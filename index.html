@@ -110,8 +110,8 @@
   <h3>Quality</h3>
   <div class="row"><label>Preset</label>
     <div class="seg" id="qPreset">
-      <button type="button" data-q="0">Low</button><button type="button" data-q="1">Med</button>
-      <button type="button" data-q="2" class="on">High</button><button type="button" data-q="3">Ultra</button>
+      <button type="button" data-q="0">Low</button><button type="button" data-q="1" class="on">Med</button>
+      <button type="button" data-q="2">High</button><button type="button" data-q="3">Ultra</button>
     </div></div>
   <div class="row"><label>Grass density</label><input id="qDens" type="range" min="20" max="140" value="100"><span class="val" id="qDensV">100</span></div>
   <div class="row"><label>Render scale</label><input id="qScale" type="range" min="60" max="150" value="100"><span class="val" id="qScaleV">100</span></div>
@@ -203,15 +203,14 @@ const CFG = {
 // the distance it claims to cover.  Hand-picked grids were too small for rings
 // 1-3, which left an un-grassed annulus between every pair of rings — that is
 // what made dense grass "only appear when you get closer".
-// `px` is the supersample factor ON TOP of the device pixel ratio, so it is
-// always >= 1.0 above Low and the composite always resolves DOWN to the canvas.
-// The composite runs a luma FXAA, which is what lets 1.12x do the job the old
-// 1.30x brute-force supersample was doing, for 1.35x fewer fragments.
+// `px` is the preset's render-scale factor on top of the device pixel ratio.
+// The adaptive governor may lower it temporarily; luma FXAA keeps grass edges
+// stable when the final composite resolves that buffer to the canvas.
 const QUALITY = [
-  { grass:[0.30,0.28,0.26,0.24], shadow:1280, wind:160, px:0.85, bloomLv:4, blades:[3,1,1,1] },
-  { grass:[0.58,0.55,0.52,0.48], shadow:1536, wind:224, px:1.00, bloomLv:5, blades:[3,2,1,1] },
-  { grass:[1.00,1.00,1.00,1.00], shadow:2048, wind:288, px:1.12, bloomLv:5, blades:[4,2,1,1] },
-  { grass:[1.45,1.38,1.30,1.20], shadow:2560, wind:352, px:1.32, bloomLv:6, blades:[5,3,2,1] },
+  { grass:[0.30,0.26,0.22,0.18], shadow:1024, wind:160, px:0.85, bloomLv:3, blades:[3,1,1,1] },
+  { grass:[0.58,0.50,0.38,0.30], shadow:1280, wind:192, px:1.00, bloomLv:4, blades:[3,1,1,1] },
+  { grass:[1.00,0.92,0.78,0.64], shadow:1792, wind:256, px:1.08, bloomLv:4, blades:[4,2,1,1] },
+  { grass:[1.35,1.22,1.02,0.82], shadow:2304, wind:320, px:1.22, bloomLv:5, blades:[5,3,2,1] },
 ];
 
 // Four overlapping grass rings carry blades from underfoot to the far ridge.
@@ -4983,6 +4982,7 @@ const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'hig
 renderer.setClearColor(0x0e1219, 1);
 renderer.outputColorSpace = THREE.LinearSRGBColorSpace;   // we encode sRGB ourselves
 renderer.autoClear = false;
+renderer.info.autoReset = false; // include auxiliary and post passes in one frame total
 $('#app').appendChild(renderer.domElement);
 const gl = renderer.getContext();
 const hasFloatLinear = !!gl.getExtension('OES_texture_float_linear');
@@ -5068,10 +5068,15 @@ const postMat = (fs, uni)=> new THREE.RawShaderMaterial({
 
 /*──────── state ────────*/
 const QS = new URLSearchParams(location.search);
+function queryNumber(name, fallback, lo, hi){
+  if(!QS.has(name)) return fallback;
+  const value = Number(QS.get(name));
+  return Number.isFinite(value) ? clamp(value, lo, hi) : fallback;
+}
 const State = {
-  q: QS.has('q') ? clamp(+QS.get('q'),0,3) : 2,
-  density: QS.has('d') ? +QS.get('d') : 1.0,
-  scale:   QS.has('s') ? +QS.get('s') : 1.0,
+  q: Math.round(queryNumber('q', 1, 0, 3)),
+  density: queryNumber('d', 1.0, 0.2, 1.4),
+  scale:   queryNumber('s', 1.0, 0.6, 1.5),
   exposure:1.0, bloom:1.0, paint:1.0,
   autoQ: !QS.has('q'),
   showWind:false, paused:false, running:false,
@@ -5086,6 +5091,7 @@ let walker, grass, train, smoke, motes, birdsP, cloudObj, skyMesh, waterMesh, te
 let trees=[], ridges=[], reflectSet=[];
 let millWheel=null, villageSmokers=[], proxyTerrain=null, puffRT=null;
 let cloudShRT=null, cloudShMat=null, lifeGroup=null;
+let shadowCacheX=Infinity, shadowCacheZ=Infinity, shadowCacheT=-Infinity;
 
 /*──────── the whole build ────────*/
 async function boot(){
@@ -5340,6 +5346,7 @@ async function boot(){
   /*── grass ──*/
   setStat('sowing a million blades', 0.88); await idle();
   grass = new GrassField(scene, G, QUALITY[State.q]);
+  grass.density = State.density;
   grass.build(QUALITY[State.q]);
   for(const ring of grass.rings) for(const m of ring.meshes) m.userData.noCast = true;
 
@@ -5406,15 +5413,11 @@ function buildTargets(){
   camera.updateProjectionMatrix();
   reflCam.aspect = camera.aspect; reflCam.fov = camera.fov; reflCam.updateProjectionMatrix();
 
-  // The scene buffer must never be SMALLER than the canvas.  If it is, the
-  // composite magnifies it (blurry) while FXAA has already resolved edges at
-  // the lower resolution and cannot put the detail back (jagged) — you get both
-  // at once, which is exactly what happens on a hi-dpi display.  So the render
-  // scale multiplies the device ratio rather than replacing it, and every
-  // preset above Low is >= 1.0 so the final resolve is always a downsample.
-  const want = dpr * q.px * State.scale;
-  const px = q.px < 1.0 ? want
-           : Math.max(dpr, Math.min(want, Math.max(dpr, 1.40)));
+  // User scale and the automatic governor are separate: the slider remains a
+  // predictable preference while the governor can temporarily trade resolution
+  // for a stable frame rate.  The 0.7 floor retains enough input detail for FXAA.
+  const want = dpr * q.px * State.scale * State.adapt;
+  const px = Math.min(want, Math.max(dpr, 1.40));
   const W = Math.max(320, Math.floor(window.innerWidth*px));
   const H = Math.max(240, Math.floor(window.innerHeight*px));
 
@@ -5460,6 +5463,8 @@ function buildTargets(){
     G.uShadowMap.value = shadowRT.depthTexture;
     G.uShadowTexel.value = 1/q.shadow;
   }
+  // A resized/recreated target cannot reuse the previous cached shadow view.
+  shadowCacheX=Infinity; shadowCacheZ=Infinity; shadowCacheT=-Infinity;
   if(!windRT || windRT.width!==q.wind){
     if(windRT) windRT.dispose();
     windRT = new THREE.WebGLRenderTarget(q.wind, q.wind, {
@@ -5718,6 +5723,12 @@ function shadowPass(){
   let cx = camera.position.x + _tmpF.x*span*0.30;
   let cz = camera.position.z + _tmpF.z*span*0.30;
   cx = Math.round(cx/texel)*texel; cz = Math.round(cz/texel)*texel;
+  // The sun is fixed and most casters are static.  Reuse the map while its
+  // texel-snapped view is unchanged, refreshing occasionally for swaying trees.
+  // The moving train remains fully dynamic.
+  const maxAge = State.q <= 1 ? 0.75 : 0.40;
+  if(cx === shadowCacheX && cz === shadowCacheZ && !train.active && tAcc-shadowCacheT < maxAge) return false;
+  shadowCacheX=cx; shadowCacheZ=cz; shadowCacheT=tAcc;
   // trees cull against the map's own centre, not the camera's
   G.uShadowC.value.set(cx, cz);
   const cy = sampleHeight(cx,cz);
@@ -5736,6 +5747,7 @@ function shadowPass(){
   renderer.clear(true, true, false);
   renderer.render(scene, sunCam);
   endSwap();
+  return true;
 }
 
 const _mirror = new THREE.Matrix4();
@@ -5824,12 +5836,18 @@ function postChain(){
   softDownMat.uniforms.uTexel.value.set(1/softRT[0].width, 1/softRT[0].height);
   blit(softDownMat, softRT[0]);
   blurMats[0].uniforms.uSrc.value = softRT[0].texture; blit(blurMats[0], softRT[1]);
-  blurMats[1].uniforms.uSrc.value = softRT[1].texture; blit(blurMats[1], softRT[0]);
+  // Low/Medium already downsample the source to 1/8 resolution; one separable
+  // blur leg is sufficient there and saves a full-screen pass every frame.
+  let softTex = softRT[1].texture;
+  if(State.q >= 2){
+    blurMats[1].uniforms.uSrc.value = softRT[1].texture; blit(blurMats[1], softRT[0]);
+    softTex = softRT[0].texture;
+  }
 
   const c = composite.uniforms;
   c.uScene.value = sceneRT.texture;
   c.uBloom.value = (upRTs.length ? upRTs[0].texture : bloomRTs[0].texture);
-  c.uSoft.value  = softRT[0].texture;
+  c.uSoft.value  = softTex;
   c.uTime.value  = G.uTime.value;
   c.uExposure.value = State.exposure;
   c.uBloomAmt.value = 0.62*State.bloom;
@@ -5852,9 +5870,10 @@ function postChain(){
 }
 
 /*──────────────────────────── the frame ───────────────────────────────────*/
-let last = performance.now(), tAcc = 0, fpsAcc=[], nextTrain = 11.0, warmed=0;
+let last = performance.now(), tAcc = 0, fpsAcc=[], nextTrain = 11.0;
 const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4();
 let cloudSortT=0, rawMat=null, frameNo=0, windWarm=false, shadowWarm=false, cloudWarm=false;
+let autoCheckT=5, autoLow=0, autoHigh=0, targetRebuildT=null;
 // a handful of probe spheres along the river; if none is in the frustum there
 // is no water on screen and the whole reflection pass can be skipped
 const RIVER_PROBES = (()=>{ const a=[];
@@ -5879,6 +5898,8 @@ function frame(now){
   let dt = Math.min(0.05, (now-last)/1000); last = now;
   if(State.paused) dt = 0;
   tAcc += dt;
+  State.frameMs += ((dt*1000)-State.frameMs)*0.08;
+  renderer.info.reset();
 
   updateWind(dt, camera.position);
   walker.update(dt, tAcc);
@@ -5926,13 +5947,10 @@ function frame(now){
   grass.update(camera, _frustum);
   State.grassNear = clamp(splatSampleMask(camera.position.x, camera.position.z), 0, 1);
 
-  // The wind field and the sun shadow both change slowly compared with the
-  // camera, so they run at half rate on alternate frames — invisible, and it
-  // takes two whole passes off most frames.
   /*  Three auxiliary passes, none of which the eye can follow at frame rate:
       the wind field drifts, the sun does not move at all and the cloud deck
       creeps.  Interleaving them one per frame means each frame pays for one
-      instead of two, and nothing updates slower than 20 Hz.                  */
+      instead of all three; the shadow pass can additionally reuse its cache. */
   frameNo++;
   const phase = frameNo % 3;
   if(phase === 0 || !windWarm){ windWarm = true;
@@ -5956,9 +5974,9 @@ function frame(now){
   fpsAcc.push(dt); if(fpsAcc.length>40) fpsAcc.shift();
   let s=0; for(const v of fpsAcc) s+=v;
   State.fps = fpsAcc.length/Math.max(s,1e-4);
-  // long enough that shader compilation, texture uploads and the first GC are
-  // all well behind us before we let the auto-quality logic judge the frame rate
-  if(++warmed === 260) autoQuality();
+  // Re-check throughout the session: train smoke, viewport changes and thermal
+  // throttling can all alter the appropriate setting after initial warm-up.
+  autoQuality(tAcc);
 }
 function splatSampleMask(x,z){
   const R=CFG.dataRes;
@@ -6004,10 +6022,19 @@ function sortClouds(){
   cloudObj.geom.index.needsUpdate=true;
   cloudObj.geom.setDrawRange(0, k);
 }
-function setQuality(q){
+function scheduleTargetRebuild(delay=180){
+  clearTimeout(targetRebuildT);
+  targetRebuildT=setTimeout(()=>{ targetRebuildT=null; buildTargets(); }, delay);
+}
+function setQuality(q, manual=true){
   q = clamp(q|0, 0, 3);
-  if(q === State.q) return;
-  State.q = q; State.autoQ = false;
+  const resetAdapt = manual && State.adapt !== 1;
+  if(manual){ State.autoQ = false; State.adapt = 1; autoLow=0; autoHigh=0; }
+  if(q === State.q){
+    if(resetAdapt) scheduleTargetRebuild();
+    return;
+  }
+  State.q = q;
   for(const b of document.querySelectorAll('#qPreset button'))
     b.classList.toggle('on', +b.dataset.q === q);
   rebuildGrass(); buildTargets();
@@ -6018,10 +6045,29 @@ function rebuildGrass(){
   grass.setAngular(ANG_PER_PX);
   for(const r of grass.rings) for(const m of r.meshes) m.userData.noCast=true;
 }
-function autoQuality(){
-  if(!State.autoQ) return;
-  if(State.fps < 34 && State.q > 0){
-    const q = State.q - 1; State.q = -1; setQuality(q); State.autoQ = true;
+function autoQuality(now){
+  if(!State.autoQ || now < autoCheckT) return;
+  autoCheckT = now + 2.25;
+
+  if(State.fps < 43){ autoLow += State.fps < 32 ? 2 : 1; autoHigh=0; }
+  else if(State.fps > 56){ autoHigh++; autoLow=0; }
+  else { autoLow=0; autoHigh=0; }
+
+  if(autoLow >= 2){
+    autoLow=0;
+    if(State.adapt > 0.701){
+      State.adapt = Math.max(0.70, Math.round((State.adapt-0.10)*100)/100);
+      scheduleTargetRebuild();
+      toast('auto render '+Math.round(State.adapt*100)+'%');
+    } else if(State.q > 0){
+      // Recover some sharpness when a geometry-heavy preset is reduced.
+      State.adapt=0.85;
+      setQuality(State.q-1, false);
+    }
+  } else if(autoHigh >= 3 && State.adapt < 0.999){
+    autoHigh=0;
+    State.adapt=Math.min(1, Math.round((State.adapt+0.05)*100)/100);
+    scheduleTargetRebuild();
   }
 }
 function loop(now){
@@ -6040,9 +6086,11 @@ function hudTick(){
     const t=$('#tele'); t.textContent='';
     const mk=(cls)=>{ const s=document.createElement('span'); s.className=cls; t.appendChild(s); return s; };
     teleNodes={ a:mk('k'), b:mk('v'), c:mk('k'), d:mk('v'), br:t.appendChild(document.createElement('br')),
-                e:mk('k'), f:mk('v'), g:mk('k'), h:mk('v') };
+                e:mk('k'), f:mk('v'), g:mk('k'), h:mk('v'), br2:t.appendChild(document.createElement('br')),
+                i:mk('k'), j:mk('v'), k:mk('k'), l:mk('v') };
     teleNodes.a.textContent='wind '; teleNodes.c.textContent='  gust ';
     teleNodes.e.textContent='train '; teleNodes.g.textContent='  fps ';
+    teleNodes.i.textContent='render '; teleNodes.k.textContent='  draw ';
   }
   const w = windAtJS(camera.position.x, camera.position.z, 10);
   const eta = Math.max(0, nextTrain - tAcc);
@@ -6050,6 +6098,9 @@ function hudTick(){
   teleNodes.d.textContent = (WindSys.meanSpeed*(1+w.gust*0.9)).toFixed(1);
   teleNodes.f.textContent = train.active ? 'crossing' : (eta<1?'—':eta.toFixed(0)+'s');
   teleNodes.h.textContent = State.fps.toFixed(0);
+  teleNodes.j.textContent = Math.round(State.scale*State.adapt*100)+'%';
+  const tris=renderer.info.render.triangles;
+  teleNodes.l.textContent = renderer.info.render.calls+'/'+(tris>=1e6?(tris/1e6).toFixed(1)+'m':Math.round(tris/1000)+'k');
 }
 let toastT=null;
 function toast(msg){
@@ -6092,17 +6143,20 @@ function bindInput(){
   });
   addEventListener('blur', ()=>{ walker.keys={}; });
 
+  // Reflect URL-provided values before binding.  Previously the controls' HTML
+  // defaults silently overwrote ?d= and ?s= during startup.
+  $('#qDens').value=Math.round(State.density*100);
+  $('#qScale').value=Math.round(State.scale*100);
   const bind=(id, f, fmt)=>{ const el=$('#'+id), out=$('#'+id+'V');
-    const go=()=>{ const v=+el.value; f(v); if(out) out.textContent = fmt?fmt(v):String(v); };
-    el.addEventListener('input', go); go(); };
+    const go=(fromUser=false)=>{ const v=+el.value; f(v,fromUser); if(out) out.textContent = fmt?fmt(v):String(v); };
+    el.addEventListener('input', ()=>go(true)); go(false); };
   // rebuilding the field is a ~200 ms hitch; never do it per slider tick
   let densT=null;
-  bind('qDens', v=>{ State.density=v/100;
-    if(grass && grass.built){ clearTimeout(densT);
+  bind('qDens', (v,fromUser)=>{ State.density=v/100;
+    if(fromUser && grass && grass.built){ clearTimeout(densT);
       densT = setTimeout(()=>{ grass.density=State.density; rebuildGrass(); }, 280); } });
-  let scaleT=null;
-  bind('qScale', v=>{ State.scale=v/100;
-    if(sceneRT){ clearTimeout(scaleT); scaleT=setTimeout(buildTargets, 220); } });
+  bind('qScale', (v,fromUser)=>{ State.scale=v/100;
+    if(fromUser){ State.autoQ=false; State.adapt=1; autoLow=0; autoHigh=0; scheduleTargetRebuild(220); } });
   bind('wSpd', v=>{ WindSys.baseSpeed=v/10; WindSys.tgtSpeed=v/10; }, v=>(v/10).toFixed(1));
   bind('wGust', v=>{ WindSys.gustiness=v/100; }, v=>(v/100).toFixed(2));
   bind('pExp', v=>{ State.exposure=v/100; }, v=>(v/100).toFixed(2));
