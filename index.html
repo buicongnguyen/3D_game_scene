@@ -83,10 +83,11 @@
   .seg button.on{background:rgba(143,190,168,.34);border-color:rgba(143,190,168,.6)}
   #seasonPreset{gap:2px}
   #seasonPreset button{font-size:7.4px;letter-spacing:.02em;padding:4px 3px}
-  #timeCycle{font-family:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  #timeCycle,#recordScene{font-family:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
     min-width:126px;padding:5px 8px;border-radius:5px;cursor:pointer;color:var(--cream);
     background:rgba(91,116,160,.20);border:1px solid rgba(170,192,230,.28);transition:.18s}
-  #timeCycle:hover{background:rgba(112,137,184,.34);border-color:rgba(190,210,242,.46)}
+  #timeCycle:hover,#recordScene:hover{background:rgba(112,137,184,.34);border-color:rgba(190,210,242,.46)}
+  #recordScene.recording{background:rgba(154,48,48,.42);border-color:rgba(255,142,126,.72);color:#FFE3D8}
   .season-row[hidden]{display:none}
   #panel .note{opacity:.4;font-size:9.5px;line-height:1.7;margin-top:14px;letter-spacing:.06em;
     text-transform:none;font-style:italic}
@@ -110,7 +111,7 @@
   <div id="keys" class="k">
     <span><b>WASD</b> walk</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span>
     <span><b>F</b> fly</span><span><b>Space/Ctrl</b> up&#47;down</span><span><b>T</b> train</span>
-    <span><b>C</b> cinematic</span><span><b>H</b> settings</span><span><b>Esc</b> release</span>
+    <span><b>C</b> cinematic mode</span><span><b>R</b> record</span><span><b>H</b> settings</span><span><b>Esc</b> release</span>
   </div>
   <div id="tele"></div>
 </div>
@@ -135,6 +136,13 @@
   <div class="row season-row" id="flowerRow" hidden><label>Flower density</label><input id="sFlower" type="range" min="0" max="100" value="60"><span class="val" id="sFlowerV">60</span></div>
   <div class="row season-row" id="foliageRow" hidden><label>Foliage density</label><input id="sFoliage" type="range" min="0" max="100" value="70"><span class="val" id="sFoliageV">70</span></div>
   <div class="row season-row" id="snowRow" hidden><label>Snow density</label><input id="sSnow" type="range" min="10" max="100" value="70"><span class="val" id="sSnowV">70</span></div>
+  <h3>Cinematic</h3>
+  <div class="row"><label>Mode</label>
+    <div class="seg" id="cinePreset">
+      <button type="button" data-cine="0" class="on">Free</button><button type="button" data-cine="1">Default</button>
+      <button type="button" data-cine="2">Season tour</button>
+    </div></div>
+  <div class="row"><label>Export</label><button type="button" id="recordScene">Record video</button></div>
   <h3>Wind</h3>
   <div class="row"><label>Mean speed</label><input id="wSpd" type="range" min="5" max="140" value="42"><span class="val" id="wSpdV">4.2</span></div>
   <div class="row"><label>Gustiness</label><input id="wGust" type="range" min="0" max="200" value="100"><span class="val" id="wGustV">1.0</span></div>
@@ -146,7 +154,7 @@
   <div class="row"><label>Music</label><input id="aMus" type="checkbox" class="chk" checked></div>
   <div class="row"><label>Show wind field</label><input id="dWind" type="checkbox" class="chk"></div>
   <p class="note">Press <b>T</b> to summon the train, <b>1</b>&#8211;<b>4</b> for quality presets,
-    <b>H</b> to close this panel. <b>P</b> pauses the scene.</p>
+    <b>C</b> to cycle cinematic modes, <b>R</b> to record, and <b>P</b> to pause.</p>
 </div>
 
 <div id="flash"></div>
@@ -4805,7 +4813,8 @@ class Walker {
     this.bobY=0; this.bobX=0; this.roll=0; this.lean=0;
     this.breath=0; this.groundY=0;
     this.keys={};
-    this.cinematic=false; this.cineT=0; this.fly=false; this.flyY=0;
+    // 0 free walk, 1 camera-only cinematic, 2 seasonal day-to-night tour.
+    this.cinematic=0; this.cineT=0; this.fly=false; this.flyY=0;
     this.onFootstep=null;
     this.windLean=new THREE.Vector2();
     this.idle=0;
@@ -4961,7 +4970,7 @@ class Audio {
     this.t0 = ctx.currentTime;
 
     // ── master chain ────────────────────────────────────────────────────
-    const comp = ctx.createDynamicsCompressor();
+    const comp = this.output = ctx.createDynamicsCompressor();
     comp.threshold.value=-16; comp.knee.value=22; comp.ratio.value=3.2;
     comp.attack.value=0.02; comp.release.value=0.35;
     const master = this.master = ctx.createGain(); master.gain.value=this.vol;
@@ -6485,6 +6494,7 @@ function frame(now){
 
   updateWind(dt, camera.position);
   walker.update(dt, tAcc);
+  updateCinematicTour();
   camera.updateMatrixWorld(true);
 
   G.uTime.value = tAcc;
@@ -6694,6 +6704,119 @@ function toast(msg){
 }
 
 const SEASON_NAMES=['spring','summer','autumn','winter'];
+const CINEMATIC_NAMES=['free walk','cinematic — default','cinematic — season tour'];
+let cinematicRestore=null, cinematicChapter=-1, cinematicUiDay=Infinity;
+function syncCinematicControl(){
+  for(const b of document.querySelectorAll('#cinePreset button'))
+    b.classList.toggle('on',+b.dataset.cine===walker.cinematic);
+}
+function setCinematicMode(mode, announce=true){
+  mode=clamp(mode|0,0,2);
+  const previous=walker.cinematic|0;
+  if(previous===2&&mode!==2&&cinematicRestore){
+    daylightAnim++;
+    setSeason(cinematicRestore.season,false);
+    setDaylight(cinematicRestore.daylight);
+    State.timePreset=cinematicRestore.timePreset;
+    syncDaylightControl(); updateTimeButton();
+    cinematicRestore=null; cinematicChapter=-1;
+  }
+  if(mode===2&&previous!==2){
+    cinematicRestore={season:State.season,daylight:State.daylight,timePreset:State.timePreset};
+    cinematicChapter=-1; cinematicUiDay=Infinity; daylightAnim++;
+  }
+  walker.cinematic=mode; walker.cineT=0; walker.vel.set(0,0,0);
+  syncCinematicControl();
+  if(mode===2) updateCinematicTour();
+  if(announce) toast(CINEMATIC_NAMES[mode]);
+}
+function updateCinematicTour(){
+  if(!walker||walker.cinematic!==2) return;
+  const chapterSeconds=32, chapter=Math.floor(walker.cineT/chapterSeconds)%4;
+  const local=walker.cineT%chapterSeconds;
+  if(chapter!==cinematicChapter){
+    cinematicChapter=chapter;
+    setSeason(chapter,true);
+  }
+  // Each seasonal chapter establishes daylight, descends through sunset, holds
+  // on the stars, then returns through dawn before the next season arrives.
+  let day=14, preset=0;
+  if(local>=5&&local<17){ const u=smoothstep(5,17,local); day=lerp(14,-14,u); preset=local<11?1:2; }
+  else if(local>=17&&local<26){ day=-14; preset=2; }
+  else if(local>=26){ day=lerp(-14,14,smoothstep(26,32,local)); preset=3; }
+  setDaylight(day);
+  if(State.timePreset!==preset){ State.timePreset=preset; updateTimeButton(); }
+  const rounded=Math.round(day);
+  if(rounded!==cinematicUiDay){ cinematicUiDay=rounded; syncDaylightControl(); }
+}
+
+let videoRecording=null;
+function recordingFormat(){
+  const candidates=[
+    {type:'video/mp4;codecs=avc1.42E01E',ext:'mp4'},
+    {type:'video/webm;codecs=vp9,opus',ext:'webm'},
+    {type:'video/webm;codecs=vp8,opus',ext:'webm'},
+    {type:'video/webm',ext:'webm'},
+  ];
+  return candidates.find(f=>MediaRecorder.isTypeSupported(f.type))||{type:'',ext:'webm'};
+}
+function updateRecordButton(){
+  const b=$('#recordScene'); if(!b) return;
+  if(!videoRecording){ b.textContent='Record video'; b.classList.remove('recording'); return; }
+  const seconds=Math.floor((performance.now()-videoRecording.started)/1000);
+  b.textContent='Stop '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+  b.classList.add('recording');
+}
+function toggleSceneRecording(){
+  if(videoRecording){
+    if(videoRecording.rec.state!=='inactive') videoRecording.rec.stop();
+    return;
+  }
+  const canvas=renderer.domElement;
+  if(!canvas.captureStream||!window.MediaRecorder){ toast('video recording unsupported'); return; }
+  audio.resume();
+  const canvasStream=canvas.captureStream(60), stream=new MediaStream(canvasStream.getVideoTracks());
+  let audioDest=null;
+  if(audio.ok&&audio.ctx&&audio.output){
+    audioDest=audio.ctx.createMediaStreamDestination();
+    audio.output.connect(audioDest);
+    for(const track of audioDest.stream.getAudioTracks()) stream.addTrack(track);
+  }
+  const format=recordingFormat(), chunks=[];
+  let rec;
+  try{
+    const bitrate=clamp(canvas.width*canvas.height*7,4e6,16e6);
+    rec=new MediaRecorder(stream,Object.assign({videoBitsPerSecond:bitrate},format.type?{mimeType:format.type}:{}));
+  }catch(error){
+    for(const track of stream.getTracks()) track.stop();
+    if(audioDest) audio.output.disconnect(audioDest);
+    toast('could not start recorder'); return;
+  }
+  const session=videoRecording={rec,stream,audioDest,chunks,format,started:performance.now(),timer:null,limit:null};
+  rec.ondataavailable=e=>{ if(e.data&&e.data.size) chunks.push(e.data); };
+  rec.onerror=()=>toast('recording error');
+  rec.onstop=()=>{
+    clearInterval(session.timer); clearTimeout(session.limit);
+    for(const track of stream.getTracks()) track.stop();
+    if(audioDest) audio.output.disconnect(audioDest);
+    if(videoRecording===session) videoRecording=null;
+    updateRecordButton();
+    const blob=new Blob(chunks,{type:rec.mimeType||format.type||'video/webm'});
+    if(!blob.size){ toast('recording was empty'); return; }
+    const ext=(blob.type||format.type).includes('mp4')?'mp4':'webm';
+    const stamp=new Date().toISOString().replace(/[:.]/g,'-');
+    const url=URL.createObjectURL(blob), link=document.createElement('a');
+    link.href=url; link.download='hoshi-no-tani-'+SEASON_NAMES[State.season]+'-'+stamp+'.'+ext;
+    document.body.appendChild(link); link.click(); link.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+    toast('video saved');
+  };
+  rec.start(1000);
+  session.timer=setInterval(updateRecordButton,500);
+  session.limit=setTimeout(()=>{ if(rec.state!=='inactive') rec.stop(); },5*60*1000);
+  updateRecordButton(); toast('recording started');
+}
+
 let seasonGrassRestore=null;
 const TIME_PRESETS=[
   {name:'afternoon',sun:14}, {name:'sunset',sun:1},
@@ -6775,8 +6898,8 @@ function bindInput(){
       if(on && document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
       toast(on ? 'settings — click the view to look again' : '');
     }
-    if(e.code==='KeyC'){ walker.cinematic=!walker.cinematic; walker.cineT=0;
-      toast(walker.cinematic?'cinematic':'free walk'); }
+    if(e.code==='KeyC'&&!e.repeat) setCinematicMode((walker.cinematic+1)%3);
+    if(e.code==='KeyR'&&!e.repeat) toggleSceneRecording();
     if(e.code==='KeyP'){ State.paused=!State.paused; toast(State.paused?'paused':'running'); }
     if(e.code==='KeyF'){ walker.fly=!walker.fly; toast(walker.fly?'flight — space/ctrl, look to steer':'walking'); }
     if(e.code==='Space') e.preventDefault();
@@ -6840,6 +6963,11 @@ function bindInput(){
   $('#timeCycle').addEventListener('click', ()=>{
     transitionTimeOfDay((State.timePreset+1)%TIME_PRESETS.length);
   });
+  $('#cinePreset').addEventListener('click', e=>{
+    const b=e.target.closest('button'); if(!b) return; setCinematicMode(+b.dataset.cine);
+  });
+  $('#recordScene').addEventListener('click', toggleSceneRecording);
+  syncCinematicControl(); updateRecordButton();
   updateTimeButton();
   setSeason(State.season,false);
   $('#enter').addEventListener('click', ()=>{
