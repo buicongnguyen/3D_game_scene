@@ -83,6 +83,10 @@
   .seg button.on{background:rgba(143,190,168,.34);border-color:rgba(143,190,168,.6)}
   #seasonPreset{gap:2px}
   #seasonPreset button{font-size:7.4px;letter-spacing:.02em;padding:4px 3px}
+  #timeCycle{font-family:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+    min-width:126px;padding:5px 8px;border-radius:5px;cursor:pointer;color:var(--cream);
+    background:rgba(91,116,160,.20);border:1px solid rgba(170,192,230,.28);transition:.18s}
+  #timeCycle:hover{background:rgba(112,137,184,.34);border-color:rgba(190,210,242,.46)}
   .season-row[hidden]{display:none}
   #panel .note{opacity:.4;font-size:9.5px;line-height:1.7;margin-top:14px;letter-spacing:.06em;
     text-transform:none;font-style:italic}
@@ -118,7 +122,7 @@
       <button type="button" data-q="0">Low</button><button type="button" data-q="1" class="on">Med</button>
       <button type="button" data-q="2">High</button><button type="button" data-q="3">Ultra</button>
     </div></div>
-  <div class="row"><label>Grass density</label><input id="qDens" type="range" min="5" max="140" value="100"><span class="val" id="qDensV">100</span></div>
+  <div class="row"><label>Grass density</label><input id="qDens" type="range" min="1" max="140" value="100"><span class="val" id="qDensV">100</span></div>
   <div class="row"><label>Render scale</label><input id="qScale" type="range" min="60" max="150" value="100"><span class="val" id="qScaleV">100</span></div>
   <h3>Season</h3>
   <div class="row"><label>Preset</label>
@@ -126,7 +130,8 @@
       <button type="button" data-season="0">Spring</button><button type="button" data-season="1" class="on">Summer</button>
       <button type="button" data-season="2">Autumn</button><button type="button" data-season="3">Winter</button>
     </div></div>
-  <div class="row"><label>Daylight</label><input id="sDay" type="range" min="5" max="60" value="14"><span class="val" id="sDayV">14°</span></div>
+  <div class="row"><label>Daylight</label><input id="sDay" type="range" min="-18" max="60" value="14"><span class="val" id="sDayV">14°</span></div>
+  <div class="row"><label>Time of day</label><button type="button" id="timeCycle">Next: Sunset</button></div>
   <div class="row season-row" id="flowerRow" hidden><label>Flower density</label><input id="sFlower" type="range" min="0" max="100" value="60"><span class="val" id="sFlowerV">60</span></div>
   <div class="row season-row" id="foliageRow" hidden><label>Foliage density</label><input id="sFoliage" type="range" min="0" max="100" value="70"><span class="val" id="sFoliageV">70</span></div>
   <div class="row season-row" id="snowRow" hidden><label>Snow density</label><input id="sSnow" type="range" min="10" max="100" value="70"><span class="val" id="sSnowV">70</span></div>
@@ -141,7 +146,7 @@
   <div class="row"><label>Music</label><input id="aMus" type="checkbox" class="chk" checked></div>
   <div class="row"><label>Show wind field</label><input id="dWind" type="checkbox" class="chk"></div>
   <p class="note">Press <b>T</b> to summon the train, <b>1</b>&#8211;<b>4</b> for quality presets,
-    <b>H</b> to close this panel. <b>P</b> pauses time-of-day drift.</p>
+    <b>H</b> to close this panel. <b>P</b> pauses the scene.</p>
 </div>
 
 <div id="flash"></div>
@@ -469,6 +474,7 @@ uniform mat4  uLightMat;
 uniform float uShadowTexel;
 uniform float uCloudAmount;
 uniform float uFogMul;
+uniform float uNight;        // 0 day .. 1 astronomical night
 uniform float uSeason;       // 0 spring, 1 summer, 2 autumn, 3 winter
 uniform float uFlower;
 uniform float uFoliage;
@@ -558,6 +564,12 @@ vec3 skyDomeLite(vec3 d){
   col = mix(col, K_SKY_HORSUN, horiz*pow(az, 2.1)*0.92);
   float ang = max(dot(d, uSunDir), 0.0);
   col = mix(col, K_SUN_GLOW, clamp(pow(ang,7.0)*0.72 + pow(ang,1.9)*0.16, 0.0, 0.9));
+  vec3 nightHor=vec3(0.026,0.042,0.086), nightZen=vec3(0.004,0.009,0.032);
+  if(uSeason<0.5){ nightHor=vec3(0.044,0.032,0.092); nightZen=vec3(0.010,0.007,0.038); }
+  else if(uSeason>2.5){ nightHor=vec3(0.030,0.060,0.112); nightZen=vec3(0.004,0.012,0.044); }
+  vec3 night=mix(nightHor,nightZen,smoothstep(-0.02,0.82,d.y));
+  float moonGlow=pow(max(dot(d,normalize(-uSunDir)),0.0),72.0)*uNight;
+  col=mix(col,night,uNight)+vec3(0.20,0.27,0.42)*moonGlow;
   return col;
 }
 `;
@@ -693,6 +705,12 @@ vec3 paint(Surf s){
     float thin = pow(clamp(1.0 - abs(dot(s.N, uSunDir)), 0.0, 1.0), 2.2);
     col += s.transCol * tr * thin * s.trans * s.shadow * 0.52;
   }
+  // At night retain shape and material colour under a cool hemispheric wash;
+  // full black would erase the procedural detail the moon is meant to reveal.
+  float moonFacing=clamp(dot(s.N,-uSunDir)*0.5+0.5,0.0,1.0);
+  vec3 moonlit=col*mix(vec3(0.105,0.135,0.22),vec3(0.24,0.31,0.48),moonFacing);
+  moonlit+=vec3(0.055,0.075,0.13)*pow(moonFacing,2.0)*s.ambient;
+  col=mix(col,moonlit,uNight);
   col *= s.ao;
   return col;
 }
@@ -710,6 +728,7 @@ vec3 aerial(vec3 col, float dist, vec3 V, float worldY){
   float mie = pow(clamp(dot(-V, uSunDir), 0.0, 1.0), 3.4);
   vec3 fc = mix(K_HAZE, K_SKY_HORSUN, mie*0.88);
   fc = mix(fc, K_SKY_ANTI, clamp(dot(-V,uSunDir),-1.0,0.0)*-0.32);
+  fc = mix(fc, vec3(0.025,0.045,0.095), uNight*0.92);
   // mist pooling in the valley floor
   float pool = smoothstep(46.0, 8.0, worldY) * smoothstep(120.0, 420.0, dist);
   fc = mix(fc, K_MIST, pool*0.45);
@@ -1443,17 +1462,56 @@ uniform vec2 uMeanWind;
 ${GL_PAL()}${GL_HASH}${GL_NOISE}${GL_SKY}
 in vec3 vDir;
 out vec4 outColor;
+vec3 seasonalStars(vec3 d){
+  float season=floor(uSeason+0.5);
+  float turn=season*0.73;
+  mat2 rot=mat2(cos(turn),-sin(turn),sin(turn),cos(turn));
+  vec2 xz=rot*d.xz;
+  vec2 sphere=vec2(atan(xz.y,xz.x)*0.15915494+0.5,
+                   asin(clamp(d.y,-1.0,1.0))*0.31830989+0.5);
+  vec2 grid=sphere*vec2(520.0,260.0);
+  vec2 cell=floor(grid), local=fract(grid)-0.5;
+  vec2 salt=vec2(19.17,47.73)*(season+1.0);
+  float id=hash12(cell+salt);
+  vec2 point=hash22(cell+salt+11.4)-0.5;
+  float bright=step(0.994,id), born=step(0.962,id);
+  float radius=mix(0.050,0.125,bright);
+  float star=(1.0-smoothstep(radius*0.30,radius,length(local-point)))*born;
+  float pulse=0.88+0.12*sin(uTime*(0.75+hash12(cell+salt+31.0)*1.35)+id*31.4);
+  float warmth=hash12(cell+salt+73.0);
+  vec3 starCol=mix(vec3(0.62,0.76,1.00),vec3(1.00,0.84,0.62),warmth);
+  return starCol*star*pulse*(0.72+bright*1.35)*smoothstep(0.015,0.12,d.y);
+}
 void main(){
   vec3 d = normalize(vDir);
   float sm;
   vec3 col = skyDome(d, sm);
-  if(uSeason > 1.5){
-    float cool = uSeason > 2.5 ? 0.34 : 0.20;
-    vec3 blue = mix(vec3(0.42,0.58,0.78), vec3(0.20,0.38,0.67), smoothstep(0.0,0.82,d.y));
-    col = mix(col, blue, cool*(1.0-sm));
+  vec3 seasonalBlue=mix(vec3(0.43,0.63,0.86),vec3(0.16,0.39,0.73),smoothstep(0.0,0.82,d.y));
+  if(uSeason<0.5) col=mix(col,seasonalBlue,0.24*(1.0-sm));
+  else if(uSeason>1.5&&uSeason<2.5) col=mix(col,seasonalBlue,0.78*(1.0-sm));
+  else if(uSeason>2.5) col=mix(col,seasonalBlue,0.36*(1.0-sm));
+  if(uNight>0.005){
+    vec3 nightHor=vec3(0.024,0.038,0.082), nightZen=vec3(0.003,0.007,0.028);
+    if(uSeason<0.5){ nightHor=vec3(0.042,0.028,0.090); nightZen=vec3(0.009,0.005,0.036); }
+    else if(uSeason>1.5&&uSeason<2.5){ nightHor=vec3(0.025,0.038,0.070); nightZen=vec3(0.006,0.010,0.028); }
+    else if(uSeason>2.5){ nightHor=vec3(0.026,0.060,0.112); nightZen=vec3(0.003,0.010,0.042); }
+    vec3 night=mix(nightHor,nightZen,smoothstep(-0.02,0.84,d.y));
+    col=mix(col,night,uNight);
+
+    float starsIn=smoothstep(0.20,0.72,uNight);
+    col+=seasonalStars(d)*starsIn;
+
+    vec3 moonDir=normalize(-uSunDir+vec3(0.035,0.0,-0.025));
+    float moonAngle=dot(d,moonDir);
+    float moonDisc=smoothstep(0.99930,0.99972,moonAngle)*smoothstep(0.18,0.72,uNight);
+    float moonHalo=pow(max(moonAngle,0.0),78.0)*uNight;
+    float crater=vn2(d.xz*285.0+vec2(12.7,31.4))*0.5+0.5;
+    vec3 moonCol=mix(vec3(0.58,0.67,0.82),vec3(1.12,1.08,0.91),0.70+crater*0.22);
+    col+=vec3(0.18,0.26,0.46)*moonHalo+moonCol*moonDisc*1.45;
   }
   // ground-side wash so the dome never shows a hard edge below the horizon
-  col = mix(col, mix(K_HAZE, K_MIST, 0.35), smoothstep(0.0, -0.16, d.y));
+  vec3 groundWash=mix(mix(K_HAZE,K_MIST,0.35),vec3(0.020,0.035,0.070),uNight);
+  col = mix(col, groundWash, smoothstep(0.0, -0.16, d.y));
   outColor = vec4(SAFE3(col), 0.0);
 }`;
 
@@ -1551,6 +1609,13 @@ void main(){
   // the same field that draws the shadow decides whether this puff exists
   float cf = cloudField(fw);
   float op = smoothstep(0.16, 0.52, cf);
+  float spring=1.0-step(0.5,uSeason);
+  float summer=1.0-step(0.45,abs(uSeason-1.0));
+  // Spring breaks the formations into many smaller cotton puffs. Summer
+  // keeps its large formations well beyond the playable valley.
+  op=mix(op,smoothstep(0.06,0.38,cf),spring);
+  float cloudDist=length(wc.xz-uCamPos.xz);
+  op*=mix(1.0,smoothstep(720.0,1650.0,cloudDist),summer);
   vOp = op;
   if(op < 0.012){ gl_Position = vec4(2.0, 2.0, 2.0, 1.0); return; }
 
@@ -1558,7 +1623,7 @@ void main(){
   vUp    = normalize(vec3(viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1]));
   vFwd   = normalize(vec3(viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2]));
 
-  float rad = pdata.x * mix(0.80, 1.06, op);
+  float rad = pdata.x * mix(0.80, 1.06, op) * mix(1.0,0.58,spring);
   float ra = pdata.y*2.399963;                    // golden-angle spin per puff
   float cr = cos(ra), sr = sin(ra);
   vec2 rc = vec2(corner.x*cr - corner.y*sr, corner.x*sr + corner.y*cr);
@@ -1629,6 +1694,9 @@ void main(){
             rimLine*(1.0-sunEdge)*(1.0-term)*0.36);
   // whole-cloud glow when the sun is directly behind
   col += K_SUN * pow(back, 6.0) * 0.62 * (1.0-edge*0.4);
+  float moonSide=clamp(dot(N,-uSunDir)*0.5+0.5,0.0,1.0);
+  vec3 nightCloud=mix(vec3(0.012,0.022,0.050),vec3(0.085,0.115,0.19),moonSide);
+  col=mix(col,nightCloud,uNight*0.92);
 
   float dist = length(uCamPos - vW);
   col = aerial(col, dist*0.55, V, vW.y);
@@ -2560,6 +2628,31 @@ void main(){
   vec2 fl = normalize(vF); vec2 cr = vec2(-fl.y, fl.x);
   float across = vD.x, tRiv = vD.y, sp = vD.z, halfW = vD.w;
 
+  // Winter is a genuinely frozen river, not moving water tinted white.  The
+  // uniform branch also skips all ripple, reflection, caustic and foam work.
+  if(uSeason > 2.5){
+    float broad = pn2(P.xz*0.018 + vec2(tRiv*5.0, 2.7))*0.5+0.5;
+    float fine = pn2(P.xz*0.105 + 17.0);
+    float crackA = 1.0-smoothstep(0.018, 0.065, abs(fine));
+    float crackB = 1.0-smoothstep(0.012, 0.045,
+      abs(pn2(P.xz*0.19 + vec2(31.0,-11.0))));
+    float cracks = clamp(crackA*0.72 + crackB*0.34, 0.0, 1.0);
+    float bankFrost = smoothstep(0.58, 0.98, abs(across));
+    float snowCover = clamp(uSnow*(0.22 + broad*0.52 + bankFrost*0.56),0.0,1.0);
+    vec3 ice = mix(vec3(0.105,0.245,0.350), vec3(0.38,0.58,0.70), broad*0.72);
+    ice = mix(ice, vec3(0.80,0.89,0.94), snowCover*0.82);
+    ice = mix(ice, vec3(0.055,0.125,0.19), cracks*(1.0-snowCover*0.62)*0.72);
+    float ndl = max(dot(vec3(0.0,1.0,0.0),uSunDir),0.0);
+    float sh = sunShadowFast(P,ndl)*cloudShadow(P);
+    ice *= 0.66 + 0.34*sh;
+    vec3 iceR = reflect(-V,vec3(0.0,1.0,0.0));
+    float moonGlint = pow(max(dot(iceR,-uSunDir),0.0),42.0)*uNight;
+    ice += vec3(0.42,0.58,0.82)*moonGlint*(0.20+0.80*(1.0-snowCover));
+    ice = aerial(ice,vDist,V,P.y);
+    outColor = vec4(SAFE3(ice),gFogAmt);
+    return;
+  }
+
   vec4 wnd = windSample(P.xz);
   float gust = clamp(wnd.b*0.7, 0.0, 1.6);
 
@@ -2597,6 +2690,10 @@ void main(){
   float bedN = pn2(P.xz*0.55)*0.5+0.5;
   vec3 wetBed = mix(${C.wetStone}, ${C.wShallow}, 0.45)*mix(0.80,1.06,bedN);
   body = mix(wetBed, body, smoothstep(0.02, 0.22, bedDepth));
+  // Autumn rain clears the silty summer colour into a cooler, deeper blue.
+  float autumn = 1.0-smoothstep(0.35,0.55,abs(uSeason-2.0));
+  vec3 autumnBlue = mix(vec3(0.10,0.30,0.46),vec3(0.08,0.23,0.40),bedDepth);
+  body = mix(body,autumnBlue,autumn*0.62);
   // caustic light rocking over the shallow bed
   float caus = pn2(vec2(q.x*1.7 - uTime*sp*0.8, q.y*2.9 + uTime*0.5));
   caus = pow(clamp(caus*0.5+0.5, 0.0, 1.0), 3.0);
@@ -4369,21 +4466,134 @@ ${GL_PAL()}${GL_HASH}${GL_NOISE}${GL_AIR}
 in vec2 vC; in float vAge; in float vSeed; in float vOp; in float vKind;
 in vec3 vW; in vec3 vR; in vec3 vU; in vec3 vF; in float vDist;
 out vec4 outColor;
+float birdEllipse(vec2 p, vec2 radius, float feather){
+  float d=length(p/radius);
+  return 1.0-smoothstep(1.0-feather,1.0,d);
+}
 void main(){
-  // a painted gull silhouette: two swept wings that flap
-  vec2 c = vC;
-  float flap = sin(vAge*6.2831*4.0 + vSeed*17.0);
-  float y = -abs(c.x)*(0.55 + 0.55*flap) + 0.06;
-  float d = abs(c.y - y);
-  float body = smoothstep(0.30, 0.05, d) * smoothstep(1.0, 0.85, abs(c.x));
-  float head = smoothstep(0.18, 0.0, length(c - vec2(0.0, 0.10)));
-  float a = clamp(body + head, 0.0, 1.0) * vOp;
+  // Top/underside view of a complete bird: tapered torso, head and beak,
+  // forked tail, articulated wings and separated outer flight feathers.
+  vec2 c=vC;
+  float variant=fract(vKind*7.731);
+  float flap=sin(vAge*6.2831 + vKind*11.0);
+  float wingX=abs(c.x), wingT=clamp((wingX-0.08)/0.88,0.0,1.0);
+  float wingY=0.12 + flap*0.27*pow(wingT,0.72) - 0.12*pow(wingT,1.7);
+  float chord=mix(0.27,0.065,pow(wingT,0.78));
+  float wingEdge=abs(c.y-wingY)/max(chord,0.02);
+  float wing=(1.0-smoothstep(0.78,1.0,wingEdge))
+    * smoothstep(0.07,0.15,wingX) * (1.0-smoothstep(0.88,0.99,wingX));
+
+  // Narrow cuts at the trailing outer wing suggest individual primaries.
+  float trailing=smoothstep(0.48,0.94,wingT)*(1.0-smoothstep(wingY-chord,wingY+0.015,c.y));
+  float featherGroove=0.5+0.5*cos((c.y-wingY)*54.0 + wingX*21.0);
+  wing*=1.0-0.28*trailing*smoothstep(0.42,0.82,featherGroove);
+
+  float body=birdEllipse(c-vec2(0.0,-0.03),vec2(0.17,0.58),0.18);
+  float breast=birdEllipse(c-vec2(0.0,0.18),vec2(0.22,0.34),0.20);
+  float head=birdEllipse(c-vec2(0.0,0.53),vec2(0.17,0.19),0.22);
+  float tailL=birdEllipse(c-vec2(-0.075,-0.63),vec2(0.085,0.30),0.20);
+  float tailR=birdEllipse(c-vec2( 0.075,-0.63),vec2(0.085,0.30),0.20);
+  float tail=max(tailL,tailR)*(1.0-smoothstep(-0.25,-0.08,c.y));
+  float beakY=clamp((c.y-0.64)/0.22,0.0,1.0);
+  float beakHalf=0.105*(1.0-beakY);
+  float beak=(1.0-smoothstep(beakHalf,beakHalf+0.025,abs(c.x)))
+    * smoothstep(0.62,0.67,c.y)*(1.0-smoothstep(0.82,0.86,c.y));
+  float legs=birdEllipse(vec2(abs(c.x)-0.075,c.y+0.38),vec2(0.025,0.19),0.30)*0.55;
+
+  float torso=clamp(max(body,breast)+head,0.0,1.0);
+  float a=clamp(max(max(wing,tail),max(torso,max(beak,legs))),0.0,1.0)*vOp;
   if(!(a > 0.02)) discard;                 // NaN-safe
-  vec3 V = normalize(uCamPos - vW);
-  vec3 col = mix(vec3(0.16,0.18,0.24), K_HAZE, 0.35);
-  col = mix(col, K_SUN*0.9, pow(clamp(dot(V,-uSunDir),0.0,1.0),2.0)*0.45);
+
+  vec3 belly=mix(vec3(0.70,0.68,0.60),vec3(0.48,0.34,0.22),variant);
+  vec3 wingCol=mix(vec3(0.29,0.32,0.36),vec3(0.24,0.17,0.12),variant);
+  float featherBand=0.82+0.18*cos(wingT*24.0+c.y*18.0+vKind*9.0);
+  vec3 col=wingCol*featherBand;
+  col=mix(col,wingCol*0.72,tail*0.82);
+  col=mix(col,belly*(0.86+0.18*(c.y+0.4)),torso);
+  col=mix(col,vec3(0.68,0.49,0.18),beak);
+  col=mix(col,vec3(0.13,0.10,0.075),legs);
+  // Small paired eye marks remain readable when a bird passes nearby.
+  float eyes=birdEllipse(vec2(abs(c.x)-0.095,c.y-0.565),vec2(0.025),0.38)*head;
+  col=mix(col,vec3(0.025,0.022,0.018),eyes);
+  float shoulder=birdEllipse(vec2(abs(c.x)-0.19,c.y-0.10),vec2(0.16,0.20),0.28)*wing;
+  col=mix(col,belly*0.72,shoulder*0.46);
+
+  vec3 V=normalize(uCamPos-vW);
+  float rim=pow(clamp(dot(V,-uSunDir),0.0,1.0),2.0);
+  col=mix(col,K_SUN*0.88,rim*0.32);
   col = aerial(col, vDist, V, vW.y);
   outColor = vec4(SAFE3(col), clamp(a, 0.0, 1.0));
+}`;
+
+const WEATHER_FS = ()=> /* glsl */`
+precision highp float;
+${GL_UNI}
+${GL_PAL()}${GL_HASH}${GL_AIR}
+in vec2 vC; in float vAge; in float vSeed; in float vOp; in float vKind;
+in vec3 vW; in vec3 vR; in vec3 vU; in vec3 vF; in float vDist;
+out vec4 outColor;
+void main(){
+  float r=length(vC), a=0.0; vec3 col=vec3(1.0);
+  if(vKind<0.5){
+    float pulse=0.70+0.30*sin(uTime*(2.0+fract(vSeed)*2.2)+vSeed*17.0);
+    float core=1.0-smoothstep(0.05,0.24,r);
+    float halo=(1.0-smoothstep(0.12,1.0,r))*0.42;
+    a=(core+halo)*pulse*vOp*smoothstep(0.20,0.78,uNight);
+    a*=smoothstep(1.2,4.0,length(uCamPos-vW));
+    col=mix(vec3(0.35,0.70,0.16),vec3(1.35,1.08,0.27),core);
+  } else if(vKind<1.5){
+    float disc=1.0-smoothstep(0.72,1.0,r);
+    float a0=abs(vC.x), a1=abs(dot(vC,vec2(0.5,0.8660254)));
+    float a2=abs(dot(vC,vec2(-0.5,0.8660254)));
+    float arms=1.0-smoothstep(0.055,0.13,min(a0,min(a1,a2)));
+    float flake=max(arms*disc,(1.0-smoothstep(0.0,0.18,r)));
+    a=flake*vOp*(0.72+0.28*sin(vSeed*31.0));
+    col=mix(vec3(0.58,0.72,0.93),vec3(1.08,1.14,1.22),1.0-r);
+  } else {
+    // A small serrated oval reads as a leaf even at the river's distance.
+    float ang=fract(vSeed*0.618)*6.2831853;
+    mat2 rot=mat2(cos(ang),-sin(ang),sin(ang),cos(ang));
+    vec2 c=rot*vC;
+    float leaf=1.0-smoothstep(0.76,0.98,length(vec2(c.x/0.52,c.y)));
+    leaf*=0.88+0.12*cos(c.y*22.0);
+    float vein=(1.0-smoothstep(0.025,0.07,abs(c.x)))*leaf;
+    a=leaf*vOp;
+    col=mix(vec3(0.48,0.12,0.025),vec3(0.95,0.48,0.055),fract(vSeed*7.31));
+    col=mix(col,vec3(0.24,0.07,0.018),vein*0.70);
+  }
+  if(!(a>0.008)) discard;
+  outColor=vec4(SAFE3(col),clamp(a,0.0,1.0));
+}`;
+
+const AIRPLANE_FS = ()=> /* glsl */`
+precision highp float;
+${GL_UNI}
+${GL_PAL()}${GL_AIR}
+in vec2 vC; in float vAge; in float vSeed; in float vOp; in float vKind;
+in vec3 vW; in vec3 vR; in vec3 vU; in vec3 vF; in float vDist;
+out vec4 outColor;
+void main(){
+  vec2 c=vC;
+  float body=1.0-smoothstep(0.78,1.0,length(vec2(c.x/0.10,(c.y-0.04)/0.82)));
+  float wingChord=mix(0.18,0.055,smoothstep(0.08,0.92,abs(c.x)));
+  float wings=(1.0-smoothstep(wingChord*0.72,wingChord,abs(c.y+0.02)))
+    *(1.0-smoothstep(0.86,0.98,abs(c.x)));
+  float tail=(1.0-smoothstep(0.08,0.14,abs(c.y+0.58)))
+    *(1.0-smoothstep(0.30,0.40,abs(c.x)));
+  float plane=max(body,max(wings,tail));
+  float behind=1.0-smoothstep(-0.42,-0.30,c.y);
+  float trails=(1.0-smoothstep(0.025,0.055,abs(abs(c.x)-0.13)))*behind
+    *smoothstep(-1.0,-0.48,c.y)*0.42;
+  float blink=step(0.68,fract(uTime*0.72+vKind*0.37));
+  float tip=1.0-smoothstep(0.0,0.075,length(vec2(abs(c.x)-0.87,c.y+0.02)));
+  float a=max(plane,max(trails,tip*blink))*vOp;
+  if(!(a>0.01)) discard;
+  vec3 col=mix(vec3(0.22,0.26,0.31),vec3(0.16,0.20,0.29),uNight);
+  col=mix(col,vec3(0.88,0.94,1.0),trails);
+  vec3 lamp=c.x<0.0?vec3(1.2,0.12,0.08):vec3(0.12,1.1,0.32);
+  col=mix(col,lamp,tip*blink);
+  vec3 V=normalize(uCamPos-vW); col=aerial(col,vDist*0.34,V,vW.y);
+  outColor=vec4(SAFE3(col),clamp(a,0.0,1.0));
 }`;
 
 
@@ -5031,7 +5241,8 @@ class Audio {
     // a murmur thirty metres up the meadow, which is not what a straight line does
     const near = clamp(14/(14 + Math.max(rf.d-10, 0)), 0, 1);
     const wide = clamp(riverWidth(rf.t)/26, 0.35, 1.3);
-    this.river.gain.gain.value += (0.115*near*near*wide - this.river.gain.gain.value)*clamp(dt*2,0,1);
+    const flowing = state.season===3 ? 0.035 : 1;
+    this.river.gain.gain.value += (0.115*near*near*wide*flowing - this.river.gain.gain.value)*clamp(dt*2,0,1);
     // distance closes the top end — over a meadow, high frequencies go first
     this.river.lp.frequency.value +=
       ((640 + 2500*near*near) - this.river.lp.frequency.value)*clamp(dt*1.5,0,1);
@@ -5144,6 +5355,7 @@ const G = {
   uWindLag:     { value:new THREE.Vector2() },
   uCloudAmount: { value:1.0 },
   uFogMul:      { value:1.0 },
+  uNight:       { value:0.0 },
   uSeason:      { value:1.0 },
   uFlower:      { value:0.60 },
   uFoliage:     { value:0.70 },
@@ -5198,20 +5410,21 @@ function queryNumber(name, fallback, lo, hi){
 }
 const State = {
   q: Math.round(queryNumber('q', 1, 0, 3)),
-  density: queryNumber('d', 1.0, 0.05, 1.4),
+  density: queryNumber('d', 1.0, 0.01, 1.4),
   scale:   queryNumber('s', 1.0, 0.6, 1.5),
   exposure:1.0, bloom:1.0, paint:1.0,
   autoQ: !QS.has('q'),
   showWind:false, paused:false, running:false,
   fps:60, frameMs:16, adapt:1.0,
   trainActive:false, trainDist:999, trainPan:0, grassNear:1,
-  season:1, daylight:14, flower:0.60, foliage:0.70, snow:0.70,
+  season:Math.round(queryNumber('season',1,0,3)), daylight:queryNumber('day',14,-18,60), timePreset:0,
+  flower:0.60, foliage:0.70, snow:0.70,
 };
 if(QS.has('t')) window.__startT = +QS.get('t');
 let sceneRT, bloomRTs=[], upRTs=[], softRT=[], shadowRT=null, windRT=null, reflRT=null;
 let composite, brightMat, downMats=[], upMats=[], blurMats=[], windMat, windViewMat, softDownMat;
 const audio = new Audio();
-let walker, grass, train, smoke, motes, birdsP, seasonFx, cloudObj, skyMesh, waterMesh, terrainMesh;
+let walker, grass, train, smoke, motes, birdsP, seasonFx, weatherFx, planesP, cloudObj, skyMesh, waterMesh, terrainMesh;
 let trees=[], ridges=[], reflectSet=[];
 let millWheel=null, villageSmokers=[], proxyTerrain=null, puffRT=null;
 let cloudShRT=null, cloudShMat=null, lifeGroup=null;
@@ -5454,7 +5667,9 @@ async function boot(){
   motes  = new Particles(lifeGroup, U(), 2400, MOTE_FS(),  24, false);
   birdsP = new Particles(lifeGroup, U(), 60,   BIRD_FS(),  21, false);
   seasonFx = new Particles(lifeGroup, U(), 1400, SEASON_FS(), 23, false);
-  initMotes(); initBirds();
+  weatherFx = new Particles(lifeGroup, U(), 1400, WEATHER_FS(), 25, false);
+  planesP = new Particles(lifeGroup, U(), 4, AIRPLANE_FS(), 20, false);
+  initMotes(); initBirds(); initAirplanes();
 
   train.onChuff = (wp, fwd, spd)=>{
     for(let i=0;i<2;i++){
@@ -5687,15 +5902,40 @@ function updateMotes(dt, cam){
       d.y=sampleHeight(d.x,d.z)+2; d.vx=d.vy=d.vz=0; }
   }
 }
+function orientFlightParticle(p,vx,vy,vz){
+  const ce=camera.matrixWorld.elements;
+  const screenX=vx*ce[0]+vy*ce[1]+vz*ce[2];
+  const screenY=vx*ce[4]+vy*ce[5]+vz*ce[6];
+  if(Math.abs(screenX)+Math.abs(screenY)<=0.0001) return;
+  // In PARTICLE_VS local +Y is the nose/head axis. Rotating (0,+1) produces
+  // (-sin(a),cos(a)), hence atan2(-screenX,screenY). Subtract the shared
+  // particle spin so the visible nose—not merely its quad—faces the velocity.
+  const desired=Math.atan2(-screenX,screenY);
+  const age01=clamp(p.age/p.life,0,1);
+  p.seed=((desired-age01*0.9)/TAU%1+1)%1;
+}
+
 const BIRDS=[];
 function initBirds(){
   const r=rng(2929);
+  const spawnYaw=-CFG.spawn.heading*DEG;
+  const fx=-Math.sin(spawnYaw), fz=-Math.cos(spawnYaw);
+  const rx=Math.cos(spawnYaw), rz=-Math.sin(spawnYaw);
   for(let i=0;i<34;i++){
-    const a=r()*TAU, rr=120+r()*260;
-    const b={ x:CFG.spawn.x+Math.cos(a)*rr, z:CFG.spawn.z+Math.sin(a)*rr,
-      y:0, vx:(r()-0.5)*8, vy:0, vz:(r()-0.5)*8, ph:r(), p:null };
-    b.y = sampleHeight(b.x,b.z)+45+r()*45;
-    b.p = birdsP.spawn({x:b.x,y:b.y,z:b.z, life:1, size:1.15, seed:r()*100, kind:0, op:1, age:r()});
+    // A small foreground group makes the detailed anatomy readable; the rest
+    // remain a broad, distant flock that gives the valley its sense of scale.
+    const near=i<10;
+    let x,z;
+    if(near){
+      const ahead=52+r()*105, side=(r()-0.5)*118;
+      x=CFG.spawn.x+fx*ahead+rx*side; z=CFG.spawn.z+fz*ahead+rz*side;
+    } else {
+      const a=r()*TAU, rr=118+r()*252;
+      x=CFG.spawn.x+Math.cos(a)*rr; z=CFG.spawn.z+Math.sin(a)*rr;
+    }
+    const b={ x,z,y:0, vx:(r()-0.5)*8, vy:0, vz:(r()-0.5)*8, ph:r(), near, p:null };
+    b.y = sampleHeight(b.x,b.z)+(b.near ? 18+r()*20 : 45+r()*45);
+    b.p = birdsP.spawn({x:b.x,y:b.y,z:b.z, life:1, size:1.25, seed:r(), kind:b.ph, op:1, age:r()});
     BIRDS.push(b);
   }
 }
@@ -5723,7 +5963,7 @@ function updateBirds(dt, t){
     b.vx += (Math.sin(t*0.31+b.ph*9)*2.4 + (cx-b.x)*0.010)*dt;
     b.vz += (Math.cos(t*0.27+b.ph*7)*2.4 + (cz-b.z)*0.010)*dt;
     const ground = sampleHeight(b.x,b.z);
-    const want = ground + 62 + Math.sin(t*0.2+b.ph*5)*22;
+    const want = ground + (b.near ? 29 : 62) + Math.sin(t*0.2+b.ph*5)*(b.near ? 10 : 22);
     b.vy += (want-b.y)*0.22*dt*4;
     const w = windAtJS(b.x,b.z,40);
     b.vx += w.x*0.30*dt; b.vz += w.z*0.30*dt;
@@ -5735,8 +5975,136 @@ function updateBirds(dt, t){
     // flap fast when climbing, glide when descending
     const climb = clamp(b.vy*0.25+0.5, 0, 1);
     p.age = (p.age + dt*(0.9+1.5*climb)) % 1;
+    orientFlightParticle(p,b.vx,b.vy,b.vz);
     p.op = 0.92;
-    p.size = 1.05 + climb*0.25;
+    p.size = 1.20 + climb*0.28;
+  }
+}
+
+const AIRPLANES=[];
+function initAirplanes(){
+  const r=rng(8181), cx=CFG.spawn.x-80, cz=CFG.spawn.z+30;
+  const spawnYaw=-CFG.spawn.heading*DEG;
+  const openingAngle=Math.atan2(-Math.cos(spawnYaw),-Math.sin(spawnYaw));
+  for(let i=0;i<3;i++){
+    const plane={ angle:openingAngle+(i-1)*0.30, radius:620+i*190, omega:(i%2?1:-1)*(0.004+i*0.0006),
+      cx,cz,y:175+i*36,phase:r()*TAU,p:null };
+    plane.p=planesP.spawn({x:0,y:plane.y,z:0,vx:0,vy:0,vz:0,life:1,age:0,
+      size:11.5+i*1.4,seed:0,kind:i/3,op:0.86});
+    AIRPLANES.push(plane);
+  }
+  updateAirplanes(0,0);
+}
+function updateAirplanes(dt,t){
+  for(const a of AIRPLANES){
+    a.angle=(a.angle+a.omega*dt)%TAU;
+    const ca=Math.cos(a.angle), sa=Math.sin(a.angle);
+    const x=a.cx+ca*a.radius, z=a.cz+sa*a.radius;
+    const vx=-sa*a.radius*a.omega, vz=ca*a.radius*a.omega;
+    const y=a.y+Math.sin(t*0.045+a.phase)*18, vy=Math.cos(t*0.045+a.phase)*0.81;
+    const p=a.p; p.x=x; p.y=y; p.z=z; p.vx=vx; p.vy=vy; p.vz=vz; p.age=0;
+    orientFlightParticle(p,vx,vy,vz);
+  }
+}
+
+let weatherFxCenter=new THREE.Vector2(1e9,1e9), weatherFxPhase=0;
+function riverPointIndexAtT(t){
+  let lo=0, hi=RIVER_PTS.length-1;
+  while(lo<hi){ const m=(lo+hi)>>1; if(RIVER_PTS[m].t<t) lo=m+1; else hi=m; }
+  return lo;
+}
+function placeRiverLeaf(d){
+  const last=RIVER_PTS.length-1;
+  const f=clamp(d.riverU,0,0.999999)*last, i=Math.floor(f), k=f-i;
+  const a=RIVER_PTS[i], b=RIVER_PTS[Math.min(i+1,last)];
+  const p0=RIVER_PTS[Math.max(0,i-1)], p1=RIVER_PTS[Math.min(last,i+2)];
+  const tx=p1.x-p0.x, tz=p1.z-p0.z, tl=Math.hypot(tx,tz)||1;
+  const t=lerp(a.t,b.t,k), side=d.riverAcross*riverWidth(t);
+  d.x=lerp(a.x,b.x,k)-tz/tl*side;
+  d.z=lerp(a.z,b.z,k)+tx/tl*side;
+  d.y=waterLevel(t)+0.075+Math.sin(tAcc*0.7+d.seed)*0.018;
+  d.vx=tx/tl; d.vy=0; d.vz=tz/tl;
+}
+function clearWeatherFX(){
+  if(!weatherFx) return;
+  weatherFx.free.length=0;
+  for(let i=weatherFx.max-1;i>=0;i--){ weatherFx.data[i].alive=false; weatherFx.free.push(i); }
+  weatherFx.geom.instanceCount=0; weatherFx.n=0;
+}
+function refreshWeatherFX(){
+  if(!weatherFx||!camera) return;
+  clearWeatherFX();
+  const cx=camera.position.x, cz=camera.position.z;
+  weatherFxCenter.set(cx,cz);
+  const seed=((Math.floor(cx/18)*83492791)^(Math.floor(cz/18)*2971215073)^State.season*911)>>>0;
+  const r=rng(seed);
+  if(State.season===3){
+    const count=Math.round(1200*State.snow);
+    for(let i=0;i<count;i++){
+      const a=r()*TAU, rr=Math.sqrt(r())*54, x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
+      weatherFx.spawn({x,y:sampleHeight(x,z)+4+r()*30,z,vx:(r()-.5)*0.5,vy:-0.9-r()*1.0,
+        vz:(r()-.5)*0.5,life:1e7,age:r(),size:0.055+r()*0.070,seed:r()*100,kind:1,op:0.72+r()*0.26});
+    }
+  } else {
+    let made=0,tries=0;
+    while(made<520&&tries++<4200){
+      const a=r()*TAU, rr=Math.sqrt(r())*34, x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
+      const ground=sampleHeight(x,z);
+      if(ground<BR.water+0.7||splatSampleMask(x,z)<0.34||pathDistance(x,z)<1.2) continue;
+      weatherFx.spawn({x,y:ground+0.18+r()*2.8,z,vx:(r()-.5)*0.16,vy:0,vz:(r()-.5)*0.16,
+        life:1e7,age:r(),size:0.040+r()*0.052,seed:r()*100,kind:0,op:0.70+r()*0.30});
+      made++;
+    }
+    if(State.season===2){
+      const centerT=riverField(cx,cz).t;
+      const centerI=riverPointIndexAtT(centerT)/(RIVER_PTS.length-1);
+      for(let i=0;i<96;i++){
+        const d=weatherFx.spawn({x:0,y:0,z:0,vx:0,vy:0,vz:0,life:1e7,age:r(),
+          size:0.12+r()*0.10,seed:r()*100,kind:2,op:0.74+r()*0.24,
+          riverU:clamp(centerI+(r()-.5)*0.16,0.002,0.998),riverAcross:(r()-.5)*1.45,
+          flow:0.00042+r()*0.00038});
+        if(d) placeRiverLeaf(d);
+      }
+    }
+  }
+  weatherFx.commit(camera.position);
+}
+function updateWeatherFX(dt){
+  if(!weatherFx) return;
+  const dx=camera.position.x-weatherFxCenter.x, dz=camera.position.z-weatherFxCenter.y;
+  if(dx*dx+dz*dz>32*32){ refreshWeatherFX(); return; }
+  weatherFxPhase=(weatherFxPhase+1)&1; const stepDt=dt*2;
+  for(let i=weatherFxPhase;i<weatherFx.max;i+=2){
+    const d=weatherFx.data[i]; if(!d.alive) continue;
+    if(d.kind>1.5){
+      d.riverU+=d.flow*stepDt;
+      if(d.riverU>=0.999) d.riverU=0.002;
+      placeRiverLeaf(d);
+      continue;
+    }
+    const ground=sampleHeight(d.x,d.z);
+    if(d.kind<0.5){
+      if(G.uNight.value<0.04) continue;
+      const w=windAtJS(d.x,d.z,Math.max(0.2,d.y-ground));
+      d.vx+=(w.x*0.035+Math.sin(tAcc*0.9+d.seed)*0.18-d.vx)*clamp(stepDt*1.4,0,1);
+      d.vz+=(w.z*0.035+Math.cos(tAcc*0.7+d.seed*1.7)*0.18-d.vz)*clamp(stepDt*1.4,0,1);
+      const want=ground+0.35+1.7*(0.5+0.5*Math.sin(tAcc*0.55+d.seed));
+      d.vy+=(want-d.y)*stepDt*1.8;
+    } else {
+      const w=windAtJS(d.x,d.z,Math.max(1,d.y-ground));
+      d.vx+=(w.x*0.24-d.vx)*clamp(stepDt*0.8,0,1);
+      d.vz+=(w.z*0.24-d.vz)*clamp(stepDt*0.8,0,1);
+      d.vy+=(-1.45-d.vy)*clamp(stepDt*0.9,0,1);
+    }
+    d.x+=d.vx*stepDt; d.y+=d.vy*stepDt; d.z+=d.vz*stepDt;
+    const far=Math.hypot(d.x-camera.position.x,d.z-camera.position.z)>48;
+    if(far||d.y<ground+0.08||d.y>ground+38){
+      const a=Math.random()*TAU, rr=Math.sqrt(Math.random())*(d.kind<0.5?30:44);
+      d.x=camera.position.x+Math.cos(a)*rr; d.z=camera.position.z+Math.sin(a)*rr;
+      const g=sampleHeight(d.x,d.z);
+      d.y=g+(d.kind<0.5?0.2+Math.random()*2.7:20+Math.random()*18);
+      if(d.kind>0.5) d.vy=-0.9-Math.random();
+    }
   }
 }
 
@@ -5919,6 +6287,17 @@ function updateCullCone(){
   G.uCull.value.set(rx, rz, half >= Math.PI ? -1.1 : Math.cos(half), 0);
 }
 function shadowPass(){
+  // Once the sun is below the horizon its camera would sit underneath the
+  // terrain and produce inverted shadows. Clear the map once; moonlit ambient
+  // supplies the night modelling until sunrise.
+  if(SUN.y<=0.01){
+    if(!nightShadowCleared){
+      renderer.setRenderTarget(shadowRT); renderer.clear(true,true,false);
+      nightShadowCleared=true;
+    }
+    return false;
+  }
+  nightShadowCleared=false;
   _tmpF.set(0,0,-1).applyQuaternion(camera.quaternion);
   const span = CFG.shadowSpan;
   const texel = span/shadowRT.width*2;
@@ -6051,7 +6430,7 @@ function postChain(){
   c.uBloom.value = (upRTs.length ? upRTs[0].texture : bloomRTs[0].texture);
   c.uSoft.value  = softTex;
   c.uTime.value  = G.uTime.value;
-  c.uExposure.value = State.exposure;
+  c.uExposure.value = State.exposure*lerp(1.0,0.55,G.uNight.value);
   c.uBloomAmt.value = 0.62*State.bloom;
   c.uPaint.value = State.paint;
   c.uCA.value = State.paint;
@@ -6075,6 +6454,7 @@ function postChain(){
 let last = performance.now(), tAcc = 0, fpsAcc=[], nextTrain = 11.0;
 const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4();
 let cloudSortT=0, rawMat=null, frameNo=0, windWarm=false, shadowWarm=false, cloudWarm=false;
+let nightShadowCleared=false;
 let autoCheckT=5, autoLow=0, autoHigh=0, targetRebuildT=null;
 // a handful of probe spheres along the river; if none is in the frustum there
 // is no water on screen and the whole reflection pass can be skipped
@@ -6138,8 +6518,10 @@ function frame(now){
   if(millWheel) millWheel.rotation.z -= dt*0.55;
 
   updateSmoke(dt); emitVillageSmoke(dt);
-  updateMotes(dt, camera); updateBirds(dt, tAcc); updateSeasonFX(dt);
+  updateMotes(dt, camera); updateBirds(dt, tAcc); updateAirplanes(dt,tAcc);
+  updateSeasonFX(dt); updateWeatherFX(dt);
   smoke.commit(camera.position); motes.commit(camera.position); birdsP.commit(camera.position);
+  weatherFx.commit(camera.position); planesP.commit(camera.position);
 
   cloudSortT -= dt;
   if(cloudSortT <= 0){ cloudSortT = 0.4; sortClouds(); }
@@ -6163,8 +6545,9 @@ function frame(now){
   if(phase === 2 || !cloudWarm){ cloudWarm = true; cloudShadowPass(); }
   // the reflection is only worth anything when water is actually on screen
   const wantRefl = riverOnScreen(_frustum, camera.position);
-  if(State.q >= 2 && phase === 0 && wantRefl) reflectionPass();
-  else if(!wantRefl) waterMesh.material.uniforms.uReflectOn.value = 0;
+  const frozenRiver = State.season===3;
+  if(!frozenRiver && State.q >= 2 && phase === 0 && wantRefl) reflectionPass();
+  else if(frozenRiver || !wantRefl) waterMesh.material.uniforms.uReflectOn.value = 0;
 
   renderer.setRenderTarget(sceneRT);
   renderer.clear(true, true, false);
@@ -6311,23 +6694,71 @@ function toast(msg){
 }
 
 const SEASON_NAMES=['spring','summer','autumn','winter'];
+let seasonGrassRestore=null;
+const TIME_PRESETS=[
+  {name:'afternoon',sun:14}, {name:'sunset',sun:1},
+  {name:'night',sun:-14}, {name:'dawn',sun:-4},
+];
+let daylightAnim=0;
 function setDaylight(degrees){
-  State.daylight=clamp(degrees,5,60);
+  State.daylight=clamp(degrees,-18,60);
   const el=State.daylight*DEG, az=CFG.sunAzim*DEG;
   SUN.set(Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el)).normalize();
   G.uSunDir.value.copy(SUN);
+  G.uNight.value=1-smoothstep(-8,4,State.daylight);
   shadowCacheX=Infinity; shadowCacheZ=Infinity; shadowCacheT=-Infinity;
 }
+function nearestTimePreset(degrees){
+  let best=0, distance=Infinity;
+  for(let i=0;i<TIME_PRESETS.length;i++){
+    const d=Math.abs(TIME_PRESETS[i].sun-degrees);
+    if(d<distance){ distance=d; best=i; }
+  }
+  return best;
+}
+function updateTimeButton(){
+  const next=TIME_PRESETS[(State.timePreset+1)%TIME_PRESETS.length];
+  $('#timeCycle').textContent='Next: '+next.name;
+}
+function syncDaylightControl(){
+  $('#sDay').value=State.daylight.toFixed(1);
+  $('#sDayV').textContent=Math.round(State.daylight)+'°';
+}
+function transitionTimeOfDay(preset){
+  const target=TIME_PRESETS[preset], start=State.daylight, began=performance.now();
+  const token=++daylightAnim;
+  State.timePreset=preset; updateTimeButton(); toast(target.name);
+  const tick=now=>{
+    if(token!==daylightAnim) return;
+    const u=clamp((now-began)/2600,0,1), eased=u*u*(3-2*u);
+    setDaylight(lerp(start,target.sun,eased)); syncDaylightControl();
+    if(u<1) requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
 function setSeason(season, announce=true){
+  const previous=State.season;
   State.season=clamp(season|0,0,3); G.uSeason.value=State.season;
   for(const b of document.querySelectorAll('#seasonPreset button'))
     b.classList.toggle('on',+b.dataset.season===State.season);
   $('#flowerRow').hidden=State.season!==0;
   $('#foliageRow').hidden=State.season!==2;
   $('#snowRow').hidden=State.season!==3;
-  G.uCloudAmount.value=[0.90,1.00,0.78,0.72][State.season];
+  G.uCloudAmount.value=[1.25,0.92,0.62,0.76][State.season];
   G.uFogMul.value=[0.94,1.00,0.88,0.78][State.season];
+  if(State.season===3){
+    if(seasonGrassRestore===null) seasonGrassRestore=State.density;
+    if(Math.abs(State.density-0.02)>0.0001){
+      State.density=0.02; $('#qDens').value=2; $('#qDensV').textContent='2';
+      if(grass&&grass.built){ grass.density=State.density; rebuildGrass(); }
+    }
+  } else if(previous===3&&seasonGrassRestore!==null){
+    State.density=seasonGrassRestore; seasonGrassRestore=null;
+    $('#qDens').value=Math.round(State.density*100); $('#qDensV').textContent=Math.round(State.density*100);
+    if(grass&&grass.built){ grass.density=State.density; rebuildGrass(); }
+  }
   refreshSeasonFX();
+  refreshWeatherFX();
   if(announce) toast(SEASON_NAMES[State.season]);
 }
 
@@ -6370,6 +6801,8 @@ function bindInput(){
   // defaults silently overwrote ?d= and ?s= during startup.
   $('#qDens').value=Math.round(State.density*100);
   $('#qScale').value=Math.round(State.scale*100);
+  $('#sDay').value=State.daylight;
+  State.timePreset=nearestTimePreset(State.daylight);
   const bind=(id, f, fmt)=>{ const el=$('#'+id), out=$('#'+id+'V');
     const go=(fromUser=false)=>{ const v=+el.value; f(v,fromUser); if(out) out.textContent = fmt?fmt(v):String(v); };
     el.addEventListener('input', ()=>go(true)); go(false); };
@@ -6380,12 +6813,16 @@ function bindInput(){
       densT = setTimeout(()=>{ grass.density=State.density; rebuildGrass(); }, 280); } });
   bind('qScale', (v,fromUser)=>{ State.scale=v/100;
     if(fromUser){ State.autoQ=false; State.adapt=1; autoLow=0; autoHigh=0; scheduleTargetRebuild(220); } });
-  bind('sDay', v=>setDaylight(v), v=>v.toFixed(0)+'°');
+  bind('sDay', (v,fromUser)=>{
+    if(fromUser){ daylightAnim++; State.timePreset=nearestTimePreset(v); updateTimeButton(); }
+    setDaylight(v);
+  }, v=>v.toFixed(0)+'°');
   bind('sFlower', (v,fromUser)=>{ State.flower=v/100; G.uFlower.value=State.flower;
     if(fromUser && State.season===0) scheduleSeasonFX(); });
   bind('sFoliage', (v,fromUser)=>{ State.foliage=v/100; G.uFoliage.value=State.foliage;
     if(fromUser && State.season===2) scheduleSeasonFX(); });
-  bind('sSnow', v=>{ State.snow=v/100; G.uSnow.value=State.snow; });
+  bind('sSnow', (v,fromUser)=>{ State.snow=v/100; G.uSnow.value=State.snow;
+    if(fromUser&&State.season===3) refreshWeatherFX(); });
   bind('wSpd', v=>{ WindSys.baseSpeed=v/10; WindSys.tgtSpeed=v/10; }, v=>(v/10).toFixed(1));
   bind('wGust', v=>{ WindSys.gustiness=v/100; }, v=>(v/100).toFixed(2));
   bind('pExp', v=>{ State.exposure=v/100; }, v=>(v/100).toFixed(2));
@@ -6400,6 +6837,10 @@ function bindInput(){
   $('#seasonPreset').addEventListener('click', e=>{
     const b=e.target.closest('button'); if(!b) return; setSeason(+b.dataset.season);
   });
+  $('#timeCycle').addEventListener('click', ()=>{
+    transitionTimeOfDay((State.timePreset+1)%TIME_PRESETS.length);
+  });
+  updateTimeButton();
   setSeason(State.season,false);
   $('#enter').addEventListener('click', ()=>{
     audio.init(); audio.resume();
