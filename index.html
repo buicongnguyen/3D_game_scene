@@ -59,6 +59,14 @@
   #tele{text-align:right;font-variant-numeric:tabular-nums;line-height:1.75}
   #tele .v{opacity:.95}
 
+  #mobileBar{display:none}
+  #mobileBar button{font-family:inherit;color:var(--cream);background:rgba(20,27,38,.78);
+    border:1px solid rgba(246,236,216,.20);border-radius:999px;padding:9px 13px;
+    min-height:38px;white-space:nowrap;font-size:10px;letter-spacing:.10em;text-transform:uppercase;
+    backdrop-filter:blur(12px);touch-action:manipulation}
+  #mobileBar button.on{background:rgba(143,190,168,.38);border-color:rgba(143,190,168,.64)}
+  #mRecord.recording{background:rgba(154,48,48,.52);border-color:rgba(255,142,126,.72)}
+
   #panel{position:fixed;top:0;right:0;z-index:25;width:266px;padding:18px 20px 20px;
     background:rgba(20,27,38,.72);backdrop-filter:blur(14px);
     border-left:1px solid rgba(246,236,216,.12);border-bottom:1px solid rgba(246,236,216,.12);
@@ -102,10 +110,34 @@
   #err{position:fixed;inset:0;z-index:60;display:none;padding:40px;background:#171d27;
     font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.7;
     color:#E8A0A0;white-space:pre-wrap;overflow:auto}
+
+  html.mobile-ui #mobileBar{position:fixed;display:flex;z-index:29;left:8px;right:8px;
+    top:calc(env(safe-area-inset-top,0px) + 8px);gap:7px;overflow-x:auto;
+    padding:0 1px 5px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  html.mobile-ui #mobileBar::-webkit-scrollbar{display:none}
+  html.mobile-ui #panel{top:calc(env(safe-area-inset-top,0px) + 54px);width:min(92vw,320px);
+    max-height:calc(100vh - env(safe-area-inset-top,0px) - 62px);
+    max-height:calc(100dvh - env(safe-area-inset-top,0px) - 62px);overflow-y:auto;
+    padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));
+    border-top-left-radius:14px;-webkit-overflow-scrolling:touch}
+  html.mobile-ui #hud{justify-content:flex-end;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px))}
+  html.mobile-ui #keys{display:none}
+  html.mobile-ui #tele{font-size:9px;line-height:1.55}
+  html.mobile-ui #toast{top:calc(env(safe-area-inset-top,0px) + 58px);max-width:82vw;text-align:center}
+  html.mobile-ui .card{padding-left:20px;padding-right:20px}
+  html.mobile-ui .blurb{font-size:13px}
 </style>
 </head>
 <body>
 <div id="app"></div>
+
+<nav id="mobileBar" aria-label="Mobile scene controls">
+  <button type="button" id="mSettings" aria-expanded="false">Settings</button>
+  <button type="button" id="mTime">Time</button>
+  <button type="button" id="mCine">Cine: Free</button>
+  <button type="button" id="mTrain">Train</button>
+  <button type="button" id="mRecord">Record</button>
+</nav>
 
 <div id="hud">
   <div id="keys" class="k">
@@ -5412,15 +5444,21 @@ const postMat = (fs, uni)=> new THREE.RawShaderMaterial({
 
 /*──────── state ────────*/
 const QS = new URLSearchParams(location.search);
+const IS_MOBILE = QS.get('mobile')==='1' || (QS.get('mobile')!=='0' && (
+  navigator.userAgentData?.mobile===true || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) ||
+  (/Macintosh/i.test(navigator.userAgent)&&navigator.maxTouchPoints>1) ||
+  (matchMedia('(pointer:coarse)').matches && Math.min(screen.width,screen.height)<900)
+));
+document.documentElement.classList.toggle('mobile-ui',IS_MOBILE);
 function queryNumber(name, fallback, lo, hi){
   if(!QS.has(name)) return fallback;
   const value = Number(QS.get(name));
   return Number.isFinite(value) ? clamp(value, lo, hi) : fallback;
 }
 const State = {
-  q: Math.round(queryNumber('q', 1, 0, 3)),
-  density: queryNumber('d', 1.0, 0.01, 1.4),
-  scale:   queryNumber('s', 1.0, 0.6, 1.5),
+  q: Math.round(queryNumber('q', IS_MOBILE?0:1, 0, 3)),
+  density: queryNumber('d', IS_MOBILE?0.01:1.0, 0.01, 1.4),
+  scale:   queryNumber('s', IS_MOBILE?0.75:1.0, 0.6, 1.5),
   exposure:1.0, bloom:1.0, paint:1.0,
   autoQ: !QS.has('q'),
   showWind:false, paused:false, running:false,
@@ -6709,6 +6747,11 @@ let cinematicRestore=null, cinematicChapter=-1, cinematicUiDay=Infinity;
 function syncCinematicControl(){
   for(const b of document.querySelectorAll('#cinePreset button'))
     b.classList.toggle('on',+b.dataset.cine===walker.cinematic);
+  const mobile=$('#mCine');
+  if(mobile){
+    mobile.textContent=['Cine: Free','Cine: Default','Cine: Tour'][walker.cinematic];
+    mobile.classList.toggle('on',walker.cinematic!==0);
+  }
 }
 function setCinematicMode(mode, announce=true){
   mode=clamp(mode|0,0,2);
@@ -6761,11 +6804,17 @@ function recordingFormat(){
   return candidates.find(f=>MediaRecorder.isTypeSupported(f.type))||{type:'',ext:'webm'};
 }
 function updateRecordButton(){
-  const b=$('#recordScene'); if(!b) return;
-  if(!videoRecording){ b.textContent='Record video'; b.classList.remove('recording'); return; }
+  const desktop=$('#recordScene'), mobile=$('#mRecord');
+  if(!desktop&&!mobile) return;
+  if(!videoRecording){
+    if(desktop){ desktop.textContent='Record video'; desktop.classList.remove('recording'); }
+    if(mobile){ mobile.textContent='Record'; mobile.classList.remove('recording'); }
+    return;
+  }
   const seconds=Math.floor((performance.now()-videoRecording.started)/1000);
-  b.textContent='Stop '+Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
-  b.classList.add('recording');
+  const elapsed=Math.floor(seconds/60)+':'+String(seconds%60).padStart(2,'0');
+  if(desktop){ desktop.textContent='Stop '+elapsed; desktop.classList.add('recording'); }
+  if(mobile){ mobile.textContent='Stop '+elapsed; mobile.classList.add('recording'); }
 }
 function toggleSceneRecording(){
   if(videoRecording){
@@ -6842,6 +6891,7 @@ function nearestTimePreset(degrees){
 function updateTimeButton(){
   const next=TIME_PRESETS[(State.timePreset+1)%TIME_PRESETS.length];
   $('#timeCycle').textContent='Next: '+next.name;
+  const mobile=$('#mTime'); if(mobile) mobile.textContent='Time: '+next.name;
 }
 function syncDaylightControl(){
   $('#sDay').value=State.daylight.toFixed(1);
@@ -6871,8 +6921,10 @@ function setSeason(season, announce=true){
   G.uFogMul.value=[0.94,1.00,0.88,0.78][State.season];
   if(State.season===3){
     if(seasonGrassRestore===null) seasonGrassRestore=State.density;
-    if(Math.abs(State.density-0.02)>0.0001){
-      State.density=0.02; $('#qDens').value=2; $('#qDensV').textContent='2';
+    const winterDensity=IS_MOBILE?0.01:0.02;
+    if(Math.abs(State.density-winterDensity)>0.0001){
+      State.density=winterDensity; $('#qDens').value=Math.round(winterDensity*100);
+      $('#qDensV').textContent=Math.round(winterDensity*100);
       if(grass&&grass.built){ grass.density=State.density; rebuildGrass(); }
     }
   } else if(previous===3&&seasonGrassRestore!==null){
@@ -6886,25 +6938,29 @@ function setSeason(season, announce=true){
 }
 
 /*──────────────────────────── input ───────────────────────────────────────*/
+function toggleSettings(){
+  const panel=$('#panel'), on=panel.classList.toggle('on');
+  const mobile=$('#mSettings');
+  if(mobile){ mobile.classList.toggle('on',on); mobile.setAttribute('aria-expanded',String(on));
+    mobile.textContent=on?'Close':'Settings'; }
+  if(on&&document.pointerLockElement&&document.exitPointerLock) document.exitPointerLock();
+  toast(on?'settings — tap again to close':'');
+}
+function summonTrain(){
+  train.start(); audio.whistle(0.18); nextTrain=tAcc+110; toast('train approaching');
+}
 function bindInput(){
   const cv = renderer.domElement;
   addEventListener('keydown', e=>{
     walker.keys[e.code]=true;
     if(e.code>='Digit1' && e.code<='Digit4') setQuality(+e.code.slice(5)-1);
-    if(e.code==='KeyH'){
-      const on = $('#panel').classList.toggle('on');
-      // with the pointer locked the browser sends no cursor to the DOM at all,
-      // so the settings panel could be opened but never actually clicked
-      if(on && document.pointerLockElement && document.exitPointerLock) document.exitPointerLock();
-      toast(on ? 'settings — click the view to look again' : '');
-    }
+    if(e.code==='KeyH'&&!e.repeat) toggleSettings();
     if(e.code==='KeyC'&&!e.repeat) setCinematicMode((walker.cinematic+1)%3);
     if(e.code==='KeyR'&&!e.repeat) toggleSceneRecording();
     if(e.code==='KeyP'){ State.paused=!State.paused; toast(State.paused?'paused':'running'); }
     if(e.code==='KeyF'){ walker.fly=!walker.fly; toast(walker.fly?'flight — space/ctrl, look to steer':'walking'); }
     if(e.code==='Space') e.preventDefault();
-    if(e.code==='KeyT'){ train.start(); audio.whistle(0.18); nextTrain=tAcc+110;
-      toast('train approaching'); }
+    if(e.code==='KeyT'&&!e.repeat) summonTrain();
     if(e.code==='Escape' && document.exitPointerLock) document.exitPointerLock();
   });
   addEventListener('keyup', e=>{ walker.keys[e.code]=false; });
@@ -6913,7 +6969,7 @@ function bindInput(){
   cv.addEventListener('click', ()=>{
     audio.resume();
     if($('#panel').classList.contains('on')) return;
-    if(cv.requestPointerLock) cv.requestPointerLock();
+    if(!IS_MOBILE&&cv.requestPointerLock) cv.requestPointerLock();
   });
   addEventListener('mousemove', e=>{
     if(document.pointerLockElement===cv) walker.look(e.movementX, e.movementY);
@@ -6967,6 +7023,13 @@ function bindInput(){
     const b=e.target.closest('button'); if(!b) return; setCinematicMode(+b.dataset.cine);
   });
   $('#recordScene').addEventListener('click', toggleSceneRecording);
+  $('#mSettings').addEventListener('click', ()=>{ audio.resume(); toggleSettings(); });
+  $('#mTime').addEventListener('click', ()=>{ audio.resume();
+    transitionTimeOfDay((State.timePreset+1)%TIME_PRESETS.length); });
+  $('#mCine').addEventListener('click', ()=>{ audio.resume();
+    setCinematicMode((walker.cinematic+1)%3); });
+  $('#mTrain').addEventListener('click', ()=>{ audio.resume(); summonTrain(); });
+  $('#mRecord').addEventListener('click', ()=>{ audio.resume(); toggleSceneRecording(); });
   syncCinematicControl(); updateRecordButton();
   updateTimeButton();
   setSeason(State.season,false);
@@ -6975,7 +7038,7 @@ function bindInput(){
     $('#veil').classList.add('gone');
     $('#hud').classList.add('on');
     setTimeout(()=>{ $('#veil').style.display='none'; }, 1700);
-    if(cv.requestPointerLock) cv.requestPointerLock();
+    if(!IS_MOBILE&&cv.requestPointerLock) cv.requestPointerLock();
   });
 }
 
