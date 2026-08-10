@@ -1692,6 +1692,159 @@ function updateConstellations(){
   }
 }
 
+/* Autumn's meteor shower is geometry rather than a full-screen shader effect:
+   only a few dynamic line vertices are touched while the shower is visible. */
+const METEOR_MAX=7, METEOR_SEGMENTS=3, COMET_SEGMENTS=6, SKY_TRAIL_RADIUS=7580;
+let meteorDome=null, meteorTrail=null, meteorHeads=null, cometTrail=null, cometHead=null;
+let meteorTrailPos=null, meteorTrailCol=null, meteorHeadPos=null, meteorHeadCol=null;
+let cometTrailPos=null, cometTrailCol=null, cometHeadPos=null;
+let meteorCentre=null, meteorRight=null, meteorUp=null, meteorNext=0, cometNext=0, autumnSkyActive=false;
+const meteorStates=Array.from({length:METEOR_MAX},()=>({active:false,born:0,life:1,x:0,y:0,dx:0,dy:0,tail:0}));
+const cometState={active:false,born:0,life:3.2,x:0,y:0,dx:0,dy:0,tail:0};
+
+function setSkyTrailPoint(array, offset, x, y){
+  let px=meteorCentre.x+meteorRight.x*x+meteorUp.x*y;
+  let py=meteorCentre.y+meteorRight.y*x+meteorUp.y*y;
+  let pz=meteorCentre.z+meteorRight.z*x+meteorUp.z*y;
+  const scale=SKY_TRAIL_RADIUS/Math.hypot(px,py,pz);
+  array[offset]=px*scale; array[offset+1]=py*scale; array[offset+2]=pz*scale;
+}
+function setTrailColor(array, offset, strength, warm=false){
+  array[offset]=strength*(warm ? 1.00 : .70);
+  array[offset+1]=strength*(warm ? .78 : .88);
+  array[offset+2]=strength*(warm ? .44 : 1.00);
+}
+function buildAutumnSkyTrails(){
+  meteorCentre=new THREE.Vector3(-.94,.30,-.16).normalize();
+  meteorRight=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),meteorCentre).normalize();
+  meteorUp=new THREE.Vector3().crossVectors(meteorCentre,meteorRight).normalize();
+  meteorDome=new THREE.Group(); meteorDome.name='autumn-meteor-shower'; meteorDome.userData.bulk=true;
+  meteorDome.visible=false; scene.add(meteorDome);
+
+  meteorTrailPos=new Float32Array(METEOR_MAX*METEOR_SEGMENTS*2*3);
+  meteorTrailCol=new Float32Array(meteorTrailPos.length);
+  const trailGeometry=new THREE.BufferGeometry();
+  trailGeometry.setAttribute('position',new THREE.BufferAttribute(meteorTrailPos,3).setUsage(THREE.DynamicDrawUsage));
+  trailGeometry.setAttribute('color',new THREE.BufferAttribute(meteorTrailCol,3).setUsage(THREE.DynamicDrawUsage));
+  trailGeometry.setDrawRange(0,0);
+  const trailMaterial=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0,
+    blending:THREE.AdditiveBlending,depthTest:true,depthWrite:false,toneMapped:false});
+  meteorTrail=new THREE.LineSegments(trailGeometry,trailMaterial); meteorTrail.frustumCulled=false; meteorTrail.renderOrder=14;
+
+  meteorHeadPos=new Float32Array(METEOR_MAX*3); meteorHeadCol=new Float32Array(METEOR_MAX*3);
+  const headGeometry=new THREE.BufferGeometry();
+  headGeometry.setAttribute('position',new THREE.BufferAttribute(meteorHeadPos,3).setUsage(THREE.DynamicDrawUsage));
+  headGeometry.setAttribute('color',new THREE.BufferAttribute(meteorHeadCol,3).setUsage(THREE.DynamicDrawUsage));
+  headGeometry.setDrawRange(0,0);
+  const headMaterial=new THREE.PointsMaterial({size:IS_MOBILE?8:11,map:constellationStarTexture(),vertexColors:true,
+    transparent:true,opacity:0,alphaTest:.025,blending:THREE.AdditiveBlending,depthTest:true,depthWrite:false,
+    sizeAttenuation:false,toneMapped:false});
+  meteorHeads=new THREE.Points(headGeometry,headMaterial); meteorHeads.frustumCulled=false; meteorHeads.renderOrder=15;
+
+  cometTrailPos=new Float32Array(COMET_SEGMENTS*2*3); cometTrailCol=new Float32Array(cometTrailPos.length);
+  const cometGeometry=new THREE.BufferGeometry();
+  cometGeometry.setAttribute('position',new THREE.BufferAttribute(cometTrailPos,3).setUsage(THREE.DynamicDrawUsage));
+  cometGeometry.setAttribute('color',new THREE.BufferAttribute(cometTrailCol,3).setUsage(THREE.DynamicDrawUsage));
+  cometGeometry.setDrawRange(0,0);
+  const cometMaterial=new THREE.LineBasicMaterial({vertexColors:true,transparent:true,opacity:0,
+    blending:THREE.AdditiveBlending,depthTest:true,depthWrite:false,toneMapped:false});
+  cometTrail=new THREE.LineSegments(cometGeometry,cometMaterial); cometTrail.frustumCulled=false; cometTrail.renderOrder=14;
+
+  cometHeadPos=new Float32Array(3);
+  const cometHeadGeometry=new THREE.BufferGeometry();
+  cometHeadGeometry.setAttribute('position',new THREE.BufferAttribute(cometHeadPos,3).setUsage(THREE.DynamicDrawUsage));
+  cometHeadGeometry.setDrawRange(0,0);
+  const cometHeadMaterial=new THREE.PointsMaterial({color:0xffdda0,size:IS_MOBILE?13:17,map:constellationStarTexture(),
+    transparent:true,opacity:0,alphaTest:.02,blending:THREE.AdditiveBlending,depthTest:true,depthWrite:false,
+    sizeAttenuation:false,toneMapped:false});
+  cometHead=new THREE.Points(cometHeadGeometry,cometHeadMaterial); cometHead.frustumCulled=false; cometHead.renderOrder=16;
+  meteorDome.add(meteorTrail,meteorHeads,cometTrail,cometHead);
+}
+function resetAutumnSkyTrails(){
+  for(const meteor of meteorStates) meteor.active=false;
+  cometState.active=false;
+  meteorTrail.geometry.setDrawRange(0,0); meteorHeads.geometry.setDrawRange(0,0);
+  cometTrail.geometry.setDrawRange(0,0); cometHead.geometry.setDrawRange(0,0);
+}
+function spawnAutumnMeteor(){
+  let meteor=null;
+  for(const candidate of meteorStates) if(!candidate.active){ meteor=candidate; break; }
+  if(!meteor) return;
+  meteor.active=true; meteor.born=tAcc; meteor.life=.94+Math.random()*.66;
+  meteor.x=-.60+Math.random()*.72; meteor.y=.12+Math.random()*.36;
+  meteor.dx=.38+Math.random()*.24; meteor.dy=-.20-Math.random()*.13; meteor.tail=.12+Math.random()*.07;
+}
+function spawnAutumnComet(){
+  cometState.active=true; cometState.born=tAcc; cometState.life=3.6+Math.random()*.5;
+  cometState.x=-.62; cometState.y=.42+Math.random()*.10;
+  cometState.dx=1.12+Math.random()*.14; cometState.dy=-.32-Math.random()*.08; cometState.tail=.34;
+}
+function updateAutumnSkyTrails(){
+  if(!meteorDome) return;
+  meteorDome.position.copy(camera.position);
+  const nightFade=smoothstep(.40,.76,G.uNight.value), active=State.season===2&&nightFade>.004;
+  meteorDome.visible=active;
+  if(!active){ if(autumnSkyActive) resetAutumnSkyTrails(); autumnSkyActive=false; return; }
+  if(!autumnSkyActive){
+    resetAutumnSkyTrails(); autumnSkyActive=true;
+    spawnAutumnMeteor(); spawnAutumnMeteor(); meteorNext=tAcc+.18; cometNext=tAcc+2.2;
+  }
+  if(tAcc>=meteorNext){
+    spawnAutumnMeteor(); meteorNext=tAcc+(IS_MOBILE?.48+Math.random()*.30:.22+Math.random()*.20);
+  }
+  if(!cometState.active&&tAcc>=cometNext) spawnAutumnComet();
+
+  let lineVertices=0, heads=0;
+  for(const meteor of meteorStates){
+    if(!meteor.active) continue;
+    const u=(tAcc-meteor.born)/meteor.life;
+    if(u>=1){ meteor.active=false; continue; }
+    const fade=smoothstep(0,.08,u)*(1-smoothstep(.78,1,u));
+    const hx=meteor.x+meteor.dx*u, hy=meteor.y+meteor.dy*u, len=Math.hypot(meteor.dx,meteor.dy);
+    const ux=meteor.dx/len, uy=meteor.dy/len, tail=meteor.tail*Math.min(1,u/.20);
+    for(let segment=0;segment<METEOR_SEGMENTS;segment++){
+      const back0=tail*(1-segment/METEOR_SEGMENTS), back1=tail*(1-(segment+1)/METEOR_SEGMENTS);
+      const offset=lineVertices*3;
+      setSkyTrailPoint(meteorTrailPos,offset,hx-ux*back0,hy-uy*back0);
+      setSkyTrailPoint(meteorTrailPos,offset+3,hx-ux*back1,hy-uy*back1);
+      setTrailColor(meteorTrailCol,offset,fade*(.24+segment*.28));
+      setTrailColor(meteorTrailCol,offset+3,fade*(.46+segment*.30));
+      lineVertices+=2;
+    }
+    setSkyTrailPoint(meteorHeadPos,heads*3,hx,hy);
+    setTrailColor(meteorHeadCol,heads*3,fade); heads++;
+  }
+  meteorTrail.geometry.setDrawRange(0,lineVertices); meteorHeads.geometry.setDrawRange(0,heads);
+  meteorTrail.geometry.attributes.position.needsUpdate=true; meteorTrail.geometry.attributes.color.needsUpdate=true;
+  meteorHeads.geometry.attributes.position.needsUpdate=true; meteorHeads.geometry.attributes.color.needsUpdate=true;
+  meteorTrail.material.opacity=nightFade*.94; meteorHeads.material.opacity=nightFade;
+
+  if(cometState.active){
+    const u=(tAcc-cometState.born)/cometState.life;
+    if(u>=1){ cometState.active=false; cometNext=tAcc+8+Math.random()*5; cometTrail.geometry.setDrawRange(0,0); cometHead.geometry.setDrawRange(0,0); }
+    else {
+      const fade=smoothstep(0,.10,u)*(1-smoothstep(.76,1,u));
+      const curve=Math.sin(u*Math.PI)*.035;
+      const hx=cometState.x+cometState.dx*u, hy=cometState.y+cometState.dy*u+curve;
+      const len=Math.hypot(cometState.dx,cometState.dy), ux=cometState.dx/len, uy=cometState.dy/len;
+      const tail=cometState.tail*Math.min(1,u/.22);
+      for(let segment=0;segment<COMET_SEGMENTS;segment++){
+        const back0=tail*(1-segment/COMET_SEGMENTS), back1=tail*(1-(segment+1)/COMET_SEGMENTS);
+        const offset=segment*6;
+        setSkyTrailPoint(cometTrailPos,offset,hx-ux*back0,hy-uy*back0);
+        setSkyTrailPoint(cometTrailPos,offset+3,hx-ux*back1,hy-uy*back1);
+        setTrailColor(cometTrailCol,offset,fade*(.08+segment*.12),true);
+        setTrailColor(cometTrailCol,offset+3,fade*(.18+segment*.15),true);
+      }
+      setSkyTrailPoint(cometHeadPos,0,hx,hy);
+      cometTrail.geometry.setDrawRange(0,COMET_SEGMENTS*2); cometHead.geometry.setDrawRange(0,1);
+      cometTrail.geometry.attributes.position.needsUpdate=true; cometTrail.geometry.attributes.color.needsUpdate=true;
+      cometHead.geometry.attributes.position.needsUpdate=true;
+      cometTrail.material.opacity=nightFade*.95; cometHead.material.opacity=nightFade*fade;
+    }
+  }
+}
+
 /*──────────────────────── procedural cumulus congestus ─────────────────────*/
 /* Each formation is grown the way a real cumulus grows: a broad base disc,
    then a few towers of decreasing radius, then cauliflower on the shoulders. */
@@ -3051,7 +3204,7 @@ function addClump(M, cx,cy,cz, rx,ry,rz, seed, hueV, detail){
 function makeTree(kind, detail, seed){
   const M = MeshBuf(); const r = rng(seed);
   const H = kind==='poplar' ? 13+r()*5 : kind==='pine' ? 12+r()*6 :
-            kind==='willow' ? 8+r()*3 : 10+r()*4;
+            kind==='willow' ? 8+r()*3 : kind==='maple' ? 9+r()*4.5 : 10+r()*4;
   const trunkSeg = detail>=2 ? 8 : (detail>=1 ? 6 : 4);
 
   if(kind==='pine'){
@@ -3093,7 +3246,8 @@ function makeTree(kind, detail, seed){
       if(detail>=1) addClump(M, cx*1.05, cy-rr*1.5, cz*1.05, rr*0.55, rr*1.5, rr*0.55,
                              seed+i*41, 0.6+r()*0.4, Math.max(0,detail-1));
     }
-  } else { // broadleaf: the camphor / oak silhouette
+  } else { // broadleaf / maple: a spreading deciduous silhouette
+    const isMaple=kind==='maple';
     const pts=[], rad=[];
     const lean=(r()-0.5)*0.5;
     for(let i=0;i<=6;i++){ const u=i/6;
@@ -3110,14 +3264,14 @@ function makeTree(kind, detail, seed){
         br.push(lerp(H*0.020, H*0.006, u)); }
       addTube(M, bp, br, Math.max(3,trunkSeg-2), 0.0);
     }
-    const n = detail>=2 ? 22 : (detail>=1 ? 12 : 7);
-    const CR = H*0.40;
+    const n = detail>=2 ? (isMaple?28:22) : (detail>=1 ? (isMaple?16:12) : (isMaple?9:7));
+    const CR = H*(isMaple?0.48:0.40);
     for(let i=0;i<n;i++){
       let cx,cy,cz,rr;
       if(i===0){ cx=0; cy=H*0.78; cz=0; rr=CR*0.72; }
       else{ const a=r()*TAU, dd=Math.pow(r(),0.55)*CR*1.02;
         cx=Math.cos(a)*dd; cz=Math.sin(a)*dd*0.92;
-        cy=H*0.74 + (r()-0.44)*CR*0.95 - dd*0.20;
+        cy=H*(isMaple?0.70:0.74) + (r()-0.44)*CR*(isMaple?0.78:0.95) - dd*(isMaple?0.12:0.20);
         rr=CR*(0.26+r()*0.26); }
       addClump(M, cx,cy,cz, rr*1.12, rr*0.86, rr*1.12, seed+i*53, r(), Math.max(0,detail-1));
     }
@@ -3138,7 +3292,7 @@ in vec3 nrm; in vec3 clm; in float flx; in float hue;
 in vec4 iPos;              // xyz = root, w = scale
 in vec4 iVar;              // rot, hueShift, phase, kind
 out vec3 vW; out vec3 vN; out float vHue; out float vLeaf; out float vDist;
-out float vY; out float vAO;
+out float vY; out float vAO; out float vKind;
 void main(){
   // The sun shadow map covers a bounded square around the walker, so a tree two
   // kilometres away cannot possibly cast into it — yet every instance in the
@@ -3191,6 +3345,7 @@ void main(){
 
   vec3 wp = iPos.xyz + p;
   vW = wp; vN = normalize(rn); vHue = fract(hue + iVar.y);
+  vKind = iVar.w;
   vLeaf = step(0.9, flx); vY = clamp(rp.y/max(H,0.5), 0.0, 1.0);
   vAO = mix(0.62, 1.0, smoothstep(0.0, 0.55, vY));
   vec4 mv = viewMatrix * vec4(wp, 1.0);
@@ -3205,7 +3360,7 @@ uniform vec2 uMeanWind;
 ${GL_PAL()}${GL_HASH}${GL_NOISE}${GL_TERRAIN}
 ${GL_CLOUDFIELD}${GL_SHADOW}${GL_LIGHT}${GL_AIR}
 in vec3 vW; in vec3 vN; in float vHue; in float vLeaf; in float vDist;
-in float vY; in float vAO;
+in float vY; in float vAO; in float vKind;
 out vec4 outColor;
 void main(){
   vec3 N = normalize(vN);
@@ -3224,11 +3379,21 @@ void main(){
       lit=mix(lit, vec3(0.34,0.68,0.23), 0.20);
       mid=mix(mid, vec3(0.15,0.38,0.17), 0.14);
     } else if(uSeason > 1.5 && uSeason < 2.5){
-      vec3 fall=vHue<0.34 ? vec3(0.92,0.61,0.12) :
-                (vHue<0.68 ? vec3(0.74,0.24,0.07) : vec3(0.48,0.16,0.06));
-      lit=mix(lit, fall, uFoliage*0.92);
-      mid=mix(mid, fall*0.58, uFoliage*0.86);
-      shd=mix(shd, vec3(0.20,0.07,0.035), uFoliage*0.72);
+      vec3 fall;
+      if(vKind>0.5){
+        // Canadian maple crowns: saturated scarlet, crimson and hot orange.
+        fall=vHue<0.30 ? vec3(1.08,0.19,0.035) :
+             (vHue<0.64 ? vec3(0.86,0.055,0.025) : vec3(1.00,0.39,0.045));
+        lit=mix(lit, fall, uFoliage*0.98);
+        mid=mix(mid, fall*0.48, uFoliage*0.94);
+        shd=mix(shd, vec3(0.24,0.018,0.012), uFoliage*0.84);
+      } else {
+        fall=vHue<0.34 ? vec3(0.92,0.61,0.12) :
+             (vHue<0.68 ? vec3(0.74,0.24,0.07) : vec3(0.48,0.16,0.06));
+        lit=mix(lit, fall, uFoliage*0.92);
+        mid=mix(mid, fall*0.58, uFoliage*0.86);
+        shd=mix(shd, vec3(0.20,0.07,0.035), uFoliage*0.72);
+      }
     } else if(uSeason > 2.5){
       float snow=uSnow*smoothstep(-0.16,0.66,N.y)*(0.70+0.30*grain);
       lit=mix(lit, vec3(0.98,1.00,1.00), snow);
@@ -3272,8 +3437,8 @@ function scatterTrees(){
 
   // hero tree on the ridge shoulder, framing the right of the opening shot
   add('broadleaf', 2, -80.5, 79.0, 1.26, 0.7, 0.15, 1.3);
-  add('broadleaf', 2, -104, 54, 0.92, 2.4, 0.55, 3.1);
-  add('broadleaf', 2, -14, 126, 0.98, 4.1, 0.35, 5.2);
+  add('maple',     2, -104, 54, 0.92, 2.4, 0.55, 3.1);
+  add('maple',     2, -14, 126, 0.98, 4.1, 0.35, 5.2);
   add('pine',      2, -96, 108, 0.85, 1.1, 0.62, 2.2);
 
   // riverside willows
@@ -3290,7 +3455,8 @@ function scatterTrees(){
     if(d > 700) continue;
     const rf = riverField(x,z);
     if(rf.d < riverWidth(rf.t)+2) continue;
-    add(r()<0.72?'willow':'broadleaf', detailFor(d), x, z, 0.7+r()*0.6, r()*TAU, r(), r()*10);
+    const riversideKind=r()<0.72?'willow':(r()<0.34?'maple':'broadleaf');
+    add(riversideKind, detailFor(d), x, z, 0.7+r()*0.6, r()*TAU, r(), r()*10);
   }
 
   // woods: clustered stands on the shoulders, denser away from the meadow
@@ -3313,7 +3479,8 @@ function scatterTrees(){
       if(pathDistance(x,z) < 6) continue;
       const d = Math.hypot(x-cx, z-cz);
       if(d < 26) continue;
-      const kind = r()<0.34 ? 'pine' : (r()<0.22 ? 'poplar' : 'broadleaf');
+      const kindRoll=r();
+      const kind = kindRoll<0.34 ? 'pine' : (kindRoll<0.48 ? 'poplar' : (kindRoll<0.68 ? 'maple' : 'broadleaf'));
       add(kind, detailFor(d), x, z, 0.62+r()*0.72, r()*TAU, r(), r()*10);
     }
   }
@@ -3326,7 +3493,8 @@ function scatterTrees(){
     const rf=riverField(x,z);
     if(sampleHeight(x,z) < waterLevel(rf.t)+3) continue;
     const d=Math.hypot(x-cx,z-cz);
-    add(r()<0.3?'poplar':'broadleaf', detailFor(d), x, z, 0.55+r()*0.5, r()*TAU, r(), r()*10);
+    const kindRoll=r(), kind=kindRoll<0.30?'poplar':(kindRoll<0.52?'maple':'broadleaf');
+    add(kind, detailFor(d), x, z, 0.55+r()*0.5, r()*TAU, r(), r()*10);
   }
   return groups;
 }
@@ -4208,7 +4376,7 @@ const LOCO = {
   drivers: [-0.55, 1.15, 2.85], pony: [4.15],
   speed: 8.4,
 };
-const TRAIN_CAR_COUNT = 4;
+const TRAIN_CAR_COUNT = 10;
 const TRAIN_FIRST_CAR = 18.0;
 const TRAIN_CAR_GAP = 16.2;
 
@@ -4305,13 +4473,20 @@ function buildTender(){
 function addCarNumber(M,number,side){
   const z=side*1.355, face=side*1.395;
   const plaque=tint(LC('boiler'),0.72), mark=LC('carBand');
-  pbox(M,0,1.73,z,0.45,0.48,0.035,0,plaque,1);
-  const h=(y,w=0.25)=>pbox(M,0,y,face,w,0.045,0.025,0,mark,1);
-  const v=(x,y,hh=0.16)=>pbox(M,x,y,face,0.045,hh,0.025,0,mark,1);
-  if(number===1){ v(0,1.73,0.31); h(1.42,0.19); }
-  if(number===2){ h(2.03); h(1.73); h(1.43); v(0.25,1.88); v(-0.25,1.58); }
-  if(number===3){ h(2.03); h(1.73); h(1.43); v(0.25,1.88); v(0.25,1.58); }
-  if(number===4){ h(1.73); v(-0.25,1.88); v(0.25,1.88); v(0.25,1.56,0.18); }
+  pbox(M,0,1.73,z,0.56,0.48,0.035,0,plaque,1);
+  const patterns={
+    0:[1,1,1,0,1,1,1], 1:[0,0,1,0,0,1,0], 2:[1,0,1,1,1,0,1], 3:[1,0,1,1,0,1,1],
+    4:[0,1,1,1,0,1,0], 5:[1,1,0,1,0,1,1], 6:[1,1,0,1,1,1,1], 7:[1,0,1,0,0,1,0],
+    8:[1,1,1,1,1,1,1], 9:[1,1,1,1,0,1,1],
+  };
+  const digits=String(number), scale=digits.length>1 ? .72 : 1, spacing=.36*scale;
+  for(let i=0;i<digits.length;i++){
+    const cx=(i-(digits.length-1)*.5)*spacing, seg=patterns[digits[i]];
+    const h=(y)=>pbox(M,cx,y,face,.135*scale,.034,0.025,0,mark,1);
+    const v=(x,y)=>pbox(M,cx+x*scale,y,face,.034,.115,0.025,0,mark,1);
+    if(seg[0]) h(2.00); if(seg[1]) v(-.155,1.865); if(seg[2]) v(.155,1.865);
+    if(seg[3]) h(1.73); if(seg[4]) v(-.155,1.595); if(seg[5]) v(.155,1.595); if(seg[6]) h(1.46);
+  }
 }
 function buildCarriage(i){
   const M=PB();
@@ -4416,9 +4591,9 @@ class Train {
     this.group.add(this.tenderGroup);
 
     this.cars=[];
+    const cw=buildWheel(0.50,8); // shared by every coach; each mesh still rotates independently
     for(let i=0;i<TRAIN_CAR_COUNT;i++){
       const g=new THREE.Group(); g.add(mk(buildCarriage(i)));
-      const cw=buildWheel(0.50,8);
       for(const bx of [-3.7,3.7]) for(const dx of [-0.85,0.85]) for(const s of [-1,1]){
         const w=mk(cw); w.position.set(bx+dx,0.50,s*0.98); g.add(w);
         this.wheels.push({m:w, side:s, x:bx+dx, drive:false, r:0.50, car:i});
@@ -4711,6 +4886,7 @@ void main(){
   outColor=vec4(SAFE3(col),clamp(a,0.0,1.0));
 }`;
 
+const FAUNA_COUNT_MULTIPLIER=4, FAUNA_SIZE_MULTIPLIER=4;
 const FAUNA_VS = ()=> /* glsl */`
 ${GL_UNI}
 in vec4 iP; in vec4 iQ;
@@ -4966,9 +5142,9 @@ in vec2 vC; in float vAge; in float vSeed; in float vOp; in float vKind;
 in vec3 vW; in vec3 vR; in vec3 vU; in vec3 vF; in float vDist;
 out vec4 outColor;
 void main(){
-  float r=length(vC), core=1.0-smoothstep(0.035,0.20,r);
-  float halo=(1.0-smoothstep(0.08,1.0,r))*0.52;
-  float fade=1.0-smoothstep(0.58,1.0,vAge);
+  float r=length(vC), core=1.0-smoothstep(0.04,0.28,r);
+  float halo=(1.0-smoothstep(0.10,1.0,r))*0.68;
+  float fade=1.0-smoothstep(0.68,1.0,vAge);
   float twinkle=0.78+0.22*sin(uTime*(12.0+fract(vSeed)*9.0)+vSeed*31.0);
   vec3 col=vec3(1.0);
   if(vKind<0.5){
@@ -4992,7 +5168,7 @@ void main(){
   } else {
     col=mix(vec3(1.10,0.28,0.05),vec3(1.45,1.16,0.58),core); fade*=0.72;
   }
-  float a=(core+halo)*fade*twinkle*vOp;
+  float a=(core*1.18+halo)*fade*twinkle*vOp;
   if(!(a>0.008)) discard;
   outColor=vec4(SAFE3(col*(1.12+core*1.05)),clamp(a,0.0,1.0));
 }`;
@@ -5962,6 +6138,7 @@ async function boot(){
   skyMesh.frustumCulled=false; skyMesh.renderOrder=9; scene.add(skyMesh);
   skyMesh.userData.noCast=true;
   buildConstellations();
+  buildAutumnSkyTrails();
 
   /*── distant ridges ──*/
   setStat('raising the far hills', 0.46); await idle();
@@ -6079,8 +6256,8 @@ async function boot(){
   /*── trees ──*/
   setStat('planting the woods', 0.74); await idle();
   const groups = scatterTrees();
-  const heightOf = { broadleaf:11.5, pine:14.5, poplar:15.0, willow:9.5 };
-  const flexOf   = { broadleaf:1.0, pine:0.52, poplar:0.80, willow:1.75 };
+  const heightOf = { broadleaf:11.5, maple:11.0, pine:14.5, poplar:15.0, willow:9.5 };
+  const flexOf   = { broadleaf:1.0, maple:1.08, pine:0.52, poplar:0.80, willow:1.75 };
   for(const key in groups){
     const list = groups[key];
     const [kind, detailS] = key.split('_'); const detail = +detailS;
@@ -6090,7 +6267,7 @@ async function boot(){
     list.forEach((o,i)=>{
       const y = sampleHeight(o.x,o.z)-0.35;
       iPos[i*4]=o.x; iPos[i*4+1]=y; iPos[i*4+2]=o.z; iPos[i*4+3]=o.scale;
-      iVar[i*4]=o.rot; iVar[i*4+1]=o.hue; iVar[i*4+2]=o.phase; iVar[i*4+3]=0;
+      iVar[i*4]=o.rot; iVar[i*4+1]=o.hue; iVar[i*4+2]=o.phase; iVar[i*4+3]=kind==='maple'?1:0;
       minX=Math.min(minX,o.x); maxX=Math.max(maxX,o.x);
       minZ=Math.min(minZ,o.z); maxZ=Math.max(maxZ,o.z);
     });
@@ -6128,10 +6305,10 @@ async function boot(){
   smoke  = new Particles(lifeGroup, U(), 520,  SMOKE_FS(), 22, true);
   motes  = new Particles(lifeGroup, U(), 2400, MOTE_FS(),  24, false);
   birdsP = new Particles(lifeGroup, U(), 60,   BIRD_FS(),  21, false);
-  seasonFx = new Particles(lifeGroup, U(), 1400, SEASON_FS(), 23, false);
-  faunaFx = new Particles(lifeGroup, U(), 120, FAUNA_FS(), 22, false, FAUNA_VS());
+  seasonFx = new Particles(lifeGroup, U(), IS_MOBILE?1100:2600, SEASON_FS(), 23, false);
+  faunaFx = new Particles(lifeGroup, U(), IS_MOBILE?96:240, FAUNA_FS(), 22, false, FAUNA_VS());
   weatherFx = new Particles(lifeGroup, U(), 1400, WEATHER_FS(), 25, false);
-  fireworkFx = new Particles(lifeGroup, U(), IS_MOBILE?700:1600, FIREWORK_FS(), 27, false, null,
+  fireworkFx = new Particles(lifeGroup, U(), IS_MOBILE?900:2400, FIREWORK_FS(), 27, false, null,
     {blending:THREE.AdditiveBlending});
   planesP = new Particles(lifeGroup, U(), 4, AIRPLANE_FS(), 20, false);
   initMotes(); initBirds(); initAirplanes();
@@ -6577,18 +6754,20 @@ function updateWeatherFX(dt){
 }
 
 let fireworkNext=0, fireworkStyle=0, fireworksWereActive=false, fireworksSeason=-1;
+const fireworkQueue=[];
 function clearFireworks(){
   if(!fireworkFx) return;
+  fireworkQueue.length=0;
   fireworkFx.free.length=0;
   for(let i=fireworkFx.max-1;i>=0;i--){ fireworkFx.data[i].alive=false; fireworkFx.free.push(i); }
   fireworkFx.geom.instanceCount=0; fireworkFx.n=0;
 }
 function explodeFirework(rocket){
   const style=rocket.style, mobile=IS_MOBILE, festival=rocket.festival>0.5;
-  const counts=mobile?[0,72,58,64,60,82,76,86]:[0,150,118,130,120,205,190,215];
+  const counts=mobile?[0,84,72,78,74,94,90,98]:[0,190,158,174,160,250,232,260];
   const count=counts[style], golden=2.39996323, plane=Math.random()*TAU;
   const bx=Math.cos(plane), bz=Math.sin(plane), px=-bz, pz=bx;
-  const colorSeed=Math.random()*100, scale=festival?1.46:1;
+  const colorSeed=Math.random()*100, scale=festival?1.76:1.30;
   for(let i=0;i<count;i++){
     let vx=0,vy=0,vz=0, life=3.1+Math.random()*0.7;
     if(style===1){
@@ -6608,15 +6787,15 @@ function explodeFirework(rocket){
       vx=bx*hx*speed+px*thick; vy=hy*speed+0.8; vz=bz*hx*speed+pz*thick; life=3.5+Math.random()*0.5;
     } else if(style===5){
       // Two concentric rings crossing at a slight angle.
-      const outer=i&1, a=(i/count*2.0)*TAU, speed=(outer?12.4:7.6)*scale;
-      const cs=Math.cos(a), sn=Math.sin(a), tilt=outer?.42:-.28;
-      vx=(bx*cs+px*sn*tilt)*speed; vy=sn*speed*(outer?.88:1.0);
+      const outer=i&1, a=(i/count*2.0)*TAU, speed=(outer ? 12.4 : 7.6)*scale;
+      const cs=Math.cos(a), sn=Math.sin(a), tilt=outer ? .42 : -.28;
+      vx=(bx*cs+px*sn*tilt)*speed; vy=sn*speed*(outer ? .88 : 1.0);
       vz=(bz*cs+pz*sn*tilt)*speed; life=3.4+Math.random()*0.55;
     } else if(style===6){
       // A crisp five-point star drawn as ten connected velocity spokes.
       const t=i/count*10, seg=Math.floor(t), f=t-seg;
       const aa=-Math.PI*.5+seg*TAU/10, ab=-Math.PI*.5+((seg+1)%10)*TAU/10;
-      const ra=(seg&1)?.43:1, rb=((seg+1)&1)?.43:1;
+      const ra=(seg&1) ? .43 : 1, rb=((seg+1)&1) ? .43 : 1;
       const sx=lerp(Math.cos(aa)*ra,Math.cos(ab)*rb,f), sy=lerp(Math.sin(aa)*ra,Math.sin(ab)*rb,f);
       const speed=(11.8+Math.random()*.8)*scale, thick=(Math.random()-.5)*.30;
       vx=(bx*sx+px*thick)*speed; vy=sy*speed; vz=(bz*sx+pz*thick)*speed; life=3.6+Math.random()*.55;
@@ -6628,19 +6807,30 @@ function explodeFirework(rocket){
       life=4.6+Math.random()*1.1;
     }
     if(!fireworkFx.spawn({x:rocket.x,y:rocket.y,z:rocket.z,vx,vy,vz,life,age:0,
-      size:(0.68+Math.random()*0.36)*(festival?1.22:1),seed:colorSeed+i*0.00013,kind:style,op:0.92+Math.random()*0.08})) break;
+      size:(0.68+Math.random()*0.36)*(festival?1.46:1.26),seed:colorSeed+i*0.00013,kind:style,op:0.96+Math.random()*0.04})) break;
   }
   fireworkFx.spawn({x:rocket.x,y:rocket.y,z:rocket.z,vx:0,vy:0,vz:0,life:0.38,age:0,
     size:festival?3.4:2.2,seed:colorSeed,kind:9,op:1});
 }
-function launchFirework(festival=false, companion=false){
+function launchFirework(festival=false, lateralOffset=0, heightBias=0){
   const spreadX=festival?116:72, spreadZ=festival?82:54;
-  const x=VILLAGE.x+(Math.random()-.5)*spreadX+(companion?26:0), z=VILLAGE.z+(Math.random()-.5)*spreadZ;
+  const x=VILLAGE.x+(Math.random()-.5)*spreadX+lateralOffset, z=VILLAGE.z+(Math.random()-.5)*spreadZ;
   const y=sampleHeight(x,z)+2.0, style=1+(fireworkStyle++%(festival?7:4));
   fireworkFx.spawn({x,y,z,vx:(Math.random()-.5)*(festival?2.4:1.8),
-    vy:(festival?43:34)+Math.random()*(festival?7.5:6.0),vz:(Math.random()-.5)*(festival?2.4:1.8),
-    life:2.5,age:0,size:festival?1.06:0.86,seed:Math.random()*100,kind:0,op:1,
-    burstAge:(festival?1.58:1.45)+Math.random()*0.25,style,festival:festival?1:0,trailT:0});
+    vy:(festival?45:36)+heightBias+Math.random()*(festival?8.5:7.0),vz:(Math.random()-.5)*(festival?2.4:1.8),
+    life:2.7,age:0,size:festival?1.26:1.02,seed:Math.random()*100,kind:0,op:1,
+    burstAge:(festival?1.62:1.48)+heightBias*.008+Math.random()*0.24,style,festival:festival?1:0,trailT:0});
+}
+function queueFireworkSalvo(festival){
+  let shots=1;
+  if(festival) shots=IS_MOBILE?(Math.random()<.62?2:1):(Math.random()<.20?1:2+Math.floor(Math.random()*3));
+  else if(Math.random()<.52) shots=IS_MOBILE?2:2+Math.floor(Math.random()*2);
+  const centre=(shots-1)*.5;
+  for(let i=0;i<shots;i++) fireworkQueue.push({
+    at:tAcc+i*(.08+Math.random()*.08), festival,
+    offset:(i-centre)*(festival?30:24)+(Math.random()-.5)*8,
+    height:(i-centre)*(festival?7.0:5.0)+(Math.random()-.5)*3.0,
+  });
 }
 function updateFireworks(dt){
   if(!fireworkFx) return;
@@ -6655,11 +6845,15 @@ function updateFireworks(dt){
   }
   if(tAcc>=fireworkNext){
     const festival=State.season===1;
-    launchFirework(festival);
-    if(festival&&!IS_MOBILE&&Math.random()<.28) launchFirework(true,true);
+    queueFireworkSalvo(festival);
     fireworkNext=tAcc+(festival
-      ?(IS_MOBILE?1.72+Math.random()*.34:1.04+Math.random()*.30)
-      :(IS_MOBILE?2.05+Math.random()*.40:1.45+Math.random()*.40));
+      ?(IS_MOBILE?2.00+Math.random()*.42:1.48+Math.random()*.38)
+      :(IS_MOBILE?2.30+Math.random()*.48:1.82+Math.random()*.48));
+  }
+  for(let i=fireworkQueue.length-1;i>=0;i--){
+    const shot=fireworkQueue[i];
+    if(shot.at>tAcc) continue;
+    launchFirework(shot.festival,shot.offset,shot.height); fireworkQueue.splice(i,1);
   }
   for(let i=0;i<fireworkFx.max;i++){
     const d=fireworkFx.data[i]; if(!d.alive) continue;
@@ -6700,19 +6894,22 @@ function refreshSeasonFX(){
   const seed=((Math.floor(cx/24)*73856093)^(Math.floor(cz/24)*19349663)^7331)>>>0;
   const r=rng(seed);
   if(State.season===0 || State.season===1){
-    const mobileMul=IS_MOBILE?0.38:1;
-    const want=Math.min(1200,Math.round((State.season===1?1500:900)*State.flower*mobileMul));
+    const mobileMul=IS_MOBILE?0.42:1;
+    const butterflyTarget=State.season===1?Math.round((IS_MOBILE?34:92)*State.flower):0;
+    const want=Math.min(seasonFx.max-butterflyTarget,
+      Math.round((State.season===1?3200:2100)*State.flower*mobileMul));
     let made=0, tries=0;
     while(made<want && tries++<want*7){
       const a=r()*TAU, rr=Math.sqrt(r())*68;
       const x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr, y=sampleHeight(x,z);
       if(y<BR.water+1.2 || splatSampleMask(x,z)<0.48 || pathDistance(x,z)<2.8) continue;
-      seasonFx.spawn({x,y:y+0.48+r()*0.52,z,vx:0,vy:0,vz:0,life:1e7,
-        size:0.17+r()*0.14,seed:r()*100,kind:0,op:0.76+r()*0.23});
+      const stemHeight=(1.35+r()*0.82)*State.scale+(State.season===1?0.12:0);
+      seasonFx.spawn({x,y:y+stemHeight,z,vx:0,vy:0,vz:0,life:1e7,
+        size:(State.season===1?0.23:0.21)+r()*0.16,seed:r()*100,kind:0,op:0.88+r()*0.12});
       made++;
     }
     if(State.season===1){
-      const butterflies=Math.min(seasonFx.max-made,Math.round((IS_MOBILE?34:92)*State.flower));
+      const butterflies=Math.min(seasonFx.max-made,butterflyTarget);
       for(let i=0;i<butterflies;i++){
         const a=r()*TAU, rr=Math.sqrt(r())*48, x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
         seasonFx.spawn({x,y:sampleHeight(x,z)+0.7+r()*3.2,z,vx:(r()-.5)*1.15,vy:0,vz:(r()-.5)*1.15,
@@ -6787,9 +6984,10 @@ function faunaGroundPoint(r,cx,cz,minRadius,maxRadius){
   return null;
 }
 function spawnFaunaSpecies(r,species,count,minRadius,maxRadius,minSize,maxSize){
+  count=Math.round(count*FAUNA_COUNT_MULTIPLIER);
   for(let i=0;i<count;i++){
     const p=faunaGroundPoint(r,faunaFxCenter.x,faunaFxCenter.y,minRadius,maxRadius); if(!p) continue;
-    const size=lerp(minSize,maxSize,r()), heading=r()*TAU;
+    const size=lerp(minSize,maxSize,r())*FAUNA_SIZE_MULTIPLIER, heading=r()*TAU;
     faunaFx.spawn({x:p.x,y:p.y+size*0.72,z:p.z,vx:0,vy:0,vz:0,life:1,age:r(),
       size,seed:r()*100,kind:species+0.75,op:0.96,species,heading,turnSeed:r()*100,
       baseSpeed:lerp(0.35,0.75,r()), homeX:p.x,homeZ:p.z});
@@ -6818,8 +7016,8 @@ function updateFaunaFX(dt){
   const dcx=camera.position.x-faunaFxCenter.x, dcz=camera.position.z-faunaFxCenter.y;
   if(dcx*dcx+dcz*dcz>52*52){ refreshFaunaFX(); return; }
   faunaRight.set(1,0,0).applyQuaternion(camera.quaternion);
-  faunaFxPhase=(faunaFxPhase+1)&1; const stepDt=Math.min(dt*2,0.05);
-  for(let i=faunaFxPhase;i<faunaFx.max;i+=2){
+  faunaFxPhase=(faunaFxPhase+1)&3; const stepDt=Math.min(dt*4,0.08);
+  for(let i=faunaFxPhase;i<faunaFx.max;i+=4){
     const d=faunaFx.data[i]; if(!d.alive) continue;
     const s=d.species, rhythm=tAcc*(s===1?2.7:(s===5?1.35:0.55))+d.turnSeed;
     const idle=s===0?Math.sin(rhythm*0.72)>0.28:(s===2?Math.sin(rhythm)>0.68:(s===3?Math.sin(rhythm*1.6)>0.48:(s===5?Math.sin(rhythm*0.72)>0.82:false)));
@@ -7156,6 +7354,7 @@ function frame(now){
   G.uMeanWind.value.copy(WindSys.vec);
   G.uCloudDrift.value.copy(WindSys.cloudDrift);
   updateConstellations();
+  updateAutumnSkyTrails();
   // snapped to the proxy's own 3 m cell so the grid is fixed in world space
   G.uProxyC.value.set(Math.round(camera.position.x/3)*3, Math.round(camera.position.z/3)*3);
   updateCullCone();
