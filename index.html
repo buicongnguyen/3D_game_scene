@@ -155,7 +155,7 @@
       <button type="button" data-q="0">Low</button><button type="button" data-q="1" class="on">Med</button>
       <button type="button" data-q="2">High</button><button type="button" data-q="3">Ultra</button>
     </div></div>
-  <div class="row"><label>Grass density</label><input id="qDens" type="range" min="1" max="140" value="100"><span class="val" id="qDensV">100</span></div>
+  <div class="row"><label>Grass density</label><input id="qDens" type="range" min="0.1" max="140" step="0.1" value="100"><span class="val" id="qDensV">100</span></div>
   <div class="row"><label>Render scale</label><input id="qScale" type="range" min="60" max="150" value="100"><span class="val" id="qScaleV">100</span></div>
   <h3>Season</h3>
   <div class="row"><label>Preset</label>
@@ -2436,7 +2436,10 @@ class GrassField {
     const segs = q.blades;
     for(let li=0; li<RINGS.length; li++){
       const R = RINGS[li];
-      const n = Math.max(64, Math.round(R.blades * q.grass[Math.min(li,q.grass.length-1)] * this.density));
+      // The desktop floor prevents empty-looking chunks at very low manual
+      // settings. Mobile intentionally trades that continuity for GPU time.
+      const n = Math.max(IS_MOBILE?8:64,
+        Math.round(R.blades * q.grass[Math.min(li,q.grass.length-1)] * this.density));
       const geom = buildBladeInstances(buildBladeGeometry(segs[li]), R.chunk, n, 7000+li*131);
       // The grid is derived, never hand-tuned: it must be wide enough for the
       // ring to physically reach its own `far`, or an un-grassed annulus opens
@@ -2558,7 +2561,9 @@ class GrassField {
         const nz = Math.max(Math.abs(cp.z - cz) - cs*0.5, 0);
         const dNear = Math.max(Math.hypot(nx, nz), R.dn);
         const dens = Math.min(1, Math.pow(R.dn / dNear, DENS_POW));
-        d.count = Math.max(24, Math.round(ring.maxInst * clamp(f, 0, 1) * dens));
+        const drawFloor=Math.min(IS_MOBILE?4:24,ring.maxInst);
+        d.count = Math.min(ring.maxInst,
+          Math.max(drawFloor, Math.round(ring.maxInst * clamp(f, 0, 1) * dens)));
         drawn += d.count;
         // position drives the depth sort AND, via modelMatrix, the chunk origin
         // the vertex shader works from — so it must be the chunk centre exactly.
@@ -2588,7 +2593,10 @@ function grassBeforeRender(){
    surface as cat's-paw ripple patches.                                        */
 
 function buildRiverGeometry(){
-  const NL = 760, NC = 14;
+  // 106x1 quads is almost exactly 1% of the desktop triangle count. Keeping
+  // those samples along the river preserves its curve; the shader interpolates
+  // depth and current continuously across the single bank-to-bank strip.
+  const NL = IS_MOBILE?106:760, NC = IS_MOBILE?1:14;
   const pos = new Float32Array((NL+1)*(NC+1)*3);
   const dat = new Float32Array((NL+1)*(NC+1)*4);   // across(-1..1), t, speed, bankDist
   const flw = new Float32Array((NL+1)*(NC+1)*2);
@@ -4061,10 +4069,11 @@ function buildMillWheel(mill){
 const LOCO = {
   driveR: 0.82, crank: 0.52, rodL: 1.95, crossY: 0.90,
   drivers: [-0.55, 1.15, 2.85], pony: [4.15],
-  speed: 9.6,
+  speed: 8.4,
 };
 const TRAIN_CAR_COUNT = 4;
-const TRAIN_CAR_GAP = 13.2;
+const TRAIN_FIRST_CAR = 18.0;
+const TRAIN_CAR_GAP = 16.2;
 
 function buildLocoBody(){
   const M=PB();
@@ -4145,6 +4154,8 @@ function buildTender(){
   pbox(M, 0, 0.62, 0, 2.6, 0.14, 1.10, 0, tint(dark,1.1), 1);
   pbox(M, 0, 1.55, 0, 2.5, 0.82, 1.15, 0, tint(dark,1.0), 1);
   pbox(M, 0, 2.40, 0, 2.5, 0.05, 1.18, 0, tint(band,0.45), 1);
+  // short rear drawbar visually keeps the tender with the locomotive
+  pbox(M, -2.86, 0.68, 0, 0.34, 0.07, 0.10, 0, tint(dark,0.72), 1);
   // coal heap
   const r=rng(77);
   for(let i=0;i<26;i++){
@@ -4154,21 +4165,65 @@ function buildTender(){
   }
   return finishPainted(M);
 }
+function addCarNumber(M,number,side){
+  const z=side*1.355, face=side*1.395;
+  const plaque=tint(LC('boiler'),0.72), mark=LC('carBand');
+  pbox(M,0,1.73,z,0.45,0.48,0.035,0,plaque,1);
+  const h=(y,w=0.25)=>pbox(M,0,y,face,w,0.045,0.025,0,mark,1);
+  const v=(x,y,hh=0.16)=>pbox(M,x,y,face,0.045,hh,0.025,0,mark,1);
+  if(number===1){ v(0,1.73,0.31); h(1.42,0.19); }
+  if(number===2){ h(2.03); h(1.73); h(1.43); v(0.25,1.88); v(-0.25,1.58); }
+  if(number===3){ h(2.03); h(1.73); h(1.43); v(0.25,1.88); v(0.25,1.58); }
+  if(number===4){ h(1.73); v(-0.25,1.88); v(0.25,1.88); v(0.25,1.56,0.18); }
+}
 function buildCarriage(i){
   const M=PB();
-  // Alternating paint values make the four coaches readable as separate cars
-  // at distance without turning the train into a carnival.
-  const body = mixc(LC('carBody'), LC('livery'), i%2 ? 0.16 : 0.03);
+  // Four restrained livery variants and numbered plaques make the consist
+  // countable at a glance, even when it is small against the viaduct.
+  const bodies=[
+    LC('carBody'),
+    mixc(LC('carBody'),LC('livery'),0.40),
+    mixc(LC('carBody'),LC('roofSlate'),0.44),
+    mixc(LC('livery'),LC('brass'),0.20),
+  ];
+  const body=bodies[i%4];
   const band = LC('carBand');
+  const windows=[
+    LC('carWin'),
+    mixc(LC('carWin'),LC('livery'),0.28),
+    mixc(LC('carWin'),LC('ambSky'),0.42),
+    mixc(LC('carWin'),LC('carBand'),0.52),
+  ][i%4];
   pbox(M, 0, 1.55, 0, 5.6, 0.95, 1.30, 0, body, 1);
   pbox(M, 0, 2.52, 0, 5.65, 0.10, 1.34, 0, tint(body,0.72), 1);
   pcyl(M, [-5.6,2.56,0],[5.6,2.56,0], 1.24, 1.24, 12, tint(body,0.80), 1);
   pbox(M, 0, 0.72, 0, 5.7, 0.12, 1.25, 0, tint(LC('boiler'),1.0), 1);
   pbox(M, 0, 2.02, 0, 5.62, 0.10, 1.33, 0, band, 1);
-  for(let w=0;w<9;w++){
-    const x=(w-4)*1.16;
+  // A centre plaque and end doors break the old continuous window ribbon.
+  for(const x of [-3.75,-2.62,-1.49,1.49,2.62,3.75]){
     for(const s of [-1,1])
-      pbox(M, x, 1.72, s*1.31, 0.40, 0.40, 0.03, 0, LC('carWin'), 2);
+      pbox(M, x, 1.72, s*1.31, 0.40, 0.40, 0.03, 0, windows, 2);
+  }
+  for(const end of [-1,1]){
+    const x=end*4.92;
+    pbox(M,x,1.55,0,0.42,0.91,1.325,0,tint(LC('boiler'),0.88),1);
+    for(const s of [-1,1])
+      pbox(M,x,1.78,s*1.335,0.25,0.32,0.025,0,tint(LC('carWin'),0.82),2);
+    // These cream divider posts remain visible above the bridge parapet and
+    // turn the distant window ribbon into four unmistakable groups.
+    for(const s of [-1,1])
+      pbox(M,end*5.43,1.88,s*1.37,0.11,1.02,0.04,0,band,1);
+    pbox(M,end*5.90,0.78,0,0.30,0.08,1.44,0,tint(LC('boiler'),0.82),1);
+    pbox(M,end*6.48,0.69,0,0.88,0.065,0.11,0,tint(LC('boiler'),0.66),1);
+  }
+  for(const s of [-1,1]) addCarNumber(M,i+1,s);
+  // Roof vents reinforce the one/two/three/four sequence from high viewpoints.
+  for(let vent=0;vent<=i;vent++){
+    const x=(vent-i*0.5)*0.58;
+    pcyl(M,[x,3.67,0],[x,3.84,0],0.115,0.09,8,tint(LC('brass'),0.82),1,false,true);
+  }
+  if(i===TRAIN_CAR_COUNT-1){
+    for(const s of [-1,1]) pbox(M,-5.72,1.12,s*0.76,0.055,0.13,0.13,0,LC('livery'),2);
   }
   for(const bx of [-3.7, 3.7]) for(const s of [-1,1]){
     pbox(M, bx, 0.52, s*0.92, 0.85, 0.22, 0.14, 0, tint(LC('boiler'),0.9), 1);
@@ -4236,7 +4291,7 @@ class Train {
     scene.add(this.group);
 
     this.s = -1e9; this.active=false; this.theta=0; this.lastChuff=0; this.chuffCount=0;
-    this.tailLength = 15.6 + (TRAIN_CAR_COUNT-1)*TRAIN_CAR_GAP + 6.0;
+    this.tailLength = TRAIN_FIRST_CAR + (TRAIN_CAR_COUNT-1)*TRAIN_CAR_GAP + 6.0;
     this.speed = LOCO.speed;
     this.group.visible=false;
     this.smokePos = new THREE.Vector3();
@@ -4267,8 +4322,9 @@ class Train {
     // cleared the exit point.
     if(this.s > (this.sEnd || TRACK.total - 40) + this.tailLength){ this.active=false; this.group.visible=false; return; }
     const p = this.place(this.locoGroup, this.s, 0.32);
-    this.place(this.tenderGroup, this.s - 8.4, 0.32);
-    for(let i=0;i<this.cars.length;i++) this.place(this.cars[i], this.s - 15.6 - i*TRAIN_CAR_GAP, 0.30);
+    this.place(this.tenderGroup, this.s - 7.0, 0.32);
+    for(let i=0;i<this.cars.length;i++)
+      this.place(this.cars[i], this.s - TRAIN_FIRST_CAR - i*TRAIN_CAR_GAP, 0.30);
 
     // wheel rotation from true rolling
     this.theta -= this.speed*dt / LOCO.driveR;
@@ -5457,7 +5513,7 @@ function queryNumber(name, fallback, lo, hi){
 }
 const State = {
   q: Math.round(queryNumber('q', IS_MOBILE?0:1, 0, 3)),
-  density: queryNumber('d', IS_MOBILE?0.01:1.0, 0.01, 1.4),
+  density: queryNumber('d', IS_MOBILE?0.001:1.0, 0.001, 1.4),
   scale:   queryNumber('s', IS_MOBILE?0.75:1.0, 0.6, 1.5),
   exposure:1.0, bloom:1.0, paint:1.0,
   autoQ: !QS.has('q'),
@@ -5467,6 +5523,10 @@ const State = {
   season:Math.round(queryNumber('season',1,0,3)), daylight:queryNumber('day',14,-18,60), timePreset:0,
   flower:0.60, foliage:0.70, snow:0.70,
 };
+function grassPercent(density){
+  const pct=density*100;
+  return pct<1?pct.toFixed(1).replace(/\.0$/,''):String(Math.round(pct));
+}
 if(QS.has('t')) window.__startT = +QS.get('t');
 let sceneRT, bloomRTs=[], upRTs=[], softRT=[], shadowRT=null, windRT=null, reflRT=null;
 let composite, brightMat, downMats=[], upMats=[], blurMats=[], windMat, windViewMat, softDownMat;
@@ -5752,7 +5812,9 @@ async function boot(){
     const sh = sampleHeight(CFG.spawn.x, CFG.spawn.z);
     window.__dbg = { hMin:mn, hMax:mx, spawnH:sh, eye:sh+CFG.eyeHeight,
       water:BR.water, deck:BR.deck, sun:[SUN.x,SUN.y,SUN.z],
-      brAx:BR.ax, hType: hasFloatLinear?'float':'half', trainCars:train.cars.length };
+      brAx:BR.ax, hType: hasFloatLinear?'float':'half', trainCars:train.cars.length,
+      mobile:IS_MOBILE, grassDensity:State.density,
+      waterTriangles:waterMesh.geometry.index.count/3 };
     console.log('DBG '+JSON.stringify(window.__dbg));
   }
 
@@ -6921,15 +6983,16 @@ function setSeason(season, announce=true){
   G.uFogMul.value=[0.94,1.00,0.88,0.78][State.season];
   if(State.season===3){
     if(seasonGrassRestore===null) seasonGrassRestore=State.density;
-    const winterDensity=IS_MOBILE?0.01:0.02;
+    const winterDensity=IS_MOBILE?0.001:0.02;
     if(Math.abs(State.density-winterDensity)>0.0001){
-      State.density=winterDensity; $('#qDens').value=Math.round(winterDensity*100);
-      $('#qDensV').textContent=Math.round(winterDensity*100);
+      State.density=winterDensity; const pct=grassPercent(winterDensity);
+      $('#qDens').value=pct; $('#qDensV').textContent=pct;
       if(grass&&grass.built){ grass.density=State.density; rebuildGrass(); }
     }
   } else if(previous===3&&seasonGrassRestore!==null){
     State.density=seasonGrassRestore; seasonGrassRestore=null;
-    $('#qDens').value=Math.round(State.density*100); $('#qDensV').textContent=Math.round(State.density*100);
+    const pct=grassPercent(State.density);
+    $('#qDens').value=pct; $('#qDensV').textContent=pct;
     if(grass&&grass.built){ grass.density=State.density; rebuildGrass(); }
   }
   refreshSeasonFX();
@@ -6978,7 +7041,7 @@ function bindInput(){
 
   // Reflect URL-provided values before binding.  Previously the controls' HTML
   // defaults silently overwrote ?d= and ?s= during startup.
-  $('#qDens').value=Math.round(State.density*100);
+  $('#qDens').value=grassPercent(State.density);
   $('#qScale').value=Math.round(State.scale*100);
   $('#sDay').value=State.daylight;
   State.timePreset=nearestTimePreset(State.daylight);
