@@ -1585,6 +1585,113 @@ void main(){
   outColor = vec4(SAFE3(col), 0.0);
 }`;
 
+/* Named seasonal constellations sit on the same infinitely distant dome as the
+   procedural stars.  They are tiny scene primitives instead of more shader
+   branches so the names remain legible and are included by canvas recording. */
+const CONSTELLATIONS = [
+  {name:'LEO', season:'SPRING SKY', color:0xffd9a8,
+   points:[[-1.18,-.18],[-.88,.02],[-.68,.42],[-.34,.68],[-.05,.52],[-.18,.16],[.30,.04],[.78,-.18],[1.18,-.02]],
+   edges:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,1],[5,6],[6,7],[7,8]]},
+  {name:'CYGNUS', season:'SUMMER SKY', color:0xaedcff,
+   points:[[0,-.82],[0,-.42],[0,0],[0,.42],[0,.86],[-.82,.06],[-.38,.02],[.40,-.02],[.86,-.10]],
+   edges:[[0,1],[1,2],[2,3],[3,4],[5,6],[6,2],[2,7],[7,8]]},
+  {name:'PEGASUS', season:'AUTUMN SKY', color:0xb9cfff,
+   points:[[-.72,-.48],[-.70,.42],[.25,.50],[.38,-.44],[-1.12,.76],[-1.38,.94],[.73,.78],[1.06,.96]],
+   edges:[[0,1],[1,2],[2,3],[3,0],[1,4],[4,5],[2,6],[6,7]]},
+  {name:'ORION', season:'WINTER SKY', color:0xd8ecff,
+   points:[[-.66,.72],[.62,.62],[-.16,.10],[.02,.04],[.20,-.02],[-.56,-.76],[.62,-.68],[-.92,.12],[.92,.04]],
+   edges:[[0,2],[2,5],[1,4],[4,6],[2,3],[3,4],[7,2],[4,8],[0,1],[5,6]]},
+];
+let constellationDome=null;
+
+function constellationStarTexture(){
+  const canvas=document.createElement('canvas'); canvas.width=canvas.height=64;
+  const ctx=canvas.getContext('2d'), glow=ctx.createRadialGradient(32,32,0,32,32,32);
+  glow.addColorStop(0,'rgba(255,255,255,1)'); glow.addColorStop(.16,'rgba(255,255,255,.98)');
+  glow.addColorStop(.48,'rgba(190,220,255,.38)'); glow.addColorStop(1,'rgba(150,190,255,0)');
+  ctx.fillStyle=glow; ctx.fillRect(0,0,64,64);
+  const texture=new THREE.CanvasTexture(canvas); texture.colorSpace=THREE.SRGBColorSpace;
+  return texture;
+}
+
+function constellationLabel(def){
+  const canvas=document.createElement('canvas'); canvas.width=1024; canvas.height=192;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='rgba(3,9,28,.42)'; ctx.strokeStyle='rgba(165,205,255,.42)'; ctx.lineWidth=2;
+  const x=180,y=8,w=664,h=176,r=42;
+  ctx.beginPath(); ctx.moveTo(x+r,y); ctx.lineTo(x+w-r,y); ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r); ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h); ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h,x,y+h-r); ctx.lineTo(x,y+r); ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowColor='rgba(100,170,255,.85)'; ctx.shadowBlur=18;
+  ctx.fillStyle='#f4f8ff'; ctx.font='600 92px Georgia, serif'; ctx.fillText(def.name,512,68);
+  ctx.shadowBlur=7; ctx.fillStyle='rgba(205,225,255,.90)';
+  ctx.font='500 34px Arial, sans-serif'; ctx.letterSpacing='8px'; ctx.fillText(def.season,512,145);
+  const texture=new THREE.CanvasTexture(canvas); texture.colorSpace=THREE.SRGBColorSpace;
+  texture.minFilter=THREE.LinearFilter; texture.magFilter=THREE.LinearFilter;
+  const material=new THREE.SpriteMaterial({map:texture,transparent:true,opacity:0,depthTest:true,depthWrite:false,
+    alphaTest:.025,toneMapped:false});
+  const sprite=new THREE.Sprite(material); sprite.scale.set(1500,280,1); sprite.renderOrder=13;
+  sprite.frustumCulled=false;
+  return sprite;
+}
+
+function buildConstellations(){
+  const radius=7600, patternScale=.105;
+  // West is the valley's opening view.  Keeping the anchor fixed in world space
+  // makes the constellation behave like a real sky object when the player looks around.
+  const centre=new THREE.Vector3(-.94,.30,-.16).normalize();
+  const right=new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0),centre).normalize();
+  const up=new THREE.Vector3().crossVectors(centre,right).normalize();
+  const starTexture=constellationStarTexture();
+  constellationDome=new THREE.Group(); constellationDome.name='seasonal-constellations';
+  constellationDome.userData.bulk=true; scene.add(constellationDome);
+
+  for(const def of CONSTELLATIONS){
+    const group=new THREE.Group(), positions=[];
+    for(const point of def.points){
+      const p=centre.clone().addScaledVector(right,point[0]*patternScale)
+        .addScaledVector(up,point[1]*patternScale).normalize().multiplyScalar(radius);
+      positions.push(p);
+    }
+    const pointGeometry=new THREE.BufferGeometry().setFromPoints(positions);
+    const pointMaterial=new THREE.PointsMaterial({color:def.color,size:IS_MOBILE?10:12,map:starTexture,
+      transparent:true,opacity:0,alphaTest:.035,blending:THREE.AdditiveBlending,depthTest:true,depthWrite:false,
+      sizeAttenuation:false,toneMapped:false});
+    const stars=new THREE.Points(pointGeometry,pointMaterial); stars.frustumCulled=false; stars.renderOrder=12;
+
+    const segments=[];
+    for(const edge of def.edges) segments.push(positions[edge[0]],positions[edge[1]]);
+    const lineGeometry=new THREE.BufferGeometry().setFromPoints(segments);
+    const lineMaterial=new THREE.LineBasicMaterial({color:def.color,transparent:true,opacity:0,
+      blending:THREE.AdditiveBlending,depthTest:true,depthWrite:false,toneMapped:false});
+    const lines=new THREE.LineSegments(lineGeometry,lineMaterial); lines.frustumCulled=false; lines.renderOrder=11;
+
+    const label=constellationLabel(def);
+    label.position.copy(centre).addScaledVector(right,.18).addScaledVector(up,-.015)
+      .normalize().multiplyScalar(radius-20);
+    group.add(lines,stars,label); group.visible=false;
+    group.userData={lineMaterial,pointMaterial,labelMaterial:label.material};
+    constellationDome.add(group);
+  }
+}
+
+function updateConstellations(){
+  if(!constellationDome) return;
+  constellationDome.position.copy(camera.position);
+  const fade=smoothstep(.30,.72,G.uNight.value);
+  for(let i=0;i<constellationDome.children.length;i++){
+    const group=constellationDome.children[i], active=i===State.season&&fade>.004;
+    group.visible=active;
+    if(!active) continue;
+    const pulse=.94+.06*Math.sin(tAcc*.72+i*1.7), materials=group.userData;
+    materials.lineMaterial.opacity=fade*(.38+.06*Math.sin(tAcc*.34+i));
+    materials.pointMaterial.opacity=fade*pulse;
+    materials.labelMaterial.opacity=fade*.92;
+  }
+}
+
 /*──────────────────────── procedural cumulus congestus ─────────────────────*/
 /* Each formation is grown the way a real cumulus grows: a broad base disc,
    then a few towers of decreasing radius, then cauliflower on the shoulders. */
@@ -4875,6 +4982,13 @@ void main(){
     col=mix(vec3(1.20,0.46,0.06),vec3(1.58,1.16,0.42),core); fade=1.0-smoothstep(0.72,1.0,vAge);
   } else if(vKind<4.5){
     col=mix(vec3(1.48,0.12,0.28),vec3(1.48,0.66,1.20),fract(vSeed*0.29));
+  } else if(vKind<5.5){
+    col=mix(vec3(0.08,1.18,1.42),vec3(1.52,1.12,0.24),fract(vSeed*0.41));
+  } else if(vKind<6.5){
+    col=mix(vec3(0.25,0.72,1.58),vec3(1.52,0.16,0.72),fract(vSeed*0.53));
+  } else if(vKind<7.5){
+    col=mix(vec3(0.20,1.24,0.48),vec3(1.62,1.02,0.18),core);
+    fade=1.0-smoothstep(0.70,1.0,vAge);
   } else {
     col=mix(vec3(1.10,0.28,0.05),vec3(1.45,1.16,0.58),core); fade*=0.72;
   }
@@ -5626,6 +5740,22 @@ class Audio {
 
 const $ = s=>document.querySelector(s);
 const setStat=(s,p)=>{ $('#stat').textContent=s; if(p!==undefined) $('#barIn').style.width=(p*100).toFixed(0)+'%'; };
+let enterStarted=false, autoEnterTimer=null, enterCountdownTimer=null;
+function stopEnterCountdown(){
+  clearTimeout(autoEnterTimer); clearInterval(enterCountdownTimer);
+  autoEnterTimer=null; enterCountdownTimer=null;
+}
+function scheduleAutoEnter(){
+  stopEnterCountdown();
+  const button=$('#enter'), began=performance.now(), delay=3000;
+  const update=()=>{
+    if(enterStarted) return;
+    const seconds=Math.max(1,Math.ceil((delay-(performance.now()-began))/1000));
+    button.textContent='Enter the valley · '+seconds;
+  };
+  update(); enterCountdownTimer=setInterval(update,200);
+  autoEnterTimer=setTimeout(()=>{ stopEnterCountdown(); if(!enterStarted) button.click(); },delay);
+}
 const idle = ()=> new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
 
 const renderer = new THREE.WebGLRenderer({ antialias:false, powerPreference:'high-performance',
@@ -5831,6 +5961,7 @@ async function boot(){
     RSM(SKY_VS, SKY_FS(), U(), {side:THREE.BackSide, depthWrite:false, depthTest:true}));
   skyMesh.frustumCulled=false; skyMesh.renderOrder=9; scene.add(skyMesh);
   skyMesh.userData.noCast=true;
+  buildConstellations();
 
   /*── distant ridges ──*/
   setStat('raising the far hills', 0.46); await idle();
@@ -6070,6 +6201,7 @@ async function boot(){
   bindInput();
   setStat('ready', 1.0);
   $('#enter').classList.add('on');
+  scheduleAutoEnter();
   for(const b of document.querySelectorAll('#qPreset button'))
     b.classList.toggle('on', +b.dataset.q === State.q);
   State.running = true;
@@ -6444,7 +6576,7 @@ function updateWeatherFX(dt){
   }
 }
 
-let fireworkNext=0, fireworkStyle=0, fireworksWereActive=false;
+let fireworkNext=0, fireworkStyle=0, fireworksWereActive=false, fireworksSeason=-1;
 function clearFireworks(){
   if(!fireworkFx) return;
   fireworkFx.free.length=0;
@@ -6452,53 +6584,82 @@ function clearFireworks(){
   fireworkFx.geom.instanceCount=0; fireworkFx.n=0;
 }
 function explodeFirework(rocket){
-  const style=rocket.style, mobile=IS_MOBILE;
-  const counts=[0,mobile?72:150,mobile?58:118,mobile?64:130,mobile?60:120];
+  const style=rocket.style, mobile=IS_MOBILE, festival=rocket.festival>0.5;
+  const counts=mobile?[0,72,58,64,60,82,76,86]:[0,150,118,130,120,205,190,215];
   const count=counts[style], golden=2.39996323, plane=Math.random()*TAU;
   const bx=Math.cos(plane), bz=Math.sin(plane), px=-bz, pz=bx;
-  const colorSeed=Math.random()*100;
+  const colorSeed=Math.random()*100, scale=festival?1.46:1;
   for(let i=0;i<count;i++){
     let vx=0,vy=0,vz=0, life=3.1+Math.random()*0.7;
     if(style===1){
       const u=1-2*(i+0.5)/count, ring=Math.sqrt(Math.max(0,1-u*u)), a=i*golden+Math.random()*0.08;
-      const speed=7.2+Math.random()*5.0;
+      const speed=(7.2+Math.random()*5.0)*scale;
       vx=Math.cos(a)*ring*speed; vy=u*speed; vz=Math.sin(a)*ring*speed;
     } else if(style===2){
-      const a=i/count*TAU, speed=8.5+Math.random()*1.8, cs=Math.cos(a), sn=Math.sin(a);
+      const a=i/count*TAU, speed=(8.5+Math.random()*1.8)*scale, cs=Math.cos(a), sn=Math.sin(a);
       vx=bx*cs*speed+px*(Math.random()-.5)*0.25; vy=sn*speed; vz=bz*cs*speed+pz*(Math.random()-.5)*0.25;
     } else if(style===3){
-      const a=i/count*TAU+Math.random()*0.12, radial=3.4+Math.random()*5.2;
-      vx=Math.cos(a)*radial; vy=4.0+Math.random()*6.4; vz=Math.sin(a)*radial; life=4.2+Math.random()*1.2;
-    } else {
+      const a=i/count*TAU+Math.random()*0.12, radial=(3.4+Math.random()*5.2)*scale;
+      vx=Math.cos(a)*radial; vy=(4.0+Math.random()*6.4)*scale; vz=Math.sin(a)*radial; life=4.2+Math.random()*1.2;
+    } else if(style===4){
       const a=i/count*TAU, sa=Math.sin(a), hx=sa*sa*sa;
       const hy=(13*Math.cos(a)-5*Math.cos(2*a)-2*Math.cos(3*a)-Math.cos(4*a))/17;
-      const speed=8.2+Math.random()*0.8, thick=(Math.random()-.5)*0.35;
+      const speed=(8.2+Math.random()*0.8)*scale, thick=(Math.random()-.5)*0.35;
       vx=bx*hx*speed+px*thick; vy=hy*speed+0.8; vz=bz*hx*speed+pz*thick; life=3.5+Math.random()*0.5;
+    } else if(style===5){
+      // Two concentric rings crossing at a slight angle.
+      const outer=i&1, a=(i/count*2.0)*TAU, speed=(outer?12.4:7.6)*scale;
+      const cs=Math.cos(a), sn=Math.sin(a), tilt=outer?.42:-.28;
+      vx=(bx*cs+px*sn*tilt)*speed; vy=sn*speed*(outer?.88:1.0);
+      vz=(bz*cs+pz*sn*tilt)*speed; life=3.4+Math.random()*0.55;
+    } else if(style===6){
+      // A crisp five-point star drawn as ten connected velocity spokes.
+      const t=i/count*10, seg=Math.floor(t), f=t-seg;
+      const aa=-Math.PI*.5+seg*TAU/10, ab=-Math.PI*.5+((seg+1)%10)*TAU/10;
+      const ra=(seg&1)?.43:1, rb=((seg+1)&1)?.43:1;
+      const sx=lerp(Math.cos(aa)*ra,Math.cos(ab)*rb,f), sy=lerp(Math.sin(aa)*ra,Math.sin(ab)*rb,f);
+      const speed=(11.8+Math.random()*.8)*scale, thick=(Math.random()-.5)*.30;
+      vx=(bx*sx+px*thick)*speed; vy=sy*speed; vz=(bz*sx+pz*thick)*speed; life=3.6+Math.random()*.55;
+    } else {
+      // Palm crown: rising gold-green fronds that hang before falling.
+      const a=i*golden+Math.random()*.10, radial=Math.sqrt((i+.5)/count);
+      const speed=(5.0+radial*7.0)*scale;
+      vx=Math.cos(a)*speed; vy=(7.5+Math.random()*5.0)*scale; vz=Math.sin(a)*speed;
+      life=4.6+Math.random()*1.1;
     }
     if(!fireworkFx.spawn({x:rocket.x,y:rocket.y,z:rocket.z,vx,vy,vz,life,age:0,
-      size:0.68+Math.random()*0.36,seed:colorSeed+i*0.00013,kind:style,op:0.92+Math.random()*0.08})) break;
+      size:(0.68+Math.random()*0.36)*(festival?1.22:1),seed:colorSeed+i*0.00013,kind:style,op:0.92+Math.random()*0.08})) break;
   }
   fireworkFx.spawn({x:rocket.x,y:rocket.y,z:rocket.z,vx:0,vy:0,vz:0,life:0.38,age:0,
-    size:2.2,seed:colorSeed,kind:5,op:1});
+    size:festival?3.4:2.2,seed:colorSeed,kind:9,op:1});
 }
-function launchFirework(){
-  const x=VILLAGE.x+(Math.random()-.5)*72, z=VILLAGE.z+(Math.random()-.5)*54;
-  const y=sampleHeight(x,z)+2.0, style=1+(fireworkStyle++%4);
-  fireworkFx.spawn({x,y,z,vx:(Math.random()-.5)*1.8,vy:34+Math.random()*6.0,vz:(Math.random()-.5)*1.8,
-    life:2.2,age:0,size:0.86,seed:Math.random()*100,kind:0,op:1,
-    burstAge:1.45+Math.random()*0.25,style,trailT:0});
+function launchFirework(festival=false, companion=false){
+  const spreadX=festival?116:72, spreadZ=festival?82:54;
+  const x=VILLAGE.x+(Math.random()-.5)*spreadX+(companion?26:0), z=VILLAGE.z+(Math.random()-.5)*spreadZ;
+  const y=sampleHeight(x,z)+2.0, style=1+(fireworkStyle++%(festival?7:4));
+  fireworkFx.spawn({x,y,z,vx:(Math.random()-.5)*(festival?2.4:1.8),
+    vy:(festival?43:34)+Math.random()*(festival?7.5:6.0),vz:(Math.random()-.5)*(festival?2.4:1.8),
+    life:2.5,age:0,size:festival?1.06:0.86,seed:Math.random()*100,kind:0,op:1,
+    burstAge:(festival?1.58:1.45)+Math.random()*0.25,style,festival:festival?1:0,trailT:0});
 }
 function updateFireworks(dt){
   if(!fireworkFx) return;
-  const active=State.season===0&&G.uNight.value>0.58;
+  const active=State.season<=1&&G.uNight.value>0.58;
   if(!active){
     if(fireworksWereActive) clearFireworks();
-    fireworksWereActive=false; return;
+    fireworksWereActive=false; fireworksSeason=-1; return;
   }
-  if(!fireworksWereActive){ fireworksWereActive=true; fireworkNext=tAcc+0.18; fireworkStyle=0; }
+  if(!fireworksWereActive||fireworksSeason!==State.season){
+    if(fireworksWereActive) clearFireworks();
+    fireworksWereActive=true; fireworksSeason=State.season; fireworkNext=tAcc+0.18; fireworkStyle=0;
+  }
   if(tAcc>=fireworkNext){
-    launchFirework();
-    fireworkNext=tAcc+(IS_MOBILE?2.05+Math.random()*0.40:1.45+Math.random()*0.40);
+    const festival=State.season===1;
+    launchFirework(festival);
+    if(festival&&!IS_MOBILE&&Math.random()<.28) launchFirework(true,true);
+    fireworkNext=tAcc+(festival
+      ?(IS_MOBILE?1.72+Math.random()*.34:1.04+Math.random()*.30)
+      :(IS_MOBILE?2.05+Math.random()*.40:1.45+Math.random()*.40));
   }
   for(let i=0;i<fireworkFx.max;i++){
     const d=fireworkFx.data[i]; if(!d.alive) continue;
@@ -6510,13 +6671,13 @@ function updateFireworks(dt){
         d.trailT=0;
         fireworkFx.spawn({x:d.x,y:d.y-0.35,z:d.z,vx:-d.vx*0.05+(Math.random()-.5)*0.25,
           vy:-2.0-Math.random()*1.8,vz:-d.vz*0.05+(Math.random()-.5)*0.25,
-          life:0.65+Math.random()*0.25,age:0,size:0.34+Math.random()*0.22,seed:d.seed,kind:5,op:0.72});
+          life:0.65+Math.random()*0.25,age:0,size:0.34+Math.random()*0.22,seed:d.seed,kind:9,op:0.72});
       }
       if(d.age>=d.burstAge){ explodeFirework(d); d.alive=false; fireworkFx.free.push(i); }
       continue;
     }
     if(d.age>=d.life){ d.alive=false; fireworkFx.free.push(i); continue; }
-    const willow=d.kind>2.5&&d.kind<3.5, trail=d.kind>4.5;
+    const willow=(d.kind>2.5&&d.kind<3.5)||(d.kind>6.5&&d.kind<7.5), trail=d.kind>8.5;
     const drag=Math.exp(-dt*(willow?0.36:(trail?1.4:0.18)));
     d.vx*=drag; d.vz*=drag; d.vy=d.vy*drag-(willow?4.0:(trail?2.4:3.2))*dt;
     d.x+=d.vx*dt; d.y+=d.vy*dt; d.z+=d.vz*dt;
@@ -6994,6 +7155,7 @@ function frame(now){
   G.uCamPos.value.copy(camera.position);
   G.uMeanWind.value.copy(WindSys.vec);
   G.uCloudDrift.value.copy(WindSys.cloudDrift);
+  updateConstellations();
   // snapped to the proxy's own 3 m cell so the grid is fixed in world space
   G.uProxyC.value.set(Math.round(camera.position.x/3)*3, Math.round(camera.position.z/3)*3);
   updateCullCone();
@@ -7555,6 +7717,9 @@ function bindInput(){
   setSeason(State.season,false);
   setCinematicMode(2,false);
   $('#enter').addEventListener('click', ()=>{
+    if(enterStarted) return;
+    enterStarted=true; stopEnterCountdown();
+    $('#enter').textContent='Entering the valley'; $('#enter').disabled=true;
     audio.init(); audio.resume();
     if(walker.cinematic===2){ walker.cineT=0; cinematicChapter=-1; updateCinematicTour(); }
     $('#veil').classList.add('gone');
