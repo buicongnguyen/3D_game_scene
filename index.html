@@ -108,6 +108,8 @@
     background:rgba(246,236,216,.08);border:1px solid rgba(246,236,216,.18);transition:.18s}
   .seg button:hover{background:rgba(246,236,216,.2)}
   .seg button.on{background:rgba(143,190,168,.34);border-color:rgba(143,190,168,.6)}
+  #qPreset{gap:2px}
+  #qPreset button{font-size:8px;letter-spacing:.04em;padding:4px 4px}
   #seasonPreset{gap:2px}
   #seasonPreset button{font-size:7.4px;letter-spacing:.02em;padding:4px 3px}
   #timeCycle,#recordScene{font-family:inherit;font-size:9px;letter-spacing:.08em;text-transform:uppercase;
@@ -176,8 +178,9 @@
   <h3>Quality</h3>
   <div class="row"><label>Preset</label>
     <div class="seg" id="qPreset">
-      <button type="button" data-q="0">Low</button><button type="button" data-q="1" class="on">Med</button>
-      <button type="button" data-q="2">High</button><button type="button" data-q="3">Ultra</button>
+      <button type="button" data-q="0">U-Low</button><button type="button" data-q="1">Low</button>
+      <button type="button" data-q="2" class="on">Med</button><button type="button" data-q="3">High</button>
+      <button type="button" data-q="4">Ultra</button>
     </div></div>
   <div class="row"><label>Grass density</label><input id="qDens" type="range" min="0.1" max="140" step="0.1" value="100"><span class="val" id="qDensV">100</span></div>
   <div class="row"><label>Render scale</label><input id="qScale" type="range" min="60" max="150" value="100"><span class="val" id="qScaleV">100</span></div>
@@ -209,7 +212,7 @@
   <div class="row"><label>Audio</label><input id="aVol" type="range" min="0" max="100" value="70"><span class="val" id="aVolV">70</span></div>
   <div class="row"><label>Music</label><input id="aMus" type="checkbox" class="chk" checked></div>
   <div class="row"><label>Show wind field</label><input id="dWind" type="checkbox" class="chk"></div>
-  <p class="note">Press <b>T</b> to summon the train, <b>1</b>&#8211;<b>4</b> for quality presets,
+  <p class="note">Press <b>T</b> to summon the train, <b>1</b>&#8211;<b>5</b> for quality presets,
     <b>C</b> to cycle cinematic modes, <b>R</b> to record, and <b>P</b> to pause.</p>
 </div>
 
@@ -295,21 +298,25 @@ const QUALITY = [
   // Each preset is a complete frame budget. `fx` scales persistent/seasonal
   // particles; mobile values are deliberately stricter because fill-rate and
   // memory bandwidth, rather than raw geometry, dominate on phone GPUs.
+  { grass:[.06,.045,.03,.02], shadow:384, mobileShadow:256, wind:64, mobileWind:48,
+    px:.58, bloomLv:1, blades:[1,1,1,1], rings:2, mobileRings:1,
+    fx:.12, mobileFx:.07, fauna:.0625, clouds:220, mobileClouds:110, cloudShadow:128, mobileCloudShadow:96,
+    water:[64,1], mobileWater:[40,1], waterDetail:.08, mobileWaterDetail:.03 },
   { grass:[.16,.13,.10,.07], shadow:768,  mobileShadow:512,  wind:128, mobileWind:96,
     px:.75, bloomLv:2, blades:[2,1,1,1], rings:3, mobileRings:2,
-    fx:.30, mobileFx:.18, clouds:520, mobileClouds:260, cloudShadow:256, mobileCloudShadow:192,
+    fx:.30, mobileFx:.18, fauna:.125, clouds:520, mobileClouds:260, cloudShadow:256, mobileCloudShadow:192,
     water:[180,1], mobileWater:[64,1], waterDetail:.24, mobileWaterDetail:.10 },
   { grass:[.46,.39,.29,.21], shadow:1024, mobileShadow:768,  wind:160, mobileWind:128,
     px:.92, bloomLv:3, blades:[3,1,1,1], rings:4, mobileRings:3,
-    fx:.56, mobileFx:.32, clouds:850, mobileClouds:420, cloudShadow:384, mobileCloudShadow:256,
+    fx:.56, mobileFx:.32, fauna:.25, clouds:850, mobileClouds:420, cloudShadow:384, mobileCloudShadow:256,
     water:[300,2], mobileWater:[106,1], waterDetail:.48, mobileWaterDetail:.24 },
   { grass:[.82,.72,.58,.44], shadow:1536, mobileShadow:1024, wind:224, mobileWind:160,
     px:1.04, bloomLv:4, blades:[4,2,1,1], rings:4, mobileRings:4,
-    fx:.80, mobileFx:.50, clouds:1200, mobileClouds:620, cloudShadow:512, mobileCloudShadow:384,
+    fx:.80, mobileFx:.50, fauna:.50, clouds:1200, mobileClouds:620, cloudShadow:512, mobileCloudShadow:384,
     water:[420,4], mobileWater:[180,2], waterDetail:.76, mobileWaterDetail:.48 },
   { grass:[1.18,1.06,.88,.68], shadow:2048, mobileShadow:1280, wind:288, mobileWind:192,
     px:1.16, bloomLv:5, blades:[5,3,2,1], rings:4, mobileRings:4,
-    fx:1.0, mobileFx:.68, clouds:1500, mobileClouds:820, cloudShadow:512, mobileCloudShadow:512,
+    fx:1.0, mobileFx:.68, fauna:1.0, clouds:1500, mobileClouds:820, cloudShadow:512, mobileCloudShadow:512,
     water:[620,6], mobileWater:[260,3], waterDetail:1.0, mobileWaterDetail:.72 },
 ];
 
@@ -1584,9 +1591,12 @@ void main(){
     float starsIn=smoothstep(0.20,0.72,uNight);
     col+=seasonalStars(d)*starsIn;
 
-    // Same azimuth as the daylight sun, reflected above the horizon at night.
-    // This keeps the moon in the familiar visible part of the default view.
-    vec3 moonDir=normalize(vec3(uSunDir.x,max(abs(uSunDir.y),0.18),uSunDir.z));
+    // Keep the moon near the daylight sun's azimuth, but rotate it six degrees
+    // toward the left side of the valley's opening view.
+    const float moonC=0.994522, moonS=0.104528;
+    vec2 moonXZ=vec2(uSunDir.x*moonC+uSunDir.z*moonS,
+                     uSunDir.z*moonC-uSunDir.x*moonS);
+    vec3 moonDir=normalize(vec3(moonXZ.x,max(abs(uSunDir.y),0.18),moonXZ.y));
     float moonAngle=dot(d,moonDir);
     float moonDisc=smoothstep(0.99810,0.99915,moonAngle)*smoothstep(0.12,0.55,uNight);
     float moonHalo=pow(max(moonAngle,0.0),34.0)*uNight;
@@ -4924,7 +4934,9 @@ void main(){
   outColor=vec4(SAFE3(col),clamp(a,0.0,1.0));
 }`;
 
-const FAUNA_COUNT_MULTIPLIER=4, FAUNA_SIZE_MULTIPLIER=4;
+// Animals were intentionally enlarged for visibility; 2x is readable without
+// dominating the meadow. Ultra now spawns half the former 4x population.
+const FAUNA_COUNT_MULTIPLIER=2, FAUNA_SIZE_MULTIPLIER=2;
 const FAUNA_VS = ()=> /* glsl */`
 ${GL_UNI}
 in vec4 iP; in vec4 iQ;
@@ -6080,7 +6092,7 @@ function queryNumber(name, fallback, lo, hi){
   return Number.isFinite(value) ? clamp(value, lo, hi) : fallback;
 }
 const State = {
-  q: Math.round(queryNumber('q', IS_MOBILE?0:1, 0, 3)),
+  q: Math.round(queryNumber('q', IS_MOBILE?0:2, 0, 4)),
   density: queryNumber('d', IS_MOBILE?0.001:1.0, 0.001, 1.4),
   scale:   queryNumber('s', IS_MOBILE?0.75:1.0, 0.6, 1.5),
   exposure:1.0, bloom:1.0, paint:1.0,
@@ -6098,6 +6110,9 @@ function qualityFxScale(){
 function qualityCount(base, floor=0){
   if(base<=0) return 0;
   return Math.max(floor,Math.round(base*qualityFxScale()));
+}
+function qualityFloor(ultraLow, regular){
+  return State.q===0?ultraLow:regular;
 }
 function grassPercent(density){
   const pct=density*100;
@@ -6488,10 +6503,10 @@ function buildTargets(){
     {type:THREE.HalfFloatType, format:THREE.RGBAFormat, minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter, depthBuffer:false}));
 
   if(reflRT) reflRT.dispose();
-  // High uses a quarter-resolution reflection and Ultra half-resolution. Low
-  // and Medium never render this pass; phones reserve it for Ultra only.
-  const reflShift = State.q===3 ? 1 : 2;
-  const reflAllowed=State.q>=(IS_MOBILE?3:2);
+  // High uses a quarter-resolution reflection and Ultra half-resolution.
+  // Ultra Low through Medium skip it; phones reserve it for Ultra only.
+  const reflShift = State.q===4 ? 1 : 2;
+  const reflAllowed=State.q>=(IS_MOBILE?4:3);
   const reflW = !reflAllowed ? 2 : Math.max(2,W>>reflShift);
   const reflH = !reflAllowed ? 2 : Math.max(2,H>>reflShift);
   reflRT = new THREE.WebGLRenderTarget(reflW, reflH,
@@ -6575,7 +6590,8 @@ function clearParticlePool(ps){
 function initMotes(){
   clearParticlePool(motes);
   const r=rng(1717), origin=camera?camera.position:CFG.spawn;
-  const count=Math.min(motes.max,qualityCount(MOTE_N,IS_MOBILE?120:300));
+  const count=Math.min(motes.max,qualityCount(MOTE_N,
+    IS_MOBILE?qualityFloor(70,120):qualityFloor(160,300)));
   for(let i=0;i<count;i++){
     const a=r()*TAU, rr=Math.sqrt(r())*30;
     const x=origin.x+Math.cos(a)*rr, z=origin.z+Math.sin(a)*rr;
@@ -6641,7 +6657,8 @@ function initBirds(){
   const spawnYaw=-CFG.spawn.heading*DEG;
   const fx=-Math.sin(spawnYaw), fz=-Math.cos(spawnYaw);
   const rx=Math.cos(spawnYaw), rz=-Math.sin(spawnYaw);
-  const birdCount=Math.min(birdsP.max,qualityCount(34,IS_MOBILE?6:10));
+  const birdCount=Math.min(birdsP.max,qualityCount(34,
+    IS_MOBILE?qualityFloor(3,6):qualityFloor(5,10)));
   const nearCount=Math.max(3,Math.round(birdCount*.30));
   for(let i=0;i<birdCount;i++){
     // A small foreground group makes the detailed anatomy readable; the rest
@@ -6761,14 +6778,16 @@ function refreshWeatherFX(){
   const seed=((Math.floor(cx/18)*83492791)^(Math.floor(cz/18)*2971215073)^State.season*911)>>>0;
   const r=rng(seed);
   if(State.season===3){
-    const count=Math.min(weatherFx.max,qualityCount(1200*State.snow,IS_MOBILE?90:220));
+    const count=Math.min(weatherFx.max,qualityCount(1200*State.snow,
+      IS_MOBILE?qualityFloor(40,90):qualityFloor(80,220)));
     for(let i=0;i<count;i++){
       const a=r()*TAU, rr=Math.sqrt(r())*54, x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
       weatherFx.spawn({x,y:sampleHeight(x,z)+4+r()*30,z,vx:(r()-.5)*0.5,vy:-0.9-r()*1.0,
         vz:(r()-.5)*0.5,life:1e7,age:r(),size:0.055+r()*0.070,seed:r()*100,kind:1,op:0.72+r()*0.26});
     }
   } else {
-    const groundTarget=qualityCount(520,IS_MOBILE?70:150);
+    const groundTarget=qualityCount(520,
+      IS_MOBILE?qualityFloor(30,70):qualityFloor(60,150));
     let made=0,tries=0;
     while(made<groundTarget&&tries++<groundTarget*8){
       const a=r()*TAU, rr=Math.sqrt(r())*34, x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
@@ -6781,7 +6800,8 @@ function refreshWeatherFX(){
     if(State.season===2){
       const centerT=riverField(cx,cz).t;
       const centerI=riverPointIndexAtT(centerT)/(RIVER_PTS.length-1);
-      const riverLeaves=qualityCount(96,IS_MOBILE?12:28);
+      const riverLeaves=qualityCount(96,
+        IS_MOBILE?qualityFloor(5,12):qualityFloor(10,28));
       for(let i=0;i<riverLeaves;i++){
         const d=weatherFx.spawn({x:0,y:0,z:0,vx:0,vy:0,vz:0,life:1e7,age:r(),
           size:0.12+r()*0.10,seed:r()*100,kind:2,op:0.74+r()*0.24,
@@ -6844,7 +6864,9 @@ function clearFireworks(){
 function explodeFirework(rocket){
   const style=rocket.style, festival=rocket.festival>0.5;
   const counts=[0,190,158,174,160,250,232,260];
-  const count=qualityCount(counts[style],IS_MOBILE?28:72), golden=2.39996323, plane=Math.random()*TAU;
+  const count=qualityCount(counts[style],
+    IS_MOBILE?qualityFloor(12,28):qualityFloor(28,72));
+  const golden=2.39996323, plane=Math.random()*TAU;
   const bx=Math.cos(plane), bz=Math.sin(plane), px=-bz, pz=bx;
   const colorSeed=Math.random()*100, scale=festival?1.76:1.30;
   for(let i=0;i<count;i++){
@@ -6925,7 +6947,8 @@ function updateFireworks(dt){
   if(tAcc>=fireworkNext){
     const festival=State.season===1;
     queueFireworkSalvo(festival);
-    fireworkNext=tAcc+(festival
+    const qualityPace=State.q===0?1.55:1;
+    fireworkNext=tAcc+qualityPace*(festival
       ?(IS_MOBILE?2.00+Math.random()*.42:1.48+Math.random()*.38)
       :(IS_MOBILE?2.30+Math.random()*.48:1.82+Math.random()*.48));
   }
@@ -6940,7 +6963,7 @@ function updateFireworks(dt){
     if(d.kind<0.5){
       d.vy-=1.7*dt; d.x+=d.vx*dt; d.y+=d.vy*dt; d.z+=d.vz*dt;
       d.trailT+=dt;
-      if(d.trailT>(IS_MOBILE?0.10:0.065)){
+      if(d.trailT>(State.q===0?0.16:(IS_MOBILE?0.10:0.065))){
         d.trailT=0;
         fireworkFx.spawn({x:d.x,y:d.y-0.35,z:d.z,vx:-d.vx*0.05+(Math.random()-.5)*0.25,
           vy:-2.0-Math.random()*1.8,vz:-d.vz*0.05+(Math.random()-.5)*0.25,
@@ -6973,9 +6996,11 @@ function refreshSeasonFX(){
   const seed=((Math.floor(cx/24)*73856093)^(Math.floor(cz/24)*19349663)^7331)>>>0;
   const r=rng(seed);
   if(State.season===0 || State.season===1){
-    const butterflyTarget=State.season===1?qualityCount(92*State.flower,IS_MOBILE?6:16):0;
+    const butterflyTarget=State.season===1?qualityCount(92*State.flower,
+      IS_MOBILE?qualityFloor(2,6):qualityFloor(5,16)):0;
     const want=Math.min(seasonFx.max-butterflyTarget,
-      qualityCount((State.season===1?3200:2100)*State.flower,IS_MOBILE?180:480));
+      qualityCount((State.season===1?3200:2100)*State.flower,
+        IS_MOBILE?qualityFloor(70,180):qualityFloor(160,480)));
     let made=0, tries=0;
     while(made<want && tries++<want*7){
       const a=r()*TAU, rr=Math.sqrt(r())*68;
@@ -6995,8 +7020,10 @@ function refreshSeasonFX(){
       }
     }
   } else if(State.season===2){
-    const butterflies=qualityCount(85*State.foliage,IS_MOBILE?5:14);
-    const leaves=qualityCount(620*State.foliage,IS_MOBILE?55:160);
+    const butterflies=qualityCount(85*State.foliage,
+      IS_MOBILE?qualityFloor(2,5):qualityFloor(5,14));
+    const leaves=qualityCount(620*State.foliage,
+      IS_MOBILE?qualityFloor(20,55):qualityFloor(60,160));
     for(let i=0;i<butterflies;i++){
       const a=r()*TAU, rr=Math.sqrt(r())*36, x=cx+Math.cos(a)*rr, z=cz+Math.sin(a)*rr;
       seasonFx.spawn({x,y:sampleHeight(x,z)+0.8+r()*3.8,z,vx:(r()-.5)*1.2,vy:0,vz:(r()-.5)*1.2,
@@ -7063,7 +7090,9 @@ function faunaGroundPoint(r,cx,cz,minRadius,maxRadius){
   return null;
 }
 function spawnFaunaSpecies(r,species,count,minRadius,maxRadius,minSize,maxSize){
-  count=qualityCount(count*FAUNA_COUNT_MULTIPLIER,1);
+  // Fauna has its own predictable quality ladder rather than inheriting the
+  // general particle budget: every tier doubles the population below it.
+  count=Math.max(1,Math.round(count*FAUNA_COUNT_MULTIPLIER*QUALITY[State.q].fauna));
   for(let i=0;i<count;i++){
     const p=faunaGroundPoint(r,faunaFxCenter.x,faunaFxCenter.y,minRadius,maxRadius); if(!p) continue;
     const size=lerp(minSize,maxSize,r())*FAUNA_SIZE_MULTIPLIER, heading=r()*TAU;
@@ -7074,7 +7103,7 @@ function spawnFaunaSpecies(r,species,count,minRadius,maxRadius,minSize,maxSize){
 }
 function configureFaunaLod(){
   if(!faunaFx) return;
-  const far=[76,108,142,178][State.q]*(IS_MOBILE?.74:1);
+  const far=[54,76,108,142,178][State.q]*(IS_MOBILE?.74:1);
   faunaFx.lodNear=far*.50; faunaFx.lodFar=far; faunaFx.lodMinKeep=IS_MOBILE?.14:.20;
 }
 function refreshFaunaFX(){
@@ -7254,7 +7283,7 @@ function shadowPass(){
   // The sun is fixed and most casters are static.  Reuse the map while its
   // texel-snapped view is unchanged, refreshing occasionally for swaying trees.
   // The moving train remains fully dynamic.
-  const maxAge = State.q <= 1 ? 0.75 : 0.40;
+  const maxAge = State.q <= 2 ? 0.75 : 0.40;
   if(cx === shadowCacheX && cz === shadowCacheZ && !train.active && tAcc-shadowCacheT < maxAge) return false;
   shadowCacheX=cx; shadowCacheZ=cz; shadowCacheT=tAcc;
   // trees cull against the map's own centre, not the camera's
@@ -7337,7 +7366,9 @@ function windPass(){
 }
 
 function postChain(){
-  if(QS.get('post')==='0'){
+  // Ultra Low resolves the scene with one tone-map pass. Bloom, watercolor
+  // softening and chromatic treatment are intentionally reserved for Low+.
+  if(QS.get('post')==='0'||State.q===0){
     if(!rawMat) rawMat = postMat('uniform sampler2D uSrc;\nin vec2 vUv;\nout vec4 o;\nvoid main(){ vec3 c=texture(uSrc,vUv).rgb; c=c/(c+1.0); o=vec4(pow(c,vec3(1.0/2.2)),1.0); }',
       { uSrc:{value:null} });
     rawMat.uniforms.uSrc.value = sceneRT.texture;
@@ -7364,17 +7395,19 @@ function postChain(){
   softDownMat.uniforms.uTexel.value.set(1/softRT[0].width, 1/softRT[0].height);
   blit(softDownMat, softRT[0]);
   blurMats[0].uniforms.uSrc.value = softRT[0].texture; blit(blurMats[0], softRT[1]);
-  // Low/Medium already downsample the source to 1/8 resolution; one separable
-  // blur leg is sufficient there and saves a full-screen pass every frame.
+  // Ultra Low through Medium already downsample the source to 1/8 resolution;
+  // one separable blur leg is sufficient and saves a full-screen pass.
   let softTex = softRT[1].texture;
-  if(State.q >= 2){
+  if(State.q >= 3){
     blurMats[1].uniforms.uSrc.value = softRT[1].texture; blit(blurMats[1], softRT[0]);
     softTex = softRT[0].texture;
   }
 
   const c = composite.uniforms;
   c.uScene.value = sceneRT.texture;
-  c.uBloom.value = (upRTs.length ? upRTs[0].texture : bloomRTs[0].texture);
+  // A one-level Ultra Low bloom has no upsample pass, so its source is the
+  // bright-pass target itself rather than the unwritten upRT placeholder.
+  c.uBloom.value = (bloomRTs.length>1 ? upRTs[0].texture : bloomRTs[0].texture);
   c.uSoft.value  = softTex;
   c.uTime.value  = G.uTime.value;
   c.uExposure.value = State.exposure*lerp(1.0,0.55,G.uNight.value);
@@ -7417,7 +7450,7 @@ function riverOnScreen(fr, cp){
   for(let i=0;i<RIVER_PROBES.length;i++){
     const s = RIVER_PROBES[i];
     if(!fr.intersectsSphere(s)) continue;
-    const maxDist = State.q===3 ? 320 : 240;
+    const maxDist = State.q===4 ? 320 : 240;
     if(cp && s.center.distanceToSquared(cp) > maxDist*maxDist) continue;
     return true;
   }
@@ -7476,7 +7509,7 @@ function frame(now){
 
   cloudSortT -= dt;
   if(cloudSortT <= 0){
-    cloudSortT = [1.10,.72,.50,.40][State.q]*(IS_MOBILE?1.25:1);
+    cloudSortT = [1.60,1.10,.72,.50,.40][State.q]*(IS_MOBILE?1.25:1);
     sortClouds();
   }
 
@@ -7490,23 +7523,30 @@ function frame(now){
       creeps. They are interleaved, and the fallback tiers also leave three
       frames idle between cycles; the shadow pass can reuse its cache as well. */
   frameNo++;
-  // Low (and mobile Medium) spreads the three background passes over six
-  // frames. Their fields move slowly enough that the lower cadence is invisible.
-  const auxStride=(State.q===0||(IS_MOBILE&&State.q===1))?6:3;
+  // Ultra Low spreads the three background passes over nine frames; Low (and
+  // mobile Medium) use six. These fields move slowly enough for that cadence.
+  const auxStride=State.q===0?9:(State.q===1||(IS_MOBILE&&State.q===2)?6:3);
   const phase = frameNo % auxStride;
   if(phase === 0 || !windWarm){ windWarm = true;
     G.uWindOrigin.value.set(camera.position.x, camera.position.z);
     windPass();
   }
-  if(phase === 1 || !shadowWarm){ shadowWarm = true; shadowPass(); }
+  if(State.q===0){
+    // Ultra Low uses an always-lit depth map and avoids rendering the valley a
+    // second time for shadows. Clear once whenever the target is recreated.
+    if(!shadowWarm){
+      renderer.setRenderTarget(shadowRT); renderer.clear(true,true,false);
+      renderer.setRenderTarget(null); shadowWarm=true;
+    }
+  } else if(phase === 1 || !shadowWarm){ shadowWarm = true; shadowPass(); }
   if(phase === 2 || !cloudWarm){ cloudWarm = true; cloudShadowPass(); }
   // the reflection is only worth anything when water is actually on screen
   const wantRefl = riverOnScreen(_frustum, camera.position);
   const frozenRiver = State.season===3;
   // High refreshes the costly second scene render every six frames; Ultra every
   // three. The previous reflection remains valid between refreshes.
-  const reflFrame = frameNo % (State.q===3 ? 3 : 6) === 0;
-  const reflAllowed=State.q>=(IS_MOBILE?3:2);
+  const reflFrame = frameNo % (State.q===4 ? 3 : 6) === 0;
+  const reflAllowed=State.q>=(IS_MOBILE?4:3);
   if(!frozenRiver && reflAllowed && reflFrame && wantRefl) reflectionPass();
   else if(frozenRiver || !reflAllowed || !wantRefl) waterMesh.material.uniforms.uReflectOn.value = 0;
 
@@ -7574,7 +7614,7 @@ function scheduleTargetRebuild(delay=180){
   targetRebuildT=setTimeout(()=>{ targetRebuildT=null; buildTargets(); }, delay);
 }
 function setQuality(q, manual=true){
-  q = clamp(q|0, 0, 3);
+  q = clamp(q|0, 0, 4);
   const resetAdapt = manual && State.adapt !== 1;
   if(manual){ State.autoQ = false; State.adapt = 1; autoLow=0; autoHigh=0; }
   if(q === State.q){
@@ -7591,7 +7631,7 @@ function setQuality(q, manual=true){
   initMotes(); initBirds();
   refreshSeasonFX(); refreshFaunaFX(); refreshWeatherFX();
   clearFireworks(); fireworksWereActive=false; cloudSortT=0;
-  toast(['low','medium','high','ultra'][q]);
+  toast(['ultra low','low','medium','high','ultra'][q]);
 }
 function rebuildGrass(){
   grass.build(QUALITY[State.q]);
@@ -7892,7 +7932,7 @@ function bindInput(){
   const cv = renderer.domElement;
   addEventListener('keydown', e=>{
     walker.keys[e.code]=true;
-    if(e.code>='Digit1' && e.code<='Digit4') setQuality(+e.code.slice(5)-1);
+    if(e.code>='Digit1' && e.code<='Digit5') setQuality(+e.code.slice(5)-1);
     if(e.code==='KeyH'&&!e.repeat) toggleSettings();
     if(e.code==='KeyC'&&!e.repeat) setCinematicMode((walker.cinematic+1)%3);
     if(e.code==='KeyR'&&!e.repeat) toggleSceneRecording();
