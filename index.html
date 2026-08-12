@@ -985,7 +985,12 @@ function valleyProfile(d, wobble, w){
 
 /* ── the hero landmarks that the terrain must accommodate ── */
 const BRIDGE = { x:CFG.bridge.x, z:CFG.bridge.z };
-const VILLAGE = { x:-452, z:186, r:150 };
+const VILLAGE = { x:-452, z:186, r:150, laneN:44, seed:8080 };
+// The railway through the viaduct separates the two settlements. This smaller
+// neighbour mirrors the original village's signed offset across the track while
+// staying clear of the opening knoll and the river corridor.
+const SECOND_VILLAGE = { x:4, z:299, r:112, laneN:30, seed:18181 };
+const VILLAGES = [VILLAGE, SECOND_VILLAGE];
 const SPAWN_KNOLL = { x:CFG.spawn.x-6, z:CFG.spawn.z-4, r:78, h:8.4 };
 
 function baseHills(x,z){
@@ -1024,12 +1029,14 @@ function terrainAt(x,z){
   const dk = Math.hypot(x-SPAWN_KNOLL.x, z-SPAWN_KNOLL.z);
   h += SPAWN_KNOLL.h * Math.pow(Math.max(0, 1 - dk/SPAWN_KNOLL.r), 2.0);
 
-  // village terrace: a gentle shelf on the far bank
-  const dv = Math.hypot(x-VILLAGE.x, z-VILLAGE.z);
-  if(dv < VILLAGE.r*1.5){
-    const w = smootherstep(VILLAGE.r*1.5, VILLAGE.r*0.35, dv);
-    const target = wl + 16 + (z-VILLAGE.z)*0.075 + noise2(x*0.01,z*0.01)*2.2;
-    h = lerp(h, target, w*0.72);
+  // village terraces: gentle shelves on their respective sides of the railway
+  for(const village of VILLAGES){
+    const dv = Math.hypot(x-village.x, z-village.z);
+    if(dv >= village.r*1.5) continue;
+    const w = smootherstep(village.r*1.5, village.r*0.35, dv);
+    const target = wl + (village===VILLAGE?16:14)
+      + (z-village.z)*0.075 + noise2(x*0.01,z*0.01)*2.2;
+    h = lerp(h, target, w*(village===VILLAGE?0.72:0.66));
   }
   // (the railway's own grading shapes the approaches; see trackAdjust —
   //  nothing is stamped under the bridge itself)
@@ -1078,8 +1085,10 @@ function bakeSplat(){
       let mask = 1;
       mask *= 1 - smoothstep(0.60, 0.88, slope);       // cliffs only
       mask *= smoothstep(-0.55, 0.75, h - wl);         // right down to the water
-      const dv = Math.hypot(wx-VILLAGE.x, wz-VILLAGE.z);
-      mask *= lerp(1, 0.42, smoothstep(VILLAGE.r*0.70, VILLAGE.r*0.16, dv));
+      for(const village of VILLAGES){
+        const dv = Math.hypot(wx-village.x, wz-village.z);
+        mask *= lerp(1, 0.42, smoothstep(village.r*0.70, village.r*0.16, dv));
+      }
       const dp = PATH_DF(wx,wz).d;
       mask *= smoothstep(0.7, 2.4, dp);
       if(TRACK){ const tf = TRACK.field(wx,wz); mask *= smoothstep(1.8, 4.6, tf.d); }
@@ -1272,8 +1281,11 @@ void main(){
   gMid = mix(gMid, ${C.gDry}*0.72, dd*0.42);
 
   // --- hedgerowed field parcels on the far bank (the Ghibli quilt) --------
-  float farm = smoothstep(230.0, 120.0, distance(P.xz, vec2(${VILLAGE.x.toFixed(1)},${VILLAGE.z.toFixed(1)})))
-             * smoothstep(0.30, 0.10, slope);
+  float farmA = smoothstep(230.0, 120.0, distance(P.xz,
+    vec2(${VILLAGE.x.toFixed(1)},${VILLAGE.z.toFixed(1)})));
+  float farmB = smoothstep(185.0, 92.0, distance(P.xz,
+    vec2(${SECOND_VILLAGE.x.toFixed(1)},${SECOND_VILLAGE.z.toFixed(1)})));
+  float farm = max(farmA,farmB) * smoothstep(0.30, 0.10, slope);
   if(farm > 0.003){
     vec2 fr = mat2(0.87,-0.49,0.49,0.87) * P.xz * 0.0165;
     vec2 wf = vec2(pn2(fr*0.62), pn2(fr*0.62+7.0))*0.42;
@@ -3508,7 +3520,7 @@ function scatterTrees(){
       const rf = riverField(x,z);
       const h = sampleHeight(x,z);
       if(h < waterLevel(rf.t)+2.6) continue;
-      if(Math.hypot(x-VILLAGE.x, z-VILLAGE.z) < VILLAGE.r*0.75) continue;
+      if(VILLAGES.some(v=>Math.hypot(x-v.x,z-v.z)<v.r*0.75)) continue;
       if(Math.hypot(x-BRIDGE.x, z-BRIDGE.z) < 60) continue;
       if(pathDistance(x,z) < 6) continue;
       const d = Math.hypot(x-cx, z-cz);
@@ -3518,17 +3530,21 @@ function scatterTrees(){
       add(kind, detailFor(d), x, z, 0.62+r()*0.72, r()*TAU, r(), r()*10);
     }
   }
-  // hedgerow / field-boundary trees near the village
-  for(let i=0;i<130;i++){
-    const a=r()*TAU, rr=60+Math.pow(r(),0.7)*260;
-    const x=VILLAGE.x+Math.cos(a)*rr, z=VILLAGE.z+Math.sin(a)*rr;
-    const nrm=sampleNormal(x,z,4);
-    if(nrm.y<0.80) continue;
-    const rf=riverField(x,z);
-    if(sampleHeight(x,z) < waterLevel(rf.t)+3) continue;
-    const d=Math.hypot(x-cx,z-cz);
-    const kindRoll=r(), kind=kindRoll<0.30?'poplar':(kindRoll<0.52?'maple':'broadleaf');
-    add(kind, detailFor(d), x, z, 0.55+r()*0.5, r()*TAU, r(), r()*10);
+  // hedgerow / field-boundary trees around both villages
+  for(const village of VILLAGES){
+    const treeN=village===VILLAGE?130:72;
+    for(let i=0;i<treeN;i++){
+      const a=r()*TAU, rr=village.r*.40+Math.pow(r(),0.7)*village.r*1.72;
+      const x=village.x+Math.cos(a)*rr, z=village.z+Math.sin(a)*rr;
+      const nrm=sampleNormal(x,z,4);
+      if(nrm.y<0.80) continue;
+      const rf=riverField(x,z);
+      if(sampleHeight(x,z) < waterLevel(rf.t)+3) continue;
+      if(TRACK&&TRACK.field(x,z).d<7) continue;
+      const d=Math.hypot(x-cx,z-cz);
+      const kindRoll=r(), kind=kindRoll<0.30?'poplar':(kindRoll<0.52?'maple':'broadleaf');
+      add(kind, detailFor(d), x, z, 0.55+r()*0.5, r()*TAU, r(), r()*10);
+    }
   }
   return groups;
 }
@@ -4243,47 +4259,85 @@ function pushSolid(x, z, hx, hz, yaw){
 
 /*───────────────────────────── §9c  THE VILLAGE ────────────────────────────*/
 function buildVillage(){
-  const M = PB(); const r = rng(8080);
+  const M=PB(), D=PB();
+  const detailedHouses=!IS_MOBILE;
   const smokers = [];
   const roofCols=[LC('roofA'), LC('roofB'), LC('roofSlate'), LC('thatch')];
   const wallCols=[LC('wallA'), LC('wallB'), tint(LC('wallA'),0.94)];
   const houses=[];
 
-  // a lane winding up the slope, houses hung off it
-  const laneN = 44;
-  for(let i=0;i<laneN;i++){
-    const u=i/(laneN-1);
-    const a = -0.9 + u*3.4;
-    const rr = 34 + u*118;
-    const lx = VILLAGE.x + Math.cos(a)*rr*0.85;
-    const lz = VILLAGE.z + Math.sin(a)*rr*0.62 - u*38;
-    for(let k=0;k<2;k++){
-      if(r()<0.24) continue;
-      const off = (k?1:-1)*(9 + r()*8);
-      const x = lx + Math.cos(a+1.57)*off, z = lz + Math.sin(a+1.57)*off;
-      const rf = riverField(x,z);
-      const gy = sampleHeight(x,z);
-      if(gy < waterLevel(rf.t)+3.0) continue;
-      houses.push({x,z,y:gy, yaw:a+1.57+(r()-0.5)*0.5, s:0.85+r()*0.5, seed:r()});
+  // Each settlement follows a winding lane. The second is deliberately more
+  // compact, and both reject the permanent way so no house clips the rails.
+  for(const village of VILLAGES){
+    const vr=rng(village.seed), laneN=IS_MOBILE?Math.ceil(village.laneN*.62):village.laneN;
+    for(let i=0;i<laneN;i++){
+      const u=i/(laneN-1);
+      const a = -0.9 + u*3.4 + (village===SECOND_VILLAGE ? .34 : 0);
+      const rr = village.r*(.23 + u*.79);
+      const lx = village.x + Math.cos(a)*rr*.85;
+      const lz = village.z + Math.sin(a)*rr*.62 - u*village.r*.25;
+      for(let k=0;k<2;k++){
+        if(vr()<(village===SECOND_VILLAGE ? .32 : .24)) continue;
+        const off=(k?1:-1)*(8+vr()*7)*(village===SECOND_VILLAGE ? .90 : 1);
+        const x=lx+Math.cos(a+1.57)*off, z=lz+Math.sin(a+1.57)*off;
+        const rf=riverField(x,z), gy=sampleHeight(x,z);
+        if(gy<waterLevel(rf.t)+3.0) continue;
+        if(TRACK&&TRACK.field(x,z).d<12) continue;
+        if(Math.hypot(x-CFG.spawn.x,z-CFG.spawn.z)<35) continue;
+        houses.push({x,z,y:gy,yaw:a+1.57+(vr()-.5)*.5,
+          s:(.82+vr()*.48)*(village===SECOND_VILLAGE ? .92 : 1),seed:vr(),village});
+      }
     }
   }
   for(const h of houses){
+    const r=rng(((h.seed*0xffffffff)>>>0)^h.village.seed);
     const w = 3.0*h.s + r()*1.2, d = 4.0*h.s + r()*1.6, ht = 2.5*h.s + r()*1.3;
     const wc = wallCols[(r()*wallCols.length)|0];
     const rcI = r()<0.55?0 : (r()<0.5?1:(r()<0.6?2:3));
     const rc = tint(roofCols[rcI], 0.88+r()*0.28);
     const y0 = h.y - 0.5;
     pushSolid(h.x, h.z, w/2, d/2, h.yaw);
+    // A visible stone plinth keeps the walls out of wet ground and gives every
+    // cottage a grounded silhouette on the sloping terrace.
+    pbox(M,h.x,y0+.24*h.s,h.z,w/2+.12*h.s,.30*h.s,d/2+.12*h.s,h.yaw,
+      tint(LC('mortar'),.72+r()*.16),0);
     pbox(M, h.x, y0+ht/2, h.z, w/2, ht/2, d/2, h.yaw, tint(wc, 0.92+r()*0.18), 0);
-    proof(M, h.x, y0+ht, h.z, w/2*1.14, d/2*1.16, 1.5*h.s + r()*0.8, h.yaw, rc, 0);
+    const roofH=1.5*h.s+r()*.8, roofHX=w/2*1.14, roofHZ=d/2*1.16;
+    proof(M,h.x,y0+ht,h.z,roofHX,roofHZ,roofH,h.yaw,rc,0);
+    // Eave boards and a ridge cap sharpen the roof construction from afar.
+    if(detailedHouses){
+      for(const side of [-1,1]){
+        const [ex,ez]=rotY(0,side*roofHZ,Math.cos(h.yaw),Math.sin(h.yaw));
+        pbox(D,h.x+ex,y0+ht+.02*h.s,h.z+ez,roofHX,.08*h.s,.065*h.s,h.yaw,
+          tint(LC('timber'),.72),0);
+      }
+      pbox(D,h.x,y0+ht+roofH+.04*h.s,h.z,roofHX+.05*h.s,.07*h.s,.10*h.s,h.yaw,
+        tint(rc,.68),0);
+    }
     // chimney
     const cxo=(r()-0.5)*w*0.5;
     const [chx,chz]=rotY(cxo, d*0.22, Math.cos(h.yaw), Math.sin(h.yaw));
     const chY = y0+ht+1.5*h.s+0.7;
     pbox(M, h.x+chx, chY, h.z+chz, 0.22*h.s, 0.9*h.s, 0.22*h.s, h.yaw, tint(rc,0.75), 0);
     if(r()<0.55) smokers.push({x:h.x+chx, y:chY+0.9*h.s, z:h.z+chz, rate:0.5+r()*0.8});
+    // Framed front door, lintel, threshold and a small metal latch.
+    const doorSide=h.seed<.5?1:-1, doorAlong=(r()-.5)*w*.34;
+    const [dx,dz]=rotY(doorAlong,doorSide*(d/2+.075),Math.cos(h.yaw),Math.sin(h.yaw));
+    const doorY=y0+.92*h.s;
+    pbox(M,h.x+dx,doorY,h.z+dz,.43*h.s,.86*h.s,.075,h.yaw,tint(LC('timber'),.56),3);
+    if(detailedHouses){
+      for(const sx of [-1,1]){
+        const [fx,fz]=rotY(doorAlong+sx*.48*h.s,doorSide*(d/2+.105),Math.cos(h.yaw),Math.sin(h.yaw));
+        pbox(D,h.x+fx,doorY,h.z+fz,.055*h.s,.93*h.s,.045,h.yaw,tint(LC('timber'),.90),0);
+      }
+      pbox(D,h.x+dx,doorY+.91*h.s,h.z+dz,.52*h.s,.055*h.s,.11,h.yaw,tint(LC('timber'),.90),0);
+      const [kx,kz]=rotY(doorAlong+.25*h.s,doorSide*(d/2+.17),Math.cos(h.yaw),Math.sin(h.yaw));
+      pbox(D,h.x+kx,doorY,h.z+kz,.045*h.s,.045*h.s,.035,h.yaw,LC('windowGlow'),1);
+    }
+    const [sx,sz]=rotY(doorAlong,doorSide*(d/2+.42),Math.cos(h.yaw),Math.sin(h.yaw));
+    pbox(M,h.x+sx,y0+.09*h.s,h.z+sz,.60*h.s,.09*h.s,.34*h.s,h.yaw,tint(LC('mortar'),.72),0);
     // windows, warm at golden hour
-    const nw = 2 + (r()*3|0);
+    const nw = detailedHouses?2+(r()*3|0):1+(r()*2|0);
     for(let i=0;i<nw;i++){
       const side = r()<0.5?1:-1;
       const along = (r()-0.5)*w*0.7;
@@ -4292,6 +4346,14 @@ function buildVillage(){
       const on = r()<0.5;
       pbox(M, h.x+wx, lvl, h.z+wz, 0.30*h.s, 0.38*h.s, 0.05, h.yaw,
            on?LC('windowGlow'):tint(LC('timber'),0.6), on?2:3);
+      // Timber mullions divide each pane and stay visible even when unlit.
+      if(detailedHouses){
+        const frame=tint(LC('timber'),.82);
+        pbox(D,h.x+wx,lvl,h.z+wz,.035*h.s,.38*h.s,.075,h.yaw,frame,0);
+        pbox(D,h.x+wx,lvl,h.z+wz,.30*h.s,.035*h.s,.078,h.yaw,frame,0);
+        if(r()<.42) pbox(D,h.x+wx,lvl-.49*h.s,h.z+wz,.36*h.s,.07*h.s,.11,h.yaw,
+          tint(LC('timber'),.70),0);
+      }
     }
     // timber framing on a few of them
     if(r()<0.4){
@@ -4300,17 +4362,68 @@ function buildVillage(){
         const [tx,tz]=rotY(along, d/2+0.04, Math.cos(h.yaw), Math.sin(h.yaw));
         pbox(M, h.x+tx, y0+ht/2, h.z+tz, 0.07*h.s, ht/2*0.94, 0.04, h.yaw, LC('timber'), 0);
       }
+      const [hx0,hz0]=rotY(0,d/2+.045,Math.cos(h.yaw),Math.sin(h.yaw));
+      for(const yy of [.30,.68]) pbox(M,h.x+hx0,y0+ht*yy,h.z+hz0,w/2*.96,.055*h.s,.045,
+        h.yaw,LC('timber'),0);
+    }
+    // Occasional dormer breaks up the long roof plane without adding a new
+    // material or draw call.
+    if(detailedHouses&&r()<.27&&h.s>.92){
+      const dormSide=r()<.5?1:-1, localZ=dormSide*roofHZ*.42;
+      const surfaceY=y0+ht+roofH*(1-Math.abs(localZ)/roofHZ);
+      const [qx,qz]=rotY((r()-.5)*w*.30,localZ,Math.cos(h.yaw),Math.sin(h.yaw));
+      pbox(D,h.x+qx,surfaceY+.34*h.s,h.z+qz,.48*h.s,.36*h.s,.42*h.s,h.yaw,
+        tint(wc,.96),0);
+      proof(D,h.x+qx,surfaceY+.70*h.s,h.z+qz,.56*h.s,.48*h.s,.34*h.s,h.yaw,rc,0);
     }
   }
   // the bell tower: the village's vertical accent
   {
     const x=VILLAGE.x+22, z=VILLAGE.z-16, y=sampleHeight(x,z)-0.5;
-    pushSolid(x, z, 2.1, 2.1, 0.3);
-    pbox(M, x, y+7, z, 2.1, 7, 2.1, 0.3, LC('wallA'), 0);
-    pbox(M, x, y+14.4, z, 2.5, 0.4, 2.5, 0.3, tint(LC('wallB'),0.9), 0);
-    proof(M, x, y+14.8, z, 2.3, 2.3, 3.4, 0.3, LC('roofSlate'), 0);
-    pbox(M, x, y+12.3, z+2.12, 0.62, 0.9, 0.06, 0.3, tint(LC('timber'),0.5), 3);
+    const yaw=.3, ca=Math.cos(yaw), sa=Math.sin(yaw);
+    pushSolid(x,z,2.1,2.1,yaw);
+    pbox(M,x,y+7,z,2.1,7,2.1,yaw,LC('wallA'),0);
+    // Dressed corner quoins, string courses and four open belfry arches make
+    // the landmark read as masonry rather than one tall box.
+    pbox(M,x,y+14.4,z,2.5,.4,2.5,yaw,tint(LC('wallB'),.9),0);
+    proof(M,x,y+14.8,z,2.3,2.3,3.4,yaw,LC('roofSlate'),0);
+    const [frontX,frontZ]=rotY(0,2.12,ca,sa);
+    pbox(M,x+frontX,y+12.3,z+frontZ,.62,.9,.06,yaw,tint(LC('timber'),.5),3);
+    if(detailedHouses){
+      for(const ax of [-1,1]) for(const az of [-1,1]){
+        const [qx,qz]=rotY(ax*1.94,az*1.94,ca,sa);
+        pbox(D,x+qx,y+7,z+qz,.18,6.9,.18,yaw,tint(LC('mortar'),1.08),0);
+      }
+      for(const yy of [4.2,9.4]) pbox(D,x,y+yy,z,2.22,.14,2.22,yaw,tint(LC('mortar'),.92),0);
+      for(const side of [-1,1]){
+        let [qx,qz]=rotY(0,side*2.12,ca,sa);
+        pbox(D,x+qx,y+12.3,z+qz,.62,.9,.06,yaw,tint(LC('timber'),.5),3);
+        [qx,qz]=rotY(side*2.12,0,ca,sa);
+        pbox(D,x+qx,y+12.3,z+qz,.62,.9,.06,yaw+Math.PI/2,tint(LC('timber'),.5),3);
+      }
+      // Clock face and a simple iron finial/cross at the roof peak.
+      const [cx0,cz0]=rotY(0,2.18,ca,sa);
+      pbox(D,x+cx0,y+9.2,z+cz0,.66,.66,.055,yaw,tint(LC('wallB'),1.14),0);
+      pbox(D,x+cx0,y+9.2,z+cz0,.045,.48,.075,yaw,tint(LC('timber'),.48),1);
+      pbox(D,x+cx0,y+9.2,z+cz0,.38,.045,.078,yaw,tint(LC('timber'),.48),1);
+      pbox(D,x,y+18.8,z,.06,.78,.06,yaw,tint(LC('roofSlate'),.55),1);
+      pbox(D,x,y+19.0,z,.38,.055,.055,yaw,tint(LC('roofSlate'),.55),1);
+    }
     smokers.push(null);
+  }
+  // A roofed communal well gives the smaller village a recognizable centre.
+  {
+    const x=SECOND_VILLAGE.x-8,z=SECOND_VILLAGE.z+5,y=sampleHeight(x,z)-.15,yaw=-.25;
+    pushSolid(x,z,1.45,1.45,yaw);
+    pcyl(M,[x,y,z],[x,y+.72,z],1.32,1.32,12,tint(LC('mortar'),.82),0,true,true);
+    for(const side of [-1,1]){
+      const [px,pz]=rotY(side*1.18,0,Math.cos(yaw),Math.sin(yaw));
+      pbox(M,x+px,y+2.0,z+pz,.10,1.38,.10,yaw,LC('timber'),0);
+    }
+    proof(M,x,y+3.25,z,1.65,1.25,.68,yaw,LC('roofA'),0);
+    const [ax0,az0]=rotY(-.92,0,Math.cos(yaw),Math.sin(yaw));
+    const [ax1,az1]=rotY(.92,0,Math.cos(yaw),Math.sin(yaw));
+    pcyl(M,[x+ax0,y+1.45,z+az0],[x+ax1,y+1.45,z+az1],.08,.08,8,LC('timber'),0,true,true);
   }
   // the watermill on the near bank
   const mill = (()=>{
@@ -4328,7 +4441,8 @@ function buildVillage(){
     pbox(M, x, y+2.6, z, 3.1, 0.9, 3.9, yaw, tint(LC('timber'),0.9), 0);
     return { x, y:y+2.4, z, yaw, r:2.6, tx, tz };
   })();
-  return { geom:finishPainted(M), smokers:smokers.filter(Boolean), mill };
+  return { geom:finishPainted(M), detailGeom:D.pos.length?finishPainted(D):null,
+    smokers:smokers.filter(Boolean), mill, houseCount:houses.length };
 }
 
 /*──────────────── the walkable world: ground, deck, parapets ───────────────*/
@@ -6124,7 +6238,7 @@ let composite, brightMat, downMats=[], upMats=[], blurMats=[], windMat, windView
 const audio = new Audio();
 let walker, grass, train, smoke, motes, birdsP, seasonFx, faunaFx, weatherFx, fireworkFx, planesP, cloudObj, skyMesh, waterMesh, terrainMesh;
 let trees=[], ridges=[], reflectSet=[];
-let millWheel=null, villageSmokers=[], proxyTerrain=null, puffRT=null;
+let millWheel=null, villageDetailMesh=null, villageSmokers=[], proxyTerrain=null, puffRT=null;
 let cloudShRT=null, cloudShMat=null, lifeGroup=null;
 let shadowCacheX=Infinity, shadowCacheZ=Infinity, shadowCacheT=-Infinity;
 
@@ -6310,6 +6424,13 @@ async function boot(){
   vMesh.frustumCulled=true; vMesh.renderOrder=2;
   vMesh.userData.depth = DSM(PAINTED_VS(), U(), {side:THREE.DoubleSide});
   scene.add(vMesh);
+  if(vil.detailGeom){
+    villageDetailMesh=new THREE.Mesh(vil.detailGeom,paintedMat);
+    villageDetailMesh.frustumCulled=true; villageDetailMesh.renderOrder=2;
+    villageDetailMesh.userData.depth=vMesh.userData.depth;
+    villageDetailMesh.visible=!IS_MOBILE&&State.q>0;
+    scene.add(villageDetailMesh);
+  }
   millWheel = new THREE.Mesh(buildMillWheel(vil.mill), paintedMat);
   millWheel.position.set(vil.mill.x, vil.mill.y, vil.mill.z);
   millWheel.rotation.y = vil.mill.yaw;
@@ -6413,7 +6534,7 @@ async function boot(){
     window.__dbg = { hMin:mn, hMax:mx, spawnH:sh, eye:sh+CFG.eyeHeight,
       water:BR.water, deck:BR.deck, sun:[SUN.x,SUN.y,SUN.z],
       brAx:BR.ax, hType: hasFloatLinear?'float':'half', trainCars:train.cars.length,
-      mobile:IS_MOBILE, grassDensity:State.density,
+      mobile:IS_MOBILE, grassDensity:State.density, villages:VILLAGES.length, houses:vil.houseCount,
       waterTriangles:waterMesh.geometry.index.count/3 };
     console.log('DBG '+JSON.stringify(window.__dbg));
   }
@@ -6915,7 +7036,9 @@ function explodeFirework(rocket){
 }
 function launchFirework(festival=false, lateralOffset=0, heightBias=0){
   const spreadX=festival?116:72, spreadZ=festival?82:54;
-  const x=VILLAGE.x+(Math.random()-.5)*spreadX+lateralOffset, z=VILLAGE.z+(Math.random()-.5)*spreadZ;
+  const village=Math.random()<.32?SECOND_VILLAGE:VILLAGE;
+  const x=village.x+(Math.random()-.5)*spreadX+lateralOffset;
+  const z=village.z+(Math.random()-.5)*spreadZ;
   const y=sampleHeight(x,z)+2.0, style=1+(fireworkStyle++%(festival?7:4));
   fireworkFx.spawn({x,y,z,vx:(Math.random()-.5)*(festival?2.4:1.8),
     vy:(festival?45:36)+heightBias+Math.random()*(festival?8.5:7.0),vz:(Math.random()-.5)*(festival?2.4:1.8),
@@ -7622,6 +7745,7 @@ function setQuality(q, manual=true){
     return;
   }
   State.q = q;
+  if(villageDetailMesh) villageDetailMesh.visible=!IS_MOBILE&&q>0;
   configureFaunaLod();
   for(const b of document.querySelectorAll('#qPreset button'))
     b.classList.toggle('on', +b.dataset.q === q);
