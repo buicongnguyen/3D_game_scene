@@ -67,24 +67,42 @@
   #mobileBar button.on{background:rgba(143,190,168,.38);border-color:rgba(143,190,168,.64)}
   #mRecord.recording{background:rgba(154,48,48,.52);border-color:rgba(255,142,126,.72)}
 
-  /* Compact analog movement pad; drag the scene itself with the other thumb to look. */
-  #mobileMove{display:none}
-  html.mobile-ui #mobileMove{position:fixed;display:grid;place-items:center;z-index:28;
-    left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(14px + env(safe-area-inset-bottom,0px));
-    width:98px;height:98px;padding:0;border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;
-    appearance:none;color:var(--cream);font-family:inherit;
-    border:1px solid rgba(246,236,216,.30);background:
-      radial-gradient(circle at 50% 38%,rgba(255,255,255,.10),transparent 58%),
-      rgba(20,27,38,.48);box-shadow:0 5px 18px rgba(8,12,20,.30),inset 0 0 0 5px rgba(246,236,216,.035);
-    backdrop-filter:blur(8px);transition:opacity .2s,border-color .2s}
-  html.mobile-ui #mobileMove[data-engaged="true"]{border-color:rgba(143,190,168,.78)}
-  html.mobile-ui #mobileMove.disabled{opacity:.18;pointer-events:none}
-  #mobileMoveKnob{width:42px;height:42px;border-radius:50%;pointer-events:none;
-    transform:translate(var(--move-x,0px),var(--move-y,0px));
-    border:1px solid rgba(255,255,255,.38);background:linear-gradient(155deg,#9BCAB4,#47766F);
-    box-shadow:0 3px 8px rgba(8,15,20,.42),inset 0 1px 1px rgba(255,255,255,.25)}
-  #mobileMoveHint{position:absolute;bottom:5px;pointer-events:none;font-size:7px;letter-spacing:.18em;
-    text-transform:uppercase;opacity:.62;text-shadow:0 1px 2px #111827}
+  /* Explicit twin D-pads keep movement and camera direction independent. */
+  .mobilePad,#mobileFly{display:none}
+  html.mobile-ui .mobilePad,html.desktop-controls .mobilePad{position:fixed;display:block;z-index:28;
+    bottom:calc(14px + env(safe-area-inset-bottom,0px));width:116px;height:116px;
+    border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;
+    color:var(--cream);font-family:inherit;border:1px solid rgba(246,236,216,.27);
+    background:radial-gradient(circle,rgba(20,27,38,.58) 0 35%,rgba(20,27,38,.34) 36% 67%,transparent 68%);
+    filter:drop-shadow(0 5px 12px rgba(8,12,20,.34));transition:opacity .2s}
+  html.mobile-ui #mobileMove,html.desktop-controls #mobileMove{left:calc(12px + env(safe-area-inset-left,0px))}
+  html.mobile-ui #mobileView,html.desktop-controls #mobileView{right:calc(12px + env(safe-area-inset-right,0px))}
+  .mobilePad.disabled,#mobileFly.disabled{opacity:.18;pointer-events:none}
+  .mobilePad .pad-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    pointer-events:none;font-size:7px;letter-spacing:.16em;text-transform:uppercase;opacity:.68;
+    text-shadow:0 1px 2px #111827}
+  .mobilePad button{position:absolute;width:38px;height:38px;padding:0;border-radius:50%;
+    touch-action:none;appearance:none;color:var(--cream);font:600 18px/1 system-ui,sans-serif;
+    border:1px solid rgba(255,255,255,.30);background:rgba(30,42,56,.76);
+    box-shadow:0 2px 7px rgba(8,15,20,.38);backdrop-filter:blur(6px)}
+  .mobilePad button.active{background:rgba(87,145,128,.90);border-color:rgba(190,238,215,.82);
+    transform:scale(.92)}
+  .mobilePad .pad-up{left:39px;top:0}.mobilePad .pad-down{left:39px;bottom:0}
+  .mobilePad .pad-left{left:0;top:39px}.mobilePad .pad-right{right:0;top:39px}
+  html.mobile-ui #mobileFly,html.desktop-controls #mobileFly{position:fixed;display:block;z-index:28;
+    right:calc(31px + env(safe-area-inset-right,0px));bottom:calc(140px + env(safe-area-inset-bottom,0px));
+    min-width:78px;height:40px;padding:0 12px;border-radius:999px;touch-action:none;
+    user-select:none;-webkit-user-select:none;color:var(--cream);font-family:inherit;font-size:9px;
+    letter-spacing:.12em;text-transform:uppercase;border:1px solid rgba(190,220,255,.42);
+    background:rgba(54,76,112,.76);box-shadow:0 4px 12px rgba(8,12,20,.34);backdrop-filter:blur(8px)}
+  html.mobile-ui #mobileFly.active,html.desktop-controls #mobileFly.active{background:rgba(93,137,186,.94);border-color:rgba(218,238,255,.88);
+    transform:scale(.96)}
+  #controlsToggle{position:fixed;display:block;z-index:29;left:12px;top:12px;min-height:38px;
+    padding:0 14px;border-radius:999px;color:var(--cream);font-family:inherit;font-size:9px;
+    letter-spacing:.12em;text-transform:uppercase;border:1px solid rgba(246,236,216,.22);
+    background:rgba(20,27,38,.72);box-shadow:0 4px 12px rgba(8,12,20,.28);backdrop-filter:blur(9px)}
+  #controlsToggle.on{background:rgba(87,145,128,.76);border-color:rgba(190,238,215,.66)}
+  html.mobile-ui #controlsToggle{display:none}
 
   #panel{position:fixed;top:0;right:0;z-index:25;width:266px;padding:18px 20px 20px;
     background:rgba(20,27,38,.72);backdrop-filter:blur(14px);
@@ -143,7 +161,8 @@
     border-top-left-radius:14px;-webkit-overflow-scrolling:touch}
   html.mobile-ui #hud{justify-content:flex-end;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px))}
   html.mobile-ui #keys{display:none}
-  html.mobile-ui #tele{font-size:9px;line-height:1.55}
+  html.mobile-ui #tele{position:fixed;right:calc(13px + env(safe-area-inset-right,0px));
+    bottom:calc(190px + env(safe-area-inset-bottom,0px));font-size:9px;line-height:1.55}
   html.mobile-ui #toast{top:calc(env(safe-area-inset-top,0px) + 58px);max-width:82vw;text-align:center}
   html.mobile-ui canvas{touch-action:none}
   html.mobile-ui .card{padding-left:20px;padding-right:20px}
@@ -161,15 +180,30 @@
   <button type="button" id="mRecord">Record</button>
 </nav>
 
-<button id="mobileMove" type="button" aria-label="Move: drag in any direction" data-engaged="false">
-  <div id="mobileMoveKnob"></div><span id="mobileMoveHint">Move</span>
-</button>
+<button id="controlsToggle" type="button" aria-expanded="false">Controls [K]</button>
+
+<div id="mobileMove" class="mobilePad" role="group" aria-label="Movement controls">
+  <button type="button" class="pad-up" data-move="forward" aria-label="Move forward">&#8593;</button>
+  <button type="button" class="pad-down" data-move="backward" aria-label="Move backward">&#8595;</button>
+  <button type="button" class="pad-left" data-move="left" aria-label="Move left">&#8592;</button>
+  <button type="button" class="pad-right" data-move="right" aria-label="Move right">&#8594;</button>
+  <span class="pad-label">Move</span>
+</div>
+<div id="mobileView" class="mobilePad" role="group" aria-label="Camera viewing controls">
+  <button type="button" class="pad-up" data-view="up" aria-label="Look up">&#8593;</button>
+  <button type="button" class="pad-down" data-view="down" aria-label="Look down">&#8595;</button>
+  <button type="button" class="pad-left" data-view="left" aria-label="Turn view left">&#8592;</button>
+  <button type="button" class="pad-right" data-view="right" aria-label="Turn view right">&#8594;</button>
+  <span class="pad-label">View</span>
+</div>
+<button id="mobileFly" type="button" aria-label="Hold to fly upward">Hold Fly &#8593;</button>
 
 <div id="hud">
   <div id="keys" class="k">
     <span><b>WASD</b> walk</span><span><b>Shift</b> run</span><span><b>Mouse</b> look</span>
     <span><b>F</b> fly</span><span><b>Space/Ctrl</b> up&#47;down</span><span><b>T</b> train</span>
-    <span><b>C</b> cinematic mode</span><span><b>R</b> record</span><span><b>H</b> settings</span><span><b>Esc</b> release</span>
+    <span><b>C</b> cinematic mode</span><span><b>K</b> controls</span><span><b>R</b> record</span>
+    <span><b>H</b> settings</span><span><b>Esc</b> release</span>
   </div>
   <div id="tele"></div>
 </div>
@@ -5577,6 +5611,7 @@ class Walker {
     this.bobY=0; this.bobX=0; this.roll=0; this.lean=0;
     this.breath=0; this.groundY=0;
     this.keys={}; this.joyX=0; this.joyY=0;
+    this.mobileLookX=0; this.mobileLookY=0; this.mobileAscend=false;
     // 0 free walk, 1 camera-only cinematic, 2 seasonal day-to-night tour.
     this.cinematic=0; this.cineT=0; this.fly=false; this.flyY=0;
     this.onFootstep=null;
@@ -5591,6 +5626,9 @@ class Walker {
   }
   update(dt, t){
     const k=this.keys;
+    // Mobile view buttons turn at a stable angular speed independent of FPS.
+    if(!this.cinematic&&(this.mobileLookX||this.mobileLookY))
+      this.look(this.mobileLookX*480*dt,this.mobileLookY*400*dt);
     let fw=0, sd=0;
     if(k['KeyW']||k['ArrowUp'])   fw+=1;
     if(k['KeyS']||k['ArrowDown']) fw-=1;
@@ -5621,6 +5659,7 @@ class Walker {
     if(this.fly){
       let up = 0;
       if(k['Space']||k['KeyE']) up += 1;
+      if(this.mobileAscend) up += 1;
       if(k['ControlLeft']||k['ControlRight']||k['KeyQ']||k['ShiftRight']) up -= 1;
       // look-direction flight: pitch steers the climb
       const climb = -Math.sin(this.pitch)*fw*base;
@@ -8038,14 +8077,25 @@ function setSeason(season, announce=true){
 }
 
 /*──────────────────────────── input ───────────────────────────────────────*/
-let resetMobileMove=()=>{};
+let resetMobileControls=()=>{};
+function setDesktopControls(open,announce=true){
+  if(IS_MOBILE) return;
+  document.documentElement.classList.toggle('desktop-controls',open);
+  const button=$('#controlsToggle');
+  button.classList.toggle('on',open); button.setAttribute('aria-expanded',String(open));
+  button.textContent=open?'Hide Controls [K]':'Controls [K]';
+  if(!open) resetMobileControls();
+  if(open&&document.pointerLockElement&&document.exitPointerLock) document.exitPointerLock();
+  if(announce) toast(open?'desktop controls shown':'desktop controls hidden');
+}
 function toggleSettings(){
   const panel=$('#panel'), on=panel.classList.toggle('on');
   const mobile=$('#mSettings');
   if(mobile){ mobile.classList.toggle('on',on); mobile.setAttribute('aria-expanded',String(on));
     mobile.textContent=on?'Close':'Settings'; }
-  const move=$('#mobileMove'); if(move) move.classList.toggle('disabled',on);
-  if(on) resetMobileMove();
+  for(const control of document.querySelectorAll('.mobilePad,#mobileFly'))
+    control.classList.toggle('disabled',on);
+  if(on) resetMobileControls();
   if(on&&document.pointerLockElement&&document.exitPointerLock) document.exitPointerLock();
   toast(on?'settings — tap again to close':'');
 }
@@ -8058,6 +8108,7 @@ function bindInput(){
     walker.keys[e.code]=true;
     if(e.code>='Digit1' && e.code<='Digit5') setQuality(+e.code.slice(5)-1);
     if(e.code==='KeyH'&&!e.repeat) toggleSettings();
+    if(e.code==='KeyK'&&!e.repeat) setDesktopControls(!document.documentElement.classList.contains('desktop-controls'));
     if(e.code==='KeyC'&&!e.repeat) setCinematicMode((walker.cinematic+1)%3);
     if(e.code==='KeyR'&&!e.repeat) toggleSceneRecording();
     if(e.code==='KeyP'){ State.paused=!State.paused; toast(State.paused?'paused':'running'); }
@@ -8077,42 +8128,65 @@ function bindInput(){
   addEventListener('mousemove', e=>{
     if(document.pointerLockElement===cv) walker.look(e.movementX, e.movementY);
   });
-  addEventListener('blur', ()=>{ walker.keys={}; resetMobileMove(); });
+  addEventListener('blur', ()=>{ walker.keys={}; resetMobileControls(); });
 
-  // The reference mobile game uses a pointer-captured analog thumb-stick.  The
-  // same pattern gives proportional walking here while a second finger remains
-  // free to drag the view on the canvas.
-  const moveStick=$('#mobileMove'), moveKnob=$('#mobileMoveKnob');
-  let movePointer=null;
-  const releaseMove=e=>{
-    if(e && movePointer!==e.pointerId) return;
-    const owned=movePointer; movePointer=null; walker.joyX=0; walker.joyY=0;
-    moveStick.dataset.engaged='false';
-    moveKnob.style.setProperty('--move-x','0px'); moveKnob.style.setProperty('--move-y','0px');
-    if(owned!==null && moveStick.hasPointerCapture(owned)) moveStick.releasePointerCapture(owned);
+  const moveHeld=new Set(), viewHeld=new Set();
+  const updateMoveButtons=()=>{
+    let x=(moveHeld.has('right')?1:0)-(moveHeld.has('left')?1:0);
+    let y=(moveHeld.has('backward')?1:0)-(moveHeld.has('forward')?1:0);
+    const length=Math.hypot(x,y); if(length>1){ x/=length; y/=length; }
+    walker.joyX=x; walker.joyY=y;
   };
-  const updateMove=e=>{
-    const rect=moveStick.getBoundingClientRect(), cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
-    const maxR=Math.min(rect.width,rect.height)*0.32;
-    let dx=e.clientX-cx, dy=e.clientY-cy, dist=Math.hypot(dx,dy);
-    if(dist>maxR && dist>0){ dx=dx/dist*maxR; dy=dy/dist*maxR; dist=maxR; }
-    moveKnob.style.setProperty('--move-x',dx.toFixed(1)+'px');
-    moveKnob.style.setProperty('--move-y',dy.toFixed(1)+'px');
-    const raw=maxR>0?clamp(dist/maxR,0,1):0, amount=raw<0.14?0:(raw-0.14)/0.86;
-    walker.joyX=dist>0?dx/dist*amount:0; walker.joyY=dist>0?dy/dist*amount:0;
+  const updateViewButtons=()=>{
+    walker.mobileLookX=(viewHeld.has('right')?1:0)-(viewHeld.has('left')?1:0);
+    walker.mobileLookY=(viewHeld.has('down')?1:0)-(viewHeld.has('up')?1:0);
   };
-  resetMobileMove=()=>releaseMove();
-  if(IS_MOBILE){
-    moveStick.addEventListener('pointerdown',e=>{
-      if(movePointer!==null || $('#panel').classList.contains('on')) return;
-      e.preventDefault(); audio.resume(); movePointer=e.pointerId; moveStick.dataset.engaged='true';
-      moveStick.setPointerCapture(e.pointerId); updateMove(e);
+  const beginMobileControl=()=>{
+    audio.resume();
+    // The default seasonal tour owns the camera; manual controls must first
+    // return it to Free mode or the input appears broken.
+    if(walker.cinematic) setCinematicMode(0);
+  };
+  const heldButtons=[];
+  const bindHold=(button,value,held,update,onStart=null,onEnd=null)=>{
+    let pointer=null;
+    const release=e=>{
+      if(pointer===null||(e&&e.pointerId!==pointer)) return;
+      const owned=pointer; pointer=null; held.delete(value); button.classList.remove('active');
+      button.setAttribute('aria-pressed','false');
+      update(); if(onEnd) onEnd();
+      if(button.hasPointerCapture(owned)) button.releasePointerCapture(owned);
+    };
+    button.addEventListener('pointerdown',e=>{
+      if(pointer!==null||$('#panel').classList.contains('on')) return;
+      e.preventDefault(); beginMobileControl(); pointer=e.pointerId; held.add(value);
+      button.classList.add('active'); button.setAttribute('aria-pressed','true');
+      button.setPointerCapture(e.pointerId); update();
+      if(onStart) onStart();
     });
-    moveStick.addEventListener('pointermove',e=>{ if(e.pointerId===movePointer){ e.preventDefault(); updateMove(e); } });
-    moveStick.addEventListener('pointerup',releaseMove);
-    moveStick.addEventListener('pointercancel',releaseMove);
-    moveStick.addEventListener('lostpointercapture',()=>{ if(movePointer!==null) releaseMove(); });
-    moveStick.addEventListener('contextmenu',e=>e.preventDefault());
+    button.addEventListener('pointerup',release); button.addEventListener('pointercancel',release);
+    button.addEventListener('lostpointercapture',()=>release());
+    button.addEventListener('contextmenu',e=>e.preventDefault());
+    heldButtons.push(()=>release());
+  };
+  resetMobileControls=()=>{
+    for(const release of heldButtons) release();
+    moveHeld.clear(); viewHeld.clear(); walker.joyX=walker.joyY=0;
+    walker.mobileLookX=walker.mobileLookY=0; walker.mobileAscend=false;
+  };
+  for(const button of document.querySelectorAll('#mobileMove [data-move]'))
+    bindHold(button,button.dataset.move,moveHeld,updateMoveButtons);
+  for(const button of document.querySelectorAll('#mobileView [data-view]'))
+    bindHold(button,button.dataset.view,viewHeld,updateViewButtons);
+  const flyButton=$('#mobileFly'), flyHeld=new Set();
+  let flyBeforeHold=false;
+  bindHold(flyButton,'up',flyHeld,()=>{},()=>{
+    flyBeforeHold=walker.fly; walker.fly=true; walker.mobileAscend=true;
+  },()=>{
+    walker.mobileAscend=false; walker.fly=flyBeforeHold;
+  });
+
+  if(IS_MOBILE){
 
     let lookPointer=null, lookX=0, lookY=0;
     const releaseLook=e=>{
@@ -8181,6 +8255,9 @@ function bindInput(){
     const b=e.target.closest('button'); if(!b) return; setCinematicMode(+b.dataset.cine);
   });
   $('#recordScene').addEventListener('click', toggleSceneRecording);
+  $('#controlsToggle').addEventListener('click',()=>{
+    audio.resume(); setDesktopControls(!document.documentElement.classList.contains('desktop-controls'));
+  });
   $('#mSettings').addEventListener('click', ()=>{ audio.resume(); toggleSettings(); });
   $('#mTime').addEventListener('click', ()=>{ audio.resume();
     transitionTimeOfDay((State.timePreset+1)%TIME_PRESETS.length); });
@@ -8201,7 +8278,7 @@ function bindInput(){
     $('#veil').classList.add('gone');
     $('#hud').classList.add('on');
     setTimeout(()=>{ $('#veil').style.display='none'; }, 1700);
-    if(IS_MOBILE) setTimeout(()=>toast('left stick move — drag scene to look'),900);
+    if(IS_MOBILE) setTimeout(()=>toast('left pad moves — right pad views — hold Fly to rise'),900);
     if(!IS_MOBILE&&cv.requestPointerLock) cv.requestPointerLock();
   });
 }
