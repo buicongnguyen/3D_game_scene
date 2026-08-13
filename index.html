@@ -89,14 +89,18 @@
     transform:scale(.92)}
   .mobilePad .pad-up{left:39px;top:0}.mobilePad .pad-down{left:39px;bottom:0}
   .mobilePad .pad-left{left:0;top:39px}.mobilePad .pad-right{right:0;top:39px}
-  html.mobile-ui #mobileFly,html.desktop-controls #mobileFly{position:fixed;display:block;z-index:28;
-    right:calc(31px + env(safe-area-inset-right,0px));bottom:calc(140px + env(safe-area-inset-bottom,0px));
-    min-width:78px;height:40px;padding:0 12px;border-radius:999px;touch-action:none;
-    user-select:none;-webkit-user-select:none;color:var(--cream);font-family:inherit;font-size:9px;
-    letter-spacing:.12em;text-transform:uppercase;border:1px solid rgba(190,220,255,.42);
-    background:rgba(54,76,112,.76);box-shadow:0 4px 12px rgba(8,12,20,.34);backdrop-filter:blur(8px)}
-  html.mobile-ui #mobileFly.active,html.desktop-controls #mobileFly.active{background:rgba(93,137,186,.94);border-color:rgba(218,238,255,.88);
-    transform:scale(.96)}
+  html.mobile-ui #mobileFly,html.desktop-controls #mobileFly{position:fixed;display:flex;z-index:28;
+    right:calc(13px + env(safe-area-inset-right,0px));bottom:calc(140px + env(safe-area-inset-bottom,0px));
+    width:114px;height:42px;padding:3px;border-radius:999px;touch-action:none;align-items:center;
+    justify-content:space-between;user-select:none;-webkit-user-select:none;color:var(--cream);
+    font-family:inherit;border:1px solid rgba(190,220,255,.42);background:rgba(54,76,112,.76);
+    box-shadow:0 4px 12px rgba(8,12,20,.34);backdrop-filter:blur(8px)}
+  #mobileFly button{width:34px;height:34px;padding:0;border-radius:50%;touch-action:none;appearance:none;
+    color:var(--cream);font:600 18px/1 system-ui,sans-serif;border:1px solid rgba(218,238,255,.34);
+    background:rgba(30,48,78,.82)}
+  #mobileFly button.active{background:rgba(93,137,186,.96);border-color:rgba(218,238,255,.90);
+    transform:scale(.92)}
+  #mobileFly .fly-label{font-size:8px;letter-spacing:.14em;text-transform:uppercase;pointer-events:none}
   #controlsToggle{position:fixed;display:block;z-index:29;left:12px;top:12px;min-height:38px;
     padding:0 14px;border-radius:999px;color:var(--cream);font-family:inherit;font-size:9px;
     letter-spacing:.12em;text-transform:uppercase;border:1px solid rgba(246,236,216,.22);
@@ -196,7 +200,11 @@
   <button type="button" class="pad-right" data-view="right" aria-label="Turn view right">&#8594;</button>
   <span class="pad-label">View</span>
 </div>
-<button id="mobileFly" type="button" aria-label="Hold to fly upward">Hold Fly &#8593;</button>
+<div id="mobileFly" role="group" aria-label="Flight altitude controls">
+  <button type="button" data-fly="up" aria-label="Fly upward">&#8593;</button>
+  <span class="fly-label">Fly</span>
+  <button type="button" data-fly="down" aria-label="Fly downward">&#8595;</button>
+</div>
 
 <div id="hud">
   <div id="keys" class="k">
@@ -1019,11 +1027,11 @@ function valleyProfile(d, wobble, w){
 
 /* ── the hero landmarks that the terrain must accommodate ── */
 const BRIDGE = { x:CFG.bridge.x, z:CFG.bridge.z };
-const VILLAGE = { x:-452, z:186, r:150, laneN:44, seed:8080 };
+const VILLAGE = { x:-429, z:95, r:150, laneN:44, seed:8080 };
 // The railway through the viaduct separates the two settlements. This smaller
 // neighbour mirrors the original village's signed offset across the track while
 // staying clear of the opening knoll and the river corridor.
-const SECOND_VILLAGE = { x:4, z:299, r:112, laneN:30, seed:18181 };
+const SECOND_VILLAGE = { x:26, z:210, r:112, laneN:30, seed:18181 };
 const VILLAGES = [VILLAGE, SECOND_VILLAGE];
 const SPAWN_KNOLL = { x:CFG.spawn.x-6, z:CFG.spawn.z-4, r:78, h:8.4 };
 
@@ -2782,6 +2790,9 @@ class GrassField {
     this.built = false;
     this.quality = quality;
     this.density = 1.0;
+    // Runtime multiplier changes instanceCount only; unlike `density`, it never
+    // rebuilds buffers and is therefore safe to animate during camera takeoff.
+    this.renderScale = 1.0;
     this.drawn = 0;
   }
   dispose(){
@@ -2896,6 +2907,7 @@ class GrassField {
   update(cam, frustum){
     const cp = cam.position;
     const box = GrassField._box || (GrassField._box = new THREE.Box3());
+    const renderScale=clamp(this.renderScale,0.02,1);
     let drawn = 0;
     for(const ring of this.rings){
       const R = ring.R, cs = R.chunk;
@@ -2925,9 +2937,13 @@ class GrassField {
         const nz = Math.max(Math.abs(cp.z - cz) - cs*0.5, 0);
         const dNear = Math.max(Math.hypot(nx, nz), R.dn);
         const dens = Math.min(1, Math.pow(R.dn / dNear, DENS_POW));
-        const drawFloor=Math.min(IS_MOBILE?3:18,ring.maxInst);
+        // Aerial Tour can retire most blades without leaving an entirely empty
+        // terrain chunk. The ordinary floor returns automatically on landing.
+        const floorBase=renderScale<.35?(IS_MOBILE?1:4):(IS_MOBILE?3:18);
+        const drawFloor=Math.min(floorBase,ring.maxInst);
+        const wanted=Math.round(ring.maxInst*clamp(f,0,1)*dens*renderScale);
         d.count = Math.min(ring.maxInst,
-          Math.max(drawFloor, Math.round(ring.maxInst * clamp(f, 0, 1) * dens)));
+          Math.max(drawFloor,wanted));
         drawn += d.count;
         // position drives the depth sort AND, via modelMatrix, the chunk origin
         // the vertex shader works from — so it must be the chunk centre exactly.
@@ -5599,6 +5615,21 @@ void main(){
 /* A real gait clock drives head bob, footstep audio and the grass the walker
    parts, so they can never drift out of sync.                                */
 
+const TOUR_INTRO_SECONDS=10, TOUR_CHAPTER_SECONDS=18;
+// Season Tour begins on foot, takes off toward the viaduct, then uses one
+// elevated composition for every seasonal day/night chapter. Altitude is
+// clearance above local ground; targetLift raises the gaze for sky events.
+const TOUR_SHOTS=[
+  {x:BRIDGE.x+138,z:BRIDGE.z-122,alt:68,tx:BRIDGE.x,tz:BRIDGE.z,targetLift:7,train:true},
+  {x:VILLAGE.x+118,z:VILLAGE.z-106,alt:82,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:52},
+  {x:-105,z:360,alt:96,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:9},
+  {x:VILLAGE.x+168,z:VILLAGE.z+42,alt:92,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:58},
+  {x:SECOND_VILLAGE.x+145,z:SECOND_VILLAGE.z-122,alt:86,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:10},
+  {x:BRIDGE.x+42,z:BRIDGE.z+182,alt:112,tx:BRIDGE.x-35,tz:BRIDGE.z+25,targetLift:92},
+  {x:SECOND_VILLAGE.x-34,z:SECOND_VILLAGE.z+172,alt:78,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:9},
+  {x:-226,z:342,alt:122,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:78},
+];
+
 class Walker {
   constructor(cam){
     this.cam=cam;
@@ -5611,9 +5642,9 @@ class Walker {
     this.bobY=0; this.bobX=0; this.roll=0; this.lean=0;
     this.breath=0; this.groundY=0;
     this.keys={}; this.joyX=0; this.joyY=0;
-    this.mobileLookX=0; this.mobileLookY=0; this.mobileAscend=false;
+    this.mobileLookX=0; this.mobileLookY=0; this.mobileVertical=0;
     // 0 free walk, 1 camera-only cinematic, 2 seasonal day-to-night tour.
-    this.cinematic=0; this.cineT=0; this.fly=false; this.flyY=0;
+    this.cinematic=0; this.cineT=0; this.cineEyeY=undefined; this.fly=false; this.flyY=0;
     this.onFootstep=null;
     this.windLean=new THREE.Vector2();
     this.idle=0;
@@ -5659,7 +5690,7 @@ class Walker {
     if(this.fly){
       let up = 0;
       if(k['Space']||k['KeyE']) up += 1;
-      if(this.mobileAscend) up += 1;
+      up += this.mobileVertical;
       if(k['ControlLeft']||k['ControlRight']||k['KeyQ']||k['ShiftRight']) up -= 1;
       // look-direction flight: pitch steers the climb
       const climb = -Math.sin(this.pitch)*fw*base;
@@ -5714,19 +5745,84 @@ class Walker {
     // ── cinematic dolly ───────────────────────────────────────────────────
     if(this.cinematic){
       this.cineT += dt;
-      const u = this.cineT*0.0125;
-      const a = u*TAU;
-      const R = 46 + Math.sin(u*3.1)*16;
-      this.pos.x = CFG.spawn.x + Math.sin(a)*R*0.9 - 18;
-      this.pos.z = CFG.spawn.z + Math.cos(a*0.7)*R*0.6 + 10;
-      const look = new THREE.Vector3(BRIDGE.x, BR.deck+4, BRIDGE.z);
-      const dx = look.x-this.pos.x, dz = look.z-this.pos.z;
-      const tYaw = Math.atan2(-dx, -dz);
+      let lookX=BRIDGE.x, lookZ=BRIDGE.z, lookY=BR.deck+4, eyeY;
+      if(this.cinematic===2){
+        if(this.cineT<TOUR_INTRO_SECONDS){
+          // Four seconds on foot establish the meadow. The following six form
+          // a real takeoff: travel toward shot zero while gaining clearance.
+          const walk=smootherstep(0,4,this.cineT), lift=smootherstep(4,TOUR_INTRO_SECONDS,this.cineT);
+          const spawnYaw=-CFG.spawn.heading*DEG, fx=-Math.sin(spawnYaw), fz=-Math.cos(spawnYaw);
+          const walkX=CFG.spawn.x+fx*18*walk, walkZ=CFG.spawn.z+fz*18*walk;
+          const first=TOUR_SHOTS[0];
+          this.pos.x=lerp(walkX,first.x,lift); this.pos.z=lerp(walkZ,first.z,lift);
+          const walkBlend=smoothstep(0,.55,this.cineT)*(1-smootherstep(3.4,4.8,this.cineT));
+          const oldStep=this.stepPhase; this.stepPhase+=dt*1.45*walkBlend;
+          if(Math.floor(this.stepPhase*2)!==Math.floor(oldStep*2)&&this.onFootstep)
+            this.onFootstep(2.8*walkBlend,this.pos);
+          this.bobY=Math.sin(this.stepPhase*TAU*2)*.013*walkBlend;
+          this.bobX=Math.sin(this.stepPhase*TAU)*.009*walkBlend;
+          this.roll=Math.sin(this.stepPhase*TAU)*.005*walkBlend;
+          const groundEye=sampleHeight(this.pos.x,this.pos.z)+CFG.eyeHeight;
+          eyeY=Math.max(groundEye,lerp(groundEye,sampleHeight(first.x,first.z)+first.alt,lift));
+          lookX=lerp(BRIDGE.x+48,first.tx,lift); lookZ=lerp(BRIDGE.z+5,first.tz,lift);
+          lookY=lerp(sampleHeight(lookX,lookZ)+3,BR.deck+first.targetLift,lift);
+        } else {
+          const tourT=this.cineT-TOUR_INTRO_SECONDS;
+          const chapter=Math.floor(tourT/TOUR_CHAPTER_SECONDS)%TOUR_SHOTS.length;
+          const cycle=Math.floor(tourT/(TOUR_CHAPTER_SECONDS*TOUR_SHOTS.length));
+          const local=tourT%TOUR_CHAPTER_SECONDS, shot=TOUR_SHOTS[chapter];
+          const previous=chapter===0&&cycle===0?shot:
+            TOUR_SHOTS[(chapter+TOUR_SHOTS.length-1)%TOUR_SHOTS.length];
+          const transition=smootherstep(0,4.5,local);
+          this.pos.x=lerp(previous.x,shot.x,transition);
+          this.pos.z=lerp(previous.z,shot.z,transition);
+          // A very small crane arc keeps a held view alive without swinging a
+          // tree or building across the foreground.
+          const hold=smoothstep(5,TOUR_CHAPTER_SECONDS,local);
+          const shotAngle=chapter*1.71+hold*.55;
+          if(chapter===0&&cycle===0){
+            const orbitR=smootherstep(0,3,local)*7;
+            this.pos.x+=Math.cos(shotAngle)*orbitR; this.pos.z+=Math.sin(shotAngle)*orbitR;
+          } else {
+            const prevChapter=(chapter+TOUR_SHOTS.length-1)%TOUR_SHOTS.length;
+            const prevAngle=prevChapter*1.71+.55;
+            this.pos.x+=lerp(Math.cos(prevAngle),Math.cos(shotAngle),transition)*7;
+            this.pos.z+=lerp(Math.sin(prevAngle),Math.sin(shotAngle),transition)*7;
+          }
+          const prevEye=sampleHeight(previous.x,previous.z)+previous.alt;
+          const shotEye=sampleHeight(shot.x,shot.z)+shot.alt;
+          const clearance=sampleHeight(this.pos.x,this.pos.z)+48;
+          eyeY=Math.max(lerp(prevEye,shotEye,transition),clearance);
+          lookX=lerp(previous.tx,shot.tx,transition); lookZ=lerp(previous.tz,shot.tz,transition);
+          const prevLook=sampleHeight(previous.tx,previous.tz)+previous.targetLift;
+          const shotLook=sampleHeight(shot.tx,shot.tz)+shot.targetLift;
+          lookY=lerp(prevLook,shotLook,transition);
+          // The opening aerial shot follows the locomotive into and across the
+          // viaduct, keeping the complete consist inside the wide composition.
+          if(shot.train&&train&&train.active){
+            const p=trackPose(train.s-Math.min(train.tailLength*.30,34));
+            const follow=smoothstep(1.5,4.5,local);
+            lookX=lerp(lookX,p.x,follow); lookZ=lerp(lookZ,p.z,follow);
+            lookY=lerp(lookY,p.y+4.2,follow);
+          }
+        }
+        if(this.cineEyeY===undefined) this.cineEyeY=this.groundY+CFG.eyeHeight;
+        this.cineEyeY+=(eyeY-this.cineEyeY)*clamp((this.cineT<4?8:2.4)*dt,0,1);
+      } else {
+        // Default cinematic remains a close, grounded dolly around the opening
+        // overlook; only Season Tour owns the aerial route.
+        this.cineEyeY=undefined;
+        const u=this.cineT*.0125, a=u*TAU, R=46+Math.sin(u*3.1)*16;
+        this.pos.x=CFG.spawn.x+Math.sin(a)*R*.9-18;
+        this.pos.z=CFG.spawn.z+Math.cos(a*.7)*R*.6+10;
+      }
+      const dx=lookX-this.pos.x, dz=lookZ-this.pos.z;
+      const tYaw=Math.atan2(-dx,-dz);
       let dy = tYaw - this.yaw;
       while(dy>Math.PI) dy-=TAU; while(dy<-Math.PI) dy+=TAU;
       this.yaw += dy*clamp(1.4*dt,0,1);
-      const gy = sampleHeight(this.pos.x,this.pos.z)+CFG.eyeHeight;
-      const tPitch = Math.atan2(look.y-gy, Math.hypot(dx,dz)) - 0.02;
+      const cameraEye=this.cineEyeY===undefined?sampleHeight(this.pos.x,this.pos.z)+CFG.eyeHeight:this.cineEyeY;
+      const tPitch=Math.atan2(lookY-cameraEye,Math.hypot(dx,dz))-.02;
       this.pitch += (tPitch-this.pitch)*clamp(1.4*dt,0,1);
       // a breath of handheld
       this.yaw   += Math.sin(t*0.41)*0.00042 + Math.sin(t*1.13)*0.00016;
@@ -5736,10 +5832,19 @@ class Walker {
     // ── settle the eye ────────────────────────────────────────────────────
     // groundHeightAt adds the viaduct deck as a second, conditional surface
     const g = groundHeightAt(this.pos.x, this.pos.z, this.groundY);
-    if(this.fly){
+    if(this.cinematic===2&&this.cineEyeY!==undefined){
+      this.freeY=undefined;
+      this.groundY=this.cineEyeY-CFG.eyeHeight;
+    } else if(this.fly){
       this.freeY = (this.freeY===undefined ? this.groundY + CFG.eyeHeight : this.freeY) + this.flyY*dt;
       this.freeY = clamp(this.freeY, -40, 1400);
-      this.groundY = this.freeY - CFG.eyeHeight;
+      const landingEye=g+CFG.eyeHeight;
+      if(this.mobileVertical<0&&this.freeY<=landingEye){
+        // Mobile Down doubles as a safe landing control. Once grounded, normal
+        // collision and terrain following resume without sinking below grade.
+        this.freeY=undefined; this.fly=false; this.flyY=0; this.mobileVertical=0;
+        this.groundY=g;
+      } else this.groundY = this.freeY - CFG.eyeHeight;
     } else {
       this.freeY = undefined;
       this.groundY += (g - this.groundY)*clamp(16*dt,0,1);
@@ -7677,6 +7782,11 @@ function frame(now){
 
   _pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
   _frustum.setFromProjectionMatrix(_pm);
+  // Once Season Tour leaves the ground, individual blades are sub-pixel detail
+  // but remain expensive. Fade their instance budget down during takeoff; this
+  // does not touch State.density, the slider, or any GPU allocation.
+  const tourLift=walker.cinematic===2?smootherstep(4,TOUR_INTRO_SECONDS,walker.cineT):0;
+  grass.renderScale=lerp(1,IS_MOBILE ? .10 : .14,tourLift);
   grass.update(camera, _frustum);
   State.grassNear = clamp(splatSampleMask(camera.position.x, camera.position.z), 0, 1);
 
@@ -7900,19 +8010,24 @@ function setCinematicMode(mode, announce=true){
     cinematicRestore={season:State.season,daylight:State.daylight,timePreset:State.timePreset};
     cinematicChapter=-1; cinematicUiDay=Infinity; daylightAnim++;
   }
-  walker.cinematic=mode; walker.cineT=0; walker.vel.set(0,0,0);
+  walker.cinematic=mode; walker.cineT=0; walker.cineEyeY=undefined; walker.vel.set(0,0,0);
   syncCinematicControl();
   if(mode===2) updateCinematicTour();
   if(announce) toast(CINEMATIC_NAMES[mode]);
 }
 function updateCinematicTour(){
   if(!walker||walker.cinematic!==2) return;
-  const chapterSeconds=16, chapter=Math.floor(walker.cineT/chapterSeconds)%8;
-  const local=walker.cineT%chapterSeconds;
+  const tourT=Math.max(0,walker.cineT-TOUR_INTRO_SECONDS);
+  const elapsedChapters=Math.floor(tourT/TOUR_CHAPTER_SECONDS);
+  const chapter=elapsedChapters%TOUR_SHOTS.length;
+  const local=tourT%TOUR_CHAPTER_SECONDS;
   const season=Math.floor(chapter/2), night=(chapter&1)===1;
   if(chapter!==cinematicChapter){
     cinematicChapter=chapter;
     if(State.season!==season) setSeason(season,false);
+    // Start a fresh crossing for the opening viaduct shot. Resetting here also
+    // makes pressing Enter restart the train after the loading/countdown veil.
+    if(chapter===0&&train){ train.start(); nextTrain=tAcc+110; }
     toast(SEASON_NAMES[season]+' — '+(night?'night':'day'));
   }
   // Eight explicit views: each season gets a day chapter and a night chapter.
@@ -7921,7 +8036,7 @@ function updateCinematicTour(){
   let day=14, preset=0;
   if(night){
     day=lerp(14,-14,smoothstep(0,6,local)); preset=local<3?1:2;
-  } else if(walker.cineT>=chapterSeconds){
+  } else if(elapsedChapters>0){
     day=lerp(-14,14,smoothstep(0,6,local)); preset=local<3?3:0;
   }
   setDaylight(day);
@@ -8172,19 +8287,22 @@ function bindInput(){
   resetMobileControls=()=>{
     for(const release of heldButtons) release();
     moveHeld.clear(); viewHeld.clear(); walker.joyX=walker.joyY=0;
-    walker.mobileLookX=walker.mobileLookY=0; walker.mobileAscend=false;
+    walker.mobileLookX=walker.mobileLookY=0; walker.mobileVertical=0;
   };
   for(const button of document.querySelectorAll('#mobileMove [data-move]'))
     bindHold(button,button.dataset.move,moveHeld,updateMoveButtons);
   for(const button of document.querySelectorAll('#mobileView [data-view]'))
     bindHold(button,button.dataset.view,viewHeld,updateViewButtons);
-  const flyButton=$('#mobileFly'), flyHeld=new Set();
-  let flyBeforeHold=false;
-  bindHold(flyButton,'up',flyHeld,()=>{},()=>{
-    flyBeforeHold=walker.fly; walker.fly=true; walker.mobileAscend=true;
-  },()=>{
-    walker.mobileAscend=false; walker.fly=flyBeforeHold;
-  });
+  const flyHeld=new Set();
+  const updateFlyButtons=()=>{
+    const vertical=(flyHeld.has('up')?1:0)-(flyHeld.has('down')?1:0);
+    if(vertical&&!walker.fly) toast('flight — release to hold height');
+    walker.mobileVertical=vertical;
+    if(vertical) walker.fly=true;
+    else if(walker.fly) walker.flyY=0;
+  };
+  for(const button of document.querySelectorAll('#mobileFly [data-fly]'))
+    bindHold(button,button.dataset.fly,flyHeld,updateFlyButtons);
 
   if(IS_MOBILE){
 
@@ -8278,7 +8396,7 @@ function bindInput(){
     $('#veil').classList.add('gone');
     $('#hud').classList.add('on');
     setTimeout(()=>{ $('#veil').style.display='none'; }, 1700);
-    if(IS_MOBILE) setTimeout(()=>toast('left pad moves — right pad views — hold Fly to rise'),900);
+    if(IS_MOBILE) setTimeout(()=>toast('left pad moves — right pad views — Fly arrows change height'),900);
     if(!IS_MOBILE&&cv.requestPointerLock) cv.requestPointerLock();
   });
 }
