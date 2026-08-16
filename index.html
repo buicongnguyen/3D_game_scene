@@ -1068,11 +1068,11 @@ function valleyProfile(d, wobble, w){
 
 /* ── the hero landmarks that the terrain must accommodate ── */
 const BRIDGE = { x:CFG.bridge.x, z:CFG.bridge.z };
-const VILLAGE = { x:-429, z:95, r:150, laneN:44, seed:8080 };
+const VILLAGE = { x:-355, z:125, r:150, laneN:44, seed:8080 };
 // The railway through the viaduct separates the two settlements. This smaller
 // neighbour mirrors the original village's signed offset across the track while
 // staying clear of the opening knoll and the river corridor.
-const SECOND_VILLAGE = { x:26, z:210, r:112, laneN:30, seed:18181 };
+const SECOND_VILLAGE = { x:-70, z:238, r:112, laneN:30, seed:18181 };
 const VILLAGES = [VILLAGE, SECOND_VILLAGE];
 const SPAWN_KNOLL = { x:CFG.spawn.x-6, z:CFG.spawn.z-4, r:78, h:8.4 };
 
@@ -1119,7 +1119,10 @@ function terrainAt(x,z){
     const w = smootherstep(village.r*1.5, village.r*0.35, dv);
     const target = wl + (village===VILLAGE?16:14)
       + (z-village.z)*0.075 + noise2(x*0.01,z*0.01)*2.2;
-    h = lerp(h, target, w*(village===VILLAGE?0.72:0.66));
+    // Keep the settlement terraces on dry land. Without this bank fade their
+    // broad footprint could lift the riverbed through the water near cottages.
+    const bankEdge=riverWidth(rf.t), riverClear=smootherstep(bankEdge+8,bankEdge+34,rf.d);
+    h = lerp(h, target, w*(village===VILLAGE?0.72:0.66)*riverClear);
   }
   // (the railway's own grading shapes the approaches; see trackAdjust —
   //  nothing is stamped under the bridge itself)
@@ -3660,6 +3663,7 @@ function scatterTrees(){
       const nrm=sampleNormal(x,z,4);
       if(nrm.y<0.80) continue;
       const rf=riverField(x,z);
+      if(rf.d<riverWidth(rf.t)+10) continue;
       if(sampleHeight(x,z) < waterLevel(rf.t)+3) continue;
       if(TRACK&&TRACK.field(x,z).d<7) continue;
       const d=Math.hypot(x-cx,z-cz);
@@ -4407,6 +4411,7 @@ function buildVillage(){
         const off=(k?1:-1)*(8+vr()*7)*(village===SECOND_VILLAGE ? .90 : 1);
         const x=lx+Math.cos(a+1.57)*off, z=lz+Math.sin(a+1.57)*off;
         const rf=riverField(x,z), gy=sampleHeight(x,z);
+        if(rf.d<riverWidth(rf.t)+12) continue;
         if(gy<waterLevel(rf.t)+3.0) continue;
         if(TRACK&&TRACK.field(x,z).d<12) continue;
         if(Math.hypot(x-CFG.spawn.x,z-CFG.spawn.z)<35) continue;
@@ -5712,14 +5717,14 @@ const TOUR_CHAPTER_SECONDS=18;
 // elevated composition for every seasonal day/night chapter. Altitude is
 // clearance above local ground; targetLift raises the gaze for sky events.
 const TOUR_SHOTS=[
-  {x:BRIDGE.x+138,z:BRIDGE.z-122,alt:54,tx:BRIDGE.x,tz:BRIDGE.z,targetLift:26,train:true},
-  {x:VILLAGE.x+118,z:VILLAGE.z-106,alt:66,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:52},
-  {x:-105,z:360,alt:76,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:22},
-  {x:VILLAGE.x+168,z:VILLAGE.z+42,alt:72,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:58},
-  {x:SECOND_VILLAGE.x+145,z:SECOND_VILLAGE.z-122,alt:68,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:24},
-  {x:BRIDGE.x+42,z:BRIDGE.z+182,alt:88,tx:BRIDGE.x-35,tz:BRIDGE.z+25,targetLift:92},
-  {x:SECOND_VILLAGE.x-34,z:SECOND_VILLAGE.z+172,alt:64,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:22},
-  {x:-226,z:342,alt:94,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:78},
+  {x:BRIDGE.x+138,z:BRIDGE.z-122,alt:48,tx:BRIDGE.x,tz:BRIDGE.z,targetLift:26,train:true},
+  {x:VILLAGE.x+118,z:VILLAGE.z-106,alt:54,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:66},
+  {x:-105,z:360,alt:64,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:22},
+  {x:VILLAGE.x+168,z:VILLAGE.z+42,alt:58,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:72},
+  {x:SECOND_VILLAGE.x+145,z:SECOND_VILLAGE.z-122,alt:58,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:24},
+  {x:BRIDGE.x+42,z:BRIDGE.z+182,alt:64,tx:BRIDGE.x-35,tz:BRIDGE.z+25,targetLift:96},
+  {x:SECOND_VILLAGE.x-34,z:SECOND_VILLAGE.z+172,alt:56,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:22},
+  {x:-226,z:342,alt:66,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:92},
 ];
 
 class Walker {
@@ -5888,7 +5893,7 @@ class Walker {
           const shotEye=sampleHeight(shot.x,shot.z)+shot.alt;
           // Stay above foreground trees while keeping landmarks large enough to
           // read; the previous 48 m floor made every shot feel like a top-down map.
-          const clearance=sampleHeight(this.pos.x,this.pos.z)+36;
+          const clearance=sampleHeight(this.pos.x,this.pos.z)+30;
           eyeY=Math.max(lerp(prevEye,shotEye,transition),clearance);
           lookX=lerp(previous.tx,shot.tx,transition); lookZ=lerp(previous.tz,shot.tz,transition);
           const prevLook=sampleHeight(previous.tx,previous.tz)+previous.targetLift;

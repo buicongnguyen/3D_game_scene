@@ -80,7 +80,9 @@ self.onmessage = event => {
       if(dv>=village.r*1.5) continue;
       const w=smootherstep(village.r*1.5,village.r*.35,dv);
       const target=wl+village.lift+(z-village.z)*.075+noise2(x*.01,z*.01)*2.2;
-      h=lerp(h,target,w*village.blend);
+      const bankEdge=riverWidth(rf.t);
+      const riverClear=smootherstep(bankEdge+8,bankEdge+34,rf.d);
+      h=lerp(h,target,w*village.blend*riverClear);
     }
     return h;
   }
