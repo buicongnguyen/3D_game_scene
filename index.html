@@ -384,15 +384,15 @@ const QUALITY = [
   { grass:[.06,.045,.03,.02], shadow:384, mobileShadow:256, wind:64, mobileWind:48,
     px:.58, bloomLv:1, blades:[1,1,1,1], rings:2, mobileRings:1,
     fx:.12, mobileFx:.07, fauna:.0625, clouds:220, mobileClouds:110, cloudShadow:128, mobileCloudShadow:96,
-    water:[64,1], mobileWater:[40,1], waterDetail:.08, mobileWaterDetail:.03 },
+    water:[180,1], mobileWater:[160,1], waterDetail:.08, mobileWaterDetail:.03 },
   { grass:[.16,.13,.10,.07], shadow:768,  mobileShadow:512,  wind:128, mobileWind:96,
     px:.75, bloomLv:2, blades:[2,1,1,1], rings:3, mobileRings:2,
     fx:.30, mobileFx:.18, fauna:.125, clouds:520, mobileClouds:260, cloudShadow:256, mobileCloudShadow:192,
-    water:[180,1], mobileWater:[64,1], waterDetail:.24, mobileWaterDetail:.10 },
+    water:[240,1], mobileWater:[200,1], waterDetail:.24, mobileWaterDetail:.10 },
   { grass:[.46,.39,.29,.21], shadow:1024, mobileShadow:768,  wind:160, mobileWind:128,
     px:.92, bloomLv:3, blades:[3,1,1,1], rings:4, mobileRings:3,
     fx:.56, mobileFx:.32, fauna:.25, clouds:850, mobileClouds:420, cloudShadow:384, mobileCloudShadow:256,
-    water:[300,2], mobileWater:[106,1], waterDetail:.48, mobileWaterDetail:.24 },
+    water:[300,2], mobileWater:[240,1], waterDetail:.48, mobileWaterDetail:.24 },
   { grass:[.82,.72,.58,.44], shadow:1536, mobileShadow:1024, wind:224, mobileWind:160,
     px:1.04, bloomLv:4, blades:[4,2,1,1], rings:4, mobileRings:4,
     fx:.80, mobileFx:.50, fauna:.50, clouds:1200, mobileClouds:620, cloudShadow:512, mobileCloudShadow:384,
@@ -3052,20 +3052,24 @@ function buildRiverGeometry(q=QUALITY[State.q]){
   let k=0, k4=0, k2=0;
   for(let i=0;i<=NL;i++){
     const t = i/NL;
-    const pi = clamp(Math.round(t*(RIVER_PTS.length-1)), 1, RIVER_PTS.length-2);
-    const p  = RIVER_PTS[pi];
-    const pm = RIVER_PTS[Math.max(0,pi-4)], pp = RIVER_PTS[Math.min(RIVER_PTS.length-1,pi+4)];
+    // Interpolate the dense course instead of snapping every ribbon row to its
+    // nearest sample. At reduced quality the old 40-row ribbon cut across bends,
+    // slipped under the carved valley and looked like two disconnected rivers.
+    const f=t*(RIVER_PTS.length-1), p0=Math.floor(f), p1=Math.min(p0+1,RIVER_PTS.length-1);
+    const blend=f-p0, pa=RIVER_PTS[p0], pb=RIVER_PTS[p1];
+    const px0=lerp(pa.x,pb.x,blend), pz0=lerp(pa.z,pb.z,blend), riverT=lerp(pa.t,pb.t,blend);
+    const pm = RIVER_PTS[Math.max(0,p0-4)], pp = RIVER_PTS[Math.min(RIVER_PTS.length-1,p1+4)];
     let tx = pp.x-pm.x, tz = pp.z-pm.z; const L=Math.hypot(tx,tz)||1; tx/=L; tz/=L;
     const nx = -tz, nz = tx;
-    const w  = riverWidth(p.t);
-    const y  = waterLevel(p.t);
+    const w  = riverWidth(riverT);
+    const y  = waterLevel(riverT);
     // narrows run faster
     const spd = 0.9 + 2.6*(12.0/Math.max(w,6.0));
     for(let j=0;j<=NC;j++){
       const a = j/NC*2-1;
-      const px = p.x + nx*a*w, pz = p.z + nz*a*w;
+      const px = px0 + nx*a*w, pz = pz0 + nz*a*w;
       pos[k++]=px; pos[k++]=y - Math.abs(a)*0.06; pos[k++]=pz;
-      dat[k4++]=a; dat[k4++]=p.t; dat[k4++]=spd; dat[k4++]=w;
+      dat[k4++]=a; dat[k4++]=riverT; dat[k4++]=spd; dat[k4++]=w;
       flw[k2++]=tx; flw[k2++]=tz;
     }
   }
@@ -5708,14 +5712,14 @@ const TOUR_CHAPTER_SECONDS=18;
 // elevated composition for every seasonal day/night chapter. Altitude is
 // clearance above local ground; targetLift raises the gaze for sky events.
 const TOUR_SHOTS=[
-  {x:BRIDGE.x+138,z:BRIDGE.z-122,alt:68,tx:BRIDGE.x,tz:BRIDGE.z,targetLift:7,train:true},
-  {x:VILLAGE.x+118,z:VILLAGE.z-106,alt:82,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:52},
-  {x:-105,z:360,alt:96,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:9},
-  {x:VILLAGE.x+168,z:VILLAGE.z+42,alt:92,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:58},
-  {x:SECOND_VILLAGE.x+145,z:SECOND_VILLAGE.z-122,alt:86,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:10},
-  {x:BRIDGE.x+42,z:BRIDGE.z+182,alt:112,tx:BRIDGE.x-35,tz:BRIDGE.z+25,targetLift:92},
-  {x:SECOND_VILLAGE.x-34,z:SECOND_VILLAGE.z+172,alt:78,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:9},
-  {x:-226,z:342,alt:122,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:78},
+  {x:BRIDGE.x+138,z:BRIDGE.z-122,alt:54,tx:BRIDGE.x,tz:BRIDGE.z,targetLift:26,train:true},
+  {x:VILLAGE.x+118,z:VILLAGE.z-106,alt:66,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:52},
+  {x:-105,z:360,alt:76,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:22},
+  {x:VILLAGE.x+168,z:VILLAGE.z+42,alt:72,tx:VILLAGE.x,tz:VILLAGE.z,targetLift:58},
+  {x:SECOND_VILLAGE.x+145,z:SECOND_VILLAGE.z-122,alt:68,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:24},
+  {x:BRIDGE.x+42,z:BRIDGE.z+182,alt:88,tx:BRIDGE.x-35,tz:BRIDGE.z+25,targetLift:92},
+  {x:SECOND_VILLAGE.x-34,z:SECOND_VILLAGE.z+172,alt:64,tx:SECOND_VILLAGE.x,tz:SECOND_VILLAGE.z,targetLift:22},
+  {x:-226,z:342,alt:94,tx:(VILLAGE.x+SECOND_VILLAGE.x)/2,tz:(VILLAGE.z+SECOND_VILLAGE.z)/2,targetLift:78},
 ];
 
 class Walker {
@@ -5882,7 +5886,9 @@ class Walker {
           }
           const prevEye=sampleHeight(previous.x,previous.z)+previous.alt;
           const shotEye=sampleHeight(shot.x,shot.z)+shot.alt;
-          const clearance=sampleHeight(this.pos.x,this.pos.z)+48;
+          // Stay above foreground trees while keeping landmarks large enough to
+          // read; the previous 48 m floor made every shot feel like a top-down map.
+          const clearance=sampleHeight(this.pos.x,this.pos.z)+36;
           eyeY=Math.max(lerp(prevEye,shotEye,transition),clearance);
           lookX=lerp(previous.tx,shot.tx,transition); lookZ=lerp(previous.tz,shot.tz,transition);
           const prevLook=sampleHeight(previous.tx,previous.tz)+previous.targetLift;
@@ -5892,9 +5898,11 @@ class Walker {
           // viaduct, keeping the complete consist inside the wide composition.
           if(shot.train&&train&&train.active){
             const p=trackPose(train.s-Math.min(train.tailLength*.30,34),this.trackSample);
-            const follow=smoothstep(1.5,4.5,local);
+            const follow=smoothstep(1.5,4.5,local)*.78;
             lookX=lerp(lookX,p.x,follow); lookZ=lerp(lookZ,p.z,follow);
-            lookY=lerp(lookY,p.y+4.2,follow);
+            // Aim above the locomotive: it remains in the lower composition and
+            // the horizon/sky no longer disappear while the camera follows it.
+            lookY=lerp(lookY,p.y+26,follow);
           }
         }
         if(this.cineEyeY===undefined) this.cineEyeY=this.groundY+CFG.eyeHeight;
