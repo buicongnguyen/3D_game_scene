@@ -5475,8 +5475,16 @@ void main(){
   } else if(vKind<7.5){
     col=mix(vec3(0.20,1.24,0.48),vec3(1.62,1.02,0.18),core);
     fade=1.0-smoothstep(0.70,1.0,vAge);
-  } else {
+  } else if(vKind<8.5){
+    col=mix(vec3(0.48,0.22,1.62),vec3(1.62,0.82,1.34),fract(vSeed*0.47));
+  } else if(vKind<9.5){
+    // Rocket trail and burst flash.
     col=mix(vec3(1.10,0.28,0.05),vec3(1.45,1.16,0.58),core); fade*=0.72;
+  } else if(vKind<10.5){
+    col=mix(vec3(0.18,1.42,0.84),vec3(1.64,0.30,0.92),fract(vSeed*0.61));
+  } else {
+    col=mix(vec3(0.28,0.72,1.62),vec3(1.68,1.30,0.36),core);
+    fade=1.0-smoothstep(0.72,1.0,vAge);
   }
   float a=(core*1.18+halo)*fade*twinkle*vOp;
   if(!(a>0.008)) discard;
@@ -7055,7 +7063,10 @@ function initBirds(){
     }
     const b={ x,z,y:0, vx:(r()-0.5)*8, vy:0, vz:(r()-0.5)*8, ph:r(), near, p:null };
     b.y = sampleHeight(b.x,b.z)+(b.near ? 18+r()*20 : 45+r()*45);
-    b.p = birdsP.spawn({x:b.x,y:b.y,z:b.z, life:1, size:1.25, seed:r(), kind:b.ph, op:1, age:r()});
+    // Orientation rewrites `seed` every frame, so visibility must use a separate
+    // stable ticket; deriving LOD from the rotating seed made aerial birds blink.
+    b.p = birdsP.spawn({x:b.x,y:b.y,z:b.z, life:1, size:1.25, seed:r(),
+      lodTicket:b.ph,kind:b.ph,op:1,age:r()});
     BIRDS.push(b);
   }
 }
@@ -7234,8 +7245,9 @@ function updateWeatherFX(dt){
   }
 }
 
-let fireworkNext=0, fireworkStyle=0, fireworksWereActive=false, fireworksSeason=-1;
+let fireworkNext=0, fireworkStyle=0, fireworkPattern=0, fireworksWereActive=false, fireworksSeason=-1;
 const fireworkQueue=[];
+const FESTIVAL_FIREWORK_STYLES=[1,2,3,4,5,6,7,8,10,11];
 function clearFireworks(){
   if(!fireworkFx) return;
   fireworkQueue.length=0;
@@ -7245,8 +7257,8 @@ function clearFireworks(){
 }
 function explodeFirework(rocket){
   const style=rocket.style, festival=rocket.festival>0.5;
-  const counts=[0,190,158,174,160,250,232,260];
-  const count=qualityCount(counts[style],
+  const counts=[0,190,158,174,160,250,232,260,224,0,210,238];
+  const count=qualityCount(counts[style]*(rocket.burstScale||1),
     IS_MOBILE?qualityFloor(12,28):qualityFloor(28,72));
   const golden=2.39996323, plane=Math.random()*TAU;
   const bx=Math.cos(plane), bz=Math.sin(plane), px=-bz, pz=bx;
@@ -7282,12 +7294,31 @@ function explodeFirework(rocket){
       const sx=lerp(Math.cos(aa)*ra,Math.cos(ab)*rb,f), sy=lerp(Math.sin(aa)*ra,Math.sin(ab)*rb,f);
       const speed=(11.8+Math.random()*.8)*scale, thick=(Math.random()-.5)*.30;
       vx=(bx*sx+px*thick)*speed; vy=sy*speed; vz=(bz*sx+pz*thick)*speed; life=3.6+Math.random()*.55;
-    } else {
+    } else if(style===7){
       // Palm crown: rising gold-green fronds that hang before falling.
       const a=i*golden+Math.random()*.10, radial=Math.sqrt((i+.5)/count);
       const speed=(5.0+radial*7.0)*scale;
       vx=Math.cos(a)*speed; vy=(7.5+Math.random()*5.0)*scale; vz=Math.sin(a)*speed;
       life=4.6+Math.random()*1.1;
+    } else if(style===8){
+      // Spiral chrysanthemum: spherical points gathered into curling bands.
+      const u=1-2*(i+.5)/count, ring=Math.sqrt(Math.max(0,1-u*u));
+      const a=i*golden+u*5.4, pulse=.72+.28*Math.sin(i*.47)*Math.sin(i*.47);
+      const speed=(9.0+Math.random()*2.1)*scale*pulse;
+      vx=Math.cos(a)*ring*speed; vy=u*speed; vz=Math.sin(a)*ring*speed;
+      life=3.8+Math.random()*.7;
+    } else if(style===10){
+      // Six-petal flower in a gently tilted plane.
+      const a=i/count*TAU, petal=.32+.68*Math.abs(Math.cos(a*3));
+      const speed=(10.2+Math.random()*.8)*scale*petal, cs=Math.cos(a), sn=Math.sin(a);
+      vx=(bx*cs+px*sn*.28)*speed; vy=sn*speed; vz=(bz*cs+pz*sn*.28)*speed;
+      life=3.7+Math.random()*.55;
+    } else {
+      // Brocade crown: layered rising spokes that open into a wide umbrella.
+      const spokes=12, spoke=i%spokes, layer=(i/spokes|0)/Math.max(1,Math.ceil(count/spokes)-1);
+      const a=spoke/spokes*TAU+(layer-.5)*.16, speed=(6.8+layer*7.4)*scale;
+      vx=Math.cos(a)*speed; vz=Math.sin(a)*speed; vy=(8.8-layer*3.2+Math.sin(a*2)*1.2)*scale;
+      life=4.4+Math.random()*.8;
     }
     if(!fireworkFx.spawn({x:rocket.x,y:rocket.y,z:rocket.z,vx,vy,vz,life,age:0,
       size:(0.68+Math.random()*0.36)*(festival?1.46:1.26),seed:colorSeed+i*0.00013,kind:style,op:0.96+Math.random()*0.04})) break;
@@ -7295,27 +7326,83 @@ function explodeFirework(rocket){
   fireworkFx.spawn({x:rocket.x,y:rocket.y,z:rocket.z,vx:0,vy:0,vz:0,life:0.38,age:0,
     size:festival?3.4:2.2,seed:colorSeed,kind:9,op:1});
 }
-function launchFirework(festival=false, lateralOffset=0, heightBias=0){
+function launchFirework(shot){
+  const festival=shot.festival, heightBias=shot.height||0;
   const spreadX=festival?116:72, spreadZ=festival?82:54;
   const village=Math.random()<.32?SECOND_VILLAGE:VILLAGE;
-  const x=village.x+(Math.random()-.5)*spreadX+lateralOffset;
-  const z=village.z+(Math.random()-.5)*spreadZ;
-  const y=sampleHeight(x,z)+2.0, style=1+(fireworkStyle++%(festival?7:4));
+  const x=Number.isFinite(shot.x)?shot.x:village.x+(Math.random()-.5)*spreadX+(shot.offset||0);
+  const z=Number.isFinite(shot.z)?shot.z:village.z+(Math.random()-.5)*spreadZ;
+  const styles=festival?FESTIVAL_FIREWORK_STYLES:[1,2,3,4];
+  const style=shot.style||styles[fireworkStyle++%styles.length];
+  const y=sampleHeight(x,z)+2.0;
   fireworkFx.spawn({x,y,z,vx:(Math.random()-.5)*(festival?2.4:1.8),
     vy:(festival?45:36)+heightBias+Math.random()*(festival?8.5:7.0),vz:(Math.random()-.5)*(festival?2.4:1.8),
     life:2.7,age:0,size:festival?1.26:1.02,seed:Math.random()*100,kind:0,op:1,
-    burstAge:(festival?1.62:1.48)+heightBias*.008+Math.random()*0.24,style,festival:festival?1:0,trailT:0});
+    burstAge:(festival?1.62:1.48)+heightBias*.008+Math.random()*0.24,style,festival:festival?1:0,
+    burstScale:shot.burstScale||1,trailT:0});
+}
+function queueFestivalShot(delay,u,height,styleIndex,depth=0){
+  // Span the two settlements and a small margin beyond them. Interpolating Z
+  // keeps the launch row aligned with the villages instead of cutting across
+  // the river as the world-space X position changes.
+  const margin=44, x=lerp(VILLAGE.x-margin,SECOND_VILLAGE.x+margin,u);
+  const z=lerp(VILLAGE.z,SECOND_VILLAGE.z,u)+depth;
+  fireworkQueue.push({at:tAcc+delay,festival:true,x,z,height,
+    burstScale:IS_MOBILE?.58:.72,
+    style:FESTIVAL_FIREWORK_STYLES[styleIndex%FESTIVAL_FIREWORK_STYLES.length]});
+}
+function queueFestivalPattern(){
+  const n=IS_MOBILE?(State.q===0?4:5):(State.q===0?5:7);
+  const pattern=fireworkPattern++%7, styleBase=fireworkStyle;
+  let span=0, made=0;
+  const add=(delay,u,height=0,depth=0)=>{
+    queueFestivalShot(delay,clamp(u,0,1),height,styleBase+made++,depth);
+    span=Math.max(span,delay);
+  };
+  if(pattern===0||pattern===1){
+    // A clean left-to-right sweep, followed next cycle by its reverse.
+    for(let i=0;i<n;i++) add(i*.14,pattern===0?i/(n-1):1-i/(n-1),(i%2)*4-2);
+  } else if(pattern===2){
+    // Centre-out mirrored pairs.
+    add(0,.5,10);
+    for(let ring=1;made<n;ring++){
+      const d=ring/Math.max(2,Math.ceil((n-1)/2))*0.48, delay=ring*.17;
+      add(delay,.5-d,ring*3); if(made<n) add(delay,.5+d,ring*3);
+    }
+  } else if(pattern===3){
+    // Outside-in mirrored pairs converge on one high centre burst.
+    for(let ring=0;made<n;ring++){
+      const u=ring/Math.max(2,Math.ceil((n-1)/2))*.48, delay=ring*.16;
+      add(delay,u,ring*3); if(made<n) add(delay,1-u,ring*3);
+    }
+  } else if(pattern===4){
+    // Rising staircase with alternating near/far launch depth.
+    const reverse=(fireworkPattern&1)===0;
+    for(let i=0;i<n;i++) add(i*.13,reverse?1-i/(n-1):i/(n-1),-7+i*4,(i&1?9:-5));
+  } else if(pattern===5){
+    // Two opposing waves cross like a festival call-and-response.
+    const m=IS_MOBILE?3:4;
+    for(let i=0;i<m;i++) add(i*.12,i/(m-1),Math.sin(i/(m-1)*Math.PI)*8,-4);
+    for(let i=0;i<m;i++) add(.54+i*.12,1-i/(m-1),8+Math.sin(i/(m-1)*Math.PI)*7,10);
+  } else {
+    // Finale: a broad simultaneous row, then a higher mirrored crown.
+    for(let i=0;i<n;i++) add((i&1)*.045,i/(n-1),i%2?7:0);
+    add(.38,.28,18,5); add(.38,.72,18,5); add(.52,.5,28,12);
+  }
+  fireworkStyle+=made;
+  return span;
 }
 function queueFireworkSalvo(festival){
+  if(festival) return queueFestivalPattern();
   let shots=1;
-  if(festival) shots=IS_MOBILE?(Math.random()<.62?2:1):(Math.random()<.20?1:2+Math.floor(Math.random()*3));
-  else if(Math.random()<.52) shots=IS_MOBILE?2:2+Math.floor(Math.random()*2);
+  if(Math.random()<.52) shots=IS_MOBILE?2:2+Math.floor(Math.random()*2);
   const centre=(shots-1)*.5;
   for(let i=0;i<shots;i++) fireworkQueue.push({
     at:tAcc+i*(.08+Math.random()*.08), festival,
-    offset:(i-centre)*(festival?30:24)+(Math.random()-.5)*8,
-    height:(i-centre)*(festival?7.0:5.0)+(Math.random()-.5)*3.0,
+    offset:(i-centre)*24+(Math.random()-.5)*8,
+    height:(i-centre)*5.0+(Math.random()-.5)*3.0,
   });
+  return Math.max(0,(shots-1)*.16);
 }
 function updateFireworks(dt){
   if(!fireworkFx) return;
@@ -7326,20 +7413,21 @@ function updateFireworks(dt){
   }
   if(!fireworksWereActive||fireworksSeason!==State.season){
     if(fireworksWereActive) clearFireworks();
-    fireworksWereActive=true; fireworksSeason=State.season; fireworkNext=tAcc+0.18; fireworkStyle=0;
+    fireworksWereActive=true; fireworksSeason=State.season; fireworkNext=tAcc+0.18;
+    fireworkStyle=0; fireworkPattern=0;
   }
   if(tAcc>=fireworkNext){
     const festival=State.season===1;
-    queueFireworkSalvo(festival);
+    const patternSpan=queueFireworkSalvo(festival);
     const qualityPace=State.q===0?1.55:1;
     fireworkNext=tAcc+qualityPace*(festival
-      ?(IS_MOBILE?2.00+Math.random()*.42:1.48+Math.random()*.38)
+      ?(patternSpan+1.45+Math.random()*.38)
       :(IS_MOBILE?2.30+Math.random()*.48:1.82+Math.random()*.48));
   }
   for(let i=fireworkQueue.length-1;i>=0;i--){
     const shot=fireworkQueue[i];
     if(shot.at>tAcc) continue;
-    launchFirework(shot.festival,shot.offset,shot.height); fireworkQueue.splice(i,1);
+    launchFirework(shot); fireworkQueue.splice(i,1);
   }
   for(let i=0;i<fireworkFx.max;i++){
     const d=fireworkFx.data[i]; if(!d.alive) continue;
@@ -7357,7 +7445,8 @@ function updateFireworks(dt){
       continue;
     }
     if(d.age>=d.life){ d.alive=false; fireworkFx.free.push(i); continue; }
-    const willow=(d.kind>2.5&&d.kind<3.5)||(d.kind>6.5&&d.kind<7.5), trail=d.kind>8.5;
+    const willow=(d.kind>2.5&&d.kind<3.5)||(d.kind>6.5&&d.kind<7.5);
+    const trail=d.kind>8.5&&d.kind<9.5;
     const drag=Math.exp(-dt*(willow?0.36:(trail?1.4:0.18)));
     d.vx*=drag; d.vz*=drag; d.vy=d.vy*drag-(willow?4.0:(trail?2.4:3.2))*dt;
     d.x+=d.vx*dt; d.y+=d.vy*dt; d.z+=d.vz*dt;
