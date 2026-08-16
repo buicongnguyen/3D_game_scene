@@ -44,6 +44,7 @@
     font-family:inherit;font-size:13.5px;letter-spacing:.28em;text-transform:uppercase;
     transition:.35s;backdrop-filter:blur(3px)}
   #enter:hover{background:rgba(255,252,244,.72);letter-spacing:.34em}
+  #enter:disabled{cursor:wait;opacity:.58;letter-spacing:.20em}
   #enter.on{display:inline-block;animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
   @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
@@ -70,7 +71,7 @@
   /* Explicit twin D-pads keep movement and camera direction independent. */
   .mobilePad,#mobileFly{display:none}
   html.mobile-ui .mobilePad,html.desktop-controls .mobilePad{position:fixed;display:block;z-index:28;
-    bottom:calc(14px + env(safe-area-inset-bottom,0px));width:116px;height:116px;
+    bottom:calc(14px + env(safe-area-inset-bottom,0px));width:134px;height:134px;
     border-radius:50%;touch-action:none;user-select:none;-webkit-user-select:none;
     color:var(--cream);font-family:inherit;border:1px solid rgba(246,236,216,.27);
     background:radial-gradient(circle,rgba(20,27,38,.58) 0 35%,rgba(20,27,38,.34) 36% 67%,transparent 68%);
@@ -81,21 +82,21 @@
   .mobilePad .pad-label{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
     pointer-events:none;font-size:7px;letter-spacing:.16em;text-transform:uppercase;opacity:.68;
     text-shadow:0 1px 2px #111827}
-  .mobilePad button{position:absolute;width:38px;height:38px;padding:0;border-radius:50%;
+  .mobilePad button{position:absolute;width:44px;height:44px;padding:0;border-radius:50%;
     touch-action:none;appearance:none;color:var(--cream);font:600 18px/1 system-ui,sans-serif;
     border:1px solid rgba(255,255,255,.30);background:rgba(30,42,56,.76);
     box-shadow:0 2px 7px rgba(8,15,20,.38);backdrop-filter:blur(6px)}
   .mobilePad button.active{background:rgba(87,145,128,.90);border-color:rgba(190,238,215,.82);
     transform:scale(.92)}
-  .mobilePad .pad-up{left:39px;top:0}.mobilePad .pad-down{left:39px;bottom:0}
-  .mobilePad .pad-left{left:0;top:39px}.mobilePad .pad-right{right:0;top:39px}
+  .mobilePad .pad-up{left:45px;top:0}.mobilePad .pad-down{left:45px;bottom:0}
+  .mobilePad .pad-left{left:0;top:45px}.mobilePad .pad-right{right:0;top:45px}
   html.mobile-ui #mobileFly,html.desktop-controls #mobileFly{position:fixed;display:flex;z-index:28;
-    right:calc(13px + env(safe-area-inset-right,0px));bottom:calc(140px + env(safe-area-inset-bottom,0px));
-    width:114px;height:42px;padding:3px;border-radius:999px;touch-action:none;align-items:center;
+    right:calc(13px + env(safe-area-inset-right,0px));bottom:calc(156px + env(safe-area-inset-bottom,0px));
+    width:134px;height:50px;padding:3px;border-radius:999px;touch-action:none;align-items:center;
     justify-content:space-between;user-select:none;-webkit-user-select:none;color:var(--cream);
     font-family:inherit;border:1px solid rgba(190,220,255,.42);background:rgba(54,76,112,.76);
     box-shadow:0 4px 12px rgba(8,12,20,.34);backdrop-filter:blur(8px)}
-  #mobileFly button{width:34px;height:34px;padding:0;border-radius:50%;touch-action:none;appearance:none;
+  #mobileFly button{width:44px;height:44px;padding:0;border-radius:50%;touch-action:none;appearance:none;
     color:var(--cream);font:600 18px/1 system-ui,sans-serif;border:1px solid rgba(218,238,255,.34);
     background:rgba(30,48,78,.82)}
   #mobileFly button.active{background:rgba(93,137,186,.96);border-color:rgba(218,238,255,.90);
@@ -154,23 +155,59 @@
     font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;line-height:1.7;
     color:#E8A0A0;white-space:pre-wrap;overflow:auto}
 
-  html.mobile-ui #mobileBar{position:fixed;display:flex;z-index:29;left:8px;right:8px;
-    top:calc(env(safe-area-inset-top,0px) + 8px);gap:7px;overflow-x:auto;
-    padding:0 1px 5px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  html.mobile-ui #mobileBar::-webkit-scrollbar{display:none}
-  html.mobile-ui #panel{top:calc(env(safe-area-inset-top,0px) + 54px);width:min(92vw,320px);
+  html.mobile-ui #mobileBar{position:fixed;display:grid;grid-template-columns:1.15fr 1fr 1fr .8fr;
+    z-index:29;left:8px;right:8px;top:calc(env(safe-area-inset-top,0px) + 8px);gap:6px}
+  html.mobile-ui #mobileBar button{min-width:0;min-height:44px;padding:8px 5px;overflow:hidden;text-overflow:ellipsis}
+  #mobileMore{display:none}
+  html.mobile-ui #mobileMore{position:fixed;z-index:31;right:8px;top:calc(env(safe-area-inset-top,0px) + 54px);
+    width:150px;padding:7px;border-radius:12px;background:rgba(20,27,38,.92);border:1px solid rgba(246,236,216,.20);
+    box-shadow:0 8px 24px rgba(8,12,20,.42);backdrop-filter:blur(14px)}
+  html.mobile-ui #mobileMore[hidden]{display:none}
+  html.mobile-ui #mobileMore:not([hidden]){display:grid;gap:6px}
+  html.mobile-ui #mobileMore button{min-height:44px;border-radius:8px;color:var(--cream);font-family:inherit;
+    font-size:10px;letter-spacing:.12em;text-transform:uppercase;background:rgba(246,236,216,.08);
+    border:1px solid rgba(246,236,216,.18)}
+  .panel-head{display:none}
+  html.mobile-ui #panel{top:calc(env(safe-area-inset-top,0px) + 54px);width:min(100vw,360px);
     max-height:calc(100vh - env(safe-area-inset-top,0px) - 62px);
     max-height:calc(100dvh - env(safe-area-inset-top,0px) - 62px);overflow-y:auto;
     padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));
     border-top-left-radius:14px;-webkit-overflow-scrolling:touch}
+  html.mobile-ui .panel-head{position:sticky;top:-16px;z-index:2;display:flex;align-items:center;
+    justify-content:space-between;margin:-16px -18px 14px;padding:12px 14px;background:rgba(20,27,38,.96);
+    border-bottom:1px solid rgba(246,236,216,.14)}
+  html.mobile-ui .panel-head strong{font-size:11px;letter-spacing:.22em;text-transform:uppercase}
+  html.mobile-ui .panel-head button{min-width:72px;min-height:44px;border-radius:999px;color:var(--cream);
+    font-family:inherit;font-size:9px;letter-spacing:.12em;text-transform:uppercase;
+    background:rgba(246,236,216,.10);border:1px solid rgba(246,236,216,.24)}
+  html.mobile-ui #panel .row{min-height:44px;margin:9px 0}
+  html.mobile-ui #panel .seg{flex:1;justify-content:flex-end}
+  html.mobile-ui #panel .seg button{min-height:44px;flex:1;padding:5px 3px}
+  html.mobile-ui #panel input[type=range]{height:40px}
+  html.mobile-ui #panel .chk{width:24px;height:24px}
+  html.mobile-ui #timeCycle,html.mobile-ui #recordScene{min-height:44px}
   html.mobile-ui #hud{justify-content:flex-end;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px))}
   html.mobile-ui #keys{display:none}
   html.mobile-ui #tele{position:fixed;right:calc(13px + env(safe-area-inset-right,0px));
-    bottom:calc(190px + env(safe-area-inset-bottom,0px));font-size:9px;line-height:1.55}
+    bottom:calc(220px + env(safe-area-inset-bottom,0px));font-size:9px;line-height:1;
+    padding:7px 9px;border-radius:999px;background:rgba(20,27,38,.62);border:1px solid rgba(246,236,216,.14);
+    backdrop-filter:blur(8px)}
   html.mobile-ui #toast{top:calc(env(safe-area-inset-top,0px) + 58px);max-width:82vw;text-align:center}
   html.mobile-ui canvas{touch-action:none}
   html.mobile-ui .card{padding-left:20px;padding-right:20px}
   html.mobile-ui .blurb{font-size:13px}
+  @media (orientation:landscape) and (max-height:500px){
+    .card{max-width:760px;padding:4px 24px}
+    .kanji{display:none}
+    h1{font-size:clamp(30px,7vw,44px)}
+    h1 em{margin-top:6px}
+    .rule{margin:10px auto}
+    .blurb{font-size:12px!important;line-height:1.45;max-width:560px}
+    .credit{margin-top:7px;font-size:9px}
+    #bar{margin:10px auto 6px}
+    #stat{font-size:9px;min-height:12px}
+    #enter{margin-top:10px;padding:10px 28px;font-size:11px}
+  }
 </style>
 </head>
 <body>
@@ -180,9 +217,12 @@
   <button type="button" id="mSettings" aria-expanded="false">Settings</button>
   <button type="button" id="mTime">Time</button>
   <button type="button" id="mCine" class="on">Cine: Tour</button>
+  <button type="button" id="mMore" aria-expanded="false" aria-controls="mobileMore">More</button>
+</nav>
+<div id="mobileMore" hidden>
   <button type="button" id="mTrain">Train</button>
   <button type="button" id="mRecord">Record</button>
-</nav>
+</div>
 
 <button id="controlsToggle" type="button" aria-expanded="false">Controls [K]</button>
 
@@ -216,7 +256,8 @@
   <div id="tele"></div>
 </div>
 
-<div id="panel">
+<div id="panel" aria-label="Scene settings">
+  <div class="panel-head"><strong>Settings</strong><button type="button" id="panelClose">Close</button></div>
   <h3>Quality</h3>
   <div class="row"><label>Preset</label>
     <div class="seg" id="qPreset">
@@ -273,7 +314,7 @@
     <p class="credit">Modified by Bui Cong Nguyen</p>
     <div id="bar"><div id="barIn"></div></div>
     <div id="stat">preparing</div>
-    <button id="enter">Enter the valley</button>
+    <button id="enter" disabled>Preparing the valley</button>
   </div>
 </div>
 
@@ -1220,12 +1261,36 @@ function sampleHeight(x,z){
   return lerp(lerp(heightData[i],heightData[i+1],tx),
               lerp(heightData[i+HM],heightData[i+HM+1],tx), ty);
 }
-function sampleNormal(x,z,e){
+function sampleNormal(x,z,e,out){
   e = e||2.4;
   const l=sampleHeight(x-e,z), r=sampleHeight(x+e,z);
   const d=sampleHeight(x,z-e), u=sampleHeight(x,z+e);
   const nx=l-r, ny=2*e, nz=d-u; const L=Math.hypot(nx,ny,nz);
-  return {x:nx/L, y:ny/L, z:nz/L};
+  out=out||{}; out.x=nx/L; out.y=ny/L; out.z=nz/L; return out;
+}
+async function bakeTerrainAsync(onProgress){
+  if(typeof Worker==='undefined'||QS.get('worker')==='0'){ bakeTerrain(onProgress); return; }
+  let worker;
+  try{
+    worker=new Worker(new URL('./terrain-worker.js',import.meta.url));
+    const result=await new Promise((resolve,reject)=>{
+      worker.onmessage=e=>{
+        if(e.data.type==='progress'){ if(onProgress) onProgress(e.data.value); return; }
+        if(e.data.type==='done') resolve(new Float32Array(e.data.buffer));
+      };
+      worker.onerror=event=>reject(event.error||new Error(event.message||'terrain worker failed'));
+      worker.postMessage({
+        hm:HM,world:WS,df:DF,dfs:DFS,waterY0:WATER_Y0,waterY1:WATER_Y1,
+        perm:PERM,gx:GX,gy:GY,dfDist,dfT,
+        spawn:SPAWN_KNOLL,
+        villages:VILLAGES.map((v,i)=>({x:v.x,z:v.z,r:v.r,lift:i===0?16:14,blend:i===0?.72:.66}))
+      });
+    });
+    heightData.set(result);
+  } catch(error){
+    console.warn('Terrain worker unavailable; using main-thread fallback.',error);
+    bakeTerrain(onProgress);
+  } finally { if(worker) worker.terminate(); }
 }
 
 /* ── warped clipmap mesh: dense underfoot, coarse at the horizon ── */
@@ -2198,7 +2263,7 @@ function updateWind(dt, camPos){
 }
 
 /* CPU mirror — audio, smoke, pollen, birds and the camera all sample this. */
-function windAtJS(x, z, height){
+function windAtJS(x, z, height, out){
   const W = WindSys;
   const [fx,fz] = W.fwd, [sx,sz] = W.side;
   let vx = W.vec.x, vz = W.vec.y;
@@ -2227,7 +2292,9 @@ function windAtJS(x, z, height){
   const ca = Math.cos(veer), sa = Math.sin(veer);
   const rx = (vx*ca - vz*sa)*gs, rz = (vx*sa + vz*ca)*gs;
   const prof = height===undefined ? 1 : Math.log((Math.max(height,0.015)+0.06)/0.06)*0.19523;
-  return { x:rx*prof, z:rz*prof, gust:gustW, speed:Math.hypot(rx,rz)*prof };
+  out=out||{};
+  out.x=rx*prof; out.z=rz*prof; out.gust=gustW; out.speed=Math.hypot(rx,rz)*prof;
+  return out;
 }
 
 /*──────────────────── the wind field pass (fullscreen) ────────────────────*/
@@ -3913,7 +3980,7 @@ function buildTrack(){
   TRACK = { pts, total, field, yAt, iB, sMid, N };
   return TRACK;
 }
-function trackPose(s){                        // world position + tangent at arc length s
+function trackPose(s,out){                    // world position + tangent at arc length s
   const T = TRACK;
   const u = clamp(s/T.total, 0, 1);
   const fi = u*T.N, i = clamp(Math.floor(fi), 0, T.N-1), f = fi-i;
@@ -3922,7 +3989,9 @@ function trackPose(s){                        // world position + tangent at arc
   const i0=clamp(i-4,0,T.N), i1=clamp(i+4,0,T.N);
   let tx=T.pts[i1].x-T.pts[i0].x, tz=T.pts[i1].z-T.pts[i0].z, ty=T.pts[i1].y-T.pts[i0].y;
   const L=Math.hypot(tx,tz,ty)||1;
-  return { x,y,z, tx:tx/L, ty:ty/L, tz:tz/L };
+  out=out||{};
+  out.x=x; out.y=y; out.z=z; out.tx=tx/L; out.ty=ty/L; out.tz=tz/L;
+  return out;
 }
 
 /*  Ballast, sleepers and bullhead rail, for the WHOLE length of the line.
@@ -3939,7 +4008,9 @@ function buildPermanentWay(){
   const quad=(a,b,c,d)=>{idx.push(a,b,c,a,c,d);};
   const T=TRACK, GA=1.435/2;
   const s0 = 2, s1 = T.total - 2;
-  const step = 1.2;
+  // Rail profiles are sub-pixel on phones; doubling the longitudinal spacing
+  // removes a large amount of invisible geometry while keeping all ten cars.
+  const step = IS_MOBILE ? (State.q===0?2.4:1.8) : 1.2;
   // rail section, as (lateral offset from the rail centreline, height): foot,
   // web, head — traced up one side, over the top and down the other
   const SECT = [
@@ -3993,7 +4064,8 @@ function buildPermanentWay(){
     prev = cur;
   }
   // sleepers
-  for(let s=s0; s<=s1; s+=0.78){
+  const sleeperStep=IS_MOBILE ? (State.q===0?1.56:1.18) : .78;
+  for(let s=s0; s<=s1; s+=sleeperStep){
     const p=trackPose(s); const px=-p.tz, pz=p.tx;
     const hw=1.32, hl=0.14, hh=0.095;
     const c0=[p.x, p.y+0.02, p.z];
@@ -4805,6 +4877,8 @@ class Train {
     this.speed = LOCO.speed;
     this.group.visible=false;
     this.smokePos = new THREE.Vector3();
+    this.smokeWorld = new THREE.Vector3(); this.smokeForward = new THREE.Vector3();
+    this.locoPose={}; this.tempPose={};
     this.onChuff = null;
   }
   /*  It used to enter the line at s = 40 — over a kilometre of graded track
@@ -4817,8 +4891,8 @@ class Train {
     this.sEnd = Math.min(TRACK.total - 6, TRACK.sMid + 380);
     this.active=true; this.group.visible=true; this.theta=0;
   }
-  place(obj, s, lift){
-    const p = trackPose(s);
+  place(obj, s, lift, out){
+    const p = trackPose(s,out||this.tempPose);
     obj.position.set(p.x, p.y + (lift||0), p.z);
     obj.rotation.set(0, Math.atan2(p.tx, p.tz) - Math.PI/2, 0);
     const pitch = Math.asin(clamp(p.ty,-1,1));
@@ -4831,7 +4905,7 @@ class Train {
     // Keep the consist alive until the final coach—not just the locomotive—has
     // cleared the exit point.
     if(this.s > (this.sEnd || TRACK.total - 40) + this.tailLength){ this.active=false; this.group.visible=false; return; }
-    const p = this.place(this.locoGroup, this.s, 0.32);
+    const p = this.place(this.locoGroup, this.s, 0.32, this.locoPose);
     this.place(this.tenderGroup, this.s - 7.0, 0.32);
     for(let i=0;i<this.cars.length;i++)
       this.place(this.cars[i], this.s - TRAIN_FIRST_CAR - i*TRAIN_CAR_GAP, 0.30);
@@ -4866,10 +4940,10 @@ class Train {
     const beat = Math.floor(rev*4);
     if(beat !== this.chuffCount){
       this.chuffCount = beat;
-      const wp = new THREE.Vector3(3.98, 2.95, 0);
+      const wp = this.smokeWorld.set(3.98, 2.95, 0);
       this.locoGroup.localToWorld(wp);
       this.smokePos.copy(wp);
-      const fwd = new THREE.Vector3(p.tx, p.ty, p.tz);
+      const fwd = this.smokeForward.set(p.tx, p.ty, p.tz);
       if(this.onChuff) this.onChuff(wp, fwd, this.speed);
     }
   }
@@ -4880,10 +4954,11 @@ class Particles {
   constructor(scene, uni, max, fragShader, order, sort, vertShader=null, matOptions=null){
     this.max=max; this.n=0; this.sort = !!sort;
     this.lodFar=0; this.lodNear=0; this.lodMinKeep=1;
+    this.runtimeScale=1;
     this.p = new Float32Array(max*4);       // x,y,z,size
     this.q = new Float32Array(max*4);       // age01, seed, opacity, kind
     this.data = new Array(max);
-    for(let i=0;i<max;i++) this.data[i]={alive:false,x:0,y:0,z:0,vx:0,vy:0,vz:0,age:0,life:1,size:1,seed:0,kind:0,op:1};
+    for(let i=0;i<max;i++) this.data[i]={idx:i,alive:false,x:0,y:0,z:0,vx:0,vy:0,vz:0,age:0,life:1,size:1,seed:0,kind:0,op:1};
     const g=new THREE.InstancedBufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(new Float32Array([-1,-1,0, 1,-1,0, 1,1,0, -1,1,0]),3));
     g.setIndex([0,1,2, 0,2,3]);
@@ -4911,10 +4986,18 @@ class Particles {
   }
   commit(camPos){
     let k=0;
+    const runtimeScale=clamp(this.runtimeScale,0,1);
+    if(runtimeScale<=0){
+      this.geom.instanceCount=0; this.n=0; return;
+    }
     if(this.sort){
       const order=this._ord || (this._ord=[]);
       order.length=0;
       for(let i=0;i<this.max;i++){ const d=this.data[i]; if(!d.alive) continue;
+        if(runtimeScale<1){
+          const ticket=d.lodTicket===undefined?((Math.sin(d.seed*91.73)*43758.5453%1)+1)%1:d.lodTicket;
+          if(ticket>runtimeScale) continue;
+        }
         const dx=d.x-camPos.x, dy=d.y-camPos.y, dz=d.z-camPos.z;
         order.push(dx*dx+dy*dy+dz*dz, i); }
       const pairs=this._pairs || (this._pairs=[]);
@@ -4930,6 +5013,10 @@ class Particles {
     } else {
       const useLod=this.lodFar>0, near=this.lodNear, far=this.lodFar, span=Math.max(far-near,1);
       for(let i=0;i<this.max;i++){ const d=this.data[i]; if(!d.alive) continue;
+        if(runtimeScale<1){
+          const runtimeTicket=d.lodTicket===undefined?((Math.sin(d.seed*91.73)*43758.5453%1)+1)%1:d.lodTicket;
+          if(runtimeTicket>runtimeScale) continue;
+        }
         let lodOpacity=1;
         if(useLod){
           const dx=d.x-camPos.x, dz=d.z-camPos.z, dist2=dx*dx+dz*dz;
@@ -4949,7 +5036,7 @@ class Particles {
     this.n=k; this.geom.instanceCount=k;
     if(k>0){ this.aP.needsUpdate=true; this.aQ.needsUpdate=true; }
   }
-  kill(d){ d.alive=false; const i=this.data.indexOf(d); if(i>=0) this.free.push(i); }
+  kill(d){ d.alive=false; this.free.push(d.idx); }
 }
 
 const PARTICLE_VS = ()=> /* glsl */`
@@ -5615,7 +5702,8 @@ void main(){
 /* A real gait clock drives head bob, footstep audio and the grass the walker
    parts, so they can never drift out of sync.                                */
 
-const TOUR_INTRO_SECONDS=10, TOUR_CHAPTER_SECONDS=18;
+let TOUR_WALK_SECONDS=4, TOUR_INTRO_SECONDS=10;
+const TOUR_CHAPTER_SECONDS=18;
 // Season Tour begins on foot, takes off toward the viaduct, then uses one
 // elevated composition for every seasonal day/night chapter. Altitude is
 // clearance above local ground; targetLift raises the gaze for sky events.
@@ -5638,6 +5726,7 @@ class Walker {
     this.yaw = -(ov?ov[2]:CFG.spawn.heading)*DEG;
     this.pitch = (ov?ov[3]:CFG.spawn.pitch)*DEG;
     this.vel=new THREE.Vector3();
+    this.moveTarget=new THREE.Vector3(); this.groundNormal={}; this.windSample={}; this.trackSample={};
     this.stepPhase=0; this.stepFreq=0; this.lastStep=0;
     this.bobY=0; this.bobX=0; this.roll=0; this.lean=0;
     this.breath=0; this.groundY=0;
@@ -5679,10 +5768,10 @@ class Walker {
     const wl=Math.hypot(wx,wz); if(wl>0){ wx=wx/wl*inputAmount; wz=wz/wl*inputAmount; }
 
     // uphill is slower, downhill a touch faster
-    const n = sampleNormal(this.pos.x, this.pos.z, 1.4);
+    const n = sampleNormal(this.pos.x, this.pos.z, 1.4, this.groundNormal);
     const slopeDot = (n.x*wx + n.z*wz);
     const slopeMul = clamp(1.0 + slopeDot*1.15, 0.42, 1.30);
-    const target = new THREE.Vector3(wx*base*slopeMul, 0, wz*base*slopeMul);
+    const target = this.moveTarget.set(wx*base*slopeMul, 0, wz*base*slopeMul);
     const accel = moving ? 9.5 : 12.0;
     this.vel.x += (target.x-this.vel.x)*clamp(accel*dt,0,1);
     this.vel.z += (target.z-this.vel.z)*clamp(accel*dt,0,1);
@@ -5738,7 +5827,7 @@ class Walker {
     this.breath += dt*0.9;
 
     // ── the wind actually pushes you ──────────────────────────────────────
-    const w = windAtJS(this.pos.x, this.pos.z, 1.7);
+    const w = windAtJS(this.pos.x, this.pos.z, 1.7, this.windSample);
     this.windLean.x += (w.x*0.0042 - this.windLean.x)*clamp(2.2*dt,0,1);
     this.windLean.y += (w.z*0.0042 - this.windLean.y)*clamp(2.2*dt,0,1);
 
@@ -5750,12 +5839,14 @@ class Walker {
         if(this.cineT<TOUR_INTRO_SECONDS){
           // Four seconds on foot establish the meadow. The following six form
           // a real takeoff: travel toward shot zero while gaining clearance.
-          const walk=smootherstep(0,4,this.cineT), lift=smootherstep(4,TOUR_INTRO_SECONDS,this.cineT);
+          const walk=smootherstep(0,TOUR_WALK_SECONDS,this.cineT);
+          const lift=smootherstep(TOUR_WALK_SECONDS,TOUR_INTRO_SECONDS,this.cineT);
           const spawnYaw=-CFG.spawn.heading*DEG, fx=-Math.sin(spawnYaw), fz=-Math.cos(spawnYaw);
           const walkX=CFG.spawn.x+fx*18*walk, walkZ=CFG.spawn.z+fz*18*walk;
           const first=TOUR_SHOTS[0];
           this.pos.x=lerp(walkX,first.x,lift); this.pos.z=lerp(walkZ,first.z,lift);
-          const walkBlend=smoothstep(0,.55,this.cineT)*(1-smootherstep(3.4,4.8,this.cineT));
+          const walkBlend=smoothstep(0,Math.min(.55,TOUR_WALK_SECONDS*.35),this.cineT)
+            *(1-smootherstep(TOUR_WALK_SECONDS*.82,TOUR_WALK_SECONDS+Math.min(.8,TOUR_WALK_SECONDS*.3),this.cineT));
           const oldStep=this.stepPhase; this.stepPhase+=dt*1.45*walkBlend;
           if(Math.floor(this.stepPhase*2)!==Math.floor(oldStep*2)&&this.onFootstep)
             this.onFootstep(2.8*walkBlend,this.pos);
@@ -5800,7 +5891,7 @@ class Walker {
           // The opening aerial shot follows the locomotive into and across the
           // viaduct, keeping the complete consist inside the wide composition.
           if(shot.train&&train&&train.active){
-            const p=trackPose(train.s-Math.min(train.tailLength*.30,34));
+            const p=trackPose(train.s-Math.min(train.tailLength*.30,34),this.trackSample);
             const follow=smoothstep(1.5,4.5,local);
             lookX=lerp(lookX,p.x,follow); lookZ=lerp(lookZ,p.z,follow);
             lookY=lerp(lookY,p.y+4.2,follow);
@@ -5871,7 +5962,10 @@ class Walker {
    arrive a beat before you see the near blades move.                         */
 
 class Audio {
-  constructor(){ this.ok=false; this.vol=0.7; this.music=true; }
+  constructor(){
+    this.ok=false; this.vol=0.7; this.music=true; this.windSample={};
+    this.right=new THREE.Vector3();
+  }
   init(){
     if(this.ok) return;
     const AC = window.AudioContext || window.webkitAudioContext;
@@ -6141,14 +6235,13 @@ class Audio {
     this.master.gain.value += (this.vol - this.master.gain.value)*clamp(dt*3,0,1);
 
     // WIND — driven by the same field that bends the grass
-    const w = windAtJS(cam.position.x, cam.position.z, 1.7);
+    const w = windAtJS(cam.position.x, cam.position.z, 1.7, this.windSample);
     const s = w.speed, gust = w.gust;
     const k = clamp(dt*4,0,1);
-    const setG=(o,v)=>{ o.gn.gain.value += (v-o.gn.gain.value)*k; };
-    setG(this.wind.low,  0.035 + 0.052*clamp(s/6,0,1.6));
-    setG(this.wind.mid,  0.014 + 0.048*clamp(s/5,0,1.7));
-    setG(this.wind.hiss, 0.004 + 0.030*clamp((s-0.6)/5,0,1.6));
-    setG(this.wind.whis, 0.028*clamp((s-3.4)/4.0,0,1)*clamp(gust,0,1.4));
+    this.wind.low.gn.gain.value += (0.035 + 0.052*clamp(s/6,0,1.6)-this.wind.low.gn.gain.value)*k;
+    this.wind.mid.gn.gain.value += (0.014 + 0.048*clamp(s/5,0,1.7)-this.wind.mid.gn.gain.value)*k;
+    this.wind.hiss.gn.gain.value += (0.004 + 0.030*clamp((s-0.6)/5,0,1.6)-this.wind.hiss.gn.gain.value)*k;
+    this.wind.whis.gn.gain.value += (0.028*clamp((s-3.4)/4.0,0,1)*clamp(gust,0,1.4)-this.wind.whis.gn.gain.value)*k;
     this.wind.mid.bq.frequency.value  += (420 + 190*clamp(s/6,0,1.5) - this.wind.mid.bq.frequency.value)*k;
     this.wind.hiss.bq.frequency.value += (2100 + 1900*clamp(s/6,0,1.5) - this.wind.hiss.bq.frequency.value)*k;
     this.wind.grass.gn.gain.value += (0.006 + 0.036*clamp((s-0.4)/4.5,0,1.5)*clamp(state.grassNear,0,1)
@@ -6171,12 +6264,10 @@ class Audio {
     }
     // which side is the water on
     {
-      let best=1e9, bx=0, bz=0;
       const i0=clamp(Math.round(rf.t*(RIVER_PTS.length-1)),0,RIVER_PTS.length-1);
-      const p=RIVER_PTS[i0]; bx=p.x; bz=p.z;
+      const p=RIVER_PTS[i0], bx=p.x, bz=p.z;
       const dx=bx-cam.position.x, dz=bz-cam.position.z;
-      const f=new THREE.Vector3(0,0,-1).applyQuaternion(cam.quaternion);
-      const rgt=new THREE.Vector3(1,0,0).applyQuaternion(cam.quaternion);
+      const rgt=this.right.set(1,0,0).applyQuaternion(cam.quaternion);
       const L=Math.hypot(dx,dz)||1;
       this.river.pan.pan.value = clamp((rgt.x*dx+rgt.z*dz)/L, -0.85, 0.85);
     }
@@ -6224,21 +6315,28 @@ class Audio {
 
 const $ = s=>document.querySelector(s);
 const setStat=(s,p)=>{ $('#stat').textContent=s; if(p!==undefined) $('#barIn').style.width=(p*100).toFixed(0)+'%'; };
-let enterStarted=false, autoEnterTimer=null, enterCountdownTimer=null;
+let enterStarted=false, enterUnlockTimer=null, enterCountdownTimer=null;
 function stopEnterCountdown(){
-  clearTimeout(autoEnterTimer); clearInterval(enterCountdownTimer);
-  autoEnterTimer=null; enterCountdownTimer=null;
+  clearTimeout(enterUnlockTimer); clearInterval(enterCountdownTimer);
+  enterUnlockTimer=null; enterCountdownTimer=null;
 }
-function scheduleAutoEnter(){
+function scheduleEnterUnlock(){
   stopEnterCountdown();
   const button=$('#enter'), began=performance.now(), delay=3000;
+  button.disabled=true;
   const update=()=>{
     if(enterStarted) return;
     const seconds=Math.max(1,Math.ceil((delay-(performance.now()-began))/1000));
-    button.textContent='Enter the valley · '+seconds;
+    button.textContent='Ready in '+seconds;
   };
   update(); enterCountdownTimer=setInterval(update,200);
-  autoEnterTimer=setTimeout(()=>{ stopEnterCountdown(); if(!enterStarted) button.click(); },delay);
+  enterUnlockTimer=setTimeout(()=>{
+    stopEnterCountdown();
+    if(enterStarted) return;
+    button.disabled=false;
+    button.textContent='Enter the valley';
+    button.focus({preventScroll:true});
+  },delay);
 }
 const idle = ()=> new Promise(r=>requestAnimationFrame(()=>setTimeout(r,0)));
 
@@ -6344,6 +6442,7 @@ const IS_MOBILE = QS.get('mobile')==='1' || (QS.get('mobile')!=='0' && (
   (matchMedia('(pointer:coarse)').matches && Math.min(screen.width,screen.height)<900)
 ));
 document.documentElement.classList.toggle('mobile-ui',IS_MOBILE);
+if(IS_MOBILE){ TOUR_WALK_SECONDS=.9; TOUR_INTRO_SECONDS=4.8; }
 function queryNumber(name, fallback, lo, hi){
   if(!QS.has(name)) return fallback;
   const value = Number(QS.get(name));
@@ -6389,7 +6488,7 @@ let shadowCacheX=Infinity, shadowCacheZ=Infinity, shadowCacheT=-Infinity;
 /*──────── the whole build ────────*/
 async function boot(){
   setStat('carving the valley', 0.04); await idle();
-  bakeTerrain(p=>setStat('carving the valley', 0.04+p*0.30));
+  await bakeTerrainAsync(p=>setStat('carving the valley', 0.04+p*0.30));
   await idle();
 
   setStat('laying the permanent way', 0.36); await idle();
@@ -6483,7 +6582,8 @@ async function boot(){
   // 320 divisions still puts the innermost cell at 15 cm — the warp packs the
   // grid so tightly underfoot that a third of the triangles were smaller than
   // a grass blade, under a metre of grass
-  const tGeo = buildTerrainGeometry(320, 1190, 1.62, CFG.spawn.x, CFG.spawn.z);
+  const terrainDiv=IS_MOBILE?[176,208,248,288,320][State.q]:[224,272,320,360,400][State.q];
+  const tGeo = buildTerrainGeometry(terrainDiv, 1190, 1.62, CFG.spawn.x, CFG.spawn.z);
   terrainMesh = new THREE.Mesh(tGeo, RSM(TERRAIN_VS(), TERRAIN_FS(), U()));
   terrainMesh.frustumCulled=false; terrainMesh.renderOrder=1;
   scene.add(terrainMesh);
@@ -6642,14 +6742,16 @@ async function boot(){
   planesP = new Particles(lifeGroup, U(), 4, AIRPLANE_FS(), 20, false);
   initMotes(); initBirds(); initAirplanes();
 
+  const trainSmokeSpawn={};
   train.onChuff = (wp, fwd, spd)=>{
     const puffCount=qualityFxScale()<.70?1:2;
     for(let i=0;i<puffCount;i++){
-      smoke.spawn({ x:wp.x+(Math.random()-0.5)*0.25, y:wp.y+0.1, z:wp.z+(Math.random()-0.5)*0.25,
-        vx:fwd.x*spd*0.55+(Math.random()-0.5)*0.9, vy:5.4+Math.random()*2.6,
-        vz:fwd.z*spd*0.55+(Math.random()-0.5)*0.9,
-        life:16+Math.random()*9, size:0.85+Math.random()*0.5, seed:Math.random()*100,
-        kind:0, op:0.92 });
+      trainSmokeSpawn.x=wp.x+(Math.random()-.5)*.25; trainSmokeSpawn.y=wp.y+.1; trainSmokeSpawn.z=wp.z+(Math.random()-.5)*.25;
+      trainSmokeSpawn.vx=fwd.x*spd*.55+(Math.random()-.5)*.9; trainSmokeSpawn.vy=5.4+Math.random()*2.6;
+      trainSmokeSpawn.vz=fwd.z*spd*.55+(Math.random()-.5)*.9;
+      trainSmokeSpawn.life=16+Math.random()*9; trainSmokeSpawn.size=.85+Math.random()*.5;
+      trainSmokeSpawn.seed=Math.random()*100; trainSmokeSpawn.kind=0; trainSmokeSpawn.op=.92;
+      smoke.spawn(trainSmokeSpawn);
     }
     const d = camera.position.distanceTo(wp);
     audio.chuff(clamp(0.34*140/(50+d),0.02,0.4), 0, clamp(1.0-d*0.0009,0.35,1.0));
@@ -6703,7 +6805,7 @@ async function boot(){
   bindInput();
   setStat('ready', 1.0);
   $('#enter').classList.add('on');
-  scheduleAutoEnter();
+  scheduleEnterUnlock();
   for(const b of document.querySelectorAll('#qPreset button'))
     b.classList.toggle('on', +b.dataset.q === State.q);
   State.running = true;
@@ -6846,6 +6948,7 @@ let ANG_PER_PX = 0.001;
 
 /*──────────────────────────── life: motes & birds ──────────────────────────*/
 const MOTE_N = 2200;
+const _fxWind={};
 function clearParticlePool(ps){
   if(!ps) return;
   ps.free.length=0;
@@ -6870,14 +6973,14 @@ function initMotes(){
 let _motePhase = 0;
 function updateMotes(dt, cam){
   const t = WindSys.time;
-  const STRIDE = 3;
+  const STRIDE = RuntimeLod.aerial>.55?9:3;
   _motePhase = (_motePhase + 1) % STRIDE;
   dt *= STRIDE;
   for(let i=_motePhase;i<motes.max;i+=STRIDE){
     const d=motes.data[i]; if(!d.alive) continue;
     const g = sampleHeight(d.x,d.z);
     const h = Math.max(0.05, d.y-g);
-    const w = windAtJS(d.x, d.z, h);
+    const w = windAtJS(d.x, d.z, h, _fxWind);
     // drag toward the air, plus buoyancy and a little swirl
     const drag = 3.1;
     d.vx += (w.x - d.vx)*clamp(drag*dt,0,1);
@@ -6969,7 +7072,7 @@ function updateBirds(dt, t){
     const ground = sampleHeight(b.x,b.z);
     const want = ground + (b.near ? 29 : 62) + Math.sin(t*0.2+b.ph*5)*(b.near ? 10 : 22);
     b.vy += (want-b.y)*0.22*dt*4;
-    const w = windAtJS(b.x,b.z,40);
+    const w = windAtJS(b.x,b.z,40,_fxWind);
     b.vx += w.x*0.30*dt; b.vz += w.z*0.30*dt;
     const sp=Math.hypot(b.vx,b.vy,b.vz);
     if(sp>0.01){ const k=lerp(1, 11.5/sp, clamp(dt*1.5,0,1)); b.vx*=k; b.vy*=k; b.vz*=k; }
@@ -7082,8 +7185,9 @@ function updateWeatherFX(dt){
   if(!weatherFx) return;
   const dx=camera.position.x-weatherFxCenter.x, dz=camera.position.z-weatherFxCenter.y;
   if(dx*dx+dz*dz>32*32){ refreshWeatherFX(); return; }
-  weatherFxPhase=(weatherFxPhase+1)&1; const stepDt=dt*2;
-  for(let i=weatherFxPhase;i<weatherFx.max;i+=2){
+  const stride=RuntimeLod.aerial>.55?4:2;
+  weatherFxPhase=(weatherFxPhase+1)%stride; const stepDt=dt*stride;
+  for(let i=weatherFxPhase;i<weatherFx.max;i+=stride){
     const d=weatherFx.data[i]; if(!d.alive) continue;
     if(d.kind>1.5){
       d.riverU+=d.flow*stepDt;
@@ -7094,13 +7198,13 @@ function updateWeatherFX(dt){
     const ground=sampleHeight(d.x,d.z);
     if(d.kind<0.5){
       if(G.uNight.value<0.04) continue;
-      const w=windAtJS(d.x,d.z,Math.max(0.2,d.y-ground));
+      const w=windAtJS(d.x,d.z,Math.max(0.2,d.y-ground),_fxWind);
       d.vx+=(w.x*0.035+Math.sin(tAcc*0.9+d.seed)*0.18-d.vx)*clamp(stepDt*1.4,0,1);
       d.vz+=(w.z*0.035+Math.cos(tAcc*0.7+d.seed*1.7)*0.18-d.vz)*clamp(stepDt*1.4,0,1);
       const want=ground+0.35+1.7*(0.5+0.5*Math.sin(tAcc*0.55+d.seed));
       d.vy+=(want-d.y)*stepDt*1.8;
     } else {
-      const w=windAtJS(d.x,d.z,Math.max(1,d.y-ground));
+      const w=windAtJS(d.x,d.z,Math.max(1,d.y-ground),_fxWind);
       d.vx+=(w.x*0.24-d.vx)*clamp(stepDt*0.8,0,1);
       d.vz+=(w.z*0.24-d.vz)*clamp(stepDt*0.8,0,1);
       d.vy+=(-1.45-d.vy)*clamp(stepDt*0.9,0,1);
@@ -7312,8 +7416,9 @@ function updateSeasonFX(dt){
   const dx=camera.position.x-seasonFxCenter.x, dz=camera.position.z-seasonFxCenter.y;
   if(dx*dx+dz*dz>34*34){ refreshSeasonFX(); return; }
   if(State.season===0) return;
-  seasonFxPhase=(seasonFxPhase+1)&1; const stepDt=dt*2;
-  for(let i=seasonFxPhase;i<seasonFx.max;i+=2){
+  const stride=RuntimeLod.aerial>.55?4:2;
+  seasonFxPhase=(seasonFxPhase+1)%stride; const stepDt=dt*stride;
+  for(let i=seasonFxPhase;i<seasonFx.max;i+=stride){
     const d=seasonFx.data[i]; if(!d.alive) continue;
     if(d.kind<0.5) continue;
     d.age=(d.age+stepDt*0.22)%1;
@@ -7324,7 +7429,7 @@ function updateSeasonFX(dt){
       const want=ground+1.2+1.6*(0.5+0.5*Math.sin(tAcc*2.1+d.seed));
       d.vy+=(want-d.y)*stepDt*2.2;
     } else {
-      const w=windAtJS(d.x,d.z,Math.max(0.2,d.y-ground));
+      const w=windAtJS(d.x,d.z,Math.max(0.2,d.y-ground),_fxWind);
       d.vx+=(w.x*0.28-d.vx)*clamp(stepDt*0.9,0,1);
       d.vz+=(w.z*0.28-d.vz)*clamp(stepDt*0.9,0,1);
       d.vy=-0.34-0.22*(0.5+0.5*Math.sin(tAcc+d.seed));
@@ -7393,11 +7498,13 @@ function refreshFaunaFX(){
 }
 function updateFaunaFX(dt){
   if(!faunaFx || State.season===0) return;
+  if(faunaFx.runtimeScale<.08){ faunaFx.commit(camera.position); return; }
   const dcx=camera.position.x-faunaFxCenter.x, dcz=camera.position.z-faunaFxCenter.y;
   if(dcx*dcx+dcz*dcz>52*52){ refreshFaunaFX(); return; }
   faunaRight.set(1,0,0).applyQuaternion(camera.quaternion);
-  faunaFxPhase=(faunaFxPhase+1)&3; const stepDt=Math.min(dt*4,0.08);
-  for(let i=faunaFxPhase;i<faunaFx.max;i+=4){
+  const stride=RuntimeLod.aerial>.45?8:4;
+  faunaFxPhase=(faunaFxPhase+1)%stride; const stepDt=Math.min(dt*stride,0.10);
+  for(let i=faunaFxPhase;i<faunaFx.max;i+=stride){
     const d=faunaFx.data[i]; if(!d.alive) continue;
     const s=d.species, rhythm=tAcc*(s===1?2.7:(s===5?1.35:0.55))+d.turnSeed;
     const idle=s===0?Math.sin(rhythm*0.72)>0.28:(s===2?Math.sin(rhythm)>0.68:(s===3?Math.sin(rhythm*1.6)>0.48:(s===5?Math.sin(rhythm*0.72)>0.82:false)));
@@ -7430,7 +7537,7 @@ function updateSmoke(dt){
     const u = d.age/d.life;
     const ground = sampleHeight(d.x,d.z);
     const plumeHeight = Math.max(0, d.y-ground);
-    const w = windAtJS(d.x, d.z, Math.max(1, plumeHeight));
+    const w = windAtJS(d.x, d.z, Math.max(1, plumeHeight), _fxWind);
     // buoyancy decays as the puff cools and mixes with the air
     const buoy = (d.kind===1 ? 1.5 : 4.2) * Math.exp(-d.age*0.42);
     d.vy += (buoy - d.vy)*clamp(dt*1.3,0,1);
@@ -7446,6 +7553,7 @@ function updateSmoke(dt){
   }
 }
 let villSmokeT=0;
+const villageSmokeSpawn={};
 function emitVillageSmoke(dt){
   villSmokeT -= dt;
   if(villSmokeT>0 || !villageSmokers.length) return;
@@ -7453,9 +7561,11 @@ function emitVillageSmoke(dt){
   // continuous chimney plume without spending the full particle budget.
   villSmokeT = lerp(1.35,0.55,qualityFxScale());
   const s = villageSmokers[(Math.random()*villageSmokers.length)|0];
-  smoke.spawn({ x:s.x+(Math.random()-0.5)*0.2, y:s.y, z:s.z+(Math.random()-0.5)*0.2,
-    vx:0, vy:1.5, vz:0, life:22+Math.random()*10, size:0.5+Math.random()*0.4,
-    seed:Math.random()*100, kind:1, op:0.5 });
+  villageSmokeSpawn.x=s.x+(Math.random()-.5)*.2; villageSmokeSpawn.y=s.y; villageSmokeSpawn.z=s.z+(Math.random()-.5)*.2;
+  villageSmokeSpawn.vx=0; villageSmokeSpawn.vy=1.5; villageSmokeSpawn.vz=0;
+  villageSmokeSpawn.life=22+Math.random()*10; villageSmokeSpawn.size=.5+Math.random()*.4;
+  villageSmokeSpawn.seed=Math.random()*100; villageSmokeSpawn.kind=1; villageSmokeSpawn.op=.5;
+  smoke.spawn(villageSmokeSpawn);
 }
 
 /*──────────────────────────── render passes ────────────────────────────────*/
@@ -7699,10 +7809,25 @@ function postChain(){
 
 /*──────────────────────────── the frame ───────────────────────────────────*/
 let last = performance.now(), tAcc = 0, fpsAcc=[], nextTrain = 11.0;
-const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4();
+const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4(), _frameTrackPose={};
 let cloudSortT=0, rawMat=null, frameNo=0, windWarm=false, shadowWarm=false, cloudWarm=false;
 let nightShadowCleared=false;
 let autoCheckT=5, autoLow=0, autoHigh=0, targetRebuildT=null;
+const RuntimeLod={altitude:0,aerial:0};
+function updateRuntimeBudgets(){
+  RuntimeLod.altitude=Math.max(0,camera.position.y-sampleHeight(camera.position.x,camera.position.z));
+  RuntimeLod.aerial=smootherstep(IS_MOBILE?12:18,IS_MOBILE?62:90,RuntimeLod.altitude);
+  const tourLift=walker.cinematic===2?smootherstep(TOUR_WALK_SECONDS,TOUR_INTRO_SECONDS,walker.cineT):0;
+  const lift=Math.max(tourLift,RuntimeLod.aerial);
+  grass.renderScale=lerp(1,IS_MOBILE ? .06 : .12,lift);
+  smoke.runtimeScale=lerp(1,IS_MOBILE ? .22 : .35,lift);
+  motes.runtimeScale=lerp(1,.06,lift);
+  birdsP.runtimeScale=lerp(1,.48,lift);
+  seasonFx.runtimeScale=lerp(1,.16,lift);
+  faunaFx.runtimeScale=lerp(1,0,lift);
+  weatherFx.runtimeScale=lerp(1,.28,lift);
+  fireworkFx.runtimeScale=1; planesP.runtimeScale=1;
+}
 // a handful of probe spheres along the river; if none is in the frustum there
 // is no water on screen and the whole reflection pass can be skipped
 const RIVER_PROBES = (()=>{ const a=[];
@@ -7735,6 +7860,7 @@ function frame(now){
   walker.update(dt, tAcc);
   updateCinematicTour();
   camera.updateMatrixWorld(true);
+  updateRuntimeBudgets();
 
   G.uTime.value = tAcc;
   G.uCamPos.value.copy(camera.position);
@@ -7759,7 +7885,7 @@ function frame(now){
   train.update(dt, tAcc);
   State.trainActive = train.active;
   if(train.active){
-    const p = trackPose(train.s);
+    const p = trackPose(train.s,_frameTrackPose);
     _tmpV.set(p.x, p.y, p.z);
     State.trainDist = camera.position.distanceTo(_tmpV);
     const rgt = _tmpF.set(1,0,0).applyQuaternion(camera.quaternion);
@@ -7768,7 +7894,7 @@ function frame(now){
   }
   if(millWheel) millWheel.rotation.z -= dt*0.55;
 
-  updateSmoke(dt); emitVillageSmoke(dt);
+  updateSmoke(dt); if(RuntimeLod.aerial<.72) emitVillageSmoke(dt);
   updateMotes(dt, camera); updateBirds(dt, tAcc); updateAirplanes(dt,tAcc);
   updateSeasonFX(dt); updateFaunaFX(dt); updateWeatherFX(dt); updateFireworks(dt);
   smoke.commit(camera.position); motes.commit(camera.position); birdsP.commit(camera.position);
@@ -7782,11 +7908,8 @@ function frame(now){
 
   _pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
   _frustum.setFromProjectionMatrix(_pm);
-  // Once Season Tour leaves the ground, individual blades are sub-pixel detail
-  // but remain expensive. Fade their instance budget down during takeoff; this
-  // does not touch State.density, the slider, or any GPU allocation.
-  const tourLift=walker.cinematic===2?smootherstep(4,TOUR_INTRO_SECONDS,walker.cineT):0;
-  grass.renderScale=lerp(1,IS_MOBILE ? .10 : .14,tourLift);
+  // Grass and ground effects are sub-pixel from an aerial camera. Their runtime
+  // budgets are reduced by updateRuntimeBudgets without rebuilding allocations.
   grass.update(camera, _frustum);
   State.grassNear = clamp(splatSampleMask(camera.position.x, camera.position.z), 0, 1);
 
@@ -7955,8 +8078,16 @@ function loop(now){
   hudTick();
 }
 let hudT=0, teleNodes=null;
+const _hudWind={};
 function hudTick(){
   hudT++; if(hudT%12) return;
+  if(IS_MOBILE){
+    $('#tele').textContent=State.fps.toFixed(0)+' FPS · '+['U-LOW','LOW','MED','HIGH','ULTRA'][State.q]
+      +' · '+Math.round(State.scale*State.adapt*100)+'%';
+    const flyLabel=$('#mobileFly .fly-label');
+    if(flyLabel) flyLabel.textContent=walker.fly?Math.round(RuntimeLod.altitude)+'m':'Fly';
+    return;
+  }
   if(!teleNodes){
     const t=$('#tele'); t.textContent='';
     const mk=(cls)=>{ const s=document.createElement('span'); s.className=cls; t.appendChild(s); return s; };
@@ -7967,7 +8098,7 @@ function hudTick(){
     teleNodes.e.textContent='train '; teleNodes.g.textContent='  fps ';
     teleNodes.i.textContent='render '; teleNodes.k.textContent='  draw ';
   }
-  const w = windAtJS(camera.position.x, camera.position.z, 10);
+  const w = windAtJS(camera.position.x, camera.position.z, 10, _hudWind);
   const eta = Math.max(0, nextTrain - tAcc);
   teleNodes.b.textContent = w.speed.toFixed(1)+' m/s';
   teleNodes.d.textContent = (WindSys.meanSpeed*(1+w.gust*0.9)).toFixed(1);
@@ -7991,7 +8122,8 @@ function syncCinematicControl(){
     b.classList.toggle('on',+b.dataset.cine===walker.cinematic);
   const mobile=$('#mCine');
   if(mobile){
-    mobile.textContent=['Cine: Free','Cine: Default','Cine: Tour'][walker.cinematic];
+    mobile.textContent=['Free','Default','Tour'][walker.cinematic];
+    mobile.setAttribute('aria-label','Cinematic mode: '+['free walk','default','season tour'][walker.cinematic]);
     mobile.classList.toggle('on',walker.cinematic!==0);
   }
 }
@@ -8143,7 +8275,10 @@ function nearestTimePreset(degrees){
 function updateTimeButton(){
   const next=TIME_PRESETS[(State.timePreset+1)%TIME_PRESETS.length];
   $('#timeCycle').textContent='Next: '+next.name;
-  const mobile=$('#mTime'); if(mobile) mobile.textContent='Time: '+next.name;
+  const mobile=$('#mTime'); if(mobile){
+    mobile.textContent=next.name;
+    mobile.setAttribute('aria-label','Change time; next: '+next.name);
+  }
 }
 function syncDaylightControl(){
   $('#sDay').value=State.daylight.toFixed(1);
@@ -8212,7 +8347,16 @@ function toggleSettings(){
     control.classList.toggle('disabled',on);
   if(on) resetMobileControls();
   if(on&&document.pointerLockElement&&document.exitPointerLock) document.exitPointerLock();
-  toast(on?'settings — tap again to close':'');
+  if(IS_MOBILE){
+    $('#toast').classList.remove('on');
+    setMobileMore(false);
+  } else toast(on?'settings — press H to close':'');
+}
+function setMobileMore(open){
+  const menu=$('#mobileMore'), button=$('#mMore');
+  if(!menu||!button) return;
+  menu.hidden=!open; button.classList.toggle('on',open);
+  button.setAttribute('aria-expanded',String(open));
 }
 function summonTrain(){
   train.start(); audio.whistle(0.18); nextTrain=tAcc+110; toast('train approaching');
@@ -8237,6 +8381,7 @@ function bindInput(){
   // it back on every canvas click made the controls impossible to hit.
   cv.addEventListener('click', ()=>{
     audio.resume();
+    setMobileMore(false);
     if($('#panel').classList.contains('on')) return;
     if(!IS_MOBILE&&cv.requestPointerLock) cv.requestPointerLock();
   });
@@ -8377,12 +8522,14 @@ function bindInput(){
     audio.resume(); setDesktopControls(!document.documentElement.classList.contains('desktop-controls'));
   });
   $('#mSettings').addEventListener('click', ()=>{ audio.resume(); toggleSettings(); });
+  $('#panelClose').addEventListener('click', ()=>{ if($('#panel').classList.contains('on')) toggleSettings(); });
+  $('#mMore').addEventListener('click', ()=>{ audio.resume(); setMobileMore($('#mobileMore').hidden); });
   $('#mTime').addEventListener('click', ()=>{ audio.resume();
     transitionTimeOfDay((State.timePreset+1)%TIME_PRESETS.length); });
   $('#mCine').addEventListener('click', ()=>{ audio.resume();
     setCinematicMode((walker.cinematic+1)%3); });
-  $('#mTrain').addEventListener('click', ()=>{ audio.resume(); summonTrain(); });
-  $('#mRecord').addEventListener('click', ()=>{ audio.resume(); toggleSceneRecording(); });
+  $('#mTrain').addEventListener('click', ()=>{ audio.resume(); setMobileMore(false); summonTrain(); });
+  $('#mRecord').addEventListener('click', ()=>{ audio.resume(); setMobileMore(false); toggleSceneRecording(); });
   syncCinematicControl(); updateRecordButton();
   updateTimeButton();
   setSeason(State.season,false);
