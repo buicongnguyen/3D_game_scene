@@ -209,6 +209,19 @@
     #enter{margin-top:10px;padding:10px 28px;font-size:11px}
   }
 </style>
+<style>
+  #gameActions{position:fixed;top:12px;left:155px;z-index:29;display:flex;gap:8px}
+  #gameActions button{padding:10px 15px;border-radius:8px;background:#203139dd;color:#fff;border:1px solid #ffffff44;cursor:pointer}
+  #aimDot{display:none;position:fixed;left:50%;top:50%;width:4px;height:4px;border-radius:50%;background:#fff9;pointer-events:none;z-index:20}
+  html.pointer-playing #aimDot{display:block}
+  html.mobile-ui #gameActions{display:none}
+  html.mobile-ui #mobileView{display:none}
+  html.mobile-ui #mobileMove button{visibility:hidden}
+  html.mobile-ui #mobileMove{border-radius:50%;background:#14232a55;border:1px solid #ffffff44;touch-action:none}
+  #moveKnob{display:none;position:absolute;left:50%;top:50%;width:44px;height:44px;margin:-22px;border-radius:50%;background:#deedea88;pointer-events:none}
+  html.mobile-ui #moveKnob{display:block}
+  #keys span:nth-child(n+6){display:none}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -225,8 +238,11 @@
 </div>
 
 <button id="controlsToggle" type="button" aria-expanded="false">Controls [K]</button>
+<div id="gameActions"><button id="exploreScene" type="button">Explore</button><button id="gameMenu" type="button">Menu · Esc</button></div>
+<div id="aimDot" aria-hidden="true"></div>
 
 <div id="mobileMove" class="mobilePad" role="group" aria-label="Movement controls">
+  <span id="moveKnob" aria-hidden="true"></span>
   <button type="button" class="pad-up" data-move="forward" aria-label="Move forward">&#8593;</button>
   <button type="button" class="pad-down" data-move="backward" aria-label="Move backward">&#8595;</button>
   <button type="button" class="pad-left" data-move="left" aria-label="Move left">&#8592;</button>
@@ -258,6 +274,10 @@
 
 <div id="panel" aria-label="Scene settings">
   <div class="panel-head"><strong>Settings</strong><button type="button" id="panelClose">Close</button></div>
+  <h3>Controls</h3>
+  <p>Explore: WASD move · Mouse look · Shift run. F toggles flight; Space rises and Ctrl descends. Esc opens the menu. On touch screens, use the left pad to move and drag the scene to look.</p>
+  <div class="row"><label for="lookSensitivity">Look sensitivity</label><input id="lookSensitivity" type="range" min="25" max="200" value="100"><span class="val" id="lookSensitivityV">100%</span></div>
+  <div class="row"><label for="invertLook">Invert vertical look</label><input id="invertLook" type="checkbox"></div>
   <h3>Quality</h3>
   <div class="row"><label>Preset</label>
     <div class="seg" id="qPreset">
@@ -284,6 +304,7 @@
       <button type="button" data-cine="0">Free</button><button type="button" data-cine="1">Default</button>
       <button type="button" data-cine="2" class="on">Season tour</button>
     </div></div>
+  <div class="row"><label>Tour scene time</label><input id="sTourTime" type="range" min="12" max="60" step="1" value="25"><span class="val" id="sTourTimeV">25 s</span></div>
   <div class="row"><label>Export</label><button type="button" id="recordScene">Record video</button></div>
   <h3>Wind</h3>
   <div class="row"><label>Mean speed</label><input id="wSpd" type="range" min="5" max="140" value="42"><span class="val" id="wSpdV">4.2</span></div>
@@ -324,6 +345,7 @@
 
 <script type="module">
 import * as THREE from 'three';
+import { TOUR_DURATION, normalizeTourDuration, retimeTour, FrameMetrics } from './scene-timing.mjs';
 
 window.addEventListener('error', e=>{
   const el=document.getElementById('err'); el.style.display='block';
@@ -1273,15 +1295,22 @@ function sampleNormal(x,z,e,out){
 }
 async function bakeTerrainAsync(onProgress){
   if(typeof Worker==='undefined'||QS.get('worker')==='0'){ bakeTerrain(onProgress); return; }
-  let worker;
+  let worker, timeout;
   try{
     worker=new Worker(new URL('./terrain-worker.js',import.meta.url));
     const result=await new Promise((resolve,reject)=>{
+      timeout=setTimeout(()=>reject(new Error('Terrain worker timed out')),60000);
       worker.onmessage=e=>{
         if(e.data.type==='progress'){ if(onProgress) onProgress(e.data.value); return; }
-        if(e.data.type==='done') resolve(new Float32Array(e.data.buffer));
+        if(e.data.type==='done'){
+          if(!(e.data.buffer instanceof ArrayBuffer)||e.data.buffer.byteLength!==HM*HM*4){
+            reject(new Error('Invalid terrain worker result')); return;
+          }
+          resolve(new Float32Array(e.data.buffer));
+        }
       };
       worker.onerror=event=>reject(event.error||new Error(event.message||'terrain worker failed'));
+      worker.onmessageerror=()=>reject(new Error('Terrain worker message could not be decoded'));
       worker.postMessage({
         hm:HM,world:WS,df:DF,dfs:DFS,waterY0:WATER_Y0,waterY1:WATER_Y1,
         perm:PERM,gx:GX,gy:GY,dfDist,dfT,
@@ -1291,9 +1320,10 @@ async function bakeTerrainAsync(onProgress){
     });
     heightData.set(result);
   } catch(error){
+    if(worker) worker.terminate();
     console.warn('Terrain worker unavailable; using main-thread fallback.',error);
     bakeTerrain(onProgress);
-  } finally { if(worker) worker.terminate(); }
+  } finally { clearTimeout(timeout); if(worker) worker.terminate(); }
 }
 
 /* ── warped clipmap mesh: dense underfoot, coarse at the horizon ── */
@@ -4444,6 +4474,19 @@ function buildVillage(){
       }
       pbox(D,h.x,y0+ht+roofH+.04*h.s,h.z,roofHX+.05*h.s,.07*h.s,.10*h.s,h.yaw,
         tint(rc,.68),0);
+      // Stepped tile courses and corner posts share the existing detail mesh.
+      for(const side of [-1,1]){
+        for(let course=1;course<=4;course++){
+          const z=side*roofHZ*course/5;
+          const [tx,tz]=rotY(0,z,Math.cos(h.yaw),Math.sin(h.yaw));
+          pbox(D,h.x+tx,y0+ht+roofH*(1-course/5)+.035*h.s,h.z+tz,
+            roofHX,.025*h.s,.045*h.s,h.yaw,tint(rc,.78),0);
+        }
+        for(const end of [-1,1]){
+          const [px,pz]=rotY(end*w*.48,side*d*.50,Math.cos(h.yaw),Math.sin(h.yaw));
+          pbox(D,h.x+px,y0+ht*.50,h.z+pz,.075*h.s,ht*.49,.075*h.s,h.yaw,LC('timber'),0);
+        }
+      }
     }
     // chimney
     const cxo=(r()-0.5)*w*0.5;
@@ -5211,7 +5254,8 @@ void main(){
   if(!(sz>0.0)||!(sz<20.0)||!(dot(iP.xyz,iP.xyz)<1.0e12)){
     gl_Position=vec4(2.0,2.0,2.0,1.0); return;
   }
-  vec3 wp=iP.xyz+vR*(vC.x*sz)+vU*(vC.y*sz);
+  // Mirror the artwork only; mirroring the quad too cancels the facing change.
+  vec3 wp=iP.xyz+vR*(position.x*sz)+vU*(position.y*sz);
   vW=wp; vec4 mv=viewMatrix*vec4(wp,1.0); vDist=-mv.z; gl_Position=projectionMatrix*mv;
 }`;
 
@@ -5242,6 +5286,9 @@ void main(){
     vec3 fleece=mix(vec3(0.66,0.72,0.75),vec3(1.03,1.01,0.91),0.66+0.18*cos(c.x*11.0+c.y*9.0));
     col=fleece; col=mix(col,vec3(0.15,0.13,0.11),max(head,max(ear,legs))*0.92);
     float eye=ell(c-hp-vec2(0.10,0.055),vec2(0.025)); col=mix(col,vec3(0.02),eye);
+    float curls=sin(c.x*38.0+sin(c.y*24.0))*sin(c.y*32.0);
+    col*=1.0+wool*(1.0-head)*curls*.065;
+    col=mix(col,vec3(.055,.04,.035),ell(c-hp-vec2(.19,-.06),vec2(.055,.035)));
   } else if(species<1.5){
     // Rabbit: long separated ears, rounded haunch, bright tail and tiny eye.
     float body=ell(c-vec2(-0.12,-0.20),vec2(0.50,0.34));
@@ -5256,6 +5303,9 @@ void main(){
     col=mix(col,vec3(0.96,0.94,0.86),tail);
     col=mix(col,vec3(0.82,0.44,0.45),max(ear1,ear2)*ell(c-vec2(0.33,0.49),vec2(0.08,0.34))*0.55);
     float eye=ell(c-vec2(0.46,0.09),vec2(0.032)); col=mix(col,vec3(0.015),eye);
+    float cheek=ell(c-vec2(.46,-.075),vec2(.15,.095));
+    col=mix(col,fur*1.28,cheek*.7);
+    col=mix(col,vec3(.48,.24,.22),ell(c-vec2(.59,-.005),vec2(.04,.032)));
   } else if(species<2.5){
     // Peacock: broad iridescent fan with eye spots, blue neck and crown.
     float fanD=length((c-vec2(-0.20,0.02))/vec2(0.72,0.72));
@@ -5277,6 +5327,9 @@ void main(){
     col=mix(col,vec3(0.88,0.67,0.10),spots);
     col=mix(col,vec3(0.04,0.05,0.16),spots*ell(c-vec2(-0.20,0.48),vec2(0.05,0.07)));
     col=mix(col,vec3(0.90,0.63,0.13),beak);
+    float featherAngle=atan(c.y-.02,c.x+.20);
+    col*=1.0-fan*(1.0-max(body,neck))*.16*pow(abs(sin(featherAngle*16.0)),8.0);
+    col=mix(col,vec3(.015,.025,.06),ell(c-vec2(.38,.60),vec2(.026)));
   } else if(species<3.5){
     // Chicken: varied plumage, comb, beak, tail fan and pecking legs.
     float body=ell(c-vec2(-0.10,-0.14),vec2(0.56,0.40));
@@ -5293,6 +5346,8 @@ void main(){
     col=mix(col,vec3(0.90,0.08,0.045),comb);
     col=mix(col,vec3(1.0,0.64,0.08),max(beak,legs));
     float eye=ell(c-vec2(0.48,0.31),vec2(0.028)); col=mix(col,vec3(0.01),eye);
+    float foldedWing=ell(c-vec2(-.18,-.12),vec2(.31,.24));
+    col*=1.0-foldedWing*(.14+.10*pow(abs(sin(c.y*32.0+c.x*9.0)),6.0));
   } else if(species<4.5){
     // Winter bear: white or brown coat with snow collecting over its back.
     float body=ell(c-vec2(-0.12,-0.15),vec2(0.66,0.48));
@@ -5309,6 +5364,9 @@ void main(){
     col=mix(col,vec3(0.90,0.94,0.96),snow);
     col=mix(col,vec3(0.68,0.60,0.49),muzzle*(1.0-polar*0.65));
     float eye=ell(c-vec2(0.60,0.21),vec2(0.032)); col=mix(col,vec3(0.012),eye);
+    col=mix(col,vec3(.045,.033,.03),ell(c-vec2(.87,.07),vec2(.075,.06)));
+    float innerEar=max(ell(c-vec2(.29,.40),vec2(.065)),ell(c-vec2(.63,.40),vec2(.065)));
+    col=mix(col,brown*.5,innerEar*.65);
   } else {
     // Winter fox: low running profile, pointed ears and a curved white-tipped brush.
     float body=ell(c-vec2(-0.08,-0.20),vec2(0.56,0.31));
@@ -5330,7 +5388,11 @@ void main(){
     col=mix(col,vec3(0.12,0.075,0.055),legs*0.88);
     float eye=ell(c-vec2(0.57,0.23),vec2(0.030));
     float nose=ell(c-vec2(0.88,0.08),vec2(0.050,0.038)); col=mix(col,vec3(0.012),max(eye,nose));
+    col=mix(col,vec3(.18,.075,.045),max(ear1,ear2)*smoothstep(.43,.63,c.y)*.8);
   }
+  // Broad form shading stays readable at distance without extra geometry/textures.
+  float formLight=.80+.20*smoothstep(-.65,.55,c.y);
+  col*=formLight*mix(1.0,.62,uNight);
   col=mix(col,vec3(0.055,0.075,0.065),groundShadow*(1.0-a)*0.9);
   a=max(a,groundShadow*0.24); a*=vOp;
   if(!(a>0.012)) discard;
@@ -5502,19 +5564,27 @@ void main(){
   vec2 c=vC;
   float body=1.0-smoothstep(0.78,1.0,length(vec2(c.x/0.10,(c.y-0.04)/0.82)));
   float wingChord=mix(0.18,0.055,smoothstep(0.08,0.92,abs(c.x)));
-  float wings=(1.0-smoothstep(wingChord*0.72,wingChord,abs(c.y+0.02)))
+  float wingY=c.y+0.02+abs(c.x)*.28;
+  float wings=(1.0-smoothstep(wingChord*0.72,wingChord,abs(wingY)))
     *(1.0-smoothstep(0.86,0.98,abs(c.x)));
   float tail=(1.0-smoothstep(0.08,0.14,abs(c.y+0.58)))
     *(1.0-smoothstep(0.30,0.40,abs(c.x)));
-  float plane=max(body,max(wings,tail));
+  float engine=1.0-smoothstep(.78,1.0,length(vec2((abs(c.x)-.32)/.065,(c.y+.11)/.18)));
+  float plane=max(engine,max(body,max(wings,tail)));
   float behind=1.0-smoothstep(-0.42,-0.30,c.y);
   float trails=(1.0-smoothstep(0.025,0.055,abs(abs(c.x)-0.13)))*behind
     *smoothstep(-1.0,-0.48,c.y)*0.42;
   float blink=step(0.68,fract(uTime*0.72+vKind*0.37));
-  float tip=1.0-smoothstep(0.0,0.075,length(vec2(abs(c.x)-0.87,c.y+0.02)));
+  float tip=1.0-smoothstep(0.0,0.075,length(vec2(abs(c.x)-0.87,c.y+.264)));
   float a=max(plane,max(trails,tip*blink))*vOp;
   if(!(a>0.01)) discard;
-  vec3 col=mix(vec3(0.22,0.26,0.31),vec3(0.16,0.20,0.29),uNight);
+  vec3 col=mix(vec3(.78,.82,.85),vec3(.16,.20,.29),uNight);
+  col*=.78+.22*smoothstep(-.10,.07,c.x);
+  vec3 livery=vKind<.4?vec3(.12,.30,.62):vec3(.68,.18,.10);
+  col=mix(col,livery,body*(1.0-smoothstep(.025,.05,abs(c.x)))*.8);
+  float cockpit=body*(1.0-smoothstep(.035,.068,abs(c.y-.59)));
+  col=mix(col,vec3(.06,.13,.20),cockpit);
+  col=mix(col,vec3(.19,.22,.26),engine*.6);
   col=mix(col,vec3(0.88,0.94,1.0),trails);
   vec3 lamp=c.x<0.0?vec3(1.2,0.12,0.08):vec3(0.12,1.1,0.32);
   col=mix(col,lamp,tip*blink);
@@ -5719,8 +5789,9 @@ void main(){
 /* A real gait clock drives head bob, footstep audio and the grass the walker
    parts, so they can never drift out of sync.                                */
 
+const InputSettings={sensitivity:1,invert:false};
 let TOUR_WALK_SECONDS=4, TOUR_INTRO_SECONDS=10;
-const TOUR_CHAPTER_SECONDS=18;
+let TOUR_CHAPTER_SECONDS=TOUR_DURATION.default;
 // Season Tour begins on foot, takes off toward the viaduct, then uses one
 // elevated composition for every seasonal day/night chapter. Altitude is
 // clearance above local ground; targetLift raises the gaze for sky events.
@@ -5751,11 +5822,23 @@ class Walker {
     this.mobileLookX=0; this.mobileLookY=0; this.mobileVertical=0;
     // 0 free walk, 1 camera-only cinematic, 2 seasonal day-to-night tour.
     this.cinematic=0; this.cineT=0; this.cineEyeY=undefined; this.fly=false; this.flyY=0;
+    this.tourLookYaw=0; this.tourLookPitch=0; this.tourLookIdle=0;
     this.onFootstep=null;
     this.windLean=new THREE.Vector2();
     this.idle=0;
   }
   look(dx,dy){
+    dx*=InputSettings.sensitivity;
+    dy*=InputSettings.sensitivity*(InputSettings.invert?-1:1);
+    if(this.cinematic===2){
+      // Let the viewer glance around without permanently fighting the authored
+      // tour shot. Tour input is intentionally about one third as sensitive as
+      // free look and is constrained so landmarks cannot be lost completely.
+      this.tourLookYaw=clamp(this.tourLookYaw-dx*.00072,-.52,.52);
+      this.tourLookPitch=clamp(this.tourLookPitch-dy*.00072,-.34,.34);
+      this.tourLookIdle=0; this.idle=0;
+      return;
+    }
     this.yaw   -= dx*0.0021;
     this.pitch -= dy*0.0021;
     this.pitch = clamp(this.pitch, -1.15, 1.05);
@@ -5797,10 +5880,9 @@ class Walker {
       let up = 0;
       if(k['Space']||k['KeyE']) up += 1;
       up += this.mobileVertical;
-      if(k['ControlLeft']||k['ControlRight']||k['KeyQ']||k['ShiftRight']) up -= 1;
-      // look-direction flight: pitch steers the climb
-      const climb = -Math.sin(this.pitch)*fw*base;
-      this.flyY += ((up*base*0.85 + climb) - this.flyY)*clamp(9*dt,0,1);
+      if(k['ControlLeft']||k['ControlRight']||k['KeyQ']) up -= 1;
+      // Altitude is independent of view direction. Release means hold height.
+      this.flyY=clamp(up,-1,1)*base*.85;
     } else this.flyY += (0 - this.flyY)*clamp(6*dt,0,1);
     if(!this.cinematic){
       this.pos.x += this.vel.x*dt;
@@ -5851,6 +5933,16 @@ class Walker {
     // ── cinematic dolly ───────────────────────────────────────────────────
     if(this.cinematic){
       this.cineT += dt;
+      if(this.cinematic===2){
+        this.tourLookIdle+=dt;
+        if(this.tourLookIdle>1.2){
+          // Roughly eight seconds to settle almost completely after the user
+          // releases the mouse, rather than snapping back in under a second.
+          const settle=1-Math.exp(-dt*.38);
+          this.tourLookYaw+=(0-this.tourLookYaw)*settle;
+          this.tourLookPitch+=(0-this.tourLookPitch)*settle;
+        }
+      }
       let lookX=BRIDGE.x, lookZ=BRIDGE.z, lookY=BR.deck+4, eyeY;
       if(this.cinematic===2){
         if(this.cineT<TOUR_INTRO_SECONDS){
@@ -5929,12 +6021,14 @@ class Walker {
         this.pos.z=CFG.spawn.z+Math.cos(a*.7)*R*.6+10;
       }
       const dx=lookX-this.pos.x, dz=lookZ-this.pos.z;
-      const tYaw=Math.atan2(-dx,-dz);
+      const tourYaw=this.cinematic===2?this.tourLookYaw:0;
+      const tourPitch=this.cinematic===2?this.tourLookPitch:0;
+      const tYaw=Math.atan2(-dx,-dz)+tourYaw;
       let dy = tYaw - this.yaw;
       while(dy>Math.PI) dy-=TAU; while(dy<-Math.PI) dy+=TAU;
       this.yaw += dy*clamp(1.4*dt,0,1);
       const cameraEye=this.cineEyeY===undefined?sampleHeight(this.pos.x,this.pos.z)+CFG.eyeHeight:this.cineEyeY;
-      const tPitch=Math.atan2(lookY-cameraEye,Math.hypot(dx,dz))-.02;
+      const tPitch=Math.atan2(lookY-cameraEye,Math.hypot(dx,dz))-.02+tourPitch;
       this.pitch += (tPitch-this.pitch)*clamp(1.4*dt,0,1);
       // a breath of handheld
       this.yaw   += Math.sin(t*0.41)*0.00042 + Math.sin(t*1.13)*0.00016;
@@ -5951,12 +6045,12 @@ class Walker {
       this.freeY = (this.freeY===undefined ? this.groundY + CFG.eyeHeight : this.freeY) + this.flyY*dt;
       this.freeY = clamp(this.freeY, -40, 1400);
       const landingEye=g+CFG.eyeHeight;
-      if(this.mobileVertical<0&&this.freeY<=landingEye){
-        // Mobile Down doubles as a safe landing control. Once grounded, normal
+      if(this.flyY<0&&this.freeY<=landingEye){
+        // Both keyboard and touch descent land safely. Once grounded, normal
         // collision and terrain following resume without sinking below grade.
         this.freeY=undefined; this.fly=false; this.flyY=0; this.mobileVertical=0;
         this.groundY=g;
-      } else this.groundY = this.freeY - CFG.eyeHeight;
+      } else { this.freeY=Math.max(this.freeY,landingEye); this.groundY = this.freeY - CFG.eyeHeight; }
     } else {
       this.freeY = undefined;
       this.groundY += (g - this.groundY)*clamp(16*dt,0,1);
@@ -7910,7 +8004,8 @@ function postChain(){
 }
 
 /*──────────────────────────── the frame ───────────────────────────────────*/
-let last = performance.now(), tAcc = 0, fpsAcc=[], nextTrain = 11.0;
+let last = performance.now(), tAcc = 0, nextTrain = 11.0;
+const frameMetrics = new FrameMetrics();
 const _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4(), _frameTrackPose={};
 let cloudSortT=0, rawMat=null, frameNo=0, windWarm=false, shadowWarm=false, cloudWarm=false;
 let nightShadowCleared=false;
@@ -7952,14 +8047,15 @@ function riverOnScreen(fr, cp){
 }
 
 function frame(now){
-  let dt = Math.min(0.05, (now-last)/1000); last = now;
+  const elapsed = Math.max(0, (now-last)/1000); last = now;
+  let dt = Math.min(0.05, elapsed);
   if(State.paused) dt = 0;
   tAcc += dt;
-  State.frameMs += ((dt*1000)-State.frameMs)*0.08;
+  State.frameMs += ((elapsed*1000)-State.frameMs)*0.08;
   renderer.info.reset();
 
   updateWind(dt, camera.position);
-  walker.update(dt, tAcc);
+  if(!$('#panel').classList.contains('on')&&!State.paused) walker.update(dt, tAcc);
   updateCinematicTour();
   camera.updateMatrixWorld(true);
   updateRuntimeBudgets();
@@ -8054,12 +8150,11 @@ function frame(now){
 
   audio.update(dt, camera, walker, State);
 
-  fpsAcc.push(dt); if(fpsAcc.length>40) fpsAcc.shift();
-  let s=0; for(const v of fpsAcc) s+=v;
-  State.fps = fpsAcc.length/Math.max(s,1e-4);
+  frameMetrics.push(elapsed);
+  State.fps = frameMetrics.fps;
   // Re-check throughout the session: train smoke, viewport changes and thermal
   // throttling can all alter the appropriate setting after initial warm-up.
-  autoQuality(tAcc);
+  if(!State.paused) autoQuality(now/1000);
 }
 function splatSampleMask(x,z){
   const R=CFG.dataRes;
@@ -8172,7 +8267,7 @@ function autoQuality(now){
 }
 function loop(now){
   requestAnimationFrame(loop);
-  if(!State.running) return;
+  if(!State.running || document.hidden){ last=now; return; }
   try{ frame(now); } catch(e){
     State.running=false;
     const el=document.getElementById('err'); el.style.display='block'; el.textContent+='\n'+(e.stack||e);
@@ -8219,6 +8314,16 @@ function toast(msg){
 const SEASON_NAMES=['spring','summer','autumn','winter'];
 const CINEMATIC_NAMES=['free walk','cinematic — default','cinematic — season tour'];
 let cinematicRestore=null, cinematicChapter=-1, cinematicUiDay=Infinity;
+function setTourSceneTime(seconds, preserveProgress=false){
+  const next=normalizeTourDuration(seconds), previous=TOUR_CHAPTER_SECONDS;
+  if(next===previous) return;
+  // Keep the same season, day/night chapter, and relative point in that scene
+  // when the duration is adjusted during a running tour.
+  if(preserveProgress&&walker&&walker.cinematic===2&&walker.cineT>TOUR_INTRO_SECONDS){
+    walker.cineT=retimeTour(walker.cineT,TOUR_INTRO_SECONDS,previous,next);
+  }
+  TOUR_CHAPTER_SECONDS=next;
+}
 function syncCinematicControl(){
   for(const b of document.querySelectorAll('#cinePreset button'))
     b.classList.toggle('on',+b.dataset.cine===walker.cinematic);
@@ -8245,6 +8350,7 @@ function setCinematicMode(mode, announce=true){
     cinematicChapter=-1; cinematicUiDay=Infinity; daylightAnim++;
   }
   walker.cinematic=mode; walker.cineT=0; walker.cineEyeY=undefined; walker.vel.set(0,0,0);
+  walker.tourLookYaw=0; walker.tourLookPitch=0; walker.tourLookIdle=0;
   syncCinematicControl();
   if(mode===2) updateCinematicTour();
   if(announce) toast(CINEMATIC_NAMES[mode]);
@@ -8357,9 +8463,12 @@ const TIME_PRESETS=[
   {name:'afternoon',sun:14}, {name:'sunset',sun:1},
   {name:'night',sun:-14}, {name:'dawn',sun:-4},
 ];
-let daylightAnim=0;
+let daylightAnim=0, appliedDaylight=NaN;
 function setDaylight(degrees){
+  if(!Number.isFinite(degrees)) return;
+  if(appliedDaylight===clamp(degrees,-18,60)) return;
   State.daylight=clamp(degrees,-18,60);
+  appliedDaylight=State.daylight;
   const el=State.daylight*DEG, az=CFG.sunAzim*DEG;
   SUN.set(Math.sin(az)*Math.cos(el),Math.sin(el),Math.cos(az)*Math.cos(el)).normalize();
   G.uSunDir.value.copy(SUN);
@@ -8387,6 +8496,8 @@ function syncDaylightControl(){
   $('#sDayV').textContent=Math.round(State.daylight)+'°';
 }
 function transitionTimeOfDay(preset){
+  if(!TIME_PRESETS[preset]) return;
+  if(walker.cinematic===2) setCinematicMode(1,false);
   const target=TIME_PRESETS[preset], start=State.daylight, began=performance.now();
   const token=++daylightAnim;
   State.timePreset=preset; updateTimeButton(); toast(target.name);
@@ -8447,7 +8558,9 @@ function toggleSettings(){
     mobile.textContent=on?'Close':'Settings'; }
   for(const control of document.querySelectorAll('.mobilePad,#mobileFly'))
     control.classList.toggle('disabled',on);
-  if(on) resetMobileControls();
+  if(on){ walker.keys={}; walker.vel.set(0,0,0); walker.flyY=0; resetMobileControls(); }
+  panel.inert=!on;
+  if(on) $('#panelClose').focus(); else renderer.domElement.focus();
   if(on&&document.pointerLockElement&&document.exitPointerLock) document.exitPointerLock();
   if(IS_MOBILE){
     $('#toast').classList.remove('on');
@@ -8465,18 +8578,62 @@ function summonTrain(){
 }
 function bindInput(){
   const cv = renderer.domElement;
+  cv.tabIndex=0;
+  $('#panel').inert=!$('#panel').classList.contains('on');
+  const takeControl=()=>{
+    if(!walker.cinematic) return;
+    const eye=camera.position.y;
+    // Exploration continues in the scene currently on screen.
+    if(walker.cinematic===2) cinematicRestore=null;
+    setCinematicMode(0,false);
+    walker.groundY=eye-CFG.eyeHeight;
+    walker.fly=walker.groundY>sampleHeight(walker.pos.x,walker.pos.z)+2;
+    walker.freeY=walker.fly?eye:undefined;
+    walker.flyY=0;
+    toast('explore — WASD move · F flight · Esc menu');
+  };
+  const lockMouse=()=>{
+    if(IS_MOBILE||!cv.requestPointerLock) return;
+    try{ const pending=cv.requestPointerLock(); if(pending?.catch) pending.catch(()=>toast('Click the scene to capture the mouse')); }
+    catch{ toast('Mouse capture unavailable'); }
+  };
+  $('#exploreScene').addEventListener('click',()=>{
+    if($('#panel').classList.contains('on')) toggleSettings();
+    audio.resume(); takeControl(); cv.focus(); lockMouse();
+  });
+  $('#gameMenu').addEventListener('click',toggleSettings);
+  document.addEventListener('pointerlockchange',()=>{
+    const locked=document.pointerLockElement===cv;
+    document.documentElement.classList.toggle('pointer-playing',locked);
+    if(!locked){ walker.keys={}; walker.vel.set(0,0,0); walker.flyY=0;
+      if(!IS_MOBILE&&!$('#panel').classList.contains('on')) toggleSettings(); }
+  });
+  // Associate existing row labels with their controls for keyboard/screen-reader use.
+  for(const label of document.querySelectorAll('#panel .row > label')){
+    const control=label.parentElement.querySelector('input[id],select[id]');
+    if(control) label.htmlFor=control.id;
+  }
   addEventListener('keydown', e=>{
+    if((e.code==='Escape'||e.code==='KeyH')&&!e.repeat){
+      e.preventDefault();
+      if(e.code==='Escape'&&document.pointerLockElement===cv){ document.exitPointerLock(); return; }
+      toggleSettings(); return;
+    }
+    if($('#panel').classList.contains('on')) return;
+    if(e.target instanceof Element && e.target.closest('input,textarea,select,button,[contenteditable="true"]')) return;
+    const leavingTour=walker.cinematic!==0;
+    if(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','KeyF'].includes(e.code)){
+      e.preventDefault(); takeControl();
+    }
     walker.keys[e.code]=true;
-    if(e.code>='Digit1' && e.code<='Digit5') setQuality(+e.code.slice(5)-1);
-    if(e.code==='KeyH'&&!e.repeat) toggleSettings();
+    if(e.code>='Digit1' && e.code<='Digit5'&&!e.repeat) setQuality(+e.code.slice(5)-1);
     if(e.code==='KeyK'&&!e.repeat) setDesktopControls(!document.documentElement.classList.contains('desktop-controls'));
     if(e.code==='KeyC'&&!e.repeat) setCinematicMode((walker.cinematic+1)%3);
     if(e.code==='KeyR'&&!e.repeat) toggleSceneRecording();
-    if(e.code==='KeyP'){ State.paused=!State.paused; toast(State.paused?'paused':'running'); }
-    if(e.code==='KeyF'){ walker.fly=!walker.fly; toast(walker.fly?'flight — space/ctrl, look to steer':'walking'); }
+    if(e.code==='KeyP'&&!e.repeat){ State.paused=!State.paused; toast(State.paused?'paused':'running'); }
+    if(e.code==='KeyF'&&!e.repeat){ walker.fly=leavingTour?true:!walker.fly; walker.flyY=0; toast(walker.fly?'flight — Space up · Ctrl down · release to hold':'walking'); }
     if(e.code==='Space') e.preventDefault();
     if(e.code==='KeyT'&&!e.repeat) summonTrain();
-    if(e.code==='Escape' && document.exitPointerLock) document.exitPointerLock();
   });
   addEventListener('keyup', e=>{ walker.keys[e.code]=false; });
   // While the settings panel is open the cursor belongs to the panel; grabbing
@@ -8485,12 +8642,17 @@ function bindInput(){
     audio.resume();
     setMobileMore(false);
     if($('#panel').classList.contains('on')) return;
-    if(!IS_MOBILE&&cv.requestPointerLock) cv.requestPointerLock();
+    cv.focus(); lockMouse();
   });
   addEventListener('mousemove', e=>{
     if(document.pointerLockElement===cv) walker.look(e.movementX, e.movementY);
   });
   addEventListener('blur', ()=>{ walker.keys={}; resetMobileControls(); });
+  document.addEventListener('visibilitychange', ()=>{
+    last=performance.now(); frameMetrics.reset(); autoLow=0; autoHigh=0;
+    autoCheckT=last/1000+2.25;
+    if(document.hidden){ walker.keys={}; resetMobileControls(); }
+  });
 
   const moveHeld=new Set(), viewHeld=new Set();
   const updateMoveButtons=()=>{
@@ -8507,7 +8669,7 @@ function bindInput(){
     audio.resume();
     // The default seasonal tour owns the camera; manual controls must first
     // return it to Free mode or the input appears broken.
-    if(walker.cinematic) setCinematicMode(0);
+    takeControl();
   };
   const heldButtons=[];
   const bindHold=(button,value,held,update,onStart=null,onEnd=null)=>{
@@ -8552,6 +8714,26 @@ function bindInput(){
     bindHold(button,button.dataset.fly,flyHeld,updateFlyButtons);
 
   if(IS_MOBILE){
+    const pad=$('#mobileMove'), knob=$('#moveKnob');
+    let movePointer=null;
+    const moveStick=e=>{
+      const rect=pad.getBoundingClientRect(), radius=Math.min(rect.width,rect.height)*.36;
+      let x=(e.clientX-rect.left-rect.width/2)/radius, y=(e.clientY-rect.top-rect.height/2)/radius;
+      const length=Math.hypot(x,y); if(length>1){ x/=length; y/=length; }
+      walker.joyX=Math.abs(x)<.1?0:x; walker.joyY=Math.abs(y)<.1?0:y;
+      knob.style.transform=`translate(${x*radius}px,${y*radius}px)`;
+    };
+    const releaseStick=()=>{
+      const owned=movePointer; movePointer=null; walker.joyX=walker.joyY=0; knob.style.transform='';
+      if(owned!==null&&pad.hasPointerCapture(owned)) pad.releasePointerCapture(owned);
+    };
+    heldButtons.push(releaseStick);
+    pad.addEventListener('pointerdown',e=>{
+      if(movePointer!==null||$('#panel').classList.contains('on')) return;
+      e.preventDefault(); beginMobileControl(); movePointer=e.pointerId; pad.setPointerCapture(movePointer); moveStick(e);
+    });
+    pad.addEventListener('pointermove',e=>{ if(e.pointerId===movePointer){ e.preventDefault(); moveStick(e); } });
+    for(const type of ['pointerup','pointercancel','lostpointercapture']) pad.addEventListener(type,e=>{if(e.pointerId===movePointer) releaseStick();});
 
     let lookPointer=null, lookX=0, lookY=0;
     const releaseLook=e=>{
@@ -8559,6 +8741,7 @@ function bindInput(){
       const owned=lookPointer; lookPointer=null;
       if(owned!==null && cv.hasPointerCapture(owned)) cv.releasePointerCapture(owned);
     };
+    heldButtons.push(()=>releaseLook());
     cv.addEventListener('pointerdown',e=>{
       if(e.pointerType==='mouse' || lookPointer!==null || $('#panel').classList.contains('on')) return;
       e.preventDefault(); audio.resume(); lookPointer=e.pointerId; lookX=e.clientX; lookY=e.clientY;
@@ -8582,6 +8765,8 @@ function bindInput(){
   const bind=(id, f, fmt)=>{ const el=$('#'+id), out=$('#'+id+'V');
     const go=(fromUser=false)=>{ const v=+el.value; f(v,fromUser); if(out) out.textContent = fmt?fmt(v):String(v); };
     el.addEventListener('input', ()=>go(true)); go(false); };
+  bind('lookSensitivity',v=>{InputSettings.sensitivity=v/100;},v=>v+'%');
+  $('#invertLook').addEventListener('change',e=>{InputSettings.invert=e.target.checked;});
   // rebuilding the field is a ~200 ms hitch; never do it per slider tick
   let densT=null;
   bind('qDens', (v,fromUser)=>{ State.density=v/100;
@@ -8590,7 +8775,10 @@ function bindInput(){
   bind('qScale', (v,fromUser)=>{ State.scale=v/100;
     if(fromUser){ State.autoQ=false; State.adapt=1; autoLow=0; autoHigh=0; scheduleTargetRebuild(220); } });
   bind('sDay', (v,fromUser)=>{
-    if(fromUser){ daylightAnim++; State.timePreset=nearestTimePreset(v); updateTimeButton(); }
+    if(fromUser){
+      if(walker.cinematic===2) setCinematicMode(1,false);
+      daylightAnim++; State.timePreset=nearestTimePreset(v); updateTimeButton();
+    }
     setDaylight(v);
   }, v=>v.toFixed(0)+'°');
   bind('sFlower', (v,fromUser)=>{ State.flower=v/100; G.uFlower.value=State.flower;
@@ -8599,6 +8787,7 @@ function bindInput(){
     if(fromUser && State.season===2) scheduleSeasonFX(); });
   bind('sSnow', (v,fromUser)=>{ State.snow=v/100; G.uSnow.value=State.snow;
     if(fromUser&&State.season===3) refreshWeatherFX(); });
+  bind('sTourTime', setTourSceneTime, v=>Math.round(v)+' s');
   bind('wSpd', v=>{ WindSys.baseSpeed=v/10; WindSys.tgtSpeed=v/10; }, v=>(v/10).toFixed(1));
   bind('wGust', v=>{ WindSys.gustiness=v/100; }, v=>(v/100).toFixed(2));
   bind('pExp', v=>{ State.exposure=v/100; }, v=>(v/100).toFixed(2));
@@ -8611,7 +8800,9 @@ function bindInput(){
     const b = e.target.closest('button'); if(!b) return; setQuality(+b.dataset.q);
   });
   $('#seasonPreset').addEventListener('click', e=>{
-    const b=e.target.closest('button'); if(!b) return; setSeason(+b.dataset.season);
+    const b=e.target.closest('button'); if(!b) return;
+    if(walker.cinematic===2) setCinematicMode(1,false);
+    setSeason(+b.dataset.season);
   });
   $('#timeCycle').addEventListener('click', ()=>{
     transitionTimeOfDay((State.timePreset+1)%TIME_PRESETS.length);
