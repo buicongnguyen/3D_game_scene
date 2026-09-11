@@ -46,6 +46,19 @@ def oval(name, pos, scale, mat, segments=16, rings=10):
         poly.use_smooth = True
     return obj
 
+def merge_static():
+    groups = {}
+    for obj in list(bpy.context.scene.objects):
+        if not any(part in obj.name for part in ['foot', 'wing']):
+            groups.setdefault(obj.data.materials[0].name, []).append(obj)
+    for group in groups.values():
+        if len(group) == 1: continue
+        bpy.ops.object.select_all(action='DESELECT')
+        for obj in group: obj.select_set(True)
+        bpy.context.view_layer.objects.active = group[0]
+        bpy.ops.object.join()
+    bpy.ops.object.select_all(action='SELECT')
+
 def save(name):
     rng = random.Random(name)
     for obj in list(bpy.context.scene.objects):
@@ -58,30 +71,33 @@ def save(name):
             variation = .91 + .065*math.sin(p.x*31+p.y*17)*math.sin(p.z*23) + rng.uniform(-.025,.025)
             color.color = (*(min(1, channel*variation) for channel in base[:3]), 1)
     # Merge static pieces sharing materials to avoid one draw call per primitive.
-    groups = {}
-    for obj in list(bpy.context.scene.objects):
-        if 'foot' not in obj.name:
-            groups.setdefault(obj.data.materials[0].name, []).append(obj)
-    for group in groups.values():
-        if len(group) == 1:
-            continue
-        bpy.ops.object.select_all(action='DESELECT')
-        for obj in group:
-            obj.select_set(True)
-        bpy.context.view_layer.objects.active = group[0]
-        bpy.ops.object.join()
-    bpy.ops.object.select_all(action='SELECT')
+    mobile_houses=[]
+    if name.startswith('house-'):
+        for obj in bpy.context.scene.objects:
+            if any(detail in obj.name for detail in ['tile course','mullion','crossbar','plaster crack','exposed stone repair','door handle','recessed door panel']): continue
+            copy=obj.copy();copy.data=obj.data.copy();mobile_houses.append(copy)
+    merge_static()
     bpy.ops.export_scene.gltf(filepath=str(OUT / (name + '.glb')), export_format='GLB', use_selection=True)
     # Editable native source is generated next to each exported asset.
     bpy.ops.wm.save_as_mainfile(filepath=str(SOURCE / (name + '.blend')))
+    if mobile_houses:
+        bpy.ops.object.delete(use_global=False)
+        for obj in mobile_houses: bpy.context.collection.objects.link(obj)
+        merge_static()
     # Export a separate lightweight delivery mesh; do not download both on phones.
     for obj in bpy.context.selected_objects:
         if len(obj.data.polygons) < 80:
             continue
         bpy.context.view_layer.objects.active = obj
         modifier = obj.modifiers.new('mobile LOD', 'DECIMATE')
-        modifier.ratio = .32
+        if name.startswith('house-') or name in ['locomotive','tender','coach','train-wheel']:
+            # Collapsing thin window frames can produce degenerate triangles.
+            modifier.decimate_type = 'DISSOLVE'
+            modifier.angle_limit = .10
+        else:
+            modifier.ratio = .32
         bpy.ops.object.modifier_apply(modifier=modifier.name)
+        obj.data.validate(clean_customdata=False)
     mobile_out = OUT / 'mobile'
     mobile_out.mkdir(exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=str(mobile_out / (name + '.glb')), export_format='GLB', use_selection=True)

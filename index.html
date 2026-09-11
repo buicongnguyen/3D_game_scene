@@ -361,6 +361,8 @@
 import * as THREE from 'three';
 import { TOUR_DURATION, normalizeTourDuration, retimeTour, FrameMetrics } from './scene-timing.mjs';
 import { createGameplay } from './gameplay.js';
+import { loadSceneModels, createModelWildlife, upgradeTrain } from './scene-models.js';
+import {HOUSE_STYLES,HOUSE_HALF_EXTENT,HOUSE_CHIMNEY_HEIGHT,loadVillageModels,createVillageModels} from './village-models.js';
 
 window.addEventListener('error', e=>{
   const el=document.getElementById('err'); el.style.display='block';
@@ -4466,105 +4468,30 @@ function buildVillage(){
       }
     }
   }
+  const modelHouses=[];
   for(const h of houses){
     const r=rng(((h.seed*0xffffffff)>>>0)^h.village.seed);
-    const w = 3.0*h.s + r()*1.2, d = 4.0*h.s + r()*1.6, ht = 2.5*h.s + r()*1.3;
-    const wc = wallCols[(r()*wallCols.length)|0];
-    const rcI = r()<0.55?0 : (r()<0.5?1:(r()<0.6?2:3));
-    const rc = tint(roofCols[rcI], 0.88+r()*0.28);
-    const y0 = h.y - 0.5;
-    pushSolid(h.x, h.z, w/2, d/2, h.yaw);
-    // A visible stone plinth keeps the walls out of wet ground and gives every
-    // cottage a grounded silhouette on the sloping terrace.
-    pbox(M,h.x,y0+.24*h.s,h.z,w/2+.12*h.s,.30*h.s,d/2+.12*h.s,h.yaw,
-      tint(LC('mortar'),.72+r()*.16),0);
-    pbox(M, h.x, y0+ht/2, h.z, w/2, ht/2, d/2, h.yaw, tint(wc, 0.92+r()*0.18), 0);
-    const roofH=1.5*h.s+r()*.8, roofHX=w/2*1.14, roofHZ=d/2*1.16;
-    proof(M,h.x,y0+ht,h.z,roofHX,roofHZ,roofH,h.yaw,rc,0);
-    // Eave boards and a ridge cap sharpen the roof construction from afar.
-    if(detailedHouses){
-      for(const side of [-1,1]){
-        const [ex,ez]=rotY(0,side*roofHZ,Math.cos(h.yaw),Math.sin(h.yaw));
-        pbox(D,h.x+ex,y0+ht+.02*h.s,h.z+ez,roofHX,.08*h.s,.065*h.s,h.yaw,
-          tint(LC('timber'),.72),0);
-      }
-      pbox(D,h.x,y0+ht+roofH+.04*h.s,h.z,roofHX+.05*h.s,.07*h.s,.10*h.s,h.yaw,
-        tint(rc,.68),0);
-      // Stepped tile courses and corner posts share the existing detail mesh.
-      for(const side of [-1,1]){
-        for(let course=1;course<=4;course++){
-          const z=side*roofHZ*course/5;
-          const [tx,tz]=rotY(0,z,Math.cos(h.yaw),Math.sin(h.yaw));
-          pbox(D,h.x+tx,y0+ht+roofH*(1-course/5)+.035*h.s,h.z+tz,
-            roofHX,.025*h.s,.045*h.s,h.yaw,tint(rc,.78),0);
-        }
-        for(const end of [-1,1]){
-          const [px,pz]=rotY(end*w*.48,side*d*.50,Math.cos(h.yaw),Math.sin(h.yaw));
-          pbox(D,h.x+px,y0+ht*.50,h.z+pz,.075*h.s,ht*.49,.075*h.s,h.yaw,LC('timber'),0);
-        }
-      }
+    const w=3*h.s+r()*1.2,d=4*h.s+r()*1.6;
+    const sx=w/4,sz=d/5,sy=h.s,style=modelHouses.length%HOUSE_STYLES.length;
+    const hx=HOUSE_HALF_EXTENT.x*sx,hz=HOUSE_HALF_EXTENT.z*sz;
+    const ca=Math.cos(h.yaw),sa=Math.sin(h.yaw);
+    let low=Infinity,high=-Infinity,safe=true;
+    for(const dx of [-hx,0,hx])for(const dz of [-hz,0,hz]){
+      const x=h.x+dx*ca-dz*sa,z=h.z+dx*sa+dz*ca;
+      const rf=riverField(x,z),y=sampleHeight(x,z);
+      low=Math.min(low,y);high=Math.max(high,y);
+      if(rf.d<riverWidth(rf.t)+5||y<waterLevel(rf.t)+2||TRACK.field(x,z).d<5)safe=false;
     }
-    // chimney
-    const cxo=(r()-0.5)*w*0.5;
-    const [chx,chz]=rotY(cxo, d*0.22, Math.cos(h.yaw), Math.sin(h.yaw));
-    const chY = y0+ht+1.5*h.s+0.7;
-    pbox(M, h.x+chx, chY, h.z+chz, 0.22*h.s, 0.9*h.s, 0.22*h.s, h.yaw, tint(rc,0.75), 0);
-    if(r()<0.55) smokers.push({x:h.x+chx, y:chY+0.9*h.s, z:h.z+chz, rate:0.5+r()*0.8});
-    // Framed front door, lintel, threshold and a small metal latch.
-    const doorSide=h.seed<.5?1:-1, doorAlong=(r()-.5)*w*.34;
-    const [dx,dz]=rotY(doorAlong,doorSide*(d/2+.075),Math.cos(h.yaw),Math.sin(h.yaw));
-    const doorY=y0+.92*h.s;
-    pbox(M,h.x+dx,doorY,h.z+dz,.43*h.s,.86*h.s,.075,h.yaw,tint(LC('timber'),.56),3);
-    if(detailedHouses){
-      for(const sx of [-1,1]){
-        const [fx,fz]=rotY(doorAlong+sx*.48*h.s,doorSide*(d/2+.105),Math.cos(h.yaw),Math.sin(h.yaw));
-        pbox(D,h.x+fx,doorY,h.z+fz,.055*h.s,.93*h.s,.045,h.yaw,tint(LC('timber'),.90),0);
-      }
-      pbox(D,h.x+dx,doorY+.91*h.s,h.z+dz,.52*h.s,.055*h.s,.11,h.yaw,tint(LC('timber'),.90),0);
-      const [kx,kz]=rotY(doorAlong+.25*h.s,doorSide*(d/2+.17),Math.cos(h.yaw),Math.sin(h.yaw));
-      pbox(D,h.x+kx,doorY,h.z+kz,.045*h.s,.045*h.s,.035,h.yaw,LC('windowGlow'),1);
-    }
-    const [sx,sz]=rotY(doorAlong,doorSide*(d/2+.42),Math.cos(h.yaw),Math.sin(h.yaw));
-    pbox(M,h.x+sx,y0+.09*h.s,h.z+sz,.60*h.s,.09*h.s,.34*h.s,h.yaw,tint(LC('mortar'),.72),0);
-    // windows, warm at golden hour
-    const nw = detailedHouses?2+(r()*3|0):1+(r()*2|0);
-    for(let i=0;i<nw;i++){
-      const side = r()<0.5?1:-1;
-      const along = (r()-0.5)*w*0.7;
-      const [wx,wz]=rotY(along, side*(d/2+0.06), Math.cos(h.yaw), Math.sin(h.yaw));
-      const lvl = r()<0.6 ? y0+ht*0.42 : y0+ht*0.78;
-      const on = r()<0.5;
-      pbox(M, h.x+wx, lvl, h.z+wz, 0.30*h.s, 0.38*h.s, 0.05, h.yaw,
-           on?LC('windowGlow'):tint(LC('timber'),0.6), on?2:3);
-      // Timber mullions divide each pane and stay visible even when unlit.
-      if(detailedHouses){
-        const frame=tint(LC('timber'),.82);
-        pbox(D,h.x+wx,lvl,h.z+wz,.035*h.s,.38*h.s,.075,h.yaw,frame,0);
-        pbox(D,h.x+wx,lvl,h.z+wz,.30*h.s,.035*h.s,.078,h.yaw,frame,0);
-        if(r()<.42) pbox(D,h.x+wx,lvl-.49*h.s,h.z+wz,.36*h.s,.07*h.s,.11,h.yaw,
-          tint(LC('timber'),.70),0);
-      }
-    }
-    // timber framing on a few of them
-    if(r()<0.4){
-      for(let i=0;i<3;i++){
-        const along=(i-1)*w*0.32;
-        const [tx,tz]=rotY(along, d/2+0.04, Math.cos(h.yaw), Math.sin(h.yaw));
-        pbox(M, h.x+tx, y0+ht/2, h.z+tz, 0.07*h.s, ht/2*0.94, 0.04, h.yaw, LC('timber'), 0);
-      }
-      const [hx0,hz0]=rotY(0,d/2+.045,Math.cos(h.yaw),Math.sin(h.yaw));
-      for(const yy of [.30,.68]) pbox(M,h.x+hx0,y0+ht*yy,h.z+hz0,w/2*.96,.055*h.s,.045,
-        h.yaw,LC('timber'),0);
-    }
-    // Occasional dormer breaks up the long roof plane without adding a new
-    // material or draw call.
-    if(detailedHouses&&r()<.27&&h.s>.92){
-      const dormSide=r()<.5?1:-1, localZ=dormSide*roofHZ*.42;
-      const surfaceY=y0+ht+roofH*(1-Math.abs(localZ)/roofHZ);
-      const [qx,qz]=rotY((r()-.5)*w*.30,localZ,Math.cos(h.yaw),Math.sin(h.yaw));
-      pbox(D,h.x+qx,surfaceY+.34*h.s,h.z+qz,.48*h.s,.36*h.s,.42*h.s,h.yaw,
-        tint(wc,.96),0);
-      proof(D,h.x+qx,surfaceY+.70*h.s,h.z+qz,.56*h.s,.48*h.s,.34*h.s,h.yaw,rc,0);
+    if(!safe||high-low>1.7*sy)continue;
+    const radius=Math.hypot(hx,hz);
+    if(Math.hypot(h.x-(VILLAGE.x+22),h.z-(VILLAGE.z-16))<radius+3.8||
+       Math.hypot(h.x-(SECOND_VILLAGE.x-8),h.z-(SECOND_VILLAGE.z+5))<radius+2.5)continue;
+    if(modelHouses.some(o=>Math.hypot(o.x-h.x,o.z-h.z)<radius+o.radius+.6))continue;
+    const pose={x:h.x,z:h.z,y:high+.02,yaw:h.yaw,sx,sy,sz,style,radius};
+    modelHouses.push(pose);pushSolid(h.x,h.z,hx,hz,h.yaw);
+    if(h.seed<.55){
+      const [cx,cz]=rotY(1.2*sx,-.6*sz,ca,sa);
+      smokers.push({x:h.x+cx,y:pose.y+HOUSE_CHIMNEY_HEIGHT[style]*sy,z:h.z+cz,rate:1});
     }
   }
   // the bell tower: the village's vertical accent
@@ -4632,7 +4559,7 @@ function buildVillage(){
     return { x, y:y+2.4, z, yaw, r:2.6, tx, tz };
   })();
   return { geom:finishPainted(M), detailGeom:D.pos.length?finishPainted(D):null,
-    smokers:smokers.filter(Boolean), mill, houseCount:houses.length };
+    smokers:smokers.filter(Boolean), mill, modelHouses, houseCount:modelHouses.length };
 }
 
 /*──────────────── the walkable world: ground, deck, parapets ───────────────*/
@@ -4943,6 +4870,7 @@ class Train {
     this.s = -1e9; this.active=false; this.theta=0; this.lastChuff=0; this.chuffCount=0;
     this.tailLength = TRAIN_FIRST_CAR + (TRAIN_CAR_COUNT-1)*TRAIN_CAR_GAP + 6.0;
     this.speed = LOCO.speed;
+    this.driveRadius = LOCO.driveR;
     this.group.visible=false;
     this.smokePos = new THREE.Vector3();
     this.smokeWorld = new THREE.Vector3(); this.smokeForward = new THREE.Vector3();
@@ -6614,6 +6542,8 @@ let walker, grass, train, smoke, motes, birdsP, seasonFx, faunaFx, weatherFx, fi
 let trees=[], ridges=[], reflectSet=[];
 let millWheel=null, villageDetailMesh=null, villageSmokers=[], proxyTerrain=null, puffRT=null;
 let cloudShRT=null, cloudShMat=null, lifeGroup=null;
+let modelWildlife=null, modelSun=null, modelAmbient=null;
+let villageModels=null;
 let shadowCacheX=Infinity, shadowCacheZ=Infinity, shadowCacheT=-Infinity;
 
 /*──────── the whole build ────────*/
@@ -6793,6 +6723,10 @@ async function boot(){
   /*── village ──*/
   setStat('lighting the village', 0.68); await idle();
   const vil = buildVillage();
+  const houseAssets=await loadVillageModels(IS_MOBILE);
+  const houseDepth=DSM('in mat4 instanceMatrix; void main(){gl_Position=projectionMatrix*viewMatrix*modelMatrix*instanceMatrix*vec4(position,1.0);}',U(),{side:THREE.DoubleSide});
+  villageModels=createVillageModels(scene,houseAssets,vil.modelHouses,houseDepth);
+  reflectSet.push(villageModels.root);
   villageSmokers = vil.smokers;
   const paintedMat = RSM(PAINTED_VS(), PAINTED_FS(), U(), {side:THREE.DoubleSide});
   const vMesh = new THREE.Mesh(vil.geom, paintedMat);
@@ -6852,8 +6786,13 @@ async function boot(){
   /*── train ──*/
   setStat('raising steam', 0.82); await idle();
   train = new Train(scene, U());
+  const sceneModels = await loadSceneModels(IS_MOBILE);
+  upgradeTrain(train,sceneModels);
+  modelAmbient = new THREE.HemisphereLight(0xc7dfff,0x534931,.65);scene.add(modelAmbient);
+  modelSun = new THREE.DirectionalLight(0xffe4bc,1.6);scene.add(modelSun);
   const trainDepth = DSM(PAINTED_VS(), U(), {side:THREE.DoubleSide});
-  train.group.traverse(o=>{ if(o.isMesh) o.userData.depth = trainDepth; });
+  const wheelDepth = DSM('in mat4 instanceMatrix; void main(){ gl_Position=projectionMatrix*viewMatrix*modelMatrix*instanceMatrix*vec4(position,1.0); }', U(), {side:THREE.DoubleSide});
+  train.group.traverse(o=>{ if(o.isMesh) o.userData.depth = o.isInstancedMesh?wheelDepth:trainDepth; });
   reflectSet.push(train.group);
 
   /*── particles ──*/
@@ -6872,6 +6811,8 @@ async function boot(){
     {blending:THREE.AdditiveBlending});
   planesP = new Particles(lifeGroup, U(), 4, AIRPLANE_FS(), 20, false);
   initMotes(); initBirds(); initAirplanes();
+  modelWildlife=createModelWildlife(lifeGroup,sceneModels,faunaFx.max,birdsP.max);
+  faunaFx.mesh.visible=false;birdsP.mesh.visible=false;
 
   const trainSmokeSpawn={};
   train.onChuff = (wp, fwd, spd)=>{
@@ -6966,7 +6907,7 @@ async function boot(){
       if(rf.d<riverWidth(rf.t)+9) return false;
       const h=sampleHeight(x,z), hit=collideWalk(x,z,h,.6);
       return Math.abs(hit[0]-x)<.01&&Math.abs(hit[1]-z)<.01;
-    },canvas:renderer.domElement,mobile:IS_MOBILE,toast,obstacles:[vMesh,core,way],habitat,isFrozen:()=>State.season===3});
+    },canvas:renderer.domElement,mobile:IS_MOBILE,toast,obstacles:[vMesh,core,way,...villageModels.root.children],habitat,isFrozen:()=>State.season===3});
   setStat('ready', 1.0);
   $('#enter').classList.add('on');
   scheduleEnterUnlock();
@@ -8109,7 +8050,7 @@ function frame(now){
   if(gameplay){
     gameplay.update(dt,tAcc,walker.cinematic===0,State.paused||!enterStarted||$('#panel').classList.contains('on'));
     if(walker.cinematic===0) setDaylight(Math.round((14-Math.min(gameplay.elapsed/600,1)*18)*10)/10);
-    if(faunaFx) faunaFx.mesh.visible=walker.cinematic!==0;
+    if(faunaFx) faunaFx.mesh.visible=false;
   }
   updateCinematicTour();
   camera.updateMatrixWorld(true);
@@ -8136,6 +8077,7 @@ function frame(now){
     setTimeout(()=>{ if(train.active) audio.whistle(0.13); }, 2600);
   }
   train.update(dt, tAcc);
+  if(train.active)train.updateBlenderWheels();
   State.trainActive = train.active;
   if(train.active){
     const p = trackPose(train.s,_frameTrackPose);
@@ -8150,6 +8092,14 @@ function frame(now){
   updateSmoke(dt); if(RuntimeLod.aerial<.72) emitVillageSmoke(dt);
   updateMotes(dt, camera); updateBirds(dt, tAcc); updateAirplanes(dt,tAcc);
   updateSeasonFX(dt); updateFaunaFX(dt); updateWeatherFX(dt); updateFireworks(dt);
+  if(modelWildlife){
+    modelWildlife.update({fauna:faunaFx.data,birds:BIRDS,camera:camera.position,time:tAcc,
+      showFauna:walker.cinematic!==0&&State.season!==0,far:faunaFx.lodFar,
+      faunaScale:faunaFx.runtimeScale,birdScale:birdsP.runtimeScale});
+    modelSun.position.copy(SUN);modelSun.intensity=Math.max(0,SUN.y)*2;
+    modelAmbient.intensity=.18+Math.max(0,SUN.y)*.7;
+    villageModels.updateNight(1-Math.max(0,Math.min(1,SUN.y*5)));
+  }
   smoke.commit(camera.position); motes.commit(camera.position); birdsP.commit(camera.position);
   weatherFx.commit(camera.position); fireworkFx.commit(camera.position); planesP.commit(camera.position);
 

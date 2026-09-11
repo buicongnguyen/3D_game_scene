@@ -5,7 +5,8 @@
 Aim for readable anatomy, convincing silhouettes and material separation at gameplay
 distance, with a separate mobile mesh budget. These are improved procedural assets,
 not AAA photorealistic models. More polygons alone do not establish realism.
-The environment houses, train and seasonal animals are outside this seven-asset pass.
+The follow-ups below extend the same delivery pipeline to seasonal animals, the
+train, and four village house styles. Landmark tower, well and mill remain procedural.
 
 ## Implemented
 
@@ -55,3 +56,65 @@ artifacts at close range. Device FPS and in-game lighting still need visual prof
 
 Do not label the current output AAA: realistic fur, authored texture maps, skeletal
 animation and environment-wide art consistency remain unfinished.
+
+## Seasonal wildlife and railway follow-up
+
+`tools/blender/generate_scene_assets.py` extends the shared generator with sheep,
+snow-dusted brown bear, fox, peacock, chicken, flying bird, locomotive, coal tender,
+coach and unit-radius train wheel. Seasonal rabbits reuse the existing rabbit GLB.
+Every export has editable Blender source and a separate mobile delivery file.
+Hard-surface train geometry is already sparse; its mobile files preserve thin windows
+using planar simplification rather than aggressively collapsing their faces.
+
+`scene-models.js` integrates these assets into the existing scene. Seasonal sprites
+and flying-bird sprites are hidden; their simulation state drives instanced 3D meshes.
+Seasonal wildlife retains the previous tour/exploration visibility rules (hidden in
+the dinner mission), quality-dependent populations, terrain checks and distance culling.
+Wings flap about shoulder pivots; legs use simple pivot motion, not skeletal rigs.
+Brown bear snow detail is geometry; there is no separate polar-bear variation yet.
+
+The train retains ten coaches, the tender, track following, animated wheel poses,
+existing procedural coupling rods and smoke timing. Main bodywork and wheels now
+come from Blender. Wheels are instanced into two draw calls for the entire consist;
+the custom shadow pass has an instance-aware vertex shader. Opaque window materials
+avoid transparent sorting costs. A low-cost sun/hemisphere lighting setup follows
+the existing day/night direction; PBR surfaces do not yet receive the custom terrain
+shadow map. No extra shadow or reflection pass was added.
+
+Review fixed duplicate coplanar tail feathers, locomotive chimney support, thin-window
+decimation, zero-budget culling, and wheel instancing/shadow transforms. Tests load
+the actual desktop/mobile GLBs and cover budgets, finite instance matrices, animation,
+distance/quality/mode visibility, and ten-coach assembly. The local browser reached
+Ready. Exported seasonal and railway studio renders were inspected. These previews
+are not an in-game lighting or real-phone performance benchmark.
+
+Run the preview script with `-- --seasonal` or `-- --railway`; add `--mobile` to
+inspect reduced delivery assets. Current models remain stylized, not AAA realistic.
+
+## Village house follow-up
+
+Plan executed: create four original Blender styles, replace residential geometry in
+both existing settlements, preserve collision/smoke behavior, reduce phone detail,
+test and deploy with the pending animal/train changes.
+
+- Two-storey timber-framed home, weathered cottage with repaired plaster and shutters,
+  new ivory flat-roof house, and teal art studio with skylight and rear mural panels.
+- Framed opaque windows, doors, steps, chimneys, roof seams and deep stone foundations.
+  Windows gain warm emissive color at night without creating many point lights.
+- Desktop residential models total 570,556 bytes. Mobile models strip minor trim,
+  cracks, hardware and roof seams, bounded by a separate 450 KB combined test budget.
+- Repeated houses are instanced by style/material. Instanced geometry participates
+  in the existing shadow/reflection passes and interaction-occlusion raycasts.
+- Placement samples a nine-point footprint, rejects river/rail edges and steep slopes,
+  avoids house overlap and the tower/well, and grounds foundations on the highest
+  footprint sample. Conservative bounds include roof overhangs and steps.
+- Review fixed the sign difference between existing village yaw and Three.js rotation.
+  Collision and chimney smoke now use the same coordinate convention as the meshes.
+- Thirteen automated tests pass, including GLB budgets, bounds, material/mesh validity,
+  raycast occlusion, window glow, existing mission behavior, wildlife and train assembly.
+  Desktop and mobile house studio renders were inspected. Browser startup diagnostics
+  reported two villages and 41 accepted desktop houses, with no captured startup errors.
+
+Generate everything with `tools/blender/generate_village_assets.py`; preview houses
+using `tools/blender/preview_game_assets.py -- --houses` (optionally `--mobile`).
+Houses are exterior props: interiors and enterable doors are not implemented.
