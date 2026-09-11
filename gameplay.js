@@ -10,7 +10,7 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
   const loader=new GLTFLoader();
   const models={};
   await Promise.all(['rabbit','wood','berries','camp','bow',...(habitat?['fish','crab']:[])].map(async name=>{
-    const gltf=await (loadModel?loadModel(name):loader.loadAsync(`${import.meta.env.BASE_URL}models/${name}.glb`));
+    const gltf=await (loadModel?loadModel(name):loader.loadAsync(`${import.meta.env.BASE_URL}models/${mobile?'mobile/':''}${name}.glb`));
     models[name]=gltf.scene;
   }));
   const camp=new THREE.Vector3(walker.pos.x,0,walker.pos.z);

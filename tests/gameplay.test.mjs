@@ -5,7 +5,7 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {readFileSync} from 'node:fs';
 import {createGameplay} from '../gameplay.js';
 
-test('real Blender assets support gather, pause, cook, completion and replay',async()=>{
+for(const mobile of [false,true]) test(`real ${mobile?'mobile':'desktop'} Blender assets support gather, pause, cook, completion and replay`,async()=>{
   const nodes=new Map();
   const node=()=>({style:{},classList:{toggle(){}},focus(){},setAttribute(){},addEventListener(){},querySelector(id){
     if(!nodes.has(id)) nodes.set(id,node());return nodes.get(id);
@@ -18,10 +18,10 @@ test('real Blender assets support gather, pause, cook, completion and replay',as
   const obstacles=[];
   let frozen=false;
   const game=await createGameplay({scene,camera,walker,height:()=>0,validGround:()=>true,
-    canvas:node(),mobile:true,toast(){},uiDocument,inputTarget:node(),obstacles,
+    canvas:node(),mobile,toast(){},uiDocument,inputTarget:node(),obstacles,
     habitat:{x:105,z:0,radius:4,spot:new THREE.Vector3(100,0,0),water:()=>2},isFrozen:()=>frozen,
     loadModel:async name=>{
-      const bytes=readFileSync(new URL(`../public/models/${name}.glb`,import.meta.url));
+      const bytes=readFileSync(new URL(`../public/models/${mobile?'mobile/':''}${name}.glb`,import.meta.url));
       return loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
     }});
   const root=scene.getObjectByName('Valley gameplay');
