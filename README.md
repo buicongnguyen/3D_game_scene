@@ -1,6 +1,12 @@
 # Hoshi-no-Tani — The Valley of Stars
 
-Procedural Three.js landscape with seasonal tours, train, villages and night effects.
+Playable Three.js valley with original Blender assets, a gathering/hunting/cooking
+mission, and an optional seasonal sightseeing tour.
+
+Play starts by default: collect two wood and two food (berries or rabbits), then
+return to camp and press E to cook. WASD moves, mouse aims, left click shoots;
+touch controls provide movement, drag-look and action buttons. Select Season Tour
+for sightseeing. See [GAME-PLAN.md](GAME-PLAN.md) for scope and the Blender workflow.
 
 ## Development
 
