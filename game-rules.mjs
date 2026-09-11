@@ -12,6 +12,6 @@ export function cookMeal(supplies){
 }
 export function objective(supplies){
   if(supplies.meals) return 'Dinner is ready! Explore the valley or replay the mission.';
-  if(supplies.wood<2||supplies.food<2) return 'Gather 2 wood and 2 food. Hunt rabbits or pick berries.';
+  if(supplies.wood<2||supplies.food<2) return 'Gather 2 wood and 2 food. Hunt, pick berries, or fish at the river.';
   return 'Return to camp and cook dinner.';
 }

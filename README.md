@@ -1,4 +1,4 @@
-# Hoshi-no-Tani — The Valley of Stars
+# Wildhaven: River & Hearth
 
 Playable Three.js valley with original Blender assets, a gathering/hunting/cooking
 mission, and an optional seasonal sightseeing tour.

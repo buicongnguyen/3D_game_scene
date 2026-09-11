@@ -113,3 +113,23 @@ tube('bow limb', [(math.sin(i/16*math.pi)*.22,0,(i/16-.5)*1.3) for i in range(17
 tube('string', [(0,0,-.65),(0,0,.65)], .004, cream)
 oval('leather grip', (.22,0,0), (.035,.035,.14), dark)
 save('bow')
+
+silver=material('river silver',(.32,.58,.61))
+fin=material('gold fins',(.56,.31,.12))
+shell=material('crab shell',(.42,.19,.075))
+oval('fish body',(0,0,.0),(.16,.48,.22),silver)
+oval('fish belly',(0,.06,-.08),(.145,.34,.12),cream)
+oval('tail',(0,-.50,0),(.035,.16,.23),fin)
+oval('dorsal',(0,-.06,.22),(.025,.20,.12),fin)
+for side in [-1,1]:
+    oval('eye',(side*.13,.30,.075),(.025,.03,.03),dark)
+    oval('side fin',(side*.18,0,-.02),(.12,.15,.025),fin)
+save('fish')
+
+oval('shell',(0,0,.17),(.28,.21,.12),shell)
+for side in [-1,1]:
+    for i in range(4):
+        tube('leg',[(side*.20,(i-1.5)*.09,.16),(side*.37,(i-1.5)*.15,.12),(side*.46,(i-1.5)*.17,.025)],.022,shell)
+    oval('claw',(side*.28,.30,.15),(.11,.16,.07),shell)
+    oval('eye',(side*.10,.20,.29),(.03,.03,.035),dark)
+save('crab')

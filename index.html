@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>Hoshi-no-Tani — The Valley of Stars</title>
+<title>Wildhaven: River &amp; Hearth</title>
 <style>
   :root{
     --cream:#F6ECD8; --ink:#3A4356; --warm:#E8C98A; --teal:#4E7F79;
@@ -230,6 +230,11 @@
   .game-buttons button{min-height:40px;background:#426b59;color:white;border:1px solid #9bad91;border-radius:6px;padding:6px 12px;touch-action:manipulation}
   html.mobile-ui #gameHud{top:58px;font-size:12px;padding:10px;max-width:290px}
   html.mobile-ui #mobileFly{display:none}
+  #gameCollapse{float:right;border:0;background:transparent;color:#fff;font-size:22px;min-width:36px;min-height:32px;cursor:pointer}
+  html.mobile-ui .game-buttons{position:fixed;right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));width:155px;display:grid;grid-template-columns:1fr 1fr}
+  html.mobile-ui .game-buttons button{min-height:52px;font-size:13px}
+  html.mobile-ui #gameFishGuide{grid-column:1 / -1}
+  @media(max-height:500px){html.mobile-ui #gameHud{max-width:260px;font-size:11px;top:52px}html.mobile-ui #gameObjective{display:none}}
 </style>
 </head>
 <body>
@@ -336,10 +341,10 @@
 <div id="veil">
   <div class="card">
     <div class="kanji">星 の 谷</div>
-    <h1>Hoshi&#8209;no&#8209;Tani<em>The Valley of Stars</em></h1>
+    <h1>Wildhaven<em>River &amp; Hearth</em></h1>
     <div class="rule"></div>
     <p class="blurb">Welcome to the valley. Gather <b>two bundles of wood and two portions of food</b>,
-      then return to camp to cook dinner. Pick berries or hunt rabbits with your bow.
+      then return to camp to cook dinner. Pick berries, fish from shore, or hunt rabbits with your bow.
       WASD moves, the mouse aims, and E collects. Your first evening begins now.</p>
     <p class="credit">Modified by Bui Cong Nguyen</p>
     <div id="bar"><div id="barIn"></div></div>
@@ -3195,7 +3200,7 @@ void main(){
     float moonGlint = pow(max(dot(iceR,-uSunDir),0.0),42.0)*uNight;
     ice += vec3(0.42,0.58,0.82)*moonGlint*(0.20+0.80*(1.0-snowCover));
     ice = aerial(ice,vDist,V,P.y);
-    outColor = vec4(SAFE3(ice),gFogAmt);
+    outColor = vec4(SAFE3(ice),1.0);
     return;
   }
 
@@ -3317,7 +3322,8 @@ void main(){
 
   col += K_SUN * pow(clamp(dot(V,-uSunDir),0.0,1.0), 5.0) * 0.16 * sh;
   col = aerial(col, vDist, V, P.y);
-  outColor = vec4(SAFE3(col), gFogAmt);
+  // Near water reveals submerged wildlife; distant water remains opaque.
+  outColor = vec4(SAFE3(col), mix(.48,1.0,smoothstep(20.0,110.0,vDist)));
 }`;
 
 /*──────────────────────────────── §8  TREES ─────────────────────────────────*/
@@ -6739,7 +6745,7 @@ async function boot(){
       uReflect:{value:null}, uReflectOn:{value:0}, uReflectPlane:{value:BR.water},
       uWaterDetail:{value:waterDetail},
       uPiers:{value:piers}, uPierN:{value:pierN},
-    }), {side:THREE.DoubleSide}));
+    }), {side:THREE.DoubleSide,transparent:true,depthWrite:false}));
   waterMesh.frustumCulled=false; waterMesh.renderOrder=3; waterMesh.userData.noCast=true;
   scene.add(waterMesh);
 
@@ -6942,13 +6948,25 @@ async function boot(){
   window.addEventListener('resize', buildTargets);
   bindInput();
   setStat('preparing the camp',.98);
+  let habitat=null,habitatScore=Infinity;
+  for(let i=2;i<RIVER_PTS.length-2;i+=4){
+    const p=RIVER_PTS[i],before=RIVER_PTS[i-1],after=RIVER_PTS[i+1];
+    const dx=after.x-before.x,dz=after.z-before.z,len=Math.hypot(dx,dz)||1;
+    for(const side of [-1,1]){
+      const width=riverWidth(p.t),x=p.x+side*dz/len*(width+5),z=p.z-side*dx/len*(width+5);
+      const y=sampleHeight(x,z),hit=collideWalk(x,z,y,1);
+      if(Math.hypot(hit[0]-x,hit[1]-z)>.01||Math.abs(y-waterLevel(p.t))>5) continue;
+      const distance=Math.hypot(x-walker.pos.x,z-walker.pos.z);
+      if(distance<habitatScore){habitatScore=distance;habitat={x:p.x,z:p.z,radius:width*.6,spot:new THREE.Vector3(x,y,z),water:(x,z)=>waterLevel(riverField(x,z).t)};}
+    }
+  }
   gameplay=await createGameplay({scene,camera,walker,height:sampleHeight,
     validGround:(x,z)=>{
       const rf=riverField(x,z);
       if(rf.d<riverWidth(rf.t)+9) return false;
       const h=sampleHeight(x,z), hit=collideWalk(x,z,h,.6);
       return Math.abs(hit[0]-x)<.01&&Math.abs(hit[1]-z)<.01;
-    },canvas:renderer.domElement,mobile:IS_MOBILE,toast,obstacles:[vMesh,core,way]});
+    },canvas:renderer.domElement,mobile:IS_MOBILE,toast,obstacles:[vMesh,core,way],habitat,isFrozen:()=>State.season===3});
   setStat('ready', 1.0);
   $('#enter').classList.add('on');
   scheduleEnterUnlock();

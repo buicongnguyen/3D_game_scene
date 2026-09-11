@@ -1,20 +1,23 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { createRiverLife } from './river-life.js';
 import { createSupplies, cookMeal, objective, MISSION, inReach, dinnerResult } from './game-rules.mjs';
 
 export async function createGameplay({scene,camera,walker,height,validGround,canvas,mobile,toast,obstacles=[],
-  loadModel=null,uiDocument=document,inputTarget=window}){
+  loadModel=null,uiDocument=document,inputTarget=window,habitat=null,isFrozen=()=>false}){
   const root=new THREE.Group(); root.name='Valley gameplay'; scene.add(root);
   const light=new THREE.HemisphereLight(0xffedcf,0x394c43,2.2); root.add(light);
   const loader=new GLTFLoader();
   const models={};
-  await Promise.all(['rabbit','wood','berries','camp','bow'].map(async name=>{
+  await Promise.all(['rabbit','wood','berries','camp','bow',...(habitat?['fish','crab']:[])].map(async name=>{
     const gltf=await (loadModel?loadModel(name):loader.loadAsync(`${import.meta.env.BASE_URL}models/${name}.glb`));
     models[name]=gltf.scene;
   }));
   const camp=new THREE.Vector3(walker.pos.x,0,walker.pos.z);
   camp.y=height(camp.x,camp.z);
   const supplies=createSupplies(), items=[], animals=[];
+  const riverLife=habitat?createRiverLife({root,models,habitat,height,mobile}):null;
+  let fishing=0,catches=0;
   let active=false, elapsed=0, cooldown=0, hint='', nearest=null, cooking=0, finishedAt=null;
   const playerGround=new THREE.Vector3(), interactionTarget=new THREE.Vector3();
   const raycaster=new THREE.Raycaster();
@@ -64,10 +67,16 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
     throw new Error('Camp terrain cannot support mission supplies');
   }
   const hud=uiDocument.createElement('section'); hud.id='gameHud';
-  hud.innerHTML='<strong>DINNER BEFORE DUSK</strong><p id="gameObjective"></p><div id="gameSupplies"></div><div id="gameDirection"></div><div id="gameHint" role="status"></div><div class="game-buttons"><button id="gameInteract">Collect / Cook · E</button><button id="gameShoot">Shoot · click</button><button id="gameReplay" hidden>Play again</button></div>';
+  hud.innerHTML='<strong>WILDHAVEN · RIVER & HEARTH</strong><button id="gameCollapse" aria-expanded="true" aria-label="Toggle mission details">−</button><p id="gameObjective"></p><div id="gameSupplies"></div><div id="gameDirection"></div><div id="gameHint" role="status"></div><div class="game-buttons"><button id="gameInteract">Interact · E</button><button id="gameShoot">Shoot</button><button id="gameFishGuide">Find river</button><button id="gameReplay" hidden>Play again</button></div>';
   uiDocument.body.append(hud);
   const objectiveNode=hud.querySelector('#gameObjective'), suppliesNode=hud.querySelector('#gameSupplies'), directionNode=hud.querySelector('#gameDirection'), hintNode=hud.querySelector('#gameHint');
   const replay=hud.querySelector('#gameReplay');
+  let riverGuide=false,collapsed=false;
+  hud.querySelector('#gameFishGuide').onclick=()=>{riverGuide=!riverGuide;toast(riverGuide?'Follow the river marker to fish from shore':'Following mission supplies');canvas.focus();};
+  hud.querySelector('#gameCollapse').onclick=()=>{
+    collapsed=!collapsed;objectiveNode.hidden=collapsed;suppliesNode.hidden=collapsed;
+    const button=hud.querySelector('#gameCollapse');button.textContent=collapsed?'+':'−';button.setAttribute('aria-expanded',String(!collapsed));canvas.focus();
+  };
   function refresh(){
     objectiveNode.textContent=supplies.meals?dinnerResult(finishedAt??elapsed):objective(supplies);
     suppliesNode.textContent=`Wood ${supplies.wood}/2 · Food ${supplies.food}/2 · Meals ${supplies.meals}`;
@@ -87,7 +96,11 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
   function interact(){
     if(!active) return;
     if(nearest&&reachable(nearest)){
-      if(nearest.type==='camp'){
+      if(nearest.type==='fishing'){
+        if(isFrozen()){toast('The river is frozen — gather berries or hunt.');return;}
+        if(catches>=4){toast('This pool is resting. Try another food source.');return;}
+        if(fishing===0){fishing=3;toast('Fishing — stay by the river marker');}
+      }else if(nearest.type==='camp'){
         if(supplies.meals){toast(dinnerResult(finishedAt));return;}
         if(cooking>0) return;
         if(supplies.wood>=2&&supplies.food>=2){cooking=MISSION.cookSeconds;toast('Cooking — stay by the campfire');}
@@ -137,7 +150,7 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
   hud.querySelector('#gameShoot').onclick=()=>{shoot();canvas.focus();};
   replay.onclick=()=>{
     if(!active) return;
-    Object.assign(supplies,createSupplies());elapsed=0;cooldown=0;cooking=0;finishedAt=null;nearest=null;trail.visible=false;
+    Object.assign(supplies,createSupplies());elapsed=0;cooldown=0;cooking=0;fishing=0;catches=0;finishedAt=null;nearest=null;trail.visible=false;
     walker.pos.x=camp.x;walker.pos.z=camp.z;walker.groundY=camp.y;
     walker.fly=false;walker.freeY=undefined;walker.flyY=0;walker.vel.set(0,0,0);
     populate();refresh();canvas.focus();
@@ -158,6 +171,11 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
       if(!supplies.meals) elapsed+=dt;
       cooldown=Math.max(0,cooldown-dt);
       playerGround.set(walker.pos.x,walker.groundY,walker.pos.z);
+      if(riverLife) riverLife.update(elapsed,playerGround,isFrozen());
+      if(fishing>0){
+        if(walker.fly||isFrozen()||!inReach(playerGround,riverLife.spot)){fishing=0;toast('Fishing cancelled — return to shore.');}
+        else {fishing=Math.max(0,fishing-dt);if(fishing===0){supplies.food++;catches++;refresh();toast('Caught a river fish — food +1');}}
+      }
       light.intensity=2.2-Math.min(elapsed/MISSION.duskSeconds,1)*1.35;
       if(cooking>0){
         if(walker.fly||!inReach(playerGround,camp)){cooking=0;toast('Cooking cancelled — return to camp.');}
@@ -195,9 +213,10 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
       }
       const campDistance=Math.hypot(walker.pos.x-camp.x,walker.pos.z-camp.z);
       if(inReach(playerGround,camp,3.5)) nearest={type:'camp'};
+      if(!nearest&&riverLife&&!isFrozen()&&inReach(playerGround,riverLife.spot,3.5)) nearest={type:'fishing',object:{position:riverLife.spot}};
       if(walker.fly) nearest=null;
       campMarker.rotation.y+=dt;
-      hint=cooking>0?`Cooking… ${Math.ceil(cooking)}s`:nearest?(nearest.type==='camp'?'E — Cook at camp':'E — Collect '+nearest.type):'Left click — hunt · E — collect · Esc — menu';
+      hint=fishing>0?`Fishing… ${Math.ceil(fishing)}s`:cooking>0?`Cooking… ${Math.ceil(cooking)}s`:nearest?(nearest.type==='camp'?'E — Cook at camp':nearest.type==='fishing'?'E — Fish from shore':'E — Collect '+nearest.type):'Left click — hunt · E — interact · Esc — menu';
       hudTime+=dt;
       if(hudTime>.15){
         hudTime=0;hintNode.textContent=hint;
@@ -210,6 +229,7 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
           }
         }
         let angle=Math.atan2(-(guide.x-walker.pos.x),-(guide.z-walker.pos.z))-walker.yaw;
+        if(riverGuide&&riverLife){guide=riverLife.spot;label=isFrozen()?'Frozen river':'Fishing spot';angle=Math.atan2(-(guide.x-walker.pos.x),-(guide.z-walker.pos.z))-walker.yaw;}
         angle=Math.atan2(Math.sin(angle),Math.cos(angle));
         const arrow=Math.abs(angle)<.4?'↑':Math.abs(angle)>2.5?'↓':angle>0?'←':'→';
         const distance=Math.hypot(guide.x-walker.pos.x,guide.z-walker.pos.z);

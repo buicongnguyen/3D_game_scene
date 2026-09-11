@@ -7,7 +7,7 @@ import {createGameplay} from '../gameplay.js';
 
 test('real Blender assets support gather, pause, cook, completion and replay',async()=>{
   const nodes=new Map();
-  const node=()=>({style:{},classList:{toggle(){}},focus(){},addEventListener(){},querySelector(id){
+  const node=()=>({style:{},classList:{toggle(){}},focus(){},setAttribute(){},addEventListener(){},querySelector(id){
     if(!nodes.has(id)) nodes.set(id,node());return nodes.get(id);
   }});
   const uiDocument={createElement:node,body:{append(){}},documentElement:node()};
@@ -16,8 +16,10 @@ test('real Blender assets support gather, pause, cook, completion and replay',as
   camera.position.set(0,1.68,0);
   const loader=new GLTFLoader();
   const obstacles=[];
+  let frozen=false;
   const game=await createGameplay({scene,camera,walker,height:()=>0,validGround:()=>true,
     canvas:node(),mobile:true,toast(){},uiDocument,inputTarget:node(),obstacles,
+    habitat:{x:105,z:0,radius:4,spot:new THREE.Vector3(100,0,0),water:()=>2},isFrozen:()=>frozen,
     loadModel:async name=>{
       const bytes=readFileSync(new URL(`../public/models/${name}.glb`,import.meta.url));
       return loader.parseAsync(bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),'');
@@ -52,4 +54,11 @@ test('real Blender assets support gather, pause, cook, completion and replay',as
   nodes.get('#gameReplay').onclick();assert.equal(game.complete,false);
   assert.equal(game.elapsed,0);assert.equal(walker.pos.length(),0);
   assert.equal(root.children.filter(o=>o.name==='wood'&&o.visible).length,5);
+  move(new THREE.Vector3(100,0,0));tick();interact();tick(3.1);
+  assert.match(nodes.get('#gameSupplies').textContent,/Food 1\/2/);
+  interact();tick(1);move(new THREE.Vector3());tick(3);
+  assert.match(nodes.get('#gameSupplies').textContent,/Food 1\/2/,'leaving shore cancels fishing');
+  move(new THREE.Vector3(100,0,0));tick();interact();frozen=true;tick(4);
+  assert.match(nodes.get('#gameSupplies').textContent,/Food 1\/2/,'freezing cancels fishing');
+  assert.equal(root.getObjectByName('River wildlife').visible,false);
 });

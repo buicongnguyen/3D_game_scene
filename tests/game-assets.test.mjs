@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 test('all gameplay assets are valid GLB files within the initial download budget',()=>{
   let total=0;
-  for(const name of ['rabbit','wood','berries','camp','bow']){
+  for(const name of ['rabbit','wood','berries','camp','bow','fish','crab']){
     const data=readFileSync(new URL(`../public/models/${name}.glb`,import.meta.url));
     assert.equal(data.toString('ascii',0,4),'glTF');
     assert.equal(data.readUInt32LE(4),2);
