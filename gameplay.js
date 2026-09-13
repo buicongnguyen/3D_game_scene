@@ -1,11 +1,13 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { createRiverLife } from './river-life.js';
+import {createAimView} from './aim-view.js';
 import { createSupplies, cookMeal, objective, MISSION, inReach, dinnerResult } from './game-rules.mjs';
 
 export async function createGameplay({scene,camera,walker,height,validGround,canvas,mobile,toast,obstacles=[],
   loadModel=null,uiDocument=document,inputTarget=window,habitat=null,isFrozen=()=>false}){
   const root=new THREE.Group(); root.name='Valley gameplay'; scene.add(root);
+  walker.easyObstacles=obstacles;
   const light=new THREE.HemisphereLight(0xffedcf,0x394c43,2.2); root.add(light);
   const loader=new GLTFLoader();
   const models={};
@@ -21,6 +23,10 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
   let active=false, elapsed=0, cooldown=0, hint='', nearest=null, cooking=0, finishedAt=null;
   const playerGround=new THREE.Vector3(), interactionTarget=new THREE.Vector3();
   const raycaster=new THREE.Raycaster();
+  const aimPoint=new THREE.Vector2();
+  const interactionOrigin=new THREE.Vector3();
+  let aimView=null,aimReady=false;
+  const aimOutline=new THREE.BoxHelper(undefined,0x7aff99);aimOutline.visible=false;root.add(aimOutline);
   const ray=new THREE.Ray(), forward=new THREE.Vector3(), center=new THREE.Vector3();
   const sphere=new THREE.Sphere(new THREE.Vector3(),.85);
   const markerGeo=new THREE.OctahedronGeometry(.22);
@@ -67,7 +73,7 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
     throw new Error('Camp terrain cannot support mission supplies');
   }
   const hud=uiDocument.createElement('section'); hud.id='gameHud';
-  hud.innerHTML='<strong>WILDHAVEN · RIVER & HEARTH</strong><button id="gameCollapse" aria-expanded="true" aria-label="Toggle mission details">−</button><p id="gameObjective"></p><div id="gameSupplies"></div><div id="gameDirection"></div><div id="gameHint" role="status"></div><div class="game-buttons"><button id="gameInteract">Interact · E</button><button id="gameShoot">Shoot</button><button id="gameFishGuide">Find river</button><button id="gameReplay" hidden>Play again</button></div>';
+  hud.innerHTML='<strong>WILDHAVEN · RIVER & HEARTH</strong><button id="gameCollapse" aria-expanded="true" aria-label="Toggle mission details">−</button><p id="gameObjective"></p><div id="gameSupplies"></div><div id="gameDirection"></div><div id="gameHint" role="status"></div><div class="game-buttons"><button id="gameInteract">Interact · E</button><button id="gameShoot">Shoot</button><button id="gameFishGuide">Find river</button><button id="gameCamera">Camera: Easy Play</button><button id="gameRotateLeft" aria-label="Rotate view left">↶ View</button><button id="gameRotateRight" aria-label="Rotate view right">View ↷</button><button id="gameReplay" hidden>Play again</button></div>';
   uiDocument.body.append(hud);
   const objectiveNode=hud.querySelector('#gameObjective'), suppliesNode=hud.querySelector('#gameSupplies'), directionNode=hud.querySelector('#gameDirection'), hintNode=hud.querySelector('#gameHint');
   const replay=hud.querySelector('#gameReplay');
@@ -82,15 +88,19 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
     suppliesNode.textContent=`Wood ${supplies.wood}/2 · Food ${supplies.food}/2 · Meals ${supplies.meals}`;
     replay.hidden=!supplies.meals;
   }
+  function interactionDistance(position){return walker.easyPlay?Math.hypot(playerGround.x-position.x,playerGround.z-position.z):playerGround.distanceTo(position);}
+  function interactionReach(position,range=MISSION.interactionRange){return interactionDistance(position)<=range;}
   function reachable(entry){
-    if(walker.fly||entry.taken) return false;
+    if((walker.fly&&!walker.easyPlay)||entry.taken) return false;
     playerGround.set(walker.pos.x,walker.groundY,walker.pos.z);
     const position=entry.type==='camp'?camp:entry.object.position;
-    if(!inReach(playerGround,position)) return false;
+    if(!interactionReach(position)) return false;
     interactionTarget.copy(position);interactionTarget.y+=.4;
-    forward.copy(interactionTarget).sub(camera.position);
+    interactionOrigin.copy(walker.easyPlay?playerGround:camera.position);
+    if(walker.easyPlay)interactionOrigin.y+=1.5;
+    forward.copy(interactionTarget).sub(interactionOrigin);
     const distance=forward.length();forward.normalize();
-    raycaster.set(camera.position,forward);raycaster.far=distance;
+    raycaster.set(interactionOrigin,forward);raycaster.far=distance;
     return raycaster.intersectObjects(obstacles,false).length===0;
   }
   function interact(){
@@ -111,12 +121,13 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
         toast(nearest.type==='wood'?'Collected firewood':'Collected food');
       }
       nearest=null; refresh();
-    } else toast('Move closer on foot with a clear view to collect.');
+    } else toast('Move closer with a clear path to collect.');
   }
-  function shoot(){
-    if(!active||cooldown>0||walker.fly) return;
-    cooldown=.8;
-    camera.getWorldDirection(forward); ray.set(camera.position,forward);
+  function findShot(){
+    camera.updateMatrixWorld(true);
+    if(walker.easyPlay&&aimView?.opened){raycaster.setFromCamera(aimPoint,camera);forward.copy(raycaster.ray.direction);}
+    else camera.getWorldDirection(forward);
+    ray.set(camera.position,forward);
     let target=null, distance=MISSION.shotRange;
     raycaster.set(camera.position,forward);raycaster.far=distance;
     const blocked=raycaster.intersectObjects(obstacles,false)[0];
@@ -140,6 +151,13 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
         }
       }
     }
+    return {target,distance};
+  }
+  function shoot(){
+    if(!active||cooldown>0||(walker.fly&&!walker.easyPlay)) return;
+    if(walker.easyPlay&&!aimView?.opened){toast('Hold right mouse or Hold Aim to magnify; release to stop aiming');return;}
+    cooldown=.8;
+    const {target,distance}=findShot();
     if(target){target.down=true;target.object.rotation.z=Math.PI/2;target.type='food';toast('Rabbit hit — approach and collect with E');}
         else toast('Miss — approach quietly, aim at a rabbit within 35m');
     trailPoints[0]=camera.position.x;trailPoints[1]=camera.position.y-.2;trailPoints[2]=camera.position.z;
@@ -148,8 +166,23 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
   }
   hud.querySelector('#gameInteract').onclick=()=>{interact();canvas.focus();};
   hud.querySelector('#gameShoot').onclick=()=>{shoot();canvas.focus();};
+  if(canvas.getBoundingClientRect) aimView=createAimView({canvas,document:uiDocument,walker,onShoot:shoot,
+    onAim:(u,v)=>{aimPoint.set(u*2-1,1-v*2);},onClose:()=>{aimReady=false;aimOutline.visible=false;}});
+  const modeButton=hud.querySelector('#gameCamera');
+  modeButton.onclick=()=>{
+    if(!active)return;
+    aimView?.close();walker.easyPlay=!walker.easyPlay;walker.fly=false;walker.freeY=undefined;walker.vel.set(0,0,0);
+    walker.groundY=height(walker.pos.x,walker.pos.z);walker.pitch=-.12;
+    modeButton.textContent=walker.easyPlay?'Camera: Easy Play':'Camera: First person';
+    if(uiDocument.pointerLockElement&&walker.easyPlay)uiDocument.exitPointerLock?.();
+    canvas.focus();
+  };
+  for(const [id,delta]of [['#gameRotateLeft',Math.PI/6],['#gameRotateRight',-Math.PI/6]])hud.querySelector(id).onclick=()=>{
+    if(!active||!walker.easyPlay||aimView?.opened)return;walker.yaw+=delta;canvas.focus();
+  };
   replay.onclick=()=>{
     if(!active) return;
+    aimView?.close();
     Object.assign(supplies,createSupplies());elapsed=0;cooldown=0;cooking=0;fishing=0;catches=0;finishedAt=null;nearest=null;trail.visible=false;
     walker.pos.x=camp.x;walker.pos.z=camp.z;walker.groundY=camp.y;
     walker.fly=false;walker.freeY=undefined;walker.flyY=0;walker.vel.set(0,0,0);
@@ -159,12 +192,15 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
     if(e.repeat||!active||e.target.closest?.('input,button,textarea,select')) return;
     if(e.code==='KeyE'){e.preventDefault();interact();}
   });
-  canvas.addEventListener('pointerdown',e=>{if(e.button===0&&uiDocument.pointerLockElement===canvas) shoot();});
+  canvas.addEventListener('pointerdown',e=>{if(!walker.easyPlay&&e.button===0&&uiDocument.pointerLockElement===canvas) shoot();});
   refresh();
   let hudTime=0;
   return {
     update(dt,time,enabled,blocked){
       active=enabled&&!blocked; root.visible=enabled; hud.hidden=!enabled;
+      walker.gameActive=active;
+      uiDocument.documentElement.classList.toggle('easy-play',enabled&&!!walker.easyPlay);
+      if(!active&&aimView?.active)aimView.close();
       uiDocument.documentElement.classList.toggle('game-playing',active);
       hud.style.pointerEvents=blocked?'none':'auto';
       if(!active) return;
@@ -173,12 +209,12 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
       playerGround.set(walker.pos.x,walker.groundY,walker.pos.z);
       if(riverLife) riverLife.update(elapsed,playerGround,isFrozen());
       if(fishing>0){
-        if(walker.fly||isFrozen()||!inReach(playerGround,riverLife.spot)){fishing=0;toast('Fishing cancelled — return to shore.');}
+        if((walker.fly&&!walker.easyPlay)||isFrozen()||!interactionReach(riverLife.spot)){fishing=0;toast('Fishing cancelled — return to shore.');}
         else {fishing=Math.max(0,fishing-dt);if(fishing===0){supplies.food++;catches++;refresh();toast('Caught a river fish — food +1');}}
       }
       light.intensity=2.2-Math.min(elapsed/MISSION.duskSeconds,1)*1.35;
       if(cooking>0){
-        if(walker.fly||!inReach(playerGround,camp)){cooking=0;toast('Cooking cancelled — return to camp.');}
+        if((walker.fly&&!walker.easyPlay)||!interactionReach(camp)){cooking=0;toast('Cooking cancelled — return to camp.');}
         else {
           cooking=Math.max(0,cooking-dt);
           if(cooking===0&&cookMeal(supplies)){finishedAt=elapsed;toast(dinnerResult(elapsed));refresh();}
@@ -186,18 +222,18 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
       }
       bowOffset.set(.35,-.32,-.65).applyQuaternion(camera.quaternion);
       bow.position.copy(camera.position).add(bowOffset);bow.quaternion.copy(camera.quaternion);
-      bow.scale.setScalar(.65);bow.visible=!walker.fly;
+      bow.scale.setScalar(.65);bow.visible=!walker.fly&&!walker.easyPlay;
       trail.visible=cooldown>.68;
       nearest=null;let closest=3.8;
       for(const item of items){
         if(item.taken) continue;
-        const d=playerGround.distanceTo(item.object.position);
+        const d=interactionDistance(item.object.position);
         if(d<closest){closest=d;nearest=item;}
       }
       for(const animal of animals){
         if(animal.taken) continue;
         const o=animal.object, dist=Math.hypot(o.position.x-walker.pos.x,o.position.z-walker.pos.z);
-        if(animal.down){const d=playerGround.distanceTo(o.position);if(d<closest){closest=d;nearest=animal;}continue;}
+        if(animal.down){const d=interactionDistance(o.position);if(d<closest){closest=d;nearest=animal;}continue;}
         o.visible=dist<85;
         if(!o.visible) continue;
         const fleeing=dist<9;
@@ -212,11 +248,12 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
         }
       }
       const campDistance=Math.hypot(walker.pos.x-camp.x,walker.pos.z-camp.z);
-      if(inReach(playerGround,camp,3.5)) nearest={type:'camp'};
-      if(!nearest&&riverLife&&!isFrozen()&&inReach(playerGround,riverLife.spot,3.5)) nearest={type:'fishing',object:{position:riverLife.spot}};
-      if(walker.fly) nearest=null;
+      if(interactionReach(camp,3.5)) nearest={type:'camp'};
+      if(!nearest&&riverLife&&!isFrozen()&&interactionReach(riverLife.spot,3.5)) nearest={type:'fishing',object:{position:riverLife.spot}};
+      if(walker.fly&&!walker.easyPlay) nearest=null;
+      if(aimView?.opened){const {target}=findShot();aimReady=!!target;aimOutline.visible=!!target;if(target)aimOutline.setFromObject(target.object);}
       campMarker.rotation.y+=dt;
-      hint=fishing>0?`Fishing… ${Math.ceil(fishing)}s`:cooking>0?`Cooking… ${Math.ceil(cooking)}s`:nearest?(nearest.type==='camp'?'E — Cook at camp':nearest.type==='fishing'?'E — Fish from shore':'E — Collect '+nearest.type):'Left click — hunt · E — interact · Esc — menu';
+      hint=fishing>0?`Fishing… ${Math.ceil(fishing)}s`:cooking>0?`Cooking… ${Math.ceil(cooking)}s`:nearest?(nearest.type==='camp'?'E — Cook at camp':nearest.type==='fishing'?'E — Fish from shore':'E — Collect '+nearest.type):walker.easyPlay?'Hold right mouse / Aim · drag to aim · click / Fire to shoot':'Left click — hunt · E — interact · Esc — menu';
       hudTime+=dt;
       if(hudTime>.15){
         hudTime=0;hintNode.textContent=hint;
@@ -236,6 +273,8 @@ export async function createGameplay({scene,camera,walker,height,validGround,can
         directionNode.textContent=`${arrow} ${label} ${Math.round(distance)}m · Camp ${Math.round(campDistance)}m · ${Math.max(0,Math.ceil((600-elapsed)/60))} min to dusk`;
       }
     },
+    closeAim(){if(!aimView?.active)return false;aimView.close();return true;},
+    renderAim(){aimView?.render(aimReady);},
     get elapsed(){return elapsed;},
     get complete(){return supplies.meals>0;}
   };

@@ -5,20 +5,24 @@ import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {readFileSync} from 'node:fs';
 import {createGameplay} from '../gameplay.js';
 
-for(const mobile of [false,true]) test(`real ${mobile?'mobile':'desktop'} Blender assets support gather, pause, cook, completion and replay`,async()=>{
+for(const [mobile,easy]of [[false,false],[true,false],[true,true]]) test(`real ${mobile?'mobile':'desktop'} ${easy?'Easy Play':'first-person'} assets support shooting, gather, pause, cook and replay`,async()=>{
   const nodes=new Map();
-  const node=()=>({style:{},classList:{toggle(){}},focus(){},setAttribute(){},addEventListener(){},querySelector(id){
+  const node=()=>({style:{},events:{},width:1000,height:600,classList:{toggle(){}},focus(){},setAttribute(){},
+    addEventListener(type,fn){(this.events[type]??=[]).push(fn);},
+    getBoundingClientRect(){return {left:0,top:0,width:1000,height:600};},
+    getContext(){return {drawImage(){},beginPath(){},arc(){},moveTo(){},lineTo(){},stroke(){}};},querySelector(id){
     if(!nodes.has(id)) nodes.set(id,node());return nodes.get(id);
   }});
   const uiDocument={createElement:node,body:{append(){}},documentElement:node()};
   const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera();
-  const walker={pos:new THREE.Vector3(),groundY:0,yaw:0,vel:new THREE.Vector3(),fly:false};
+  const walker={pos:new THREE.Vector3(),groundY:0,yaw:0,vel:new THREE.Vector3(),fly:false,easyPlay:easy};
+  const canvas=node();
   camera.position.set(0,1.68,0);
   const loader=new GLTFLoader();
   const obstacles=[];
   let frozen=false;
   const game=await createGameplay({scene,camera,walker,height:()=>0,validGround:()=>true,
-    canvas:node(),mobile,toast(){},uiDocument,inputTarget:node(),obstacles,
+    canvas,mobile,toast(){},uiDocument,inputTarget:node(),obstacles,
     habitat:{x:105,z:0,radius:4,spot:new THREE.Vector3(100,0,0),water:()=>2},isFrozen:()=>frozen,
     loadModel:async name=>{
       const bytes=readFileSync(new URL(`../public/models/${mobile?'mobile/':''}${name}.glb`,import.meta.url));
@@ -34,6 +38,12 @@ for(const mobile of [false,true]) test(`real ${mobile?'mobile':'desktop'} Blende
   camera.lookAt(0,.8,-10);camera.updateMatrixWorld(true);
   const wall=new THREE.Mesh(new THREE.BoxGeometry(6,6,1),new THREE.MeshBasicMaterial());
   wall.position.set(0,1,-5);wall.updateMatrixWorld(true);obstacles.push(wall);
+  if(easy){
+    const event={button:2,pointerId:1,clientX:500,clientY:300,preventDefault(){}};
+    for(const fn of canvas.events.pointerdown)fn(event);
+    await new Promise(resolve=>setTimeout(resolve,200));game.renderAim();
+    assert.equal(walker.aiming,true);assert.ok(Math.abs(rabbit.rotation.z)<1e-8,'opening magnifier never shoots');
+  }
   nodes.get('#gameShoot').onclick();assert.ok(Math.abs(rabbit.rotation.z)<1e-8,'wall blocks the shot');
   obstacles.length=0;tick(1);
   camera.lookAt(rabbit.position.x,.8,rabbit.position.z);camera.updateMatrixWorld(true);

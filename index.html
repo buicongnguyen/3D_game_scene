@@ -208,6 +208,26 @@
     #stat{font-size:9px;min-height:12px}
     #enter{margin-top:10px;padding:10px 28px;font-size:11px}
   }
+  #aimView{position:fixed;z-index:35;top:82px;right:18px;width:min(380px,calc(100vw - 28px));padding:12px;background:#10242bf5;color:#fff;border:1px solid #b4c9c3;border-radius:14px;box-sizing:border-box}
+  #aimView[hidden]{display:none}
+  #aimCanvas{position:relative!important;width:100%!important;height:auto!important;display:block;touch-action:none;margin:8px 0;border-radius:8px}
+  #aimView button{min-height:48px;min-width:90px;margin:8px 6px 0 0;background:#426b59;color:white;border:1px solid #9bad91;border-radius:8px}
+  #aimView button:disabled{opacity:.4}
+  #huntControls[hidden]{display:none}
+  #huntControls button{position:fixed;z-index:40;bottom:calc(20px + env(safe-area-inset-bottom,0px));min-height:64px;min-width:100px;background:#234c3eef;color:white;border:2px solid #c3d5b9;border-radius:18px;touch-action:none;user-select:none}
+  #huntAim{right:calc(18px + env(safe-area-inset-right,0px))}
+  #huntFire{left:calc(22px + env(safe-area-inset-left,0px));display:none}
+  html.aiming #huntFire{display:block}
+  html.aiming #huntFire:disabled{opacity:.45}
+  html.easy-play #gameShoot{display:none}
+  html.easy-play #tele{bottom:96px;pointer-events:none}
+  html.mobile-ui.easy-play .game-buttons{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
+  html.aiming.mobile-ui .game-buttons{visibility:hidden}
+  html.aiming #mobileMove,html.aiming #mobileView,html.aiming #mobileFly{pointer-events:none;opacity:.25}
+  html.easy-play #mobileView,html.easy-play #mobileFly{display:none!important}
+  html:not(.easy-play) #gameRotateLeft,html:not(.easy-play) #gameRotateRight{display:none}
+  html.easy-play #keys{visibility:hidden}
+  @media(max-height:520px){#aimView{top:60px;left:50%;right:auto;transform:translateX(-50%);width:240px;padding:8px}}
 </style>
 <style>
   #gameActions{position:fixed;top:12px;left:155px;z-index:29;display:flex;gap:8px}
@@ -289,7 +309,7 @@
 <div id="panel" aria-label="Scene settings">
   <div class="panel-head"><strong>Settings</strong><button type="button" id="panelClose">Close</button></div>
   <h3>Controls</h3>
-  <p>Explore: WASD move · Mouse look · Shift run. F toggles flight; Space rises and Ctrl descends. Esc opens the menu. On touch screens, use the left pad to move and drag the scene to look.</p>
+  <p>Easy Play: WASD or the left pad moves beneath a hovering camera. Hold right mouse or Hold Aim to magnify, move the mouse or drag your aiming thumb, and left-click or press Fire to shoot. Release to leave aiming. Esc closes aiming or opens the menu. Use Camera to switch to first person: mouse/drag looks, Shift runs, and F toggles flight.</p>
   <div class="row"><label for="lookSensitivity">Look sensitivity</label><input id="lookSensitivity" type="range" min="25" max="200" value="100"><span class="val" id="lookSensitivityV">100%</span></div>
   <div class="row"><label for="invertLook">Invert vertical look</label><input id="invertLook" type="checkbox"></div>
   <h3>Quality</h3>
@@ -345,7 +365,7 @@
     <div class="rule"></div>
     <p class="blurb">Welcome to the valley. Gather <b>two bundles of wood and two portions of food</b>,
       then return to camp to cook dinner. Pick berries, fish from shore, or hunt rabbits with your bow.
-      WASD moves, the mouse aims, and E collects. Your first evening begins now.</p>
+      WASD or the left pad moves. Hold right mouse or Hold Aim for the 3× scope; move to aim, then left-click or press Fire. Release to stop aiming. E or Interact collects nearby items. Your first evening begins now.</p>
     <p class="credit">Modified by Bui Cong Nguyen</p>
     <div id="bar"><div id="barIn"></div></div>
     <div id="stat">preparing</div>
@@ -361,6 +381,7 @@
 import * as THREE from 'three';
 import { TOUR_DURATION, normalizeTourDuration, retimeTour, FrameMetrics } from './scene-timing.mjs';
 import { createGameplay } from './gameplay.js';
+import {updateEasyPlay} from './easy-play.js';
 import { loadSceneModels, createModelWildlife, upgradeTrain } from './scene-models.js';
 import {HOUSE_STYLES,HOUSE_HALF_EXTENT,HOUSE_CHIMNEY_HEIGHT,loadVillageModels,createVillageModels} from './village-models.js';
 
@@ -5766,12 +5787,14 @@ class Walker {
     this.mobileLookX=0; this.mobileLookY=0; this.mobileVertical=0;
     // 0 free walk, 1 camera-only cinematic, 2 seasonal day-to-night tour.
     this.cinematic=0; this.cineT=0; this.cineEyeY=undefined; this.fly=false; this.flyY=0;
+    this.easyPlay=true;this.aiming=false;
     this.tourLookYaw=0; this.tourLookPitch=0; this.tourLookIdle=0;
     this.onFootstep=null;
     this.windLean=new THREE.Vector2();
     this.idle=0;
   }
   look(dx,dy){
+    if(this.easyPlay&&!this.cinematic)return;
     dx*=InputSettings.sensitivity;
     dy*=InputSettings.sensitivity*(InputSettings.invert?-1:1);
     if(this.cinematic===2){
@@ -5789,6 +5812,7 @@ class Walker {
     this.idle=0;
   }
   update(dt, t){
+    if(this.easyPlay&&!this.cinematic){updateEasyPlay(this,dt,sampleHeight,collideWalk);return;}
     const k=this.keys;
     // Mobile view buttons turn at a stable angular speed independent of FPS.
     if(!this.cinematic&&(this.mobileLookX||this.mobileLookY))
@@ -8152,6 +8176,7 @@ function frame(now){
   renderer.clear(true, true, false);
   renderer.render(scene, camera);
   postChain();
+  gameplay?.renderAim();
 
   audio.update(dt, camera, walker, State);
 
@@ -8599,6 +8624,7 @@ function bindInput(){
     toast('explore — WASD move · F flight · Esc menu');
   };
   const lockMouse=()=>{
+    if(walker.easyPlay&&!walker.cinematic)return;
     if(IS_MOBILE||!cv.requestPointerLock) return;
     try{ const pending=cv.requestPointerLock(); if(pending?.catch) pending.catch(()=>toast('Click the scene to capture the mouse')); }
     catch{ toast('Mouse capture unavailable'); }
@@ -8613,7 +8639,7 @@ function bindInput(){
     const locked=document.pointerLockElement===cv;
     document.documentElement.classList.toggle('pointer-playing',locked);
     if(!locked){ walker.keys={}; walker.vel.set(0,0,0); walker.flyY=0;
-      if(!IS_MOBILE&&!$('#panel').classList.contains('on')) toggleSettings(); }
+      if(!IS_MOBILE&&!walker.easyPlay&&!$('#panel').classList.contains('on')) toggleSettings(); }
   });
   // Associate existing row labels with their controls for keyboard/screen-reader use.
   for(const label of document.querySelectorAll('#panel .row > label')){
@@ -8623,6 +8649,7 @@ function bindInput(){
   addEventListener('keydown', e=>{
     if((e.code==='Escape'||e.code==='KeyH')&&!e.repeat){
       e.preventDefault();
+      if(e.code==='Escape'&&gameplay?.closeAim())return;
       if(e.code==='Escape'&&document.pointerLockElement===cv){ document.exitPointerLock(); return; }
       toggleSettings(); return;
     }
@@ -8638,7 +8665,7 @@ function bindInput(){
     if(e.code==='KeyC'&&!e.repeat) setCinematicMode((walker.cinematic+1)%3);
     if(e.code==='KeyR'&&!e.repeat) toggleSceneRecording();
     if(e.code==='KeyP'&&!e.repeat){ State.paused=!State.paused; toast(State.paused?'paused':'running'); }
-    if(e.code==='KeyF'&&!e.repeat){ walker.fly=leavingTour?true:!walker.fly; walker.flyY=0; toast(walker.fly?'flight — Space up · Ctrl down · release to hold':'walking'); }
+    if(e.code==='KeyF'&&!e.repeat&&!walker.easyPlay){ walker.fly=leavingTour?true:!walker.fly; walker.flyY=0; toast(walker.fly?'flight — Space up · Ctrl down · release to hold':'walking'); }
     if(e.code==='Space') e.preventDefault();
     if(e.code==='KeyT'&&!e.repeat) summonTrain();
   });
@@ -8654,11 +8681,11 @@ function bindInput(){
   addEventListener('mousemove', e=>{
     if(document.pointerLockElement===cv) walker.look(e.movementX, e.movementY);
   });
-  addEventListener('blur', ()=>{ walker.keys={}; resetMobileControls(); });
+  addEventListener('blur', ()=>{ walker.keys={}; resetMobileControls(); gameplay?.closeAim(); });
   document.addEventListener('visibilitychange', ()=>{
     last=performance.now(); frameMetrics.reset(); autoLow=0; autoHigh=0;
     autoCheckT=last/1000+2.25;
-    if(document.hidden){ walker.keys={}; resetMobileControls(); }
+    if(document.hidden){ walker.keys={}; resetMobileControls(); gameplay?.closeAim(); }
   });
 
   const moveHeld=new Set(), viewHeld=new Set();
@@ -8750,7 +8777,7 @@ function bindInput(){
     };
     heldButtons.push(()=>releaseLook());
     cv.addEventListener('pointerdown',e=>{
-      if(e.pointerType==='mouse' || lookPointer!==null || $('#panel').classList.contains('on')) return;
+      if((walker.easyPlay&&!walker.cinematic)||e.pointerType==='mouse' || lookPointer!==null || $('#panel').classList.contains('on')) return;
       e.preventDefault(); audio.resume(); lookPointer=e.pointerId; lookX=e.clientX; lookY=e.clientY;
       cv.setPointerCapture(e.pointerId);
     });
