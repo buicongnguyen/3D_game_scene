@@ -41,6 +41,7 @@ export class Scenes {
   update(dt) {
     // drifting lantern boats
     for (const b of this.boats) {
+      if (b.fixed) continue;
       b.s += dt * 1.4;
       const p = river.at(b.s);
       b.obj.position.set(p.x - p.tz * b.off, 0.05 + Math.sin(b.s * 2 + b.off) * 0.03, p.z + p.tx * b.off);
@@ -310,12 +311,18 @@ export class Scenes {
     const g = this.g, d = this.d;
     d.fx.fireworks(true, V(90, 20, 60));
     d.fx.meteorShower(1.4);
-    // lantern boats drift down from the ferry landing
+    // Kawabe's lanterns: in winter they are set out in a long line on the frozen river; otherwise they drift downstream
+    const frozen = !!g.world.frozen, s0 = river.nearest(0, 118).s;
     for (let i = 0; i < 26; i++) {
       const obj = g.assets.clone('lantern-boat') || new THREE.Mesh(new THREE.SphereGeometry(0.3), new THREE.MeshStandardMaterial({ color: '#ffb13d', emissive: '#ff9a2a', emissiveIntensity: 3 }));
       obj.traverse(o => { if (o.isMesh) for (const m of [o.material].flat()) if (m.name === 'Lantern glow') { m.emissive = new THREE.Color('#ffb13d'); m.emissiveIntensity = 3.5; } });
       g.scene.add(obj);
-      this.boats.push({ obj, s: river.nearest(12, 25).s + i * 2.2, off: ((i * 7) % 11 - 5) * 0.9 });
+      if (frozen) {
+        const p = river.at(s0 - 70 + i * 6), off = (i % 2 ? 1 : -1) * (1.5 + (i * 7) % 4);
+        obj.position.set(p.x - p.tz * off, 0.08, p.z + p.tx * off);
+        obj.rotation.y = i * 1.3;
+        this.boats.push({ obj, fixed: true });
+      } else this.boats.push({ obj, s: river.nearest(12, 25).s + i * 2.2, off: ((i * 7) % 11 - 5) * 0.9 });
     }
     await this.shot(V(-20, 26, 160), V(0, 18, 120), 2.5, 1500);
     await this.shot(V(40, 30, 150), V(0, 22, 118), 3, 800);

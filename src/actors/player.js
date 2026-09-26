@@ -8,6 +8,12 @@ export const MOVE = {
   walk: 1.6, run: 4.4, sprint: 6.8, accel: 16, airAccel: 5, turn: 11, maxSlope: 47,
 };
 
+/** The speed leap, a little hack: tap jump quickly while running forward. 2 taps x4, 3 taps x8, 4 taps x16. */
+export const LEAP = { window: 0.42, hold: 1.4, max: 4 };
+/** Winter ice sits a hair above the summer water line. */
+export const ICE_LIFT = 0.06;
+export function leapMultiplier(taps) { return taps >= 2 ? 2 ** Math.min(taps, LEAP.max) : 1; }
+
 /** Swimming: Mika floats with her head above the surface, strokes along, dives and climbs out. */
 export const SWIM = {
   float: 1.02,     // feet below the surface while floating (head and shoulders out)
@@ -40,6 +46,9 @@ export class Player {
     this.swimming = false;
     this.swimCooldown = 0;
     this.pitch = 0;
+    this.leapMul = 1;
+    this.leapT = 0;
+    this.taps = 0;
 
     this.root = new THREE.Group();
     this.root.name = 'player';
@@ -86,6 +95,7 @@ export class Player {
     this.lastSafe.copy(this.pos);
     this.grounded = true;
     this.setSwimming(false);
+    this.leapMul = 1;
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.facing;
   }
@@ -96,12 +106,15 @@ export class Player {
   setSwimming(on) {
     if (this.swimming === on) return;
     this.swimming = on;
+    if (on) this.leapMul = 1;
     if (this.lantern) this.lantern.visible = !on;
     if (!on) { this.pitch = 0; this.pivot.rotation.x = 0; }
   }
 
   groundHeight(x, z, footY) {
     let g = this.world.heightAt(x, z);
+    // a frozen river is a floor
+    if (this.world.frozen && g < WATER_Y + ICE_LIFT) g = WATER_Y + ICE_LIFT;
     const c = this.colliders.groundAt(x, z, footY, MOVE.step);
     if (c && c.y > g) { g = c.y; this.onItem = c.item; } else this.onItem = null;
     return g;
@@ -140,34 +153,60 @@ export class Player {
     let dx = fx * my + rx * mx, dz = fz * my + rz * mx;
     const dl = Math.hypot(dx, dz);
     if (dl > 1e-4) { dx /= dl; dz /= dl; }
+    // the speed leap: quick jump taps while running forward multiply the pace (x4, x8, x16)
+    this.clockT = (this.clockT || 0) + dt;
+    const forward = my > 0.5;
+    if (canMove && input.pressed('jump')) {
+      this.taps = forward && this.clockT - (this.lastTap ?? -9) < LEAP.window ? Math.min(LEAP.max, this.taps + 1) : 1;
+      this.lastTap = this.clockT;
+      if (this.taps >= 2) {
+        const mul = leapMultiplier(this.taps);
+        if (mul > this.leapMul) this.events.push({ type: 'leap', mul });
+        this.leapMul = Math.max(this.leapMul, mul);
+        this.leapT = LEAP.hold;
+        if (!this.grounded) this.vel.y = Math.max(this.vel.y, M.jumpV * 0.75); // a hop in mid-air keeps the leap going
+      }
+    }
+    this.leapT = Math.max(0, this.leapT - dt);
+    if (this.leapMul > 1 && (!forward || !canMove || (this.leapT <= 0 && this.grounded))) this.leapMul = 1;
+
     let target = 0;
     if (mag > 0.05) {
       target = mag < 0.6 ? M.walk * (mag / 0.6) * 1.2 : M.run;
       if (input.held('sprint') && mag >= 0.6) target = M.sprint;
+      if (this.leapMul > 1) target = M.run * this.leapMul;
     }
-    const accel = this.grounded ? M.accel : M.airAccel;
+    // ice is slippery: she builds speed slowly and slides a little when she stops or turns
+    this.onIce = !!this.world.frozen && this.world.heightAt(this.pos.x, this.pos.z) < WATER_Y + ICE_LIFT;
+    const accel = this.leapMul > 1 ? 9 : this.grounded ? (this.onIce ? 2.6 : M.accel) : M.airAccel;
     const k = 1 - Math.exp(-accel * dt);
     this.vel.x += (dx * target - this.vel.x) * k;
     this.vel.z += (dz * target - this.vel.z) * k;
 
-    // horizontal move with steep-slope blocking
-    let nx = this.pos.x + this.vel.x * dt, nz = this.pos.z + this.vel.z * dt;
-    const hNow = this.world.heightAt(this.pos.x, this.pos.z);
-    const hNext = this.world.heightAt(nx, nz);
-    if (hNext > hNow + 0.05 && this.world.grid.slopeAt(nx, nz) > M.maxSlope && hNext > this.pos.y - 0.2) {
-      // slide along the contour instead of climbing
-      const n = this.world.grid.normalAt(nx, nz);
-      const nl = Math.hypot(n.nx, n.nz) || 1;
-      const ux = n.nx / nl, uz = n.nz / nl;
-      const into = this.vel.x * ux + this.vel.z * uz;
-      if (into < 0) { this.vel.x -= into * ux; this.vel.z -= into * uz; }
-      nx = this.pos.x + this.vel.x * dt; nz = this.pos.z + this.vel.z * dt;
+    // horizontal move with steep-slope blocking, in short steps so a fast leap never tunnels through a wall
+    const sub = Math.max(1, Math.ceil(Math.hypot(this.vel.x, this.vel.z) * dt / 0.35));
+    for (let i = 0; i < sub; i++) {
+      const sdt = dt / sub;
+      let nx = this.pos.x + this.vel.x * sdt, nz = this.pos.z + this.vel.z * sdt;
+      const hNow = this.world.heightAt(this.pos.x, this.pos.z);
+      const hNext = this.world.heightAt(nx, nz);
+      if (hNext > hNow + 0.05 && this.world.grid.slopeAt(nx, nz) > M.maxSlope && hNext > this.pos.y - 0.2) {
+        // slide along the contour instead of climbing
+        const n = this.world.grid.normalAt(nx, nz);
+        const nl = Math.hypot(n.nx, n.nz) || 1;
+        const ux = n.nx / nl, uz = n.nz / nl;
+        const into = this.vel.x * ux + this.vel.z * uz;
+        if (into < 0) { this.vel.x -= into * ux; this.vel.z -= into * uz; }
+        nx = this.pos.x + this.vel.x * sdt; nz = this.pos.z + this.vel.z * sdt;
+      }
+      // soft world bounds
+      nx = Math.min(WORLD.maxX, Math.max(WORLD.minX, nx));
+      nz = Math.min(WORLD.maxZ, Math.max(WORLD.minZ, nz));
+      const res = this.colliders.resolve(nx, nz, M.radius, this.pos.y, M.height, M.step);
+      this.pos.x = res.x; this.pos.z = res.z;
+      // keep her on the ground over bumps while racing along
+      if (this.grounded && this.vel.y <= 0) { const gh = this.groundHeight(this.pos.x, this.pos.z, this.pos.y); if (gh > this.pos.y && gh - this.pos.y < M.step) this.pos.y = gh; }
     }
-    // soft world bounds
-    nx = Math.min(WORLD.maxX, Math.max(WORLD.minX, nx));
-    nz = Math.min(WORLD.maxZ, Math.max(WORLD.minZ, nz));
-    const res = this.colliders.resolve(nx, nz, M.radius, this.pos.y, M.height, M.step);
-    this.pos.x = res.x; this.pos.z = res.z;
 
     // vertical
     this.jumpBuffer = input.pressed('jump') && !this.locked ? 0.14 : Math.max(0, this.jumpBuffer - dt);
@@ -203,7 +242,7 @@ export class Player {
 
     // deep water: Mika swims
     const terrain = this.world.heightAt(this.pos.x, this.pos.z);
-    if (!this.onItem && WATER_Y - terrain > SWIM.enter && this.pos.y < WATER_Y - SWIM.float + 0.12 && this.swimCooldown <= 0) {
+    if (!this.world.frozen && !this.onItem && WATER_Y - terrain > SWIM.enter && this.pos.y < WATER_Y - SWIM.float + 0.12 && this.swimCooldown <= 0) {
       this.events.push({ type: 'splash', x: this.pos.x, z: this.pos.z, strength: Math.min(1, Math.abs(this.vel.y) / 8 + 0.25) });
       this.vel.y *= 0.3;
       this.setSwimming(true);
@@ -216,7 +255,7 @@ export class Player {
       this.lastSafe.copy(this.pos);
       this.safeTimer = 0.5;
     }
-    this.surface = this.onItem ? (this.onItem.surface || 'wood') : terrain < 0.3 ? 'sand' : 'grass';
+    this.surface = this.onItem ? (this.onItem.surface || 'wood') : this.onIce ? 'ice' : terrain < 0.3 ? 'sand' : 'grass';
 
     // facing
     const hs = Math.hypot(this.vel.x, this.vel.z);
@@ -235,6 +274,15 @@ export class Player {
   // ------------------------------------------------------------------ water
   swim(dt, input, camYaw) {
     const S = SWIM;
+    // the river froze (a season change): climb out onto the ice
+    if (this.world.frozen) {
+      this.setSwimming(false);
+      this.pos.y = WATER_Y + ICE_LIFT;
+      this.vel.set(0, 0, 0);
+      this.grounded = true;
+      this.root.position.copy(this.pos);
+      return;
+    }
     const canMove = !this.locked;
     const mx = canMove ? input.move.x : 0, my = canMove ? input.move.y : 0;
     const mag = Math.min(1, Math.hypot(mx, my));

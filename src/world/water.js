@@ -29,7 +29,7 @@ const WATER_VS = /* glsl */`
   }`;
 
 const WATER_FS = /* glsl */`
-  uniform float uTime, uNight, uSunVis;
+  uniform float uTime, uNight, uSunVis, uIce;
   uniform vec3 uShallow, uDeep, uZenith, uHorizon, uSunDir, uSunColor, uFoam;
   uniform sampler2D uHeight, uNoise;
   uniform vec4 uHX;
@@ -79,6 +79,7 @@ const WATER_FS = /* glsl */`
     vec3 body = mix(uShallow, uDeep, dk);
     vec3 col = mix(body, sky, fres * 0.8) + uSunColor * spec * uSunVis;
     // warm lamp reflections: vertical streaks under each lit lamp
+    vec3 lampAdd = vec3(0.0);
     for (int i = 0; i < 4; i++) {
       vec4 L = uLamps[i];
       if (L.w <= 0.0) continue;
@@ -89,15 +90,37 @@ const WATER_FS = /* glsl */`
       float along = dot(d, normalize(toCam.xz));
       float streak = exp(-across * across * 0.9) * smoothstep(-2.0, 1.5, along) * exp(-max(along, 0.0) * 0.05);
       float rip = 0.6 + 0.8 * texture2D(uNoise, vWPos.xz * 0.6 + vec2(0.0, uTime * 0.3)).r;
-      col += uLampColor * streak * rip * L.w * 1.4;
+      lampAdd += uLampColor * streak * rip * L.w * 1.4;
     }
+    col += lampAdd;
     float fn = texture2D(uNoise, vWPos.xz * 0.42 - flow * uTime * 0.5).r;
     float fn2 = texture2D(uNoise, vWPos.xz * 1.3 - flow * uTime * 0.8).g;
     float foam = smoothstep(0.42, 0.05, depth - fn * 0.28) * smoothstep(0.25, 0.6, fn2 + 0.25);
     col = mix(col, uFoam, foam * 0.85);
+    if (uIce > 0.001) {
+      // winter: a sheet of milky blue ice with snow drifting in from the banks, fine cracks and a cold sheen
+      float n1 = texture2D(uNoise, vWPos.xz * 0.045).r;
+      float n2 = texture2D(uNoise, vWPos.xz * 0.21 + 0.31).g;
+      float n3 = texture2D(uNoise, vWPos.xz * 0.9 + 0.7).b;
+      float cr = texture2D(uNoise, vWPos.xz * 0.35 + 0.13).a;
+      float crack = smoothstep(0.035, 0.0, abs(cr - 0.5)) * smoothstep(0.35, 0.6, n1);
+      vec3 ice = mix(vec3(0.46, 0.66, 0.80), vec3(0.80, 0.90, 0.97), smoothstep(0.25, 0.8, n1));
+      ice = mix(ice, vec3(0.34, 0.54, 0.70), smoothstep(0.6, 2.2, depth) * 0.35);   // darker where it's deep
+      float snow = smoothstep(0.5, 0.78, n2 + (1.0 - smoothstep(0.0, 1.4, depth)) * 0.45);
+      ice = mix(ice, vec3(0.96, 0.98, 1.0), snow);
+      ice = mix(ice, ice * 0.72, crack * (1.0 - snow));
+      float fresI = 0.04 + 0.96 * pow(1.0 - clamp(V.y, 0.0, 1.0), 5.0);
+      vec3 skyI = mix(uHorizon, uZenith, 0.5);
+      float glint = pow(max(dot(reflect(-V, vec3(0.0, 1.0, 0.0)), uSunDir), 0.0), 80.0) * (0.6 + n3);
+      ice = mix(ice, skyI, fresI * 0.4 * (1.0 - snow)) + uSunColor * glint * 1.6 * uSunVis * (1.0 - snow);
+      ice *= mix(1.0, 0.2, uNight);
+      ice += lampAdd * 0.55;
+      col = mix(col, ice, uIce);
+    }
     float alpha = mix(0.5, 0.94, smoothstep(0.0, 1.4, depth));
     alpha = max(alpha, foam * 0.9);
     alpha = max(alpha, fres * 0.9) * smoothstep(-0.05, 0.08, depth);
+    alpha = mix(alpha, smoothstep(-0.05, 0.05, depth), uIce);
     gl_FragColor = vec4(col, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -107,7 +130,7 @@ const WATER_FS = /* glsl */`
 export class Water {
   constructor(scene, grid, heightTex, noiseTex) {
     this.uniforms = THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
-      uTime: { value: 0 }, uNight: { value: 0 }, uSunVis: { value: 1 },
+      uTime: { value: 0 }, uNight: { value: 0 }, uSunVis: { value: 1 }, uIce: { value: 0 },
       uShallow: { value: new THREE.Color('#37c4c0') }, uDeep: { value: new THREE.Color('#145f8f') },
       uZenith: { value: new THREE.Color() }, uHorizon: { value: new THREE.Color() },
       uSunDir: { value: new THREE.Vector3(0, 1, 0) }, uSunColor: { value: new THREE.Color() },
@@ -163,9 +186,13 @@ export class Water {
     return geo;
   }
 
+  /** Winter: the river freezes over (eased in, so a season change doesn't pop). */
+  setIce(on) { this.iceTarget = on ? 1 : 0; if (this.iceSnap !== false) { this.uniforms.uIce.value = this.iceTarget; this.iceSnap = false; } }
+
   update(dt, sky, lamps = []) {
     const u = this.uniforms;
     u.uTime.value += dt;
+    u.uIce.value += ((this.iceTarget || 0) - u.uIce.value) * (1 - Math.exp(-dt * 1.5));
     const L = sky.state;
     u.uZenith.value.copy(sky.uniforms.uZenith.value);
     u.uHorizon.value.copy(sky.uniforms.uHorizon.value);

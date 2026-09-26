@@ -591,5 +591,13 @@
  "Press E (or tap) when the float dips": "찌가 잠기면 E (또는 탭)",
  "Stirring…": "젓는 중…",
  "Press E as each lantern comes near": "등불이 다가올 때마다 E",
- "Menu": "메뉴"
+ "Menu": "메뉴",
+ "Difficulty": "난이도",
+ "Easy": "쉬움",
+ "Easy: Tamo reaches lamps and bells from much farther away, and fish bite for longer.": "쉬움: 타모가 훨씬 먼 곳의 등과 종에도 닿고, 물고기가 더 오래 입질해요.",
+ "Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)": "앞으로 달리며 Space를 두 번 빠르게 누르면 ×4 질주 (네 번: ×16)",
+ "Run and tap Jump twice for a ×4 speed leap (four taps: ×16)": "달리면서 점프를 두 번 빠르게 누르면 ×4 질주 (네 번: ×16)",
+ "The ferry's frozen in till spring! Good news: the whole river is a road now. A slippery road.": "나룻배가 봄까지 얼어붙었어! 좋은 소식: 이제 강 전체가 길이야. 미끄러운 길.",
+ "Frozen in till spring. Fine, I'll walk across. Carefully. Mostly.": "봄까지 꽁꽁 얼었네. 좋아, 걸어서 건너지 뭐. 조심조심. 대체로.",
+ "Look at the frozen ferry": "얼어붙은 나룻배 보기"
 }

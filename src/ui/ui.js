@@ -490,7 +490,8 @@ export class UI {
     q.addEventListener('change', () => { g.renderer.setQuality(q.value); this.toast(tx('Graphics setting saved — reload to apply fully')); });
     const load = (k, d) => { try { return JSON.parse(localStorage.getItem(`starline-opt-${k}`)) ?? d; } catch { return d; } };
     const save = (k, v) => { try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify(v)); } catch { /* ignore */ } };
-    const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps');
+    const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps'), diff = $('optDifficulty');
+    diff.value = load('difficulty', 'easy');
     sens.value = load('sens', 1); inv.checked = load('invert', false); mus.value = load('music', 0.55); sfx.value = load('sfx', 0.8); fps.checked = load('fps', false);
     // advanced: what you see (season, time, weather), how it renders, how big the words are
     const ADV = { season: '', time: '', weather: true, shadows: true, scale: '', fov: 55, camDist: 6.2, text: '1' };
@@ -505,6 +506,8 @@ export class UI {
     let lastCam = null;
     const apply = () => {
       g.input.sensitivity = +sens.value; g.input.invertY = inv.checked;
+      g.easy = diff.value !== 'normal';
+      save('difficulty', diff.value);
       this.audio?.setVolumes(+mus.value, +sfx.value);
       $('fps').classList.toggle('hidden', !fps.checked);
       save('sens', +sens.value); save('invert', inv.checked); save('music', +mus.value); save('sfx', +sfx.value); save('fps', fps.checked);
@@ -521,7 +524,7 @@ export class UI {
       save('season', season.value); save('time', tv); save('weather', weather.checked); save('shadows', shadows.checked);
       save('scale', scale.value); save('fov', +fov.value); save('camDist', +camDist.value); save('text', text.value);
     };
-    [sens, inv, mus, sfx, fps, season, time, weather, shadows, scale, fov, camDist, text].forEach(el => el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', apply));
+    [sens, inv, mus, sfx, fps, diff, season, time, weather, shadows, scale, fov, camDist, text].forEach(el => el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', apply));
     $('btnResetAdv').addEventListener('click', () => {
       for (const [k, v] of Object.entries(ADV)) save(k, v);
       loadAdv();
@@ -592,8 +595,8 @@ export class UI {
     } else {
       const row = (keys, text) => `<div class="step">${keys.map(k => `<kbd>${k}</kbd>`).join(' ')} ${esc(tx(text))}</div>`;
       body.innerHTML = this.touch
-        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Act')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming')), row([tx('Kite')], N_('Fly or land the Star Kite, once you have it'))].join('')
-        : [row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')), row(['C'], N_('Dive while swimming')), row(['G'], N_('Fly or land the Star Kite, once you have it')),
+        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Act')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming')), row([tx('Kite')], N_('Fly or land the Star Kite, once you have it')), row([tx('Jump'), tx('Jump')], N_('Run and tap Jump twice for a ×4 speed leap (four taps: ×16)'))].join('')
+        : [row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')), row(['C'], N_('Dive while swimming')), row(['G'], N_('Fly or land the Star Kite, once you have it')), row(['W', 'Space', 'Space'], N_('Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)')),
           row(['E'], N_('Talk, pick up, light lamps — anything nearby')), row(['E', 'Q'], N_('Next / back in conversations')), row([tx('Mouse')], N_('Drag to look · wheel to zoom')),
           row(['J'], N_('Journal')), row(['Esc'], N_('Pause')), row(['🎮'], N_('Gamepad supported'))].join('');
     }
@@ -654,6 +657,13 @@ export class UI {
     if (this._kiteBtn === on) return;
     this._kiteBtn = on;
     $('tKite').classList.toggle('hidden', !on || !this.touch);
+  }
+  leap(mul) {
+    const on = mul > 1;
+    if (this._leap === mul) return;
+    this._leap = mul;
+    $('leap').classList.toggle('hidden', !on);
+    if (on) $('leap').textContent = `⚡ ×${mul}`;
   }
   swimming(on) {
     if (this._swim === on) return;

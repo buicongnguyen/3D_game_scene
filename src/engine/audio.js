@@ -107,13 +107,14 @@ export class Audio {
   click() { this.tone(1400, { type: 'triangle', dur: 0.06, vol: 0.08, rev: 0 }); }
   blip(pitch = 1) { this.tone(420 * pitch * (0.92 + Math.random() * 0.16), { type: 'square', dur: 0.05, vol: 0.035, rev: 0.05, filter: 1800 }); }
   step(surface = 'grass') {
-    const f = { grass: 900, wood: 420, stone: 1500, sand: 700, snow: 600 }[surface] || 900;
+    const f = { grass: 900, wood: 420, stone: 1500, sand: 700, snow: 600, ice: 2600 }[surface] || 900;
     this.noise({ dur: surface === 'wood' ? 0.09 : 0.07, vol: surface === 'snow' ? 0.14 : 0.09, freq: f * (0.9 + Math.random() * 0.2), q: surface === 'wood' ? 4 : 1.2 });
     if (surface === 'wood') this.tone(160 + Math.random() * 30, { dur: 0.08, vol: 0.05, rev: 0 });
   }
   jump() { this.noise({ dur: 0.12, vol: 0.06, freq: 1800, sweep: 0.5 }); }
   land(s = 0.5) { this.noise({ dur: 0.14, vol: 0.08 + s * 0.12, freq: 500, q: 0.8 }); }
   splash(strength = 0.6) { this.noise({ dur: 0.35 + strength * 0.4, vol: 0.12 + strength * 0.3, freq: 1600 + strength * 1200, q: 0.5, type: 'lowpass', sweep: 0.3 }); }
+  whoosh(mul = 4) { this.noise({ dur: 0.5, vol: 0.12 + Math.log2(mul) * 0.03, freq: 700 + mul * 60, q: 0.8, type: 'bandpass', sweep: 2.4 }); }
   stroke() { this.noise({ dur: 0.32, vol: 0.07, freq: 1300, q: 0.6, type: 'lowpass', sweep: 0.5 }); }
   setUnderwater(on) {
     if (!this.ctx || this._under === on) return;

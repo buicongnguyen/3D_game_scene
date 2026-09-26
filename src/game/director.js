@@ -119,8 +119,10 @@ export class Director {
     const mill = S.byId.get('mill');
     this.interact('millAxle', V(mill.x + 4.2, mill.y + 1, mill.z + 2.2), N_('Fit the cogs and repair the wheel'), () => this.step('c1.wheel'), () => this.event({ type: 'interact', target: 'millAxle' }), 3.2);
     this.interact('drawbridgeUp', V(-9.8, 1.2, -45), N_('Look at the drawbridge'), () => !this.q.unlocked('drawbridge'), () => this.say('drawbridge_up'), 2.4);
-    this.interact('ferryWest', V(-0.6, 0.9, 30), N_('Take the ferry across'), () => this.npcs.rin.visible && this.game.player.pos.x < 12, () => this.ferry('east'), 2.4);
-    this.interact('ferryEast', V(24.2, 0.9, 30), N_('Take the ferry back'), () => this.game.player.pos.x > 12, () => this.ferry('west'), 2.4);
+    this.interact('ferryWest', V(-0.6, 0.9, 30), N_('Take the ferry across'), () => !this.world.frozen && this.npcs.rin.visible && this.game.player.pos.x < 12, () => this.ferry('east'), 2.4);
+    this.interact('ferryEast', V(24.2, 0.9, 30), N_('Take the ferry back'), () => !this.world.frozen && this.game.player.pos.x > 12, () => this.ferry('west'), 2.4);
+    // in winter the ferry is frozen in: the whole river is a road
+    for (const [id, x] of [['ferryIceW', -0.6], ['ferryIceE', 24.2]]) this.interact(id, V(x, 0.9, 30), N_('Look at the frozen ferry'), () => !!this.world.frozen, () => this.say('ferry_frozen'), 2.4);
     const gal = this.game.structures.gallery || { x: 115, z: -4, y: 31.92 };
     this.interact('towerDoor', V(gal.x, gal.y - 10.6, gal.z + 2.8), N_('Climb the bell tower'), () => this.game.player.pos.y < gal.y - 3, () => this.tower(true), 2.2);
     this.interact('towerExit', V(gal.x, gal.y + 0.4, gal.z + 2.0), N_('Go back down'), () => this.game.player.pos.y > gal.y - 1, () => this.tower(false), 1.4, null, 1);
@@ -250,6 +252,7 @@ export class Director {
     const tamoHere = () => this.q?.has('hasTamo') && !this.q.has('tamoHome');
     this.interact(`spark:${id}`, null, label, () => tamoHere() && !t.pending && t.when(), () => this.sparkAt(t),
       reach.r ?? 6, () => (t.posFn ? t.posFn() : t.pos), reach.prio ?? 2, reach.vy ?? 6);
+    this.interactables.get(`spark:${id}`).spark = true;
   }
 
   sparkAt(t) {
@@ -723,7 +726,7 @@ export class Director {
   startFishing() {
     if (this.minigame) return;
     const dusk = this.game.time.hour > 17.6 && this.game.time.hour < 20.5;
-    this.minigame = { kind: 'fish', m: new Fishing({ dusk }) };
+    this.minigame = { kind: 'fish', m: new Fishing({ dusk, window: this.game.easy ? 2.6 : 1.6 }) };
     this.game.player.locked = true;
     this.game.player.turnTo(Math.PI / 2, 1, 50);
     this.game.player.gesture('Cast', { lock: true, then: 'Reel' });
@@ -833,13 +836,16 @@ export class Director {
       const pos = it.posFn ? it.posFn() : it.pos;
       if (!pos) continue;
       const d = Math.hypot(pos.x - p.pos.x, pos.z - p.pos.z);
-      if (d > it.radius || Math.abs(pos.y - (p.pos.y + 1)) > it.vy) continue;
+      // Easy mode (the default): Tamo reaches lamps and bells from much farther away and 4x the height
+      const reachR = it.spark ? it.radius * (this.game.easy ? 1.6 : 1.15) : it.radius;
+      const reachY = it.spark ? it.vy * (this.game.easy ? 4 : 1.5) : it.vy;
+      if (d > reachR || Math.abs(pos.y - (p.pos.y + 1)) > reachY) continue;
       if (!it.when()) continue;
       // story-relevant interactions win over nearby generic ones
       const score = d - (typeof it.prio === 'function' ? it.prio() : it.prio || 0) * 10;
       if (score < bd) { bd = score; best = it; }
     }
-    if (best) bd = Math.hypot((best.posFn ? best.posFn() : best.pos).x - p.pos.x, (best.posFn ? best.posFn() : best.pos).z - p.pos.z);
+    if (best) bd = Math.hypot((best.posFn ? best.posFn() : best.pos).x - p.pos.x, (best.posFn ? best.posFn() : best.pos).z - p.pos.z) / (best.spark && this.game.easy ? 1.6 : 1);
     this.focus = best;
     this.ui.prompt(best ? (typeof best.label === 'function' ? best.label() : tx(best.label)) : null);
     if (best && (inp.pressed('act') || (this.ui.touch && inp.pressed('tap') && bd < best.radius * 0.8))) {
@@ -852,17 +858,19 @@ export class Director {
     // clock & autosave
     this.ui.setClock(g.shownSeason || g.time.season, clockLabel(g.shownHour()));
     this.ui.swimming(p.swimming);
+    this.ui.leap(p.leapMul);
     this.saveClock += dt;
     if (this.saveClock > 45 && !this.busy && !this.minigame) { this.saveClock = 0; this.save(); }
     // footsteps
     if (p.grounded && p.speed > 0.8) {
-      this.stepAcc = (this.stepAcc || 0) + dt * p.speed * 0.62;
-      if (this.stepAcc > 1) { this.stepAcc = 0; this.audio.step(g.time.season === 'winter' && p.surface === 'grass' ? 'snow' : p.surface); }
+      this.stepAcc = (this.stepAcc || 0) + dt * Math.min(p.speed, 7) * 0.62;
+      if (this.stepAcc > 1) { this.stepAcc = 0; if (p.leapMul > 1) this.fx.twinkle(p.pos.clone().add(V(0, 0.2, 0))); this.audio.step(g.time.season === 'winter' && p.surface === 'grass' ? 'snow' : p.surface); }
     }
     for (const e of p.events) {
       if (e.type === 'jump') this.audio.jump();
       if (e.type === 'land') this.audio.land(e.strength);
       if (e.type === 'splash') { this.audio.splash(e.strength); this.fx.splash(V(e.x, 0, e.z)); }
+      if (e.type === 'leap') { this.audio.whoosh(e.mul); this.fx.burst(p.pos.clone().add(V(0, 0.3, 0)), { n: 10 + e.mul, color: [1, 0.85, 0.45], speed: 2.5, size: 0.2 }); }
       if (e.type === 'stroke') { this.audio.stroke(); if (Math.random() < 0.5) this.fx.splash(V(e.x, 0, e.z)); }
     }
     // river ambience

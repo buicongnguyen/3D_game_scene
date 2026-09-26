@@ -71,6 +71,17 @@ together, and how the game is verified. The story itself is in
   (letterboxed during the arrival) as the train passes landmarks, by fraction of
   the route. In the epilogue Kobo shuttles between the station and Takamori Halt
   and Mika can ride it.
+- **Winter ice.** When the shown season is winter the river freezes: the water
+  shader blends to an ice sheet (snow drifts, cracks, sheen), `groundHeight`
+  treats the river as a floor just above the water line, footing is slippery,
+  the ferry is frozen in and the ducks are gone; the finale's lanterns sit on
+  the ice instead of drifting.
+- **Speed leap.** Tapping jump quickly while running forward multiplies the pace:
+  2 taps ×4, 3 taps ×8, 4 taps ×16 (`LEAP` in player.js). Movement is sub-stepped
+  (≤ 0.35 m) so a leap never tunnels through a wall; the camera widens and Tamo
+  follows tighter at speed.
+- **Difficulty.** Easy (the default) scales spark-target reach ×1.6 across and ×4
+  in height and gives fish a 2.6 s bite window; Normal keeps ×1.15 / ×1.5 and 1.6 s.
 - **Profiles and settings.** Three save slots (slot 1 keeps the original key).
   Season and time-of-day overrides only change what is shown (`game.applyLook`,
   `game.shownHour`); the story keeps its own calendar and clock.

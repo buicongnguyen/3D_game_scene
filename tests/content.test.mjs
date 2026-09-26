@@ -47,3 +47,8 @@ test('old saves gain friends and keepsakes when loaded', () => {
   assert.deepEqual(s.friends, {});
   assert.deepEqual(s.keepsakes, []);
 });
+
+test('speed leap: 2 quick jump taps run x4, 3 taps x8, 4 taps x16 (and no more)', async () => {
+  const { leapMultiplier } = await import('../src/actors/player.js');
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 9].map(leapMultiplier), [1, 1, 4, 8, 16, 16, 16]);
+});

@@ -26,6 +26,9 @@ export class World {
   setSeason(season) {
     if (season === this.season) return;
     this.season = season;
+    // winter freezes the river: the ice is walkable (player.groundHeight) and the water turns to ice (water.js)
+    this.frozen = season === 'winter';
+    this.water.setIce?.(this.frozen);
     this.terrain.setSeason(season);
     this.onSeason?.(season);
   }

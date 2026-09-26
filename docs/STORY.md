@@ -223,7 +223,7 @@ all four lamps say "clear", so at nightfall Mika lights the Viaduct Lamp, and
 the relay burns down the river: Forest, Mill, Orchard, Viaduct. Both villages
 board the Star Train. From the footplate Mika lights eight trackside lanterns
 as the train crosses the viaduct to Takamori Halt, and the sky falls: meteors,
-fireworks and lantern boats. Tamo tells Mika the Viaduct Lamp was always his
+fireworks and a line of lanterns glowing on the frozen river. Tamo tells Mika the Viaduct Lamp was always his
 lamp, and it needs its hoshibi. "I'll keep watch. Every night. You keep watch
 too, okay?" He rises into the lamp.
 
@@ -973,7 +973,7 @@ then its step id). Narration is in italics; stage directions are quoted.
 >
 > **86%, nearing Takamori Halt:** Four lamps lit, two villages aboard, one little red engine. And everyone, for once, is looking up.
 
-> *Meteors, Takamori fireworks and Kawabe lantern boats fill the valley.*
+> *Meteors, Takamori fireworks and a line of Kawabe's lanterns glowing on the frozen river fill the valley.*
 
 *The Star Train rolls into Takamori Halt as the sky begins to fall—one star, then ten, then a thousand.*
 
@@ -1044,6 +1044,16 @@ What Mika hears when she tries a way that is not open yet.
 *The broken viaduct span:*
 
 **Tamo:** That's where the span fell. Don't even THINK about jumping.
+
+### Other lines
+
+*`ferry_frozen`:*
+
+**Tamo:** The ferry's frozen in till spring! Good news: the whole river is a road now. A slippery road.
+
+*`ferry_frozen_solo`:*
+
+**Mika:** Frozen in till spring. Fine, I'll walk across. Carefully. Mostly.
 
 ## Appendix B · Sora's letters and journal pages
 

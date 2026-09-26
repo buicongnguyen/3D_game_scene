@@ -37,6 +37,7 @@
     <div id="clock" class="panel"><span id="seasonIcon"></span><span id="clockText">10:00</span></div>
     <div id="inventory"></div>
     <div id="marker" class="hidden"><div class="arrow"></div><span id="markerDist"></span></div>
+    <div id="leap" class="hidden"></div>
     <div id="prompt" class="hidden"><kbd id="promptKey">E</kbd><span id="promptText"></span></div>
     <div id="toasts"></div>
     <button id="btnMenu" class="iconbtn" aria-label="Menu" data-i18n-aria>☰</button>
@@ -103,6 +104,8 @@
       <header><h2 data-i18n>Settings</h2><button class="close" data-close="settings">✕</button></header>
       <div class="form">
         <label><span data-i18n>Language</span> <select id="optLang"></select></label>
+        <label><span data-i18n>Difficulty</span> <select id="optDifficulty"><option value="easy" data-i18n>Easy</option><option value="normal" data-i18n>Normal</option></select></label>
+        <p class="note" data-i18n>Easy: Tamo reaches lamps and bells from much farther away, and fish bite for longer.</p>
         <label><span data-i18n>Graphics</span> <select id="optQuality"><option value="low" data-i18n>Low (phones)</option><option value="medium" data-i18n>Medium</option><option value="high" data-i18n>High</option></select></label>
         <label><span data-i18n>Camera sensitivity</span> <input id="optSens" type="range" min="0.3" max="2" step="0.05" value="1" /></label>
         <label class="check"><input id="optInvert" type="checkbox" /> <span data-i18n>Invert camera Y</span></label>

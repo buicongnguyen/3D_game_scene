@@ -20,7 +20,8 @@ danger that night.
   a bell, a crab or a trackside lantern. Fishing is a single press when the
   float dips.
 - **Swim and dive.** The river is open: swim across, dive to the bed and watch
-  the trout, weed and sunken boats in a hushed, green-blue world.
+  the trout, weed and sunken boats in a hushed, green-blue world. In winter the
+  river freezes: run, leap and slide straight across the ice.
 - **Fly Sora's Star Kite.** Find it on her workbench and press **G**: Mika hangs
   from a wind-up paper kite and soars over the whole valley.
 - **Step inside.** Sora's cottage, Hana's bakery, Ōta's mill and Genzo's station
@@ -30,6 +31,8 @@ danger that night.
 - **Storytelling on the rails.** Captions tell the tale across the top of the
   screen while the train rolls in, during the Star Train ride, and on the Sunday
   service you can ride after the ending.
+- **Easy mode (default)** lets Tamo reach lamps and bells from much farther away
+  and four times the height, and gives fish longer to bite. Normal is in Settings.
 - **Three save profiles** and an **Advanced** settings panel (season and time of
   day to look at, weather, shadows, resolution, field of view, camera distance,
   text size).
@@ -52,6 +55,7 @@ danger that night.
 | Do anything nearby (talk, pick up, light, cook…) | E | X | **Act** |
 | Next / back in a conversation | E / Q | A / B | Tap / **Back** |
 | Jump · swim up | Space | A | **Jump** |
+| Speed leap: ×4 (2 taps), ×8 (3), ×16 (4) | Hold W and tap Space quickly | Hold forward, tap A | Hold the stick, tap **Jump** |
 | Dive (while swimming) | C or Ctrl | LT / RT | **Dive** |
 | Fly / land the Star Kite | G | Y | **Kite** |
 | Journal / pause | J / Esc | Back / Start | ☰ and ✎ buttons |

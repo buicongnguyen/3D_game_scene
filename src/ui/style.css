@@ -56,6 +56,9 @@ kbd { font-family: var(--head); font-weight: 600; background: var(--ink); color:
 .inv img, .inv .ph { width: 30px; height: 30px; object-fit: contain; border-radius: 50%; background: #fdecd0; }
 @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 #prompt { position: absolute; left: 50%; bottom: calc(96px + var(--safe-b)); transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 9px 18px; border-radius: 99px; background: rgba(28, 35, 64, 0.86); color: #fff; font-weight: 800; font-size: 17px; box-shadow: var(--shadow); white-space: nowrap; }
+#leap { position: absolute; left: 50%; bottom: calc(150px + var(--safe-b)); transform: translateX(-50%); padding: 6px 16px; border-radius: 99px; font-family: var(--head); font-weight: 700; font-size: 22px; color: #3b1c05; background: linear-gradient(180deg, #ffe38a, #f2a33a); box-shadow: 0 0 22px rgba(255, 196, 70, 0.8), var(--shadow); animation: leapPulse 0.5s ease-in-out infinite alternate; }
+@keyframes leapPulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.08); } }
+.form .note { font-size: 12.5px; color: var(--ink-soft); margin: -4px 0 6px; }
 #prompt kbd { background: var(--gold); color: #3b1c05; box-shadow: 0 2px 0 #a8661a; }
 #marker { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
 #marker .arrow { width: 26px; height: 26px; background: var(--gold); clip-path: polygon(50% 0, 100% 100%, 50% 75%, 0 100%); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }

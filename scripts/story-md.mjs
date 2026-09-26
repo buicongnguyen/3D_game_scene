@@ -46,7 +46,7 @@ const CUTSCENES = {
   meeting: 'Kawabe and Takamori gather on the snowy platform.',
   relay: 'Down the river, Forest, Mill, Orchard and Viaduct burn one after another.',
   starTrain: 'The Star Train, Kobo hung with lanterns, leaves Hoshi Station with both villages aboard.',
-  finale: 'Meteors, Takamori fireworks and Kawabe lantern boats fill the valley.',
+  finale: "Meteors, Takamori fireworks and a line of Kawabe's lanterns glowing on the frozen river fill the valley.",
   farewell: 'Tamo rises into the Viaduct Lamp. Credits.',
 };
 const UNLOCKS = {

@@ -68,8 +68,10 @@ export class Tamo {
       player.pos.z + Math.cos(f) * fwd - Math.sin(f) * side * -1,
     );
     if (this.override) target.copy(this.override);
-    const k = 1 - Math.exp(-dt * (this.override ? 2.2 : 6));
+    // he keeps up even when Mika speed-leaps (x16 is ~70 m/s): the faster she goes, the tighter he follows
+    const k = 1 - Math.exp(-dt * (this.override ? 2.2 : 6 + (player.speed || 0) * 0.9));
     this.pos.lerp(target, k);
+    if (!this.override && this.pos.distanceTo(target) > 25) this.pos.lerp(target, 0.9);
     this.root.position.copy(this.pos);
     this.root.rotation.y = aiming ? camYaw : f + Math.sin(this.t * 0.7) * 0.4;
     const s = 0.9 + this.power * 0.06;

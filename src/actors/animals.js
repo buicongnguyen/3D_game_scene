@@ -267,6 +267,7 @@ export class Wildlife {
       if (far && a.kind !== 'fox' && a.kind !== 'sheep') continue;
       if (a.kind === 'rabbit') this.rabbit(a, dt, player);
       else if (a.kind === 'chicken') this.wander(a, dt, 0.6, 5, [120, 22]);
+      else if (a.kind === 'duck' && game?.game?.world?.frozen) { a.root.visible = false; continue; } // gone south for the winter
       else if (a.kind === 'duck') {
         const p = river.at(a.s0 + Math.sin(t * 0.05 + a.phase) * 25);
         const off = riverHalfWidth(p.z) * 0.45 * Math.sin(t * 0.08 + a.phase);

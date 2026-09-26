@@ -1305,6 +1305,18 @@
   ]
  },
  {
+  "s": "The ferry's frozen in till spring! Good news: the whole river is a road now. A slippery road.",
+  "ctx": [
+   "dialogue ferry_frozen, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Frozen in till spring. Fine, I'll walk across. Carefully. Mostly.",
+  "ctx": [
+   "dialogue ferry_frozen_solo, spoken by Mika"
+  ]
+ },
+ {
   "s": "Ferry? Not a chance. Grandpa says nobody crosses until the Mill Lamp's lit.",
   "ctx": [
    "dialogue ferry_locked, spoken by Rin"
@@ -2675,6 +2687,12 @@
   ]
  },
  {
+  "s": "Look at the frozen ferry",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Climb the bell tower",
   "ctx": [
    "UI (src/game/director.js)"
@@ -3128,6 +3146,12 @@
   ]
  },
  {
+  "s": "Run and tap Jump twice for a ×4 speed leap (four taps: ×16)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Move",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -3135,6 +3159,12 @@
  },
  {
   "s": "Run faster",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -3316,6 +3346,30 @@
   ]
  },
  {
+  "s": "Difficulty",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Easy",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Normal",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Easy: Tamo reaches lamps and bells from much farther away, and fish bite for longer.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "Graphics",
   "ctx": [
    "menu / screen text"
@@ -3491,12 +3545,6 @@
  },
  {
   "s": "Text size",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Normal",
   "ctx": [
    "menu / screen text"
   ]

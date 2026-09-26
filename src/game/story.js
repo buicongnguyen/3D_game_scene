@@ -336,6 +336,8 @@ export const DIALOGUE = {
     ['sora', 'Keep looking up, my darling. Love, Grandma.'],
   ],
   ferry_ride: [['rin', "Hold on to something! Ferry's leaving!", 'Pole']],
+  ferry_frozen: [['tamo', "The ferry's frozen in till spring! Good news: the whole river is a road now. A slippery road.", 'Happy']],
+  ferry_frozen_solo: [['mika', "Frozen in till spring. Fine, I'll walk across. Carefully. Mostly."]],
   ferry_locked: [['rin', "Ferry? Not a chance. Grandpa says nobody crosses until the Mill Lamp's lit.", 'Talk']],
   gate_locked: [['tamo', "The orchard gate is locked tight. Hana has the key to everything up here."]],
   drawbridge_up: [['tamo', "The drawbridge is up. It lifts with the mill wheel, and the wheel isn't turning."]],

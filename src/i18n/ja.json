@@ -591,5 +591,13 @@
   "Large": "大",
   "Extra large": "特大",
   "Season and time of day only change what you see; the story keeps its own calendar.": "季節と時間帯は見た目だけが変わります。ストーリーは独自の暦で進みます。",
-  "Reset advanced settings": "詳細設定をリセット"
+  "Reset advanced settings": "詳細設定をリセット",
+  "Difficulty": "難易度",
+  "Easy": "かんたん",
+  "Easy: Tamo reaches lamps and bells from much farther away, and fish bite for longer.": "かんたん：タモがずっと遠くの灯や鈴にも届き、魚のアタリも長く続く。",
+  "Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)": "前に走りながらスペースを2回すばやく押すと×4ダッシュ（4回で×16）",
+  "Run and tap Jump twice for a ×4 speed leap (four taps: ×16)": "走りながらジャンプを2回すばやく押すと×4ダッシュ（4回で×16）",
+  "The ferry's frozen in till spring! Good news: the whole river is a road now. A slippery road.": "渡し舟は春まで氷づけだよ！　いい知らせ：川ぜんぶが道になった。すべる道だけど！",
+  "Frozen in till spring. Fine, I'll walk across. Carefully. Mostly.": "春まで氷づけか。いいよ、歩いて渡る。慎重に。たぶん。",
+  "Look at the frozen ferry": "凍った渡し舟を見る"
 }

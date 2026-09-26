@@ -126,7 +126,8 @@ export class FollowCamera {
     this.camera.lookAt(this.look);
     this.pos.copy(this.camera.position);
     const spd = this.flying ? (this.flySpeed || 0) : player.speed;
-    this.setFov(THREE.MathUtils.lerp(this.fovBase + Math.min(6, spd * 0.8), 44, this.aimBlend) + this.flyBlend * 6, dt);
+    const leap = player.leapMul > 1 ? Math.min(14, Math.log2(player.leapMul) * 3.5) : 0;
+    this.setFov(THREE.MathUtils.lerp(this.fovBase + Math.min(6, spd * 0.8) + leap, 44, this.aimBlend) + this.flyBlend * 6, dt);
   }
 
   /** Wide cinematic shots get a larger near plane for depth precision; gameplay keeps a close one. */
