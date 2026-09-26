@@ -300,3 +300,26 @@ button.small { border: 0; border-radius: 12px; padding: 7px 12px; font-family: v
 #compass .tip { fill: #ffd23f; stroke: #8a5a1e; stroke-width: 1.2; filter: drop-shadow(0 0 3px rgba(255, 200, 50, 0.9)); }
 #compassDist { font-family: var(--head); font-weight: 700; font-size: 12px; color: #fff; background: rgba(28, 35, 64, 0.85); border-radius: 99px; padding: 0 7px; }
 body.touch #compass { bottom: auto; top: calc(116px + var(--safe-t)); left: 16px; }
+
+/* ---------- Hard mode: aim and spark ---------- */
+#tAim { right: calc(196px + env(safe-area-inset-right, 0px)); bottom: calc(108px + var(--safe-b)); width: 64px; height: 64px; background: linear-gradient(180deg, #e9f1ff, #9dbbff); color: #16264d; }
+#tFire { right: calc(112px + env(safe-area-inset-right, 0px)); bottom: calc(128px + var(--safe-b)); width: 84px; height: 84px; background: linear-gradient(180deg, #fff1b8, #ffb13d); font-size: 17px; }
+#reticle { pointer-events: none; z-index: 2; }
+
+/* ---------- The End ---------- */
+.endcard { text-align: center; margin: 4px 0 10px; }
+.endcard .the-end { font-family: var(--head); font-weight: 700; font-size: 44px; line-height: 1.1; margin: 6px 0 8px; color: #c8781a;
+  background: linear-gradient(180deg, #ffd66b, #e98a2a); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: rise 0.8s ease both; }
+.endcard .lead { font-weight: 700; font-size: 17px; }
+.endstats { list-style: none; padding: 0; margin: 12px auto; display: flex; flex-wrap: wrap; gap: 6px 8px; justify-content: center; max-width: 560px; }
+.endstats li { background: #fff4dc; border: 2px solid #f2c46b; border-radius: 99px; padding: 3px 12px; font-weight: 700; font-size: 14px; }
+.endcard .primary { margin-top: 6px; border: 0; border-radius: 16px; padding: 12px 26px; font-family: var(--head); font-size: 19px; font-weight: 600;
+  background: linear-gradient(180deg, #ffd66b, #f2a33a); color: #3b1c05; box-shadow: var(--shadow); cursor: pointer; transition: transform 0.12s; }
+.endcard .primary:hover, .endcard .primary:focus-visible { transform: translateY(-2px) scale(1.03); outline: none; }
+
+/* ---------- graphics trouble: try again / reload ---------- */
+button.retry { margin: 14px auto 0; display: block; border: 0; border-radius: 14px; padding: 10px 24px; font-family: var(--head); font-size: 18px; font-weight: 600;
+  background: linear-gradient(180deg, #ffd66b, #f2a33a); color: #3b1c05; box-shadow: var(--shadow); cursor: pointer; }
+#glLost { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; background: rgba(11, 16, 36, 0.72); }
+#glLost .panel { max-width: 420px; margin: 16px; padding: 20px 22px; text-align: center; font-weight: 700; font-size: 17px; }
+#loadLabel { max-width: 620px; margin-left: auto; margin-right: auto; padding: 0 16px; text-align: center; line-height: 1.45; }

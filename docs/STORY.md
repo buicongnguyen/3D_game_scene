@@ -618,6 +618,12 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 > *The Blossom Wave: a golden wave runs down the river, every cherry tree blooms at once, koi leap over the mill wheel, a rainbow, and a star of petals pointing to Takamori. The album gets its first photo.*
 
+*Across the top of the screen during the slow flight over Kawabe that ends the party:*
+
+> **6%:** The Mill Lamp burns again, and all of Kawabe comes out onto the riverbank to see it.
+>
+> **50%:** Blossoms ride the river all the way down the valley, like a letter nobody had to write.
+
 *The light runs down the river like a wave, and every cherry tree in Kawabe blooms at once.*
 
 **Rin:** Grandpa! GRANDPA! The koi are jumping! Right over the wheel!
@@ -740,6 +746,12 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 > *The Firefly Festival: every peach tree glows like a lantern, a river of fireflies rises into the night, fireworks, a bon-odori circle round the bell tower, and the sheep float. A lantern boat drifts over from Kawabe.*
 
+*Across the top of the screen during the slow flight over Takamori and the orchard that ends the party:*
+
+> **6%:** Takamori dances until the lanterns burn low. Nobody wants to be the first to go home.
+>
+> **50%:** Every peach tree glows. From up here, the orchard looks like a field full of little moons.
+
 *The bell's last note rolls over the orchard, and every peach tree lights up like a paper lantern.*
 
 **Hana:** Fireflies! Thousands of them! Somebody fetch the drums. The summer festival starts NOW!
@@ -804,6 +816,8 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 #### Cross the stepping stones and look at the landslide scar · `c3.landslide`
 
+> *The camera finds the landslide scar: a raw chute of earth torn out of the wooded hillside, with fallen cedars and boulders at its foot.*
+
 **Mika:** Look at this slope. The whole hillside slid into the river.
 
 **Mika:** It must have dammed the river, then burst. That was the flood. Nobody caused it—not Kawabe, not Takamori.
@@ -843,6 +857,12 @@ then its step id). Narration is in italics; stage directions are quoted.
 > *Journal page 3 added: “Page 3 · Kiku”.*
 
 > *Moon-viewing with the forest: kodama rattle their heads, maple leaves turn into golden butterflies up the shrine steps, and Ōkuma, Kon, the deer and the rabbits gather under the moon.*
+
+*Across the top of the screen during the slow flight over the shrine woods:*
+
+> **6%:** The forest remembers every kindness. This evening, it is saying thank you.
+>
+> **50%:** Ōkuma, Kon and the deer stay to watch the moon come up. The shrine steps are open again.
 
 *The Forest Lamp flares gold, and the whole wood answers.*
 
@@ -1035,6 +1055,14 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 > *Aurora and star-snow. The falling stars gather into a Star Train of light crossing the sky, with Sora waving from a window. Then everyone squashes onto Kobo for a photograph, and the credits play as the year’s album.*
 
+*Across the top of the screen during the slow flight over the snowy valley, before the credits:*
+
+> **5%:** Four lamps, one valley, and a train made of starlight.
+>
+> **40%:** Below, every window in Kawabe and Takamori is lit. The whole valley stayed up for this.
+>
+> **75%:** For the first time in ten winters, nobody in Hoshi Valley is looking away.
+
 *Then the falling stars gather, one by one, into a train of light that crosses the whole sky.*
 
 **Genzo:** That's… the Star Train. And in the window… Sora. She's waving. She's waving at us.
@@ -1094,6 +1122,18 @@ then its step id). Narration is in italics; stage directions are quoted.
 > **62%:** Forest, Mill, Orchard, Viaduct: four lamps, all saying 'clear'. Not one has gone out since winter.
 >
 > **82%:** Somewhere in Kawabe, Ōta waves at the train, then pretends he was swatting a fly.
+
+> *The camera rises from Mika over the whole starlit valley. Then the last page: The End, the year’s photographs, and a thank-you. After it, the valley is Mika’s to explore.*
+
+*Across the top of the screen as the camera rises over the valley:*
+
+> **5%:** Twelve Fallen Stars, home again. Four Star Lamps, burning bright.
+>
+> **42%:** Two villages that became one valley. One little red engine, running on time.
+>
+> **75%:** And one star spirit, who comes to visit every Sunday.
+
+#### The story is complete! Hoshi Valley is yours to explore · `e.done`
 
 ### Blocked paths
 

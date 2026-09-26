@@ -268,7 +268,7 @@ runtime looks up.
 | `stepping-stone` | 1.5×1.3×1.4 | Flat-topped river boulder: top at z=0.35, base to z=−1. Two variants (`stepping-stone`, `stepping-stone-b`). | ≤ 600 |
 | `lantern-boat` | 0.6×0.8×0.7 | Floating paper lantern on a wooden base (`Lantern glow`). | ≤ 800 |
 | `tunnel-portal` | 9×4×9 | Stone railway tunnel mouth set into a mountain face: an arched opening 4.6 m wide and 5.4 m tall on −Y (the track enters toward +Y) with voussoirs, a keystone plate, wing walls flaring back, and a dark inner tunnel 6 m deep that fades to near-black. Origin at rail-top centre of the opening. | ≤ 4k |
-| `landslide` | 22×16×9 | The upriver landslide scar: an exposed earth and rock slope (origin at its toe), fallen cedar trunks, boulders. | ≤ 8k |
+| `landslide` | 24×18×9 | The upriver landslide scar: an exposed earth and rock slope (origin at its toe), fallen cedar trunks, boulders. Its ground is analytic and mirrored exactly by `src/world/landslide.js` (the terrain is sunk under it; keep both in sync); footprint x −12..12, y −6..12 on the terrain grid's 6 m lines; `Turf` is drawn with the terrain shader, `Turf lip` is tinted with the season's grass. | ≤ 8k |
 
 ### Nature — `build_nature.py`
 

@@ -1,12 +1,12 @@
 // Unified input: keyboard + mouse, gamepad and touch -> one action model polled once per frame.
 // move: {x, y} with x = right, y = forward, length <= 1. look: {x, y} deltas (pixels-ish) this frame.
-// Buttons: jump, act, dive (held), sprint (held), journal, pause, back.
+// Buttons: jump, act, dive (held), sprint (held), journal, pause, back; in Hard mode also aim (held) and fire.
 
 const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   Space: 'jump', KeyE: 'act', KeyF: 'act', Enter: 'act', ShiftLeft: 'sprint', ShiftRight: 'sprint',
   KeyJ: 'journal', KeyI: 'journal', Escape: 'pause', KeyP: 'pause', Backspace: 'back',
-  KeyC: 'dive', ControlLeft: 'dive', ControlRight: 'dive', KeyG: 'kite',
+  KeyC: 'dive', ControlLeft: 'dive', ControlRight: 'dive', KeyG: 'kite', KeyQ: 'aim', KeyR: 'fire',
 };
 
 export class Input {
@@ -17,7 +17,8 @@ export class Input {
     this.move = { x: 0, y: 0 };
     this.look = { x: 0, y: 0 };
     this.zoom = 0;
-    this.touch = { move: null, look: null };
+    this.touch = { move: null, look: null, aimHeld: false };
+    this.aimMode = false;    // Hard mode: aiming and sparking by hand
     this.dragging = false;
     this.enabled = true;
     this.sensitivity = 1;
@@ -46,11 +47,14 @@ export class Input {
     c.addEventListener('contextmenu', e => e.preventDefault());
     c.addEventListener('mousedown', e => {
       this.lastDevice = 'keyboard';
-      // either mouse button drags the camera
+      // either mouse button drags the camera; in Hard mode the right button also aims and a left click sparks
       if (e.button === 0 || e.button === 2) { this.dragging = true; if (e.button === 0) this.edges.add('click'); }
+      if (this.aimMode && e.button === 2) this.mouseAim = true;
+      if (this.aimMode && e.button === 0 && this.mouseAim) this.edges.add('fire');
     });
     addEventListener('mouseup', e => {
       if (e.button === 0 || e.button === 2) this.dragging = false;
+      if (e.button === 2) this.mouseAim = false;
     });
     addEventListener('mousemove', e => {
       if (e.sourceCapabilities?.firesTouchEvents) return;
@@ -100,12 +104,17 @@ export class Input {
     }
   }
 
+  /** Hard mode: aiming is held on the right mouse button, Q, the left trigger or the on-screen Aim button. */
+  get aiming() { return this.enabled && this.aimMode && !!(this.mouseAim || this.keys.has('aim') || this.gpAim || this.touch.aimHeld); }
+
   /** Called by on-screen buttons. */
   press(action) { this.edges.add(action); this.keys.add(action); }
   release(action) { this.keys.delete(action); }
 
   releaseAll() {
     this.keys.clear();
+    this.mouseAim = false;
+    this.touch.aimHeld = false;
     this.dragging = false;
     this.touch.move = null;
     this.touch.look = null;
@@ -140,6 +149,9 @@ export class Input {
       if (gp.buttons[6]?.value > 0.4 || gp.buttons[7]?.value > 0.4) { this.keys.add('dive'); this._gpDive = true; }
       else if (this._gpDive) { this.keys.delete('dive'); this._gpDive = false; }
       if (btn(10)) this.keys.add('sprint'); else if (this.lastDevice === 'gamepad') this.keys.delete('sprint');
+      // Hard mode: left trigger aims, right trigger sparks
+      this.gpAim = this.aimMode && gp.buttons[6]?.value > 0.4;
+      this._gpEdge('fire', this.aimMode && gp.buttons[7]?.value > 0.4);
     }
     const len = Math.hypot(mx, my);
     this.move.x = len > 1 ? mx / len : mx;

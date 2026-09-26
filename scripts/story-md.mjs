@@ -22,6 +22,11 @@ const DURING = {
 const CAPTIONED = {
   arrival: ['arrival', 'Across the top of the screen while Kobo runs in, one caption after another'],
   starTrain: ['ride', 'Across the top of the screen during the ride, by how far along the line the train is'],
+  'celebrate:1': ['flight1', 'Across the top of the screen during the slow flight over Kawabe that ends the party'],
+  'celebrate:2': ['flight2', 'Across the top of the screen during the slow flight over Takamori and the orchard that ends the party'],
+  'celebrate:3': ['flight3', 'Across the top of the screen during the slow flight over the shrine woods'],
+  'celebrate:4': ['flight4', 'Across the top of the screen during the slow flight over the snowy valley, before the credits'],
+  theEnd: ['theEnd', 'Across the top of the screen as the camera rises over the valley'],
 };
 const CAPTIONS_DURING = {
   'e.free': [['tour', "Riding Kobo's Sunday service between Hoshi Station and Takamori Halt (by how far along the ride, either way)"]],
@@ -54,9 +59,11 @@ const CUTSCENES = {
   'celebrate:3': 'Moon-viewing with the forest: kodama rattle their heads, maple leaves turn into golden butterflies up the shrine steps, and Ōkuma, Kon, the deer and the rabbits gather under the moon.',
   'celebrate:4': 'Aurora and star-snow. The falling stars gather into a Star Train of light crossing the sky, with Sora waving from a window. Then everyone squashes onto Kobo for a photograph, and the credits play as the year’s album.',
   tamoReturns: 'A small gold light shoots out of the Viaduct Lamp.',
+  landslide: 'The camera finds the landslide scar: a raw chute of earth torn out of the wooded hillside, with fallen cedars and boulders at its foot.',
+  theEnd: 'The camera rises from Mika over the whole starlit valley. Then the last page: The End, the year’s photographs, and a thank-you. After it, the valley is Mika’s to explore.',
 };
 // dialogue played inside a cutscene
-const CUTSCENE_SAYS = { 'celebrate:1': ['c1_party'], 'celebrate:2': ['c2_party'], 'celebrate:3': ['c3_party', 'bear_acorn'], 'celebrate:4': ['c4_skytrain', 'c4_photo'], tamoReturns: ['tamo_returns'] };
+const CUTSCENE_SAYS = { 'celebrate:1': ['c1_party'], 'celebrate:2': ['c2_party'], 'celebrate:3': ['c3_party', 'bear_acorn'], 'celebrate:4': ['c4_skytrain', 'c4_photo'], tamoReturns: ['tamo_returns'], landslide: ['c3_landslide'] };
 const UNLOCKS = {
   drawbridge: 'The drawbridge to the mill island comes down.',
   ferry: "Rin's ferry now crosses the river.",
@@ -67,7 +74,7 @@ const UNLOCKS = {
 
 const used = new Set();
 const out = [];
-const put = (...lines) => out.push(...lines);
+const put = (...lines) => out.push(...lines.map(l => (typeof l === 'string' ? l.replace(/\{act\}/g, 'E') : l)));
 const stage = s => put(`> *${s}*`, '');
 const name = who => CAST[who]?.name || who;
 const objective = s => s.replace(/\s*\(\{\w+\}\/\d+\)/g, '');

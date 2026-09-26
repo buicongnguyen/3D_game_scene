@@ -169,10 +169,11 @@ export class Game {
       // the train moves first: Mika (when riding) and the camera then see this frame's train, not last frame's
       this.railway.update(dt, this.night || 0);
       this.kite?.update(dt); // the kite moves before Mika reads its handle
+      this.player.aiming = !!this.director?.canAim?.() && this.input.aiming;
       this.player.update(dt, this.input, this.follow.yaw);
-      this.follow.update(dt, this.player, this.input, false);
+      this.follow.update(dt, this.player, this.input, this.player.aiming);
       for (const s of this.systems) s.update(dt, this);
-      const L = this.world.update(dt, this.player.pos);
+      const L = this.world.update(dt, this.viewFocus || this.player.pos);
       this.underwater?.update(dt, L);
       this.riverbed?.update(dt);
       this.interiors?.update(dt);

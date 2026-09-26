@@ -40,6 +40,7 @@
     <div id="leap" class="hidden"></div>
     <div id="compass" class="hidden"><div class="dial"><svg viewBox="0 0 48 48" aria-hidden="true"><path class="needle" d="M24 5 L28 24 L24 43 L20 24 Z"/><path class="tip" d="M24 5 L26.4 12 L33.5 12 L27.8 16.3 L30 23 L24 18.9 L18 23 L20.2 16.3 L14.5 12 L21.6 12 Z"/></svg></div><span id="compassDist"></span></div>
     <div id="prompt" class="hidden"><kbd id="promptKey">E</kbd><span id="promptText"></span></div>
+    <div id="reticle" class="hidden"><div class="ring"></div><div class="dot"></div><div id="reticleLabel"></div></div>
     <div id="toasts"></div>
     <button id="btnMenu" class="iconbtn" aria-label="Menu" data-i18n-aria>☰</button>
     <button id="btnJournal" class="iconbtn" aria-label="Journal" data-i18n-aria>✎</button>
@@ -48,9 +49,11 @@
   <div id="touch" class="hidden">
     <div id="stick"><div id="stickKnob"></div></div>
     <button id="tJump" class="tbtn" data-i18n>Jump</button>
-    <button id="tAct" class="tbtn act">Act</button>
+    <button id="tAct" class="tbtn act">Do it</button>
     <button id="tDive" class="tbtn dive hidden" data-i18n>Dive</button>
     <button id="tKite" class="tbtn kite hidden" data-i18n>Kite</button>
+    <button id="tAim" class="tbtn aim hidden" data-i18n>Aim</button>
+    <button id="tFire" class="tbtn fire hidden" data-i18n>Spark</button>
   </div>
 
   <div id="dialogue" class="hidden" role="dialog" aria-live="polite">
@@ -105,7 +108,7 @@
       <header><h2 data-i18n>Settings</h2><button class="close" data-close="settings">✕</button></header>
       <div class="form">
         <label><span data-i18n>Language</span> <select id="optLang"></select></label>
-        <label><span data-i18n>Difficulty</span> <select id="optDifficulty"><option value="easy" data-i18n>Easy</option><option value="normal" data-i18n>Normal</option></select></label>
+        <label><span data-i18n>Difficulty</span> <select id="optDifficulty"><option value="easy" data-i18n>Easy</option><option value="normal" data-i18n>Normal</option><option value="hard" data-i18n>Hard (aim and spark)</option></select></label>
         <p class="note" data-i18n>Easy: Tamo reaches lamps and bells from much farther away, and fish bite for longer.</p>
         <label><span data-i18n>Graphics</span> <select id="optQuality"><option value="low" data-i18n>Low (phones)</option><option value="medium" data-i18n>Medium</option><option value="high" data-i18n>High</option></select></label>
         <label><span data-i18n>Camera sensitivity</span> <input id="optSens" type="range" min="0.3" max="2" step="0.05" value="1" /></label>
@@ -133,6 +136,13 @@
   <div id="credits" class="overlay hidden">
     <div class="book small credits">
       <header><h2>Starline</h2><button class="close" data-close="credits">✕</button></header>
+      <div id="endCard" class="endcard hidden">
+        <p class="the-end" data-i18n>The End</p>
+        <p class="lead" data-i18n>All twelve Fallen Stars are home, and every Star Lamp in Hoshi Valley is lit. Mika's story is complete.</p>
+        <ul id="endStats" class="endstats"></ul>
+        <p data-i18n>Thank you for playing Starline! The valley is yours to explore, and Tamo visits every Sunday.</p>
+        <button class="primary" data-close="credits" data-i18n>Keep exploring</button>
+      </div>
       <p data-i18n>A story about a railway, two villages, a tiny fallen star and the night everybody looked away.</p>
       <p><b data-i18n>Design, story, code &amp; Blender art</b><br />Bui Cong Nguyen with Claude</p>
       <p><b data-i18n>Built with</b><br />three.js · Blender 4.5 · Vite</p>
@@ -145,7 +155,7 @@
     <div class="mgtitle" id="fishTitle"></div>
     <div class="pond"><div class="ripple"></div><div class="float" id="fishFloat"><i></i></div></div>
     <div class="catchbar bite"><div id="fishBite"></div></div>
-    <div class="mghint"><span data-i18n>Press E (or tap) when the float dips</span> · <kbd>Esc</kbd></div>
+    <div class="mghint"><span data-i18n>Press {act} when the float dips</span> · <kbd>Esc</kbd></div>
   </div>
 
   <div id="cooking" class="minigame hidden">
@@ -155,7 +165,7 @@
     <div class="mghint" data-i18n>Stirring…</div>
   </div>
 
-  <div id="rideHud" class="hidden"><div class="panel"><span id="rideText"></span><small data-i18n>Press E as each lantern comes near</small></div></div>
+  <div id="rideHud" class="hidden"><div class="panel"><span id="rideText"></span><small data-i18n>Press {act} as each lantern comes near</small></div></div>
   <div id="fade"></div>
   <div id="flash"></div>
   <div id="fps" class="hidden"></div>

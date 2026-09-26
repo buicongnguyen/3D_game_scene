@@ -1,6 +1,6 @@
 import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, DIALOGUE } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
-import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange } from '../i18n/i18n.js';
+import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 
 const $ = id => document.getElementById(id);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -19,6 +19,8 @@ export class UI {
     this.dialogueOpen = false;
     this.overlay = null;
     this.touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+    // "press {act}": the E key on a keyboard, the "Do it" button on a phone
+    setGlobal('act', () => (this.touch ? `“${tx('Do it')}”` : 'E'));
     if (this.touch) document.body.classList.add('touch');
     this.bindMenus();
     this.bindTouch();
@@ -57,13 +59,13 @@ export class UI {
     this._inv = null;
     this._prompt = undefined;
     this.setTitleHint();
-    $('tAct').textContent = tx('Act');
+    $('tAct').textContent = tx('Do it');
     this.game.director?.refreshObjective();
     if (this.overlay === 'journal') this.journalTab(this._tab || 'story');
   }
 
   setTitleHint() {
-    $('titleHint').textContent = this.touch ? tx('Left thumb moves · drag the right side to look · Act does anything nearby')
+    $('titleHint').textContent = this.touch ? tx('Left thumb moves · drag the right side to look · “Do it” does anything nearby')
       : tx('WASD / stick to move · Mouse drag to look · E to do anything nearby · Space to jump or swim up · C to dive');
   }
 
@@ -191,14 +193,15 @@ export class UI {
   }
 
   prompt(text, key) {
-    if (this._prompt === text) return;
+    if (this._prompt === text && this._promptKey === key) return;
     this._prompt = text;
+    this._promptKey = key;
     const p = $('prompt');
-    if (!text) { p.classList.add('hidden'); $('tAct').textContent = tx('Act'); return; }
+    if (!text) { p.classList.add('hidden'); $('tAct').textContent = tx('Do it'); return; }
     p.classList.remove('hidden');
     $('promptText').textContent = text;
-    $('promptKey').textContent = this.touch ? tx('Act') : key || 'E';
-    $('tAct').textContent = tx('Act');
+    $('promptKey').textContent = key || (this.touch ? tx('Do it') : 'E');
+    $('tAct').textContent = tx('Do it');
   }
 
   toast(text, icon) {
@@ -508,7 +511,9 @@ export class UI {
     let lastCam = null;
     const apply = () => {
       g.input.sensitivity = +sens.value; g.input.invertY = inv.checked;
-      g.easy = diff.value !== 'normal';
+      g.easy = diff.value === 'easy';
+      g.hard = diff.value === 'hard';
+      g.input.aimMode = g.hard;
       save('difficulty', diff.value);
       this.audio?.setVolumes(+mus.value, +sfx.value);
       $('fps').classList.toggle('hidden', !fps.checked);
@@ -547,12 +552,22 @@ export class UI {
   closeOverlay() {
     const top = this.overlayStack?.pop();
     if (top) $(top).classList.add('hidden');
+    if (top === 'credits') this.endClosed();
     this.overlay = this.overlayStack?.[this.overlayStack.length - 1] || null;
     if (this.overlay) $(this.overlay).classList.remove('hidden');
     if (!this.overlay) this.game.togglePause?.(false, true);
   }
 
+  /** The end card belongs to the finale only; the menu's Credits button shows the plain page. */
+  endClosed() {
+    $('endCard').classList.add('hidden');
+    const done = this.onCreditsClosed;
+    this.onCreditsClosed = null;
+    done?.();
+  }
+
   closeAll() {
+    if (!$('credits').classList.contains('hidden')) this.endClosed();
     for (const id of ['journal', 'pause', 'settings', 'credits']) $(id).classList.add('hidden');
     this.overlayStack = [];
     this.overlay = null;
@@ -604,12 +619,12 @@ export class UI {
         ALBUM.map((a, i) => `<div class="polaroid" style="--tilt:${[-2, 1.5, -1, 2][i % 4]}deg">${photos[a.id] ? `<img alt="" src="${photos[a.id]}">` : '<div class="blank">★</div>'}<p>${esc(tx(a.title))}</p></div>`).join('') + '</div>';
     } else if (tab === 'friends') {
       const met = q.friends || {}, n = FRIENDS.filter(f => met[f.id]).length;
-      body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press E to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +
+      body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press {act} to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +
         FRIENDS.map(f => this.cardHTML(!!met[f.id], f.icon, tx(f.name), met[f.id] ? tx(f.desc) : tx(f.hint), met[f.id] ? '♥' : tx('Not met yet'))).join('') + '</div>';
     } else {
       const row = (keys, text) => `<div class="step">${keys.map(k => `<kbd>${k}</kbd>`).join(' ')} ${esc(tx(text))}</div>`;
       body.innerHTML = this.touch
-        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Act')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming')), row([tx('Kite')], N_('Fly or land the Star Kite, once you have it')), row([tx('Jump'), tx('Jump')], N_('Run and tap Jump twice for a ×4 speed leap (four taps: ×16)'))].join('')
+        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Do it')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming')), row([tx('Kite')], N_('Fly or land the Star Kite, once you have it')), row([tx('Jump'), tx('Jump')], N_('Run and tap Jump twice for a ×4 speed leap (four taps: ×16)'))].join('')
         : [row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')), row(['C'], N_('Dive while swimming')), row(['G'], N_('Fly or land the Star Kite, once you have it')), row(['W', 'Space', 'Space'], N_('Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)')),
           row(['E'], N_('Talk, pick up, light lamps — anything nearby')), row(['E', 'Q'], N_('Next / back in conversations')), row([tx('Mouse')], N_('Drag to look · wheel to zoom')),
           row(['J'], N_('Journal')), row(['Esc'], N_('Pause')), row(['🎮'], N_('Gamepad supported'))].join('');
@@ -639,6 +654,8 @@ export class UI {
     hold('tAct', 'act');
     hold('tDive', 'dive');
     hold('tKite', 'kite');
+    hold('tAim', 'aim', true);
+    hold('tFire', 'fire');
     input.onStick = s => {
       const st = $('stick');
       if (!s) { st.classList.remove('on'); return; }
@@ -667,6 +684,31 @@ export class UI {
     $('rideHud').classList.toggle('hidden', !on);
     if (on) $('rideText').textContent = tx('Trackside lanterns lit {n} / {total}', { n: lit, total });
   }
+  /** Hard mode: the aiming reticle, locked (gold) when Tamo can reach what it's on. */
+  reticle(on, lock, label) {
+    const r = $('reticle');
+    r.classList.toggle('hidden', !on);
+    r.classList.toggle('lock', !!lock);
+    if ($('reticleLabel').textContent !== (label || '')) $('reticleLabel').textContent = label || '';
+    $('tFire').classList.toggle('hidden', !on || !this.touch);
+  }
+
+  aimButton(on) {
+    if (this._aimBtn === on) return;
+    this._aimBtn = on;
+    $('tAim').classList.toggle('hidden', !on || !this.touch);
+  }
+
+  /** The last page: The End, the year's photographs and a few numbers. Resolves when the player closes it. */
+  theEnd(stats) {
+    $('endCard').classList.remove('hidden');
+    $('endStats').innerHTML = (stats?.lines || []).map(l => `<li>${esc(l)}</li>`).join('');
+    this.creditsAlbum(stats?.photos);
+    this.game.togglePause?.(true, true);
+    this.open('credits');
+    return new Promise(res => { this.onCreditsClosed = res; });
+  }
+
   kiteButton(on) {
     if (this._kiteBtn === on) return;
     this._kiteBtn = on;

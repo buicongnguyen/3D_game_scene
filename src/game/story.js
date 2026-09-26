@@ -80,7 +80,7 @@ export const DIALOGUE = {
     ['tamo', "Sora's… gone? Oh. …Then I'll help you. I'm very good with lamps. I think. Watch this!", 'Sad'],
   ],
   p_spark_tutorial: [
-    ['tamo', "Walk up to the porch lamp and press E. I'll do the rest. Pfft—like a sneeze, but useful!", 'Talk'],
+    ['tamo', "Walk up to the porch lamp and press {act}. I'll do the rest. Pfft—like a sneeze, but useful!", 'Talk'],
   ],
   p_spark_done: [
     ['tamo', 'I did it! Did you see? Pfft! Spark! I am SO good at this.', 'Happy'],
@@ -107,7 +107,7 @@ export const DIALOGUE = {
   c1_rin_fish: [
     ['rin', "He said no, right? Classic Grandpa.", 'Talk'],
     ['rin', "Okay. Plan. Grandpa melts for grilled trout. Catch me three fish—any fish, we'll call them trout—and I'll grill them."],
-    ['rin', "Rod's on the dock. Cast, wait for the float to dip, then press E. That's all there is to it."],
+    ['rin', "Rod's on the dock. Cast, wait for the float to dip, then press {act}. That's all there is to it."],
   ],
   c1_fish_done: [
     ['rin', "Three! Not bad for a city girl. Okay, maybe good. Don't let it go to your head.", 'Cheer'],
@@ -122,7 +122,7 @@ export const DIALOGUE = {
   ],
   c1_crab: [
     ['tamo', "There! On the sandbar! That crab is holding a COG like a tiny shield!"],
-    ['tamo', "Get close and press E. I'll give it a little boop—just enough to make it drop the cog."],
+    ['tamo', "Get close and press {act}. I'll give it a little boop—just enough to make it drop the cog."],
   ],
   c1_crab_hit: [
     ['tamo', "Boop! Ha! It dropped it! It looks very offended. Sorry, Mr. Crab!", 'Happy'],
@@ -190,7 +190,7 @@ export const DIALOGUE = {
   ],
   c2_bell: [
     ['narrator', 'BONG. The old bell rolls across the valley, and every bird in Takamori takes off at once.'],
-    ['tamo', "That was LOUD! Do it again! No—look, the sun's going down. The lamp's right above us. Press E!"],
+    ['tamo', "That was LOUD! Do it again! No—look, the sun's going down. The lamp's right above us. Press {act}!"],
   ],
   c2_lamp: [
     ['tamo', 'The Orchard Lamp! Oh… another memory.', 'Sad'],
@@ -216,7 +216,7 @@ export const DIALOGUE = {
   ],
   c3_hive: [
     ['tamo', "Honey means bees, and bees mean a hive. There's one hanging on a branch east of the chestnuts."],
-    ['tamo', "Walk under it and press E. One good spark and it'll drop… and then we RUN."],
+    ['tamo', "Walk under it and press {act}. One good spark and it'll drop… and then we RUN."],
   ],
   c3_hive_hit: [
     ['tamo', "It dropped! Grab the honeycomb! Bees! BEES! Run, Mika!", 'Happy'],
@@ -316,7 +316,7 @@ export const DIALOGUE = {
   ],
   c4_board: [
     ['genzo', "All aboard the Star Train! Kawabe AND Takamori! No pushing! Ōta, that means you!", 'Wave'],
-    ['genzo', "Mika—up front with me. Press E as each trackside lantern comes near. Show them the way home."],
+    ['genzo', "Mika—up front with me. Press {act} as each trackside lantern comes near. Show them the way home."],
   ],
   c4_finale: [
     ['narrator', 'The Star Train rolls into Takamori Halt as the sky begins to fall—one star, then ten, then a thousand.'],
@@ -596,6 +596,30 @@ export const CAPTIONS = {
     { at: 0.7, text: 'Fireworks climb from Takamori to meet the falling stars. Rin cheers the loudest. Obviously.' },
     { at: 0.86, text: 'Four lamps lit, two villages aboard, one little red engine. And everyone, for once, is looking up.' },
   ],
+  // the slow flight at the end of each chapter's celebration
+  flight1: [
+    { at: 0.06, text: 'The Mill Lamp burns again, and all of Kawabe comes out onto the riverbank to see it.' },
+    { at: 0.5, text: 'Blossoms ride the river all the way down the valley, like a letter nobody had to write.' },
+  ],
+  flight2: [
+    { at: 0.06, text: 'Takamori dances until the lanterns burn low. Nobody wants to be the first to go home.' },
+    { at: 0.5, text: 'Every peach tree glows. From up here, the orchard looks like a field full of little moons.' },
+  ],
+  flight3: [
+    { at: 0.06, text: 'The forest remembers every kindness. This evening, it is saying thank you.' },
+    { at: 0.5, text: 'Ōkuma, Kon and the deer stay to watch the moon come up. The shrine steps are open again.' },
+  ],
+  flight4: [
+    { at: 0.05, text: 'Four lamps, one valley, and a train made of starlight.' },
+    { at: 0.4, text: "Below, every window in Kawabe and Takamori is lit. The whole valley stayed up for this." },
+    { at: 0.75, text: 'For the first time in ten winters, nobody in Hoshi Valley is looking away.' },
+  ],
+  // The End: the camera rises from Mika over the starlit valley
+  theEnd: [
+    { at: 0.05, text: 'Twelve Fallen Stars, home again. Four Star Lamps, burning bright.' },
+    { at: 0.42, text: 'Two villages that became one valley. One little red engine, running on time.' },
+    { at: 0.75, text: 'And one star spirit, who comes to visit every Sunday.' },
+  ],
   // the Sunday service in the epilogue (spring; Tamo is home in the Viaduct Lamp): either direction
   tour: [
     { at: 0.02, text: 'Sunday service. Kobo toots twice, huffs once, and rolls out with Mika up front, where the view is.' },
@@ -653,7 +677,7 @@ export const STEPS = [
     exit: [{ say: 'p_cottage' }] },
   { id: 'p.chest', chapter: 0, objective: "Open Sora's chest on the porch", marker: 'interact:chest', done: { event: 'interact', target: 'chest' },
     exit: [{ cutscene: 'tamoWakes' }, { say: 'p_chest' }, { say: 'p_letter' }, { flag: 'hasTamo' }, { say: 'p_spark_tutorial' }] },
-  { id: 'p.porch', chapter: 0, objective: 'Walk up to the porch lamp and press E', marker: 'target:porchLamp', done: { event: 'spark', target: 'porchLamp' },
+  { id: 'p.porch', chapter: 0, objective: 'Walk up to the porch lamp and press {act}', marker: 'target:porchLamp', done: { event: 'spark', target: 'porchLamp' },
     exit: [{ say: 'p_spark_done' }, { autosave: true }] },
   // ---------------------------------------------------------------- chapter 1 (spring, Kawabe)
   { id: 'c1.rin', chapter: 1, objective: 'Find the Mill Lamp keeper in Kawabe', marker: 'npc:rin',
@@ -704,7 +728,7 @@ export const STEPS = [
   { id: 'c3.cook', chapter: 3, objective: 'Cook honey chestnuts at the shrine hearth', marker: 'interact:shrineHearth', done: { event: 'minigame', name: 'cook', ok: true },
     exit: [{ take: ['chestnut', 3] }, { take: ['mushroom', 2] }, { take: ['honeycomb', 1] }, { give: ['honeyChestnuts', 1] }, { say: 'c3_cooked' }] },
   { id: 'c3.landslide', chapter: 3, objective: 'Cross the stepping stones and look at the landslide scar', marker: 'place:landslide', done: { event: 'arrive', zone: 'landslide' },
-    exit: [{ say: 'c3_landslide' }, { flag: 'sawLandslide' }] },
+    exit: [{ cutscene: 'landslide' }, { flag: 'sawLandslide' }] },
   { id: 'c3.bear', chapter: 3, objective: 'Feed Ōkuma the honey chestnuts', marker: 'npc:bear', done: { event: 'interact', target: 'bear' },
     exit: [{ take: ['honeyChestnuts', 1] }, { cutscene: 'bearWakes' }, { say: 'c3_bear_fed' }, { unlock: 'shrineStairs' }, { timelapse: 18.6 }] },
   { id: 'c3.lamp', chapter: 3, objective: 'Climb the shrine steps and light the Forest Lamp', marker: 'target:forestLamp', done: { event: 'spark', target: 'forestLamp' },
@@ -727,7 +751,9 @@ export const STEPS = [
   // ---------------------------------------------------------------- epilogue
   { id: 'e.free', chapter: 5, objective: 'Explore Hoshi Valley — find all 12 Fallen Stars ({stars}/12)', marker: 'item:star',
     enter: [{ chapter: 5 }, { time: 10 }, { season: 'spring' }, { title: 5 }, { say: 'epilogue' }, { sayChoice: 'epilogue' }, { cutscene: 'tamoReturns' }, { flag: 'tamoBack' }, { autosave: true }],
-    done: { never: true } },
+    done: { event: 'cutscene', id: 'starfall' }, exit: [{ cutscene: 'theEnd' }] },
+  // after Starfall Night and The End: the valley is Mika's to wander
+  { id: 'e.done', chapter: 5, objective: 'The story is complete! Hoshi Valley is yours to explore', enter: [{ autosave: true }], done: { never: true } },
 ];
 
 export const STEP_INDEX = Object.fromEntries(STEPS.map((s, i) => [s.id, i]));

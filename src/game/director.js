@@ -136,7 +136,8 @@ export class Director {
     this.interact('millAxle', V(mill.x + 4.2, mill.y + 1, mill.z + 2.2), N_('Fit the cogs and repair the wheel'), () => this.step('c1.wheel'), () => this.event({ type: 'interact', target: 'millAxle' }), 3.2);
     this.interact('drawbridgeUp', V(-9.8, 1.2, -45), N_('Look at the drawbridge'), () => !this.q.unlocked('drawbridge'), () => this.say('drawbridge_up'), 2.4);
     this.interact('ferryWest', V(-0.6, 0.9, 30), N_('Take the ferry across'), () => !this.world.frozen && this.npcs.rin.visible && this.game.player.pos.x < 12, () => this.ferry('east'), 2.4);
-    this.interact('ferryEast', V(24.2, 0.9, 30), N_('Take the ferry back'), () => !this.world.frozen && this.game.player.pos.x > 12, () => this.ferry('west'), 2.4);
+    this.interact('ferryEast', V(24.2, 0.9, 30), () => (this.step('c2.ferry') ? tx("Call Rin's ferry") : tx('Take the ferry back')), () => !this.world.frozen && this.game.player.pos.x > 12,
+      () => this.ferry(this.step('c2.ferry') ? 'east' : 'west'), 2.4);
     // in winter the ferry is frozen in: the whole river is a road
     for (const [id, x] of [['ferryIceW', -0.6], ['ferryIceE', 24.2]]) this.interact(id, V(x, 0.9, 30), N_('Look at the frozen ferry'), () => !!this.world.frozen, () => this.say('ferry_frozen'), 2.4);
     const gal = this.game.structures.gallery || { x: 115, z: -4, y: 31.92 };
@@ -438,6 +439,7 @@ export class Director {
     this.power();
     this.placeCast();
     await this.run(effects, !resumed);
+    if (resumed && this.q.state.step === 'e.free' && this.q.has('allStars')) this.event({ type: 'cutscene', id: 'starfall' });
   }
 
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
@@ -468,6 +470,80 @@ export class Director {
   static slots() { return [1, 2, 3].map(slot => ({ slot, data: Director.loadSave(slot) })); }
 
   static lastSlot() { try { return +localStorage.getItem('starline-last-slot') || 1; } catch { return 1; } }
+
+  // ------------------------------------------------------------------ Hard mode: aim and spark
+  /** Hard mode, and Tamo is here to spark: hold Aim (right mouse, Q, LT or the Aim button) and Spark (click, R, RT, Spark). */
+  canAim() {
+    const g = this.game, p = g.player;
+    return !!g.hard && !!this.quest && this.tamoAround() && !this.busy && !this.minigame && !this.ui.overlay && !g.kite?.active
+      && !p.swimming && !p.mounted && !g.interiors?.active && !p.locked;
+  }
+
+  updateAim() {
+    const g = this.game, p = g.player;
+    this.ui.aimButton(!!g.hard && this.tamoAround() && !p.swimming && !p.mounted && !g.interiors?.active && !g.kite?.active && !this.busy);
+    if (!p.aiming) { if (this.aimShown) { this.ui.reticle(false); this.aimShown = false; } this.aimLock = null; return; }
+    const { origin, dir } = g.follow.aimRay();
+    let best = null, bestAng = 1e9;
+    for (const t of this.targets.values()) {
+      if (t.pending || !t.when()) continue;
+      const tp = t.posFn ? t.posFn() : t.pos;
+      const to = tp.clone().sub(origin);
+      const dist = to.length();
+      if (dist > 34) continue;
+      const ang = to.normalize().angleTo(dir);
+      if (ang > Math.atan2(1.5, dist) + 0.04) continue;
+      if (!this.lineOfSight(this.tamo.pos, tp)) continue;
+      if (ang < bestAng) { bestAng = ang; best = t; }
+    }
+    this.aimLock = best;
+    this.ui.reticle(true, !!best, best ? (typeof best.label === 'function' ? best.label() : tx(best.label)) : '');
+    this.aimShown = true;
+    if (g.input.pressed('fire')) this.fireSpark(origin, dir);
+  }
+
+  /** Nothing but air between Tamo and the target (the ground is checked; buildings are forgiving). */
+  lineOfSight(a, b) {
+    for (let i = 1; i < 24; i++) {
+      const t = i / 24;
+      const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t, z = a.z + (b.z - a.z) * t;
+      if (this.world.heightAt(x, z) > y + 0.2) return false;
+    }
+    return true;
+  }
+
+  fireSpark(origin, dir) {
+    if ((this.sparkCooldown || 0) > performance.now()) return;
+    this.sparkCooldown = performance.now() + 450;
+    const t = this.aimLock;
+    if (t) { this.sparkAt(t); return; }
+    // a miss: the spark flies to wherever the reticle points and fizzles
+    let to = origin.clone().addScaledVector(dir, 30);
+    for (let d = 2; d < 30; d += 1) {
+      const q = origin.clone().addScaledVector(dir, d);
+      if (this.world.heightAt(q.x, q.z) > q.y) { to = q; break; }
+    }
+    this.audio.spark();
+    this.game.player.gesture('Point', { lock: false, then: 'Aim' });
+    this.tamo.fire(to, pos => { this.audio.miss(); this.fx.burst(pos, { n: 14, speed: 2, size: 0.2 }); });
+  }
+
+  /** Numbers for the last page. */
+  endStats() {
+    const st = this.q.state;
+    const mins = Math.round((st.playtime || 0) / 60);
+    return {
+      photos: this.album(),
+      lines: [
+        tx('{n} of 12 Fallen Stars', { n: st.stars.length }),
+        tx('{n} of 4 Star Lamps', { n: Object.values(st.lamps).filter(Boolean).length }),
+        tx('{n} fish caught', { n: Object.values(st.fishLog || {}).reduce((a, n) => a + n, 0) }),
+        tx('{n} of {total} friends made', { n: Object.keys(st.friends || {}).length, total: FRIENDS.length }),
+        tx('{n} of 5 Sky Letters', { n: (st.letters || []).length }),
+        tx('Played for {h} h {m} min', { h: Math.floor(mins / 60), m: mins % 60 }),
+      ],
+    };
+  }
 
   /** Tamo is at Mika's side: from the chest until he goes home to his lamp, and again on his Sundays off. */
   tamoAround() {
@@ -954,7 +1030,7 @@ export class Director {
     this.updateVillagers(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);
-    this.tamo.update(dt, p, g.night || 0, false, g.follow.yaw, g.camera);
+    this.tamo.update(dt, p, g.night || 0, !!p.aiming, g.follow.yaw, g.camera);
     this.updateMinigame(dt);
     this.animateWorld(dt);
     this.scenes.update(dt);
@@ -970,8 +1046,8 @@ export class Director {
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
       if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < (pk.grab || 1.45)) this.collect(pk);
     }
-    // Rin's ferry is the story's way over, but a swimmer who lands on the east bank has crossed too
-    if (this.step('c2.ferry') && !this.busy && !p.swimming && p.grounded && p.pos.x > 22 && p.pos.z > -60 && p.pos.z < 110) this.event({ type: 'ferry', side: 'east' });
+    // Rin's ferry is the story's way over; only when the river is frozen does walking across the ice count instead
+    if (this.step('c2.ferry') && this.world.frozen && !this.busy && !p.swimming && p.grounded && p.pos.x > 22 && p.pos.z > -60 && p.pos.z < 110) this.event({ type: 'ferry', side: 'east' });
     // zones
     if (!this.busy) for (const z of this.zones.values()) {
       if (z.when() && Math.hypot(p.pos.x - z.pos.x, p.pos.z - z.pos.z) < z.r && Math.abs(p.pos.y - z.pos.y) < 12) this.event({ type: 'arrive', zone: z.id });
@@ -985,8 +1061,9 @@ export class Director {
     const kite = g.kite, hasKite = this.q.count('kite') > 0;
     if (kite && hasKite && inp.pressed('kite') && !this.busy && !this.minigame && !this.ui.overlay && !this.scenes.active && !this.game.interiors?.active) kite.toggle();
     this.ui.kiteButton(!!kite && hasKite && !this.game.interiors?.active && (kite.active || kite.canLaunch()));
-    const canAct = !this.busy && !this.minigame && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active;
-    let best = null, bd = 1e9;
+    const canAct = !this.busy && !this.minigame && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active && !p.aiming;
+    const hard = !!this.game.hard;
+    let best = null, bd = 1e9, aimHint = null, ad = 1e9;
     if (canAct) for (const it of this.interactables.values()) {
       const pos = it.posFn ? it.posFn() : it.pos;
       if (!pos) continue;
@@ -996,13 +1073,25 @@ export class Director {
       const reachY = it.spark ? it.vy * (this.game.easy ? 4 : 1.5) : it.vy;
       if (d > reachR || Math.abs(pos.y - (p.pos.y + 1)) > reachY) continue;
       if (!it.when()) continue;
+      // Hard mode: lamps, bells and the rest are aimed at and sparked by hand (the Star Train's lanterns stay one press)
+      if (hard && it.spark && !it.id.startsWith('spark:lantern')) { if (d < ad) { ad = d; aimHint = it; } continue; }
       // story-relevant interactions win over nearby generic ones
       const score = d - (typeof it.prio === 'function' ? it.prio() : it.prio || 0) * 10;
       if (score < bd) { bd = score; best = it; }
     }
     if (best) bd = Math.hypot((best.posFn ? best.posFn() : best.pos).x - p.pos.x, (best.posFn ? best.posFn() : best.pos).z - p.pos.z) / (best.spark && this.game.easy ? 1.6 : 1);
     this.focus = best;
-    this.ui.prompt(best ? (typeof best.label === 'function' ? best.label() : tx(best.label)) : null);
+    const labelOf = it => (typeof it.label === 'function' ? it.label() : tx(it.label));
+    if (!best && aimHint) {
+      this.ui.prompt(tx('Aim and spark: {what}', { what: labelOf(aimHint) }), this.ui.touch ? tx('Aim') : tx('Right mouse'));
+      // the first time in a session: how aiming works on this device
+      if (!this.aimTaught) {
+        this.aimTaught = true;
+        this.ui.toast(tx('Hard mode: hold {aim} to aim, then press {fire} to spark', this.ui.touch ? { aim: tx('Aim'), fire: tx('Spark') } : { aim: tx('Right mouse'), fire: tx('Left click') }));
+      }
+    }
+    else this.ui.prompt(best ? labelOf(best) : null);
+    this.updateAim();
     if (best && (inp.pressed('act') || (this.ui.touch && inp.pressed('tap') && bd < best.radius * 0.8))) {
       this.audio.click();
       best.action();
@@ -1103,7 +1192,7 @@ export class Director {
     }
     if (kind === 'interact') {
       if (what === 'beam') return V(-1.4, DECK_Y + 1, 120);
-      if (what === 'ferry') return p.x < 12 ? V(-0.6, 1.8, 30) : null;
+      if (what === 'ferry') return p.x < 12 ? V(-0.6, 1.8, 30) : V(24.2, 1.8, 30); // over there: Rin comes to fetch Mika
       const it = this.interactables.get(what);
       if (what === 'bell' && p.y < 28) return this.interactables.get('towerDoor').pos.clone().add(V(0, 1.5, 0));
       return it?.pos?.clone().add(V(0, 1, 0)) || null;

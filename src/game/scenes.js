@@ -144,6 +144,15 @@ export class Scenes {
     await new Promise(res => this.d.wildlife.bearWakes(res));
   }
 
+  /** Chapter 3: the camera finds the landslide scar, then Mika and Tamo talk it over. */
+  async landslide() {
+    const L = PLACES.landslide, toe = this.above(L.x, L.z, 0);
+    // straight up the path, then a slow push in toward the headscarp
+    await this.shot(this.above(L.x + 2.6, L.z + 24, 4.2), toe.clone().add(V(0, 3.6, -6)), 2.2, 900);
+    await this.shot(this.above(L.x + 1.6, L.z + 15, 3.4), toe.clone().add(V(0, 4.6, -8)), 3.6, 0);
+    await this.d.sayNow('c3_landslide');
+  }
+
   // ---------------------------------------------------------------- chapter 4
   meetingPositions(after) {
     const n = this.d.npcs, y = RAIL_Y + 0.95;
@@ -353,7 +362,7 @@ export class Scenes {
       if (!n) continue;
       n.path = null;
       n.setVisible(true);
-      n.place(x, z, facing);
+      n.place(x, z, facing, this.standY(x, z));
       n.setIdle('Talk');
     }
     return list.map(([id]) => d.npcs[id]).filter(Boolean);
@@ -379,6 +388,95 @@ export class Scenes {
     if (url) this.d.addPhoto(id, url);
   }
 
+  /** Where someone stands at (x, z): the ground, or the top of a platform, deck or step there. */
+  standY(x, z) {
+    const g = this.g, h = g.world.heightAt(x, z);
+    const c = g.colliders.groundAt(x, z, h + 3, 3);
+    return c && c.y > h ? c.y : h;
+  }
+
+  /** `n` places in a row through c along dir, `gap` apart, on c's level (a slot off a platform's edge moves outward on the other side). */
+  rowSlots(c, dir, n, gap = 0.95) {
+    const out = [];
+    for (let i = 0; out.length < n && i < 24; i++) {
+      const o = (i % 2 ? -1 : 1) * Math.ceil((i + 1) / 2) * gap; // +1, -1, +2, -2 …
+      const x = c.x + dir.x * o, z = c.z + dir.z * o;
+      if (Math.abs(this.standY(x, z) - c.y) < 0.3) out.push([x, z, o]);
+    }
+    return out.sort((a, b) => a[2] - b[2]);
+  }
+
+  /** A point `dy` above whatever one would stand on at (x, z). */
+  above(x, z, dy = 0) { return V(x, this.standY(x, z) + dy, z); }
+
+  /** Eases the time of day to `hour` over `ms`, the short way round the clock (golden hour, blue hour, night). */
+  async easeHour(hour, ms = 2500) {
+    const g = this.g, h0 = g.time.hour, t0 = performance.now();
+    const span = ((hour - h0 + 36) % 24) - 12;
+    while (performance.now() - t0 < ms) {
+      const k = (performance.now() - t0) / ms;
+      g.time.hour = (h0 + span * k * k * (3 - 2 * k) + 24) % 24;
+      await wait(16);
+    }
+    g.time.hour = (hour + 24) % 24;
+    this.d.q.state.hour = g.time.hour;
+  }
+
+  /**
+   * A slow reward flight: the camera glides along a smooth curve through [pos, look] keyframes for `seconds`,
+   * easing in and out and never dipping into the ground, while `captions` ({at, text}) are told across the top.
+   * Level of detail follows the view meanwhile, so the whole village stays dressed while the camera is far from Mika.
+   */
+  async flight(keys, seconds, captions = []) {
+    const g = this.g, d = this.d;
+    const P = new THREE.CatmullRomCurve3(keys.map(k => k[0]), false, 'centripetal');
+    const L = new THREE.CatmullRomCurve3(keys.map(k => k[1]), false, 'centripetal');
+    const T = seconds * 1000, t0 = performance.now(), a = 0.14, v = 1 / (1 - a);
+    // a gentle start and stop, a steady glide in between
+    const u = () => {
+      const t = Math.min(1, (performance.now() - t0) / T);
+      return t < a ? v * t * t / (2 * a) : t > 1 - a ? 1 - v * (1 - t) * (1 - t) / (2 * a) : v * (t - a / 2);
+    };
+    const pos = () => {
+      const p = P.getPoint(u());
+      p.y = Math.max(p.y, g.world.heightAt(p.x, p.z) + 3);
+      return p;
+    };
+    const look = () => (g.viewFocus = L.getPoint(u()));
+    g.follow.track(pos, look, 5);
+    const told = new Set();
+    while (performance.now() - t0 < T) {
+      const f = (performance.now() - t0) / T;
+      for (const c of captions || []) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5600); }
+      await wait(100);
+    }
+    await wait(500);
+    g.viewFocus = null;
+  }
+
+  /**
+   * The chapter photograph: everyone turns to the camera and cheers, Tamo floats into the frame, a warm fill light
+   * (night photos) brightens their faces and colours, and the frame goes into the album.
+   */
+  async groupPhoto(id, people, cam, look, { fill = false, tamo = true } = {}) {
+    const g = this.g, d = this.d, p = g.player;
+    if (tamo && d.tamoAround()) d.tamo.override = look.clone().lerp(cam, 0.18).add(V(0.9, 1.2, 0));
+    await this.shot(cam, look, 1.8, 250);
+    for (const n of people) { n.setIdle('Idle'); n.lookAt(cam.x, cam.z); }
+    p.facing = Math.atan2(cam.x - p.pos.x, cam.z - p.pos.z);
+    const light = fill ? g.lights.add({ pos: cam.clone().lerp(look, 0.45).add(V(0, 1.4, 0)), intensity: () => 34, range: 14, color: '#ffe2b8' }) : null;
+    await wait(450);
+    for (const n of people) n.gesture(n.anim?.has?.('Cheer') ? 'Cheer' : 'Wave');
+    p.gesture('Cheer', { lock: false });
+    await wait(520);
+    await this.photo(id);
+    d.ui.flash?.();
+    d.audio.star();
+    await wait(1200);
+    if (light) g.lights.remove(light);
+    d.tamo.override = null;
+  }
+
   async celebrate(n) {
     const g = this.g, d = this.d;
     n = +n;
@@ -392,30 +490,47 @@ export class Scenes {
     }
   }
 
-  // spring: the Blossom Wave, koi over the wheel, a rainbow, and a star of petals pointing to Takamori
+  // spring at golden hour: the Blossom Wave, koi over the wheel, a rainbow, the photo on the west bank, a star of
+  // petals pointing to Takamori, and a slow flight over Kawabe with the blossoms streaming down the river
   async party1(C) {
     const g = this.g, d = this.d;
     const lamp = g.structures.lamps.get('mill')?.flame || V(1.2, 8.8, -45.6);
-    const party = this.gather([['ota', -14, -41.5, Math.PI / 2], ['rin', -12, -39, Math.PI / 2], ['v1', -16, -37.5, 1.2], ['v2', -12.5, -35.8, 1.9], ['v3', -14.5, -34.5, 1.6]]);
-    g.player.teleport(-11.4, -40.6, undefined, Math.PI / 2);
+    const golden = this.easeHour(17.6, 2600);
+    // everyone on the west bank, in a row facing the river and the lamp
+    const row = [['v3', -13.4, -31.6], ['v1', -12.8, -33.4], ['ota', -12.9, -35.1], ['rin', -12.5, -38.7], ['v2', -12.9, -40.4]];
+    const party = this.gather(row.map(([id, x, z]) => [id, x, z, Math.PI / 2]));
+    g.player.teleport(-12.3, -36.9, undefined, Math.PI / 2);
     const stop = this.partyLoop(party);
     const s0 = river.nearest(lamp.x, lamp.z).s, s1 = river.nearest(8, 60).s;
     C?.blossomWave?.(lamp, s0, s1, 9);
     await this.shot(V(18, 30, -78), V(4, 2, -20), 2.2, 400);
+    await golden;
     C?.koiArc?.(V(-1, 0, -40), V(9, 0, -37), 7);
-    C?.rainbow?.(V(6, 0, 5), 90, 26);
+    C?.rainbow?.(V(6, 0, 5), 90, 70);
     await d.sayNow(null, DIALOGUE.c1_party.slice(0, 3));
-    await this.shot(V(-4, 7, -30), V(-12, 3, -39), 1.6, 300);
-    await this.photo('c1');
+    stop();
+    await this.groupPhoto('c1', party, this.above(-19.4, -36.4, 2.2), this.above(-12.6, -36.4, 1.3));
+    const stop2 = this.partyLoop(party);
     C?.petalStar?.(V(8, 18, -18), V(115, 36, -4));
     await this.shot(V(-16, 10, -30), V(10, 36, -20), 2, 1800);
     await d.sayNow(null, DIALOGUE.c1_party.slice(3));
-    stop();
+    // the reward: a long, slow look at Kawabe from the air while the blossoms stream down the river
+    C?.blossomWave?.(lamp, s0, s1, 24, { linger: 6 });
+    await this.flight([
+      [V(-5, 5.5, -31), V(3, 2.5, -46)],
+      [V(12, 14, -24), V(1, 3, -46)],
+      [V(30, 34, 0), V(-8, 0, -38)],
+      [V(20, 56, 44), V(-26, 0, -16)],
+      [V(-12, 74, 80), V(-40, 2, -6)],
+    ], 24, CAPTIONS.flight1);
+    stop2();
   }
 
-  // summer night: every peach tree a lantern, a river of fireflies, fireworks, a circle dance and floating sheep
+  // summer blue hour: every peach tree a lantern, a river of fireflies, fireworks, a circle dance, floating sheep,
+  // the photo under the bell tower, and a slow flight over Takamori and the glowing orchard
   async party2(C) {
     const g = this.g, d = this.d;
+    const blue = this.easeHour(19.7, 2600);
     const ring = (i, n, r = 5.5) => [115 + Math.cos(i / n * Math.PI * 2) * r, 7 + Math.sin(i / n * Math.PI * 2) * r];
     const ids = ['hana', 'v4', 'v5', 'v6'];
     const party = this.gather(ids.map((id, i) => [id, ...ring(i, ids.length), 0]));
@@ -429,59 +544,89 @@ export class Scenes {
     g.player.teleport(111, 11, undefined, 0.8);
     const stop = this.partyLoop(party);
     if (!d.orchardGlow) d.orchardGlow = C?.orchardLanterns?.(V(72, 0, -48), 45, true);
-    C?.fireflyRiver?.(V(72, 0, -48), 22);
+    C?.fireflyRiver?.(V(72, 0, -48), 70);
     d.fx.fireworks(true, V(118, 30, -12));
-    await this.shot(V(138, 30, 26), V(96, 14, -30), 2.4, 500);
+    await this.shot(this.above(142, 26, 12), this.above(98, -28, 2), 2.4, 500);
+    await blue;
     await d.sayNow(null, DIALOGUE.c2_party.slice(0, 2));
     C?.floatSheep?.(9);
-    await this.shot(V(132, 12, -18), V(150, 4, -38), 1.6, 1200);
+    await this.shot(this.above(134, -14, 5), this.above(150, -38, 2), 1.6, 1200);
     await d.sayNow(null, DIALOGUE.c2_party.slice(2, 4));
-    await this.shot(V(122, 9, 18), V(115, 2, 6), 1.6, 300);
-    await this.photo('c2');
+    // the photo: the dancers line up in the square, the bell tower and the fireworks behind them
+    dancing = false;
+    stop();
+    const line = [['hana', 111.4], ['v4', 113.2], ['v5', 116.8], ['v6', 118.6]];
+    for (const [id, x] of line) d.npcs[id]?.place(x, 8.6, 0, this.standY(x, 8.6));
+    g.player.teleport(115, 8.6, undefined, 0);
+    const people = line.map(([id]) => d.npcs[id]).filter(Boolean);
+    await this.groupPhoto('c2', people, this.above(115, 17.4, 1.7), this.above(115, 5, 3.4), { fill: true });
+    const stop2 = this.partyLoop(people);
     // an answer from Kawabe: one small lantern boat on the river
     const boat = g.assets.clone('lantern-boat');
     if (boat && !g.world.frozen) { g.scene.add(boat); this.boats.push({ obj: boat, s: river.nearest(9, -20).s, off: 0.5 }); }
     await this.shot(V(40, 14, 10), V(9, 0, -12), 2, 600);
     await d.sayNow(null, DIALOGUE.c2_party.slice(4));
-    dancing = false;
-    stop();
+    // the reward: a slow flight over Takamori and the orchard glowing like a field of lanterns
+    await this.flight([
+      [this.above(121, 22, 5), this.above(115, -2, 6)],
+      [this.above(140, 4, 16), this.above(100, -30, 2)],
+      [this.above(126, -58, 34), this.above(76, -46, 0)],
+      [this.above(72, -98, 50), this.above(88, -22, 0)],
+      [this.above(38, -40, 62), this.above(112, -4, 4)],
+    ], 24, CAPTIONS.flight2);
+    stop2();
     d.fx.fireworks(false);
   }
 
-  // autumn: kodama, leaf-butterflies up the shrine steps, the animals gather to watch the moon
+  // autumn: a golden afternoon with the forest's animals, the photo under the torii, a slow flight over the shrine
+  // woods, then the kodama come out as the moon rises, and Ōkuma brings a golden acorn
   async party3(C) {
     const g = this.g, d = this.d, W = d.wildlife;
-    const clearing = V(60, g.world.heightAt(60, -118), -118);
+    const golden = this.easeHour(16.9, 2600);
+    const clearing = this.above(60, -118, 0);
+    const cam = this.above(60.4, -107.9, 1.9);
+    const face = (x, z) => Math.atan2(cam.x - x, cam.z - z);
     const bear = W.story.bear || W.spawnBear();
-    bear.path = null; bear.setVisible(true); bear.place(56.5, -115.5, 0.9); bear.setIdle('Sit');
+    bear.path = null; bear.setVisible(true); bear.place(57, -115.8, face(57, -115.8)); bear.setIdle('Sit');
     const fox = W.story.fox || W.spawnFox([[63.5, -114.5]]);
-    fox.path = null; fox.trail = []; fox.place(63.5, -114.5, -2.4); fox.setIdle('Sit');
-    (W.deer || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(64 + i * 2.2, -120 - i, -1.2); a.setIdle('Graze'); });
-    (W.rabbits || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(59 + i * 1.3, -121.5, 0.3); a.setIdle('Idle'); });
+    fox.path = null; fox.trail = []; fox.place(63.4, -114.8, face(63.4, -114.8)); fox.setIdle('Sit');
+    (W.deer || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(64.4 + i * 2.2, -119.5 - i, face(64.4 + i * 2.2, -119.5 - i)); a.setIdle('Graze'); });
+    (W.rabbits || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(58.6 + i * 1.4, -112.6 + i * 0.4, face(58.6 + i * 1.4, -112.6)); a.setIdle('Idle'); });
+    g.player.teleport(60.6, -114, undefined, 0);
+    C?.leafButterflies?.(V(61, 12, -121), V(71, 25, -146), 10);
+    await this.shot(this.above(76, -104, 17), this.above(62, -130, 0), 2.2, 400);
+    await golden;
+    await d.sayNow(null, DIALOGUE.c3_party.slice(0, 3));
+    // the photo in the golden light: Mika with Ōkuma, Kon, the deer and the rabbits, under the torii
+    await this.groupPhoto('c3', [], cam, this.above(60.6, -116.5, 1.1));
+    // the reward: a slow flight over the golden shrine woods while the leaves turn into butterflies
+    C?.leafButterflies?.(V(61, 12, -121), V(71, 25, -146), 16);
+    await this.flight([
+      [this.above(66, -107, 4), this.above(62, -126, 5)],
+      [this.above(82, -118, 16), this.above(64, -150, 6)],
+      [this.above(84, -170, 32), this.above(56, -128, 0)],
+      [this.above(38, -176, 48), this.above(62, -112, 0)],
+      [this.above(16, -118, 60), this.above(70, -142, 0)],
+    ], 24, CAPTIONS.flight3);
+    // the sky darkens for moon-viewing, and the kodama come out
     g.player.teleport(60.5, -113, undefined, Math.PI);
     C?.kodama?.(clearing, 36, 16);
-    C?.leafButterflies?.(V(61, 12, -121), V(71, 25, -146), 10);
-    await this.shot(V(76, 30, -104), V(62, 12, -130), 2.2, 400);
-    await d.sayNow(null, DIALOGUE.c3_party.slice(0, 3));
-    // the sky darkens for moon-viewing
-    const h0 = g.time.hour, t0 = performance.now();
-    while (performance.now() - t0 < 3000) { const k = (performance.now() - t0) / 3000; g.time.hour = h0 + (20.5 - h0) * k * k * (3 - 2 * k); await wait(16); }
-    d.q.state.hour = g.time.hour;
+    await this.shot(this.above(66, -108, 5), clearing.clone().add(V(0, 2, 0)), 1.6, 0);
+    await this.easeHour(20.5, 3000);
     const moon = g.sky?.uniforms?.uMoonDir?.value?.clone().normalize() || V(-0.45, 0.62, 0.52).normalize();
     await this.shot(clearing.clone().add(V(-moon.x * 9, 3, -moon.z * 9)), clearing.clone().add(moon.clone().multiplyScalar(40)), 2, 400);
     await d.sayNow(null, DIALOGUE.c3_party.slice(3));
-    await this.shot(V(60, 16.5, -106), V(60, 13, -118), 1.4, 300);
-    await this.photo('c3');
     // Ōkuma's thank-you: a golden acorn
     bear.setIdle('Walk'); bear.walk([[59.2, -113.8]], () => bear.setIdle('Sit'), 0.9);
-    await this.shot(V(63, 14.5, -108.5), V(59.5, 12.6, -113.5), 1.6, 1200);
-    d.fx.burst(V(59.8, 12.5, -113.2), { n: 30, color: [1, 0.85, 0.3], speed: 2 });
+    await this.shot(this.above(63, -108.5, 2.2), this.above(59.5, -113.5, 0.6), 1.6, 1200);
+    d.fx.burst(this.above(59.8, -113.2, 0.4), { n: 30, color: [1, 0.85, 0.3], speed: 2 });
     d.q.state.inv.acorn = 1;
     d.ui.toast(tx('Received: {item}', { item: tx('Golden acorn') }), 'golden-acorn');
     await d.sayNow('bear_acorn');
   }
 
-  // winter finale: aurora, star-snow, the Star Train crossing the sky with Sora at the window, then the photo
+  // winter finale: aurora, star-snow, the Star Train crossing the sky with Sora at the window, the photo in front of
+  // Kobo, and a slow flight over the whole snowy valley
   async party4(C) {
     const g = this.g, d = this.d, r = g.railway;
     const aurora = C?.aurora?.(true), snow = C?.starSnow?.(true);
@@ -504,30 +649,42 @@ export class Scenes {
     g.follow.track(() => camAt.clone().add(V(-4, 0.6, -3)), trainAt, 2.2);
     await d.sayNow(null, DIALOGUE.c4_skytrain.slice(2));
     await Promise.race([train, wait(1500)]); // the train sails on out of sight while everyone climbs down
-    // everyone steps down in front of Kobo for the photograph
+    // everyone steps down in front of Kobo for the photograph (on the platform or the track bed, wherever that is)
     for (const n of Object.values(d.npcs)) if (n.riding) { n.root.removeFromParent(); g.scene.add(n.root); n.riding = false; }
     const loco = r.cars[0].obj;
     const p = rail.at(r.train.s), fwd = V(p.tx, 0, p.tz), side = V(-p.tz, 0, p.tx);
     const front = loco.position.clone().addScaledVector(fwd, 5.2);
-    const row = ['ota', 'genzo', null, 'hana', 'rin'];
-    const party = this.gather(row.map((id, i) => id && [id, front.x + side.x * (i - 2) * 1.05, front.z + side.z * (i - 2) * 1.05, Math.atan2(fwd.x, fwd.z)]).filter(Boolean));
-    g.player.dismount(front.x, front.z, undefined, Math.atan2(fwd.x, fwd.z));
+    front.y = this.standY(front.x, front.z);
+    // a row across the platform, everyone on the same level as Mika (nobody off the edge on the track bed)
+    const slots = this.rowSlots(front, side, 4, 0.9);
+    const ids = ['ota', 'genzo', 'hana', 'rin'];
+    const party = this.gather(slots.map(([x, z], i) => [ids[i], x, z, Math.atan2(fwd.x, fwd.z)]));
+    g.player.dismount(front.x, front.z, front.y, Math.atan2(fwd.x, fwd.z));
     const stop = this.partyLoop(party);
-    const cam = front.clone().addScaledVector(fwd, 7.5).add(V(0, 2.1, 0));
+    const mid = slots.reduce((m, [x, z]) => m.add(V(x / (slots.length + 1), 0, z / (slots.length + 1))), V(front.x / (slots.length + 1), 0, front.z / (slots.length + 1)));
+    mid.y = front.y;
+    const cam = mid.clone().addScaledVector(fwd, 5.6).add(V(0, 2.2, 0));
     await this.shot(cam, front.clone().add(V(0, 1.3, 0)), 1.6, 200);
     await d.sayNow(null, DIALOGUE.c4_photo.slice(0, 5));
     stop();
     for (const n of party) { n.setIdle('Idle'); n.lookAt(cam.x, cam.z); }
     g.player.facing = Math.atan2(fwd.x, fwd.z);
     await d.sayNow(null, DIALOGUE.c4_photo.slice(5));
-    for (const n of party) n.gesture(n.anim?.has?.('Cheer') ? 'Cheer' : 'Wave');
-    g.player.gesture('Cheer', { lock: false });
-    await wait(450);
-    await this.photo('c4');
-    d.ui.flash?.();
-    d.audio.star();
+    await this.groupPhoto('c4', party, cam.clone().add(V(0, -0.3, 0)), mid.clone().add(V(0, 1.25, 0)).addScaledVector(fwd, -1.4), { tamo: false });
     C?.sparkleBurst?.(front.clone().add(V(0, 2.5, 0)));
+    const stop2 = this.partyLoop(party);
     await wait(1400);
+    // the reward: a long, slow flight over the snowy valley under the aurora, fireworks over the mended viaduct
+    d.fx.fireworks(true, V(0, 34, 120));
+    await this.flight([
+      [cam.clone().add(V(0, 2.5, 0)), front.clone().add(V(0, 1.5, 0))],
+      [this.above(122, 44, 42), this.above(50, 108, 0)],
+      [this.above(66, 58, 72), this.above(0, 120, 8)],
+      [this.above(-6, 66, 92), this.above(-58, 132, 0)],
+      [this.above(-60, 74, 86), this.above(-98, 118, 0)],
+    ], 26, CAPTIONS.flight4);
+    d.fx.fireworks(false);
+    stop2();
     // the credits, as a photo album of the year
     d.ui.creditsAlbum?.(d.album());
     d.ui.open('credits');
@@ -623,6 +780,27 @@ export class Scenes {
     await Promise.race([drawn, wait(28000)]);
     d.ui.cinema(false);
     await d.sayNow('sora_last_letter');
+    d.fx.meteorShower(0.35);
+    d.audio.setMusic(g.shownSeason || g.time.season, 'calm');
+    // queued after this cutscene finishes (awaiting here would deadlock the effect queue): The End
+    d.event({ type: 'cutscene', id: 'starfall' });
+  }
+
+  /** The End: the camera rises from Mika over the starlit valley, then the last page of the book. */
+  async theEnd() {
+    const g = this.g, d = this.d;
+    const p = g.player.pos.clone(), fwd = V(Math.sin(g.follow.yaw), 0, Math.cos(g.follow.yaw));
+    d.ui.cinema(true);
+    d.audio.setMusic(g.shownSeason || g.time.season, 'finale');
+    d.fx.meteorShower(0.9);
+    await this.flight([
+      [p.clone().addScaledVector(fwd, 4).add(V(0, 1.8, 0)), p.clone().add(V(0, 1.3, 0))],
+      [p.clone().addScaledVector(fwd, -10).add(V(0, 12, 0)), p.clone().add(V(0, 5, 0))],
+      [V(-30, 80, 170), V(0, 18, 20)],
+      [V(40, 118, 210), V(0, 6, -30)],
+    ], 22, CAPTIONS.theEnd);
+    d.ui.cinema(false);
+    await d.ui.theEnd(d.endStats());
     d.fx.meteorShower(0.35);
     d.audio.setMusic(g.shownSeason || g.time.season, 'calm');
   }

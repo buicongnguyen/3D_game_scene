@@ -31,20 +31,28 @@ danger that night.
 - **Every lamp throws a party.** Spring's Blossom Wave (a rainbow, leaping koi,
   a star of petals), summer's Firefly Festival, autumn's moon-viewing with the
   forest spirits, and a Star Train of starlight crossing the winter sky. Each
-  party leaves a photo in the journal's Album, the valley stays decorated, and
-  Tamo wears one more lamp's colour.
+  party ends with a slow, 25-second flight over the village and its colourful
+  stream, leaves a group photo in the journal's Album, keeps the valley
+  decorated, and gives Tamo one more lamp's colour.
 - **Rewards everywhere.** Dive for Sora's music box under the viaduct and watch a
   golden memory dance; plant Ōkuma's golden acorn and a star-tree grows in the
   garden; fly the kite to five Sky Letters on the rooftops; fish up the star
   compass that points to Fallen Stars; watch the cottage fill with thank-you
-  gifts; and find all twelve stars for Starfall Night. As the lamps come back,
+  gifts; and find all twelve stars for Starfall Night, which ends the story with
+  a flight over the starlit valley and **The End** (after it the valley is yours
+  to explore). As the lamps come back,
   the bell rings the hours again, people move home, and the viaduct gets its
   fireworks.
 - **Storytelling on the rails.** Captions tell the tale across the top of the
   screen while the train rolls in, during the Star Train ride, and on the Sunday
   service you can ride after the ending.
 - **Easy mode (default)** lets Tamo reach lamps and bells from much farther away
-  and four times the height, and gives fish longer to bite. Normal is in Settings.
+  and four times the height, and gives fish longer to bite. Normal is in Settings,
+  and **Hard** brings back aiming: hold the right mouse button (Q, the left
+  trigger, or the Aim button on phones) and click (R, the right trigger, or
+  Spark) to send Tamo's spark.
+- **Phones:** the action button is **Do it**, and every "press E" in the story
+  names it instead.
 - **Three save profiles** and an **Advanced** settings panel (season and time of
   day to look at, weather, shadows, resolution, field of view, camera distance,
   text size).

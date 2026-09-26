@@ -23,13 +23,57 @@ function showError(msg) {
 
 await setLang(params.get('lang') || detectLang());
 
-const webgl2 = (() => { try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; } })();
-if (!webgl2) {
-  document.getElementById('loadLabel').textContent = tx('Starline needs WebGL 2. Please try a recent Chrome, Edge, Firefox or Safari.');
-  throw new Error('WebGL2 unavailable');
+// Starline draws with WebGL 2. A browser can refuse it for a moment (the GPU has just reset) or for the whole session
+// (3D switched off after a graphics crash or when memory ran out), so try a few times, then say which it is.
+async function probeWebGL() {
+  const tryGet = kind => {
+    let gl = null;
+    try { gl = document.createElement('canvas').getContext(kind); } catch { /* ignore */ }
+    gl?.getExtension('WEBGL_lose_context')?.loseContext(); // don't keep a spare context alive
+    return !!gl;
+  };
+  for (let i = 0; i < 3; i++) {
+    if (tryGet('webgl2')) return 'ok';
+    await new Promise(r => setTimeout(r, 700));
+  }
+  return tryGet('webgl') ? 'old' : 'off';
+}
+
+function glMessage(text, button, onClick) {
+  const label = document.getElementById('loadLabel');
+  label.textContent = text;
+  const b = document.createElement('button');
+  b.className = 'retry';
+  b.textContent = button;
+  b.addEventListener('click', onClick);
+  label.after(b);
+}
+
+const glState = await probeWebGL();
+if (glState !== 'ok') {
+  glMessage(glState === 'old'
+    ? tx('Starline needs WebGL 2, and this browser only offers WebGL 1. Please try a recent Chrome, Edge, Firefox or Safari.')
+    : tx('3D graphics are switched off in this browser right now. That can happen after the graphics card or the browser ran out of memory. Close other tabs or restart the browser, check that hardware acceleration is on, and try again.'),
+  tx('Try again'), () => location.reload());
+  throw new Error(`WebGL2 unavailable (${glState})`);
 }
 
 const game = new Game(canvas, params);
+// Graphics lost mid-game (a GPU reset, or a phone short of memory): keep the progress and offer a clean reload
+// instead of a frozen picture.
+canvas.addEventListener('webglcontextlost', e => {
+  e.preventDefault();
+  try { game.director?.save?.(); } catch { /* ignore */ }
+  if (document.getElementById('glLost')) return;
+  const el = document.createElement('div');
+  el.id = 'glLost';
+  el.innerHTML = `<div class="panel"><p></p><button class="retry"></button></div>`;
+  el.querySelector('p').textContent = tx('The graphics were interrupted. Your progress is saved.');
+  const b = el.querySelector('button');
+  b.textContent = tx('Reload');
+  b.addEventListener('click', () => location.reload());
+  document.body.appendChild(el);
+});
 const audio = new Audio();
 game.audio = audio;
 const ui = new UI(game, audio);

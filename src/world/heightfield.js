@@ -3,8 +3,11 @@
 
 import { river, riverHalfWidth, bankWidth, rail, RAIL_Y, SHAPES, POST_SHAPES, TERRAIN, VIADUCT, RAIL_PORTALS } from './layout.js';
 import { smoothstep, lerp, fbm, clamp } from '../engine/spline.js';
+import { slideTerrain, slideSurfaceAt, SLIDE } from './landslide.js';
 
-function applyShape(h, s, x, z) {
+function applyShape(h, s, x, z, step) {
+  // the spur the landslide scar is torn out of; the grid sinks under the scar model (landslide.js)
+  if (s.kind === 'landslide') return slideTerrain(h, x, z, step);
   if (s.kind === 'rect') {
     const dx = Math.abs(x - s.x) - s.hw, dz = Math.abs(z - s.z) - s.hd;
     const d = Math.max(dx, dz);
@@ -32,8 +35,8 @@ function applyShape(h, s, x, z) {
   return lerp(h, target, w);
 }
 
-/** Land height before the river is carved. */
-export function landHeight(x, z) {
+/** Land height before the river is carved. `step`: spacing of the grid being baked (the landslide shape needs it). */
+export function landHeight(x, z, step = 2) {
   // West terrace (~3 m) rising east to the Takamori hills (~22 m).
   let h = 3 + 19 * smoothstep(10, 94, x);
   // Forest hills to the north, gorge country to the south.
@@ -55,7 +58,7 @@ export function landHeight(x, z) {
     if (riverX !== null) rim *= 1 - 0.9 * (1 - smoothstep(16, 120, Math.abs(x - riverX)));
     h += rim;
   }
-  for (const s of SHAPES) h = applyShape(h, s, x, z);
+  for (const s of SHAPES) h = applyShape(h, s, x, z, step);
   // Railway bed: embankments and cuttings, except over the viaduct (the river gorge stays open).
   const onViaduct = x > VIADUCT.x0 + 4 && x < VIADUCT.x1 - 4 && Math.abs(z - VIADUCT.z) < 14;
   if (!onViaduct) {
@@ -69,9 +72,9 @@ export function landHeight(x, z) {
   return h;
 }
 
-/** Full analytic height (land + carved river + post-carve features). */
-export function rawHeight(x, z) {
-  let h = landHeight(x, z);
+/** Full analytic height of the terrain mesh (land + carved river + post-carve features). */
+export function rawHeight(x, z, step = 2) {
+  let h = landHeight(x, z, step);
   const n = river.nearest(x, z, 60);
   if (n) {
     const hw = riverHalfWidth(n.z);
@@ -82,7 +85,7 @@ export function rawHeight(x, z) {
     const land = smoothstep(hw - 1.2, hw + B, n.d);
     h = lerp(bed, Math.max(h, 0.22), land);
   }
-  for (const s of POST_SHAPES) h = applyShape(h, s, x, z);
+  for (const s of POST_SHAPES) h = applyShape(h, s, x, z, step);
   return h;
 }
 
@@ -95,7 +98,8 @@ export function riverFlow(x, z) {
 
 /**
  * Baked height grid over TERRAIN extents. Cells are split into triangles (a,b,c) and (b,d,c)
- * exactly like the terrain mesh index buffer, so heightAt() returns the rendered surface.
+ * exactly like the terrain mesh index buffer, so meshHeightAt() returns the drawn terrain. heightAt() returns
+ * the visible ground: the terrain, or the landslide model where it rises above the (sunk) terrain.
  */
 export class HeightGrid {
   constructor(step = 2, bounds = TERRAIN, fn = rawHeight) {
@@ -106,7 +110,7 @@ export class HeightGrid {
     this.h = new Float32Array(this.nx * this.nz);
     for (let j = 0; j < this.nz; j++) {
       const z = this.z0 + j * step;
-      for (let i = 0; i < this.nx; i++) this.h[j * this.nx + i] = fn(this.x0 + i * step, z);
+      for (let i = 0; i < this.nx; i++) this.h[j * this.nx + i] = fn(this.x0 + i * step, z, step);
     }
   }
 
@@ -123,7 +127,8 @@ export class HeightGrid {
     return this.h[j * this.nx + i];
   }
 
-  heightAt(x, z) {
+  /** The terrain mesh surface at (x, z). */
+  meshHeightAt(x, z) {
     const fx = (x - this.x0) / this.step, fz = (z - this.z0) / this.step;
     const i = Math.floor(fx), j = Math.floor(fz);
     const u = fx - i, v = fz - j;
@@ -131,6 +136,25 @@ export class HeightGrid {
     // triangles (a, b, c) when u + v <= 1, else (b, d, c)
     if (u + v <= 1) return a + (b - a) * u + (c - a) * v;
     return d + (c - d) * (1 - u) + (b - d) * (1 - v);
+  }
+
+  /** The visible ground at (x, z): the terrain, or the landslide scar model where it lies above the terrain. */
+  heightAt(x, z) {
+    const t = this.meshHeightAt(x, z);
+    const s = slideSurfaceAt(x, z);
+    return s !== null && s > t ? s : t;
+  }
+
+  /** Vertex heights of the visible ground (for the grass height texture): h, raised to the slide model. */
+  visibleHeights() {
+    const out = Float32Array.from(this.h);
+    const i0 = Math.max(0, Math.floor((SLIDE.x + SLIDE.x0 - this.x0) / this.step)), i1 = Math.min(this.nx - 1, Math.ceil((SLIDE.x + SLIDE.x1 - this.x0) / this.step));
+    const j0 = Math.max(0, Math.floor((SLIDE.z - SLIDE.y1 - this.z0) / this.step)), j1 = Math.min(this.nz - 1, Math.ceil((SLIDE.z - SLIDE.y0 - this.z0) / this.step));
+    for (let j = j0; j <= j1; j++) for (let i = i0; i <= i1; i++) {
+      const s = slideSurfaceAt(this.x0 + i * this.step, this.z0 + j * this.step);
+      if (s !== null && s > out[j * this.nx + i]) out[j * this.nx + i] = s;
+    }
+    return out;
   }
 
   /** Surface normal (unnormalised gradient form) -> {nx, ny, nz} unit. */

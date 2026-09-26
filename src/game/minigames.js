@@ -16,7 +16,7 @@ export class Fishing {
   }
 
   get title() {
-    return { wait: 'Wait for the float to dip…', bite: 'A bite! Press E!', done: 'Caught!' }[this.phase];
+    return { wait: 'Wait for the float to dip…', bite: 'A bite! Press {act}!', done: 'Caught!' }[this.phase];
   }
 
   /** press = the action button went down this frame. Returns the phase. */

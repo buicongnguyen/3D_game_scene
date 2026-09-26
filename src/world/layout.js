@@ -77,6 +77,7 @@ export const PLACES = {
 // Flatten / shaping operations for the height field, applied in order (see heightfield.js).
 // kind 'disc': target height t within radius r, blended to the underlying height over falloff f.
 // kind 'ramp': linear height from a (ha) to b (hb) within half-width w, falloff f.
+// kind 'landslide': the wooded spur the landslide scar is torn out of, sunk under the scar model (landslide.js).
 export const SHAPES = [
   { kind: 'disc', x: -98, z: 116, r: 34, f: 26, t: 16 },          // station plateau
   { kind: 'disc', x: -60, z: 140, r: 12, f: 14, t: 16.2 },        // cottage bluff
@@ -92,6 +93,7 @@ export const SHAPES = [
   { kind: 'ramp', ax: 62, az: -122, bx: 62, bz: -140, ha: 12, hb: 24, w: 3.2, f: 5 }, // shrine stairs: 4 flights of 4.5 m x 3 m
   { kind: 'disc', x: 62, z: -116, r: 8, f: 10, t: 12 },           // stair foot clearing
   { kind: 'ramp', ax: -86, az: 100, bx: -60, bz: 64, ha: 15.6, hb: 3.6, w: 3, f: 9 },  // station road down to Kawabe
+  { kind: 'landslide' },                                           // the scar's spur north of PLACES.landslide
 ];
 // Terraced rice paddies west of Kawabe: 3 columns stepping up the foothills x 4 rows.
 export const PADDIES = [];
@@ -193,7 +195,7 @@ export const FALLEN_STARS = [
   { id: 'fs3', x: -40, z: 68, hint: 'Kawabe south lane' },
   { id: 'fs4', x: -66, z: -44, hint: 'Behind the mill' },
   { id: 'fs5', x: -58, z: -118, hint: 'West woods' },
-  { id: 'fs6', x: -44, z: -176, hint: 'Landslide ledge' },
+  { id: 'fs6', x: -52.5, z: -179, hint: 'Landslide ledge' }, // on the crest, just behind the headscarp's lip
   { id: 'fs7', x: 160, z: 20, hint: 'Takamori east edge' },
   { id: 'fs8', x: 58, z: -30, hint: 'Orchard corner' },
   { id: 'fs9', x: 128, z: 58, hint: 'By the halt' },
@@ -206,6 +208,6 @@ export const FALLEN_STARS = [
 export const CLEARINGS = [
   [-98, 114, 22], [-60, 140, 12], [-45, 20, 50], [-18, -44, 14], [0, -45, 6], [-12, -6, 9],
   [115, 8, 40], [150, -38, 22], [143, 72, 14], [62, -156, 16], [62, -128, 10], [-164, 84, 18],
-  [53, -121, 6], [-50, -168, 12], [24.5, 30, 8], [1, 30, 8],
+  [53, -121, 6], [-50, -161, 7], [24.5, 30, 8], [1, 30, 8], // (the landslide scar clears its own ground: structures.js)
   [-85, 14.5, 25],
 ];

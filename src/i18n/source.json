@@ -371,7 +371,7 @@
   ]
  },
  {
-  "s": "Walk up to the porch lamp and press E. I'll do the rest. Pfft—like a sneeze, but useful!",
+  "s": "Walk up to the porch lamp and press {act}. I'll do the rest. Pfft—like a sneeze, but useful!",
   "ctx": [
    "dialogue p_spark_tutorial, spoken by Tamo"
   ]
@@ -485,7 +485,7 @@
   ]
  },
  {
-  "s": "Rod's on the dock. Cast, wait for the float to dip, then press E. That's all there is to it.",
+  "s": "Rod's on the dock. Cast, wait for the float to dip, then press {act}. That's all there is to it.",
   "ctx": [
    "dialogue c1_rin_fish, spoken by Rin"
   ]
@@ -539,7 +539,7 @@
   ]
  },
  {
-  "s": "Get close and press E. I'll give it a little boop—just enough to make it drop the cog.",
+  "s": "Get close and press {act}. I'll give it a little boop—just enough to make it drop the cog.",
   "ctx": [
    "dialogue c1_crab, spoken by Tamo"
   ]
@@ -779,7 +779,7 @@
   ]
  },
  {
-  "s": "That was LOUD! Do it again! No—look, the sun's going down. The lamp's right above us. Press E!",
+  "s": "That was LOUD! Do it again! No—look, the sun's going down. The lamp's right above us. Press {act}!",
   "ctx": [
    "dialogue c2_bell, spoken by Tamo"
   ]
@@ -875,7 +875,7 @@
   ]
  },
  {
-  "s": "Walk under it and press E. One good spark and it'll drop… and then we RUN.",
+  "s": "Walk under it and press {act}. One good spark and it'll drop… and then we RUN.",
   "ctx": [
    "dialogue c3_hive, spoken by Tamo"
   ]
@@ -1230,7 +1230,7 @@
   ]
  },
  {
-  "s": "Mika—up front with me. Press E as each trackside lantern comes near. Show them the way home.",
+  "s": "Mika—up front with me. Press {act} as each trackside lantern comes near. Show them the way home.",
   "ctx": [
    "dialogue c4_board, spoken by Genzo"
   ]
@@ -2484,6 +2484,78 @@
   ]
  },
  {
+  "s": "The Mill Lamp burns again, and all of Kawabe comes out onto the riverbank to see it.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 1's celebration (narration)"
+  ]
+ },
+ {
+  "s": "Blossoms ride the river all the way down the valley, like a letter nobody had to write.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 1's celebration (narration)"
+  ]
+ },
+ {
+  "s": "Takamori dances until the lanterns burn low. Nobody wants to be the first to go home.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 2's celebration (narration)"
+  ]
+ },
+ {
+  "s": "Every peach tree glows. From up here, the orchard looks like a field full of little moons.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 2's celebration (narration)"
+  ]
+ },
+ {
+  "s": "The forest remembers every kindness. This evening, it is saying thank you.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 3's celebration (narration)"
+  ]
+ },
+ {
+  "s": "Ōkuma, Kon and the deer stay to watch the moon come up. The shrine steps are open again.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 3's celebration (narration)"
+  ]
+ },
+ {
+  "s": "Four lamps, one valley, and a train made of starlight.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 4's celebration (narration)"
+  ]
+ },
+ {
+  "s": "Below, every window in Kawabe and Takamori is lit. The whole valley stayed up for this.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 4's celebration (narration)"
+  ]
+ },
+ {
+  "s": "For the first time in ten winters, nobody in Hoshi Valley is looking away.",
+  "ctx": [
+   "caption across the top during the slow flight over the valley at the end of chapter 4's celebration (narration)"
+  ]
+ },
+ {
+  "s": "Twelve Fallen Stars, home again. Four Star Lamps, burning bright.",
+  "ctx": [
+   "caption across the top as the camera rises over the starlit valley at the very end of the game (narration)"
+  ]
+ },
+ {
+  "s": "Two villages that became one valley. One little red engine, running on time.",
+  "ctx": [
+   "caption across the top as the camera rises over the starlit valley at the very end of the game (narration)"
+  ]
+ },
+ {
+  "s": "And one star spirit, who comes to visit every Sunday.",
+  "ctx": [
+   "caption across the top as the camera rises over the starlit valley at the very end of the game (narration)"
+  ]
+ },
+ {
   "s": "Meadow rabbit",
   "ctx": [
    "animal friend name"
@@ -2898,7 +2970,7 @@
   ]
  },
  {
-  "s": "Walk up to the porch lamp and press E",
+  "s": "Walk up to the porch lamp and press {act}",
   "ctx": [
    "quest objective (keep {placeholders} exactly)"
   ]
@@ -3108,6 +3180,12 @@
   ]
  },
  {
+  "s": "The story is complete! Hoshi Valley is yours to explore",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
   "s": "West portal cutting",
   "ctx": [
    "where a fallen star hides (journal hint)"
@@ -3230,6 +3308,12 @@
  },
  {
   "s": "Take the ferry across",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Call Rin's ferry",
   "ctx": [
    "UI (src/game/director.js)"
   ]
@@ -3440,6 +3524,42 @@
   ]
  },
  {
+  "s": "{n} of 12 Fallen Stars",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "{n} of 4 Star Lamps",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "{n} fish caught",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "{n} of {total} friends made",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "{n} of 5 Sky Letters",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Played for {h} h {m} min",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "A photo for the album!",
   "ctx": [
    "UI (src/game/director.js)"
@@ -3500,6 +3620,44 @@
   ]
  },
  {
+  "s": "Aim and spark: {what}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Aim",
+  "ctx": [
+   "UI (src/game/director.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Right mouse",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Hard mode: hold {aim} to aim, then press {fire} to spark",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Spark",
+  "ctx": [
+   "UI (src/game/director.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Left click",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Can't save during a scene — try again in a moment",
   "ctx": [
    "UI (src/game/game.js)"
@@ -3542,19 +3700,43 @@
   ]
  },
  {
-  "s": "Starline needs WebGL 2. Please try a recent Chrome, Edge, Firefox or Safari.",
+  "s": "Starline needs WebGL 2, and this browser only offers WebGL 1. Please try a recent Chrome, Edge, Firefox or Safari.",
   "ctx": [
    "UI (src/main.js)"
   ]
  },
  {
-  "s": "Act",
+  "s": "3D graphics are switched off in this browser right now. That can happen after the graphics card or the browser ran out of memory. Close other tabs or restart the browser, check that hardware acceleration is on, and try again.",
+  "ctx": [
+   "UI (src/main.js)"
+  ]
+ },
+ {
+  "s": "Try again",
+  "ctx": [
+   "UI (src/main.js)"
+  ]
+ },
+ {
+  "s": "The graphics were interrupted. Your progress is saved.",
+  "ctx": [
+   "UI (src/main.js)"
+  ]
+ },
+ {
+  "s": "Reload",
+  "ctx": [
+   "UI (src/main.js)"
+  ]
+ },
+ {
+  "s": "Do it",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
  },
  {
-  "s": "Left thumb moves · drag the right side to look · Act does anything nearby",
+  "s": "Left thumb moves · drag the right side to look · “Do it” does anything nearby",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -3711,7 +3893,7 @@
   ]
  },
  {
-  "s": "{n} of {total} friends made. Walk up to a creature and press E to say hello.",
+  "s": "{n} of {total} friends made. Walk up to a creature and press {act} to say hello.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -3848,7 +4030,7 @@
   ]
  },
  {
-  "s": "A bite! Press E!",
+  "s": "A bite! Press {act}!",
   "ctx": [
    "fishing minigame title"
   ]
@@ -3993,6 +4175,12 @@
  },
  {
   "s": "Normal",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Hard (aim and spark)",
   "ctx": [
    "menu / screen text"
   ]
@@ -4208,6 +4396,30 @@
   ]
  },
  {
+  "s": "The End",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "All twelve Fallen Stars are home, and every Star Lamp in Hoshi Valley is lit. Mika's story is complete.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Thank you for playing Starline! The valley is yours to explore, and Tamo visits every Sunday.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Keep exploring",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "A story about a railway, two villages, a tiny fallen star and the night everybody looked away.",
   "ctx": [
    "menu / screen text"
@@ -4232,7 +4444,7 @@
   ]
  },
  {
-  "s": "Press E (or tap) when the float dips",
+  "s": "Press {act} when the float dips",
   "ctx": [
    "menu / screen text"
   ]
@@ -4244,7 +4456,7 @@
   ]
  },
  {
-  "s": "Press E as each lantern comes near",
+  "s": "Press {act} as each lantern comes near",
   "ctx": [
    "menu / screen text"
   ]

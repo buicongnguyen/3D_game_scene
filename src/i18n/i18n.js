@@ -39,11 +39,15 @@ export function detectLang() {
 export function getLang() { return lang; }
 export function isCJK() { return LANGS[lang]?.cjk; }
 
-/** Translate an English source string; {name} placeholders are filled from vars. */
+const globals = {};
+/** A placeholder every string may use, filled when shown: {act} is the action key (E) or, on phones, the "Do it" button. */
+export function setGlobal(name, fn) { globals[name] = fn; }
+
+/** Translate an English source string; {name} placeholders are filled from vars (then the globals). */
 export function tx(s, vars) {
   if (s == null || s === '') return s;
   let out = (pack && pack[s]) || s;
-  if (vars) out = out.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+  if (out.includes('{')) out = out.replace(/\{(\w+)\}/g, (m, k) => (vars && k in vars ? vars[k] : k in globals ? globals[k]() : m));
   return out;
 }
 

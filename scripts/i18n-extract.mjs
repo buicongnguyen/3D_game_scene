@@ -35,6 +35,8 @@ export function collect() {
   for (const c of CAPTIONS.arrival) add(c, 'cinematic caption across the top while the train arrives (narration)');
   for (const c of CAPTIONS.ride) add(c.text, 'cinematic caption across the top during the Star Train ride (narration)');
   for (const c of CAPTIONS.tour) add(c.text, 'caption across the top while Mika rides the Sunday train in the epilogue (narration)');
+  for (const k of [1, 2, 3, 4]) for (const c of CAPTIONS[`flight${k}`]) add(c.text, `caption across the top during the slow flight over the valley at the end of chapter ${k}'s celebration (narration)`);
+  for (const c of CAPTIONS.theEnd) add(c.text, 'caption across the top as the camera rises over the starlit valley at the very end of the game (narration)');
   for (const f of FRIENDS) { add(f.name, 'animal friend name'); add(f.verb, 'interaction prompt shown next to the E key'); add(f.desc, 'animal friend: description'); add(f.hint, 'animal friend: where to find it'); }
   for (const a of ALBUM) add(a.title, 'photo album caption (a chapter\'s celebration photo)');
   for (const t of TREASURES) { add(t.name, 'treasure name'); add(t.hint, 'treasure: where to look (journal hint)'); add(t.text, 'treasure: journal description'); }

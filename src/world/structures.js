@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { placeholder } from '../engine/assets.js';
 import { patchMaterial } from '../engine/effects.js';
 import { BUILDINGS, LAMPS, DOCKS, STONES, PLACES, DECK_Y, VIADUCT, SCARECROWS, ORCHARD_FENCE } from './layout.js';
+import { SLIDE, SLIDE_SOLIDS, SLIDE_DRESSING, isEarth, fromSlide } from './landslide.js';
+import { PALETTES } from './seasons.js';
+import { DECIDUOUS } from './scatter.js';
 
 // Wall footprints (w, d, h) from art/CONTRACTS.md; colliders use these, not roof overhangs.
 export const FOOTPRINT = {
@@ -19,6 +22,7 @@ export const PORCH = {
 };
 
 const toRad = d => d * Math.PI / 180;
+const smooth01 = t => (t <= 0 ? 0 : t >= 1 ? 1 : t * t * (3 - 2 * t));
 
 /** Places buildings, lamps, docks, stones and set dressing; registers colliders and dynamic nodes. */
 export class Structures {
@@ -106,6 +110,106 @@ export class Structures {
     this.placeDocks();
     this.placeStones();
     this.placeDressing();
+    this.placeLandslide();
+  }
+
+  /**
+   * The landslide scar on the nose of the spur north of PLACES.landslide. The terrain under it is sunk and the
+   * height grid returns this model's ground (landslide.js), so it needs no ground collider: only its boulders,
+   * fallen trunks and the stump are solids.
+   */
+  placeLandslide() {
+    const S = SLIDE;
+    const obj = this.model('landslide', [24, 9, 18], '#a06a3a');
+    obj.position.set(S.x, S.y, S.z);
+    obj.name = 'landslide';
+    this.group.add(obj);
+    this.nodes.landslide = obj;
+    this.cullList.push({ obj, x: S.x, z: S.z - 3, prop: false });
+    // its turf is drawn with the terrain's own shader (season palette, splat, snow), so it carries on the
+    // ground around it seamlessly; the torn turf lips take the season's grass colour
+    const tm = this.world.terrain.material;
+    const turf = new THREE.MeshStandardMaterial({ name: 'Turf', roughness: tm.roughness, metalness: 0, envMapIntensity: tm.envMapIntensity, vertexColors: true });
+    turf.onBeforeCompile = tm.onBeforeCompile;
+    const lips = new Set();
+    obj.traverse(o => {
+      if (!o.isMesh) return;
+      if (o.material.name === 'Turf') { o.material = turf; o.castShadow = false; }
+      else if (o.material.name === 'Turf lip') { lips.add(o.material); o.material.envMapIntensity = tm.envMapIntensity; }
+    });
+    // trees and bushes keep the spur wooded right up to the scar (its face is too steep for the scatter). They
+    // are clones sharing the foliage system's materials, so they take its season colours and wind; the
+    // deciduous ones drop their leaves in winter like the rest of the forest
+    const bare = [];
+    const centre = fromSlide(0, 5);
+    for (const [name, lx, ly, s, lean] of SLIDE_DRESSING) {
+      const tree = this.assets.clone(name);
+      if (!tree) continue;
+      const { x, z } = fromSlide(lx, ly);
+      const y = this.world.heightAt(x, z) - 0.2 * s;
+      const holder = new THREE.Group();
+      holder.position.set(x, y, z);
+      if (lean) {
+        const d = new THREE.Vector3(centre.x - x, 0, centre.z - z).normalize();
+        holder.quaternion.setFromAxisAngle(new THREE.Vector3(d.z, 0, -d.x), toRad(lean));
+      }
+      tree.rotation.y = (lx * 1.7 + ly * 2.9) % (Math.PI * 2);
+      tree.scale.setScalar(s);
+      holder.add(tree);
+      this.group.add(holder);
+      this.cullList.push({ obj: holder, x, z, prop: false });
+      if (DECIDUOUS.has(name)) tree.traverse(o => { if (o.isMesh && ['Leaves', 'Maple leaves', 'Blossom'].includes(o.material.name)) bare.push(o); });
+      if (name.startsWith('tree')) {
+        this.colliders.cylinder(x, z, 0.38 * s, y - 1, y + 5, { id: 'tree' });
+        this.world.splat.paintDisc(x, z, 1.6 * s, 3, 0, 1.2); // keeps the scatter from planting into it
+        this.world.splat.paintDisc(x, z, 2.4 * s, 2, 0.75, 2);
+      }
+    }
+    const tint = season => {
+      const p = PALETTES[season];
+      if (!p) return;
+      const c = new THREE.Color(p.grass[0]).lerp(new THREE.Color(p.grass[1]), 0.5).multiplyScalar(0.72);
+      for (const m of lips) m.color.copy(c);
+      for (const o of bare) o.visible = !p.bareTrees;
+    };
+    this.world.seasonHooks?.push(tint);
+    if (this.world.season) tint(this.world.season);
+    // boulders and the stump can be climbed onto; the fallen trunks are walkable beams (short steps along them)
+    for (const s of SLIDE_SOLIDS) {
+      if (s[0] === 'rock' || s[0] === 'stump') {
+        const [kind, lx, ly, r, top] = s, p = fromSlide(lx, ly);
+        this.colliders.cylinder(p.x, p.z, r, S.y + top - 3, S.y + top, { walkable: true, surface: kind === 'rock' ? 'stone' : 'wood', id: 'slide-' + kind });
+        continue;
+      }
+      const [, ax, ay, az, bx, by, bz, r] = s;
+      const len = Math.hypot(bx - ax, by - ay), n = Math.max(1, Math.ceil(len / 0.6));
+      const rot = Math.atan2(by - ay, bx - ax) * 180 / Math.PI;
+      for (let k = 0; k < n; k++) {
+        const t = (k + 0.5) / n, p = fromSlide(ax + (bx - ax) * t, ay + (by - ay) * t);
+        const top = S.y + az + (bz - az) * t + r * 0.9;
+        this.colliders.box(p.x, p.z, len / n / 2 + 0.02, r * 0.85, rot, top - 2 * r - 0.4, top, { walkable: true, surface: 'wood', id: 'slide-log' });
+      }
+    }
+    // ground paint: no grass tufts (or scattered trees) on the raw earth or right at its edge, and a spill of
+    // dirt from the lobe toward the end of the path
+    const sp = this.world.splat, Q = 0.5, M = 4;
+    const cols = Math.round((S.x1 - S.x0) / Q) + 1, rows = Math.round((S.y1 - S.y0) / Q) + 1;
+    const earth = [];
+    for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++) if (isEarth(S.x0 + i * Q, S.y0 + j * Q)) earth.push([S.x0 + i * Q, S.y0 + j * Q]);
+    for (let z = Math.floor(S.z - S.y1 - M); z <= Math.ceil(S.z - S.y0 + M); z++) {
+      for (let x = Math.floor(S.x + S.x0 - M); x <= Math.ceil(S.x + S.x1 + M); x++) {
+        const i = x - sp.x0, j = z - sp.z0;
+        if (i < 0 || j < 0 || i >= sp.w || j >= sp.h) continue;
+        const lx = x + 0.5 - S.x, ly = S.z - (z + 0.5);
+        let d2 = M * M;
+        for (const [ex, ey] of earth) { const q = (ex - lx) ** 2 + (ey - ly) ** 2; if (q < d2) d2 = q; }
+        const d = Math.sqrt(d2), o = (j * sp.w + i) * 4;
+        sp.data[o + 3] *= smooth01((d - 1.5) / 2.2);
+        if (ly < 3) sp.data[o] = Math.max(sp.data[o], 200 * (1 - smooth01((d - 0.3) / 2.4)));
+      }
+    }
+    for (const [ly, r, v] of [[-5.5, 3.2, 0.6], [-8, 2.2, 0.45]]) { const p = fromSlide(0, ly); sp.paintDisc(p.x, p.z, r, 0, v, 2.5); }
+    sp.texture.needsUpdate = true;
   }
 
   /** Bell tower: solid base whose top is the walkable gallery, a central shaft above it, invisible railings. */

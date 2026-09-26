@@ -108,6 +108,23 @@ test('fallen stars are counted once each and all twelve unlock the last letter',
   assert.ok(q.state.flags.allStars);
 });
 
+test('all twelve stars and Starfall Night end the story: The End, then the valley to explore', () => {
+  const { q } = playthrough('together');
+  assert.equal(q.state.step, 'e.free');
+  const found = [];
+  for (let i = 1; i <= 12; i++) found.push(...q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` }));
+  assert.ok(found.some(e => e.allStars), 'the twelfth star starts Starfall Night');
+  assert.equal(q.state.step, 'e.free', 'Starfall Night plays before the story moves on');
+  const end = q.dispatch({ type: 'cutscene', id: 'starfall' });
+  assert.ok(end.some(e => e.cutscene === 'theEnd'), 'The End plays');
+  assert.equal(q.state.step, 'e.done');
+  assert.match(q.objective(), /complete/);
+  // a save from the free-roam epilogue loads and stays there
+  const loaded = new Quest(JSON.parse(JSON.stringify(q.save())));
+  assert.equal(loaded.state.step, 'e.done');
+  assert.ok(!loaded.start().some(e => e.say));
+});
+
 test('chatter never runs out and unknown NPCs fall back to villager lines', () => {
   const q = new Quest();
   for (const who of [...Object.keys(CHATTER), 'stranger']) for (let i = 0; i < 12; i++) {

@@ -72,8 +72,14 @@ together, and how the game is verified. The story itself is in
   koi, rainbow and petal star (spring); orchard lanterns, firefly river, floating
   sheep, fireworks and a bon-odori circle (summer); kodama, leaf-butterflies and
   moon-viewing animals (autumn); aurora, star-snow and the Star Train in the sky
-  with Sora at the window, then the group photo (winter). Each takes an album
-  photo (a downscaled frame, saved per profile) and the credits show the album.
+  with Sora at the window, then the group photo (winter). Each sets its light
+  first (spring golden hour, summer blue hour, autumn golden afternoon, winter
+  night), takes a group photo (`groupPhoto`: everyone turns and cheers, a fill
+  light for night shots, people stand on platforms via `standY`/`rowSlots`,
+  saved per profile, shown in the credits), and ends with `flight()`: a ~25 s
+  Catmull-Rom camera glide from low over the stream to high above the village,
+  with `CAPTIONS.flightN` on top. Level of detail follows the view during a
+  flight (`game.viewFocus`).
   Decorations are cumulative per lit lamp (`celebrate.decorate`), Tamo gains an
   orbiting mote per lamp, and the colour grade gets a touch more vivid.
   In the epilogue Tamo comes back on his Sundays off (`tamoBack`).
@@ -84,7 +90,10 @@ together, and how the game is verified. The story itself is in
   the nearest Fallen Star), Sky Letters are high pickups with a 3.4 m grab radius
   so a kite fly-by collects them, gifts are models at `Item_gift_*` nodes in the
   cottage shown once their step is done, and all twelve stars trigger the
-  `starfall` cutscene and a permanent Starfall sky. People come home as lamps
+  `starfall` cutscene and a permanent Starfall sky; its end completes `e.free`,
+  which plays `theEnd` (a flight over the valley, then the end card with the
+  album and numbers) and moves to `e.done`, free roam. Saves that already had
+  all twelve stars play the ending on load. People come home as lamps
   are lit (villagers v8–v17), the bell tower chimes each hour after the Orchard
   Lamp, the shrine has wind chimes after the Forest Lamp, and the repaired
   viaduct gets fireworks.
@@ -103,6 +112,22 @@ together, and how the game is verified. The story itself is in
   follows tighter at speed.
 - **Difficulty.** Easy (the default) scales spark-target reach ×1.6 across and ×4
   in height and gives fish a 2.6 s bite window; Normal keeps ×1.15 / ×1.5 and 1.6 s.
+  Hard (`game.hard`, `input.aimMode`) takes spark targets off the E key (except
+  the Star Train's lanterns): hold aim (right mouse, Q, LT, touch Aim) for the
+  over-shoulder camera and reticle (`director.updateAim`, 34 m range, terrain
+  line of sight), then fire (click, R, RT, touch Spark).
+- **Device words.** `{act}` in any string is filled by `tx()` from a global: `E`
+  on a keyboard, “Do it” (the touch action button) on phones.
+- **The landslide scar** (chapter 3) is a set piece whose ground the terrain
+  cannot draw (a 2 m grid can't follow its walls): `landslide.glb` is the visible
+  surface, `src/world/landslide.js` mirrors its analytic ground exactly, the
+  terrain is sunk under it, and `world.heightAt` returns whichever is higher, so
+  Mika, trees and pickups stand on the model. Keep `build_landslide()` and
+  `landslide.js` in sync (`tests/landslide.test.mjs` fails if they drift). The
+  step's `landslide` cutscene frames the scar before the dialogue.
+- **Rin's ferry** is the only story crossing in summer: reaching the east bank
+  another way (swimming, a speed leap) points the guide to the east landing,
+  where “Call Rin's ferry” plays the ride. Only a frozen river counts as crossed.
 - **Profiles and settings.** Three save slots (slot 1 keeps the original key).
   Season and time-of-day overrides only change what is shown (`game.applyLook`,
   `game.shownHour`); the story keeps its own calendar and clock.

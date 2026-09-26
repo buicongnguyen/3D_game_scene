@@ -395,118 +395,201 @@ def build_lantern_boat(out_name='lantern-boat'):
 
 
 # ------------------------------------------------------------------ landslide
+# The slide's ground is analytic and noise-free so the runtime can mirror it exactly (src/world/landslide.js):
+# the terrain is sunk out of sight under the scar and the player's feet follow this surface. Keep both in sync.
+# Footprint 24 x 18 m with its edges on the 6 m lines shared by the 2 m and 3 m terrain grids (placed at x -50,
+# z -168), so the terrain always covers the model's outer rim exactly.
+SLIDE_X0, SLIDE_X1, SLIDE_Y0, SLIDE_Y1 = -12.0, 12.0, -6.0, 12.0
+SLIDE_RUN, SLIDE_RISE = 12.5, 9.0      # the hillside rises 9 m over 12.5 m (at most ~41 deg), then a plateau
+SLIDE_HEAD, SLIDE_HC = 9.4, 2.6        # headscarp line at the centre; the crown arcs 2.6 m downhill at the sides
+SLIDE_W0, SLIDE_WMAX = 3.0, 7.8        # scar half-width at the chute mouth and at its widest (a spoon-shaped scar)
+
+
+def slide_wob(a, b, s):
+    """Smooth deterministic wobble in [-1, 1] (mirrored in JS, which mathutils noise could not be)."""
+    return (.5 * math.sin(a * 1.31 + b * .47 + s) + .35 * math.sin(a * .53 - b * 1.19 + s * 2.3)
+            + .15 * math.sin((a + b) * 2.03 + s * .7))
+
+
+def _slide_sm(a, b, v):
+    t = max(0.0, min(1.0, (v - a) / (b - a)))
+    return t * t * (3 - 2 * t)
+
+
+def slide_ground(y):
+    t = max(0.0, min(1.0, y / SLIDE_RUN))
+    return SLIDE_RISE * (.4 * t * t * (3 - 2 * t) + .6 * t)
+
+
+def slide_scar_w(y):
+    t = max(0.0, min(1.0, (y + 2.0) / 10.0))
+    return SLIDE_W0 + (SLIDE_WMAX - SLIDE_W0) * math.sin(t * math.pi / 2) ** 1.3
+
+
+def slide_edge(y):
+    return slide_scar_w(y) * (1 + .08 * slide_wob(y * .55, 0.0, 7.0))
+
+
+def slide_head(x):
+    u = x / SLIDE_WMAX
+    return SLIDE_HEAD - SLIDE_HC * u * u
+
+
+def slide_depth(x, y):
+    w = slide_edge(y)
+    u = abs(x) / w
+    if u >= 1:
+        return 0.0
+    D = (.7 + 3.1 * max(0.0, min(1.0, (y + 1.5) / (SLIDE_HEAD + 1.5))) ** 1.2) * _slide_sm(-2.5, -.5, y)
+    hy = slide_head(x)
+    if y > hy:
+        D *= max(0.0, 1 - (y - hy) / .7)
+    return D * (1 - u ** 4)
+
+
+def slide_lobe(x, y):
+    ry = 5.0 if y < .2 else 3.6
+    f = max(0.0, 1 - math.hypot(x / 8.5, (y - .2) / ry))
+    return 1.6 * f ** 1.4 * (1 + .3 * slide_wob(x * .45, y * .5, 4.0))
+
+
+def slide_surface(x, y):
+    d, lb = slide_depth(x, y), slide_lobe(x, y)
+    k = _slide_sm(.05, .5, d + lb)
+    return (slide_ground(y) - d + lb +
+            k * (.16 * slide_wob(x * .75, y * .7, 3.0) + .08 * slide_wob(x * 1.7, y * 1.5, 9.0)))
+
+
+def slide_lattice():
+    """Vertex columns/rows of the ground mesh (rows packed tight across the arc of the headscarp)."""
+    xs = [SLIDE_X0 + (SLIDE_X1 - SLIDE_X0) * i / 44 for i in range(45)]
+    ys = ([SLIDE_Y0 + (6.2 - SLIDE_Y0) * j / 20 for j in range(21)] +
+          [6.2 + .35 * j for j in range(1, 13)] +
+          [10.4 + (SLIDE_Y1 - 10.4) * j / 3 for j in range(1, 4)])
+    return xs, ys
+
 
 def build_landslide(out_name='landslide'):
     """The upriver landslide scar (story evidence that the flood was natural): a raw earth chute torn out of the
     wooded hillside with a steep curved headscarp, banded strata and rock slabs, torn turf lips with dangling
     roots, snapped cedar trunks (one tipped over with its root plate) and a lumpy debris lobe at the toe.
-    Origin at the toe (y=0); the hillside rises toward +Y to z~9 at y=11, the lobe spreads to y=-5."""
+    Origin at the toe (y=0); the hillside rises toward +Y to z=9 at y=11 (plateau to y=12), the lobe spreads to
+    y=-4.6; footprint x -12..12, y -6..12. The ground surface is slide_surface() on slide_lattice(), split into
+    triangles along the (i, j)-(i+1, j+1) diagonal, exactly as src/world/landslide.js interpolates it.
+    'Turf' takes the terrain shader at runtime; 'Turf lip' is tinted with the season's grass."""
+    import json
     reset()
     earth = mat('Earth', '#a06a3a', rough=.95)
     rockm = mat('Rock', '#8f8a82', rough=.72)
     turf = mat('Turf', '#5e8c3a', rough=.9)
+    lipm = mat('Turf lip', '#6f8f3e', rough=.9)
     bark = mat('Bark', '#6a4431', rough=.85)
     fresh = mat('Fresh wood', '#e2b57c', rough=.75)
     root = mat('Roots', '#4b3324', rough=.9)
     rng = random.Random(12)
     P = []
-    X0, X1, Y0, Y1 = -11.0, 11.0, -5.0, 11.0
-    HEAD = 9.6                    # headscarp line (y)
-
-    def ground(x, y):
-        t = max(0.0, min(1.0, y / Y1))
-        return 9.0 * (t * t * (3 - 2 * t)) * .55 + 9.0 * t * .45 + .5 * noise.noise(Vector((x * .13, y * .13, 1.0)))
-
-    def scar_w(y):
-        return 2.8 + 3.8 * max(0.0, min(1.0, (y + 1.5) / (HEAD + 1.5))) ** .8
-
-    def depth(x, y):
-        w = scar_w(y) * (1 + .08 * noise.noise(Vector((y * .4, 0, 7))))
-        u = abs(x) / w
-        if u >= 1 or y < -1.5:
-            return 0.0
-        D = .6 + 2.9 * max(0.0, min(1.0, (y + 1.5) / (HEAD + 1.5))) ** 1.3
-        if y > HEAD:
-            D *= max(0.0, 1 - (y - HEAD) / .7)
-        return D * (1 - u ** 5)
-
-    def lobe(x, y):
-        if y >= 1.0:
-            return 0.0
-        f = max(0.0, 1 - math.hypot(x / 7.5, (y - .2) / 4.8))
-        return 1.5 * f ** 1.4 * (1 + .25 * noise.noise(Vector((x * .5, y * .5, 4))))
-    xs = [X0 + (X1 - X0) * i / 40 for i in range(41)]
-    ys = sorted(set([Y0 + (HEAD - .6 - Y0) * j / 22 for j in range(23)] +
-                    [HEAD - .4, HEAD - .15, HEAD + .1, HEAD + .35, HEAD + .7] +
-                    [HEAD + .7 + (Y1 - HEAD - .7) * j / 2 for j in range(1, 3)]))
+    solids = []          # walkable/blocking shapes for the runtime colliders (printed as LANDSLIDE_SOLIDS)
+    HEAD = SLIDE_HEAD
+    ground, depth, lobe, surf, head = slide_ground, slide_depth, slide_lobe, slide_surface, slide_head
+    scar_w, edge = slide_scar_w, slide_edge
+    xs, ys = slide_lattice()
     bm = bmesh.new()
     col = bm.loops.layers.float_color.new('Color')
-    grid = []
-    for y in ys:
-        row = []
-        for x in xs:
-            d = depth(x, y)
-            z = ground(x, y) - d + lobe(x, y) + .1 * noise.noise(Vector((x * .9, y * .9, 3.0)))
-            if d > .05:
-                z += .12 * noise.noise(Vector((x * 1.7, y * 1.7, 9.0)))
-            row.append(bm.verts.new((x, y, z)))
-        grid.append(row)
+    grid = [[bm.verts.new((x, y, surf(x, y))) for x in xs] for y in ys]
     for j in range(len(ys) - 1):
         for i in range(len(xs) - 1):
-            bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
+            a, b, c, d = grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]
+            bm.faces.new((a, b, c))
+            bm.faces.new((a, c, d))
     for f in bm.faces:
         f.normal_update()
         if f.normal.z < 0:
             f.normal_flip()
-    STRATA = ((1.1, .92, .68), (1.0, .76, .6), (.88, .86, .82), (1.08, .86, .6), (.95, .8, .7))
+    STRATA = ((1.2, 1.0, .76), (.9, .68, .54), (1.08, 1.04, .96), (1.14, .9, .64), (.78, .6, .5), (1.02, .84, .68))
     for f in bm.faces:
         c = f.calc_center_median()
-        d = depth(c.x, c.y)
-        in_lobe = lobe(c.x, c.y) > .12
-        f.material_index = 0 if (d > .12 or in_lobe) else 1
+        # (a jittered threshold tears the lobe's edge irregularly instead of into regular saw teeth)
+        in_lobe = lobe(c.x, c.y) > .12 + .2 * (.5 + .5 * noise.noise(Vector((c.x * .8, c.y * .8, 11.0))))
+        # every triangle that dips into the scar is raw earth (a steep turf triangle would take the terrain
+        # shader's rock colour and fringe the rim with pale teeth)
+        f.material_index = 0 if (in_lobe or max(depth(v.co.x, v.co.y) for v in f.verts) > .03) else 1
         for l in f.loops:
             p = l.vert.co
             if f.material_index == 0:
-                below = ground(p.x, p.y) - p.z          # depth below the old surface
-                idx = int((p.z * 1.6 + 2 * noise.noise(Vector((p.x * .25, p.y * .25, 0)))) % len(STRATA))
+                below = ground(p.y) - p.z          # depth below the old surface
+                idx = int((p.z * 1.9 + 1.6 * noise.noise(Vector((p.x * .22, p.y * .22, 0)))) % len(STRATA))
                 c3 = STRATA[idx]
-                if below < .45 and not in_lobe:
-                    c3 = (.55, .45, .38)                # dark humus right under the turf
-                k = .9 + .1 * noise.noise(Vector((p.x * 2, p.y * 2, p.z * 2)))
+                if below < .4 and not in_lobe:
+                    c3 = (.5, .4, .33)                  # dark humus right under the turf
+                u = abs(p.x) / edge(p.y)
+                damp = .8 + .2 * _slide_sm(.5, .85, u) if not in_lobe else .9   # the chute floor is darker debris
+                k = (.88 + .14 * noise.noise(Vector((p.x * 2, p.y * 2, p.z * 2)))) * damp
                 l[col] = (c3[0] * k, c3[1] * k, c3[2] * k, 1)
-            else:
-                k = .82 + .2 * noise.noise(Vector((p.x * .45, p.y * .45, 5)))
-                l[col] = (k * .95, k, k * .85, 1)
+            else:                                        # neutral: the terrain shader colours the turf
+                k = .93 + .07 * noise.noise(Vector((p.x * .45, p.y * .45, 5)))
+                l[col] = (k, k, k, 1)
     slope = from_bmesh('Slope', bm, earth, smooth_angle=55)
     slope.data.materials.append(turf)
+    # hard edge between turf and earth: rim turf normals must not lean into the scar (the terrain shader would
+    # paint that steep-looking turf with its pale rock colour)
+    fmat = {}
+    for poly in slope.data.polygons:
+        for ek in poly.edge_keys:
+            fmat.setdefault(ek, set()).add(poly.material_index)
+    for e in slope.data.edges:
+        if len(fmat.get(e.key, ())) > 1:
+            e.use_edge_sharp = True
     P.append(slope)
-    # torn turf lips along the scar sides and over the headscarp, with dangling roots
-    lip_paths = []
-    for sx in (-1, 1):
-        lip_paths.append([Vector((sx * (scar_w(y) + .05), y, 0)) for y in
-                          [-.5 + (HEAD - .2 + .5) * j / 10 for j in range(11)]])
-    lip_paths.append([Vector((x, HEAD + .55, 0)) for x in
-                      [-scar_w(HEAD) + (2 * scar_w(HEAD)) * i / 10 for i in range(11)]])
-    for k, path in enumerate(lip_paths):
-        pts = [Vector((p.x, p.y, ground(p.x, p.y) + .05)) for p in path]
-        lip = sweep('Turf lip', pts, [(-.4, -.3), (.25, -.25), (.35, .06), (-.35, .12)], turf, up=(0, 0, 1))
-        displace(lip, strength=.1, scale=1.6, seed=k + 3)
+
+    # the rim: roots dangling from the torn sides, a turf lip overhanging the curved crown
+    def crown(x):
+        return head(x) + .7
+    side_ys = []
+    y = 1.5
+    while y < crown(edge(y)) - .45:
+        side_ys.append(y)
+        y += .5
+    x_top = edge(side_ys[-1]) - .1
+    def chunks(pts, sizes):     # torn into pieces with gaps, not one continuous ribbon
+        out, i = [], 0
+        for n in sizes:
+            if i + 1 < len(pts):
+                out.append(pts[i:i + n])
+            i += n + 1
+        return [c for c in out if len(c) > 1]
+    for sx in (-1, 1):              # roots hanging from the torn side edges
+        for y in side_ys[1::2]:
+            a = Vector((sx * (edge(y) - .05), y, ground(y) + lobe(sx * edge(y), y) - .05))
+            inward = Vector((-sx, 0, 0))
+            P.append(tube('Dangling root', [a, a + inward * .25 + Vector((0, .05, -.6)),
+                                            a + inward * .3 + Vector((.1, -.1, -1.1))], .035, root, verts=4))
+    # the torn turf lip overhanging the crown of the headscarp
+    crown_pts = [Vector((x, head(x) + .55, 0)) for x in [-x_top + 2 * x_top * i / 22 for i in range(23)]]
+    for k, path in enumerate(chunks(crown_pts, (6, 4, 7, 6))):
+        pts = [Vector((p.x, p.y, ground(p.y) + .05)) for p in path]
+        lip = sweep('Turf lip', pts, [(-.28, -.12), (.14, -.1), (.24, .02), (0, .06), (-.24, .04)], lipm, up=(0, 0, 1))
+        displace(lip, strength=.08, scale=2.6, seed=k + 3)
         P.append(lip)
         for j in range(1, len(pts) - 1, 2):
             a = pts[j]
-            inward = Vector((-a.x, 0, 0)).normalized() if k < 2 else Vector((0, -1, 0))
-            P.append(tube('Dangling root', [a + Vector((0, 0, -.15)), a + inward * .3 + Vector((0, .05, -.7)),
-                                            a + inward * .35 + Vector((.1, -.1, -1.3))], .035, root, verts=4))
+            P.append(tube('Dangling root', [a + Vector((0, 0, -.15)), a + Vector((0, -.25, -.7)),
+                                            a + Vector((.1, -.45, -1.3))], .035, root, verts=4))
     # angular rock slabs jutting from the headscarp, boulders in the chute and on the lobe
     for k in range(7):
         x = rng.uniform(-scar_w(HEAD) * .8, scar_w(HEAD) * .8)
-        y = HEAD - rng.uniform(.1, .5)
-        z = ground(x, y) - depth(x, y) * rng.uniform(.3, .8)
+        y = head(x) - rng.uniform(.1, .5)
+        z = ground(y) - depth(x, y) * rng.uniform(.3, .8)
         b = box('Rock slab', (rng.uniform(.9, 1.8), rng.uniform(.5, .9), rng.uniform(.35, .7)), (x, y, z), rockm,
                 bevel=.08, segments=1, rot=(rng.uniform(-.5, .2), rng.uniform(-.3, .3), rng.uniform(-.4, .4)))
         for p in b.data.polygons:
             p.use_smooth = False
         P.append(b)
+
+    def extent(ob):
+        bpy.context.view_layer.update()
+        bb = [ob.matrix_world @ Vector(c) for c in ob.bound_box]
+        return (min(v.x for v in bb), max(v.x for v in bb), min(v.y for v in bb), max(v.y for v in bb),
+                max(v.z for v in bb))
     for k in range(20):
         if k < 9:
             y = rng.uniform(1.0, HEAD - 1.0)
@@ -514,7 +597,7 @@ def build_landslide(out_name='landslide'):
         else:
             y = rng.uniform(-4.2, .8)
             x = rng.uniform(-6.0, 6.0)
-        z = ground(x, y) - depth(x, y) + lobe(x, y)
+        z = surf(x, y)
         r = rng.uniform(.4, 1.1) * (1.15 if k >= 9 else 1)
         b = sphere('Boulder', (r, r * rng.uniform(.7, 1), r * rng.uniform(.55, .8)), (x, y, z + r * .15), rockm,
                    seg=7, rings=5, rot=(rng.random(), rng.random(), rng.random() * 3))
@@ -522,9 +605,15 @@ def build_landslide(out_name='landslide'):
         for p in b.data.polygons:
             p.use_smooth = False
         P.append(b)
+        x0, x1, y0, y1, top = extent(b)
+        if r > .5:
+            solids.append(['rock', round((x0 + x1) / 2, 2), round((y0 + y1) / 2, 2),
+                           round(min(x1 - x0, y1 - y0) * .4, 2), round(top - .04, 2)])
 
     def trunk(a, b, r, root_plate=False):
         a, b = Vector(a), Vector(b)
+        solids.append(['log', round(a.x, 2), round(a.y, 2), round(a.z, 2), round(b.x, 2), round(b.y, 2),
+                       round(b.z, 2), round(r, 2)])
         P.append(rod('Cedar trunk', a, b, r, bark, verts=10, r2=r * .75))
         d = (b - a).normalized()
         u = d.orthogonal().normalized()
@@ -557,26 +646,41 @@ def build_landslide(out_name='landslide'):
                 P.append(tube('Root', [a - d * .3, a - d * .45 + (o - a) * .55, o - d * .35], .07, root, verts=4))
     # the big cedar that fell with the slide, tipped over at the headscarp with its root plate in the air
     ya = HEAD - .8
-    trunk((1.2, ya, ground(1.2, ya) - depth(1.2, ya) + 1.4),
-          (-2.0, 1.2, ground(-2.0, 1.2) - depth(-2.0, 1.2) + .45), .42, root_plate=True)
-    trunk((-6.2, -2.4, lobe(-6.2, -2.4) + .45), (4.6, -1.0, lobe(4.6, -1.0) + .5), .36)
-    trunk((5.5, 5.0, ground(5.5, 5.0) - depth(5.5, 5.0) + .45), (1.8, .6, ground(1.8, .6) - depth(1.8, .6) + .35), .28)
+    trunk((1.2, ya, surf(1.2, ya) + 1.4), (-2.0, 1.2, surf(-2.0, 1.2) + .45), .42, root_plate=True)
+    trunk((-6.2, -2.4, surf(-6.2, -2.4) + .45), (4.6, -1.0, surf(4.6, -1.0) + .5), .36)
+    trunk((5.5, 5.0, surf(5.5, 5.0) + .45), (1.8, .6, surf(1.8, .6) + .35), .28)
     x, y = -(scar_w(8.5) + 1.0), 8.5
-    P.append(rod('Stump', (x, y, ground(x, y) - .3), (x, y, ground(x, y) + 1.6), .38, bark, verts=10, r2=.34))
+    P.append(rod('Stump', (x, y, ground(y) - .3), (x, y, ground(y) + 1.6), .38, bark, verts=10, r2=.34))
+    solids.append(['stump', round(x, 2), round(y, 2), .4, round(ground(y) + 1.6, 2)])
     acc = Acc('Stump splinters', fresh, smooth=20)
     for i in range(6):
         ang = TAU * i / 6
-        acc.add_cone((x + math.cos(ang) * .2, y + math.sin(ang) * .2, ground(x, y) + 1.55), (0, 0, 1), .11, 0.0,
+        acc.add_cone((x + math.cos(ang) * .2, y + math.sin(ang) * .2, ground(y) + 1.55), (0, 0, 1), .11, 0.0,
                      rng.uniform(.35, .8), seg=4)
     P.append(acc.obj())
     for k in range(16):
         x, y = rng.uniform(-6.0, 6.0), rng.uniform(-4.5, 1.0)
         r = rng.uniform(.12, .32)
-        c = sphere('Clod', (r, r * .9, r * .6), (x, y, lobe(x, y) + .05), rockm if k % 3 else earth, seg=5, rings=3)
+        c = sphere('Clod', (r, r * .9, r * .6), (x, y, surf(x, y) + .05), rockm if k % 3 else earth, seg=5, rings=3)
+        for p in c.data.polygons:
+            p.use_smooth = False
+        P.append(c)
+    crng = random.Random(99)          # clods and pebbles strewn along the edge of the lobe
+    for k in range(22):
+        a = -math.pi * (k + crng.uniform(.1, .9)) / 22 + (crng.uniform(-.35, .35) if k in (0, 21) else 0)
+        f0 = .83 + crng.uniform(-.08, .1)
+        x, y = 8.5 * f0 * math.cos(a), .2 + 5.0 * f0 * math.sin(a)
+        r = crng.uniform(.09, .24)
+        c = sphere('Clod', (r, r * .9, r * .6), (x, y, surf(x, y) + .03), rockm if k % 2 else earth, seg=5, rings=3,
+                   rot=(0, 0, crng.random() * 3))
         for p in c.data.polygons:
             p.use_smooth = False
         P.append(c)
     init_color([o for o in P if not o.data.color_attributes.get('Color')])
     paint([o for o in P if o.data.materials[0].name == 'Rock'],
           lambda p, n, fi, ob: (lambda k: (k, k * .98, k * .95))(.8 + .22 * noise.noise(p * 1.7)))
+    # lips: grass on top (tinted by the season at runtime), a dark torn soil mat underneath
+    paint([o for o in P if o.data.materials[0].name == 'Turf lip'],
+          lambda p, n, fi, ob: (1.0, 1.0, 1.0) if n.z > .45 else (.42, .31, .22))
+    print('LANDSLIDE_SOLIDS ' + json.dumps(solids))
     return finish(out_name, P, [], ao=(1.4, .6), ground=None, tinted=True)
