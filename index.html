@@ -15,20 +15,21 @@
   <canvas id="game" aria-label="Starline game view"></canvas>
 
   <div id="loading" class="screen">
-    <div class="logo"><span class="kanji">星の谷</span><h1>Starline</h1><p>Light the way home</p></div>
+    <div class="logo"><span class="kanji">星の谷</span><h1>Starline</h1><p data-i18n>Light the way home</p></div>
     <div class="loadtrack"><div id="loadBar"></div></div>
-    <div id="loadLabel">Preparing the valley</div>
+    <div id="loadLabel"></div>
   </div>
 
   <div id="title" class="screen hidden">
-    <div class="logo big"><span class="kanji">星の谷 · Hoshi Valley</span><h1>Starline</h1><p>Light the four Star Lamps. Bring the Star Train home.</p></div>
+    <div class="logo big"><span class="kanji">星の谷<span class="kanjisub"> · <span data-i18n>Hoshi Valley</span></span></span><h1>Starline</h1><p data-i18n>Light the four Star Lamps. Bring the Star Train home.</p></div>
     <nav class="menu">
-      <button id="btnContinue" class="primary hidden">Continue</button>
-      <button id="btnNew" class="primary">New Game</button>
-      <button id="btnSettings">Settings</button>
-      <button id="btnCredits">Credits</button>
+      <button id="btnContinue" class="primary hidden" data-i18n>Continue</button>
+      <button id="btnNew" class="primary" data-i18n>New Game</button>
+      <button id="btnSettings" data-i18n>Settings</button>
+      <button id="btnCredits" data-i18n>Credits</button>
+      <div class="langs" id="titleLangs" role="group" aria-label="Language"></div>
     </nav>
-    <p class="hint" id="titleHint">WASD / stick to move · Mouse drag to look · E to interact · Space to jump · Right mouse to aim</p>
+    <p class="hint" id="titleHint">WASD / stick to move · Mouse drag to look · E to do anything nearby · Space to jump or swim up · C to dive</p>
   </div>
 
   <div id="hud" class="hidden">
@@ -37,39 +38,39 @@
     <div id="inventory"></div>
     <div id="marker" class="hidden"><div class="arrow"></div><span id="markerDist"></span></div>
     <div id="prompt" class="hidden"><kbd id="promptKey">E</kbd><span id="promptText"></span></div>
-    <div id="reticle" class="hidden"><div class="ring"></div><div class="dot"></div><div id="reticleLabel"></div></div>
     <div id="toasts"></div>
-    <button id="btnMenu" class="iconbtn" aria-label="Menu">☰</button>
-    <button id="btnJournal" class="iconbtn" aria-label="Journal">✎</button>
+    <button id="btnMenu" class="iconbtn" aria-label="Menu" data-i18n-aria>☰</button>
+    <button id="btnJournal" class="iconbtn" aria-label="Journal" data-i18n-aria>✎</button>
   </div>
 
   <div id="touch" class="hidden">
     <div id="stick"><div id="stickKnob"></div></div>
-    <button id="tJump" class="tbtn">Jump</button>
+    <button id="tJump" class="tbtn" data-i18n>Jump</button>
     <button id="tAct" class="tbtn act">Act</button>
-    <button id="tAim" class="tbtn aim">Aim</button>
-    <button id="tFire" class="tbtn fire hidden">Spark</button>
+    <button id="tDive" class="tbtn dive hidden" data-i18n>Dive</button>
   </div>
 
-  <div id="dialogue" class="hidden">
-    <div class="portrait" id="dlgPortrait"></div>
+  <div id="dialogue" class="hidden" role="dialog" aria-live="polite">
     <div class="box">
-      <div class="name" id="dlgName"></div>
-      <div class="text" id="dlgText"></div>
+      <div class="lines" id="dlgLines"></div>
       <div class="choices" id="dlgChoices"></div>
-      <div class="next" id="dlgNext">▼</div>
+      <div class="dlgbar">
+        <button id="dlgBack" class="nav"><kbd class="k">Q</kbd><span data-i18n>Back</span></button>
+        <span class="page" id="dlgPage"></span>
+        <button id="dlgNext" class="nav go"><span id="dlgNextLabel">Next</span><kbd class="k">E</kbd></button>
+      </div>
     </div>
-    <button id="dlgSkip" class="skip">Skip ▸▸</button>
+    <button id="dlgSkip" class="skip"><span data-i18n>Skip</span> ▸▸</button>
   </div>
 
   <div id="card" class="hidden"><div class="chapter" id="cardChapter"></div><div class="name" id="cardName"></div></div>
 
   <div id="journal" class="overlay hidden">
     <div class="book">
-      <header><h2>Mika's Journal</h2><button class="close" data-close="journal">✕</button></header>
+      <header><h2 data-i18n>Mika's Journal</h2><button class="close" data-close="journal">✕</button></header>
       <nav class="tabs" id="journalTabs">
-        <button data-tab="story" class="on">Story</button><button data-tab="pages">Sora's Pages</button>
-        <button data-tab="stars">Fallen Stars</button><button data-tab="fish">Fish</button><button data-tab="help">Controls</button>
+        <button data-tab="story" class="on" data-i18n>Story</button><button data-tab="pages" data-i18n>Sora's Pages</button>
+        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="help" data-i18n>Controls</button>
       </nav>
       <section id="journalBody"></section>
     </div>
@@ -77,26 +78,27 @@
 
   <div id="pause" class="overlay hidden">
     <div class="book small">
-      <header><h2>Paused</h2></header>
+      <header><h2 data-i18n>Paused</h2></header>
       <nav class="menu">
-        <button id="btnResume" class="primary">Resume</button>
-        <button id="btnPauseJournal">Journal</button>
-        <button id="btnPauseSettings">Settings</button>
-        <button id="btnSaveQuit">Save &amp; return to title</button>
+        <button id="btnResume" class="primary" data-i18n>Resume</button>
+        <button id="btnPauseJournal" data-i18n>Journal</button>
+        <button id="btnPauseSettings" data-i18n>Settings</button>
+        <button id="btnSaveQuit" data-i18n>Save &amp; return to title</button>
       </nav>
     </div>
   </div>
 
   <div id="settings" class="overlay hidden">
     <div class="book small">
-      <header><h2>Settings</h2><button class="close" data-close="settings">✕</button></header>
+      <header><h2 data-i18n>Settings</h2><button class="close" data-close="settings">✕</button></header>
       <div class="form">
-        <label>Graphics <select id="optQuality"><option value="low">Low (phones)</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-        <label>Camera sensitivity <input id="optSens" type="range" min="0.3" max="2" step="0.05" value="1" /></label>
-        <label class="check"><input id="optInvert" type="checkbox" /> Invert camera Y</label>
-        <label>Music <input id="optMusic" type="range" min="0" max="1" step="0.05" value="0.55" /></label>
-        <label>Sound effects <input id="optSfx" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
-        <label class="check"><input id="optFps" type="checkbox" /> Show frame rate</label>
+        <label><span data-i18n>Language</span> <select id="optLang"></select></label>
+        <label><span data-i18n>Graphics</span> <select id="optQuality"><option value="low" data-i18n>Low (phones)</option><option value="medium" data-i18n>Medium</option><option value="high" data-i18n>High</option></select></label>
+        <label><span data-i18n>Camera sensitivity</span> <input id="optSens" type="range" min="0.3" max="2" step="0.05" value="1" /></label>
+        <label class="check"><input id="optInvert" type="checkbox" /> <span data-i18n>Invert camera Y</span></label>
+        <label><span data-i18n>Music</span> <input id="optMusic" type="range" min="0" max="1" step="0.05" value="0.55" /></label>
+        <label><span data-i18n>Sound effects</span> <input id="optSfx" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
+        <label class="check"><input id="optFps" type="checkbox" /> <span data-i18n>Show frame rate</span></label>
       </div>
     </div>
   </div>
@@ -104,28 +106,28 @@
   <div id="credits" class="overlay hidden">
     <div class="book small credits">
       <header><h2>Starline</h2><button class="close" data-close="credits">✕</button></header>
-      <p>A story about a railway, two villages, a tiny fallen star and the night everybody looked away.</p>
-      <p><b>Design, story, code &amp; Blender art</b><br />Bui Cong Nguyen with Claude</p>
-      <p><b>Built with</b><br />three.js · Blender 4.5 · Vite</p>
-      <p class="thanks">For everyone who keeps a light on for someone.</p>
+      <p data-i18n>A story about a railway, two villages, a tiny fallen star and the night everybody looked away.</p>
+      <p><b data-i18n>Design, story, code &amp; Blender art</b><br />Bui Cong Nguyen with Claude</p>
+      <p><b data-i18n>Built with</b><br />three.js · Blender 4.5 · Vite</p>
+      <p class="thanks" data-i18n>For everyone who keeps a light on for someone.</p>
     </div>
   </div>
 
   <div id="fishing" class="minigame hidden">
-    <div class="mgtitle" id="fishTitle">Wait for a bite…</div>
-    <div class="meter"><div class="zone" id="fishZone"></div><div class="fishmark" id="fishMark"></div></div>
-    <div class="catchbar"><div id="fishCatch"></div></div>
-    <div class="mghint" id="fishHint">Hold <kbd>E</kbd> / tap to reel · keep the fish inside the green</div>
+    <div class="mgtitle" id="fishTitle"></div>
+    <div class="pond"><div class="ripple"></div><div class="float" id="fishFloat"><i></i></div></div>
+    <div class="catchbar bite"><div id="fishBite"></div></div>
+    <div class="mghint"><span data-i18n>Press E (or tap) when the float dips</span> · <kbd>Esc</kbd></div>
   </div>
 
   <div id="cooking" class="minigame hidden">
-    <div class="mgtitle">Honey chestnuts</div>
-    <div class="pot"><div class="beat" id="cookBeat"></div><div class="target"></div></div>
+    <div class="mgtitle" data-i18n>Honey chestnuts</div>
+    <div class="pot"><div class="steam"></div><div class="steam s2"></div><div class="steam s3"></div></div>
     <div class="catchbar"><div id="cookProg"></div></div>
-    <div class="mghint">Press <kbd>E</kbd> / tap when the ring meets the gold circle</div>
+    <div class="mghint" data-i18n>Stirring…</div>
   </div>
 
-  <div id="rideHud" class="hidden"><div class="panel" id="rideText">Lanterns lit 0/8</div></div>
+  <div id="rideHud" class="hidden"><div class="panel"><span id="rideText"></span><small data-i18n>Press E as each lantern comes near</small></div></div>
   <div id="fade"></div>
   <div id="fps" class="hidden"></div>
   <div id="err" class="hidden"></div>

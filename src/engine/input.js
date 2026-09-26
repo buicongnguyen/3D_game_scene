@@ -1,11 +1,12 @@
 // Unified input: keyboard + mouse, gamepad and touch -> one action model polled once per frame.
 // move: {x, y} with x = right, y = forward, length <= 1. look: {x, y} deltas (pixels-ish) this frame.
-// Buttons: jump, act, aim (held), fire, sprint (held), journal, pause, back.
+// Buttons: jump, act, dive (held), sprint (held), journal, pause, back.
 
 const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   Space: 'jump', KeyE: 'act', KeyF: 'act', Enter: 'act', ShiftLeft: 'sprint', ShiftRight: 'sprint',
-  KeyJ: 'journal', KeyI: 'journal', Escape: 'pause', KeyP: 'pause', KeyQ: 'aim', KeyR: 'fire', Backspace: 'back',
+  KeyJ: 'journal', KeyI: 'journal', Escape: 'pause', KeyP: 'pause', Backspace: 'back',
+  KeyC: 'dive', ControlLeft: 'dive', ControlRight: 'dive',
 };
 
 export class Input {
@@ -16,8 +17,7 @@ export class Input {
     this.move = { x: 0, y: 0 };
     this.look = { x: 0, y: 0 };
     this.zoom = 0;
-    this.touch = { move: null, look: null, aimHeld: false };
-    this.mouseAim = false;
+    this.touch = { move: null, look: null };
     this.dragging = false;
     this.enabled = true;
     this.sensitivity = 1;
@@ -46,19 +46,15 @@ export class Input {
     c.addEventListener('contextmenu', e => e.preventDefault());
     c.addEventListener('mousedown', e => {
       this.lastDevice = 'keyboard';
-      if (e.button === 2) { this.mouseAim = true; this.edges.add('aimStart'); }
-      else if (e.button === 0) {
-        if (this.mouseAim) this.edges.add('fire');
-        else { this.dragging = true; this.edges.add('click'); }
-      }
+      // either mouse button drags the camera
+      if (e.button === 0 || e.button === 2) { this.dragging = true; if (e.button === 0) this.edges.add('click'); }
     });
     addEventListener('mouseup', e => {
-      if (e.button === 2) this.mouseAim = false;
-      if (e.button === 0) this.dragging = false;
+      if (e.button === 0 || e.button === 2) this.dragging = false;
     });
     addEventListener('mousemove', e => {
       if (e.sourceCapabilities?.firesTouchEvents) return;
-      if (this.dragging || this.mouseAim || this.pointerLocked) {
+      if (this.dragging || this.pointerLocked) {
         this.look.x += e.movementX;
         this.look.y += e.movementY;
       }
@@ -110,7 +106,6 @@ export class Input {
 
   releaseAll() {
     this.keys.clear();
-    this.mouseAim = false;
     this.dragging = false;
     this.touch.move = null;
     this.touch.look = null;
@@ -133,7 +128,6 @@ export class Input {
     // gamepad
     const pads = navigator.getGamepads?.() ?? [];
     const gp = this.gamepadIndex !== null ? pads[this.gamepadIndex] : [...pads].find(Boolean);
-    this.gpAim = false;
     if (gp) {
       const dz = v => (Math.abs(v) < 0.15 ? 0 : v);
       const lx = dz(gp.axes[0]), ly = dz(gp.axes[1]), rx = dz(gp.axes[2]), ry = dz(gp.axes[3]);
@@ -141,8 +135,10 @@ export class Input {
       if (rx || ry) { this.look.x += rx * 14; this.look.y += ry * 10; this.lastDevice = 'gamepad'; }
       const btn = i => gp.buttons[i]?.pressed;
       this._gpEdge('jump', btn(0)); this._gpEdge('act', btn(2) || btn(1) && false); this._gpEdge('back', btn(1));
-      this._gpEdge('fire', gp.buttons[7]?.value > 0.5); this._gpEdge('journal', btn(8)); this._gpEdge('pause', btn(9));
-      this.gpAim = gp.buttons[6]?.value > 0.4;
+      this._gpEdge('journal', btn(8)); this._gpEdge('pause', btn(9));
+      // either trigger dives while swimming
+      if (gp.buttons[6]?.value > 0.4 || gp.buttons[7]?.value > 0.4) { this.keys.add('dive'); this._gpDive = true; }
+      else if (this._gpDive) { this.keys.delete('dive'); this._gpDive = false; }
       if (btn(10)) this.keys.add('sprint'); else if (this.lastDevice === 'gamepad') this.keys.delete('sprint');
     }
     const len = Math.hypot(mx, my);
@@ -161,7 +157,6 @@ export class Input {
 
   pressed(a) { return this.enabled && this.edges.has(a); }
   held(a) { return this.enabled && this.keys.has(a); }
-  get aiming() { return this.enabled && (this.mouseAim || this.keys.has('aim') || this.gpAim || this.touch.aimHeld); }
 
   /** Clear per-frame state; call at the end of the frame. */
   endFrame() {

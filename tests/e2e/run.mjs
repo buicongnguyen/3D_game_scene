@@ -105,24 +105,25 @@ async function talk(id) {
   await settle();
 }
 
-async function spark(targetId, from, fireTimes = 1) {
+async function spark(targetId, from) {
+  // stand within reach and press E: Tamo flies over and sparks it
   const t = await qa('Q.target(a)', targetId);
   if (!t) throw new Error(`no target ${targetId}`);
   if (from) await tp(from[0], from[1], from[2]);
   await sleep(300);
   await settle(); // arriving somewhere can trigger a hint dialogue first
   await qa('Q.faceToward(a[0], a[1])', [t[0], t[2]]);
-  await page.mouse.move(640, 360);
-  await page.mouse.down({ button: 'right' });
-  await sleep(700);
-  let lock = null;
-  for (let i = 0; i < 4 && !lock; i++) { lock = (await qa('Q.aimAt(a[0], a[1], a[2])', t)).lock; await sleep(120); lock = (await S()).aimLock; }
-  if (!lock) log(`  (no lock on ${targetId} from ${JSON.stringify((await S()).pos)})`);
-  for (let i = 0; i < fireTimes; i++) { await page.mouse.down({ button: 'left' }); await page.mouse.up({ button: 'left' }); await sleep(500); }
-  await sleep(900);
-  await page.mouse.up({ button: 'right' });
-  await sleep(300);
-  return lock;
+  await sleep(200);
+  const want = `spark:${targetId}`;
+  const s0 = await S();
+  if (s0.focus !== want) log(`  (focus is ${s0.focus}, wanted ${want} at ${JSON.stringify(s0.pos)})`);
+  for (let k = 0; k < 4; k++) {
+    await press('KeyE');
+    await sleep(1300);
+    const s = await S();
+    if (s.focus !== want) break;
+  }
+  await settle();
 }
 
 async function collect(item, want) {
@@ -142,19 +143,12 @@ async function collect(item, want) {
 async function fishOnce() {
   await interact('fishingSpot', [-0.8, 0]);
   const start = Date.now();
-  let holding = false;
-  while (Date.now() - start < 40000) {
+  while (Date.now() - start < 30000) {
     const f = await qa('Q.fish()');
     if (!f) break;
     if (f.phase === 'bite') await press('KeyE');
-    else if (f.phase === 'reel') {
-      const want = f.zone < f.fish + 0.03;
-      if (want && !holding) { await page.keyboard.down('KeyE'); holding = true; }
-      if (!want && holding) { await page.keyboard.up('KeyE'); holding = false; }
-    }
-    await sleep(30);
+    await sleep(60);
   }
-  if (holding) await page.keyboard.up('KeyE');
   await sleep(1200);
   await settle();
 }
@@ -162,41 +156,31 @@ async function fishOnce() {
 async function cook() {
   await interact('shrineHearth', [1.4, 0.8]);
   const start = Date.now();
-  while (Date.now() - start < 40000) {
-    const c = await qa('Q.cook()');
-    if (!c) break;
-    if (c.ring > 0.53 && c.ring < 0.62) { await press('KeyE'); await sleep(250); }
-    await sleep(15);
-  }
+  while (Date.now() - start < 20000 && (await qa('Q.cook()'))) await sleep(200);
   await settle();
 }
 
 async function herd() {
-  const pen = { x: 150, z: -38 };
+  // walk up to each sheep and press E; it trots home by itself
   const start = Date.now();
-  while (Date.now() - start < 240000) {
+  while (Date.now() - start < 120000) {
     const sheep = await qa('Q.sheep()');
-    const free = sheep.filter(s => !s.penned);
-    if (!free.length) break;
-    if (Date.now() - start > 60000 && !herd.dumped) {
-      herd.dumped = true;
-      log('   sheep:', JSON.stringify(sheep.map(s => [+s.x.toFixed(1), +s.z.toFixed(1), s.penned])));
-      await page.evaluate(() => { const g = __STARLINE_QA__.game; g.follow.cutscene({ pos: new g.camera.position.constructor(150, 60, -30), look: new g.camera.position.constructor(150, 20, -38) }, 0.01); });
-      await sleep(600); await shot('herd-top');
-      await page.evaluate(() => __STARLINE_QA__.game.follow.clearCutscene());
+    const todo = sheep.filter(s => !s.penned && !s.homing);
+    if (!todo.length) {
+      if (sheep.every(s => s.penned)) break;
+      await sleep(500);
+      continue;
     }
-    // round up the stray nearest the pen that is still outside the homing radius; homing sheep find the gate
-    const far = free.filter(s => Math.hypot(s.x - pen.x, s.z - pen.z) > 19);
-    if (!far.length) { await tp(pen.x + 26, pen.z - 20); await sleep(700); continue; }
-    far.sort((a, b) => Math.hypot(a.x - pen.x, a.z - pen.z) - Math.hypot(b.x - pen.x, b.z - pen.z));
-    const s = far[0];
-    const gx = pen.x, gz = pen.z;
-    const dx = s.x - gx, dz = s.z - gz, l = Math.hypot(dx, dz) || 1;
-    if (Math.hypot(s.x - gx, s.z - gz) < 3) { await sleep(400); continue; }
-    await tp(s.x + dx / l * 4.2, s.z + dz / l * 4.2);
-    await sleep(160);
-    if (Math.random() < 0.05) log(`   herding: ${sheep.filter(x => x.penned).length}/5 penned, fps ${(await S()).fps}`);
+    const s = todo[0];
+    await tp(s.x + 2, s.z + 1.5);
+    await qa('Q.faceToward(a[0], a[1])', [s.x, s.z]);
+    await sleep(250);
+    const st = await S();
+    if (st.focus !== `sheep${s.i}`) log(`  (focus is ${st.focus}, wanted sheep${s.i})`);
+    await press('KeyE');
+    await sleep(400);
   }
+  log(`   sheep home in ${((Date.now() - start) / 1000).toFixed(0)} s`);
   await settle();
 }
 
@@ -215,7 +199,7 @@ const SOLVE = {
   'p.arrive': async () => {},
   'p.cottage': async () => tp(-55, 140),
   'p.chest': async () => { await tp(-56.8, 142); await qa('Q.faceToward(-57.7, 142)'); await sleep(250); await press('KeyE'); },
-  'p.porch': async () => spark('porchLamp', [-50, 143.5]),
+  'p.porch': async () => spark('porchLamp', [-54, 143]),
   'c1.rin': async () => talk('rin'),
   'c1.ota': async () => talk('ota'),
   'c1.rinPlan': async () => talk('rin'),
@@ -224,13 +208,14 @@ const SOLVE = {
   'c1.cogs': async () => {
     const p = await qa('Q.pickups("cog")');
     for (const c of p.filter(x => x.id !== 'cogCrab')) { await tp(c.pos[0], c.pos[2], c.pos[1] - 0.7); await sleep(600); await settle(); }
-    await spark('crab', [-11, -17]);
+    const crab = await qa('Q.npc(a)', 'crab');
+    await spark('crab', crab ? [crab[0] - 2, crab[2] + 1] : [-11, -17]);
     await settle();
     await sleep(1500);
     await collect('cog', 3);
   },
   'c1.wheel': async () => interact('millAxle', [1.0, 1.4]),
-  'c1.lamp': async () => spark('millLamp', [-14, -38]),
+  'c1.lamp': async () => spark('millLamp', [-1.5, -44]),
   'c1.page': async () => talk('ota'),
   'c2.ferry': async () => interact('ferryWest', [-1.4, 0]),
   'c2.hana': async () => talk('hana'),
@@ -240,7 +225,7 @@ const SOLVE = {
       const bells = await qa('Q.targets("bell")');
       if (!bells.length) break;
       const b = bells[0];
-      await spark(b.id, [b.pos[0] + 5, b.pos[2] + 7]);
+      await spark(b.id, [b.pos[0] + 2, b.pos[2] + 2.5]);
       await settle();
     }
   },
@@ -248,7 +233,7 @@ const SOLVE = {
   'c2.bun': async () => { await interact('ferryEast', [1.4, 0]); await settle(); await talk('genzo'); },
   'c2.key': async () => { await interact('ferryWest', [-1.4, 0]); await settle(); await talk('hana'); },
   'c2.bell': async () => { await interact('towerDoor', [0, 1.2]); await settle(); await sleep(500); await press('KeyE'); },
-  'c2.lamp': async () => { await interact('towerExit', [0, 0]); await settle(); await spark('orchardLamp', [115, 12]); },
+  'c2.lamp': async () => spark('orchardLamp'), // straight from the gallery, right under the lamp
   'c2.page': async () => talk('hana'),
   'c3.fox': async () => tp(85, -86),
   'c3.follow': async () => {
@@ -263,7 +248,7 @@ const SOLVE = {
   'c3.gather': async () => {
     await collect('chestnut', 3);
     await collect('mushroom', 2);
-    await spark('hive', [95, -110]);
+    await spark('hive', [98, -116]);
     await settle();
     await sleep(800);
     await collect('honeycomb', 1);
@@ -271,12 +256,12 @@ const SOLVE = {
   'c3.cook': cook,
   'c3.landslide': async () => tp(-50, -160),
   'c3.bear': async () => interact('bear', [0, 3.0]),
-  'c3.lamp': async () => spark('forestLamp', [64, -142]),
+  'c3.lamp': async () => spark('forestLamp', [71, -146]),
   'c4.shed': async () => talk('genzo'),
   'c4.gather': async () => { await talk('ota'); await talk('hana'); },
   'c4.meeting': async () => tp(-98, 117.5, 16.95),
   'c4.repair': async () => { for (let i = 0; i < 3; i++) { await interact(`beam${i + 1}`, [-1.2, 0]); await settle(); await sleep(400); } },
-  'c4.lamp': async () => spark('viaductLamp', [-12, 120, 15.7]),
+  'c4.lamp': async () => spark('viaductLamp', [-1.4, 120, 15.7]),
   'c4.board': async () => {
     // board, answer Genzo, then hand over to the ride solver as soon as the train is under way
     const p = await qa('Q.npc(a)', 'genzo');
@@ -292,27 +277,16 @@ const SOLVE = {
   },
   'c4.ride': async () => {
     const start = Date.now();
-    let fired = 0;
-    await page.mouse.move(640, 360);
+    let pressed = 0;
     while ((await S()).step === 'c4.ride' && Date.now() - start < 240000) {
       const s = await S();
-      // answer dialogue directly: waiting for the whole queue here would block aiming for the entire ride
+      // answer dialogue directly: waiting for the whole queue here would block the lanterns for the entire ride
       if (s.dlg) { await press('KeyE'); continue; }
-      const ts = (await qa('Q.lanternTargets()')).filter(t => t.d < 28).sort((a, b) => a.d - b.d);
-      if (ts.length && !s.busy) {
-        await page.mouse.down({ button: 'right' });
-        await sleep(350);
-        await qa('Q.aimAt(a[0], a[1], a[2])', ts[0].pos);
-        await sleep(100);
-        await page.mouse.down({ button: 'left' }); await page.mouse.up({ button: 'left' });
-        fired++;
-        await sleep(600);
-        await page.mouse.up({ button: 'right' });
-      }
-      await sleep(250);
+      if (s.focus?.startsWith('spark:lantern') && !s.busy) { await press('KeyE'); pressed++; await sleep(300); }
+      await sleep(120);
     }
     const lit = (await S()).inv?.lanterns || 0;
-    log(`   ride: fired ${fired} sparks, lit ${lit}/8 trackside lanterns`);
+    log(`   ride: pressed E ${pressed} times, lit ${lit}/8 trackside lanterns`);
     if (lit < 6) throw new Error(`only ${lit}/8 lanterns lit during the ride`);
   },
 };

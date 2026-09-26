@@ -1,0 +1,2596 @@
+[
+ {
+  "s": "Mika",
+  "ctx": [
+   "character name (mika)"
+  ]
+ },
+ {
+  "s": "Tamo",
+  "ctx": [
+   "character name (tamo)"
+  ]
+ },
+ {
+  "s": "Genzo",
+  "ctx": [
+   "character name (genzo)"
+  ]
+ },
+ {
+  "s": "Rin",
+  "ctx": [
+   "character name (rin)"
+  ]
+ },
+ {
+  "s": "Grandpa Ōta",
+  "ctx": [
+   "character name (ota)"
+  ]
+ },
+ {
+  "s": "Hana",
+  "ctx": [
+   "character name (hana)"
+  ]
+ },
+ {
+  "s": "Sora",
+  "ctx": [
+   "character name (sora)"
+  ]
+ },
+ {
+  "s": "Old Kiku",
+  "ctx": [
+   "character name (kiku)"
+  ]
+ },
+ {
+  "s": "Villager",
+  "ctx": [
+   "character name (villager)"
+  ]
+ },
+ {
+  "s": "Mill cog",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Fresh trout",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Grilled trout",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Starfin",
+  "ctx": [
+   "inventory item",
+   "fish species"
+  ]
+ },
+ {
+  "s": "Peach",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Peach bun",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Bell-tower key",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Chestnut",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Mushroom",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Honeycomb",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Honey chestnuts",
+  "ctx": [
+   "inventory item",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Timber",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Iron bolts",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
+  "s": "Prologue",
+  "ctx": [
+   "chapter label"
+  ]
+ },
+ {
+  "s": "The Last Train of Winter",
+  "ctx": [
+   "chapter name"
+  ]
+ },
+ {
+  "s": "Chapter One · Spring",
+  "ctx": [
+   "chapter label"
+  ]
+ },
+ {
+  "s": "The Mill Lamp",
+  "ctx": [
+   "chapter name"
+  ]
+ },
+ {
+  "s": "Chapter Two · Summer",
+  "ctx": [
+   "chapter label"
+  ]
+ },
+ {
+  "s": "The Orchard Lamp",
+  "ctx": [
+   "chapter name"
+  ]
+ },
+ {
+  "s": "Chapter Three · Autumn",
+  "ctx": [
+   "chapter label"
+  ]
+ },
+ {
+  "s": "The Forest Lamp",
+  "ctx": [
+   "chapter name"
+  ]
+ },
+ {
+  "s": "Chapter Four · Winter",
+  "ctx": [
+   "chapter label"
+  ]
+ },
+ {
+  "s": "The Viaduct Lamp",
+  "ctx": [
+   "chapter name"
+  ]
+ },
+ {
+  "s": "Epilogue",
+  "ctx": [
+   "chapter label"
+  ]
+ },
+ {
+  "s": "Keep Watch",
+  "ctx": [
+   "chapter name"
+  ]
+ },
+ {
+  "s": "Hoshi Valley, on the last train of winter. Kobo, the little red valley engine, wheezes to a stop.",
+  "ctx": [
+   "dialogue p_arrive, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Hoshi Station! End of the line, and the end of my patience with this cold.",
+  "ctx": [
+   "dialogue p_arrive, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "…You must be Sora's granddaughter. Mika, isn't it?",
+  "ctx": [
+   "dialogue p_arrive, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "That's me. You're Genzo? Grandma's letters said you'd be grumpy.",
+  "ctx": [
+   "dialogue p_arrive, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Hah! She wasn't wrong. You have her eyes, you know. Don't…",
+  "ctx": [
+   "dialogue p_arrive, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "…Well. Here. The key to her cottage. It's up the bluff, by the viaduct.",
+  "ctx": [
+   "dialogue p_arrive, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Mind the fallen fence. And don't go poking at that bridge.",
+  "ctx": [
+   "dialogue p_arrive, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Grandma's cottage… it smells like cedar and old tea.",
+  "ctx": [
+   "dialogue p_cottage, spoken by Mika"
+  ]
+ },
+ {
+  "s": "There was a chest by the porch in all her photos.",
+  "ctx": [
+   "dialogue p_cottage, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Inside the chest: a brass signal lantern with red glass, every letter Mika ever sent, and a note with her name on it.",
+  "ctx": [
+   "dialogue p_chest, spoken by narrator"
+  ]
+ },
+ {
+  "s": "A little gold light has tumbled out of the lantern. It is… snoring?",
+  "ctx": [
+   "dialogue p_chest, spoken by narrator"
+  ]
+ },
+ {
+  "s": "…mmh. Five more minutes, Sora…",
+  "ctx": [
+   "dialogue p_chest, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "!!! You are NOT Sora! Who are you? Where am I? Why is it so BRIGHT?",
+  "ctx": [
+   "dialogue p_chest, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Whoa—you're a… star? A talking star?",
+  "ctx": [
+   "dialogue p_chest, spoken by Mika"
+  ]
+ },
+ {
+  "s": "I'm a hoshibi! A star-fire! I'm Tamo! I think. Probably. It's all very fuzzy.",
+  "ctx": [
+   "dialogue p_chest, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "I remember a lamp… and rain… and then a really long nap.",
+  "ctx": [
+   "dialogue p_chest, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "There's a note from Grandma. Let's read it.",
+  "ctx": [
+   "dialogue p_chest, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Mika — if you are reading this, I am gone, and you have met Tamo. Be patient with him; he is braver than he looks.",
+  "ctx": [
+   "dialogue p_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "The valley has four Star Lamps: Forest, Mill, Orchard and Viaduct. Ten years ago they went dark, and the Star Train stopped coming.",
+  "ctx": [
+   "dialogue p_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "On star-fall night, that train carried the whole valley across the viaduct, together. Bring it home before the stars fall this winter.",
+  "ctx": [
+   "dialogue p_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "Light the four lamps again. Start with the Mill Lamp, down in Kawabe.",
+  "ctx": [
+   "dialogue p_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "And Mika: don't be angry with Genzo. He has carried enough.",
+  "ctx": [
+   "dialogue p_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "…Oh, Grandma. And why would I be angry with Genzo?",
+  "ctx": [
+   "dialogue p_letter, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Sora's… gone? Oh. …Then I'll help you. I'm very good with lamps. I think. Watch this!",
+  "ctx": [
+   "dialogue p_letter, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Walk up to the porch lamp and press E. I'll do the rest. Pfft—like a sneeze, but useful!",
+  "ctx": [
+   "dialogue p_spark_tutorial, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "I did it! Did you see? Pfft! Spark! I am SO good at this.",
+  "ctx": [
+   "dialogue p_spark_done, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "So that's how the lamps get lit. Grandma says to start with the Mill Lamp, down in Kawabe.",
+  "ctx": [
+   "dialogue p_spark_done, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Kawabe! The river village! Let's go! …Which way is Kawabe?",
+  "ctx": [
+   "dialogue p_spark_done, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Hey! You're standing on my fishing spot. Also you're scaring the trout.",
+  "ctx": [
+   "dialogue c1_rin_meet, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Sorry. I'm Mika, Sora's granddaughter. I'm looking for the Mill Lamp keeper.",
+  "ctx": [
+   "dialogue c1_rin_meet, spoken by Mika"
+  ]
+ },
+ {
+  "s": "…Sora's granddaughter? Oh. I'm sorry. The keeper's my grandpa, Ōta. He won't let you near that lamp.",
+  "ctx": [
+   "dialogue c1_rin_meet, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Nobody touches it. Not since the flood. And that was Takamori's fault anyway.",
+  "ctx": [
+   "dialogue c1_rin_meet, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Takamori's fault?",
+  "ctx": [
+   "dialogue c1_rin_meet, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The orchard village, across the river. Their lamp stayed lit when it should've gone dark. Grandpa says so. A lot. Every day.",
+  "ctx": [
+   "dialogue c1_rin_meet, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Go try him. He's at the mill, upriver. Don't say I didn't warn you.",
+  "ctx": [
+   "dialogue c1_rin_meet, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Hm? A city girl in a raincoat. Go home. The mill is closed. The lamp is closed. Everything is closed.",
+  "ctx": [
+   "dialogue c1_ota_refuse, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "I'm Sora's granddaughter. She asked me to light the Mill Lamp.",
+  "ctx": [
+   "dialogue c1_ota_refuse, spoken by Mika"
+  ]
+ },
+ {
+  "s": "…Sora's.",
+  "ctx": [
+   "dialogue c1_ota_refuse, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "The lamp's out on the island, and the drawbridge only comes down when the wheel turns. It's been jammed ten years, three cogs short.",
+  "ctx": [
+   "dialogue c1_ota_refuse, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "And I'm not eating another dinner of pickled radish while strangers fiddle with my mill.",
+  "ctx": [
+   "dialogue c1_ota_refuse, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "(whispering) He's hungry. Hungry people are grumpy. That's science.",
+  "ctx": [
+   "dialogue c1_ota_refuse, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "He said no, right? Classic Grandpa.",
+  "ctx": [
+   "dialogue c1_rin_fish, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Okay. Plan. Grandpa melts for grilled trout. Catch me three fish—any fish, we'll call them trout—and I'll grill them.",
+  "ctx": [
+   "dialogue c1_rin_fish, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Rod's on the dock. Cast, wait for the float to dip, then press E. That's all there is to it.",
+  "ctx": [
+   "dialogue c1_rin_fish, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Three! Not bad for a city girl. Okay, maybe good. Don't let it go to your head.",
+  "ctx": [
+   "dialogue c1_fish_done, spoken by Rin"
+  ]
+ },
+ {
+  "s": "I'll grill these. Take the plate to Grandpa—say it was your idea.",
+  "ctx": [
+   "dialogue c1_fish_done, spoken by Rin"
+  ]
+ },
+ {
+  "s": "…Is that grilled trout?",
+  "ctx": [
+   "dialogue c1_ota_trout, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "…With the salt crust Rin does. Hmph. Sit, sit. No, don't sit. Just… thank you.",
+  "ctx": [
+   "dialogue c1_ota_trout, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Sora's girl. Fine. Find my three cogs and fix my wheel, and we'll talk about the lamp.",
+  "ctx": [
+   "dialogue c1_ota_trout, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "One fell in the reeds by the boathouse. Rin's cousins hid one on top of the crate stack, the rascals. And one…",
+  "ctx": [
+   "dialogue c1_ota_trout, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "…one was stolen by a crab. Do not laugh. That crab is a menace.",
+  "ctx": [
+   "dialogue c1_ota_trout, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "There! On the sandbar! That crab is holding a COG like a tiny shield!",
+  "ctx": [
+   "dialogue c1_crab, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Get close and press E. I'll give it a little boop—just enough to make it drop the cog.",
+  "ctx": [
+   "dialogue c1_crab, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Boop! Ha! It dropped it! It looks very offended. Sorry, Mr. Crab!",
+  "ctx": [
+   "dialogue c1_crab_hit, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Three cogs! Let's fix that wheel!",
+  "ctx": [
+   "dialogue c1_cogs_done, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The cogs slide into place. The old axle groans, shudders… and the great wheel turns.",
+  "ctx": [
+   "dialogue c1_wheel, spoken by narrator"
+  ]
+ },
+ {
+  "s": "…It turns. Ten years, and it turns.",
+  "ctx": [
+   "dialogue c1_wheel, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "There goes the drawbridge. The island's yours, Sora's girl. Light it at sundown—that's when a lamp earns its keep.",
+  "ctx": [
+   "dialogue c1_wheel, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "The lamp! It's… it's so warm. I remember this. I remember lamps.",
+  "ctx": [
+   "dialogue c1_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "I remember… lanterns, and someone shouting. The river was so loud.",
+  "ctx": [
+   "dialogue c1_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Tamo? Are you okay?",
+  "ctx": [
+   "dialogue c1_lamp, spoken by Mika"
+  ]
+ },
+ {
+  "s": "I'm okay. It's just a memory. A loud one.",
+  "ctx": [
+   "dialogue c1_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Look at it. The Mill Lamp, burning again. Sora would…",
+  "ctx": [
+   "dialogue c1_ota_page, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "She left this with me, a page of her journal. I never had the heart to read it. Here. It's yours.",
+  "ctx": [
+   "dialogue c1_ota_page, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Forest, Mill, Orchard, Viaduct. If one lamp goes dark, the next must go dark. A lit lamp says all clear; a dark lamp says stop.",
+  "ctx": [
+   "dialogue c1_ota_page, spoken by Sora"
+  ]
+ },
+ {
+  "s": "The next lamp downriver is Takamori's. Rin will ferry you over. Go and see what they have to say for themselves.",
+  "ctx": [
+   "dialogue c1_ota_page, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Takamori! Look at all those peach trees. The Orchard Lamp must be up there somewhere.",
+  "ctx": [
+   "dialogue c2_arrive, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Kawabe says the flood was Takamori's fault. Let's hear what Takamori says.",
+  "ctx": [
+   "dialogue c2_arrive, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Ooh, the other side of the story. Every story has one. Some have three.",
+  "ctx": [
+   "dialogue c2_arrive, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Oh! A new face! Here, have a peach bun, you look half-starved. Who are you, sweetheart?",
+  "ctx": [
+   "dialogue c2_hana_meet, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Mika. Sora's granddaughter. I came about the Orchard Lamp.",
+  "ctx": [
+   "dialogue c2_hana_meet, spoken by Mika"
+  ]
+ },
+ {
+  "s": "…Sora's. Oh, love. I was so sorry to hear.",
+  "ctx": [
+   "dialogue c2_hana_meet, spoken by Hana"
+  ]
+ },
+ {
+  "s": "And you came across the river… so Ōta sent you. Let me guess what he told you. That it was our fault.",
+  "ctx": [
+   "dialogue c2_hana_meet, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Well, here's the truth: the Mill Lamp stayed lit that night. Kawabe was down here drinking at our festival.",
+  "ctx": [
+   "dialogue c2_hana_meet, spoken by Hana"
+  ]
+ },
+ {
+  "s": "He says exactly the same thing about you.",
+  "ctx": [
+   "dialogue c2_hana_meet, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Does he now. Hmph.",
+  "ctx": [
+   "dialogue c2_hana_meet, spoken by Hana"
+  ]
+ },
+ {
+  "s": "The lamp's up in the bell tower and the key's in my apron. But the summer fair is tomorrow, and it's a disaster.",
+  "ctx": [
+   "dialogue c2_hana_tasks, spoken by Hana"
+  ]
+ },
+ {
+  "s": "My sheep are loose, the crows are at my peaches, and the fair basket down the orchard lane still needs five ripe ones.",
+  "ctx": [
+   "dialogue c2_hana_tasks, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Help me save my fair and the key is yours. Sheep first—walk up to each one and it'll trot home to the pen.",
+  "ctx": [
+   "dialogue c2_hana_tasks, spoken by Hana"
+  ]
+ },
+ {
+  "s": "All five home! You're a natural, Mika. Next on Hana's list: the crows.",
+  "ctx": [
+   "dialogue c2_sheep_done, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The scarecrow bells scare them off, but nobody can reach them. Nobody except a very talented star! Ding-ding!",
+  "ctx": [
+   "dialogue c2_sheep_done, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Listen to that! Not a crow left. Now five ripe peaches for Hana's fair basket.",
+  "ctx": [
+   "dialogue c2_crows_done, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The peaches go into Hana's fair basket. Tucked under its cloth: a warm peach bun and a note.",
+  "ctx": [
+   "dialogue c2_peaches_done, spoken by narrator"
+  ]
+ },
+ {
+  "s": "For Genzo at the station, if you'd be a dear. He used to come by every week. After that night, he stopped coming anywhere.",
+  "ctx": [
+   "dialogue c2_peaches_done, spoken by Hana"
+  ]
+ },
+ {
+  "s": "A peach bun. From Hana.",
+  "ctx": [
+   "dialogue c2_genzo_bun, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "…Take it back. Tell her… tell her I don't deserve Hana's buns.",
+  "ctx": [
+   "dialogue c2_genzo_bun, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Genzo, what happened that night?",
+  "ctx": [
+   "dialogue c2_genzo_bun, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The river happened. Go on, now. Train's leaving.",
+  "ctx": [
+   "dialogue c2_genzo_bun, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "(whispering) He's sad-grumpy. That's different from hungry-grumpy.",
+  "ctx": [
+   "dialogue c2_genzo_bun, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "He wouldn't take it? …No. I suppose he wouldn't.",
+  "ctx": [
+   "dialogue c2_hana_key, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Here's the key, love. Climb up and ring the bell for me—it's been too quiet—then light that lamp.",
+  "ctx": [
+   "dialogue c2_hana_key, spoken by Hana"
+  ]
+ },
+ {
+  "s": "BONG. The old bell rolls across the valley, and every bird in Takamori takes off at once.",
+  "ctx": [
+   "dialogue c2_bell, spoken by narrator"
+  ]
+ },
+ {
+  "s": "That was LOUD! Do it again! No—look, the sun's going down. The lamp's right above us. Press E!",
+  "ctx": [
+   "dialogue c2_bell, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The Orchard Lamp! Oh… another memory.",
+  "ctx": [
+   "dialogue c2_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The train was so bright. It was coming, and coming… and it didn't slow down.",
+  "ctx": [
+   "dialogue c2_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The Star Train? It didn't slow down? But the lamps were supposed to warn it.",
+  "ctx": [
+   "dialogue c2_lamp, spoken by Mika"
+  ]
+ },
+ {
+  "s": "I don't know. It's all fog after that.",
+  "ctx": [
+   "dialogue c2_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "It's lit. It's really lit. Here—Sora gave me this years ago. Said I'd know when to pass it on.",
+  "ctx": [
+   "dialogue c2_hana_page, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Ōta and Hana were both at the festival that night. So was I, until I heard the river.",
+  "ctx": [
+   "dialogue c2_hana_page, spoken by Sora"
+  ]
+ },
+ {
+  "s": "The Forest Lamp is up at the shrine. I've opened the upper orchard gate for you. Nobody's gone up since Old Kiku left.",
+  "ctx": [
+   "dialogue c2_hana_page, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Mika! A fox! A fox in a little red bib! It wants us to follow it!",
+  "ctx": [
+   "dialogue c3_fox, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "That's a shrine bib, and it's stitched 'Kon'. He must be the shrine's fox.",
+  "ctx": [
+   "dialogue c3_fox, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Oh no. Oh no no no. That is the biggest bear in the whole world and it's asleep ON the stairs.",
+  "ctx": [
+   "dialogue c3_bear, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "There's a note on the shrine board. From Old Kiku.",
+  "ctx": [
+   "dialogue c3_bear, spoken by Mika"
+  ]
+ },
+ {
+  "s": "To whoever comes after me: if Ōkuma sleeps on the steps, the forest is still sad. Feed him something sweet.",
+  "ctx": [
+   "dialogue c3_bear, spoken by Old Kiku"
+  ]
+ },
+ {
+  "s": "He is fond of honey chestnuts. Three chestnuts, two mushrooms, one honeycomb, and a little patience at the pot.",
+  "ctx": [
+   "dialogue c3_bear, spoken by Old Kiku"
+  ]
+ },
+ {
+  "s": "A bear recipe! We can do that. Probably. The bees might not like it.",
+  "ctx": [
+   "dialogue c3_bear, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Honey means bees, and bees mean a hive. There's one hanging on a branch east of the chestnuts.",
+  "ctx": [
+   "dialogue c3_hive, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Walk under it and press E. One good spark and it'll drop… and then we RUN.",
+  "ctx": [
+   "dialogue c3_hive, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "It dropped! Grab the honeycomb! Bees! BEES! Run, Mika!",
+  "ctx": [
+   "dialogue c3_hive_hit, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "It smells like autumn in a bowl. If I had a stomach, it would be growling.",
+  "ctx": [
+   "dialogue c3_cooked, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Mika, look across the river. Half that hillside is missing. Can we look? The bear isn't going anywhere.",
+  "ctx": [
+   "dialogue c3_cooked, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Look at this slope. The whole hillside slid into the river.",
+  "ctx": [
+   "dialogue c3_landslide, spoken by Mika"
+  ]
+ },
+ {
+  "s": "It must have dammed the river, then burst. That was the flood. Nobody caused it—not Kawabe, not Takamori.",
+  "ctx": [
+   "dialogue c3_landslide, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Nobody broke the river. The river broke itself.",
+  "ctx": [
+   "dialogue c3_landslide, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Ōkuma sniffs the bowl… opens one enormous eye… and eats the whole thing in a single, happy gulp.",
+  "ctx": [
+   "dialogue c3_bear_fed, spoken by narrator"
+  ]
+ },
+ {
+  "s": "He yawns, stretches, pats Mika very gently on the head, and ambles off into the maples.",
+  "ctx": [
+   "dialogue c3_bear_fed, spoken by narrator"
+  ]
+ },
+ {
+  "s": "He PATTED you! That is the greatest thing that has ever happened!",
+  "ctx": [
+   "dialogue c3_bear_fed, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The Forest Lamp! I remember… I remember the whole night now. Almost.",
+  "ctx": [
+   "dialogue c3_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Sora ran onto the viaduct with me in her lantern. She was waving it. Red. Red. Red.",
+  "ctx": [
+   "dialogue c3_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "And the train was so loud. And in the engine's window… Genzo. I remember Genzo's face.",
+  "ctx": [
+   "dialogue c3_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Genzo was driving the Star Train that night.",
+  "ctx": [
+   "dialogue c3_lamp, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Tucked behind the Forest Lamp, where Old Kiku kept it safe: journal page 3, in Sora's hand.",
+  "ctx": [
+   "dialogue c3_page, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Old Kiku put her lamp out that night. She did her part. The rest of us didn't.",
+  "ctx": [
+   "dialogue c3_page, spoken by Sora"
+  ]
+ },
+ {
+  "s": "Winter. Snow on the rails, and the stars fall tomorrow night.",
+  "ctx": [
+   "dialogue c4_start, spoken by narrator"
+  ]
+ },
+ {
+  "s": "One lamp left, on a bridge with a hole in it. And one person who knows what really happened.",
+  "ctx": [
+   "dialogue c4_start, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Genzo. In this snow he'll be in the engine shed. Let's go.",
+  "ctx": [
+   "dialogue c4_start, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Sora's lantern. And… that little light. I'd know it anywhere.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "You. You were driving. Sora put the Viaduct Lamp out—she scooped me into her lantern—and you didn't stop.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "…",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "The Mill and Orchard Lamps both said 'clear'. I thought the wind had blown hers out.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Then she was on the tracks, swinging that red lantern like a mad thing. I pulled the brake so hard I tore my shoulder.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "We stopped four metres from where the span fell. Forty people. All alive. Because of her.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "She was still on the viaduct when it went. She never walked right again. Because of me.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Kawabe blames Takamori. Takamori blames Kawabe. And I let them. Because it was easier than the truth.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Grandma's letter said not to be angry with you. She said you'd carried enough.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Mika"
+  ]
+ },
+ {
+  "s": "…She would say that. She gave me this before she died. Sealed, for you. I opened it. I've read it every day since.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Genzo, you old snoop, of course you read this. I forgave you before the train stopped rolling. Now forgive yourself.",
+  "ctx": [
+   "dialogue c4_confront, spoken by Sora"
+  ]
+ },
+ {
+  "s": "\"You have to tell them yourself.\"",
+  "ctx": [
+   "dialogue c4_confront: Mika's answer choice"
+  ]
+ },
+ {
+  "s": "\"Grandma forgave you. We'll tell them together.\"",
+  "ctx": [
+   "dialogue c4_confront: Mika's answer choice"
+  ]
+ },
+ {
+  "s": "…Yes. Yes, I do. It should be me. Tonight, on the platform. Bring Ōta and Hana.",
+  "ctx": [
+   "dialogue c4_choice_alone, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Together. …She'd have liked that. Tonight, on the platform. Bring Ōta and Hana.",
+  "ctx": [
+   "dialogue c4_choice_together, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "A meeting? At the station? With HER? …Fine. For Sora's girl. Only for Sora's girl.",
+  "ctx": [
+   "dialogue c4_gather_ota, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Ōta will be there? …Then I'm bringing a very large basket of buns. For courage.",
+  "ctx": [
+   "dialogue c4_gather_hana, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Snow falls on Hoshi Station. Kawabe stands on one side of the platform, Takamori on the other.",
+  "ctx": [
+   "dialogue c4_meeting_alone, spoken by narrator",
+   "dialogue c4_meeting_together, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Everyone. Please. I have something I should have said ten years ago.",
+  "ctx": [
+   "dialogue c4_meeting_alone, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "The Viaduct Lamp was dark that night. Sora put it out, like she was supposed to. I saw it, and I didn't stop.",
+  "ctx": [
+   "dialogue c4_meeting_alone, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "It was my fault. Not Kawabe's. Not Takamori's. Mine.",
+  "ctx": [
+   "dialogue c4_meeting_alone, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Everyone—Genzo and I have something to tell you. About the night the Star Train stopped.",
+  "ctx": [
+   "dialogue c4_meeting_together, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The Viaduct Lamp was dark. Sora did her part. I saw it, and I didn't stop. That's on me.",
+  "ctx": [
+   "dialogue c4_meeting_together, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "And Grandma forgave him. She wrote it down—it's the last page of her journal.",
+  "ctx": [
+   "dialogue c4_meeting_together, spoken by Mika"
+  ]
+ },
+ {
+  "s": "…My Mill Lamp was lit that night because I was at Takamori's festival. Drinking. Not watching.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "And my Orchard Lamp was lit because I was selling buns. Not watching either.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Hana"
+  ]
+ },
+ {
+  "s": "So… nobody's the villain? That's somehow worse.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Rin"
+  ]
+ },
+ {
+  "s": "No! That's BETTER! It means everybody can fix it!",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "…Hana. The mill still has timber seasoned for that span.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "And Takamori's smithy has the bolts. Has had them for ten years.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Then. Tomorrow.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Tomorrow.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Timber from Kawabe, iron from Takamori, and a girl with a hammer. The viaduct, first thing, Mika.",
+  "ctx": [
+   "dialogue c4_meeting_after, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Morning. Genzo is already up on the viaduct with the Kawabe timber and the Takamori iron.",
+  "ctx": [
+   "dialogue c4_repair, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Three new beams across the gap, Mika! You swing the hammer. I'll do the cheering.",
+  "ctx": [
+   "dialogue c4_repair, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Solid as the day she was built. Better, maybe.",
+  "ctx": [
+   "dialogue c4_repaired, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Tonight the stars fall. Go and light that lamp—Kobo doesn't cross until all four say 'clear'.",
+  "ctx": [
+   "dialogue c4_repaired, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Mika. All four. Forest, Mill, Orchard… Viaduct. Look at them.",
+  "ctx": [
+   "dialogue c4_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "I remember everything now. And I remember where I belong.",
+  "ctx": [
+   "dialogue c4_lamp, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "All aboard the Star Train! Kawabe AND Takamori! No pushing! Ōta, that means you!",
+  "ctx": [
+   "dialogue c4_board, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Mika—up front with me. Press E as each trackside lantern comes near. Show them the way home.",
+  "ctx": [
+   "dialogue c4_board, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "The Star Train rolls into Takamori Halt as the sky begins to fall—one star, then ten, then a thousand.",
+  "ctx": [
+   "dialogue c4_finale, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika. The Viaduct Lamp was my lamp, before Sora carried me off to keep me safe. It needs its hoshibi. It needs me.",
+  "ctx": [
+   "dialogue c4_finale, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "You're going back into the lamp.",
+  "ctx": [
+   "dialogue c4_finale, spoken by Mika"
+  ]
+ },
+ {
+  "s": "I'll keep watch. Every night. You keep watch too, okay? That's how lights work. Somebody has to be looking.",
+  "ctx": [
+   "dialogue c4_finale, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "…Okay. I'll keep watch. Goodnight, Tamo.",
+  "ctx": [
+   "dialogue c4_finale, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Spring comes back to Hoshi Valley. The Star Train runs every Sunday now.",
+  "ctx": [
+   "dialogue epilogue, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Kawabe and Takamori share one festival, on the viaduct, and argue about the buns.",
+  "ctx": [
+   "dialogue epilogue, spoken by narrator"
+  ]
+ },
+ {
+  "s": "And Sora's cottage has a new Viaduct Lamp keeper—who waves at a small gold light every night.",
+  "ctx": [
+   "dialogue epilogue, spoken by narrator"
+  ]
+ },
+ {
+  "s": "On Sundays, Genzo tells his passengers the whole story himself. \"First brave thing I did in ten years,\" he says. \"Felt like breathing.\"",
+  "ctx": [
+   "dialogue epilogue_alone, spoken by narrator"
+  ]
+ },
+ {
+  "s": "On Sundays, Genzo saves Mika the seat up front. \"You stood by me on that platform,\" he says. \"She'd be proud of you.\"",
+  "ctx": [
+   "dialogue epilogue_together, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika—if you found all twelve fallen stars, you walked every corner of my valley. Good.",
+  "ctx": [
+   "dialogue sora_last_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "Here is my secret: I never lit the lamps for the train. I lit them so someone would look up.",
+  "ctx": [
+   "dialogue sora_last_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "Keep looking up, my darling. Love, Grandma.",
+  "ctx": [
+   "dialogue sora_last_letter, spoken by Sora"
+  ]
+ },
+ {
+  "s": "Hold on to something! Ferry's leaving!",
+  "ctx": [
+   "dialogue ferry_ride, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Ferry? Not a chance. Grandpa says nobody crosses until the Mill Lamp's lit.",
+  "ctx": [
+   "dialogue ferry_locked, spoken by Rin"
+  ]
+ },
+ {
+  "s": "The orchard gate is locked tight. Hana has the key to everything up here.",
+  "ctx": [
+   "dialogue gate_locked, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The drawbridge is up. It lifts with the mill wheel, and the wheel isn't turning.",
+  "ctx": [
+   "dialogue drawbridge_up, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The bell-tower door is locked. Hana has the key.",
+  "ctx": [
+   "dialogue tower_locked, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "That's where the span fell. Don't even THINK about jumping.",
+  "ctx": [
+   "dialogue gap_blocked, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The bear is asleep across the whole staircase. We can't get past. We need a plan. And maybe a snack.",
+  "ctx": [
+   "dialogue bear_blocked, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Kobo runs better than I do. Don't tell her.",
+  "ctx": [
+   "small talk by Genzo"
+  ]
+ },
+ {
+  "s": "Mind the tracks, girl.",
+  "ctx": [
+   "small talk by Genzo"
+  ]
+ },
+ {
+  "s": "Sora brought me tea every Friday. Flask tea isn't the same.",
+  "ctx": [
+   "small talk by Genzo"
+  ]
+ },
+ {
+  "s": "Cold on the platform, warm in the cab. That's railways.",
+  "ctx": [
+   "small talk by Genzo"
+  ]
+ },
+ {
+  "s": "You walk like her, you know. Same stubborn chin.",
+  "ctx": [
+   "small talk by Genzo"
+  ]
+ },
+ {
+  "s": "The trout bite best at dusk. The starfin only bites AT dusk.",
+  "ctx": [
+   "small talk by Rin"
+  ]
+ },
+ {
+  "s": "Grandpa's bark is worse than his bite. His bite is also bad.",
+  "ctx": [
+   "small talk by Rin"
+  ]
+ },
+ {
+  "s": "Takamori kids have bikes. We have boats. Boats are better.",
+  "ctx": [
+   "small talk by Rin"
+  ]
+ },
+ {
+  "s": "I tried to catch the golden ayu once. Once.",
+  "ctx": [
+   "small talk by Rin"
+  ]
+ },
+ {
+  "s": "Race you to the dock!",
+  "ctx": [
+   "small talk by Rin"
+  ]
+ },
+ {
+  "s": "Hmph.",
+  "ctx": [
+   "small talk by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Ten years of radish. A man doesn't forget a thing like that.",
+  "ctx": [
+   "small talk by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "That Hana woman makes a decent bun. Don't repeat that.",
+  "ctx": [
+   "small talk by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Rin thinks I don't know she feeds that crab. I know.",
+  "ctx": [
+   "small talk by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Keep watch, girl. That's the whole job.",
+  "ctx": [
+   "small talk by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Have a bun! No? Have two!",
+  "ctx": [
+   "small talk by Hana"
+  ]
+ },
+ {
+  "s": "Flour in my hair, flour in my tea. Flour is a way of life, love.",
+  "ctx": [
+   "small talk by Hana"
+  ]
+ },
+ {
+  "s": "Ōta used to come to my stall every festival. Three buns. Always three.",
+  "ctx": [
+   "small talk by Hana"
+  ]
+ },
+ {
+  "s": "My oven's older than the viaduct.",
+  "ctx": [
+   "small talk by Hana"
+  ]
+ },
+ {
+  "s": "A bun is just a hug you can eat, sweetheart.",
+  "ctx": [
+   "small talk by Hana"
+  ]
+ },
+ {
+  "s": "Hoshi Valley's small. Everybody knows everybody's business.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "They say the stars fall in winter.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "Sora's granddaughter! You've got her walk.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "The Star Train! I remember the Star Train.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "Mind the crows.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "Page 1 · The Relay",
+  "ctx": [
+   "Sora's journal page title"
+  ]
+ },
+ {
+  "s": "Forest, Mill, Orchard, Viaduct. The four lamps watch the river. If one goes dark, the next must go dark. A lit lamp says all is clear; a dark lamp says stop. — S.",
+  "ctx": [
+   "Sora's journal page (her handwriting)"
+  ]
+ },
+ {
+  "s": "Page 2 · The Festival",
+  "ctx": [
+   "Sora's journal page title"
+  ]
+ },
+ {
+  "s": "Ōta and Hana were both at the festival that night. So was I, until I heard the river. The river sounds different when it is angry. — S.",
+  "ctx": [
+   "Sora's journal page (her handwriting)"
+  ]
+ },
+ {
+  "s": "Page 3 · Kiku",
+  "ctx": [
+   "Sora's journal page title"
+  ]
+ },
+ {
+  "s": "Old Kiku put her lamp out that night. She did her part. The rest of us did not. I will not write down who was driving. He knows. — S.",
+  "ctx": [
+   "Sora's journal page (her handwriting)"
+  ]
+ },
+ {
+  "s": "Page 4 · Forgiveness",
+  "ctx": [
+   "Sora's journal page title"
+  ]
+ },
+ {
+  "s": "Genzo, you old snoop, of course you read this. I forgave you before the train stopped rolling. Now forgive yourself, and give this page to Mika. With a bun. — S.",
+  "ctx": [
+   "Sora's journal page (her handwriting)"
+  ]
+ },
+ {
+  "s": "One star for the river,",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "one for the mill,",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "one for the orchard",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "asleep on the hill,",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "one for the forest,",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "one for the bear,",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "one for the train",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "that carried us there,",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "one for the watchers",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "who stay up all night,",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "and one for the one",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "who looks up at the light.",
+  "ctx": [
+   "Sora's star poem, one line (12 lines rhyme in pairs)"
+  ]
+ },
+ {
+  "s": "Rainbow trout",
+  "ctx": [
+   "fish species"
+  ]
+ },
+ {
+  "s": "River char",
+  "ctx": [
+   "fish species"
+  ]
+ },
+ {
+  "s": "Mill koi",
+  "ctx": [
+   "fish species"
+  ]
+ },
+ {
+  "s": "Arrive in Hoshi Valley",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Walk up the bluff to Sora's cottage",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Open Sora's chest on the porch",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Walk up to the porch lamp and press E",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Find the Mill Lamp keeper in Kawabe",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Talk to Grandpa Ōta at the mill",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Go back to Rin at the dock",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Catch three fish from the dock ({fish}/3)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Bring the grilled trout to Grandpa Ōta",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Find the three lost mill cogs ({cog}/3)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Repair the mill wheel",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Cross to the island and light the Mill Lamp",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Return to Grandpa Ōta",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Take Rin's ferry across the river",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Find the Orchard Lamp keeper in Takamori",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Send the runaway sheep home to the pen ({sheep}/5)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Ring the scarecrow bells to scare off the crows ({bells}/5)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Pick five ripe peaches ({peach}/5)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Deliver Hana's peach bun to Genzo at the station",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Tell Hana what Genzo said",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Climb the bell tower and ring the bell",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Light the Orchard Lamp on the bell tower",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Return to Hana at the bakery",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Go through the upper orchard gate",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Follow Kon the fox to the shrine",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Gather 3 chestnuts ({chestnut}/3), 2 mushrooms ({mushroom}/2) and a honeycomb ({honeycomb}/1)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Cook honey chestnuts at the shrine hearth",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Cross the stepping stones and look at the landslide scar",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Feed Ōkuma the honey chestnuts",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Climb the shrine steps and light the Forest Lamp",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Find Genzo at the engine shed",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Invite Grandpa Ōta and Hana to the station",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Meet everyone on the station platform",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Set the three new beams on the viaduct ({beams}/3)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Walk to the Viaduct Lamp and light it",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Board the Star Train at Hoshi Station",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Light the trackside lanterns from the Star Train ({lanterns}/8)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Explore Hoshi Valley — find all 12 Fallen Stars ({stars}/12)",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "West portal cutting",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Behind the cottage",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Kawabe south lane",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Behind the mill",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "West woods",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Landslide ledge",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Takamori east edge",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Orchard corner",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "By the halt",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Beehive clearing",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Upper river bend",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Under the viaduct, east bank",
+  "ctx": [
+   "where a fallen star hides (journal hint)"
+  ]
+ },
+ {
+  "s": "Forest Lamp",
+  "ctx": [
+   "Star Lamp name"
+  ]
+ },
+ {
+  "s": "Mill Lamp",
+  "ctx": [
+   "Star Lamp name"
+  ]
+ },
+ {
+  "s": "Orchard Lamp",
+  "ctx": [
+   "Star Lamp name"
+  ]
+ },
+ {
+  "s": "Viaduct Lamp",
+  "ctx": [
+   "Star Lamp name"
+  ]
+ },
+ {
+  "s": "Open Sora's chest",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Fish",
+  "ctx": [
+   "UI (src/game/director.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Fit the cogs and repair the wheel",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Look at the drawbridge",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Take the ferry across",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Take the ferry back",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Climb the bell tower",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Go back down",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Ring the bell",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "The gate is locked",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Cook honey chestnuts",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Offer the honey chestnuts",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Look at the sleeping bear",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Look at the broken span",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Set beam {n}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Talk to the villager",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Talk to {name}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Light the porch lamp",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Light the Mill Lamp",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Light the Orchard Lamp",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Light the Forest Lamp",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Light the Viaduct Lamp",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Ring the scarecrow bell",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Pick up the fallen star",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Pick up: {item}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Journal page added — press J to read",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Received: {item}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Caught a {fish}!",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Fallen Star {n}/12",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Rin's ferry now crosses the river",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Boop the crab",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Send the sheep home",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Knock down the beehive",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Can't save during a scene — try again in a moment",
+  "ctx": [
+   "UI (src/game/game.js)"
+  ]
+ },
+ {
+  "s": "Shaping the valley",
+  "ctx": [
+   "loading screen"
+  ]
+ },
+ {
+  "s": "Unpacking Blender models",
+  "ctx": [
+   "loading screen"
+  ]
+ },
+ {
+  "s": "Planting the forests",
+  "ctx": [
+   "loading screen"
+  ]
+ },
+ {
+  "s": "Waking Mika",
+  "ctx": [
+   "loading screen"
+  ]
+ },
+ {
+  "s": "Ready",
+  "ctx": [
+   "loading screen"
+  ]
+ },
+ {
+  "s": "Light the trackside lantern",
+  "ctx": [
+   "UI (src/game/scenes.js)"
+  ]
+ },
+ {
+  "s": "Starline needs WebGL 2. Please try a recent Chrome, Edge, Firefox or Safari.",
+  "ctx": [
+   "UI (src/main.js)"
+  ]
+ },
+ {
+  "s": "Act",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Left thumb moves · drag the right side to look · Act does anything nearby",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "WASD / stick to move · Mouse drag to look · E to do anything nearby · Space to jump or swim up · C to dive",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Start a new game? Your saved progress will be replaced.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Close",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Next",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Graphics setting saved — reload to apply fully",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Page {n}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Not found yet.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "{n} / 12 found.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Sora left one more letter…",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Each star holds a line of Sora's poem.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "(bites at dusk)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Left thumb: move. Drag the right side: look.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Talk, pick up, light lamps — anything nearby",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Jump",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Jump, or swim up in the water",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Dive",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Dive while swimming",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Move",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Run faster",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Next / back in conversations",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Mouse",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Drag to look · wheel to zoom",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Journal",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text",
+   "button label (screen readers)"
+  ]
+ },
+ {
+  "s": "Pause",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Gamepad supported",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Trackside lanterns lit {n} / {total}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Wait for the float to dip…",
+  "ctx": [
+   "fishing minigame title"
+  ]
+ },
+ {
+  "s": "A bite! Press E!",
+  "ctx": [
+   "fishing minigame title"
+  ]
+ },
+ {
+  "s": "Caught!",
+  "ctx": [
+   "fishing minigame title"
+  ]
+ },
+ {
+  "s": "Light the way home",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Hoshi Valley",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Light the four Star Lamps. Bring the Star Train home.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Continue",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "New Game",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Settings",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Credits",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Back",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Skip",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Mika's Journal",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Story",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sora's Pages",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Fallen Stars",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Controls",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Paused",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Resume",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Save & return to title",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Language",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Graphics",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Low (phones)",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Medium",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "High",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Camera sensitivity",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Invert camera Y",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Music",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sound effects",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Show frame rate",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "A story about a railway, two villages, a tiny fallen star and the night everybody looked away.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Design, story, code & Blender art",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Built with",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "For everyone who keeps a light on for someone.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Press E (or tap) when the float dips",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Stirring…",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Press E as each lantern comes near",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Menu",
+  "ctx": [
+   "button label (screen readers)"
+  ]
+ }
+]

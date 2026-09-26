@@ -22,35 +22,50 @@ together, and how the game is verified. The story itself is in
 2. **Help them with a problem, through a mechanic.**
    - Chapter 1: fishing, then finding three cogs through exploring, climbing
      crates and booping a crab.
-   - Chapter 2: herding sheep, a spark gallery and a delivery.
+   - Chapter 2: sending the runaway sheep home, ringing the scarecrow bells and a delivery.
    - Chapter 3: following the fox, gathering, cooking, and the stepping stones.
    - Chapter 4: a confession with a choice, the village meeting, repairing the
      viaduct, and the on-rails lantern ride.
-3. **Light the lamp at dusk.** A time-lapse brings on dusk, then the spark shot
-   and a lamp-lighting cutscene. Tamo remembers a piece of the night (story
+3. **Light the lamp at dusk.** A time-lapse brings on dusk; Mika walks up and
+   presses E, Tamo flies over and sparks it, and a lamp-lighting cutscene plays. Tamo remembers a piece of the night (story
    reveal), and Mika receives a journal page (evidence).
 4. **Unlock the next region** (ferry, orchard gate, shrine stairs, viaduct).
-   Tamo also grows brighter, and his spark reaches further.
+   Tamo also grows brighter.
 
 ### Pacing and friction
 
-- **No fail states.** Fishing can miss and cooking can be mashed, and all of
-  them eventually succeed.
-- **Deep water is forgiving:** it returns Mika to her last safe footing.
+- **One button.** Everything is "walk up and press E": a single interaction
+  system ranks what is in reach (story-critical things first) and shows one
+  prompt. Spark targets are interactables with a reach; Tamo flies to them by
+  himself. Fishing is one press while the float is under; cooking is one press
+  and a short progress bar; each sheep takes one press and trots home.
+- **No fail states.** A missed bite just comes round again; a sheep that gets
+  stuck on its way home is found in the pen.
+- **Water is a place, not a wall.** Mika swims when the river is deeper than
+  1.15 m: she floats with her head out, strokes along (the current drifts her
+  gently downstream), dives with C and climbs out onto banks and docks with
+  Space. Under the surface the camera switches to a tinted, fogged, softly
+  wobbling view with a Snell's-window sky, bubbles and muffled sound. Swimming to
+  Takamori's bank also counts as the chapter 2 crossing.
 - **Guidance:**
   - An objective card with live counters (for example *Mill cogs 2/3*).
   - An on-screen marker that clamps to the screen edge.
   - A context prompt ("E · Talk to Rin").
   - Blocked routes explain themselves. Tamo comments on the raised drawbridge,
     the locked gate and the sleeping bear.
-- **Herding:** sheep within 22 m of the pen trot home by themselves, so the
-  player's job is to round up the strays.
-- **Aim assist:** the spark locks onto targets within an angular cone. It
-  requires line of sight, and the reticle shows the target's name.
+- **Conversations are paged.** Up to three lines per page (two on phones),
+  chat-style with portraits; E/Next turns the page, Q/Back re-reads, Skip jumps to
+  the end but never past a choice.
+- **Localisation.** English strings are the keys (gettext style): `tx()` looks
+  them up in `src/i18n/{vi,ko,ja}.json`. `npm run i18n:extract` collects every
+  player-facing string (story data, `tx()`/`N_()` literals, `data-i18n` markup)
+  into `source.json`; `tests/i18n.test.mjs` fails if any pack misses a string or
+  changes a `{placeholder}`. Each script gets its own rounded typeface.
 
 ### Progression gates (geography is the lock)
 
-- The river blocks the east bank until Rin's ferry opens (end of chapter 1).
+- The story sends Mika over the river on Rin's ferry (chapter 2); she can also
+  swim, and landing on the east bank counts as the crossing.
 - The orchard fence and gate block the forest from Takamori until chapter 2 ends.
 - Ōkuma the bear sleeps across the shrine stairs until chapter 3's dish.
 - The broken viaduct span blocks the line east until chapter 4's repair.
@@ -74,11 +89,12 @@ src/engine/        renderer (quality tiers, HDR composer, bloom, grade), assets 
 src/world/         layout (pure data), heightfield (pure), terrain + splat, water, sky, grass,
                    scatter (pure) + foliage (instancing), structures, railway, colliders (pure),
                    paddies, seasons (pure)
-src/actors/        player (controller + animation states), camera, animator, npc, tamo, animals (+ herding)
+src/actors/        player (controller, swimming, animation states), camera, animator, npc, tamo, animals (+ sheep homing)
 src/game/          story (script as data), quest (pure engine), director (world binding),
                    scenes (cutscenes), minigames (pure)
-src/ui/            ui.js + style.css
-src/fx/            particles, weather, fireworks, meteors
+src/ui/            ui.js (HUD, paged dialogue, journal, language picker) + style.css
+src/i18n/          i18n.js (tx, languages, fonts) + vi/ko/ja.json packs + source.json
+src/fx/            particles, weather, fireworks, meteors, underwater (fog, grade, bubbles)
 ```
 
 ### Key decisions
@@ -128,7 +144,9 @@ library still loads with every clip and node.
 | Layer | Command | What it proves |
 |---|---|---|
 | Story engine | `node --test tests/story.test.mjs` | The whole campaign completes for both choices; saves resume mid-game; early pickups count; every dialogue exists; lines fit a phone box. |
-| Minigames | `tests/minigames.test.mjs` | A skilled bot catches most fish and an idle player never does; cooking can't fail; sheep can be herded into the pen. |
+| Minigames | `tests/minigames.test.mjs` | Fishing is one press on the bite and a missed bite comes back; cooking finishes by itself; a sheep sent home reaches the pen from anywhere; grazing sheep let Mika walk up. |
+| Dialogue | `tests/dialogue.test.mjs` | Pages keep every line in order, hold at most three lines (two on phones), cut presses by more than 40 %, and keep a choice with its question. |
+| Languages | `tests/i18n.test.mjs` | Vietnamese, Korean and Japanese packs cover every player-facing string and keep every `{placeholder}`. |
 | World | `tests/world.test.mjs` | Buildings stand on dry, level ground; the river is deep where it should be; stepping stones are a jump apart; paths avoid buildings; colliders behave; scatter is deterministic; nights are deep blue. |
 | Assets | `tests/assets.test.mjs`, `tests/pack.test.mjs` | Every one of the ~150 models meets its contract; the packed library fits the budget. |
-| Browser | `npm run test:e2e` | An autopilot plays the entire story on a GPU browser through real keyboard and mouse input. It uses QA hooks only to read state, teleport and point the camera. It fails on any page error or stuck step. `--from=<step>` resumes at any step through the pure engine. |
+| Browser | `npm run test:e2e` | An autopilot plays the entire story on a GPU browser through real keyboard and mouse input. It uses QA hooks only to read state and teleport; every action is a real key press (E near things, E on the bite, E as lanterns pass). It fails on any page error or stuck step. `--from=<step>` resumes at any step through the pure engine. |

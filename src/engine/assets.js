@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { separateCoplanar } from './coplanar.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
 export const GLOW_MATERIALS = ['Window glow', 'Lamp glass', 'Lamp star', 'Lantern glow', 'Street glow', 'Porch glass', 'Headlamp glass', 'Tamo glow', 'Garland glow'];
@@ -59,6 +60,13 @@ export class Assets {
     });
     gltf.scene.userData.rigged = gltf.animations.length > 0;
     gltf.scene.userData.name = name;
+    // Details modelled flush on larger faces (beams in plaster, trims, panes, coach panels) z-fight and
+    // shimmer whenever the camera moves: nudge them a few millimetres proud of the face they sit on.
+    if (!gltf.scene.userData.rigged) {
+      const t0 = performance.now();
+      try { gltf.scene.userData.coplanarFixed = separateCoplanar(gltf.scene); } catch (e) { console.warn(`coplanar fix skipped for ${name}`, e); }
+      this.coplanarMs = (this.coplanarMs || 0) + performance.now() - t0;
+    }
   }
 
   /** Synchronous clone of a loaded model (null if it failed or is not loaded yet). */

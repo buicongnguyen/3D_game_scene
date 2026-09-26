@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { N_ } from '../i18n/i18n.js';
 import { STOPS } from '../world/railway.js';
 import { rail, RAIL_Y, DECK_Y, PLACES, FERRY, river, VIADUCT } from '../world/layout.js';
 
@@ -59,14 +60,11 @@ export class Scenes {
     await ui.fade(false, 1600);
     this.d.audio.whistle();
     await this.shot(V(-54, 30, 150), V(-120, 18, 108), 3.2);
-    // follow the train in
+    // follow the train in: one continuous, damped tracking shot
+    const loco = r.cars[0].obj.position;
+    g.follow.track(() => loco.clone().add(V(-2, 5.5, 16)), () => loco.clone().add(V(-6, 1.6, 0)), 3);
     const t0 = performance.now();
-    while (r.train.target !== null && performance.now() - t0 < 22000) {
-      const loco = r.cars[0].obj.position;
-      const cam = loco.clone().add(V(-2, 5.5, 16));
-      g.follow.cutscene({ pos: cam, look: loco.clone().add(V(-6, 1.6, 0)) }, 0.35);
-      await wait(120);
-    }
+    while (r.train.target !== null && performance.now() - t0 < 22000) await wait(100);
     this.d.audio.whistle();
     g.player.root.visible = true;
     g.player.teleport(-94.5, 115.2, undefined, Math.PI / 2);
@@ -215,7 +213,7 @@ export class Scenes {
     await d.ui.fade(false, 900);
     d.audio.whistle();
     r.goTo(STOPS.halt, 6.5);
-    this.d.busy--;           // let the player aim during the ride
+    this.d.busy--;           // let the player light lanterns (E) during the ride
     g.player.locked = false;
     r.onArrive = () => { r.onArrive = null; this.rideDone = true; };
     this.rideDone = false;
@@ -252,13 +250,13 @@ export class Scenes {
       const light = g.lights.add({ pos: head, intensity: () => (L.lit ? 30 : 0), range: 16 });
       L.light = light;
       this.lanterns.push(L);
-      d.target(`lantern${i}`, head, 'Trackside lantern', () => d.step('c4.ride') && !L.lit, () => {
+      d.target(`lantern${i}`, head, N_('Light the trackside lantern'), () => d.step('c4.ride') && !L.lit, () => {
         L.lit = true;
         obj.traverse(o => { if (o.isMesh) for (const m of [o.material].flat()) if (m.name === 'Street glow') { m.emissive = new THREE.Color('#ffb13d'); m.emissiveIntensity = 4; } });
         d.fx.lampBloom(head);
         d.audio.chime(i % 6);
         d.event({ type: 'count', item: 'lanterns' });
-      });
+      }, { r: 11, vy: 8, prio: 2 });
     }
   }
 

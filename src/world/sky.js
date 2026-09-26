@@ -8,7 +8,12 @@ const SKY_VS = /* glsl */`
   void main() {
     vDir = position;
     vec4 p = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-    gl_Position = p.xyww; // far plane: drawn last, only where nothing else is
+    // far plane: drawn last, only where nothing else is
+    #ifdef USE_REVERSED_DEPTH_BUFFER
+      gl_Position = vec4(p.xy, 0.0, p.w);
+    #else
+      gl_Position = p.xyww;
+    #endif
   }`;
 
 const SKY_FS = /* glsl */`
@@ -170,10 +175,12 @@ export class Sky {
     this.scene.fog.density = 0.0012 + L.night * 0.0006;
     this.scene.environmentIntensity = L.env;
 
-    // regenerate the environment map when the light changes noticeably
-    const key = `${season}:${Math.round(hour * 4)}`;
+    // Regenerate the environment map as the light changes. Small, frequent steps (5 game minutes, at most
+    // ~8 per second during a timelapse) instead of 15-minute steps every 0.6 s, which made glossy paint,
+    // glass and the paddy mirrors jump in brightness.
+    const key = `${season}:${Math.round(hour * 12)}`;
     const now = performance.now();
-    if (key !== this.lastEnvKey && (now - (this.lastEnvAt || 0) > 600 || key.split(':')[0] !== this.lastEnvKey.split(':')[0])) {
+    if (key !== this.lastEnvKey && (now - (this.lastEnvAt || 0) > 120 || key.split(':')[0] !== this.lastEnvKey.split(':')[0])) {
       this.lastEnvAt = now;
       this.lastEnvKey = key;
       this.envSky.material.uniforms.uStars.value = 0;

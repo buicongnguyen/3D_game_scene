@@ -16,10 +16,11 @@ function riceGeometry() {
   let base = 0;
   for (let b = 0; b < 7; b++) {
     const a = (b / 7) * Math.PI * 2 + b * 0.37;
-    const h = 0.45 + (b % 3) * 0.08, w = 0.02, lean = 0.12 + (b % 2) * 0.08;
+    // leaves ~1 px wide at 15 m: a little wider, with a blunter taper, so swaying rice does not sparkle
+    const h = 0.45 + (b % 3) * 0.08, w = 0.03, lean = 0.12 + (b % 2) * 0.08;
     const dx = Math.cos(a), dz = Math.sin(a), sx = -dz, sz = dx;
     for (let s = 0; s <= 3; s++) {
-      const t = s / 3, ww = w * (1 - t * 0.85);
+      const t = s / 3, ww = w * (1 - t * 0.7);
       const cx = dx * lean * t * t, cz = dz * lean * t * t, cy = h * t;
       pos.push(cx - sx * ww, cy, cz - sz * ww, cx + sx * ww, cy, cz + sz * ww);
       uv.push(0, t, 1, t);

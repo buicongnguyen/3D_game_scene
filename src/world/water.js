@@ -42,6 +42,22 @@ const WATER_FS = /* glsl */`
   void main() {
     float depth = vWPos.y - ground(vWPos.xz);
     if (depth < -0.05) discard;
+    if (cameraPosition.y < vWPos.y) {
+      // underside: the sky shows through a bright window overhead; outside it the surface mirrors the depths
+      vec3 Vu = normalize(vWPos - cameraPosition);
+      vec2 rip = texture2D(uNoise, vWPos.xz * 0.21 + vFlow * uTime * 0.25).rg - 0.5;
+      float up = clamp(Vu.y + (rip.x + rip.y) * 0.08, 0.0, 1.0);
+      float win = smoothstep(0.6, 0.78, up);
+      vec3 skyc = mix(uHorizon, uZenith, 0.55) * (1.25 - uNight * 0.6) + uSunColor * uSunVis * 0.35;
+      vec3 deepc = mix(uDeep, uShallow, 0.35) * 0.75;
+      float glint = pow(max(0.0, texture2D(uNoise, vWPos.xz * 0.6 - vec2(uTime * 0.08, uTime * 0.05)).b - 0.55), 2.0) * 6.0;
+      vec3 colU = mix(deepc, skyc, win) + skyc * glint * win * (1.0 - uNight);
+      gl_FragColor = vec4(colU, mix(0.9, 0.7, win));
+      #include <tonemapping_fragment>
+      #include <colorspace_fragment>
+      #include <fog_fragment>
+      return;
+    }
     vec2 flow = vFlow;
     float speed = 0.55;
     float ph0 = fract(uTime * 0.18), ph1 = fract(uTime * 0.18 + 0.5);
@@ -104,7 +120,7 @@ export class Water {
     this.uniforms.uNoise.value = noiseTex;
     this.material = new THREE.ShaderMaterial({
       uniforms: this.uniforms, vertexShader: WATER_VS, fragmentShader: WATER_FS,
-      transparent: true, depthWrite: false, fog: true,
+      transparent: true, depthWrite: false, fog: true, side: THREE.DoubleSide,
     });
     this.mesh = new THREE.Mesh(this.buildStrip(), this.material);
     this.mesh.renderOrder = 2;

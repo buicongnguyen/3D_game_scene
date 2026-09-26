@@ -9,7 +9,10 @@
     "build": "vite build && node scripts/pack-models.mjs dist/models",
     "preview": "vite preview",
     "test": "node --test tests/*.test.mjs",
-    "test:e2e": "node tests/e2e/run.mjs"
+    "test:e2e": "node tests/e2e/run.mjs",
+    "story:md": "node scripts/story-md.mjs",
+    "i18n:extract": "node scripts/i18n-extract.mjs",
+    "i18n:check": "node scripts/i18n-extract.mjs --check"
   },
   "dependencies": {
     "three": "0.180.0"

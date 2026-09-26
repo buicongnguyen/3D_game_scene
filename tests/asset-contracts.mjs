@@ -10,7 +10,7 @@ const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer'];
 export const CONTRACTS = {
   // ---------------------------------------------------------------- characters
   mika: { family: 'characters', tris: 16000, nodes: [...HUMAN_BONES, 'scarf_1'],
-    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave'] },
+    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread'] },
   genzo: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Sad', 'ArmsCrossed', 'Bow'] },
   rin: { family: 'characters', tris: 12000, nodes: [...HUMAN_BONES, 'hat'], clips: ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cast', 'Reel', 'Pole', 'Cheer'] },
   ota: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Bow', 'Sad'] },

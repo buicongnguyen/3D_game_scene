@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Quest } from './quest.js';
-import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS } from './story.js';
+import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST } from './story.js';
+import { tx, N_ } from '../i18n/i18n.js';
 import { NPC } from '../actors/npc.js';
 import { Tamo } from '../actors/tamo.js';
 import { Wildlife } from '../actors/animals.js';
@@ -111,43 +112,44 @@ export class Director {
     const at = (obj, fallback) => { if (!obj) return fallback; const p = new THREE.Vector3(); obj.getWorldPosition(p); return p; };
     // interactables
     const chestPos = at(S.nodes.chest, V(-55.6, 16.6, 138.4));
-    this.interact('chest', chestPos, 'Open Sora\'s chest', () => this.step('p.chest'), () => this.event({ type: 'interact', target: 'chest' }), 2.4);
-    this.interact('fishingSpot', V(4.2, 0.9, 30), 'Fish', () => this.q.unlocked('ferry') || this.q.has('canFish'), () => this.startFishing(), 2.6);
+    this.interact('chest', chestPos, N_('Open Sora\'s chest'), () => this.step('p.chest'), () => this.event({ type: 'interact', target: 'chest' }), 2.4);
+    this.interact('fishingSpot', V(4.2, 0.9, 30), N_('Fish'), () => this.q.unlocked('ferry') || this.q.has('canFish'), () => this.startFishing(), 2.6);
     const mill = S.byId.get('mill');
-    this.interact('millAxle', V(mill.x + 4.2, mill.y + 1, mill.z + 2.2), 'Fit the cogs and repair the wheel', () => this.step('c1.wheel'), () => this.event({ type: 'interact', target: 'millAxle' }), 3.2);
-    this.interact('drawbridgeUp', V(-9.8, 1.2, -45), 'Look at the drawbridge', () => !this.q.unlocked('drawbridge'), () => this.say('drawbridge_up'), 2.4);
-    this.interact('ferryWest', V(-0.6, 0.9, 30), 'Take the ferry across', () => this.npcs.rin.visible && this.game.player.pos.x < 12, () => this.ferry('east'), 2.4);
-    this.interact('ferryEast', V(24.2, 0.9, 30), 'Take the ferry back', () => this.game.player.pos.x > 12, () => this.ferry('west'), 2.4);
+    this.interact('millAxle', V(mill.x + 4.2, mill.y + 1, mill.z + 2.2), N_('Fit the cogs and repair the wheel'), () => this.step('c1.wheel'), () => this.event({ type: 'interact', target: 'millAxle' }), 3.2);
+    this.interact('drawbridgeUp', V(-9.8, 1.2, -45), N_('Look at the drawbridge'), () => !this.q.unlocked('drawbridge'), () => this.say('drawbridge_up'), 2.4);
+    this.interact('ferryWest', V(-0.6, 0.9, 30), N_('Take the ferry across'), () => this.npcs.rin.visible && this.game.player.pos.x < 12, () => this.ferry('east'), 2.4);
+    this.interact('ferryEast', V(24.2, 0.9, 30), N_('Take the ferry back'), () => this.game.player.pos.x > 12, () => this.ferry('west'), 2.4);
     const gal = this.game.structures.gallery || { x: 115, z: -4, y: 31.92 };
-    this.interact('towerDoor', V(gal.x, gal.y - 10.6, gal.z + 2.8), 'Climb the bell tower', () => this.game.player.pos.y < gal.y - 3, () => this.tower(true), 2.2);
-    this.interact('towerExit', V(gal.x, gal.y + 0.4, gal.z + 2.0), 'Go back down', () => this.game.player.pos.y > gal.y - 1, () => this.tower(false), 1.4, null, 1);
-    this.interact('bell', V(gal.x, gal.y + 0.8, gal.z), 'Ring the bell', () => this.game.player.pos.y > gal.y - 1 && this.step('c2.bell'), () => this.ringBell(), 3.6, null, 2);
-    this.interact('orchardGate', V(85, 22, -79), 'The gate is locked', () => !this.q.unlocked('orchardGate'), () => this.say('gate_locked'), 3);
-    this.interact('shrineHearth', V(PLACES.forestHearth.x, 12.3, PLACES.forestHearth.z), 'Cook honey chestnuts', () => this.step('c3.cook'), () => this.startCooking(), 2.6);
-    this.interact('bear', V(PLACES.bearSpot.x, 12.6, PLACES.bearSpot.z), 'Offer the honey chestnuts', () => this.step('c3.bear') && this.q.count('honeyChestnuts') > 0 && this.wildlife.story.bear?.visible, () => this.event({ type: 'interact', target: 'bear' }), 4.5, null, 2);
-    this.interact('bearBlocked', V(PLACES.bearSpot.x, 12.6, PLACES.bearSpot.z), 'Look at the sleeping bear', () => !this.step('c3.bear') && this.wildlife.story.bear?.visible && !this.q.unlocked('shrineStairs'), () => this.say('bear_blocked'), 4.5);
-    this.interact('gap', V(-1.2, DECK_Y, 120), 'Look at the broken span', () => !this.step('c4.repair') && !this.q.unlocked('viaduct'), () => this.say('gap_blocked'), 2.4);
-    [118.8, 120, 121.2].forEach((z, i) => this.interact(`beam${i + 1}`, V(-1.4, DECK_Y, z), `Set beam ${i + 1}`, () => this.step('c4.repair') && this.q.count('beams') === i, () => this.setBeam(i), 1.6));
+    this.interact('towerDoor', V(gal.x, gal.y - 10.6, gal.z + 2.8), N_('Climb the bell tower'), () => this.game.player.pos.y < gal.y - 3, () => this.tower(true), 2.2);
+    this.interact('towerExit', V(gal.x, gal.y + 0.4, gal.z + 2.0), N_('Go back down'), () => this.game.player.pos.y > gal.y - 1, () => this.tower(false), 1.4, null, 1);
+    this.interact('bell', V(gal.x, gal.y + 0.8, gal.z), N_('Ring the bell'), () => this.game.player.pos.y > gal.y - 1 && this.step('c2.bell'), () => this.ringBell(), 3.6, null, 2);
+    this.interact('orchardGate', V(85, 22, -79), N_('The gate is locked'), () => !this.q.unlocked('orchardGate'), () => this.say('gate_locked'), 3);
+    this.interact('shrineHearth', V(PLACES.forestHearth.x, 12.3, PLACES.forestHearth.z), N_('Cook honey chestnuts'), () => this.step('c3.cook'), () => this.startCooking(), 2.6);
+    this.interact('bear', V(PLACES.bearSpot.x, 12.6, PLACES.bearSpot.z), N_('Offer the honey chestnuts'), () => this.step('c3.bear') && this.q.count('honeyChestnuts') > 0 && this.wildlife.story.bear?.visible, () => this.event({ type: 'interact', target: 'bear' }), 4.5, null, 2);
+    this.interact('bearBlocked', V(PLACES.bearSpot.x, 12.6, PLACES.bearSpot.z), N_('Look at the sleeping bear'), () => !this.step('c3.bear') && this.wildlife.story.bear?.visible && !this.q.unlocked('shrineStairs'), () => this.say('bear_blocked'), 4.5);
+    this.interact('gap', V(-1.2, DECK_Y, 120), N_('Look at the broken span'), () => !this.step('c4.repair') && !this.q.unlocked('viaduct'), () => this.say('gap_blocked'), 2.4);
+    [118.8, 120, 121.2].forEach((z, i) => this.interact(`beam${i + 1}`, V(-1.4, DECK_Y, z), () => tx('Set beam {n}', { n: i + 1 }), () => this.step('c4.repair') && this.q.count('beams') === i, () => this.setBeam(i), 1.6));
     // NPC talk
     for (const [id, n] of Object.entries(this.npcs)) {
-      this.interact(`talk:${id}`, null, `Talk to ${n.villager ? 'villager' : { genzo: 'Genzo', rin: 'Rin', ota: 'Grandpa Ōta', hana: 'Hana' }[id]}`,
+      this.interact(`talk:${id}`, null, () => (n.villager ? tx('Talk to the villager') : tx('Talk to {name}', { name: tx(CAST[id]?.name || id) })),
         () => n.visible && this.q.state.step !== 'p.arrive', () => this.talk(id), 2.6, () => n.head(), () => (this.q?.step?.talk?.[id] ? 1 : 0));
     }
     // spark targets
-    this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), 'Porch lamp', () => this.step('p.porch'), p => this.lightPorch(p));
-    this.target('millLamp', L.get('mill')?.flame, 'Mill Lamp', () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), ['lamp-mill']);
-    this.target('orchardLamp', L.get('orchard')?.flame, 'Orchard Lamp', () => this.step('c2.lamp'), () => this.event({ type: 'spark', target: 'orchardLamp' }), ['belltower', 'belltowerShaft', 'railing']);
-    this.target('forestLamp', L.get('forest')?.flame, 'Forest Lamp', () => this.step('c3.lamp'), () => this.event({ type: 'spark', target: 'forestLamp' }), ['lamp-forest']);
-    this.target('viaductLamp', L.get('viaduct')?.flame, 'Viaduct Lamp', () => this.step('c4.lamp'), () => this.event({ type: 'spark', target: 'viaductLamp' }), ['lamp-viaduct', 'parapet']);
+    this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
+    this.target('millLamp', L.get('mill')?.flame, N_('Light the Mill Lamp'), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10 });
+    // the Orchard Lamp works from the gallery or from the foot of the tower
+    this.target('orchardLamp', L.get('orchard')?.flame, N_('Light the Orchard Lamp'), () => this.step('c2.lamp'), () => this.event({ type: 'spark', target: 'orchardLamp' }), { r: 10, vy: 24 });
+    this.target('forestLamp', L.get('forest')?.flame, N_('Light the Forest Lamp'), () => this.step('c3.lamp'), () => this.event({ type: 'spark', target: 'forestLamp' }), { r: 7.5, vy: 10 });
+    this.target('viaductLamp', L.get('viaduct')?.flame, N_('Light the Viaduct Lamp'), () => this.step('c4.lamp'), () => this.event({ type: 'spark', target: 'viaductLamp' }), { r: 7.5, vy: 10 });
     S.nodes.scarecrows.forEach((s, i) => {
       const bell = at(s.bell, V(s.x, s.y + 1.7, s.z));
-      this.target(`bell${i}`, bell, 'Scarecrow bell', () => this.step('c2.crows') && !this.q.has(`bell${i}`), () => {
+      this.target(`bell${i}`, bell, N_('Ring the scarecrow bell'), () => this.step('c2.crows') && !this.q.has(`bell${i}`), () => {
         this.q.state.flags[`bell${i}`] = true;
         this.audio.bell();
         this.bellSwing = { node: s.bell, t: 0 };
         this.wildlife.scareCrow(i);
         this.event({ type: 'count', item: 'bells' });
-      });
+      }, { r: 4.2, vy: 4 });
     });
     // zones
     this.zone('cottage', V(-55, 16, 140), 7, () => this.step('p.cottage'));
@@ -162,13 +164,41 @@ export class Director {
   get q() { return this.quest; }
   step(id) { return this.quest?.state.step === id; }
 
-  interact(id, pos, label, when, action, radius = 2.4, posFn = null, prio = 0) {
-    this.interactables.set(id, { id, pos, label, when, action, radius, posFn, prio });
+  /** Something Mika can do by walking up and pressing E. label: English source text or a function. */
+  interact(id, pos, label, when, action, radius = 2.4, posFn = null, prio = 0, vy = 3.2) {
+    this.interactables.set(id, { id, pos, label, when, action, radius, posFn, prio, vy });
   }
 
-  target(id, pos, label, when, onHit, ignore = []) {
+  /** A spark target: stand near it and press E, and Tamo flies over and sparks it. */
+  target(id, pos, label, when, onHit, reach = {}) {
     if (!pos) return;
-    this.targets.set(id, { id, pos: pos.clone(), label, when, onHit, ignore: new Set(ignore) });
+    const t = { id, pos: pos.clone(), label, when, onHit, posFn: reach.at || null };
+    this.targets.set(id, t);
+    const tamoHere = () => this.q?.has('hasTamo') && !this.q.has('tamoHome');
+    this.interact(`spark:${id}`, null, label, () => tamoHere() && !t.pending && t.when(), () => this.sparkAt(t),
+      reach.r ?? 6, () => (t.posFn ? t.posFn() : t.pos), reach.prio ?? 2, reach.vy ?? 6);
+  }
+
+  sparkAt(t) {
+    if (t.pending) return;
+    t.pending = true;
+    const p = this.game.player;
+    const to = t.posFn ? t.posFn().clone() : t.pos.clone();
+    p.turnTo(Math.atan2(to.x - p.pos.x, to.z - p.pos.z), 1, 50);
+    p.gesture('Point', { lock: false });
+    this.audio.spark();
+    this.tamo.react?.('Happy');
+    const hit = pos => {
+      if (!t.pending) return;
+      t.pending = false;
+      if (!t.when()) return;
+      this.audio.sparkHit();
+      this.fx.burst(pos, { n: 50, speed: 5 });
+      t.onHit(pos);
+    };
+    this.tamo.fire(to, hit);
+    // the spark flies at most ~1.1 s; if it never lands (Tamo hidden mid-flight), light it anyway
+    setTimeout(() => hit(to), 2500);
   }
 
   zone(id, pos, r, when) { this.zones.set(id, { id, pos, r, when }); }
@@ -179,7 +209,10 @@ export class Director {
     obj.position.copy(pos);
     obj.scale.setScalar(model === 'fallen-star' ? 1.25 : 1.1);
     this.game.scene.add(obj);
-    this.pickups.set(id, { id, obj, pos: pos.clone(), item, when, t: Math.random() * 6 });
+    const pk = { id, obj, pos: pos.clone(), item, when, t: Math.random() * 6 };
+    this.pickups.set(id, pk);
+    const label = () => (item === 'star' ? tx('Pick up the fallen star') : tx('Pick up: {item}', { item: tx(ITEMS[item]?.name || item) }));
+    this.interact(`pick:${id}`, null, label, () => this.pickups.has(id) && when(), () => this.collect(pk), 2.8, () => pk.obj.position, 0.5, 3.6);
   }
 
   removePickup(id) {
@@ -187,6 +220,16 @@ export class Director {
     if (!p) return;
     this.game.scene.remove(p.obj);
     this.pickups.delete(id);
+    this.interactables.delete(`pick:${id}`);
+  }
+
+  collect(pk) {
+    if (!this.pickups.has(pk.id)) return;
+    this.q.state.flags[pk.id] = true;
+    this.removePickup(pk.id);
+    this.fx.burst(pk.obj.position, { n: 24, speed: 2.5, size: 0.25 });
+    this.game.player.gesture('Interact', { lock: false });
+    this.event({ type: 'pickup', item: pk.item, id: pk.id });
   }
 
   // ------------------------------------------------------------------ game start / load
@@ -224,11 +267,10 @@ export class Director {
 
   static clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ } }
 
-  /** Tamo grows with each lit lamp; spark range too. */
+  /** Tamo grows brighter with each lit lamp. */
   power() {
     const lit = Object.values(this.q.state.lamps).filter(Boolean).length;
     this.tamo.power = 1 + lit;
-    this.sparkRange = this.q.has('sparkRange2') ? 50 : 32;
   }
 
   // ------------------------------------------------------------------ NPC schedule
@@ -239,7 +281,7 @@ export class Director {
     // Genzo
     if (step === 'p.arrive') n.genzo.place(-92.5, 116.6, -Math.PI / 2, 16.95);
     else if (step === 'c4.shed') n.genzo.place(-157, 93.5, -2.4);
-    else if (step === 'c4.repair' || step === 'c4.lamp') n.genzo.place(-44, 121.2, Math.PI / 2, DECK_Y);
+    else if (step === 'c4.repair' || step === 'c4.lamp') n.genzo.place(-8.5, 121.6, Math.PI / 2, DECK_Y); // beside the gap, watching the beams go in
     else if (step === 'c4.board' || step === 'c4.ride') n.genzo.place(-86.5, 116.8, -Math.PI / 2, 16.95);
     else n.genzo.place(-104, 116.8, Math.PI / 2, 16.95);
     n.genzo.setIdle(ch === 4 && !after('c4.meeting') ? 'Sad' : ch >= 1 && ch <= 3 ? 'ArmsCrossed' : 'Idle');
@@ -313,11 +355,11 @@ export class Director {
       this.power();
     } else if (e.unlock) this.unlock(e.unlock, e.silent);
     else if (e.spawn) this.spawn(e.spawn, e.silent);
-    else if (e.journal !== undefined) { if (fresh) { ui.toast('Journal page added — press J to read', 'journal-page'); this.audio.pickup(); } }
-    else if (e.give) { const it = ITEMS[e.give[0]]; if (it) ui.toast(`Received: ${it.name}`, it.icon); }
-    else if (e.got) { const it = ITEMS[e.got]; if (it && !e.silent) { ui.toast(`${it.name} ×${e.total}`, it.icon); this.audio.pickup(); } }
-    else if (e.caught) { ui.toast(`Caught a ${FISH[e.caught]?.name || e.caught}!`, 'plate-trout'); this.audio.good(); }
-    else if (e.star) { ui.toast(`Fallen Star ${e.count}/12`, 'fallen-star'); this.audio.star(); }
+    else if (e.journal !== undefined) { if (fresh) { ui.toast(tx('Journal page added — press J to read'), 'journal-page'); this.audio.pickup(); } }
+    else if (e.give) { const it = ITEMS[e.give[0]]; if (it) ui.toast(tx('Received: {item}', { item: tx(it.name) }), it.icon); }
+    else if (e.got) { const it = ITEMS[e.got]; if (it && !e.silent) { ui.toast(`${tx(it.name)} ×${e.total}`, it.icon); this.audio.pickup(); } }
+    else if (e.caught) { ui.toast(tx('Caught a {fish}!', { fish: tx(FISH[e.caught]?.name || e.caught) }), 'plate-trout'); this.audio.good(); }
+    else if (e.star) { ui.toast(tx('Fallen Star {n}/12', { n: e.count }), 'fallen-star'); this.audio.star(); }
     else if (e.allStars) { await this.sayNow('sora_last_letter'); }
     else if (e.chapter !== undefined) { this.placeCast(); }
     else if (e.flag) { if (e.flag === 'tamoHome') this.tamo.hide(); this.power(); }
@@ -328,7 +370,7 @@ export class Director {
 
   refreshObjective(pulse = false) {
     if (!this.quest) return;
-    this.ui.setObjective(this.q.state.chapter, this.q.objective(), pulse);
+    this.ui.setObjective(this.q.state.chapter, this.q.objective(tx), pulse);
     this.ui.setInventory(this.q.state.inv);
   }
 
@@ -412,7 +454,7 @@ export class Director {
     } else if (what === 'viaduct') {
       g.railway.setRepaired(true);
     } else if (what === 'ferry' && !silent) {
-      this.ui.toast('Rin\'s ferry now crosses the river');
+      this.ui.toast(tx('Rin\'s ferry now crosses the river'));
     }
   }
 
@@ -424,18 +466,20 @@ export class Director {
       if (!q.has('crabBooped')) {
         W.spawnCrab();
         const c = W.story.crab;
-        this.target('crab', c.pos.clone().add(V(0, 0.3, 0)), 'Crab', () => this.step('c1.cogs') && !q.has('crabBooped'), () => {
+        this.target('crab', c.pos.clone().add(V(0, 0.3, 0)), N_('Boop the crab'), () => this.step('c1.cogs') && !q.has('crabBooped') && !!W.story.crab, () => {
           q.state.flags.crabBooped = true;
           this.audio.sparkHit();
           q.state.flags.crabHint = true;
           this.say('c1_crab_hit');
           W.crabBooped();
           this.pickup('cogCrab', 'cog', c.pos.clone().add(V(0.4, 0.8, 0)), 'cog', () => !q.has('cogCrab'));
-        });
+        }, { r: 4.5, vy: 3.5, at: () => (W.story.crab || c).pos.clone().add(V(0, 0.3, 0)) });
       } else if (!q.has('cogCrab')) this.pickup('cogCrab', 'cog', V(PLACES.sandbar.x + 0.4, 1.0, PLACES.sandbar.z), 'cog', () => !q.has('cogCrab'));
     } else if (group === 'sheep') {
       W.spawnSheep();
       W.placeSheepPenned(q.count('sheep'));
+      W.story.sheep.forEach((s, i) => this.interact(`sheep${i}`, null, N_('Send the sheep home'), () => this.step('c2.sheep') && !s.penned && !s.homing,
+        () => { W.sendHome(s); this.audio.good(); this.game.player.gesture('Wave', { lock: false }); }, 3.6, () => s.pos, 1, 3));
     } else if (group === 'crows') {
       if (q.count('bells') < 5) W.spawnCrows(S.nodes.scarecrows);
     } else if (group === 'peaches') {
@@ -463,14 +507,14 @@ export class Director {
       }
       if (q.has('hiveDropped')) { const hv = this.hiveObj?.getObjectByName('Hive'); if (hv) hv.visible = false; }
       if (!q.has('hiveDropped')) {
-        this.target('hive', hive, 'Beehive branch', () => this.step('c3.gather') && !q.has('hiveDropped'), () => {
+        this.target('hive', hive, N_('Knock down the beehive'), () => this.step('c3.gather') && !q.has('hiveDropped'), () => {
           q.state.flags.hiveDropped = true;
           const h = this.hiveObj?.getObjectByName('Hive');
           if (h) h.visible = false;
           this.pickup('honeycomb0', 'honeycomb', V(100, this.world.heightAt(100, -118) + 0.5, -117), 'honeycomb', () => !q.has('honeycomb0'));
           this.bees = 7;
           this.say('c3_hive_hit');
-        });
+        }, { r: 5.5, vy: 6 });
       } else if (!q.has('honeycomb0')) this.pickup('honeycomb0', 'honeycomb', V(100, this.world.heightAt(100, -118) + 0.5, -117), 'honeycomb', () => !q.has('honeycomb0'));
     } else if (group === 'repair') {
       this.game.railway.setRepaired(q.unlocked('viaduct'), q.count('beams'));
@@ -557,7 +601,7 @@ export class Director {
   startFishing() {
     if (this.minigame) return;
     const dusk = this.game.time.hour > 17.6 && this.game.time.hour < 20.5;
-    this.minigame = { kind: 'fish', m: new Fishing({ dusk, difficulty: 0.32 }) };
+    this.minigame = { kind: 'fish', m: new Fishing({ dusk }) };
     this.game.player.locked = true;
     this.game.player.turnTo(Math.PI / 2, 1, 50);
     this.game.player.gesture('Cast', { lock: true, then: 'Reel' });
@@ -576,31 +620,25 @@ export class Director {
     const mg = this.minigame;
     if (!mg) return;
     const inp = this.game.input;
-    // camera drags are not strikes: only the action buttons (and a tap / a touch hold) count
-    const press = inp.pressed('act') || inp.pressed('jump') || inp.pressed('tap') || inp.pressed('fire');
-    const hold = inp.held('act') || inp.held('jump') || !!inp.touch.look || inp.held('fire');
+    // camera drags are not strikes: only the action buttons (and a tap) count
+    const press = inp.pressed('act') || inp.pressed('jump') || inp.pressed('tap');
     if (inp.pressed('back') || inp.pressed('pause')) { this.endMinigame(); return; }
     if (mg.kind === 'fish') {
       const f = mg.m;
       const before = f.phase;
-      f.update(dt, press, hold);
+      f.update(dt, press);
       if (before === 'wait' && f.phase === 'bite') { this.audio.reel(); this.game.follow.shake = 0.25; this.fx.splash(V(6.5, 0, 30)); }
-      if (f.phase === 'reel' && hold && Math.random() < 0.3) this.audio.reel();
       this.ui.fishing(f.view());
       if (f.phase === 'done') {
-        const caught = f.result === 'caught';
-        this.ui.fishing(f.view());
         const token = this.minigame = { kind: 'ending' };
         setTimeout(() => { if (this.minigame === token) this.endMinigame(); }, 900);
-        if (caught) { this.game.player.gesture('Cheer', { lock: true }); this.event({ type: 'catch', species: f.species }); }
-        else { this.audio.bad(); this.ui.toast(f.result === 'early' ? 'Too early — wait for the float to dip' : 'It got away!'); }
+        this.game.player.gesture('Cheer', { lock: true });
+        this.event({ type: 'catch', species: f.species });
       }
     } else if (mg.kind === 'cook') {
       const c = mg.m;
       if (Math.random() < dt * 6) this.audio.bubble();
-      const was = c.good;
-      const done = c.update(dt, press);
-      if (press) (c.good > was ? this.audio.good() : this.audio.bad());
+      const done = c.update(dt);
       this.ui.cooking(c.view());
       if (done) {
         const token = this.minigame = { kind: 'ending' };
@@ -636,7 +674,7 @@ export class Director {
     this.updateVillagers(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);
-    this.tamo.update(dt, p, g.night || 0, p.aiming && this.q.has('hasTamo'), g.follow.yaw);
+    this.tamo.update(dt, p, g.night || 0, false, g.follow.yaw);
     this.updateMinigame(dt);
     this.animateWorld(dt);
     this.scenes.update(dt);
@@ -649,14 +687,10 @@ export class Director {
       pk.obj.position.y = pk.pos.y + Math.sin(pk.t * 2.2) * 0.12;
       pk.obj.rotation.y += dt * 1.6;
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
-      if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < 1.45) {
-        this.q.state.flags[pk.id] = true;
-        this.removePickup(pk.id);
-        this.fx.burst(pk.obj.position, { n: 24, speed: 2.5, size: 0.25 });
-        p.gesture('Interact', { lock: false });
-        this.event(pk.item === 'star' ? { type: 'pickup', item: 'star', id: pk.id } : { type: 'pickup', item: pk.item, id: pk.id });
-      }
+      if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < 1.45) this.collect(pk);
     }
+    // Rin's ferry is the story's way over, but a swimmer who lands on the east bank has crossed too
+    if (this.step('c2.ferry') && !this.busy && !p.swimming && p.grounded && p.pos.x > 22 && p.pos.z > -60 && p.pos.z < 110) this.event({ type: 'ferry', side: 'east' });
     // zones
     if (!this.busy) for (const z of this.zones.values()) {
       if (z.when() && Math.hypot(p.pos.x - z.pos.x, p.pos.z - z.pos.z) < z.r && Math.abs(p.pos.y - z.pos.y) < 12) this.event({ type: 'arrive', zone: z.id });
@@ -671,7 +705,7 @@ export class Director {
       const pos = it.posFn ? it.posFn() : it.pos;
       if (!pos) continue;
       const d = Math.hypot(pos.x - p.pos.x, pos.z - p.pos.z);
-      if (d > it.radius || Math.abs(pos.y - (p.pos.y + 1)) > 3.2) continue;
+      if (d > it.radius || Math.abs(pos.y - (p.pos.y + 1)) > it.vy) continue;
       if (!it.when()) continue;
       // story-relevant interactions win over nearby generic ones
       const score = d - (typeof it.prio === 'function' ? it.prio() : it.prio || 0) * 10;
@@ -679,17 +713,16 @@ export class Director {
     }
     if (best) bd = Math.hypot((best.posFn ? best.posFn() : best.pos).x - p.pos.x, (best.posFn ? best.posFn() : best.pos).z - p.pos.z);
     this.focus = best;
-    this.ui.prompt(best?.label || null);
+    this.ui.prompt(best ? (typeof best.label === 'function' ? best.label() : tx(best.label)) : null);
     if (best && (inp.pressed('act') || (this.ui.touch && inp.pressed('tap') && bd < best.radius * 0.8))) {
       this.audio.click();
       best.action();
     }
-    // aiming & sparks
-    this.updateAim(dt);
     // marker
     this.ui.marker(g.camera, this.busy ? null : this.markerTarget());
     // clock & autosave
     this.ui.setClock(g.time.season, clockLabel(g.time.hour));
+    this.ui.swimming(p.swimming);
     this.saveClock += dt;
     if (this.saveClock > 45 && !this.busy && !this.minigame) { this.saveClock = 0; this.save(); }
     // footsteps
@@ -700,7 +733,8 @@ export class Director {
     for (const e of p.events) {
       if (e.type === 'jump') this.audio.jump();
       if (e.type === 'land') this.audio.land(e.strength);
-      if (e.type === 'splash') { this.audio.splash(); this.fx.splash(V(e.x, 0, e.z)); this.ui.toast('Too deep! Back to the bank.'); }
+      if (e.type === 'splash') { this.audio.splash(e.strength); this.fx.splash(V(e.x, 0, e.z)); }
+      if (e.type === 'stroke') { this.audio.stroke(); if (Math.random() < 0.5) this.fx.splash(V(e.x, 0, e.z)); }
     }
     // river ambience
     const rv = river.nearest(p.pos.x, p.pos.z, 80);
@@ -728,59 +762,6 @@ export class Director {
       const d = r.cars[0].obj.position.distanceTo(this.game.player.pos);
       if (d < 120 && r.cars[0].obj.visible) this.audio.chuff(Math.max(0, 1 - d / 120));
     }
-  }
-
-  updateAim(dt) {
-    const g = this.game, p = g.player;
-    const can = this.q.has('hasTamo') && !this.q.has('tamoHome') && p.aiming && !this.busy && !this.minigame;
-    if (!can) { this.ui.reticle(false); this.aimLock = null; return; }
-    const { origin, dir } = g.follow.aimRay();
-    let best = null, bestScore = 1e9;
-    for (const t of this.targets.values()) {
-      if (!t.when()) continue;
-      const to = t.pos.clone().sub(origin);
-      const d = to.length();
-      if (d > this.sparkRange + 6) continue;
-      const ang = to.normalize().angleTo(dir);
-      const tol = Math.atan2(1.4, d) + 0.035;
-      if (ang > tol) continue;
-      if (!this.lineOfSight(this.tamo.pos, t.pos, t.ignore)) continue;
-      if (ang < bestScore) { bestScore = ang; best = t; }
-    }
-    this.aimLock = best;
-    this.ui.reticle(true, !!best, best?.label);
-    if (g.input.pressed('fire')) this.fireSpark(origin, dir);
-  }
-
-  lineOfSight(a, b, ignore) {
-    const n = 24;
-    for (let i = 1; i < n; i++) {
-      const t = i / n;
-      const x = a.x + (b.x - a.x) * t, y = a.y + (b.y - a.y) * t, z = a.z + (b.z - a.z) * t;
-      if (this.world.heightAt(x, z) > y + 0.2) return false;
-    }
-    return this.game.colliders.raycast(a.x, a.y, a.z, b.x, b.y, b.z, ignore) > 0.95;
-  }
-
-  fireSpark(origin, dir) {
-    if (this.sparkCooldown > performance.now()) return;
-    this.sparkCooldown = performance.now() + 450;
-    this.audio.spark();
-    const t = this.aimLock;
-    let to;
-    if (t) to = t.pos.clone();
-    else {
-      to = origin.clone().addScaledVector(dir, this.sparkRange);
-      for (let d = 2; d < this.sparkRange; d += 1) {
-        const q = origin.clone().addScaledVector(dir, d);
-        if (this.world.heightAt(q.x, q.z) > q.y) { to = q; break; }
-      }
-    }
-    this.game.player.gesture('Point', { lock: false, then: 'Aim' });
-    this.tamo.fire(to, pos => {
-      if (t && t.when()) { this.audio.sparkHit(); this.fx.burst(pos, { n: 50, speed: 5 }); t.onHit(pos); }
-      else { this.audio.miss(); this.fx.burst(pos, { n: 14, speed: 2, size: 0.2 }); }
-    });
   }
 
   markerTarget() {

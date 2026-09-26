@@ -40,17 +40,21 @@ const GradeShader = {
     uNight: { value: 0 },
     uFade: { value: 0 },
     uFadeColor: { value: new THREE.Color(0x0b1024) },
+    uUnder: { value: 0 },
+    uTime: { value: 0 },
   },
   vertexShader: /* glsl */`
     varying vec2 vUv;
     void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
   fragmentShader: /* glsl */`
     uniform sampler2D tDiffuse;
-    uniform float uVibrance, uSaturation, uWarm, uVignette, uNight, uFade;
+    uniform float uVibrance, uSaturation, uWarm, uVignette, uNight, uFade, uUnder, uTime;
     uniform vec3 uFadeColor;
     varying vec2 vUv;
     void main() {
-      vec4 c = texture2D(tDiffuse, vUv);
+      // under water the picture sways a little, like looking through moving water
+      vec2 wob = vec2(sin(vUv.y * 21.0 + uTime * 1.9), cos(vUv.x * 17.0 + uTime * 1.5)) * 0.0022 * uUnder;
+      vec4 c = texture2D(tDiffuse, vUv + wob);
       vec3 col = c.rgb;
       float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
       float mx = max(col.r, max(col.g, col.b)), mn = min(col.r, min(col.g, col.b));
@@ -60,7 +64,8 @@ const GradeShader = {
       // Night: cool the shadows but keep lamp light warm.
       col = mix(col, col * vec3(0.86, 0.94, 1.12), uNight * (1.0 - smoothstep(0.4, 1.6, l)));
       vec2 q = vUv - 0.5;
-      col *= 1.0 - uVignette * smoothstep(0.35, 0.95, dot(q, q) * 2.2);
+      col = mix(col, col * vec3(0.62, 0.96, 1.02) + vec3(0.0, 0.012, 0.018), uUnder * 0.75);
+      col *= 1.0 - (uVignette + uUnder * 0.35) * smoothstep(0.35, 0.95, dot(q, q) * 2.2);
       col = mix(col, uFadeColor, uFade);
       gl_FragColor = vec4(max(col, 0.0), c.a);
     }`,

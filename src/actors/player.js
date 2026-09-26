@@ -1,10 +1,21 @@
 import * as THREE from 'three';
 import { Animator } from './animator.js';
-import { WORLD } from '../world/layout.js';
+import { WORLD, WATER_Y } from '../world/layout.js';
+import { riverFlow } from '../world/heightfield.js';
 
 export const MOVE = {
   radius: 0.32, height: 1.45, step: 0.46, gravity: 26, jumpV: 8.4,
   walk: 1.6, run: 4.4, sprint: 6.8, accel: 16, airAccel: 5, turn: 11, maxSlope: 47,
+};
+
+/** Swimming: Mika floats with her head above the surface, strokes along, dives and climbs out. */
+export const SWIM = {
+  float: 1.02,     // feet below the surface while floating (head and shoulders out)
+  enter: 1.15,     // water deeper than this and she swims
+  speed: 2.3, fast: 3.4, accel: 3.4, turn: 6,
+  dive: 2.4, rise: 2.8, buoy: 2.4,
+  pivot: 0.95,     // body pitches about the hips
+  drift: 0.35,     // the current's pull mid-channel (m/s)
 };
 
 /** Mika: third-person character controller, animation state and held props. */
@@ -26,6 +37,9 @@ export class Player {
     this.aiming = false;
     this.surface = 'grass';
     this.events = [];
+    this.swimming = false;
+    this.swimCooldown = 0;
+    this.pitch = 0;
 
     this.root = new THREE.Group();
     this.root.name = 'player';
@@ -45,7 +59,12 @@ export class Player {
       this.anim = null;
     }
     this.model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    this.root.add(this.model);
+    // swimming tips the body forward about the hips, not the feet
+    this.pivot = new THREE.Group();
+    this.pivot.position.y = SWIM.pivot;
+    this.model.position.y = -SWIM.pivot;
+    this.pivot.add(this.model);
+    this.root.add(this.pivot);
     scene.add(this.root);
     // Sora's lantern in the right hand
     this.grip = this.model.getObjectByName('grip_R') || this.model;
@@ -66,8 +85,19 @@ export class Player {
     if (facing !== undefined) this.facing = facing;
     this.lastSafe.copy(this.pos);
     this.grounded = true;
+    this.setSwimming(false);
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.facing;
+  }
+
+  /** Head below the surface (diving): the camera and effects follow her under. */
+  get submerged() { return this.swimming && this.pos.y + 1.35 < WATER_Y - 0.05; }
+
+  setSwimming(on) {
+    if (this.swimming === on) return;
+    this.swimming = on;
+    if (this.lantern) this.lantern.visible = !on;
+    if (!on) { this.pitch = 0; this.pivot.rotation.x = 0; }
   }
 
   groundHeight(x, z, footY) {
@@ -78,7 +108,7 @@ export class Player {
   }
 
   /** Ride along with a moving object (ferry deck, train cab). offset is in the object's local space. */
-  mount(obj, offset = new THREE.Vector3(), facingOffset = 0) { this.mounted = { obj, offset, facingOffset }; this.vel.set(0, 0, 0); }
+  mount(obj, offset = new THREE.Vector3(), facingOffset = 0) { this.mounted = { obj, offset, facingOffset }; this.vel.set(0, 0, 0); this.setSwimming(false); }
   dismount(x, z, y, facing) { this.mounted = null; this.teleport(x, z, y, facing); }
 
   /** input: Input, camYaw: radians (camera look heading). */
@@ -99,6 +129,9 @@ export class Player {
       this.animate(dt, 0);
       return;
     }
+    this.swimCooldown = Math.max(0, this.swimCooldown - dt);
+    if (this.climb) { this.updateClimb(dt); return; }
+    if (this.swimming) { this.swim(dt, input, camYaw); return; }
     const canMove = !this.locked && !this.aiming && !(this.anim?.busy && this.anim.oneShotLocks);
     let mx = canMove ? input.move.x : 0, my = canMove ? input.move.y : 0;
     const mag = Math.min(1, Math.hypot(mx, my));
@@ -168,11 +201,15 @@ export class Player {
       this.airTime += dt;
     }
 
-    // deep water: respawn at the last safe footing (no swimming in Hoshi Valley)
+    // deep water: Mika swims
     const terrain = this.world.heightAt(this.pos.x, this.pos.z);
-    if (!this.onItem && terrain < -0.7 && this.pos.y < 0.15) {
-      this.events.push({ type: 'splash', x: this.pos.x, z: this.pos.z });
-      this.teleport(this.lastSafe.x, this.lastSafe.z, this.lastSafe.y);
+    if (!this.onItem && WATER_Y - terrain > SWIM.enter && this.pos.y < WATER_Y - SWIM.float + 0.12 && this.swimCooldown <= 0) {
+      this.events.push({ type: 'splash', x: this.pos.x, z: this.pos.z, strength: Math.min(1, Math.abs(this.vel.y) / 8 + 0.25) });
+      this.vel.y *= 0.3;
+      this.setSwimming(true);
+      this.anim?.cancelOneShot();
+      this.root.position.copy(this.pos);
+      return;
     }
     this.safeTimer -= dt;
     if (this.grounded && this.safeTimer <= 0 && (terrain > 0.15 || this.onItem) && this.world.grid.slopeAt(this.pos.x, this.pos.z) < 35) {
@@ -193,6 +230,102 @@ export class Player {
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.facing;
     this.animate(dt, hs);
+  }
+
+  // ------------------------------------------------------------------ water
+  swim(dt, input, camYaw) {
+    const S = SWIM;
+    const canMove = !this.locked;
+    const mx = canMove ? input.move.x : 0, my = canMove ? input.move.y : 0;
+    const mag = Math.min(1, Math.hypot(mx, my));
+    let dx = Math.sin(camYaw) * my - Math.cos(camYaw) * mx, dz = Math.cos(camYaw) * my + Math.sin(camYaw) * mx;
+    const dl = Math.hypot(dx, dz);
+    if (dl > 1e-4) { dx /= dl; dz /= dl; }
+    const target = mag > 0.05 ? (input.held('sprint') ? S.fast : S.speed) * mag : 0;
+    const k = 1 - Math.exp(-S.accel * dt);
+    this.vel.x += (dx * target - this.vel.x) * k;
+    this.vel.z += (dz * target - this.vel.z) * k;
+    // the river carries a swimmer gently downstream, strongest mid-channel
+    const fl = riverFlow(this.pos.x, this.pos.z);
+    const pull = fl ? S.drift * Math.max(0, 1 - fl.d / Math.max(4, fl.hw)) : 0;
+    let nx = this.pos.x + (this.vel.x + (fl ? fl.tx * pull : 0)) * dt;
+    let nz = this.pos.z + (this.vel.z + (fl ? fl.tz * pull : 0)) * dt;
+    nx = Math.min(WORLD.maxX, Math.max(WORLD.minX, nx));
+    nz = Math.min(WORLD.maxZ, Math.max(WORLD.minZ, nz));
+    const res = this.colliders.resolve(nx, nz, MOVE.radius, this.pos.y, MOVE.height, 0.1);
+    this.pos.x = res.x; this.pos.z = res.z;
+
+    // vertical: hold dive to go down, jump to come up; otherwise she bobs back to the surface
+    const surfaceY = WATER_Y - S.float;
+    const diving = canMove && input.held('dive');
+    const rising = canMove && input.held('jump') && this.pos.y < surfaceY - 0.1;
+    const vyT = diving ? -S.dive : rising ? S.rise : Math.max(-1.6, Math.min(1.8, (surfaceY - this.pos.y) * S.buoy));
+    this.vel.y += (vyT - this.vel.y) * (1 - Math.exp(-dt * 4));
+    this.pos.y += this.vel.y * dt;
+    const bed = this.world.heightAt(this.pos.x, this.pos.z);
+    if (this.pos.y < bed + 0.08) { this.pos.y = bed + 0.08; this.vel.y = Math.max(0, this.vel.y); }
+    if (this.pos.y > surfaceY) { this.pos.y = surfaceY + (this.pos.y - surfaceY) * 0.3; this.vel.y = Math.min(this.vel.y, 0.2); }
+    const bob = this.submerged ? 0 : Math.sin(performance.now() / 520) * 0.025;
+
+    // leaving the water: wade out where the bed comes up, or climb onto a bank / dock ahead
+    if (WATER_Y - bed < S.enter - 0.25 && !diving) {
+      this.setSwimming(false);
+      this.swimCooldown = 0.4;
+      this.pos.y = Math.max(this.pos.y, bed);
+      this.grounded = true;
+    } else if (canMove && input.pressed('jump') && this.pos.y > surfaceY - 0.25) {
+      const ax = this.pos.x + Math.sin(this.facing) * 0.95, az = this.pos.z + Math.cos(this.facing) * 0.95;
+      let top = this.world.heightAt(ax, az);
+      const c = this.colliders.groundAt(ax, az, WATER_Y + 1.6, 0.3);
+      if (c && c.y > top) top = c.y;
+      const blocked = this.colliders.resolve(ax, az, MOVE.radius, top + 0.05, MOVE.height, 0.1).hit;
+      if (top > WATER_Y - 0.35 && top < WATER_Y + 1.65 && !blocked) {
+        this.climb = { from: this.pos.clone(), to: new THREE.Vector3(ax, top, az), t: 0 };
+        this.anim?.once('Land', { speed: 0.8, then: 'Idle' });
+      } else {
+        this.vel.y = 6.2;
+        this.anim?.once('Jump', { hold: true, fade: 0.08 });
+      }
+      this.setSwimming(false);
+      this.swimCooldown = 0.45;
+      this.grounded = false;
+      this.events.push({ type: 'splash', x: this.pos.x, z: this.pos.z, strength: 0.35 });
+    }
+
+    const hs = Math.hypot(this.vel.x, this.vel.z);
+    this.speed = hs;
+    if (hs > 0.25 && target > 0) this.turnTo(Math.atan2(this.vel.x, this.vel.z), dt, S.turn);
+    if (this.swimming) {
+      // lie flat to stroke, tip down to dive, stand up to tread water
+      const want = (hs > 0.6 ? 1.2 : 0.12) + (diving ? 0.45 : rising ? -0.35 : 0);
+      this.pitch += (want - this.pitch) * (1 - Math.exp(-dt * 4));
+      this.pivot.rotation.x = this.pitch;
+      if (hs > 0.6 && !this.submerged) {
+        this.strokeAcc = (this.strokeAcc || 0) + dt * hs * 0.55;
+        if (this.strokeAcc > 1) { this.strokeAcc = 0; this.events.push({ type: 'stroke', x: this.pos.x, z: this.pos.z }); }
+      }
+      const a = this.anim;
+      if (a && !a.busy) {
+        if (hs > 0.6 || diving || rising) a.play(a.has('Swim') ? 'Swim' : 'Walk', { speed: Math.max(0.7, hs / S.speed), fade: 0.3 });
+        else a.play(a.has('Tread') ? 'Tread' : 'Idle', { fade: 0.35 });
+      }
+    }
+    this.root.position.set(this.pos.x, this.pos.y + bob, this.pos.z);
+    this.root.rotation.y = this.facing;
+    this.anim?.update(dt);
+  }
+
+  updateClimb(dt) {
+    const c = this.climb;
+    c.t = Math.min(1, c.t + dt / 0.5);
+    const e = c.t * c.t * (3 - 2 * c.t);
+    this.pos.lerpVectors(c.from, c.to, e);
+    this.pos.y += Math.sin(Math.PI * c.t) * 0.35;
+    this.vel.set(0, 0, 0);
+    if (c.t >= 1) { this.climb = null; this.pos.copy(c.to); this.grounded = true; this.lastSafe.copy(this.pos); }
+    this.root.position.copy(this.pos);
+    this.root.rotation.y = this.facing;
+    this.anim?.update(dt);
   }
 
   turnTo(yaw, dt, rate) {

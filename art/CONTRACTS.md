@@ -164,7 +164,7 @@ root (at origin)
 
 | Model | Height | Clips (all loop unless marked *once*) | Tris |
 |---|---|---|---|
-| `mika` | 1.45 m | Idle, Walk, Run, Jump *once*, Fall, Land *once*, Aim, Point *once*, Cast *once*, Reel, Interact *once*, Stir, Hammer, Cheer *once*, Talk, Wave *once* | ≤ 16k |
+| `mika` | 1.45 m | Idle, Walk, Run, Jump *once*, Fall, Land *once*, Aim, Point *once*, Cast *once*, Reel, Interact *once*, Stir, Hammer, Cheer *once*, Talk, Wave *once*, Swim, Tread | ≤ 16k |
 | `genzo` | 1.62 m (stout) | Idle, Walk, Talk, Wave *once*, Sad, ArmsCrossed, Bow *once* | ≤ 12k |
 | `rin` | 1.50 m | Idle, Walk, Run, Talk, Wave *once*, Cast *once*, Reel, Pole, Cheer *once* | ≤ 12k |
 | `ota` | 1.58 m | Idle (leaning on cane), Walk (with cane), Talk, Wave *once*, Bow *once*, Sad | ≤ 12k |

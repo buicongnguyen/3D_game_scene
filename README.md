@@ -15,9 +15,16 @@ danger that night.
 
 - **A prologue, four seasonal chapters and an epilogue.** About 35 story steps, a
   twist, and a choice that changes the finale.
-- **Four minigames:** fishing (strike, then keep the fish in the zone), sheep
-  herding, stirring the pot on the beat, and Tamo's spark (aim-assisted
-  lamp-lighting, bell-ringing and crab-booping).
+- **One button does it.** Walk up to anything and press **E**: talk, pick up,
+  fit the cogs, send a sheep home, cook, or have Tamo fly over and spark a lamp,
+  a bell, a crab or a trackside lantern. Fishing is a single press when the
+  float dips.
+- **Swim and dive.** The river is open: swim across, dive to the bed and watch
+  the trout, weed and sunken boats in a hushed, green-blue world.
+- **Conversations read like a chat.** Several lines per page, with **Next** and
+  **Back** to re-read, and **Skip**.
+- **English, Tiếng Việt, 한국어, 日本語.** Pick a language on the title screen or
+  in Settings; the whole story, UI and journal are translated.
 - **A lived-in valley.** Seasons change the whole world: blossoms, rice paddies,
   autumn maples and winter snow, plus day and night with lamp-lit villages. There
   are a steam train, a ferry, a mill wheel, a bell tower and wildlife.
@@ -30,9 +37,10 @@ danger that night.
 |---|---|---|---|
 | Move | WASD / arrows, Shift to sprint | Left stick | Left thumb (floating stick) |
 | Camera | Drag the mouse, wheel to zoom | Right stick | Drag the right side |
-| Interact / talk / advance | E | X | **Act** |
-| Jump | Space | A | **Jump** |
-| Aim / spark | Hold right mouse (or Q), left click (or R) | LT / RT | Hold **Aim**, tap **Spark** |
+| Do anything nearby (talk, pick up, light, cook…) | E | X | **Act** |
+| Next / back in a conversation | E / Q | A / B | Tap / **Back** |
+| Jump · swim up | Space | A | **Jump** |
+| Dive (while swimming) | C or Ctrl | LT / RT | **Dive** |
 | Journal / pause | J / Esc | Back / Start | ☰ and ✎ buttons |
 
 ## How it's built
@@ -54,7 +62,8 @@ danger that night.
   pure quest engine (`src/game/quest.js`), and `src/game/director.js` binds it to
   the world.
 
-See [docs/STORY.md](docs/STORY.md) for the story bible and
+See [docs/STORY.md](docs/STORY.md) for the full story (synopsis, cast, the
+choice and the complete script, regenerated with `npm run story:md`) and
 [docs/DESIGN.md](docs/DESIGN.md) for the systems and technical design.
 
 ## Development
@@ -62,7 +71,9 @@ See [docs/STORY.md](docs/STORY.md) for the story bible and
 ```bash
 npm ci
 npm run dev          # http://127.0.0.1:5173
-npm test             # Node: story playthrough, minigames, world, colliders, asset contracts, packed budget
+npm test             # Node: story playthrough, minigames, dialogue pages, translations, world, assets, packed budget
+npm run i18n:extract # refresh src/i18n/source.json after changing any English text, then update vi/ko/ja.json
+npm run story:md     # regenerate the script appendix of docs/STORY.md
 npm run build        # dist/ with meshopt-packed models
 npm run test:e2e     # plays the whole story in a real browser (needs Playwright + a GPU)
 ```
@@ -70,6 +81,7 @@ npm run test:e2e     # plays the whole story in a real browser (needs Playwright
 Useful URL parameters:
 
 - `?quality=low|medium|high`
+- `?lang=en|vi|ko|ja`
 - `?start=new|continue` (skips the title screen)
 - `?qa=1` exposes QA hooks
 - `?view=x,y,z,tx,ty,tz&season=autumn&hour=17` for a fixed look-dev camera

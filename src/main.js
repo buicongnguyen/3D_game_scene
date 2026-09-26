@@ -7,6 +7,7 @@ import { Director } from './game/director.js';
 import { viewerCamera } from './dev/viewer.js';
 import { PALETTES } from './world/seasons.js';
 import { attachQA } from './dev/qa.js';
+import { detectLang, setLang, tx } from './i18n/i18n.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('game');
@@ -19,9 +20,11 @@ function showError(msg) {
   if (el && params.has('qa')) { el.textContent = msg; el.classList.remove('hidden'); }
 }
 
+await setLang(params.get('lang') || detectLang());
+
 const webgl2 = (() => { try { return !!document.createElement('canvas').getContext('webgl2'); } catch { return false; } })();
 if (!webgl2) {
-  document.getElementById('loadLabel').textContent = 'Starline needs WebGL 2. Please try a recent Chrome, Edge, Firefox or Safari.';
+  document.getElementById('loadLabel').textContent = tx('Starline needs WebGL 2. Please try a recent Chrome, Edge, Firefox or Safari.');
   throw new Error('WebGL2 unavailable');
 }
 

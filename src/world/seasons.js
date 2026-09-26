@@ -51,6 +51,7 @@ export function hexToRgb(h) {
   return [(n >> 16 & 255) / 255, (n >> 8 & 255) / 255, (n & 255) / 255];
 }
 const mix = (a, b, t) => a.map((v, i) => v + (b[i] - v) * t);
+const smooth01 = x => { const t = Math.min(1, Math.max(0, x)); return t * t * (3 - 2 * t); };
 const mul = (a, b) => a.map((v, i) => v * b[i]);
 
 /** Unit vector toward the sun (y up): rises in the east (+x), crosses the south (+z) at noon, sets west. */
@@ -82,12 +83,17 @@ export function lightingAt(season, hour) {
   const zenith = blend(pick('zenith'), hexToRgb(p.sky.zenith));
   const horizon = blend(pick('horizon'), hexToRgb(p.sky.horizon));
   const fog = blend(pick('fog'), hexToRgb(p.fog));
-  const sunColor = mul(pick('sun'), num('night') > 0.5 ? [1, 1, 1] : hexToRgb(p.sunTint));
+  const night = num('night');
+  // At night the key light is the moon, placed high in the south-west. The hand-over from the sun is
+  // blended across dusk and dawn (night 0.3 .. 0.7): switching at once swung every shadow in one frame.
+  const moonW = smooth01((night - 0.3) / 0.4);
+  const sunColor = mul(pick('sun'), mix(hexToRgb(p.sunTint), [1, 1, 1], moonW));
   const winterDim = season === 'winter' ? 0.9 : 1;
   const dir = sunDirection(hour, season);
-  const night = num('night');
-  // At night the key light is the moon, placed high in the south-west.
-  const light = night > 0.5 ? { x: -0.45, y: 0.72, z: 0.52 } : dir;
+  const moon = { x: -0.45, y: 0.72, z: 0.52 };
+  const lx = dir.x + (moon.x - dir.x) * moonW, ly = Math.max(dir.y, 0.1) + (moon.y - Math.max(dir.y, 0.1)) * moonW, lz = dir.z + (moon.z - dir.z) * moonW;
+  const ll = Math.hypot(lx, ly, lz);
+  const light = moonW <= 0 ? dir : moonW >= 1 ? moon : { x: lx / ll, y: ly / ll, z: lz / ll };
   return {
     hour, season, night, zenith, horizon, fog, sunColor,
     sunIntensity: num('sunI') * winterDim, hemi: num('hemi'), env: num('env'), stars: num('stars'),

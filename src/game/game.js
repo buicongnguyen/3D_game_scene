@@ -16,6 +16,9 @@ import { FollowCamera } from '../actors/camera.js';
 import { ALL_MODELS } from '../content/models.js';
 import { LightPool } from '../engine/lights.js';
 import { Paddies } from '../world/paddies.js';
+import { Underwater } from '../fx/underwater.js';
+import { Riverbed } from '../world/riverbed.js';
+import { tx } from '../i18n/i18n.js';
 
 /** Owns every system and the frame loop. Story and UI plug in through hooks. */
 export class Game {
@@ -24,7 +27,9 @@ export class Game {
     this.canvas = canvas;
     this.renderer = new Renderer(canvas, params.get('quality'));
     this.scene = new THREE.Scene();
-    this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.1, 5000);
+    // near 0.35 m: the follow camera never gets closer than ~1 m, and a small near plane makes distant trim
+    // (train lining, window frames) z-fight and shimmer
+    this.camera = new THREE.PerspectiveCamera(55, innerWidth / innerHeight, 0.35, 4600);
     this.renderer.onResize = (w, h) => { this.camera.aspect = w / h; this.camera.updateProjectionMatrix(); };
     this.renderer.resize();
     this.input = new Input(canvas);
@@ -40,7 +45,7 @@ export class Game {
     await nextFrame();
     this.world = new World(this.scene, this.renderer.renderer, this.renderer.q);
     onProgress(0.12, 'Unpacking Blender models');
-    await this.assets.load(ALL_MODELS, (p, name) => onProgress(0.12 + p * 0.7, `Loading ${name}`));
+    await this.assets.load(ALL_MODELS, p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
     await this.assets.finalize();
     onProgress(0.84, 'Planting the forests');
     await nextFrame();
@@ -59,6 +64,8 @@ export class Game {
     await nextFrame();
     this.player = new Player(this.scene, this.assets, this.world, this.colliders);
     this.follow = new FollowCamera(this.camera, this.world, this.colliders);
+    this.underwater = new Underwater(this);
+    this.riverbed = new Riverbed(this.scene, this.assets, this.world);
     this.setSeason(this.time.season);
     onProgress(1, 'Ready');
   }
@@ -93,7 +100,7 @@ export class Game {
   }
 
   saveAndQuit() {
-    if (!this.director.save()) { this.ui.toast('Can\'t save during a scene — try again in a moment'); return; }
+    if (!this.director.save()) { this.ui.toast(tx('Can\'t save during a scene — try again in a moment')); return; }
     location.reload();
   }
 
@@ -119,15 +126,17 @@ export class Game {
       this.time.hour = (this.time.hour + dt * this.time.speed / 3600 * 24 + 24) % 24;
       this.world.hour = this.time.hour;
       this.beforeUpdate?.(dt);
-      this.player.aiming = this.input.aiming && !this.player.locked;
+      // the train moves first: Mika (when riding) and the camera then see this frame's train, not last frame's
+      this.railway.update(dt, this.night || 0);
       this.player.update(dt, this.input, this.follow.yaw);
-      this.follow.update(dt, this.player, this.input, this.player.aiming);
+      this.follow.update(dt, this.player, this.input, false);
       for (const s of this.systems) s.update(dt, this);
       const L = this.world.update(dt, this.player.pos);
+      this.underwater?.update(dt, L);
+      this.riverbed?.update(dt);
       this.fx?.update(dt, this.player.pos, L.night, this.audio, this.camera.position);
       this.night = L.night;
       this.structures.update(dt, L.night);
-      this.railway.update(dt, L.night);
       this.world.lamps = this.structures.lampReflections();
       this.assets.setGlow('Window glow', L.night * 2.2);
       this.assets.setGlow('Lantern glow', 0.4 + L.night * 2.4);

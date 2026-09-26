@@ -45,9 +45,10 @@ export class Quest {
   unlocked(what) { return !!this.state.unlocked[what]; }
 
   /** Objective text with live counters. */
-  objective() {
+  /** Current objective with its counters filled in; translate() localises the template first. */
+  objective(translate = s => s) {
     const st = this.state;
-    return this.step.objective.replace(/\{(\w+)\}/g, (_, k) => (k === 'stars' ? st.stars.length : this.count(k)));
+    return translate(this.step.objective).replace(/\{(\w+)\}/g, (_, k) => (k === 'stars' ? st.stars.length : this.count(k)));
   }
 
   /** Effects of entering the current step (call once for a new game or after loading a save). */

@@ -1,7 +1,9 @@
 import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
+import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange } from '../i18n/i18n.js';
 
 const $ = id => document.getElementById(id);
+const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 const SEASON_SVG = {
   spring: '<svg viewBox="0 0 24 24"><g fill="#f58fb3">' + [0, 72, 144, 216, 288].map(a => `<ellipse cx="12" cy="6.2" rx="3.4" ry="5" transform="rotate(${a} 12 12)"/>`).join('') + '</g><circle cx="12" cy="12" r="2.6" fill="#ffd66b"/></svg>',
@@ -21,12 +23,54 @@ export class UI {
     this.bindMenus();
     this.bindTouch();
     this.bindDialogue();
+    this.bindLanguage();
+  }
+
+  // ------------------------------------------------------------------ language
+  bindLanguage() {
+    const pills = $('titleLangs'), sel = $('optLang');
+    for (const [k, l] of Object.entries(LANGS)) {
+      const b = document.createElement('button');
+      b.textContent = l.name;
+      b.dataset.lang = k;
+      b.lang = l.html;
+      b.addEventListener('click', () => setLang(k));
+      pills.appendChild(b);
+      const o = document.createElement('option');
+      o.value = k;
+      o.textContent = l.name;
+      sel.appendChild(o);
+    }
+    sel.addEventListener('change', () => setLang(sel.value));
+    const sync = () => {
+      const l = getLang();
+      sel.value = l;
+      pills.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
+      this.refreshText();
+    };
+    onLangChange(sync);
+    sync();
+  }
+
+  /** Re-draw everything that holds translated text after a language change. */
+  refreshText() {
+    this._inv = null;
+    this._prompt = undefined;
+    this.setTitleHint();
+    $('tAct').textContent = tx('Act');
+    this.game.director?.refreshObjective();
+    if (this.overlay === 'journal') this.journalTab(this._tab || 'story');
+  }
+
+  setTitleHint() {
+    $('titleHint').textContent = this.touch ? tx('Left thumb moves · drag the right side to look · Act does anything nearby')
+      : tx('WASD / stick to move · Mouse drag to look · E to do anything nearby · Space to jump or swim up · C to dive');
   }
 
   // ------------------------------------------------------------------ screens
   setLoad(p, label) {
     $('loadBar').style.width = `${Math.round(p * 100)}%`;
-    $('loadLabel').textContent = label;
+    $('loadLabel').textContent = tx(label);
   }
   hideLoading() { $('loading').classList.add('hidden'); }
 
@@ -35,11 +79,11 @@ export class UI {
     $('hud').classList.add('hidden');
     $('touch').classList.add('hidden');
     $('btnContinue').classList.toggle('hidden', !hasSave);
-    if (this.touch) $('titleHint').textContent = 'Left thumb moves · drag right side to look · Act, Jump and Aim buttons';
+    this.setTitleHint();
     return new Promise(resolve => {
       const done = v => { $('title').classList.add('hidden'); cleanup(); this.audio?.click(); resolve(v); };
       const onNew = () => {
-        if (hasSave && !confirm('Start a new game? Your saved progress will be replaced.')) return;
+        if (hasSave && !confirm(tx('Start a new game? Your saved progress will be replaced.'))) return;
         done('new');
       };
       const onCont = () => done('continue');
@@ -58,7 +102,7 @@ export class UI {
   // ------------------------------------------------------------------ HUD
   setObjective(chapter, text, pulse = false) {
     const c = CHAPTERS[chapter];
-    $('objChapter').textContent = c ? `${c.title} — ${c.name}` : '';
+    $('objChapter').textContent = c ? `${tx(c.title)} — ${tx(c.name)}` : '';
     if ($('objText').textContent !== text) {
       $('objText').textContent = text;
       if (pulse) { const o = $('objective'); o.classList.remove('pulse'); void o.offsetWidth; o.classList.add('pulse'); }
@@ -83,7 +127,7 @@ export class UI {
       const it = ITEMS[k];
       const d = document.createElement('div');
       d.className = 'inv';
-      d.innerHTML = `<img alt="" src="${this.icon(it.icon)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph'}))"><span>${it.name}${n > 1 ? ` ×${n}` : ''}</span>`;
+      d.innerHTML = `<img alt="" src="${this.icon(it.icon)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph'}))"><span>${tx(it.name)}${n > 1 ? ` ×${n}` : ''}</span>`;
       el.appendChild(d);
     }
   }
@@ -92,11 +136,11 @@ export class UI {
     if (this._prompt === text) return;
     this._prompt = text;
     const p = $('prompt');
-    if (!text) { p.classList.add('hidden'); $('tAct').textContent = 'Act'; return; }
+    if (!text) { p.classList.add('hidden'); $('tAct').textContent = tx('Act'); return; }
     p.classList.remove('hidden');
     $('promptText').textContent = text;
-    $('promptKey').textContent = this.touch ? 'Act' : key || 'E';
-    $('tAct').textContent = text.split(' ')[0];
+    $('promptKey').textContent = this.touch ? tx('Act') : key || 'E';
+    $('tAct').textContent = tx('Act');
   }
 
   toast(text, icon) {
@@ -138,20 +182,12 @@ export class UI {
     $('markerDist').textContent = d > 8 ? `${Math.round(d)} m` : '';
   }
 
-  reticle(on, lock, label) {
-    const r = $('reticle');
-    r.classList.toggle('hidden', !on);
-    r.classList.toggle('lock', !!lock);
-    $('reticleLabel').textContent = label || '';
-    $('tFire').classList.toggle('hidden', !on || !this.touch);
-  }
-
   card(chapter) {
     const c = CHAPTERS[chapter];
     if (!c) return Promise.resolve();
     const el = $('card');
-    $('cardChapter').textContent = c.title;
-    $('cardName').textContent = c.name;
+    $('cardChapter').textContent = tx(c.title);
+    $('cardName').textContent = tx(c.name);
     el.classList.remove('hidden');
     el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
     this.audio?.chime(chapter);
@@ -166,25 +202,49 @@ export class UI {
 
   // ------------------------------------------------------------------ dialogue
   bindDialogue() {
-    const adv = e => {
-      if (!this.dialogueOpen) return;
-      if (e.type === 'keydown') {
-        if (this.choiceActive) {
-          if (e.code === 'ArrowUp' || e.code === 'KeyW') { this.selChoice(-1); e.preventDefault(); return; }
-          if (e.code === 'ArrowDown' || e.code === 'KeyS') { this.selChoice(1); e.preventDefault(); return; }
-          if (['Enter', 'KeyE', 'Space'].includes(e.code)) { this.pickChoice(this.choiceSel); e.preventDefault(); }
-          return;
-        }
-        if (!['Enter', 'KeyE', 'Space', 'KeyF'].includes(e.code)) return;
-        e.preventDefault();
+    const key = e => {
+      if (!this.dialogueOpen || e.repeat) return;
+      const c = e.code;
+      if (['KeyQ', 'Backspace', 'ArrowLeft'].includes(c)) { e.preventDefault(); this.nav?.('back'); return; }
+      if (this.choiceActive) {
+        if (c === 'ArrowUp' || c === 'KeyW') { this.selChoice(-1); e.preventDefault(); return; }
+        if (c === 'ArrowDown' || c === 'KeyS') { this.selChoice(1); e.preventDefault(); return; }
+        if (['Enter', 'KeyE', 'Space'].includes(c)) { this.pickChoice(this.choiceSel); e.preventDefault(); }
+        return;
       }
-      if (this.choiceActive) return;
-      this.advance?.();
+      if (!['Enter', 'KeyE', 'Space', 'KeyF', 'ArrowRight'].includes(c)) return;
+      e.preventDefault();
+      this.nav?.('next');
     };
-    addEventListener('keydown', adv);
-    $('dialogue').addEventListener('pointerdown', e => { if (e.target.closest('button')) return; adv(e); });
-    $('game').addEventListener('pointerdown', e => adv(e));
-    $('dlgSkip').addEventListener('click', () => { this.skipAll = true; this.advance?.(); });
+    addEventListener('keydown', key);
+    // tapping the text or the game view turns the page; the buttons do their own thing
+    $('dialogue').addEventListener('pointerdown', e => { if (e.target.closest('button')) return; if (!this.choiceActive) this.nav?.('next'); });
+    $('game').addEventListener('pointerdown', () => { if (this.dialogueOpen && !this.choiceActive) this.nav?.('next'); });
+    $('dlgNext').addEventListener('click', () => this.nav?.('next'));
+    $('dlgBack').addEventListener('click', () => this.nav?.('back'));
+    $('dlgSkip').addEventListener('click', () => this.nav?.('skip'));
+  }
+
+  /** Group dialogue lines into pages: up to three short lines (or a speech's worth of text) per page. */
+  static paginate(lines, cjk = false, narrow = false) {
+    // phones get shorter pages so a page never needs scrolling
+    const MAX = (cjk ? 150 : 270) * (narrow ? 0.6 : 1), PER = narrow ? 2 : 3;
+    const pages = [];
+    let cur = null;
+    for (const l of lines) {
+      if (l.choice) {
+        // the question and its answers share a page when there is room
+        if (!cur || cur.lines.length >= PER) { cur = { lines: [], len: 0 }; pages.push(cur); }
+        cur.choice = l.choice;
+        cur = null;
+        continue;
+      }
+      const len = [...(l[1] || '')].length;
+      if (!cur || cur.lines.length >= PER || (cur.lines.length && cur.len + len > MAX)) { cur = { lines: [], len: 0 }; pages.push(cur); }
+      cur.lines.push(l);
+      cur.len += len;
+    }
+    return pages;
   }
 
   selChoice(d) {
@@ -210,77 +270,105 @@ export class UI {
     if (!this.dialogueOpen) { this._gpPrev = null; return; }
     const gp = [...(navigator.getGamepads?.() ?? [])].find(Boolean);
     if (!gp) return;
-    const now = { a: gp.buttons[0]?.pressed || gp.buttons[2]?.pressed, up: gp.buttons[12]?.pressed || gp.axes[1] < -0.6, down: gp.buttons[13]?.pressed || gp.axes[1] > 0.6 };
+    const now = { a: gp.buttons[0]?.pressed || gp.buttons[2]?.pressed, b: gp.buttons[1]?.pressed || gp.buttons[14]?.pressed, up: gp.buttons[12]?.pressed || gp.axes[1] < -0.6, down: gp.buttons[13]?.pressed || gp.axes[1] > 0.6 };
     const prev = this._gpPrev || {};
     this._gpPrev = now;
+    if (now.b && !prev.b) { this.nav?.('back'); return; }
     if (this.choiceActive) {
       if (now.up && !prev.up) this.selChoice(-1);
       if (now.down && !prev.down) this.selChoice(1);
       if (now.a && !prev.a) this.pickChoice(this.choiceSel);
-    } else if (now.a && !prev.a) this.advance?.();
+    } else if (now.a && !prev.a) this.nav?.('next');
   }
 
   async dialogueInner(lines, { onLine } = {}) {
     this.dialogueOpen = true;
-    this.skipAll = false;
     this.prompt(null);
+    const local = lines.map(l => (l.choice ? { choice: l.choice.map(o => ({ ...o, text: tx(o.text) })) } : [l[0], tx(l[1]), l[2]]));
+    const pages = UI.paginate(local, isCJK(), innerWidth < 640 || innerHeight < 520);
     $('dialogue').classList.remove('hidden');
-    let result = null;
-    for (const line of lines) {
-      if (line.choice) { result = await this.choice(line.choice); continue; }
-      if (this.skipAll) continue;
-      const [who, text, anim] = line;
-      onLine?.(who, anim);
-      await this.showLine(who, text);
+    let result = null, i = 0;
+    const seen = new Set();
+    while (i < pages.length) {
+      const act = await this.showPage(pages, i, seen.has(i) ? null : onLine);
+      seen.add(i);
+      if (act === 'back') { i = Math.max(0, i - 1); continue; }
+      if (act === 'skip') {
+        // skipping never skips a decision: jump to the next page that asks one
+        const ci = pages.findIndex((p, k) => k > i && p.choice);
+        if (ci < 0) break;
+        i = ci;
+        continue;
+      }
+      if (act && act.choice !== undefined) result = act.choice;
+      i++;
     }
     $('dialogue').classList.add('hidden');
+    this.nav = null;
     this.dialogueOpen = false;
     return result;
   }
 
-  showLine(who, text) {
-    const c = CAST[who] || CAST.narrator;
-    const narr = who === 'narrator' || who === 'sora' || who === 'kiku';
-    $('dlgName').textContent = c.name || '';
-    $('dlgName').style.display = c.name ? '' : 'none';
-    $('dlgName').style.background = c.color;
-    const p = $('dlgPortrait');
-    const hasPortrait = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana'].includes(who);
-    p.classList.toggle('none', !hasPortrait);
-    if (hasPortrait) p.style.backgroundImage = `url(./portraits/${who}.webp)`;
-    const el = $('dlgText');
-    el.classList.toggle('narration', narr);
+  /** Render one page as a little chat: portrait, name and line per row. Resolves with the reader's move. */
+  showPage(pages, i, onLine) {
+    const page = pages[i];
+    const box = $('dlgLines');
+    box.innerHTML = '';
+    page.lines.forEach(([who, text, anim], k) => {
+      const c = CAST[who] || CAST.narrator;
+      const row = document.createElement('div');
+      row.className = 'dl-row' + (who === 'narrator' ? ' narr' : '') + (who === 'mika' ? ' me' : '') + (who === 'sora' ? ' letter' : '');
+      row.style.setProperty('--c', c.color);
+      row.style.animationDelay = `${k * 0.14}s`;
+      const hasPortrait = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana'].includes(who);
+      if (who !== 'narrator') {
+        const av = document.createElement('div');
+        av.className = 'av';
+        if (hasPortrait) av.style.backgroundImage = `url(./portraits/${who}.webp)`;
+        else { av.style.background = c.color; av.textContent = [...tx(c.name || '?')][0]; }
+        row.appendChild(av);
+      }
+      const bub = document.createElement('div');
+      bub.className = 'bub';
+      if (c.name) { const nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = tx(c.name); bub.appendChild(nm); }
+      const t = document.createElement('div');
+      t.className = 'tx';
+      t.textContent = text;
+      bub.appendChild(t);
+      row.appendChild(bub);
+      box.appendChild(row);
+      // gestures and voice blips follow the rows as they appear
+      if (onLine) setTimeout(() => { if (this.dialogueOpen) onLine(who, anim); }, k * 420);
+      if (who !== 'narrator') setTimeout(() => this.audio?.blip(c.pitch), k * 140);
+    });
+    box.scrollTop = 0;
+    const last = i === pages.length - 1;
+    $('dlgPage').textContent = pages.length > 1 ? `${i + 1} / ${pages.length}` : '';
+    $('dlgBack').disabled = i === 0;
+    $('dlgNext').style.display = page.choice ? 'none' : '';
+    $('dlgNextLabel').textContent = tx(last ? N_('Close') : N_('Next'));
+    $('dlgSkip').style.visibility = pages.length > 1 && !page.choice ? '' : 'hidden';
     $('dlgChoices').innerHTML = '';
-    $('dlgNext').style.visibility = 'hidden';
     return new Promise(resolve => {
-      let i = 0, done = false;
-      const chars = [...text];
-      el.textContent = '';
-      const step = () => {
-        if (done) return;
-        i = Math.min(chars.length, i + 2);
-        el.textContent = chars.slice(0, i).join('');
-        if (i % 4 === 0 && !narr) this.audio?.blip(c.pitch);
-        if (i >= chars.length) { finish(); return; }
-        this.typeTimer = setTimeout(step, 24);
+      const shownAt = performance.now();
+      this.nav = move => {
+        // a press that arrives with the page itself (a held key, a double tap) must not skip it unread
+        if (move === 'next' && performance.now() - shownAt < 180) return;
+        if (move === 'back' && i === 0) return;
+        if (move === 'next' && page.choice) return;
+        this.nav = null;
+        this.choiceActive = false;
+        this.onChoice = null;
+        this.audio?.click();
+        resolve(move);
       };
-      const finish = () => {
-        done = true;
-        clearTimeout(this.typeTimer);
-        el.textContent = text;
-        $('dlgNext').style.visibility = 'visible';
-        this.advance = () => { this.advance = null; this.audio?.click(); resolve(); };
-      };
-      this.advance = () => finish();
-      if (this.skipAll) { resolve(); return; }
-      step();
+      if (page.choice) this.choice(page.choice).then(v => { this.nav = null; resolve({ choice: v }); });
     });
   }
 
   choice(options) {
     this.choiceActive = true;
     this.choiceSel = 0;
-    $('dlgNext').style.visibility = 'hidden';
     const box = $('dlgChoices');
     box.innerHTML = '';
     return new Promise(resolve => {
@@ -316,7 +404,7 @@ export class UI {
     const g = this.game;
     const q = $('optQuality');
     q.value = g.renderer.qualityName;
-    q.addEventListener('change', () => { g.renderer.setQuality(q.value); this.toast('Graphics setting saved — reload to apply fully'); });
+    q.addEventListener('change', () => { g.renderer.setQuality(q.value); this.toast(tx('Graphics setting saved — reload to apply fully')); });
     const load = (k, d) => { try { return JSON.parse(localStorage.getItem(`starline-opt-${k}`)) ?? d; } catch { return d; } };
     const save = (k, v) => { try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify(v)); } catch { /* ignore */ } };
     const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps');
@@ -367,20 +455,23 @@ export class UI {
     if (tab === 'story') {
       const cur = STEP_INDEX[q.step];
       const rows = STEPS.slice(0, cur + 1).filter(s => s.chapter === q.chapter || STEP_INDEX[s.id] === cur)
-        .map(s => `<div class="step ${STEP_INDEX[s.id] < cur ? 'done' : ''}">${STEP_INDEX[s.id] < cur ? '✓' : '★'} ${s.objective.replace(/\s*\(\{\w+\}\/\d+\)/g, '').replace(/\{\w+\}/g, '')}</div>`);
-      const lamps = ['forest', 'mill', 'orchard', 'viaduct'].map(l => `${q.lamps[l] ? '🟡' : '⚫'} ${l[0].toUpperCase() + l.slice(1)} Lamp`).join(' &nbsp; ');
-      body.innerHTML = `<p>${lamps}</p><h3>${CHAPTERS[q.chapter].title} — ${CHAPTERS[q.chapter].name}</h3>${rows.join('')}`;
+        .map(s => `<div class="step ${STEP_INDEX[s.id] < cur ? 'done' : ''}">${STEP_INDEX[s.id] < cur ? '✓' : '★'} ${esc(tx(s.objective).replace(/\s*[(（]\{\w+\}\/\d+[)）]/g, '').replace(/\{\w+\}/g, ''))}</div>`);
+      const lamps = [['forest', 'Forest Lamp'], ['mill', 'Mill Lamp'], ['orchard', 'Orchard Lamp'], ['viaduct', 'Viaduct Lamp']].map(([l, n]) => `${q.lamps[l] ? '🟡' : '⚫'} ${esc(tx(n))}`).join(' &nbsp; ');
+      body.innerHTML = `<p>${lamps}</p><h3>${esc(tx(CHAPTERS[q.chapter].title))} — ${esc(tx(CHAPTERS[q.chapter].name))}</h3>${rows.join('')}`;
     } else if (tab === 'pages') {
-      body.innerHTML = JOURNAL.map((p, i) => q.pages.includes(i) ? `<div class="page"><b>${p.title}</b><br>${p.text}</div>` : `<div class="page locked"><b>Page ${i + 1}</b><br>Not found yet.</div>`).join('');
+      body.innerHTML = JOURNAL.map((p, i) => q.pages.includes(i) ? `<div class="page"><b>${esc(tx(p.title))}</b><br>${esc(tx(p.text))}</div>` : `<div class="page locked"><b>${esc(tx('Page {n}', { n: i + 1 }))}</b><br>${esc(tx('Not found yet.'))}</div>`).join('');
     } else if (tab === 'stars') {
-      body.innerHTML = `<p>${q.stars.length} / 12 found. ${q.stars.length === 12 ? 'Sora left one more letter…' : 'Each star holds a line of Sora\'s poem.'}</p><div class="grid">` +
-        FALLEN_STARS.map((s, i) => q.stars.includes(s.id) ? `<div class="star">★ ${STAR_POEM[i]}</div>` : `<div class="star locked">☆ ${s.hint}</div>`).join('') + '</div>';
+      body.innerHTML = `<p>${esc(tx('{n} / 12 found.', { n: q.stars.length }))} ${esc(q.stars.length === 12 ? tx('Sora left one more letter…') : tx('Each star holds a line of Sora\'s poem.'))}</p><div class="grid">` +
+        FALLEN_STARS.map((s, i) => q.stars.includes(s.id) ? `<div class="star">★ ${esc(tx(STAR_POEM[i]))}</div>` : `<div class="star locked">☆ ${esc(tx(s.hint))}</div>`).join('') + '</div>';
     } else if (tab === 'fish') {
-      body.innerHTML = Object.entries(FISH).map(([k, f]) => `<div class="step">${q.fishLog[k] ? '🐟' : '·'} ${q.fishLog[k] ? f.name : '???'} ${q.fishLog[k] ? `× ${q.fishLog[k]}` : ''}${f.dusk ? ' <i>(bites at dusk)</i>' : ''}</div>`).join('');
+      body.innerHTML = Object.entries(FISH).map(([k, f]) => `<div class="step">${q.fishLog[k] ? '🐟' : '·'} ${q.fishLog[k] ? esc(tx(f.name)) : '???'} ${q.fishLog[k] ? `× ${q.fishLog[k]}` : ''}${f.dusk ? ` <i>${esc(tx('(bites at dusk)'))}</i>` : ''}</div>`).join('');
     } else {
+      const row = (keys, text) => `<div class="step">${keys.map(k => `<kbd>${k}</kbd>`).join(' ')} ${esc(tx(text))}</div>`;
       body.innerHTML = this.touch
-        ? '<p>Left thumb: move. Drag the right side: look. <b>Act</b>: talk / pick up / interact. <b>Jump</b>. Hold <b>Aim</b> and tap <b>Spark</b> to send Tamo.</p>'
-        : '<p><kbd>W A S D</kbd> move · <kbd>Shift</kbd> sprint · <kbd>Space</kbd> jump · drag mouse to look · wheel to zoom<br><kbd>E</kbd> talk / interact / advance dialogue<br>Hold <b>right mouse</b> (or <kbd>Q</kbd>) to aim, <b>left click</b> (or <kbd>R</kbd>) to spark<br><kbd>J</kbd> journal · <kbd>Esc</kbd> pause · gamepad supported</p>';
+        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Act')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming'))].join('')
+        : [row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')), row(['C'], N_('Dive while swimming')),
+          row(['E'], N_('Talk, pick up, light lamps — anything nearby')), row(['E', 'Q'], N_('Next / back in conversations')), row([tx('Mouse')], N_('Drag to look · wheel to zoom')),
+          row(['J'], N_('Journal')), row(['Esc'], N_('Pause')), row(['🎮'], N_('Gamepad supported'))].join('');
     }
   }
 
@@ -399,8 +490,7 @@ export class UI {
     };
     hold('tJump', 'jump');
     hold('tAct', 'act');
-    hold('tAim', 'aim', true);
-    hold('tFire', 'fire');
+    hold('tDive', 'dive');
     input.onStick = s => {
       const st = $('stick');
       if (!s) { st.classList.remove('on'); return; }
@@ -414,22 +504,25 @@ export class UI {
   // ------------------------------------------------------------------ minigame widgets
   showFishing(on) { $('fishing').classList.toggle('hidden', !on); }
   fishing(state) {
-    $('fishTitle').textContent = state.title;
-    $('fishZone').style.left = `${(state.zone - state.zoneW / 2) * 100}%`;
-    $('fishZone').style.width = `${state.zoneW * 100}%`;
-    $('fishMark').style.left = `${state.fish * 100}%`;
-    $('fishCatch').style.width = `${state.progress * 100}%`;
-    $('fishZone').parentElement.style.visibility = state.phase === 'reel' ? 'visible' : 'hidden';
+    const title = tx(state.title);
+    if ($('fishTitle').textContent !== title) $('fishTitle').textContent = title;
+    const bite = state.phase === 'bite';
+    $('fishing').classList.toggle('bite', bite);
+    $('fishFloat').classList.toggle('bite', bite);
+    $('fishBite').style.width = `${state.bite * 100}%`;
   }
   showCooking(on) { $('cooking').classList.toggle('hidden', !on); }
   cooking(state) {
-    $('cookBeat').style.transform = `scale(${state.ring})`;
-    $('cookBeat').style.borderColor = state.flash > 0 ? (state.good ? '#2e7d32' : '#c62828') : '';
     $('cookProg').style.width = `${state.progress * 100}%`;
   }
   ride(on, lit, total) {
     $('rideHud').classList.toggle('hidden', !on);
-    if (on) $('rideText').textContent = `Trackside lanterns lit ${lit} / ${total}`;
+    if (on) $('rideText').textContent = tx('Trackside lanterns lit {n} / {total}', { n: lit, total });
+  }
+  swimming(on) {
+    if (this._swim === on) return;
+    this._swim = on;
+    $('tDive').classList.toggle('hidden', !on || !this.touch);
   }
   fpsText(t) { $('fps').textContent = t; }
   error(msg) { const e = $('err'); e.textContent = msg; e.classList.remove('hidden'); }

@@ -1,71 +1,80 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Fishing, Cooking } from '../src/game/minigames.js';
-import { herdStep } from '../src/actors/animals.js';
+import { herdStep, SHY_RADIUS } from '../src/actors/animals.js';
 import { rng } from '../src/engine/spline.js';
 
-function playFishing(policy, seed, opts = {}) {
+function playFishing(policy, seed, opts = {}, limit = 60) {
   const f = new Fishing({ rand: rng(seed), ...opts });
   const dt = 1 / 60;
   let t = 0;
-  while (f.phase !== 'done' && t < 60) {
-    const { press, hold } = policy(f);
-    f.update(dt, press, hold);
+  while (f.phase !== 'done' && t < limit) {
+    f.update(dt, policy(f));
     t += dt;
   }
-  return f;
+  return { f, t };
 }
 
-// A skilled player strikes on the bite and keeps the zone under the fish.
-const skilled = f => ({ press: f.phase === 'bite', hold: f.phase === 'reel' && f.zone < f.fish + 0.02 });
-
-test('a skilled player lands most trout; an idle player never does', () => {
-  let caught = 0;
-  for (let s = 1; s <= 40; s++) if (playFishing(skilled, s).result === 'caught') caught++;
-  assert.ok(caught >= 34, `skilled caught ${caught}/40`);
-  for (let s = 1; s <= 10; s++) assert.notEqual(playFishing(() => ({ press: false, hold: false }), s).result, 'caught');
+test('fishing is one press: press E while the float is under and the fish is caught', () => {
+  for (let s = 1; s <= 30; s++) {
+    const { f, t } = playFishing(f => f.phase === 'bite', s);
+    assert.equal(f.result, 'caught');
+    assert.ok(t < 4, `bite came after ${t.toFixed(1)} s`);
+  }
+  // an idle player never catches anything, but nothing is lost either: the bites keep coming
+  const { f } = playFishing(() => false, 3, {}, 20);
+  assert.notEqual(f.result, 'caught');
+  assert.ok(f.bites >= 3, `bites ${f.bites}`);
 });
 
-test('striking before the bite scares the fish; the starfin only appears at dusk and is harder', () => {
-  const f = new Fishing({ rand: rng(3) });
-  f.update(0.1, true, false);
-  assert.equal(f.result, 'early');
+test('pressing early does nothing; a late press after a missed bite still works on the next one', () => {
+  const f = new Fishing({ rand: rng(5) });
+  f.update(0.1, true);
+  assert.equal(f.phase, 'wait');
+  let t = 0, pressedAfterMiss = false;
+  while (f.phase !== 'done' && t < 20) {
+    // ignore the first bite, take the second
+    const press = f.phase === 'bite' && f.bites >= 2;
+    if (press) pressedAfterMiss = true;
+    f.update(1 / 60, press);
+    t += 1 / 60;
+  }
+  assert.ok(pressedAfterMiss && f.result === 'caught');
+});
+
+test('the starfin only bites at dusk', () => {
   const species = new Set();
   for (let s = 0; s < 60; s++) species.add(new Fishing({ rand: rng(s) }).species);
   assert.ok(!species.has('starfin'));
   const dusk = Array.from({ length: 60 }, (_, s) => new Fishing({ rand: rng(s), dusk: true })).filter(f => f.species === 'starfin');
-  assert.ok(dusk.length > 10 && dusk.every(f => f.difficulty > 0.5));
+  assert.ok(dusk.length > 10);
 });
 
-test('cooking: on-beat stirring finishes in four presses, mashing still finishes (no fail state)', () => {
+test('cooking: the pot finishes by itself after a short stir', () => {
   const c = new Cooking();
-  let presses = 0;
-  for (let i = 0; i < 2000 && !c.done; i++) {
-    const r = c.ring;
-    const press = r > 0.55 && r < 0.6 && (i % 3 === 0);
-    if (press) presses++;
-    c.update(1 / 60, press);
-  }
-  assert.ok(c.done);
-  assert.ok(presses <= 6, `took ${presses}`);
-  const m = new Cooking();
-  for (let i = 0; i < 40 && !m.done; i++) m.update(0.37, true);
-  assert.ok(m.done, 'mashing eventually cooks');
+  let t = 0;
+  while (!c.update(1 / 60) && t < 10) t += 1 / 60;
+  assert.ok(c.done && t > 1.5 && t < 4, `cooked in ${t.toFixed(1)} s`);
+  assert.equal(c.view().progress, 1);
 });
 
-test('herding: sheep flee the player and can be steered into the pen', () => {
+test('sheep: a sheep sent home trots into the pen on its own, even from far away', () => {
   const pen = { x: 0, z: 0, r: 5 };
-  const flock = [{ x: 0, z: 22, vx: 0, vz: 0 }];
-  const player = { x: 0, z: 30 };
-  // walk behind the sheep, pushing it toward the pen
-  for (let i = 0; i < 60 * 40 && !flock[0].penned; i++) {
-    const s = flock[0];
-    const dx = s.x - pen.x, dz = s.z - pen.z, d = Math.hypot(dx, dz) || 1;
-    player.x = s.x + dx / d * 5; player.z = s.z + dz / d * 5;
-    Object.assign(s, herdStep(s, player, flock, pen, 1 / 60, rng(i)));
+  for (const [x, z] of [[0, 40], [35, -30], [-45, 10]]) {
+    const s = { x, z, vx: 0, vz: 0, homing: true };
+    const player = { x: 100, z: 100 };
+    let t = 0;
+    for (; t < 40 && !s.penned; t += 1 / 60) Object.assign(s, herdStep(s, player, [s], pen, 1 / 60, rng(Math.round(t * 60))));
+    assert.ok(s.penned, `sheep from ${x},${z} got home`);
+    assert.ok(t < 25, `took ${t.toFixed(1)} s`);
   }
-  assert.ok(flock[0].penned, 'sheep reached the pen');
-  const s2 = { x: 10, z: 10, vx: 0, vz: 0 };
-  const n = herdStep(s2, { x: 12, z: 10 }, [s2], pen, 0.2, () => 0.5);
-  assert.ok(n.x < 10, 'flees away from the player');
+});
+
+test('sheep: grazing sheep let Mika walk right up (they only shuffle aside when bumped)', () => {
+  const pen = { x: 0, z: 0, r: 5 };
+  const s = { x: 60, z: 60, vx: 0, vz: 0 };
+  const far = herdStep(s, { x: 60 + SHY_RADIUS + 0.8, z: 60 }, [s], pen, 0.2, () => 0.5);
+  assert.ok(far.speed < 0.3, 'calm at arm\'s length');
+  const near = herdStep(s, { x: 61, z: 60 }, [s], pen, 0.2, () => 0.5);
+  assert.ok(near.x < 60, 'steps away when bumped');
 });

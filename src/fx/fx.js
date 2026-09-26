@@ -132,14 +132,17 @@ export class FX {
 
   updateWeather(dt, focus, night) {
     const k = this.weatherKind;
-    const rate = k === 'snow' ? 90 : k === 'petals' ? 16 : k === 'leaves' ? 14 : 0;
+    const life = k === 'snow' ? 9 : k === 'petals' ? 12 : 10;
+    // never emit faster than the pool recycles: the ring buffer would reuse flakes still in the air, and they
+    // blinked out mid-fall (snow at 90/s x 9 s needs 810 slots; the low tier has 350)
+    const rate = Math.min(k === 'snow' ? 90 : k === 'petals' ? 16 : k === 'leaves' ? 14 : 0, this.weather.n * 0.95 / life);
     this.wAcc = (this.wAcc || 0) + rate * dt;
     while (this.wAcc > 1) {
       this.wAcc--;
       const p = V.set(focus.x + (Math.random() - 0.5) * 50, focus.y + 8 + Math.random() * 10, focus.z + (Math.random() - 0.5) * 50);
-      if (k === 'snow') this.weather.emit(p, new THREE.Vector3(0.6, -1.6 - Math.random(), 0.3), { life: 9, size: 0.14, color: [1, 1, 1], alpha: 0.9, drag: 0.2 });
-      else if (k === 'petals') this.weather.emit(p, new THREE.Vector3(1.2, -0.8, 0.5), { life: 12, size: 0.13, color: [1, 0.72, 0.84], alpha: 0.95 });
-      else if (k === 'leaves') this.weather.emit(p, new THREE.Vector3(1.4, -1.1, 0.4), { life: 10, size: 0.18, color: Math.random() < 0.5 ? [0.93, 0.45, 0.12] : [0.95, 0.72, 0.18], alpha: 0.95 });
+      if (k === 'snow') this.weather.emit(p, new THREE.Vector3(0.6, -1.6 - Math.random(), 0.3), { life, size: 0.14, color: [1, 1, 1], alpha: 0.9, drag: 0.2 });
+      else if (k === 'petals') this.weather.emit(p, new THREE.Vector3(1.2, -0.8, 0.5), { life, size: 0.13, color: [1, 0.72, 0.84], alpha: 0.95 });
+      else if (k === 'leaves') this.weather.emit(p, new THREE.Vector3(1.4, -1.1, 0.4), { life, size: 0.18, color: Math.random() < 0.5 ? [0.93, 0.45, 0.12] : [0.95, 0.72, 0.18], alpha: 0.95 });
     }
     // summer-night fireflies
     if (k === 'fireflies' && night > 0.5) {

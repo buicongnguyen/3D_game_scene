@@ -3,8 +3,10 @@ import { NPC } from './npc.js';
 import { rng } from '../engine/spline.js';
 import { PLACES, river, riverHalfWidth } from '../world/layout.js';
 
-/** Sheep closer than this to the pen trot home by themselves; the player rounds up the rest. */
+/** Sheep closer than this to the pen drift home by themselves. */
 export const HOME_RADIUS = 22;
+/** How close Mika can walk before a grazing sheep shuffles aside (small, so she can reach it). */
+export const SHY_RADIUS = 2.2;
 
 /** Pure herding step for one sheep (Node-testable). Returns new {x, z, vx, vz, state}. */
 export function herdStep(sheep, player, flock, pen, dt, rand = Math.random) {
@@ -17,15 +19,15 @@ export function herdStep(sheep, player, flock, pen, dt, rand = Math.random) {
     if (pd > pen.r - 1.2) { ax -= px / pd * 2; az -= pz / pd * 2; }
     ax += (rand() - 0.5) * 0.6; az += (rand() - 0.5) * 0.6;
     speed = 0.5;
-  } else if (d < 7.5) {
-    const f = (7.5 - d) / 7.5;
-    ax += dx / (d || 1) * (2 + f * 6); az += dz / (d || 1) * (2 + f * 6);
-    speed = 1.2 + f * 3.4;
+  } else if (!sheep.homing && d < SHY_RADIUS) {
+    const f = (SHY_RADIUS - d) / SHY_RADIUS;
+    ax += dx / (d || 1) * (2 + f * 4); az += dz / (d || 1) * (2 + f * 4);
+    speed = 0.8 + f * 1.2;
     // flock cohesion: stay near nearby sheep
     let cx = 0, cz = 0, n = 0;
     for (const o of flock) if (o !== sheep && !o.penned && Math.hypot(o.x - x, o.z - z) < 9) { cx += o.x; cz += o.z; n++; }
     if (n) { ax += (cx / n - x) * 0.15; az += (cz / n - z) * 0.15; }
-  } else {
+  } else if (!sheep.homing) {
     if (rand() < dt * 0.4) sheep.wander = rand() * Math.PI * 2;
     ax += Math.cos(sheep.wander ?? 0) * 0.4; az += Math.sin(sheep.wander ?? 0) * 0.4;
     speed = 0.35;
@@ -34,7 +36,7 @@ export function herdStep(sheep, player, flock, pen, dt, rand = Math.random) {
   if (!sheep.penned) {
     const gx = pen.x, gz = pen.z + pen.r + 1.2;
     const toPen = Math.hypot(x - pen.x, z - pen.z);
-    if (toPen < HOME_RADIUS) {
+    if (toPen < HOME_RADIUS || sheep.homing) {
       const inGate = (Math.abs(x - pen.x) < 2.4 && z > pen.z - 1 && z < gz + 1.5) || Math.hypot(x - gx, z - gz) < 1.8;
       let tx = inGate || toPen < pen.r - 0.5 ? pen.x : gx, tz = inGate || toPen < pen.r - 0.5 ? pen.z : gz;
       // beside or behind the pen: follow the fence round toward the gate instead of pushing into it
@@ -43,10 +45,11 @@ export function herdStep(sheep, player, flock, pen, dt, rand = Math.random) {
         const a2 = ang - Math.sign(ang) * 0.7, rr = pen.r + 2.2;
         tx = pen.x + Math.sin(a2) * rr; tz = pen.z + Math.cos(a2) * rr;
       }
-      const k = 0.8 + (HOME_RADIUS - toPen) / HOME_RADIUS * 1.8;
+      const k = sheep.homing ? 3 : 0.8 + (HOME_RADIUS - toPen) / HOME_RADIUS * 1.8;
       const l = Math.hypot(tx - x, tz - z) || 1;
       ax += (tx - x) / l * k; az += (tz - z) / l * k;
-      speed = Math.max(speed, 0.9);
+      // a sent-home sheep trots, slowing to a walk through the gate
+      speed = Math.max(speed, sheep.homing ? (toPen < pen.r + 3 ? 1.6 : 3.0) : 0.9);
     }
   }
   // separation
@@ -178,6 +181,14 @@ export class Wildlife {
     });
   }
 
+  /** Mika asked nicely: this sheep trots home to the pen by itself. */
+  sendHome(s) {
+    if (s.penned || s.homing) return;
+    s.homing = true;
+    s.homeT = 0;
+    s.anim?.once('Bleat', { then: 'Run' });
+  }
+
   placeSheepPenned(n) {
     this.spawnSheep();
     this.story.sheep.forEach((s, i) => {
@@ -300,6 +311,8 @@ export class Wildlife {
     const was = s.penned;
     const n = herdStep(s, player.pos, flock, pen, dt);
     let x = n.x, z = n.z;
+    // a sheep that gets stuck on its way home (a wall, a steep bank) is found in the pen a moment later
+    if (s.homing && !s.penned && (s.homeT = (s.homeT || 0) + dt) > 22) { x = pen.x + (this.R() - 0.5) * 2; z = pen.z + (this.R() - 0.5) * 2; n.penned = true; }
     // terrain and fences
     if (this.world.heightAt(x, z) < 0.6 || this.world.grid.slopeAt(x, z) > 38) { x = s.x; z = s.z; n.vx *= -0.5; n.vz *= -0.5; }
     const r = this.colliders.resolve(x, z, 0.45, this.world.heightAt(x, z), 1.0, 0.3);

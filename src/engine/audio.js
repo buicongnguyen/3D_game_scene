@@ -27,7 +27,9 @@ export class Audio {
     const c = this.ctx = new AC();
     c.onstatechange = () => { if (c.state === 'closed') this.ctx = null; };
     this.master = c.createGain(); this.master.gain.value = 0.9; this.master.connect(c.destination);
-    this.comp = c.createDynamicsCompressor(); this.comp.threshold.value = -14; this.comp.ratio.value = 3; this.comp.connect(this.master);
+    // under water everything is heard through the river: a lowpass on the whole mix
+    this.muffle = c.createBiquadFilter(); this.muffle.type = 'lowpass'; this.muffle.frequency.value = 20000; this.muffle.connect(this.master);
+    this.comp = c.createDynamicsCompressor(); this.comp.threshold.value = -14; this.comp.ratio.value = 3; this.comp.connect(this.muffle);
     this.music = c.createGain(); this.music.gain.value = this.musicVol * 0.5; this.music.connect(this.comp);
     this.sfx = c.createGain(); this.sfx.gain.value = this.sfxVol; this.sfx.connect(this.comp);
     this.ambBus = c.createGain(); this.ambBus.gain.value = this.sfxVol * 0.6; this.ambBus.connect(this.comp);
@@ -111,7 +113,13 @@ export class Audio {
   }
   jump() { this.noise({ dur: 0.12, vol: 0.06, freq: 1800, sweep: 0.5 }); }
   land(s = 0.5) { this.noise({ dur: 0.14, vol: 0.08 + s * 0.12, freq: 500, q: 0.8 }); }
-  splash() { this.noise({ dur: 0.6, vol: 0.3, freq: 2200, q: 0.5, type: 'lowpass', sweep: 0.3 }); }
+  splash(strength = 0.6) { this.noise({ dur: 0.35 + strength * 0.4, vol: 0.12 + strength * 0.3, freq: 1600 + strength * 1200, q: 0.5, type: 'lowpass', sweep: 0.3 }); }
+  stroke() { this.noise({ dur: 0.32, vol: 0.07, freq: 1300, q: 0.6, type: 'lowpass', sweep: 0.5 }); }
+  setUnderwater(on) {
+    if (!this.ctx || this._under === on) return;
+    this._under = on;
+    this.muffle.frequency.setTargetAtTime(on ? 520 : 20000, this.ctx.currentTime, 0.06);
+  }
   spark() {
     this.noise({ dur: 0.4, vol: 0.12, freq: 3000, sweep: 0.4 });
     [0, 4, 7, 12].forEach((d, i) => this.tone(mtof(84 + d), { dur: 0.25, vol: 0.05, when: i * 0.03, rev: 0.5 }));

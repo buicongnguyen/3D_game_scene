@@ -31,6 +31,8 @@ export class World {
   }
 
   update(dt, focus) {
+    // the player: distance culling and LOD measure from here while the follow camera orbits around it
+    (this.focus ??= new THREE.Vector3()).copy(focus);
     const L = this.sky.update(dt, this.season, this.hour, focus);
     this.water.update(dt, this.sky, this.lamps);
     return L;

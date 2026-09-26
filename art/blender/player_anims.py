@@ -8,6 +8,8 @@ from mathutils import Vector, Quaternion
 from anims import sn, cs, env, bump, add, ease, smooth, clamp, lerp, sstep
 from human_lib import eul
 
+TAU = math.tau
+
 V = Vector
 
 
@@ -268,11 +270,93 @@ def cane_post(A, s, p, clip):
     return s
 
 
+def _loop_path(keys, u):
+    """Cyclic path through (t, Vector) keys (t ascending in [0, 1)); eased between keys."""
+    n = len(keys)
+    for i in range(n):
+        t0, a = keys[i]
+        t1, b = keys[(i + 1) % n]
+        if i == n - 1:
+            t1 += 1.0
+        uu = u if u >= t0 else u + 1.0
+        if t0 <= uu < t1:
+            k = (uu - t0) / (t1 - t0)
+            k = k * k * (3 - 2 * k)
+            return a.lerp(b, k)
+    return keys[0][1].copy()
+
+
+def swim(A, frames=34):
+    """Head-up front crawl, authored upright: the runtime tips the body forward about the hips, so
+    armature 'up' becomes 'ahead' and 'in front of the chest' becomes 'under the body'.
+    Alternating arm strokes (reach, pull under, high-elbow recovery over the back), a flutter kick,
+    body roll about the long axis and the head held up out of the water."""
+    k = A.k
+
+    def arm_path(S):
+        return [
+            (0.00, A.L(0.13, -0.10, 1.58, S)),   # entry: reaching ahead
+            (0.20, A.L(0.15, -0.26, 1.24, S)),   # catch: pressing down/back under the chest
+            (0.42, A.L(0.17, -0.18, 0.86, S)),   # pull
+            (0.55, A.L(0.19, -0.06, 0.64, S)),   # finish at the hip
+            (0.72, A.L(0.33, 0.12, 0.92, S)),    # recovery: elbow high over the back
+            (0.88, A.L(0.24, 0.04, 1.36, S)),
+        ]
+    paths = {S: arm_path(S) for S in 'LR'}
+
+    def pose(p):
+        s = {}
+        roll = 16 * sn(p, 1, 0.1)                   # rolls toward the pulling arm
+        s['hips@loc'] = (0, 0, 0.006 * k * sn(p, 2))
+        s['hips'] = (2, 0, roll * 0.7)
+        s['spine'] = (3, 0, roll * 0.25)
+        s['chest'] = (2, 0, roll * 0.2)
+        s['neck'] = (-22, 0, -roll * 0.5)
+        s['head'] = (-34 + 3 * sn(p, 2, 0.2), 0, -roll * 0.4)
+        for S in 'LR':
+            ph = 0.0 if S == 'R' else 0.5
+            u = (p + ph) % 1.0
+            A.arm_to(s, S, 1, _loop_path(paths[S], u), pole=(A.sx(S) * 0.9, 0.9, 0.2),
+                     end_rel=(-20 * bump(u, 0.12, 0.55), 0, 0))
+            # flutter kick: two beats per stroke, toes pointed, knees nearly straight
+            kick = sn(p, 2, 0.0 if S == 'L' else 0.5)
+            A.plant(s, S, (A.sx(S) * -0.01 * k, 0.11 * k * kick, 0.04 * k + 0.02 * k * abs(kick)), pitch=62)
+        A.secondary(s, p, drag=-30, k=2, amp=0.8, up=-50)
+        return s
+    return 'Swim', frames, pose, True
+
+
+def tread(A, frames=48):
+    """Treading water, upright: slow eggbeater legs, hands sculling flat at chest height."""
+    k = A.k
+
+    def pose(p):
+        s = {}
+        s['hips@loc'] = (0, 0, 0.012 * k * sn(p, 2, 0.1))
+        s['hips'] = (10, 0, 2 * sn(p))
+        s['spine'] = (2 + 1.5 * sn(p, 2), 0, -1.5 * sn(p))
+        s['chest'] = (-2, 0, 0)
+        s['neck'] = (-4, 0, 0)
+        s['head'] = (-6 + 2 * sn(p, 2, 0.3), 0, 6 * sn(p, 1, 0.35))
+        for S in 'LR':
+            ph = 0.0 if S == 'L' else 0.5
+            sc = sn(p, 2, ph)
+            A.arm_to(s, S, 1, A.L(0.30 + 0.09 * sc, -0.24 + 0.03 * cs(p, 2, ph), 0.9, S), pole=(A.sx(S) * 0.9, 0.5, -0.4),
+                     end_rel=(0, 0, A.sx(S) * (35 * sc)))
+            a = TAU * (p + ph)
+            A.plant(s, S, (A.sx(S) * 0.05 * k + 0.05 * k * math.cos(a), -0.04 * k + 0.07 * k * math.sin(a), 0.2 * k + 0.04 * k * math.sin(a)),
+                    pitch=35 + 10 * math.sin(a), yaw=A.sx(S) * 25)
+        A.secondary(s, p, drag=-8, k=1, amp=0.7, up=-30)
+        return s
+    return 'Tread', frames, pose, True
+
+
 def extras(A, who):
     ex = {}
     if who == 'mika':
         ex.update(Aim=lambda: aim(A), Point=lambda: point(A), Cast=lambda: cast(A), Reel=lambda: reel(A),
-                  Interact=lambda: interact(A), Stir=lambda: stir(A), Hammer=lambda: hammer(A))
+                  Interact=lambda: interact(A), Stir=lambda: stir(A), Hammer=lambda: hammer(A),
+                  Swim=lambda: swim(A), Tread=lambda: tread(A))
     if who == 'rin':
         ex.update(Cast=lambda: cast(A, energy=1.4), Reel=lambda: reel(A), Pole=lambda: pole(A))
     if who == 'genzo':

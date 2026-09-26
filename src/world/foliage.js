@@ -7,6 +7,11 @@ const FOLIAGE = { Leaves: 'leaves', Needles: 'needles', 'Maple leaves': 'maple',
 const BARE_IN_WINTER = new Set(['Leaves', 'Maple leaves', 'Blossom']);
 const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = new THREE.Vector3();
 const _sphere = new THREE.Sphere();
+const _lx = new THREE.Vector3(), _ly = new THREE.Vector3(), _ld = new THREE.Vector3();
+const UP = new THREE.Vector3(0, 1, 0);
+// LOD / cut-off hysteresis: a tree near a threshold, or a camera orbiting the player (up to ~11 m) near
+// one, must not flip between its two meshes (or in and out of view) frame after frame. Band: 7%, >= 12 m.
+const band = d => Math.max(d * 0.07, 12);
 
 /**
  * One model placed many times: instanced meshes per primitive, with an optional low-poly LOD,
@@ -18,11 +23,14 @@ class InstanceSet {
     this.records = records;
     this.opts = opts;
     const lodParts = opts.lod && assets.has(opts.lod) ? assets.parts(opts.lod) : null;
-    // Shadows come from cheap proxies (the LOD mesh when there is one) limited to the sun's shadow box,
-    // so the full-detail trees are drawn once, not twice, and distant trees never enter the shadow pass.
-    this.near = this.build(parent, assets.parts(model), records.length, opts.castShadow && !lodParts, opts.wind);
+    // Shadows come from proxies (the cheap LOD mesh when there is one) chosen by the sun's shadow box, not by
+    // the camera: the full-detail trees are drawn once, not twice, distant trees never enter the shadow pass,
+    // and a bush or rock just outside the view still casts the shadow that falls into it (frustum-culled
+    // casters made shadows pop in and out at the screen edges while the camera turned).
+    this.near = this.build(parent, assets.parts(model), records.length, false, opts.wind);
     this.far = lodParts ? this.build(parent, lodParts, records.length, false, opts.wind) : null;
-    this.shadow = lodParts && opts.castShadow ? this.buildShadow(parent, lodParts, records.length) : null;
+    this.shadow = opts.castShadow ? this.buildShadow(parent, lodParts || assets.parts(model), records.length) : null;
+    this.state = new Uint8Array(records.length); // bit 0: using the far mesh, bit 1: beyond the cut-off
     // bounding radius from the model
     const box = new THREE.Box3();
     assets.gltf(model).scene.updateMatrixWorld(true);
@@ -67,19 +75,28 @@ class InstanceSet {
       mesh.castShadow = true;
       mesh.receiveShadow = false;
       mesh.userData.partMatrix = part.matrix;
+      mesh.userData.materialName = part.material.name;
       mesh.name = `${this.model}:shadow`;
       parent.add(mesh);
       return mesh;
     });
   }
 
-  updateShadow(focus, range) {
+  /** Casters for the sun's shadow box: light-space square of half-size `range` around focus (+ margin). */
+  updateShadow(focus, range, lightDir) {
     if (!this.shadow) return;
     const counts = new Array(this.shadow.length).fill(0);
-    const r = range + this.radius * 1.5;
+    // same basis as the shadow camera (see Sky.update): x/y across the light, the box is 2*range wide
+    _ld.copy(lightDir).normalize();
+    _lx.crossVectors(UP, _ld).normalize();
+    _ly.crossVectors(_ld, _lx);
+    const fx = _lx.dot(focus), fy = _ly.dot(focus);
     for (let i = 0; i < this.records.length; i++) {
       const rec = this.records[i];
-      if (Math.abs(rec.x - focus.x) > r || Math.abs(rec.z - focus.z) > r) continue;
+      // the shadow box moves 4 m before the lists are rebuilt: keep a margin for that and the crown
+      const r = range + this.radius * rec.s + 6;
+      const px = _lx.x * rec.x + _lx.y * rec.y + _lx.z * rec.z, py = _ly.x * rec.x + _ly.y * (rec.y + this.height * rec.s * 0.5) + _ly.z * rec.z;
+      if (Math.abs(px - fx) > r || Math.abs(py - fy) > r) continue;
       const M = this.matrices[i];
       for (let k = 0; k < this.shadow.length; k++) {
         const mesh = this.shadow[k];
@@ -91,18 +108,26 @@ class InstanceSet {
     this.shadow.forEach((m, k) => { m.count = counts[k]; m.instanceMatrix.needsUpdate = true; });
   }
 
-  update(camPos, frustum, nearDist, maxDist) {
+  update(camPos, frustum, nearDist, maxDist, cam = camPos) {
     const nearCount = new Array(this.near.length).fill(0);
     const farCount = this.far ? new Array(this.far.length).fill(0) : null;
     const max = this.opts.maxDist ?? maxDist;
+    const st = this.state, bandMax = band(max), bandNear = band(nearDist);
     for (let i = 0; i < this.records.length; i++) {
       const r = this.records[i];
       const d = Math.hypot(r.x - camPos.x, r.z - camPos.z);
-      if (d > max) continue;
+      // hysteresis on the cut-off and on the LOD switch
+      let s = st[i];
+      if (s & 2) { if (d < max - bandMax) s &= ~2; } else if (d > max) s |= 2;
+      if (s & 1) { if (d < nearDist - bandNear) s &= ~1; } else if (d > nearDist) s |= 1;
+      st[i] = s;
+      if (s & 2) continue;
       _sphere.center.set(r.x, r.y + this.height * r.s * 0.5, r.z);
-      _sphere.radius = this.radius * r.s;
+      // Lists are only rebuilt after the camera moves 0.5 m or turns ~2.3 deg (Foliage.update), so cull
+      // with that much slack: otherwise trees entering at the screen edge popped in a few frames late.
+      _sphere.radius = this.radius * r.s + Math.hypot(r.x - cam.x, r.y - cam.y, r.z - cam.z) * 0.045 + 0.6;
       if (!frustum.intersectsSphere(_sphere)) continue;
-      const useNear = d < nearDist || !this.far || r.story;
+      const useNear = !(s & 1) || !this.far || r.story;
       const set = useNear ? this.near : this.far;
       const counts = useNear ? nearCount : farCount;
       const M = this.matrices[i];
@@ -118,6 +143,7 @@ class InstanceSet {
   }
 
   meshes() { return [...this.near, ...(this.far ?? [])]; }
+  shadowMeshes() { return this.shadow ?? []; }
 }
 
 export class Foliage {
@@ -145,17 +171,24 @@ export class Foliage {
     byModel(placed.lilies, { castShadow: false, wind: 0, maxDist: 120 });
     this.frustum = new THREE.Frustum();
     this.shadowFocus = new THREE.Vector3(1e9, 0, 0);
+    this.shadowDir = new THREE.Vector3(0, 1, 0);
     this.shadowRange = quality.shadowRange;
+    this.scene = scene;
     this.lastPos = new THREE.Vector3(1e9, 0, 0);
     this.lastQuat = new THREE.Quaternion();
     this.season = null;
   }
 
-  /** Rebuild the shadow-caster lists when the shadow box has moved noticeably. */
+  /** Rebuild the shadow-caster lists when the shadow box has moved or turned noticeably. */
   updateShadows(focus) {
-    if (focus.distanceToSquared(this.shadowFocus) < 16) return;
+    (this.lodFocus ??= new THREE.Vector3()).copy(focus);
+    // the key light (sun or moon) is the scene's shadow-casting directional light, placed by Sky.update
+    this.sun ??= this.scene.children.find(o => o.isDirectionalLight && o.castShadow) || null;
+    const dir = this.sun ? _p.subVectors(this.sun.position, this.sun.target.position).normalize() : UP;
+    if (focus.distanceToSquared(this.shadowFocus) < 16 && dir.dot(this.shadowDir) > 0.9995) return;
     this.shadowFocus.copy(focus);
-    for (const s of this.sets) s.updateShadow(focus, this.shadowRange);
+    this.shadowDir.copy(dir);
+    for (const s of this.sets) s.updateShadow(focus, this.shadowRange, dir);
   }
 
   update(camera, force = false) {
@@ -166,7 +199,11 @@ export class Foliage {
     camera.updateMatrixWorld();
     _m.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     this.frustum.setFromProjectionMatrix(_m);
-    for (const s of this.sets) s.update(camera.position, this.frustum, this.nearDist, this.maxDist);
+    // LOD and cut-off distances are measured from the player (last shadow focus) while the follow camera
+    // orbits within a few metres of it, so orbiting never swaps meshes; from the camera in wide shots
+    const f = this.lodFocus, c = camera.position;
+    const ref = f && (f.x - c.x) ** 2 + (f.z - c.z) ** 2 < 15 * 15 ? f : c;
+    for (const s of this.sets) s.update(ref, this.frustum, this.nearDist, this.maxDist, c);
   }
 
   setSeason(season) {
@@ -185,6 +222,11 @@ export class Foliage {
         mesh.visible = !(p.bareTrees && deciduous && BARE_IN_WINTER.has(name));
         if (name === 'Peach') mesh.visible = season === 'summer';
         if (s.model.startsWith('flowers') || s.model === 'lilypads') mesh.visible = season !== 'winter';
+      }
+      // shadow proxies follow the season too (bare winter trees cast no leaf shadows)
+      for (const mesh of s.shadowMeshes()) {
+        const name = mesh.userData.materialName;
+        mesh.visible = !(p.bareTrees && deciduous && BARE_IN_WINTER.has(name)) && (name !== 'Peach' || season === 'summer');
       }
     }
   }

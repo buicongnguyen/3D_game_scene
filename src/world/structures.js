@@ -331,12 +331,21 @@ export class Structures {
     }
   }
 
-  /** Distance culling (quality-dependent): small props vanish sooner than buildings. */
+  /**
+   * Distance culling (quality-dependent): small props vanish sooner than buildings. Hysteresis: an object
+   * hides beyond its distance but only returns 12 m (or 6%) inside it, so a camera orbiting the player or
+   * bobbing around the threshold does not blink it in and out every cull tick.
+   */
   cull(camPos, q) {
-    const p2 = q.propDist * q.propDist, b2 = q.buildDist * q.buildDist;
+    // measure from the player while the follow camera orbits it (orbiting must not change what is shown);
+    // from the camera itself for cutscene shots far from the player
+    const f = this.world.focus;
+    if (f && (f.x - camPos.x) ** 2 + (f.z - camPos.z) ** 2 < 15 * 15) camPos = f;
+    const back = d => Math.min(d - 12, d * 0.94) ** 2;
+    const p2 = q.propDist * q.propDist, b2 = q.buildDist * q.buildDist, p2in = back(q.propDist), b2in = back(q.buildDist);
     for (const c of this.cullList) {
       const d2 = (c.x - camPos.x) ** 2 + (c.z - camPos.z) ** 2;
-      c.obj.visible = d2 < (c.prop ? p2 : b2);
+      c.obj.visible = c.obj.visible ? d2 < (c.prop ? p2 : b2) : d2 < (c.prop ? p2in : b2in);
     }
     if (!q.propShadows && !this.propShadowsOff) {
       this.propShadowsOff = true;

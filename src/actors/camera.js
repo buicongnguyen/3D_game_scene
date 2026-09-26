@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { WATER_Y } from '../world/layout.js';
 
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
@@ -27,18 +28,38 @@ export class FollowCamera {
 
   /** Scripted shot: from/to {pos, look} with duration; hold keeps the final framing until cleared. */
   cutscene(to, duration = 1.6, from = null) {
+    this.tracking = null;
     this.shot = {
       from: from || { pos: this.camera.position.clone(), look: this.look.clone() },
       to: { pos: to.pos.clone(), look: to.look.clone() }, t: 0, d: duration,
     };
   }
 
+  /** Follow a moving subject smoothly: pos()/look() give the desired framing every frame. */
+  track(pos, look, stiffness = 4) {
+    this.shot = null;
+    this.tracking = { pos, look, k: stiffness, lookNow: this.look.clone() };
+  }
+
   clearCutscene(snapBehind = true) {
     this.shot = null;
+    this.tracking = null;
     this.idle = snapBehind ? 10 : 0;
   }
 
   update(dt, player, input, aiming) {
+    this.setNear(this.tracking || this.shot ? 1.2 : 0.35);
+    if (this.tracking) {
+      const tr = this.tracking;
+      const k = 1 - Math.exp(-dt * tr.k);
+      this.camera.position.lerp(tr.pos(), k);
+      tr.lookNow.lerp(tr.look(), k);
+      this.look.copy(tr.lookNow);
+      this.camera.lookAt(this.look);
+      this.pos.copy(this.camera.position);
+      this.setFov(this.fovBase, dt);
+      return;
+    }
     if (this.shot) {
       const s = this.shot;
       s.t = Math.min(s.d, s.t + dt);
@@ -88,6 +109,11 @@ export class FollowCamera {
     const target = pivot.clone().addScaledVector(fwd, -this.dist);
     const g = this.world.heightAt(target.x, target.z);
     if (target.y < g + 0.45) target.y = g + 0.45;
+    // over the river the camera stays clear of the surface: above it, or below it once Mika dives
+    if (g < WATER_Y) {
+      if (player.submerged) target.y = Math.min(target.y, WATER_Y - 0.35);
+      else target.y = Math.max(target.y, WATER_Y + 0.45);
+    }
     this.camera.position.copy(target);
     this.look.copy(pivot).addScaledVector(fwd, 10);
     if (this.shake > 0) {
@@ -98,6 +124,13 @@ export class FollowCamera {
     this.camera.lookAt(this.look);
     this.pos.copy(this.camera.position);
     this.setFov(THREE.MathUtils.lerp(this.fovBase + Math.min(6, player.speed * 0.8), 44, this.aimBlend), dt);
+  }
+
+  /** Wide cinematic shots get a larger near plane for depth precision; gameplay keeps a close one. */
+  setNear(n) {
+    if (Math.abs(this.camera.near - n) < 1e-3) return;
+    this.camera.near = n;
+    this.camera.updateProjectionMatrix();
   }
 
   setFov(f, dt) {
