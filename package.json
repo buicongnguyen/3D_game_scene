@@ -1,17 +1,25 @@
 {
-  "name": "hoshi-no-tani",
+  "name": "starline",
   "private": true,
+  "version": "1.0.0",
   "type": "module",
+  "description": "Starline — a cosy story game in Hoshi Valley (three.js + Blender).",
   "scripts": {
-    "test": "node --test tests/*.test.mjs",
     "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "build": "vite build && node scripts/pack-models.mjs dist/models",
+    "preview": "vite preview",
+    "test": "node --test tests/*.test.mjs",
+    "test:e2e": "node tests/e2e/run.mjs"
   },
   "dependencies": {
     "three": "0.180.0"
   },
   "devDependencies": {
+    "@gltf-transform/core": "^4.5.0",
+    "@gltf-transform/extensions": "^4.5.0",
+    "@gltf-transform/functions": "^4.5.0",
+    "meshoptimizer": "^0.22.0",
+    "playwright": "^1.61.1",
     "vite": "^6.1.0"
   }
 }

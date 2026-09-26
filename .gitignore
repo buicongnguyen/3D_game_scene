@@ -1,3 +1,6 @@
 node_modules/
 dist/
+.tools/
 *.blend1
+__pycache__/
+*.pyc
