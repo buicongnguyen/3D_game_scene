@@ -326,6 +326,18 @@ try {
   const lit = Object.keys(s.lamps || {}).filter(k => s.lamps[k]);
   if (s.step !== 'e.free' || lit.length !== 4) throw new Error(`did not finish: ${JSON.stringify(s)}`);
   log(`FINISHED the story (${CHOICE}) in ${((Date.now() - t0) / 60000).toFixed(1)} min; lamps: ${lit.join(', ')}`);
+  // menus: the journal opened from the pause menu must be the panel on screen, and Esc/J must work while paused
+  const shown = () => page.evaluate(() => ['pause', 'journal', 'settings'].filter(id => !document.getElementById(id).classList.contains('hidden')).join(','));
+  await page.click('#btnMenu'); await sleep(300);
+  await page.click('#btnPauseJournal'); await sleep(300);
+  if (await shown() !== 'journal') throw new Error(`pause > Journal shows [${await shown()}]`);
+  await press('Escape'); await sleep(300);
+  if (await shown() !== 'pause') throw new Error(`Esc from the journal shows [${await shown()}]`);
+  await press('KeyJ'); await sleep(300);
+  if (await shown() !== 'journal') throw new Error(`J in the pause menu shows [${await shown()}]`);
+  await press('Escape'); await sleep(200); await press('Escape'); await sleep(300);
+  if (await shown() !== '' || await page.evaluate(() => __STARLINE_QA__.game.paused)) throw new Error('Esc Esc did not resume the game');
+  log('   menus: pause > journal > back > resume all work');
 } catch (e) {
   exitCode = 1;
   console.error('FAILED:', e.message);

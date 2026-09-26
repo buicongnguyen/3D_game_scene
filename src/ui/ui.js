@@ -476,6 +476,13 @@ export class UI {
     $('btnPauseJournal').addEventListener('click', () => this.openJournal());
     $('btnPauseSettings').addEventListener('click', () => this.open('settings'));
     $('btnSaveQuit').addEventListener('click', () => this.game.saveAndQuit?.());
+    // Esc and J work on the menus themselves: game input is switched off while paused
+    addEventListener('keydown', e => {
+      if (!this.overlay || e.repeat) return;
+      const field = e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement;
+      if (e.code === 'Escape' || (e.code === 'KeyJ' && this.overlay === 'journal' && !field)) { e.preventDefault(); this.closeOverlay(); }
+      else if (e.code === 'KeyJ' && !field && this.game.director?.quest) { e.preventDefault(); this.openJournal(); }
+    });
     document.querySelectorAll('#journalTabs button').forEach(b => b.addEventListener('click', () => this.journalTab(b.dataset.tab)));
     const g = this.game;
     const q = $('optQuality');
@@ -524,8 +531,9 @@ export class UI {
     apply();
   }
 
+  /** Show a panel on top of the stack. The one underneath (the pause menu too) hides until this one closes. */
   open(id) {
-    if (this.overlay && this.overlay !== 'pause') $(this.overlay).classList.add('hidden');
+    if (this.overlay && this.overlay !== id) $(this.overlay).classList.add('hidden');
     $(id).classList.remove('hidden');
     this.overlayStack = [...(this.overlayStack || []).filter(x => x !== id), id];
     this.overlay = id;
