@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import {trainMaterial} from './render-stability.js';
 
 export const SCENE_MODELS=['sheep','rabbit','peacock','chicken','bear','fox','bird','locomotive','tender','coach','train-wheel'];
 export async function loadSceneModels(mobile, loadModel){
@@ -61,10 +62,13 @@ export function createModelWildlife(parent,models,capacity,birdCapacity){
 }
 
 export function upgradeTrain(train,models){
+  const materials=new Map();
+  const finish=source=>{if(!materials.has(source))materials.set(source,trainMaterial(source));return materials.get(source);};
   function replaceBody(group,name){
     const previous=group.children[0];group.remove(previous);
     previous.geometry?.dispose();
     const object=models[name].clone(true);group.add(object);
+    object.traverse(o=>{if(o.isMesh)o.material=Array.isArray(o.material)?o.material.map(finish):finish(o.material);});
     return object;
   }
   train.body=replaceBody(train.locoGroup,'locomotive');
@@ -83,7 +87,7 @@ export function upgradeTrain(train,models){
   const wheelParts=[];
   models['train-wheel'].traverse(o=>{
     if(!o.isMesh)return;
-    const mesh=new THREE.InstancedMesh(o.geometry,o.material,train.wheels.length);
+    const mesh=new THREE.InstancedMesh(o.geometry,finish(o.material),train.wheels.length);
     mesh.name='Blender train wheels';mesh.frustumCulled=false;mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
     train.group.add(mesh);wheelParts.push({mesh,base:o.matrixWorld.clone()});
   });

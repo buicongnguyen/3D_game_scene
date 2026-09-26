@@ -383,6 +383,7 @@ import { TOUR_DURATION, normalizeTourDuration, retimeTour, FrameMetrics } from '
 import { createGameplay } from './gameplay.js';
 import {updateEasyPlay} from './easy-play.js';
 import { loadSceneModels, createModelWildlife, upgradeTrain } from './scene-models.js';
+import {updateViewDepth,updateModelLighting,sceneSamples,SURFACE_FILTER_GLSL} from './render-stability.js';
 import {HOUSE_STYLES,HOUSE_HALF_EXTENT,HOUSE_CHIMNEY_HEIGHT,loadVillageModels,createVillageModels} from './village-models.js';
 
 window.addEventListener('error', e=>{
@@ -4236,6 +4237,7 @@ const STONE_FS = ()=> /* glsl */`
 precision highp float;
 ${GL_UNI}
 ${GL_PAL()}${GL_HASH}${GL_NOISE}${GL_TERRAIN}
+${SURFACE_FILTER_GLSL}
 ${GL_CLOUDFIELD}${GL_SHADOW}${GL_LIGHT}${GL_AIR}
 in vec3 vW; in vec3 vN; in float vSeed; in float vDist; in vec3 vL;
 out vec4 outColor;
@@ -4243,8 +4245,8 @@ void main(){
   vec3 N=normalize(vN), V=normalize(uCamPos-vW);
   float k=fract(vSeed*0.61803);
   vec3 base = k<0.25 ? ${C.sA} : (k<0.5 ? ${C.sB} : (k<0.75 ? ${C.sC} : ${C.sD}));
-  float grain = pn2(vW.xz*7.0 + vW.y*5.0)*0.5+0.5;
-  float grain2 = pn2(vW.xz*23.0 - vW.y*11.0)*0.5+0.5;
+  float grain = surfaceNoise(vW.xz*7.0 + vW.y*5.0)*0.5+0.5;
+  float grain2 = surfaceNoise(vW.xz*23.0 - vW.y*11.0)*0.5+0.5;
   base *= 0.88 + 0.26*grain + 0.08*grain2;
   vec3 lit=base, mid=mix(base,${C.sShade},0.55), shd=mix(${C.sShade},${C.sDeep},0.5);
 
@@ -4283,6 +4285,7 @@ const SOLID_FS = (litC, midC, shdC, extra)=> /* glsl */`
 precision highp float;
 ${GL_UNI}
 ${GL_PAL()}${GL_HASH}${GL_NOISE}${GL_TERRAIN}
+${SURFACE_FILTER_GLSL}
 ${GL_CLOUDFIELD}${GL_SHADOW}${GL_LIGHT}${GL_AIR}
 in vec3 vW; in vec3 vN; in float vS; in float vDist;
 out vec4 outColor;
@@ -4290,7 +4293,7 @@ void main(){
   vec3 N=normalize(vN), V=normalize(uCamPos-vW);
   vec3 lit=${litC}, mid=${midC}, shd=${shdC};
   ${extra||''}
-  float g = pn2(vW.xz*3.1+vW.y*2.3)*0.5+0.5;
+  float g = surfaceNoise(vW.xz*3.1+vW.y*2.3)*0.5+0.5;
   lit *= 0.90+0.20*g; mid *= 0.90+0.20*g;
   lit *= vS; mid *= mix(1.0, vS, 0.6);
   float ndl=dot(N,uSunDir);
@@ -6982,7 +6985,8 @@ function buildTargets(){
   sceneRT = new THREE.WebGLRenderTarget(W,H,{
     type:THREE.HalfFloatType, format:THREE.RGBAFormat,
     minFilter:THREE.LinearFilter, magFilter:THREE.LinearFilter,
-    depthBuffer:true, stencilBuffer:false, samples: 0,   // supersampled instead
+    depthBuffer:true, stencilBuffer:false,
+    samples:sceneSamples(State.q,IS_MOBILE,renderer.capabilities.maxSamples),
   });
   bloomRTs.forEach(r=>r.dispose()); bloomRTs=[];
   upRTs.forEach(r=>r.dispose()); upRTs=[];
@@ -8077,6 +8081,7 @@ function frame(now){
     if(faunaFx) faunaFx.mesh.visible=false;
   }
   updateCinematicTour();
+  updateViewDepth(camera,walker.cinematic!==0);
   camera.updateMatrixWorld(true);
   updateRuntimeBudgets();
 
@@ -8120,8 +8125,8 @@ function frame(now){
     modelWildlife.update({fauna:faunaFx.data,birds:BIRDS,camera:camera.position,time:tAcc,
       showFauna:walker.cinematic!==0&&State.season!==0,far:faunaFx.lodFar,
       faunaScale:faunaFx.runtimeScale,birdScale:birdsP.runtimeScale});
-    modelSun.position.copy(SUN);modelSun.intensity=Math.max(0,SUN.y)*2;
-    modelAmbient.intensity=.18+Math.max(0,SUN.y)*.7;
+    modelSun.position.copy(SUN);
+    updateModelLighting(modelSun,modelAmbient,SUN.y);
     villageModels.updateNight(1-Math.max(0,Math.min(1,SUN.y*5)));
   }
   smoke.commit(camera.position); motes.commit(camera.position); birdsP.commit(camera.position);

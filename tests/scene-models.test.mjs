@@ -59,4 +59,12 @@ for(const mobile of [false,true])test(`Blender scene models: ${mobile?'mobile':'
   assert.equal(wheels.length,2,'wheel materials are instanced across the full train');
   assert.equal(wheels[0].count,12);
   assert.equal(train.body,train.locoGroup.children.find(o=>o.isGroup&&o!==train.wheels[0].m));
+  const finishes=[];train.body.traverse(o=>{if(o.isMesh)finishes.push(o.material);});
+  const enamel=finishes.find(m=>m.name==='locomotive enamel');
+  assert.equal(enamel.metalness,.05);assert.equal(enamel.roughness,.64);
+  let original;models.locomotive.traverse(o=>{if(o.isMesh&&o.material.name==='locomotive enamel')original=o.material;});
+  assert.ok(original.metalness>.3,'loaded GLB stays unchanged');
+  const coachPaint=[];
+  for(const car of train.cars)car.traverse(o=>{if(o.isMesh&&o.material.name==='locomotive enamel')coachPaint.push(o.material);});
+  assert.equal(new Set(coachPaint).size,1,'ten coaches share one corrected paint material');
 });
