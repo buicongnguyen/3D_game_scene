@@ -36,6 +36,7 @@ game.ui = ui;
 
 await game.load((p, label) => ui.setLoad(p, label));
 game.fx = new FX(game.scene, game.renderer.q);
+ui.applySettings?.(); // the world exists now: apply saved view settings (season, time, shadows, FOV…)
 game.renderer.onResize = (w, h) => { game.camera.aspect = w / h; game.camera.updateProjectionMatrix(); game.fx.resize(); };
 const director = new Director(game, ui, audio, game.fx);
 game.director = director;
@@ -71,15 +72,17 @@ if (params.has('view')) {
   ui.hideLoading();
   game.start();
   window.__STARLINE_READY__ = true;
-  const saved = Director.loadSave();
-  const auto = params.get('start'); // qa: ?start=new|continue skips the title
-  const choice = auto || await ui.title(!!saved);
+  const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
+  const picked = auto ? { mode: auto, slot: +params.get('slot') || 1 } : await ui.title(Director.slots(), Director.lastSlot());
+  const choice = picked.mode;
+  director.slot = picked.slot;
+  const saved = Director.loadSave(picked.slot);
   if (!params.has('mute')) { try { audio.unlock(); } catch (e) { console.warn('audio unavailable', e); } }
   game.beforeUpdate = null;
   game.player.root.visible = true;
   ui.showHud(true);
   game.follow.clearCutscene();
-  if (choice === 'new') Director.clearSave();
+  if (choice === 'new') Director.clearSave(picked.slot);
   const started = director.begin(choice === 'continue' ? saved : null);
   window.__STARLINE_PLAYING__ = true;
   await started;

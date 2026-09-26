@@ -164,7 +164,7 @@ root (at origin)
 
 | Model | Height | Clips (all loop unless marked *once*) | Tris |
 |---|---|---|---|
-| `mika` | 1.45 m | Idle, Walk, Run, Jump *once*, Fall, Land *once*, Aim, Point *once*, Cast *once*, Reel, Interact *once*, Stir, Hammer, Cheer *once*, Talk, Wave *once*, Swim, Tread | ≤ 16k |
+| `mika` | 1.45 m | Idle, Walk, Run, Jump *once*, Fall, Land *once*, Aim, Point *once*, Cast *once*, Reel, Interact *once*, Stir, Hammer, Cheer *once*, Talk, Wave *once*, Swim, Tread, Hang (from the Star Kite's bar: straight arms up in a wide Y with the palms ~1.32 m above the feet and ~0.11 m in front of the body line, head tipped back, legs dangling, scarf streaming) | ≤ 16k |
 | `genzo` | 1.62 m (stout) | Idle, Walk, Talk, Wave *once*, Sad, ArmsCrossed, Bow *once* | ≤ 12k |
 | `rin` | 1.50 m | Idle, Walk, Run, Talk, Wave *once*, Cast *once*, Reel, Pole, Cheer *once* | ≤ 12k |
 | `ota` | 1.58 m | Idle (leaning on cane), Walk (with cane), Talk, Wave *once*, Bow *once*, Sad | ≤ 12k |
@@ -338,6 +338,63 @@ centre:
 
 **Icons:** render every pickup item at 160×160 on a transparent background, a
 3/4 view, to `public/icons/<name>.webp`.
+
+### Flying machine — `build_kite.py`
+
+| Model | Notes | Tris |
+|---|---|---|
+| `star-kite` | **Sora's Star Kite**, 1.8 m across, 1.35 m tall: a bowed diamond kite canopy of vermilion paper (cream piping and border band, cream ribs over the spars, a painted gold star) with a brass star-lantern standing on its centre; under it a brass spring drum (wind-up key at the back) carries four red-lacquered arms to four brass-ducted rotors with cream paper blades, set in the diamond's notches; a brass control triangle hangs down to a wooden handle bar with red grips. **Origin at the centre of the handle bar** (node `Handle`, an empty: Mika's hands). Nodes: `Rotor_1`–`Rotor_4` (pivots on the rotor hubs, identity rest rotation, spin about local +Y in three.js; 1 front-left, 2 front-right, 3 rear-left, 4 rear-right, where left is +X), `Canopy` (sail and spars, pivot at the canopy centre; the runtime flutters it), `Tail_1` > `Tail_2` > `Tail_3` (paper-bow tail chain under `Canopy`, each pivot at its segment's root; the string runs back and 24° down), `Core` (the glowing star in the lantern, pivot at its centre; material `Kite glow`, emissive, which the runtime drives), `Key` (wind-up key, pivot on its shaft, which runs along three.js −Z). Icon: `public/icons/star-kite.webp`. | ≤ 8k |
+
+### Interiors — `build_interiors.py`
+
+Enterable rooms behind four front doors, and the keepsakes found in them
+(modules `interior_lib`, `interior_rooms`, `interior_bakery`, `interior_mill`,
+`interior_station`, `interior_keepsakes`). The runtime (`src/world/interiors.js`)
+hangs each room high above the valley, hides the outdoors while Mika is inside
+and turns the `Col_*` boxes into colliders.
+
+**Room conventions:**
+
+- Floor at z=0, the room centred on its origin, the door in the **−Y wall**
+  (it faces +Z in three.js, like every building's front door). Rooms are about
+  7.5 × 6.5 m with the camera ceiling at 3.1–3.45 m (visible ceilings higher).
+- Nodes: `Spawn` (player start ~2 m inside the door; facing = from `Exit` to
+  `Spawn`), `Exit` (door interaction point), `Item_keepsake` (centre of the
+  floating keepsake), `Light_1`–`Light_3` (warm lamp positions; glTF extra
+  `fire: 1` marks a flickering fire), plus animated pivots with identity rest
+  rotation and glTF extras `axis` / `ratio` (mill gears follow the water wheel).
+- Collision boxes are meshes named `Col_*` (material `Collider`, hidden at
+  runtime; boxes about their own vertical axis). glTF extras: `walk: 1`
+  (walkable top), `view: 1` (blocks the follow camera), `surface`
+  (`wood`/`stone`). Every room has `Col_floor`, `Col_ceiling` (its bottom is the
+  camera ceiling) and `Col_wall_back/front/left/right` (1.2 m thick, inner faces
+  0.12 m inside the plaster). Low furniture colliders rise at least 0.62 m so
+  they are never stepped over.
+- Materials: `Window view` (window panes: a painted landscape in COLOR_0, drawn
+  unlit by the runtime and tinted by the sky), `Interior glow` (lamp shades and
+  glass; the runtime drives the emissive), `Interior fire` (oven, stove and
+  brazier; flickers), `Collider`, and the tinted bases `Wood`, `Plaster`,
+  `Paint`, `Metal`. Details sit ≥ 6 mm proud of what they are painted on.
+- A thin dark shell stands 0.45 m behind every wall and over the ceiling (window
+  holes only), so the sun's shadow map seals the room and sunlight lands only
+  through the windows.
+
+| Model | Room | Nodes (besides Spawn, Exit, Item_keepsake, Light_1–3, Col_*) | Tris |
+|---|---|---|---|
+| `interior-cottage` | Sora's cottage: stone genkan and a raised floor, six tatami, low table with the tea set, the shelf of Mika's letters, the photo wall with one pale gap, the oshiire with futons, railway-signal keepsakes (semaphore arm, signal lamp head, hand lamp, a model Viaduct Lamp), the workbench under the valley window and the Star Kite's stand. | `Item_kite`: the `star-kite` origin (its handle bar) rests here in the stand's padded cradle; 1.8 m around and 1.4 m above it are kept clear. | ≤ 25k |
+| `interior-bakery` | Hana's bakery: checker tiles, teal wainscot, the brick oven with its fire, the bread wall, the shop counter with trays of peach buns, the kneading table, peach baskets, festival bunting, a café table by the shop windows. Keepsake on the kneading table. | — (`Interior fire`) | ≤ 25k |
+| `interior-mill` | Ōta's mill: stone base and timber, the pit wheel on the water wheel's axle, wallower, main shaft, spur wheel and stone nut under the millstone tun and hopper, a raised tatami corner with brazier and a plate of pickled radish, shelves of radish crocks, pickling barrels, drying daikon, the fishing corner. Keepsake on the shelf under the rods. | `Gear_pit` (axle, about X, ratio 1), `Gear_shaft` (about three.js Y, ratio −3), `Gear_nut` (ratio 6) (`Interior fire`) | ≤ 25k |
+| `interior-station` | Genzo's office: green wainscot, the pot-belly stove, timetable board, pendulum clock, ticket window with dating press and the pigeonhole ticket rack, signal lever frame, Genzo's desk with the green lamp, his cap on the hook, flags, photos of Kobo. Keepsake on the desk. | `Pendulum` (clock pendulum, swings about X) (`Interior fire`) | ≤ 25k |
+
+Keepsakes are floating pickups (origin at the item centre, about 0.35 m across)
+with icons in `public/icons/<name>.webp`:
+
+| Model | Found in | Notes | Tris |
+|---|---|---|---|
+| `keepsake-photo` | cottage | The old festival photo in an amber frame with a brass star: young Sora, Genzo, Ōta and Hana in front of the Star Train hung with lanterns (hand-tinted). | ≤ 1.2k |
+| `keepsake-recipe` | bakery | Hana's festival peach-bun recipe card: rose border, a drawn peach bun, handwriting, a floury thumbprint, a clothes peg. | ≤ 1.2k |
+| `keepsake-float` | mill | Ōta and Genzo's two old fishing floats (red and teal caps) tied together with twine and a tag with two carved stars. | ≤ 1.2k |
+| `keepsake-ticket` | station | Kobo's first ticket, No. 0001: a pale green card ticket with a red band, a gold star and its punched hole, and the torn stub. | ≤ 1.2k |
 
 ## Budgets (enforced by `tests/assets.test.mjs`)
 

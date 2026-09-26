@@ -134,6 +134,7 @@ export class Renderer {
 
   /** Adaptive resolution: drop the render scale when frames are consistently slow. */
   track(dt) {
+    if (this.fixedScale) return;
     this.frameTimes.push(dt);
     if (this.frameTimes.length < 90) return;
     const sorted = [...this.frameTimes].sort((a, b) => a - b);

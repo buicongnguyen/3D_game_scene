@@ -469,9 +469,11 @@ class Anim:
         s.setdefault('ik', {})['arm_' + S] = dict(target=self.chest_pt(tgt), pole=tuple(pl), end_rel=er)
 
     def L(self, x, y, z, S='R'):
-        """Scaled chest-space point; x is mirrored for side S (given for the RIGHT side)."""
+        """Scaled chest-space point; x is given for the RIGHT side (which is -X: the rig faces -Y, its left
+        shoulder is +X) and mirrored for the left. (Before this was fixed, right-hand targets landed on the
+        left, crossing the arms in Cast, Point, Swim, Tread and Talk.)"""
         k = self.k
-        return V((x * k * (1 if S == 'R' else -1), y * k, z * k))
+        return V((x * k * (-1 if S == 'R' else 1), y * k, z * k))
 
     def arm_ik(self, s, S, target_local, pole=None, end_rel=(0, 0, 0), frame='chest', end=None):
         tgt = self.chest_pt(target_local) if frame == 'chest' else (

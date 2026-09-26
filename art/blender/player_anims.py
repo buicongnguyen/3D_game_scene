@@ -351,12 +351,45 @@ def tread(A, frames=48):
     return 'Tread', frames, pose, True
 
 
+def hang(A, frames=72):
+    """Hanging from the Star Kite's handle bar: both arms reach up and a little forward in a dead hang
+    (straight, hands gripping over the bar in front of the forehead), the head tipped back to look up
+    and out at the view, legs dangling with knees soft and toes pointed, swinging idly like a kid on a
+    swing; the scarf and hair stream back in the wind. The runtime pins the palms to the bar, so the
+    hips' slow sway becomes a pendulum swing of the whole body about the hands."""
+    k = A.k
+
+    def pose(p):
+        s = {}
+        s['hips@loc'] = (0, 0, 0)
+        s['hips'] = (-2 + 1.5 * sn(p, 1, 0.1), 2.0 * sn(p, 1, 0.3), 3.5 * sn(p, 1))
+        s['spine'] = (-3 + 0.8 * sn(p, 2), 0.6 * sn(p, 1, 0.35), -1.2 * sn(p, 1, 0.05))
+        s['chest'] = (-3 - 0.8 * sn(p, 2, 0.1), 0, -1.0 * sn(p, 1, 0.1))
+        s['neck'] = (-7, 0, 3 * sn(p, 1, 0.45))
+        s['head'] = (-9 + 1.5 * sn(p, 2, 0.2), -2 * sn(p, 1, 0.5), 7 * sn(p, 1, 0.5))
+        for S in 'LR':
+            sx = A.sx(S)
+            # dead hang: straight arms up, slightly out and forward so the bar clears the fringe
+            d = V((sx * 0.377, -0.458, 0.804)).normalized()
+            tgt = A.sh[S] + d * (A.l_arm * 0.999)
+            A.arm_to(s, S, 1, tgt, pole=(sx * 1.0, 0.5, 0.1), end_rel=(38, 0, sx * -6))
+            # dangling legs: soft knees, pointed toes, an idle alternating swing
+            ph = 0.0 if S == 'L' else 0.5
+            sw = sn(p, 1, ph)
+            s['thigh_' + S] = (-12 + 9 * sw, sx * -3, sx * 2)
+            s['shin_' + S] = (22 + 12 * sn(p, 1, ph + 0.12), 0, 0)
+            s['foot_' + S] = (38 + 8 * sn(p, 1, ph + 0.2), 0, 0)
+        A.secondary(s, p, drag=72, k=3, amp=1.3, up=8)
+        return s
+    return 'Hang', frames, pose, True
+
+
 def extras(A, who):
     ex = {}
     if who == 'mika':
         ex.update(Aim=lambda: aim(A), Point=lambda: point(A), Cast=lambda: cast(A), Reel=lambda: reel(A),
                   Interact=lambda: interact(A), Stir=lambda: stir(A), Hammer=lambda: hammer(A),
-                  Swim=lambda: swim(A), Tread=lambda: tread(A))
+                  Swim=lambda: swim(A), Tread=lambda: tread(A), Hang=lambda: hang(A))
     if who == 'rin':
         ex.update(Cast=lambda: cast(A, energy=1.4), Reel=lambda: reel(A), Pole=lambda: pole(A))
     if who == 'genzo':

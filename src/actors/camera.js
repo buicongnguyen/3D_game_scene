@@ -77,7 +77,9 @@ export class FollowCamera {
     this.yaw -= lx * sens * aimMul;
     this.pitch += ly * sens * 0.8 * aimMul;
     this.pitch = THREE.MathUtils.clamp(this.pitch, aiming ? -0.95 : -0.45, aiming ? 0.9 : 1.15);
-    this.zoomTarget = THREE.MathUtils.clamp(this.zoomTarget + input.zoom * 0.7, 3.2, 11);
+    this.zoomTarget = THREE.MathUtils.clamp(this.zoomTarget + input.zoom * 0.7, 3.2, this.flying ? 20 : 11);
+    // flying: ease out to a wide, far view (and back in on landing)
+    this.flyBlend = (this.flyBlend || 0) + ((this.flying ? 1 : 0) - (this.flyBlend || 0)) * (1 - Math.exp(-dt * 1.5));
     // auto-recentre behind the player while moving without camera input
     if (Math.abs(lx) + Math.abs(ly) > 0.5) this.idle = 0; else this.idle += dt;
     if (!aiming && player.speed > 1.2 && this.idle > 1.4) {
@@ -87,7 +89,7 @@ export class FollowCamera {
       this.pitch += (0.3 - this.pitch) * (1 - Math.exp(-dt * 0.8));
     }
     this.aimBlend += ((aiming ? 1 : 0) - this.aimBlend) * (1 - Math.exp(-dt * 10));
-    const dist = THREE.MathUtils.lerp(this.zoomTarget, 2.4, this.aimBlend);
+    const dist = THREE.MathUtils.lerp(this.zoomTarget, 2.4, this.aimBlend) + this.flyBlend * 4;
     const fwd = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     const right = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
     const pivot = player.pos.clone().add(new THREE.Vector3(0, THREE.MathUtils.lerp(1.45, 1.55, this.aimBlend), 0));
@@ -123,7 +125,8 @@ export class FollowCamera {
     }
     this.camera.lookAt(this.look);
     this.pos.copy(this.camera.position);
-    this.setFov(THREE.MathUtils.lerp(this.fovBase + Math.min(6, player.speed * 0.8), 44, this.aimBlend), dt);
+    const spd = this.flying ? (this.flySpeed || 0) : player.speed;
+    this.setFov(THREE.MathUtils.lerp(this.fovBase + Math.min(6, spd * 0.8), 44, this.aimBlend) + this.flyBlend * 6, dt);
   }
 
   /** Wide cinematic shots get a larger near plane for depth precision; gameplay keeps a close one. */

@@ -134,6 +134,12 @@
   ]
  },
  {
+  "s": "Star Kite",
+  "ctx": [
+   "inventory item"
+  ]
+ },
+ {
   "s": "Prologue",
   "ctx": [
    "chapter label"
@@ -1335,6 +1341,283 @@
   ]
  },
  {
+  "s": "Her glasses on the table. Her teacups. A whole shelf of letters. It's like she only just stepped out.",
+  "ctx": [
+   "dialogue inside_cottage, spoken by Mika",
+   "dialogue inside_cottage_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "I know this room! I think. It smells like toast and Sora. Mostly toast.",
+  "ctx": [
+   "dialogue inside_cottage, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Did Grandma ever throw anything away? …Good. Neither will I.",
+  "ctx": [
+   "dialogue inside_cottage_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Warm! It's so warm in here! Mika, I think I live here now.",
+  "ctx": [
+   "dialogue inside_bakery, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Peaches, hot sugar, and an oven bigger than my room in the city. I could live in here.",
+  "ctx": [
+   "dialogue inside_bakery_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "So this is where Ōta hides. Gears, flour, and a truly worrying amount of pickled radish.",
+  "ctx": [
+   "dialogue inside_mill, spoken by Mika"
+  ]
+ },
+ {
+  "s": "A timetable, a ledger and a ticking clock, all for one little train that runs to the tunnel and back.",
+  "ctx": [
+   "dialogue inside_station, spoken by Mika"
+  ]
+ },
+ {
+  "s": "And pictures of Kobo. And a tiny model of Kobo. Mika, I think Genzo REALLY likes Kobo.",
+  "ctx": [
+   "dialogue inside_station, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Genzo's office. A ticking clock, a very tidy ledger, and more pictures of Kobo than of people.",
+  "ctx": [
+   "dialogue inside_station_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "…And a little model of Kobo on the desk. Of course there is.",
+  "ctx": [
+   "dialogue inside_station_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "'Sora, Genzo, Ōta, Hana. Same time next year.' …Genzo's smiling. I didn't know his face could do that.",
+  "ctx": [
+   "dialogue keepsake_photo, spoken by Mika",
+   "dialogue keepsake_photo_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Ōta and Hana, arm in arm, and everybody laughing! Mika, can we keep it? In the journal? Please?",
+  "ctx": [
+   "dialogue keepsake_photo, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Ōta and Hana, arm in arm, and all four of them laughing. …This one's going in my journal.",
+  "ctx": [
+   "dialogue keepsake_photo_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "'Three for Ōta. He'll say he only wants one.' …Ten years of feuding, and she never crossed it out.",
+  "ctx": [
+   "dialogue keepsake_recipe, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Ō and G… Ōta and Genzo! Two floats, tied together. They went fishing TOGETHER!",
+  "ctx": [
+   "dialogue keepsake_float, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "And then ten years of pickled radish. Maybe it was never really about the radish.",
+  "ctx": [
+   "dialogue keepsake_float, spoken by Mika",
+   "dialogue keepsake_float_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Ō and G, tied together with twine. Ōta and Genzo used to go fishing together.",
+  "ctx": [
+   "dialogue keepsake_float_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "'Genzo, age 9. I will drive this train one day.' …He did, Tamo. He really did.",
+  "ctx": [
+   "dialogue keepsake_ticket, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Nine? Genzo was NINE once? I thought he came with the moustache.",
+  "ctx": [
+   "dialogue keepsake_ticket, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "'Genzo, age 9. I will drive this train one day.' …And he did. He really did.",
+  "ctx": [
+   "dialogue keepsake_ticket_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Genzo at nine. I bet he already had the frown. Maybe not the moustache.",
+  "ctx": [
+   "dialogue keepsake_ticket_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "A kite? No, it has propellers. And a handlebar. And a note tied to the handlebar.",
+  "ctx": [
+   "dialogue kite_found, spoken by Mika",
+   "dialogue kite_found_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The Star Kite. It comes when you whistle and goes where my legs won't. Hold on tight, and don't tell Genzo.",
+  "ctx": [
+   "dialogue kite_found, spoken by Sora",
+   "dialogue kite_found_solo, spoken by Sora"
+  ]
+ },
+ {
+  "s": "Sora built a FLYING machine! Press G to fly: Space climbs, C dives, Shift goes fast, and G lands.",
+  "ctx": [
+   "dialogue kite_found, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Press G to whistle for the kite. Space climbs, C dives, Shift goes faster, G lands. Genzo need never know.",
+  "ctx": [
+   "dialogue kite_found_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "It's so SOFT! And it's wiggling its nose at me! Mika, I don't HAVE a nose. What do I do?",
+  "ctx": [
+   "dialogue friend_rabbit, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The rabbit wiggles its nose at Mika. Mika, with enormous self-control, does not wiggle hers back.",
+  "ctx": [
+   "dialogue friend_rabbit_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Pleased to meet you, madam.",
+  "ctx": [
+   "dialogue friend_chicken, spoken by Mika",
+   "dialogue friend_chicken_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "She says pleased to meet you too. I think. It might have been a threat.",
+  "ctx": [
+   "dialogue friend_chicken, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The hen looks Mika over from boots to scarf, clucks once, and allows it.",
+  "ctx": [
+   "dialogue friend_chicken_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mochi opens one eye, decides Mika is acceptable, and purrs like a very small engine.",
+  "ctx": [
+   "dialogue friend_cat, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Quack! …Did I say it right? They're all looking at me. Mika, what did I SAY?",
+  "ctx": [
+   "dialogue friend_duck, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Mika waves. The ducks discuss her at length, very loudly, and then all waggle their tails at once.",
+  "ctx": [
+   "dialogue friend_duck_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "You're the one who got stuck in the hedge, aren't you?",
+  "ctx": [
+   "dialogue friend_sheep, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The sheep does not deny it.",
+  "ctx": [
+   "dialogue friend_sheep, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Shh. Shh! Look at the little one. Don't breathe. Okay—breathe a little.",
+  "ctx": [
+   "dialogue friend_deer, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Mika stands very still. The littlest deer steps up, sniffs her scarf, and bounds back to its mother.",
+  "ctx": [
+   "dialogue friend_deer_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Kon! You showed us the way! Mika, a scratch behind the ears—he earned it.",
+  "ctx": [
+   "dialogue friend_fox, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Kon! You showed us the way up to the shrine. Here—a scratch behind the ears. You earned it.",
+  "ctx": [
+   "dialogue friend_fox_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "You patted a BEAR. That's brave. Or silly. …Both! But look, he's smiling in his sleep!",
+  "ctx": [
+   "dialogue friend_bear, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Mika pats Ōkuma's enormous paw, very gently. He sighs in his sleep, and smiles.",
+  "ctx": [
+   "dialogue friend_bear_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Brave or silly? …Both. Definitely both.",
+  "ctx": [
+   "dialogue friend_bear_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "That's everyone! Every creature in the valley knows your name now.",
+  "ctx": [
+   "dialogue friends_all, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Grandma would say we've been properly introduced.",
+  "ctx": [
+   "dialogue friends_all, spoken by Mika",
+   "dialogue friends_all_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Every creature in the valley has had a proper hello now. The ducks are still talking about it.",
+  "ctx": [
+   "dialogue friends_all_solo, spoken by narrator"
+  ]
+ },
+ {
   "s": "Kobo runs better than I do. Don't tell her.",
   "ctx": [
    "small talk by Genzo"
@@ -1611,15 +1894,423 @@
   ]
  },
  {
+  "s": "Any time, from Rin's dock.",
+  "ctx": [
+   "fish log: where/when it bites"
+  ]
+ },
+ {
+  "s": "The valley's everyday fish. Rin grills it in a salt crust, and Grandpa Ōta melts.",
+  "ctx": [
+   "fish log: one-line description"
+  ]
+ },
+ {
   "s": "River char",
   "ctx": [
    "fish species"
   ]
  },
  {
+  "s": "Any time, from the dock. It bites less often than trout.",
+  "ctx": [
+   "fish log: where/when it bites"
+  ]
+ },
+ {
+  "s": "Speckled like a winter sky. Rin swears they can see in the dark.",
+  "ctx": [
+   "fish log: one-line description"
+  ]
+ },
+ {
   "s": "Mill koi",
   "ctx": [
    "fish species"
+  ]
+ },
+ {
+  "s": "Rare, any time. Keep trying.",
+  "ctx": [
+   "fish log: where/when it bites"
+  ]
+ },
+ {
+  "s": "Escaped from Ōta's mill pond years ago. He pretends not to miss them.",
+  "ctx": [
+   "fish log: one-line description"
+  ]
+ },
+ {
+  "s": "Only at dusk, from about half past five until half past eight.",
+  "ctx": [
+   "fish log: where/when it bites"
+  ]
+ },
+ {
+  "s": "Its fins glow like the Star Lamps. Nobody knows where it sleeps.",
+  "ctx": [
+   "fish log: one-line description"
+  ]
+ },
+ {
+  "s": "Ten winters ago, on star-fall night, the Star Train stopped running.",
+  "ctx": [
+   "cinematic caption across the top while the train arrives (narration)"
+  ]
+ },
+ {
+  "s": "The four Star Lamps went dark. Everybody knows why. Everybody tells it differently.",
+  "ctx": [
+   "cinematic caption across the top while the train arrives (narration)"
+  ]
+ },
+ {
+  "s": "This evening, one train brings one passenger up from the city.",
+  "ctx": [
+   "cinematic caption across the top while the train arrives (narration)"
+  ]
+ },
+ {
+  "s": "Her name is Mika. She knows this valley only from her grandmother's letters.",
+  "ctx": [
+   "cinematic caption across the top while the train arrives (narration)"
+  ]
+ },
+ {
+  "s": "She has come to clear out the cottage. She doesn't know yet that it isn't empty.",
+  "ctx": [
+   "cinematic caption across the top while the train arrives (narration)"
+  ]
+ },
+ {
+  "s": "For the first time in ten years, the Star Train pulls out of Hoshi Station.",
+  "ctx": [
+   "cinematic caption across the top during the Star Train ride (narration)"
+  ]
+ },
+ {
+  "s": "Past Sora's porch lamp and out onto the viaduct. Genzo keeps one hand near the brake, just in case.",
+  "ctx": [
+   "cinematic caption across the top during the Star Train ride (narration)"
+  ]
+ },
+ {
+  "s": "Over Kawabe timber and Takamori iron, past the Viaduct Lamp. For once, Tamo is very quiet.",
+  "ctx": [
+   "cinematic caption across the top during the Star Train ride (narration)"
+  ]
+ },
+ {
+  "s": "In the first coach, Hana passes Ōta the bun basket. He says he only wants one. He takes three.",
+  "ctx": [
+   "cinematic caption across the top during the Star Train ride (narration)"
+  ]
+ },
+ {
+  "s": "Fireworks climb from Takamori to meet the falling stars. Rin cheers the loudest. Obviously.",
+  "ctx": [
+   "cinematic caption across the top during the Star Train ride (narration)"
+  ]
+ },
+ {
+  "s": "Four lamps lit, two villages aboard, one little red engine. And everyone, for once, is looking up.",
+  "ctx": [
+   "cinematic caption across the top during the Star Train ride (narration)"
+  ]
+ },
+ {
+  "s": "Sunday service. Kobo toots twice, huffs once, and rolls out with Mika up front, where the view is.",
+  "ctx": [
+   "caption across the top while Mika rides the Sunday train in the epilogue (narration)"
+  ]
+ },
+ {
+  "s": "Down on the river, Rin's ferry is on its forty-second crossing today. She is counting. Out loud.",
+  "ctx": [
+   "caption across the top while Mika rides the Sunday train in the epilogue (narration)"
+  ]
+ },
+ {
+  "s": "Across the viaduct, the Viaduct Lamp burns gold. Mika waves. The small light inside flickers back.",
+  "ctx": [
+   "caption across the top while Mika rides the Sunday train in the epilogue (narration)"
+  ]
+ },
+ {
+  "s": "Forest, Mill, Orchard, Viaduct: four lamps, all saying 'clear'. Not one has gone out since winter.",
+  "ctx": [
+   "caption across the top while Mika rides the Sunday train in the epilogue (narration)"
+  ]
+ },
+ {
+  "s": "Somewhere in Kawabe, Ōta waves at the train, then pretends he was swatting a fly.",
+  "ctx": [
+   "caption across the top while Mika rides the Sunday train in the epilogue (narration)"
+  ]
+ },
+ {
+  "s": "Meadow rabbit",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Pet the rabbit",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Nibbles clover in the meadows round Kawabe and on the slopes below Takamori.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Walk up slowly. Rabbits bolt from anyone who runs.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Takamori hen",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Greet the hen",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Hana's hens. They believe the bakery belongs to them.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "In the lanes of Takamori, near the bakery.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Mochi the cat",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Scratch Mochi's ears",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Sleeps in the middle of Kawabe's main street. Belongs to everybody and nobody.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Kawabe's main street, usually asleep.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "River duck",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Wave to the ducks",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Paddles the slow water just upriver of the ferry, loudly.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "On the river by Kawabe. Swim out and say hello.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Orchard sheep",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Pat the sheep",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Hana's flock. Excellent at escaping, terrible at coming back.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "In the pen on Takamori's sheep pasture, from Chapter Two.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Forest deer",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Say hello to the deer",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "A shy family on the plateau above the orchard. The little one is the bravest.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Through the upper orchard gate. Walk, don't run.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Kon the fox",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Say hello to Kon",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "The shrine's red fox, who wears a bib and knows every path in the forest.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Near the forest shrine, from Chapter Three.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Ōkuma the bear",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Pat the sleeping bear (gently)",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "The forest's great sleeper. Loves honey chestnuts more than anything.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Asleep on the shrine stairs, or in his den after Chapter Three.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Festival photograph",
+  "ctx": [
+   "keepsake name"
+  ]
+ },
+ {
+  "s": "Sora, Genzo, Ōta and Hana, squashed onto Kobo's buffer beam at star-fall, the year before the flood. On the back, in Sora's hand, their four names and 'Same time next year.'",
+  "ctx": [
+   "keepsake description (journal)"
+  ]
+ },
+ {
+  "s": "Sora's cottage",
+  "ctx": [
+   "the home a keepsake is in"
+  ]
+ },
+ {
+  "s": "Hana's bun recipe",
+  "ctx": [
+   "keepsake name"
+  ]
+ },
+ {
+  "s": "Flour, peaches, a pinch of salt—and in Hana's round handwriting: 'Three for Ōta. He'll say he only wants one.'",
+  "ctx": [
+   "keepsake description (journal)"
+  ]
+ },
+ {
+  "s": "Hana's bakery",
+  "ctx": [
+   "the home a keepsake is in"
+  ]
+ },
+ {
+  "s": "Pair of fishing floats",
+  "ctx": [
+   "keepsake name"
+  ]
+ },
+ {
+  "s": "Two cork floats, one red and one teal, tied together with twine and carved Ō and G. Somebody has dusted them every week for ten years.",
+  "ctx": [
+   "keepsake description (journal)"
+  ]
+ },
+ {
+  "s": "Ōta's mill",
+  "ctx": [
+   "the home a keepsake is in"
+  ]
+ },
+ {
+  "s": "Kobo's first ticket",
+  "ctx": [
+   "keepsake name"
+  ]
+ },
+ {
+  "s": "Hoshi Station to Takamori Halt, punched on the first day the line ran. On the back, in a child's pencil: 'Genzo, age 9. I will drive this train one day.'",
+  "ctx": [
+   "keepsake description (journal)"
+  ]
+ },
+ {
+  "s": "Genzo's station",
+  "ctx": [
+   "the home a keepsake is in"
   ]
  },
  {
@@ -2038,6 +2729,18 @@
   ]
  },
  {
+  "s": "Ride Kobo to Takamori",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Ride Kobo to Hoshi Station",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Talk to the villager",
   "ctx": [
    "UI (src/game/director.js)"
@@ -2086,7 +2789,43 @@
   ]
  },
  {
+  "s": "Go inside",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Go outside",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Take the Star Kite",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Received: {item}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Keepsake found: {item} ({n}/{total})",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Pick up the fallen star",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Look at: {item}",
   "ctx": [
    "UI (src/game/director.js)"
   ]
@@ -2104,12 +2843,6 @@
   ]
  },
  {
-  "s": "Received: {item}",
-  "ctx": [
-   "UI (src/game/director.js)"
-  ]
- },
- {
   "s": "Caught a {fish}!",
   "ctx": [
    "UI (src/game/director.js)"
@@ -2117,6 +2850,18 @@
  },
  {
   "s": "Fallen Star {n}/12",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "New friend: {name} ({n}/{total})",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Friend of the Valley!",
   "ctx": [
    "UI (src/game/director.js)"
   ]
@@ -2212,7 +2957,37 @@
   ]
  },
  {
-  "s": "Start a new game? Your saved progress will be replaced.",
+  "s": "Start a new game in this slot? The story saved here will be replaced.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Delete",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Delete this save? This cannot be undone.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Empty",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "A new story begins here.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Lamps {n}/4 · Stars {s}/12 · {time}",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -2248,6 +3023,18 @@
   ]
  },
  {
+  "s": "Keepsakes",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Still in {place}.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "{n} / 12 found.",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -2266,7 +3053,25 @@
   ]
  },
  {
-  "s": "(bites at dusk)",
+  "s": "{n} of {total} kinds caught",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Not caught yet",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "{n} of {total} friends made. Walk up to a creature and press E to say hello.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Not met yet",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -2305,6 +3110,19 @@
  },
  {
   "s": "Dive while swimming",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Kite",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Fly or land the Star Kite, once you have it",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -2462,6 +3280,12 @@
   ]
  },
  {
+  "s": "Friends",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "Controls",
   "ctx": [
    "menu / screen text"
@@ -2541,6 +3365,162 @@
  },
  {
   "s": "Show frame rate",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Advanced",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Season",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Follow the story",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Spring",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Summer",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Autumn",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Winter",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Time of day",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Morning",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Noon",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sunset",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Night",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Day cycle (24 min)",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Day cycle (6 min)",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Falling petals, leaves and snow",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Shadows",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Render resolution",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Automatic",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Field of view",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Camera distance",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Text size",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Normal",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Large",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Extra large",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Season and time of day only change what you see; the story keeps its own calendar.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Reset advanced settings",
   "ctx": [
    "menu / screen text"
   ]

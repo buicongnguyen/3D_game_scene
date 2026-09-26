@@ -9,9 +9,11 @@ export const RAILWAY = ['viaduct-span', 'viaduct-abutment', 'viaduct-broken', 'v
 const TREES = ['tree-broadleaf-a', 'tree-broadleaf-b', 'tree-cedar', 'tree-pine', 'tree-maple', 'tree-sakura', 'tree-peach', 'tree-chestnut'];
 export const NATURE = [...TREES, ...TREES.map(t => `${t}-lod`), 'bush-a', 'bush-b', 'hydrangea', 'rock-a', 'rock-b', 'rock-c', 'reeds',
   'lilypads', 'flowers-a', 'flowers-b', 'mushrooms', 'log', 'stump', 'beehive-branch', 'grass-tuft'];
-export const PROPS = ['hand-lantern', 'fishing-rod', 'hammer', 'hearth', 'crate', 'barrel', 'sacks', 'fence-wood', 'fence-bamboo', 'wall-stone',
+export const PROPS = ['star-kite', 'hand-lantern', 'fishing-rod', 'hammer', 'hearth', 'crate', 'barrel', 'sacks', 'fence-wood', 'fence-bamboo', 'wall-stone',
   'bench', 'well', 'market-stall', 'street-lamp', 'postbox', 'signpost', 'cart', 'haybale', 'scarecrow', 'sheep-pen', 'laundry-line',
   'flowerpot', 'noren-lantern', 'fireworks-rack', 'festival-stall'];
 export const ITEMS = ['cog', 'peach', 'chestnut', 'mushroom-item', 'honeycomb', 'journal-page', 'fallen-star', 'peach-bun', 'plate-trout',
   'bowl-chestnuts', 'timber', 'iron-bolts', 'key'];
-export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWAY, ...NATURE, ...PROPS, ...ITEMS];
+export const INTERIORS = ['interior-cottage', 'interior-bakery', 'interior-mill', 'interior-station',
+  'keepsake-photo', 'keepsake-recipe', 'keepsake-float', 'keepsake-ticket'];
+export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWAY, ...NATURE, ...PROPS, ...ITEMS, ...INTERIORS];

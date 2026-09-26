@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { N_ } from '../i18n/i18n.js';
+import { CAPTIONS } from './story.js';
 import { STOPS } from '../world/railway.js';
 import { rail, RAIL_Y, DECK_Y, PLACES, FERRY, river, VIADUCT } from '../world/layout.js';
 
@@ -51,20 +52,29 @@ export class Scenes {
   async arrival() {
     const g = this.g, r = g.railway, ui = this.d.ui;
     await ui.fade(true, 10);
-    r.placeAt(STOPS.station - 70);
-    r.goTo(STOPS.station, 8.5);
+    // Kobo comes out of the west tunnel and runs the whole way in while the story is told across the top
+    r.placeAt(STOPS.westPortal + 4);
     g.player.root.visible = false;
     this.d.npcs.genzo.setVisible(false);
     g.follow.cutscene({ pos: V(-30, 44, 168), look: V(-60, 16, 110) }, 0.01);
     await wait(100);
+    ui.cinema(true);
+    const told = Promise.all(CAPTIONS.arrival.map(c => ui.caption(c, 4300)));
     await ui.fade(false, 1600);
+    await this.shot(V(-54, 30, 150), V(-120, 18, 108), 3.6, 600);
+    r.goTo(STOPS.station, 7);
     this.d.audio.whistle();
-    await this.shot(V(-54, 30, 150), V(-120, 18, 108), 3.2);
-    // follow the train in: one continuous, damped tracking shot
+    // hold the wide view while Kobo runs out of the tunnel and through the woods, easing a little closer…
+    const t1 = performance.now();
+    g.follow.cutscene({ pos: V(-62, 26, 144), look: V(-118, 17, 108) }, 9);
+    while (r.train.s < STOPS.station - 50 && performance.now() - t1 < 16000) await wait(100);
+    // …then ride alongside it into the platform: one continuous, damped tracking shot
     const loco = r.cars[0].obj.position;
-    g.follow.track(() => loco.clone().add(V(-2, 5.5, 16)), () => loco.clone().add(V(-6, 1.6, 0)), 3);
+    g.follow.track(() => loco.clone().add(V(-2, 5.5, 16)), () => loco.clone().add(V(-6, 1.6, 0)), 2.2);
     const t0 = performance.now();
-    while (r.train.target !== null && performance.now() - t0 < 22000) await wait(100);
+    while (r.train.target !== null && performance.now() - t0 < 30000) await wait(100);
+    await told;
+    ui.cinema(false);
     this.d.audio.whistle();
     g.player.root.visible = true;
     g.player.teleport(-94.5, 115.2, undefined, Math.PI / 2);
@@ -217,8 +227,11 @@ export class Scenes {
     g.player.locked = false;
     r.onArrive = () => { r.onArrive = null; this.rideDone = true; };
     this.rideDone = false;
+    const told = new Set();
     while (!this.rideDone) {
       d.ui.ride(true, d.q.count('lanterns'), this.lanterns.length);
+      const f = (r.train.s - STOPS.station) / (STOPS.halt - STOPS.station);
+      for (const c of CAPTIONS.ride) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5200); }
       await wait(200);
     }
     d.ui.ride(false);
@@ -258,6 +271,39 @@ export class Scenes {
         d.event({ type: 'count', item: 'lanterns' });
       }, { r: 11, vy: 8, prio: 2 });
     }
+  }
+
+  /** Epilogue: ride Kobo's Sunday service between the station and Takamori Halt, with the story told on top. */
+  async tour() {
+    const g = this.g, r = g.railway, d = this.d;
+    const fromStation = Math.abs(r.train.s - STOPS.station) < Math.abs(r.train.s - STOPS.halt);
+    const [s0, s1] = fromStation ? [STOPS.station, STOPS.halt] : [STOPS.halt, STOPS.station];
+    await d.ui.fade(true, 500);
+    const loco = r.cars[0];
+    g.player.mount(loco.cab || loco.obj, V(-0.5, 0, -0.2), 0);
+    g.follow.clearCutscene();
+    g.follow.yaw = Math.atan2(rail.at(s0 + (s1 - s0) * 0.05).tx, rail.at(s0 + (s1 - s0) * 0.05).tz) + (fromStation ? 0 : Math.PI);
+    await d.ui.fade(false, 700);
+    d.audio.whistle();
+    r.goTo(s1, 8);
+    this.d.busy--;           // look around freely while riding
+    g.player.locked = false;
+    const told = new Set();
+    let arrived = false;
+    r.onArrive = () => { r.onArrive = null; arrived = true; };
+    while (!arrived) {
+      const f = (r.train.s - s0) / (s1 - s0);
+      for (const c of CAPTIONS.tour) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5000); }
+      await wait(200);
+    }
+    this.d.busy++;
+    d.audio.whistle();
+    await d.ui.fade(true, 500);
+    if (fromStation) g.player.dismount(PLACES.halt.x - 4, PLACES.halt.z + 2, undefined, 0);
+    else g.player.dismount(-94.5, 115.2, undefined, Math.PI / 2);
+    g.follow.yaw = g.player.facing;
+    this.d.timetable = { phase: 'wait', t: 30 };
+    await d.ui.fade(false, 600);
   }
 
   async finale() {

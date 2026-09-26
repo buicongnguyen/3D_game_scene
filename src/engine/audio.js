@@ -143,6 +143,26 @@ export class Audio {
   chuff(vol = 1) { this.noise({ dur: 0.22, vol: 0.12 * vol, freq: 380, q: 0.7, type: 'lowpass' }); }
   hammer() { this.tone(180, { dur: 0.12, vol: 0.14, rev: 0.2 }); this.noise({ dur: 0.06, vol: 0.12, freq: 2400 }); }
   reel() { this.noise({ dur: 0.04, vol: 0.05, freq: 3200, q: 6 }); }
+  /** The Star Kite: a breathy wind plus a soft propeller buzz, rising with thrust (0..1). */
+  kiteHum(on, thrust = 0.5) {
+    const c = this.ctx;
+    if (!c) return;
+    if (!this.kite && on) {
+      const wind = this.loop(900, 'bandpass', 0.22);
+      const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 90;
+      const f = c.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 500;
+      const g = c.createGain(); g.gain.value = 0;
+      o.connect(f); f.connect(g); g.connect(this.sfx); o.start();
+      this.kite = { wind, o, g };
+    }
+    if (!this.kite) return;
+    const t = c.currentTime, k = this.kite;
+    k.wind.g.gain.setTargetAtTime(on ? 0.05 + thrust * 0.18 : 0, t, 0.25);
+    k.wind.f.frequency.setTargetAtTime(600 + thrust * 900, t, 0.3);
+    k.g.gain.setTargetAtTime(on ? 0.012 + thrust * 0.02 : 0, t, 0.2);
+    k.o.frequency.setTargetAtTime(80 + thrust * 70, t, 0.2);
+  }
+
   bubble() { this.tone(300 + Math.random() * 400, { dur: 0.12, vol: 0.04, glide: 1.8, rev: 0.2 }); }
   good() { [0, 7, 12].forEach((d, i) => this.tone(mtof(81 + d), { type: 'triangle', dur: 0.25, vol: 0.07, when: i * 0.05 })); }
   bad() { this.tone(220, { type: 'square', dur: 0.2, vol: 0.04, filter: 900, glide: 0.7 }); }

@@ -48,6 +48,7 @@
     <button id="tJump" class="tbtn" data-i18n>Jump</button>
     <button id="tAct" class="tbtn act">Act</button>
     <button id="tDive" class="tbtn dive hidden" data-i18n>Dive</button>
+    <button id="tKite" class="tbtn kite hidden" data-i18n>Kite</button>
   </div>
 
   <div id="dialogue" class="hidden" role="dialog" aria-live="polite">
@@ -63,6 +64,8 @@
     <button id="dlgSkip" class="skip"><span data-i18n>Skip</span> ▸▸</button>
   </div>
 
+  <div id="captions"><div class="bar top"></div><div class="bar bottom"></div><p id="captionText"></p></div>
+
   <div id="card" class="hidden"><div class="chapter" id="cardChapter"></div><div class="name" id="cardName"></div></div>
 
   <div id="journal" class="overlay hidden">
@@ -70,7 +73,7 @@
       <header><h2 data-i18n>Mika's Journal</h2><button class="close" data-close="journal">✕</button></header>
       <nav class="tabs" id="journalTabs">
         <button data-tab="story" class="on" data-i18n>Story</button><button data-tab="pages" data-i18n>Sora's Pages</button>
-        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="help" data-i18n>Controls</button>
+        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="friends" data-i18n>Friends</button><button data-tab="help" data-i18n>Controls</button>
       </nav>
       <section id="journalBody"></section>
     </div>
@@ -88,6 +91,13 @@
     </div>
   </div>
 
+  <div id="slots" class="overlay hidden">
+    <div class="book small">
+      <header><h2 id="slotsTitle"></h2><button class="close" id="slotsClose">✕</button></header>
+      <div id="slotList" class="slotlist"></div>
+    </div>
+  </div>
+
   <div id="settings" class="overlay hidden">
     <div class="book small">
       <header><h2 data-i18n>Settings</h2><button class="close" data-close="settings">✕</button></header>
@@ -99,6 +109,19 @@
         <label><span data-i18n>Music</span> <input id="optMusic" type="range" min="0" max="1" step="0.05" value="0.55" /></label>
         <label><span data-i18n>Sound effects</span> <input id="optSfx" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
         <label class="check"><input id="optFps" type="checkbox" /> <span data-i18n>Show frame rate</span></label>
+        <details class="adv">
+          <summary data-i18n>Advanced</summary>
+          <label><span data-i18n>Season</span> <select id="optSeason"><option value="" data-i18n>Follow the story</option><option value="spring" data-i18n>Spring</option><option value="summer" data-i18n>Summer</option><option value="autumn" data-i18n>Autumn</option><option value="winter" data-i18n>Winter</option></select></label>
+          <label><span data-i18n>Time of day</span> <select id="optTime"><option value="" data-i18n>Follow the story</option><option value="8" data-i18n>Morning</option><option value="12.5" data-i18n>Noon</option><option value="18.2" data-i18n>Sunset</option><option value="22.5" data-i18n>Night</option><option value="cycle-slow" data-i18n>Day cycle (24 min)</option><option value="cycle-fast" data-i18n>Day cycle (6 min)</option></select></label>
+          <label class="check"><input id="optWeather" type="checkbox" checked /> <span data-i18n>Falling petals, leaves and snow</span></label>
+          <label class="check"><input id="optShadows" type="checkbox" checked /> <span data-i18n>Shadows</span></label>
+          <label><span data-i18n>Render resolution</span> <select id="optScale"><option value="" data-i18n>Automatic</option><option value="1">100%</option><option value="0.85">85%</option><option value="0.7">70%</option><option value="0.5">50%</option></select></label>
+          <label><span data-i18n>Field of view</span> <input id="optFov" type="range" min="45" max="80" step="1" value="55" /></label>
+          <label><span data-i18n>Camera distance</span> <input id="optCamDist" type="range" min="3.2" max="11" step="0.2" value="6.2" /></label>
+          <label><span data-i18n>Text size</span> <select id="optText"><option value="1" data-i18n>Normal</option><option value="1.15" data-i18n>Large</option><option value="1.3" data-i18n>Extra large</option></select></label>
+          <p class="note" data-i18n>Season and time of day only change what you see; the story keeps its own calendar.</p>
+          <button id="btnResetAdv" class="small" data-i18n>Reset advanced settings</button>
+        </details>
       </div>
     </div>
   </div>

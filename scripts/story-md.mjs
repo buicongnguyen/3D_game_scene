@@ -4,8 +4,9 @@
 //   node scripts/story-md.mjs --check   exit 1 if docs/STORY.md is out of date
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS } from '../src/game/story.js';
-import { FALLEN_STARS } from '../src/world/layout.js';
+import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES } from '../src/game/story.js';
+import { FALLEN_STARS, rail, PLACES, VIADUCT } from '../src/world/layout.js';
+import { STOPS } from '../src/world/railway.js';
 
 const DOC = fileURLToPath(new URL('../docs/STORY.md', import.meta.url));
 const START = '<!-- story-md:start -->';
@@ -17,6 +18,18 @@ const DURING = {
   'c2.ferry': [['ferry_ride', 'On the ferry (Mika may also swim across)']],
   'c3.gather': [['c3_hive_hit', 'When the hive drops']],
 };
+// Train captions: shown during a cutscene, or while a step is active (the epilogue's Sunday service).
+const CAPTIONED = {
+  arrival: ['arrival', 'Across the top of the screen while Kobo runs in, one caption after another'],
+  starTrain: ['ride', 'Across the top of the screen during the ride, by how far along the line the train is'],
+};
+const CAPTIONS_DURING = {
+  'e.free': [['tour', "Riding Kobo's Sunday service between Hoshi Station and Takamori Halt (by how far along the ride, either way)"]],
+};
+// Scenes with Tamo in them have a `<id>_solo` variant for when he isn't with Mika.
+const SOLO = "When Tamo isn't with Mika (before she opens the chest, or after he goes home)";
+// The Star Kite waits on Sora's workbench (src/world/interiors.js) and shows once Tamo has joined (src/game/director.js).
+const KITE = { home: 'cottage', where: "On Sora's workbench, once Tamo has joined" };
 const BARKS = [
   ['ferry_locked', "Rin's ferry, before the Mill Lamp is lit"],
   ['drawbridge_up', 'The raised drawbridge, before the wheel turns'],
@@ -53,6 +66,32 @@ const objective = s => s.replace(/\s*\(\{\w+\}\/\d+\)/g, '');
 const choiceLine = () => Object.values(DIALOGUE).flat().find(l => l.choice);
 const hourWord = (h, prev) => (h < prev ? 'the next morning' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : h < 18 ? 'evening' : h < 19.5 ? 'dusk' : 'nightfall');
 
+/** A scene that can play at any time, followed by its Tamo-free variant when it has one. */
+function scene(id, label, solo = SOLO) {
+  dialogue(id, label);
+  if (DIALOGUE[`${id}_solo`]) dialogue(`${id}_solo`, solo);
+}
+
+/** Where the Star Train is, a fraction f of the way from Hoshi Station to Takamori Halt. */
+function where(f) {
+  const p = rail.at(STOPS.station + (STOPS.halt - STOPS.station) * f);
+  const near = (q, r) => Math.hypot(p.x - q.x, p.z - q.z) < r;
+  if (near(PLACES.station, 25)) return 'Hoshi Station';
+  if (p.x < VIADUCT.x0) return "the bluff by Sora's cottage";
+  if (p.x <= VIADUCT.x1) return 'the viaduct';
+  return near(PLACES.halt, 40) ? 'nearing Takamori Halt' : 'the east bank';
+}
+
+function captions(key, label, withPlace) {
+  put(`*${label}:*`, '');
+  for (const c of CAPTIONS[key]) {
+    if (typeof c === 'string') put(`> ${c}`, '>');
+    else put(`> **${Math.round(c.at * 100)}%${withPlace ? `, ${where(c.at)}` : ''}:** ${c.text}`, '>');
+  }
+  out.pop();
+  put('');
+}
+
 function dialogue(id, label) {
   const lines = DIALOGUE[id];
   if (!lines) throw new Error(`missing dialogue ${id}`);
@@ -80,7 +119,11 @@ function effects(list) {
     else if (e.sayChoice) {
       for (const c of choiceLine().choice) dialogue(`${e.sayChoice}_${c.value}`, `If Mika chose ${c.text}`);
       said = branched = true;
-    } else if (e.cutscene && CUTSCENES[e.cutscene]) stage(CUTSCENES[e.cutscene]);
+    } else if (e.cutscene && CUTSCENES[e.cutscene]) {
+      stage(CUTSCENES[e.cutscene]);
+      const cap = CAPTIONED[e.cutscene];
+      if (cap) captions(cap[0], cap[1], cap[0] === 'ride');
+    }
     else if (e.lamp) stage(`The ${e.lamp[0].toUpperCase()}${e.lamp.slice(1)} Lamp is lit.`);
     else if (e.unlock && UNLOCKS[e.unlock]) stage(UNLOCKS[e.unlock]);
     else if (e.journal !== undefined) stage(`Journal page ${e.journal + 1} added: “${JOURNAL[e.journal].title}”.`);
@@ -107,6 +150,7 @@ for (const s of STEPS) {
   const talks = Object.entries(s.talk || {});
   for (const [who, t] of talks) dialogue(typeof t === 'string' ? t : t.say, talks.length > 1 || intro ? `Talking to ${name(who)}` : null);
   for (const [id, label] of DURING[s.id] || []) dialogue(id, label);
+  for (const [key, label] of CAPTIONS_DURING[s.id] || []) captions(key, label, false);
   // when lines came before the player acts (and it isn't a conversation), mark where the step is completed
   const mark = out.length;
   if (effects(s.exit) && !talks.length && (intro || DURING[s.id])) out.splice(mark, 0, `> *${objective(s.objective)}: done.*`, '');
@@ -115,7 +159,9 @@ for (const s of STEPS) {
 put('### Blocked paths', '', 'What Mika hears when she tries a way that is not open yet.', '');
 for (const [id, label] of BARKS) dialogue(id, label);
 used.add('sora_last_letter');
-const rest = Object.keys(DIALOGUE).filter(id => !used.has(id));
+// scenes that can happen in any chapter have their own appendices (F and G)
+const anyTime = id => /^(inside_|keepsake_|kite_found|friend_|friends_all)/.test(id);
+const rest = Object.keys(DIALOGUE).filter(id => !used.has(id) && !anyTime(id));
 if (rest.length) {
   console.warn(`story-md: dialogue not placed in the script, listed at the end: ${rest.join(', ')}`);
   put('### Other lines', '');
@@ -151,9 +197,10 @@ put('');
 
 // ---------------------------------------------------------------- Appendix D: fish and items
 put('## Appendix D · Fish and story items', '');
-put('Fishing opens at Kawabe Dock in Chapter One and stays open. Any catch counts toward Rin\'s three fish.', '');
-put('| Fish | When it bites |', '|---|---|');
-for (const f of Object.values(FISH)) put(`| ${f.name} | ${f.dusk ? 'Only at dusk' : 'Any time'} |`);
+put('Fishing opens at Kawabe Dock in Chapter One and stays open. Any catch counts toward Rin\'s three fish. The journal\'s',
+  'fish log shows the hint until a fish is caught, then its entry and the count.', '');
+put('| Fish | When it bites | Fish-log hint | Fish-log entry once caught |', '|---|---|---|---|');
+for (const f of Object.values(FISH)) put(`| ${f.name} | ${f.dusk ? 'Only at dusk' : 'Any time'} | ${f.hint} | ${f.desc} |`);
 put('');
 const gives = new Map();
 for (const s of STEPS) for (const e of s.exit || []) if (e.give && !gives.has(e.give[0])) gives.set(e.give[0], s);
@@ -162,6 +209,7 @@ put('| Item | How Mika gets it |', '|---|---|');
 for (const [k, it] of Object.entries(ITEMS)) {
   const st = gives.get(k) || STEPS.find(s => s.id === PICKED[k]);
   if (k === 'fish') put(`| ${it.name} | Caught at the dock (Chapter One) |`);
+  else if (k === 'kite') put(`| ${it.name} | ${KITE.where} (Appendix F) |`);
   else if (st) put(`| ${it.name} | ${gives.has(k) ? 'Given' : 'Picked up'} on “${objective(st.objective)}” |`);
 }
 put('');
@@ -170,6 +218,32 @@ put('');
 put('## Appendix E · Idle chatter', '');
 put('What the cast says when there is nothing story-related to talk about. The lines rotate in every chapter.', '');
 for (const [who, lines] of Object.entries(CHATTER)) put(`**${name(who)}:** ${lines.map(l => `“${l[0]}”`).join(' · ')}`, '');
+
+// ---------------------------------------------------------------- Appendix F: homes, keepsakes, the kite
+put('## Appendix F · Homes, keepsakes and the Star Kite', '');
+put('Four front doors open in every chapter. The first time Mika steps into a home a short scene plays, and each home keeps',
+  'one keepsake for the journal. All of this can happen at any point in the story.', '');
+for (const k of KEEPSAKES) {
+  put(`### ${k.where}`, '');
+  if (DIALOGUE[`inside_${k.home}`]) scene(`inside_${k.home}`, 'The first time Mika steps inside');
+  put(`**Keepsake: ${k.name}.** Its journal entry:`, '', `> ${k.text}`, '');
+  scene(k.say, 'When Mika picks it up');
+  if (k.home === KITE.home) {
+    put(`**The ${ITEMS.kite.name}.** ${KITE.where}. From then on, G (or the Kite button) whistles it down, and lands it again.`, '');
+    scene('kite_found', 'When Mika takes it', 'If she only takes it after Tamo has gone home');
+  }
+}
+
+// ---------------------------------------------------------------- Appendix G: valley friends
+put('## Appendix G · Valley friends', '');
+put(`Mika can say hello to ${FRIENDS.length} kinds of creature with E. The journal's Friends page shows the hint until she has`,
+  'met one, then its entry. The first hello with each plays a short scene.', '');
+put('| Friend | Prompt | Hint (before meeting) | Journal entry |', '|---|---|---|---|');
+for (const f of FRIENDS) put(`| ${f.name} | ${f.verb} | ${f.hint} | ${f.desc} |`);
+put('');
+for (const f of FRIENDS) { put(`### ${f.name}`, ''); scene(`friend_${f.id}`); }
+put('### Every friend made', '');
+scene('friends_all', `After the last of the ${FRIENDS.length} first hellos`);
 
 // ---------------------------------------------------------------- write
 while (out[out.length - 1] === '') out.pop();

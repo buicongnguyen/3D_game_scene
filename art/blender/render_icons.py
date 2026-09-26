@@ -46,6 +46,7 @@ if not names:
 # Per-item view tweaks: azimuth/elevation of the camera (degrees), extra roll of the model (Z).
 VIEW = {
     'default': (-35, 28),
+    'fish-trout': (-78, 16), 'fish-koi': (-78, 22), 'fish-starfin': (-78, 16),
     'fallen-star': (-20, 12),
     'cog': (-25, 18),
     'journal-page': (-25, 30),
@@ -55,6 +56,7 @@ VIEW = {
     'honeycomb': (-22, 16),
     'timber': (-40, 30),
     'peach-bun': (-30, 32),
+    'star-kite': (-24, 34),
 }
 GLOW = {'fallen-star': 1.0}
 TMP = os.path.join(ROOT, '.tools', 'review', 'props', 'icons-raw')
@@ -145,7 +147,11 @@ def render(name):
     s = reset()
     bpy.ops.import_scene.gltf(filepath=os.path.join(models, name + '.glb'))
     bpy.context.view_layer.update()
-    objs = [o for o in bpy.data.objects if o.type == 'MESH']
+    # the glTF importer adds a bone-display shape (an Icosphere) for rigged models: not part of the item
+    shapes = {pb.custom_shape for a in bpy.data.objects if a.type == 'ARMATURE' for pb in a.pose.bones if pb.custom_shape}
+    for o in shapes:
+        o.hide_render = True
+    objs = [o for o in bpy.data.objects if o.type == 'MESH' and o not in shapes]
     ao_into_base(objs)
     az, el = VIEW.get(name, VIEW['default'])
     az, el = math.radians(az), math.radians(el)

@@ -53,6 +53,27 @@ together, and how the game is verified. The story itself is in
   - A context prompt ("E · Talk to Rin").
   - Blocked routes explain themselves. Tamo comments on the raised drawbridge,
     the locked gate and the sleeping bear.
+- **Homes you can enter.** Four interiors (built by `art/blender/build_interiors.py`)
+  hang high above the valley; `src/world/interiors.js` fades Mika in through the
+  real front door, hides the outdoors, relights the room (sun through the
+  windows, warm lamps from the light pool) and keeps the camera inside. Each
+  holds a keepsake for the journal; Sora's cottage also holds the Star Kite.
+- **The Star Kite** (`src/actors/kite.js`, model by `build_kite.py`, Mika's
+  `Hang` clip): swoop-in, grab, fly (cruise 9 m/s, boost 20 m/s) with terrain
+  and roof clearance, and a landing that picks open ground (or drops her in the
+  river to swim). The camera widens while flying. It lands by itself when a
+  scene starts.
+- **Valley friends.** Eight kinds of creature answer to E; the first hello plays
+  a short scene and fills the Friends page. Rabbits and deer only bolt from a
+  running Mika. Kon the fox stays by the shrine and Ōkuma sleeps in a den after
+  chapter 3.
+- **Storytelling on the rails.** `CAPTIONS` in story.js are shown across the top
+  (letterboxed during the arrival) as the train passes landmarks, by fraction of
+  the route. In the epilogue Kobo shuttles between the station and Takamori Halt
+  and Mika can ride it.
+- **Profiles and settings.** Three save slots (slot 1 keeps the original key).
+  Season and time-of-day overrides only change what is shown (`game.applyLook`,
+  `game.shownHour`); the story keeps its own calendar and clock.
 - **Conversations are paged.** Up to three lines per page (two on phones),
   chat-style with portraits; E/Next turns the page, Q/Back re-reads, Skip jumps to
   the end but never past a choice.

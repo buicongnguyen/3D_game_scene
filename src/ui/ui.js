@@ -1,4 +1,4 @@
-import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS } from '../game/story.js';
+import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange } from '../i18n/i18n.js';
 
@@ -74,24 +74,82 @@ export class UI {
   }
   hideLoading() { $('loading').classList.add('hidden'); }
 
-  title(hasSave) {
+  /** Title screen. slots: [{slot, data}] from Director.slots(). Resolves with { mode: 'new'|'continue', slot }. */
+  title(slots, last = 1) {
     $('title').classList.remove('hidden');
     $('hud').classList.add('hidden');
     $('touch').classList.add('hidden');
-    $('btnContinue').classList.toggle('hidden', !hasSave);
+    const any = slots.some(s => s.data);
+    $('btnContinue').classList.toggle('hidden', !any);
     this.setTitleHint();
     return new Promise(resolve => {
       const done = v => { $('title').classList.add('hidden'); cleanup(); this.audio?.click(); resolve(v); };
-      const onNew = () => {
-        if (hasSave && !confirm(tx('Start a new game? Your saved progress will be replaced.'))) return;
-        done('new');
-      };
-      const onCont = () => done('continue');
+      const onNew = async () => { const slot = await this.pickSlot('new', slots, last); if (slot) done({ mode: 'new', slot }); };
+      const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot) done({ mode: 'continue', slot }); };
       const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); };
       $('btnNew').addEventListener('click', onNew);
       $('btnContinue').addEventListener('click', onCont);
-      (hasSave ? $('btnContinue') : $('btnNew')).focus();
+      (any ? $('btnContinue') : $('btnNew')).focus();
     });
+  }
+
+  /** The profile chooser: three save slots with where each story stands. Resolves with a slot number or null. */
+  pickSlot(mode, slots, last) {
+    const box = $('slots');
+    $('slotsTitle').textContent = tx(mode === 'new' ? 'Start a new story in…' : 'Continue which story?');
+    box.classList.remove('hidden');
+    return new Promise(resolve => {
+      const close = v => { box.classList.add('hidden'); $('slotsClose').onclick = null; resolve(v); };
+      $('slotsClose').onclick = () => close(null);
+      const render = () => {
+        const list = $('slotList');
+        list.innerHTML = '';
+        for (const s of slots) {
+          const row = document.createElement('div');
+          row.className = 'slot';
+          const pick = document.createElement('button');
+          pick.className = 'pick' + (s.slot === last && s.data ? ' last' : '');
+          pick.innerHTML = `<span class="num ${s.data ? '' : 'empty'}">${s.slot}</span><span class="info">${this.slotInfo(s.data)}</span>`;
+          pick.disabled = mode === 'continue' && !s.data;
+          pick.onclick = () => {
+            if (mode === 'new' && s.data && !confirm(tx('Start a new game in this slot? The story saved here will be replaced.'))) return;
+            this.audio?.click();
+            close(s.slot);
+          };
+          row.appendChild(pick);
+          if (s.data) {
+            const del = document.createElement('button');
+            del.className = 'del';
+            del.textContent = tx('Delete');
+            del.onclick = () => {
+              if (!confirm(tx('Delete this save? This cannot be undone.'))) return;
+              try { localStorage.removeItem(s.slot === 1 ? 'starline-save-1' : `starline-save-${s.slot}`); } catch { /* ignore */ }
+              s.data = null;
+              if (!slots.some(x => x.data)) $('btnContinue').classList.add('hidden');
+              if (mode === 'continue' && !slots.some(x => x.data)) { close(null); return; }
+              render();
+            };
+            row.appendChild(del);
+          }
+          list.appendChild(row);
+        }
+      };
+      render();
+    });
+  }
+
+  slotInfo(data) {
+    if (!data?.quest) return `<b>${esc(tx('Empty'))}</b><span>${esc(tx('A new story begins here.'))}</span>`;
+    const q = data.quest, c = CHAPTERS[q.chapter] || CHAPTERS[0];
+    const lamps = Object.values(q.lamps || {}).filter(Boolean).length;
+    const mins = Math.floor((q.playtime || 0) / 60);
+    const time = mins >= 60 ? `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m` : `${mins}m`;
+    const step = STEPS[STEP_INDEX[q.step]];
+    const obj = step ? tx(step.objective).replace(/\s*[(（]\{\w+\}\/\d+[)）]/g, '').replace(/\{\w+\}/g, '') : '';
+    let when = '';
+    try { when = new Date(data.at).toLocaleString(getLang(), { dateStyle: 'medium', timeStyle: 'short' }); } catch { /* ignore */ }
+    return `<b>${esc(tx(c.title))} — ${esc(tx(c.name))}</b><span>${esc(obj)}</span>` +
+      `<span>${esc(tx('Lamps {n}/4 · Stars {s}/12 · {time}', { n: lamps, s: (q.stars || []).length, time }))}${when ? ` · ${esc(when)}` : ''}</span>`;
   }
 
   showHud(on) {
@@ -180,6 +238,24 @@ export class UI {
     m.style.top = `${y}px`;
     const d = camera.position.distanceTo(target);
     $('markerDist').textContent = d > 8 ? `${Math.round(d)} m` : '';
+  }
+
+  // ------------------------------------------------------------------ captions
+  /** Letterbox bars for cinematic moments. */
+  cinema(on) { $('captions').classList.toggle('cinema', on); document.body.classList.toggle('cinema', on); }
+
+  /** Narration across the top of the screen; captions queue, never overlap. Resolves when shown and gone. */
+  caption(text, ms = 4600) {
+    const show = async () => {
+      const el = $('captionText');
+      el.textContent = tx(text);
+      el.classList.add('show');
+      await new Promise(r => setTimeout(r, ms));
+      el.classList.remove('show');
+      await new Promise(r => setTimeout(r, 750));
+    };
+    this.captionChain = (this.captionChain || Promise.resolve()).then(show);
+    return this.captionChain;
   }
 
   card(chapter) {
@@ -409,13 +485,42 @@ export class UI {
     const save = (k, v) => { try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify(v)); } catch { /* ignore */ } };
     const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps');
     sens.value = load('sens', 1); inv.checked = load('invert', false); mus.value = load('music', 0.55); sfx.value = load('sfx', 0.8); fps.checked = load('fps', false);
+    // advanced: what you see (season, time, weather), how it renders, how big the words are
+    const ADV = { season: '', time: '', weather: true, shadows: true, scale: '', fov: 55, camDist: 6.2, text: '1' };
+    const season = $('optSeason'), time = $('optTime'), weather = $('optWeather'), shadows = $('optShadows'), scale = $('optScale'),
+      fov = $('optFov'), camDist = $('optCamDist'), text = $('optText');
+    const loadAdv = () => {
+      season.value = load('season', ADV.season); time.value = load('time', ADV.time); weather.checked = load('weather', ADV.weather);
+      shadows.checked = load('shadows', ADV.shadows); scale.value = load('scale', ADV.scale); fov.value = load('fov', ADV.fov);
+      camDist.value = load('camDist', ADV.camDist); text.value = load('text', ADV.text);
+    };
+    loadAdv();
+    let lastCam = null;
     const apply = () => {
       g.input.sensitivity = +sens.value; g.input.invertY = inv.checked;
       this.audio?.setVolumes(+mus.value, +sfx.value);
       $('fps').classList.toggle('hidden', !fps.checked);
       save('sens', +sens.value); save('invert', inv.checked); save('music', +mus.value); save('sfx', +sfx.value); save('fps', fps.checked);
+      g.seasonOverride = season.value || null;
+      const tv = time.value;
+      g.timeOverride = tv === '' ? null : tv.startsWith('cycle') ? tv : +tv;
+      if (typeof g.timeOverride !== 'string') g.cycleHour = undefined;
+      g.weatherOff = !weather.checked;
+      if (g.world) g.applyLook?.();
+      if (g.sky?.sun) g.sky.sun.castShadow = shadows.checked;
+      if (g.renderer) { g.renderer.fixedScale = scale.value ? +scale.value : null; if (g.renderer.fixedScale) { g.renderer.scale = g.renderer.fixedScale; g.renderer.resize(); } }
+      if (g.follow) { g.follow.fovBase = +fov.value; if (lastCam !== +camDist.value) { g.follow.zoomTarget = +camDist.value; lastCam = +camDist.value; } }
+      document.documentElement.style.setProperty('--ui-scale', text.value);
+      save('season', season.value); save('time', tv); save('weather', weather.checked); save('shadows', shadows.checked);
+      save('scale', scale.value); save('fov', +fov.value); save('camDist', +camDist.value); save('text', text.value);
     };
-    [sens, inv, mus, sfx, fps].forEach(el => el.addEventListener('input', apply));
+    [sens, inv, mus, sfx, fps, season, time, weather, shadows, scale, fov, camDist, text].forEach(el => el.addEventListener(el.tagName === 'SELECT' || el.type === 'checkbox' ? 'change' : 'input', apply));
+    $('btnResetAdv').addEventListener('click', () => {
+      for (const [k, v] of Object.entries(ADV)) save(k, v);
+      loadAdv();
+      apply();
+    });
+    this.applySettings = apply;
     apply();
   }
 
@@ -459,20 +564,37 @@ export class UI {
       const lamps = [['forest', 'Forest Lamp'], ['mill', 'Mill Lamp'], ['orchard', 'Orchard Lamp'], ['viaduct', 'Viaduct Lamp']].map(([l, n]) => `${q.lamps[l] ? '🟡' : '⚫'} ${esc(tx(n))}`).join(' &nbsp; ');
       body.innerHTML = `<p>${lamps}</p><h3>${esc(tx(CHAPTERS[q.chapter].title))} — ${esc(tx(CHAPTERS[q.chapter].name))}</h3>${rows.join('')}`;
     } else if (tab === 'pages') {
-      body.innerHTML = JOURNAL.map((p, i) => q.pages.includes(i) ? `<div class="page"><b>${esc(tx(p.title))}</b><br>${esc(tx(p.text))}</div>` : `<div class="page locked"><b>${esc(tx('Page {n}', { n: i + 1 }))}</b><br>${esc(tx('Not found yet.'))}</div>`).join('');
+      const keep = q.keepsakes || [];
+      body.innerHTML = JOURNAL.map((p, i) => q.pages.includes(i) ? `<div class="page"><b>${esc(tx(p.title))}</b><br>${esc(tx(p.text))}</div>` : `<div class="page locked"><b>${esc(tx('Page {n}', { n: i + 1 }))}</b><br>${esc(tx('Not found yet.'))}</div>`).join('') +
+        `<h3>${esc(tx('Keepsakes'))} · ${keep.length} / ${KEEPSAKES.length}</h3><div class="cards">` +
+        KEEPSAKES.map(k => this.cardHTML(keep.includes(k.id), k.model, tx(k.name), keep.includes(k.id) ? tx(k.text) : tx('Still in {place}.', { place: tx(k.where) }))).join('') + '</div>';
     } else if (tab === 'stars') {
       body.innerHTML = `<p>${esc(tx('{n} / 12 found.', { n: q.stars.length }))} ${esc(q.stars.length === 12 ? tx('Sora left one more letter…') : tx('Each star holds a line of Sora\'s poem.'))}</p><div class="grid">` +
         FALLEN_STARS.map((s, i) => q.stars.includes(s.id) ? `<div class="star">★ ${esc(tx(STAR_POEM[i]))}</div>` : `<div class="star locked">☆ ${esc(tx(s.hint))}</div>`).join('') + '</div>';
     } else if (tab === 'fish') {
-      body.innerHTML = Object.entries(FISH).map(([k, f]) => `<div class="step">${q.fishLog[k] ? '🐟' : '·'} ${q.fishLog[k] ? esc(tx(f.name)) : '???'} ${q.fishLog[k] ? `× ${q.fishLog[k]}` : ''}${f.dusk ? ` <i>${esc(tx('(bites at dusk)'))}</i>` : ''}</div>`).join('');
+      const kinds = Object.entries(FISH), caught = kinds.filter(([k]) => q.fishLog[k]).length;
+      body.innerHTML = `<p>${esc(tx('{n} of {total} kinds caught', { n: caught, total: kinds.length }))}</p><div class="cards">` + kinds.map(([k, f]) => {
+        const n = q.fishLog[k] || 0;
+        return this.cardHTML(n > 0, f.icon, tx(f.name), n ? tx(f.desc) : tx(f.hint), n ? `× ${n}` : tx('Not caught yet'), n ? tx(f.hint) : '', f.hue);
+      }).join('') + '</div>';
+    } else if (tab === 'friends') {
+      const met = q.friends || {}, n = FRIENDS.filter(f => met[f.id]).length;
+      body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press E to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +
+        FRIENDS.map(f => this.cardHTML(!!met[f.id], f.icon, tx(f.name), met[f.id] ? tx(f.desc) : tx(f.hint), met[f.id] ? '♥' : tx('Not met yet'))).join('') + '</div>';
     } else {
       const row = (keys, text) => `<div class="step">${keys.map(k => `<kbd>${k}</kbd>`).join(' ')} ${esc(tx(text))}</div>`;
       body.innerHTML = this.touch
-        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Act')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming'))].join('')
-        : [row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')), row(['C'], N_('Dive while swimming')),
+        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Act')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming')), row([tx('Kite')], N_('Fly or land the Star Kite, once you have it'))].join('')
+        : [row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')), row(['C'], N_('Dive while swimming')), row(['G'], N_('Fly or land the Star Kite, once you have it')),
           row(['E'], N_('Talk, pick up, light lamps — anything nearby')), row(['E', 'Q'], N_('Next / back in conversations')), row([tx('Mouse')], N_('Drag to look · wheel to zoom')),
           row(['J'], N_('Journal')), row(['Esc'], N_('Pause')), row(['🎮'], N_('Gamepad supported'))].join('');
     }
+  }
+
+  /** A journal card: picture (a silhouette until found), name, tag and a line or two. */
+  cardHTML(known, icon, name, text, tag = '', sub = '', hue = 0) {
+    const img = icon ? `<span class="pic"><img alt="" src="${this.icon(icon)}" style="${hue ? `filter:hue-rotate(${hue}deg)` : ''}" onerror="this.style.visibility='hidden'"></span>` : '';
+    return `<div class="jcard ${known ? '' : 'unknown'}">${img}<div><b>${esc(name)}</b>${tag ? ` <span class="tag">${esc(tag)}</span>` : ''}<p>${esc(text)}</p>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}</div></div>`;
   }
 
   // ------------------------------------------------------------------ touch
@@ -491,6 +613,7 @@ export class UI {
     hold('tJump', 'jump');
     hold('tAct', 'act');
     hold('tDive', 'dive');
+    hold('tKite', 'kite');
     input.onStick = s => {
       const st = $('stick');
       if (!s) { st.classList.remove('on'); return; }
@@ -518,6 +641,11 @@ export class UI {
   ride(on, lit, total) {
     $('rideHud').classList.toggle('hidden', !on);
     if (on) $('rideText').textContent = tx('Trackside lanterns lit {n} / {total}', { n: lit, total });
+  }
+  kiteButton(on) {
+    if (this._kiteBtn === on) return;
+    this._kiteBtn = on;
+    $('tKite').classList.toggle('hidden', !on || !this.touch);
   }
   swimming(on) {
     if (this._swim === on) return;

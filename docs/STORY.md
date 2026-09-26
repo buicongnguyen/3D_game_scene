@@ -5,16 +5,21 @@ a tiny fallen star, and the night everybody looked away.
 
 > **Spoilers.** This is the whole story, including the twist and the ending.
 > The synopsis and notes are written by hand; the appendices (the complete
-> script, Sora's pages, the poem, collectibles and chatter) are generated from
+> script with the train captions, Sora's pages, the poem, collectibles, chatter,
+> the homes and keepsakes, and the valley friends) are generated from
 > `src/game/story.js` by `npm run story:md`, so they always match the game.
 
 **Contents:** [Logline](#logline) · [Setting](#setting) · [Cast](#cast) ·
 [The four Star Lamps](#the-four-star-lamps) · [What really happened](#what-really-happened) ·
 [Synopsis](#synopsis) · [The choice](#the-choice) · [Playing the story](#playing-the-story) ·
+[Storytelling on the train](#storytelling-on-the-train) · [Homes and keepsakes](#homes-and-keepsakes) ·
+[The Star Kite](#the-star-kite) · [Valley friends](#valley-friends) ·
 [Writing notes](#writing-notes) · [Appendix A: the complete script](#appendix-a--the-complete-script) ·
 [B: letters and pages](#appendix-b--soras-letters-and-journal-pages) ·
 [C: the poem and the stars](#appendix-c--the-star-poem-and-the-twelve-fallen-stars) ·
-[D: fish and items](#appendix-d--fish-and-story-items) · [E: chatter](#appendix-e--idle-chatter)
+[D: fish and items](#appendix-d--fish-and-story-items) · [E: chatter](#appendix-e--idle-chatter) ·
+[F: homes, keepsakes and the kite](#appendix-f--homes-keepsakes-and-the-star-kite) ·
+[G: valley friends](#appendix-g--valley-friends)
 
 ## Logline
 
@@ -227,10 +232,10 @@ too, okay?" He rises into the lamp.
 Spring again. The Star Train runs every Sunday. Kawabe and Takamori share one
 festival, on the viaduct, and argue about the buns. Sora's cottage has a new
 Viaduct Lamp keeper, who waves at a small gold light every night. One line
-changes with Mika's choice (below). The valley is open to explore, and finding
-all twelve Fallen Stars (possible at any point in the game) reveals Sora's last
-letter: *"I never lit the lamps for the train. I lit them so someone would look
-up."*
+changes with Mika's choice (below). The valley is open to explore, Kobo's
+Sunday service runs all the way to Takamori Halt, and finding all twelve
+Fallen Stars (possible at any point in the game) reveals Sora's last letter:
+*"I never lit the lamps for the train. I lit them so someone would look up."*
 
 ## The choice
 
@@ -322,7 +327,78 @@ The objectives below are the ones shown on screen.
 
 | Objective | What the player does |
 |---|---|
-| Explore Hoshi Valley — find all 12 Fallen Stars (0/12) | Free roam. Walk into the stars; fish at the dock (the starfin bites only at dusk). |
+| Explore Hoshi Valley — find all 12 Fallen Stars (0/12) | Free roam. Walk into the stars; fish at the dock (the starfin bites only at dusk); ride Kobo's Sunday service from either platform. |
+
+## Storytelling on the train
+
+Three times, the story is told in captions across the top of the screen while
+a train is moving. Captions are narration (nobody speaks them) and never more
+than 120 characters. The script in Appendix A prints them where they play.
+
+- **The arrival (Prologue).** Five captions, about four seconds each, while
+  Kobo runs in from the west tunnel. They set up the mystery (the Star Train
+  stopped; the lamps went dark; everybody knows why, and everybody tells it
+  differently) and then Mika: she knows the valley only from her
+  grandmother's letters, and she doesn't know the cottage isn't empty. They
+  leave the rest to the scene that follows: the narrator names Kobo and "the
+  last train of winter", Genzo recognises Mika and hands her the key.
+- **The Star Train (Chapter Four).** Six captions, timed by how far along the
+  line the train is, over the lanterns Mika is lighting: out of the station
+  for the first time in ten years, past Sora's porch lamp onto the viaduct
+  (Genzo keeps a hand near the brake), over the Kawabe timber and Takamori
+  iron of the mended span and past the Viaduct Lamp, where Tamo goes quiet
+  (he knows where he belongs). Then the passengers: Hana passes Ōta the buns
+  and he takes three, Rin cheers the fireworks. The last caption is the
+  theme: everyone, for once, is looking up.
+- **The Sunday service (Epilogue).** Mika can ride Kobo from either platform.
+  Five spring captions: Rin's ferry, Tamo's small light flickering back from
+  the Viaduct Lamp, the four lamps all saying "clear", Ōta pretending not to
+  wave. The ride runs both ways, so only the middle caption (at 42%, which is
+  on the viaduct whichever way Mika is going) names a landmark.
+
+The line from Hoshi Station (0%) passes Sora's cottage at about 10%, is on the
+viaduct from about 19% to 58% (the Viaduct Lamp and the mended span at about
+37 to 42%), and runs up the east bank to Takamori Halt (100%).
+
+## Homes and keepsakes
+
+Four front doors open in every chapter: Sora's cottage, Hana's bakery, Ōta's
+mill and Genzo's station office. Each room is a portrait of its owner, and each
+keeps one keepsake for the journal. Together the keepsakes show the four
+friends before the flood, which the main story only tells.
+
+| Home | The room | Keepsake |
+|---|---|---|
+| **Sora's cottage** | Her glasses and teacups still on the table, a shelf of letters, a pale square on the wall, her workbench and the Star Kite. | **Festival photograph:** Sora, Genzo, Ōta and Hana squashed onto Kobo's buffer beam at star-fall, the year before the flood. On the back: "Same time next year." |
+| **Hana's bakery** | A brick oven, festival bunting, buns on every surface. | **Hana's bun recipe:** "Three for Ōta. He'll say he only wants one." Ten years of feuding, and she never crossed it out. |
+| **Ōta's mill** | The gear train, the fishing corner, and crocks and crocks of pickled radish. | **A pair of fishing floats** carved Ō and G. Ōta and Genzo fished together; after the flood Genzo stopped coming anywhere, and Ōta has sulked over pickled radish ever since. |
+| **Genzo's station** | Timetable, ledger, pendulum clock, and more pictures of Kobo than of people. | **Kobo's first ticket,** punched the day the line opened: "Genzo, age 9. I will drive this train one day." |
+
+The photograph's "Same time next year" only hurts once you know the next
+star-fall was the night of the flood. Because Mika can walk in at any point in
+the story, the scenes never assume a chapter: names are read off the objects
+(the back of the photograph, the recipe card, the ticket), and each scene with
+Tamo in it has a Tamo-free version.
+
+## The Star Kite
+
+Sora's handmade, wind-up flying machine rests on the workbench in her
+cottage. It appears once Tamo has joined Mika, and a note from Sora is tied to
+the handlebar: *"The Star Kite. It comes when you whistle and goes where my
+legs won't. Hold on tight, and don't tell Genzo."* That is an early, gentle
+hint at what Genzo confesses in Chapter Four (Sora never walked right again),
+and at how she kept watching over the valley anyway. From then on G (or the
+Kite button) whistles the kite down to carry Mika, and lands her again.
+
+## Valley friends
+
+Mika can say hello (E) to eight kinds of creature: the meadow rabbits,
+Takamori's hens, Mochi the Kawabe cat, the river ducks, Hana's sheep (from
+Chapter Two), the forest deer, and Kon and Ōkuma (from Chapter Three). The
+first hello with each plays a one- or two-line scene and fills in its page of
+the journal; meeting all eight plays one more. They are small jokes, mostly
+Tamo's (he has no nose, and no idea what "quack" means), and one more reason
+to walk every corner of the valley.
 
 ## Writing notes
 
@@ -331,7 +407,14 @@ The objectives below are the ones shown on screen.
 - **No violence.** Tamo's spark lights lamps, rings bells and startles a crab
   and some bees. Nothing is hurt or hunted.
 - **No villain.** Every character is sympathetic by the end.
-- **Short lines:** at most about 140 characters per dialogue line.
+- **Short lines:** at most about 135 characters per dialogue line, and 120
+  per train caption. The arrival captions show for about four seconds each,
+  so keep those nearer 80.
+- **Scenes that can happen at any time** (homes, keepsakes, the kite, valley
+  friends) must be true in every chapter and season. Tamo is with Mika only
+  from the chest to the finale, so every such scene with Tamo in it has an
+  `<id>_solo` version, spoken by Mika or the narrator, which the game plays
+  when he isn't there.
 - **Letters and notes are voiced by their writers** (Sora's letter and pages,
   Kiku's note, Hana's note in the basket). Anyone else who speaks is on screen.
 - **Idle chatter rotates across every chapter,** so each chatter line must be
@@ -354,6 +437,18 @@ then its step id). Narration is in italics; stage directions are quoted.
 #### Arrive in Hoshi Valley · `p.arrive`
 
 > *A little red engine winds down the valley toward Hoshi Station.*
+
+*Across the top of the screen while Kobo runs in, one caption after another:*
+
+> Ten winters ago, on star-fall night, the Star Train stopped running.
+>
+> The four Star Lamps went dark. Everybody knows why. Everybody tells it differently.
+>
+> This evening, one train brings one passenger up from the city.
+>
+> Her name is Mika. She knows this valley only from her grandmother's letters.
+>
+> She has come to clear out the cottage. She doesn't know yet that it isn't empty.
 
 *Hoshi Valley, on the last train of winter. Kobo, the little red valley engine, wheezes to a stop.*
 
@@ -864,6 +959,20 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 > *The Star Train, Kobo hung with lanterns, leaves Hoshi Station with both villages aboard.*
 
+*Across the top of the screen during the ride, by how far along the line the train is:*
+
+> **2%, Hoshi Station:** For the first time in ten years, the Star Train pulls out of Hoshi Station.
+>
+> **14%, the bluff by Sora's cottage:** Past Sora's porch lamp and out onto the viaduct. Genzo keeps one hand near the brake, just in case.
+>
+> **32%, the viaduct:** Over Kawabe timber and Takamori iron, past the Viaduct Lamp. For once, Tamo is very quiet.
+>
+> **52%, the viaduct:** In the first coach, Hana passes Ōta the bun basket. He says he only wants one. He takes three.
+>
+> **70%, the east bank:** Fireworks climb from Takamori to meet the falling stars. Rin cheers the loudest. Obviously.
+>
+> **86%, nearing Takamori Halt:** Four lamps lit, two villages aboard, one little red engine. And everyone, for once, is looking up.
+
 > *Meteors, Takamori fireworks and Kawabe lantern boats fill the valley.*
 
 *The Star Train rolls into Takamori Halt as the sky begins to fall—one star, then ten, then a thousand.*
@@ -895,6 +1004,18 @@ then its step id). Narration is in italics; stage directions are quoted.
 *If Mika chose "Grandma forgave you. We'll tell them together.":*
 
 *On Sundays, Genzo saves Mika the seat up front. "You stood by me on that platform," he says. "She'd be proud of you."*
+
+*Riding Kobo's Sunday service between Hoshi Station and Takamori Halt (by how far along the ride, either way):*
+
+> **2%:** Sunday service. Kobo toots twice, huffs once, and rolls out with Mika up front, where the view is.
+>
+> **20%:** Down on the river, Rin's ferry is on its forty-second crossing today. She is counting. Out loud.
+>
+> **42%:** Across the viaduct, the Viaduct Lamp burns gold. Mika waves. The small light inside flickers back.
+>
+> **62%:** Forest, Mill, Orchard, Viaduct: four lamps, all saying 'clear'. Not one has gone out since winter.
+>
+> **82%:** Somewhere in Kawabe, Ōta waves at the train, then pretends he was swatting a fly.
 
 ### Blocked paths
 
@@ -1002,14 +1123,15 @@ The whole poem:
 
 ## Appendix D · Fish and story items
 
-Fishing opens at Kawabe Dock in Chapter One and stays open. Any catch counts toward Rin's three fish.
+Fishing opens at Kawabe Dock in Chapter One and stays open. Any catch counts toward Rin's three fish. The journal's
+fish log shows the hint until a fish is caught, then its entry and the count.
 
-| Fish | When it bites |
-|---|---|
-| Rainbow trout | Any time |
-| River char | Any time |
-| Mill koi | Any time |
-| Starfin | Only at dusk |
+| Fish | When it bites | Fish-log hint | Fish-log entry once caught |
+|---|---|---|---|
+| Rainbow trout | Any time | Any time, from Rin's dock. | The valley's everyday fish. Rin grills it in a salt crust, and Grandpa Ōta melts. |
+| River char | Any time | Any time, from the dock. It bites less often than trout. | Speckled like a winter sky. Rin swears they can see in the dark. |
+| Mill koi | Any time | Rare, any time. Keep trying. | Escaped from Ōta's mill pond years ago. He pretends not to miss them. |
+| Starfin | Only at dusk | Only at dusk, from about half past five until half past eight. | Its fins glow like the Star Lamps. Nobody knows where it sleeps. |
 
 | Item | How Mika gets it |
 |---|---|
@@ -1023,6 +1145,7 @@ Fishing opens at Kawabe Dock in Chapter One and stays open. Any catch counts tow
 | Mushroom | Picked up on “Gather 3 chestnuts, 2 mushrooms and a honeycomb” |
 | Honeycomb | Picked up on “Gather 3 chestnuts, 2 mushrooms and a honeycomb” |
 | Honey chestnuts | Given on “Cook honey chestnuts at the shrine hearth” |
+| Star Kite | On Sora's workbench, once Tamo has joined (Appendix F) |
 
 ## Appendix E · Idle chatter
 
@@ -1037,4 +1160,221 @@ What the cast says when there is nothing story-related to talk about. The lines 
 **Hana:** “Have a bun! No? Have two!” · “Flour in my hair, flour in my tea. Flour is a way of life, love.” · “Ōta used to come to my stall every festival. Three buns. Always three.” · “My oven's older than the viaduct.” · “A bun is just a hug you can eat, sweetheart.”
 
 **Villager:** “Hoshi Valley's small. Everybody knows everybody's business.” · “They say the stars fall in winter.” · “Sora's granddaughter! You've got her walk.” · “The Star Train! I remember the Star Train.” · “Mind the crows.”
+
+## Appendix F · Homes, keepsakes and the Star Kite
+
+Four front doors open in every chapter. The first time Mika steps into a home a short scene plays, and each home keeps
+one keepsake for the journal. All of this can happen at any point in the story.
+
+### Sora's cottage
+
+*The first time Mika steps inside:*
+
+**Mika:** Her glasses on the table. Her teacups. A whole shelf of letters. It's like she only just stepped out.
+
+**Tamo:** I know this room! I think. It smells like toast and Sora. Mostly toast.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** Her glasses on the table. Her teacups. A whole shelf of letters. It's like she only just stepped out.
+
+**Mika:** Did Grandma ever throw anything away? …Good. Neither will I.
+
+**Keepsake: Festival photograph.** Its journal entry:
+
+> Sora, Genzo, Ōta and Hana, squashed onto Kobo's buffer beam at star-fall, the year before the flood. On the back, in Sora's hand, their four names and 'Same time next year.'
+
+*When Mika picks it up:*
+
+**Mika:** 'Sora, Genzo, Ōta, Hana. Same time next year.' …Genzo's smiling. I didn't know his face could do that.
+
+**Tamo:** Ōta and Hana, arm in arm, and everybody laughing! Mika, can we keep it? In the journal? Please?
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** 'Sora, Genzo, Ōta, Hana. Same time next year.' …Genzo's smiling. I didn't know his face could do that.
+
+**Mika:** Ōta and Hana, arm in arm, and all four of them laughing. …This one's going in my journal.
+
+**The Star Kite.** On Sora's workbench, once Tamo has joined. From then on, G (or the Kite button) whistles it down, and lands it again.
+
+*When Mika takes it:*
+
+**Mika:** A kite? No, it has propellers. And a handlebar. And a note tied to the handlebar.
+
+**Sora:** The Star Kite. It comes when you whistle and goes where my legs won't. Hold on tight, and don't tell Genzo.
+
+**Tamo:** Sora built a FLYING machine! Press G to fly: Space climbs, C dives, Shift goes fast, and G lands.
+
+*If she only takes it after Tamo has gone home:*
+
+**Mika:** A kite? No, it has propellers. And a handlebar. And a note tied to the handlebar.
+
+**Sora:** The Star Kite. It comes when you whistle and goes where my legs won't. Hold on tight, and don't tell Genzo.
+
+*Press G to whistle for the kite. Space climbs, C dives, Shift goes faster, G lands. Genzo need never know.*
+
+### Hana's bakery
+
+*The first time Mika steps inside:*
+
+**Tamo:** Warm! It's so warm in here! Mika, I think I live here now.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** Peaches, hot sugar, and an oven bigger than my room in the city. I could live in here.
+
+**Keepsake: Hana's bun recipe.** Its journal entry:
+
+> Flour, peaches, a pinch of salt—and in Hana's round handwriting: 'Three for Ōta. He'll say he only wants one.'
+
+*When Mika picks it up:*
+
+**Mika:** 'Three for Ōta. He'll say he only wants one.' …Ten years of feuding, and she never crossed it out.
+
+### Ōta's mill
+
+*The first time Mika steps inside:*
+
+**Mika:** So this is where Ōta hides. Gears, flour, and a truly worrying amount of pickled radish.
+
+**Keepsake: Pair of fishing floats.** Its journal entry:
+
+> Two cork floats, one red and one teal, tied together with twine and carved Ō and G. Somebody has dusted them every week for ten years.
+
+*When Mika picks it up:*
+
+**Tamo:** Ō and G… Ōta and Genzo! Two floats, tied together. They went fishing TOGETHER!
+
+**Mika:** And then ten years of pickled radish. Maybe it was never really about the radish.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** Ō and G, tied together with twine. Ōta and Genzo used to go fishing together.
+
+**Mika:** And then ten years of pickled radish. Maybe it was never really about the radish.
+
+### Genzo's station
+
+*The first time Mika steps inside:*
+
+**Mika:** A timetable, a ledger and a ticking clock, all for one little train that runs to the tunnel and back.
+
+**Tamo:** And pictures of Kobo. And a tiny model of Kobo. Mika, I think Genzo REALLY likes Kobo.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** Genzo's office. A ticking clock, a very tidy ledger, and more pictures of Kobo than of people.
+
+**Mika:** …And a little model of Kobo on the desk. Of course there is.
+
+**Keepsake: Kobo's first ticket.** Its journal entry:
+
+> Hoshi Station to Takamori Halt, punched on the first day the line ran. On the back, in a child's pencil: 'Genzo, age 9. I will drive this train one day.'
+
+*When Mika picks it up:*
+
+**Mika:** 'Genzo, age 9. I will drive this train one day.' …He did, Tamo. He really did.
+
+**Tamo:** Nine? Genzo was NINE once? I thought he came with the moustache.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** 'Genzo, age 9. I will drive this train one day.' …And he did. He really did.
+
+**Mika:** Genzo at nine. I bet he already had the frown. Maybe not the moustache.
+
+## Appendix G · Valley friends
+
+Mika can say hello to 8 kinds of creature with E. The journal's Friends page shows the hint until she has
+met one, then its entry. The first hello with each plays a short scene.
+
+| Friend | Prompt | Hint (before meeting) | Journal entry |
+|---|---|---|---|
+| Meadow rabbit | Pet the rabbit | Walk up slowly. Rabbits bolt from anyone who runs. | Nibbles clover in the meadows round Kawabe and on the slopes below Takamori. |
+| Takamori hen | Greet the hen | In the lanes of Takamori, near the bakery. | Hana's hens. They believe the bakery belongs to them. |
+| Mochi the cat | Scratch Mochi's ears | Kawabe's main street, usually asleep. | Sleeps in the middle of Kawabe's main street. Belongs to everybody and nobody. |
+| River duck | Wave to the ducks | On the river by Kawabe. Swim out and say hello. | Paddles the slow water just upriver of the ferry, loudly. |
+| Orchard sheep | Pat the sheep | In the pen on Takamori's sheep pasture, from Chapter Two. | Hana's flock. Excellent at escaping, terrible at coming back. |
+| Forest deer | Say hello to the deer | Through the upper orchard gate. Walk, don't run. | A shy family on the plateau above the orchard. The little one is the bravest. |
+| Kon the fox | Say hello to Kon | Near the forest shrine, from Chapter Three. | The shrine's red fox, who wears a bib and knows every path in the forest. |
+| Ōkuma the bear | Pat the sleeping bear (gently) | Asleep on the shrine stairs, or in his den after Chapter Three. | The forest's great sleeper. Loves honey chestnuts more than anything. |
+
+### Meadow rabbit
+
+**Tamo:** It's so SOFT! And it's wiggling its nose at me! Mika, I don't HAVE a nose. What do I do?
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*The rabbit wiggles its nose at Mika. Mika, with enormous self-control, does not wiggle hers back.*
+
+### Takamori hen
+
+**Mika:** Pleased to meet you, madam.
+
+**Tamo:** She says pleased to meet you too. I think. It might have been a threat.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** Pleased to meet you, madam.
+
+*The hen looks Mika over from boots to scarf, clucks once, and allows it.*
+
+### Mochi the cat
+
+*Mochi opens one eye, decides Mika is acceptable, and purrs like a very small engine.*
+
+### River duck
+
+**Tamo:** Quack! …Did I say it right? They're all looking at me. Mika, what did I SAY?
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika waves. The ducks discuss her at length, very loudly, and then all waggle their tails at once.*
+
+### Orchard sheep
+
+**Mika:** You're the one who got stuck in the hedge, aren't you?
+
+*The sheep does not deny it.*
+
+### Forest deer
+
+**Tamo:** Shh. Shh! Look at the little one. Don't breathe. Okay—breathe a little.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika stands very still. The littlest deer steps up, sniffs her scarf, and bounds back to its mother.*
+
+### Kon the fox
+
+**Tamo:** Kon! You showed us the way! Mika, a scratch behind the ears—he earned it.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+**Mika:** Kon! You showed us the way up to the shrine. Here—a scratch behind the ears. You earned it.
+
+### Ōkuma the bear
+
+**Tamo:** You patted a BEAR. That's brave. Or silly. …Both! But look, he's smiling in his sleep!
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika pats Ōkuma's enormous paw, very gently. He sighs in his sleep, and smiles.*
+
+**Mika:** Brave or silly? …Both. Definitely both.
+
+### Every friend made
+
+*After the last of the 8 first hellos:*
+
+**Tamo:** That's everyone! Every creature in the valley knows your name now.
+
+**Mika:** Grandma would say we've been properly introduced.
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Every creature in the valley has had a proper hello now. The ducks are still talking about it.*
+
+**Mika:** Grandma would say we've been properly introduced.
 <!-- story-md:end -->

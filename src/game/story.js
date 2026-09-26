@@ -29,6 +29,7 @@ export const ITEMS = {
   honeyChestnuts: { name: 'Honey chestnuts', icon: 'bowl-chestnuts' },
   timber: { name: 'Timber', icon: 'timber' },
   bolts: { name: 'Iron bolts', icon: 'iron-bolts' },
+  kite: { name: 'Star Kite', icon: 'star-kite' },
 };
 
 export const SEASON_OF_CHAPTER = ['spring', 'spring', 'summer', 'autumn', 'winter', 'spring'];
@@ -341,6 +342,91 @@ export const DIALOGUE = {
   tower_locked: [['tamo', 'The bell-tower door is locked. Hana has the key.']],
   gap_blocked: [['tamo', "That's where the span fell. Don't even THINK about jumping."]],
   bear_blocked: [['tamo', "The bear is asleep across the whole staircase. We can't get past. We need a plan. And maybe a snack."]],
+
+  // ---- homes, keepsakes and the Star Kite
+  // These can play in any chapter. When Tamo isn't with Mika (before the chest, or after the finale) the director
+  // plays the `<id>_solo` variant instead, so every scene that has Tamo in it has one.
+  inside_cottage: [
+    ['mika', "Her glasses on the table. Her teacups. A whole shelf of letters. It's like she only just stepped out."],
+    ['tamo', 'I know this room! I think. It smells like toast and Sora. Mostly toast.'],
+  ],
+  inside_cottage_solo: [
+    ['mika', "Her glasses on the table. Her teacups. A whole shelf of letters. It's like she only just stepped out."],
+    ['mika', 'Did Grandma ever throw anything away? …Good. Neither will I.'],
+  ],
+  inside_bakery: [['tamo', "Warm! It's so warm in here! Mika, I think I live here now.", 'Happy']],
+  inside_bakery_solo: [['mika', 'Peaches, hot sugar, and an oven bigger than my room in the city. I could live in here.']],
+  inside_mill: [['mika', 'So this is where Ōta hides. Gears, flour, and a truly worrying amount of pickled radish.']],
+  inside_station: [
+    ['mika', 'A timetable, a ledger and a ticking clock, all for one little train that runs to the tunnel and back.'],
+    ['tamo', 'And pictures of Kobo. And a tiny model of Kobo. Mika, I think Genzo REALLY likes Kobo.'],
+  ],
+  inside_station_solo: [
+    ['mika', "Genzo's office. A ticking clock, a very tidy ledger, and more pictures of Kobo than of people."],
+    ['mika', '…And a little model of Kobo on the desk. Of course there is.'],
+  ],
+  keepsake_photo: [
+    ['mika', "'Sora, Genzo, Ōta, Hana. Same time next year.' …Genzo's smiling. I didn't know his face could do that."],
+    ['tamo', 'Ōta and Hana, arm in arm, and everybody laughing! Mika, can we keep it? In the journal? Please?', 'Happy'],
+  ],
+  keepsake_photo_solo: [
+    ['mika', "'Sora, Genzo, Ōta, Hana. Same time next year.' …Genzo's smiling. I didn't know his face could do that."],
+    ['mika', "Ōta and Hana, arm in arm, and all four of them laughing. …This one's going in my journal."],
+  ],
+  keepsake_recipe: [['mika', "'Three for Ōta. He'll say he only wants one.' …Ten years of feuding, and she never crossed it out."]],
+  keepsake_float: [
+    ['tamo', 'Ō and G… Ōta and Genzo! Two floats, tied together. They went fishing TOGETHER!'],
+    ['mika', 'And then ten years of pickled radish. Maybe it was never really about the radish.'],
+  ],
+  keepsake_float_solo: [
+    ['mika', 'Ō and G, tied together with twine. Ōta and Genzo used to go fishing together.'],
+    ['mika', 'And then ten years of pickled radish. Maybe it was never really about the radish.'],
+  ],
+  keepsake_ticket: [
+    ['mika', "'Genzo, age 9. I will drive this train one day.' …He did, Tamo. He really did."],
+    ['tamo', 'Nine? Genzo was NINE once? I thought he came with the moustache.'],
+  ],
+  keepsake_ticket_solo: [
+    ['mika', "'Genzo, age 9. I will drive this train one day.' …And he did. He really did."],
+    ['mika', 'Genzo at nine. I bet he already had the frown. Maybe not the moustache.'],
+  ],
+  kite_found: [
+    ['mika', 'A kite? No, it has propellers. And a handlebar. And a note tied to the handlebar.'],
+    ['sora', "The Star Kite. It comes when you whistle and goes where my legs won't. Hold on tight, and don't tell Genzo."],
+    ['tamo', 'Sora built a FLYING machine! Press G to fly: Space climbs, C dives, Shift goes fast, and G lands.', 'Happy'],
+  ],
+  kite_found_solo: [
+    ['mika', 'A kite? No, it has propellers. And a handlebar. And a note tied to the handlebar.'],
+    ['sora', "The Star Kite. It comes when you whistle and goes where my legs won't. Hold on tight, and don't tell Genzo."],
+    ['narrator', 'Press G to whistle for the kite. Space climbs, C dives, Shift goes faster, G lands. Genzo need never know.'],
+  ],
+
+  // ---- valley friends (first hello with each creature; `_solo` when Tamo isn't with Mika)
+  friend_rabbit: [['tamo', "It's so SOFT! And it's wiggling its nose at me! Mika, I don't HAVE a nose. What do I do?", 'Happy']],
+  friend_rabbit_solo: [['narrator', 'The rabbit wiggles its nose at Mika. Mika, with enormous self-control, does not wiggle hers back.']],
+  friend_chicken: [['mika', 'Pleased to meet you, madam.'], ['tamo', 'She says pleased to meet you too. I think. It might have been a threat.']],
+  friend_chicken_solo: [['mika', 'Pleased to meet you, madam.'], ['narrator', 'The hen looks Mika over from boots to scarf, clucks once, and allows it.']],
+  friend_cat: [['narrator', 'Mochi opens one eye, decides Mika is acceptable, and purrs like a very small engine.']],
+  friend_duck: [['tamo', "Quack! …Did I say it right? They're all looking at me. Mika, what did I SAY?"]],
+  friend_duck_solo: [['narrator', 'Mika waves. The ducks discuss her at length, very loudly, and then all waggle their tails at once.']],
+  friend_sheep: [['mika', "You're the one who got stuck in the hedge, aren't you?"], ['narrator', 'The sheep does not deny it.']],
+  friend_deer: [['tamo', "Shh. Shh! Look at the little one. Don't breathe. Okay—breathe a little."]],
+  friend_deer_solo: [['narrator', 'Mika stands very still. The littlest deer steps up, sniffs her scarf, and bounds back to its mother.']],
+  friend_fox: [['tamo', 'Kon! You showed us the way! Mika, a scratch behind the ears—he earned it.', 'Happy']],
+  friend_fox_solo: [['mika', 'Kon! You showed us the way up to the shrine. Here—a scratch behind the ears. You earned it.']],
+  friend_bear: [['tamo', "You patted a BEAR. That's brave. Or silly. …Both! But look, he's smiling in his sleep!", 'Happy']],
+  friend_bear_solo: [
+    ['narrator', "Mika pats Ōkuma's enormous paw, very gently. He sighs in his sleep, and smiles."],
+    ['mika', 'Brave or silly? …Both. Definitely both.'],
+  ],
+  friends_all: [
+    ['tamo', "That's everyone! Every creature in the valley knows your name now.", 'Happy'],
+    ['mika', "Grandma would say we've been properly introduced."],
+  ],
+  friends_all_solo: [
+    ['narrator', 'Every creature in the valley has had a proper hello now. The ducks are still talking about it.'],
+    ['mika', "Grandma would say we've been properly introduced."],
+  ],
 };
 
 // Idle chatter per NPC (a line when there's nothing story-related to say). quest.talkFor() rotates through
@@ -367,11 +453,83 @@ export const STAR_POEM = [
 ];
 
 export const FISH = {
-  trout: { name: 'Rainbow trout', weight: 0.6, difficulty: 0.35 },
-  char: { name: 'River char', weight: 0.25, difficulty: 0.5 },
-  koi: { name: 'Mill koi', weight: 0.12, difficulty: 0.45 },
-  starfin: { name: 'Starfin', weight: 0.0, difficulty: 0.7, dusk: true },
+  trout: { name: 'Rainbow trout', icon: 'fish-trout', weight: 0.6, difficulty: 0.35,
+    hint: "Any time, from Rin's dock.", desc: "The valley's everyday fish. Rin grills it in a salt crust, and Grandpa Ōta melts." },
+  char: { name: 'River char', icon: 'fish-trout', hue: 150, weight: 0.25, difficulty: 0.5,
+    hint: 'Any time, from the dock. It bites less often than trout.', desc: 'Speckled like a winter sky. Rin swears they can see in the dark.' },
+  koi: { name: 'Mill koi', icon: 'fish-koi', weight: 0.12, difficulty: 0.45,
+    hint: 'Rare, any time. Keep trying.', desc: "Escaped from Ōta's mill pond years ago. He pretends not to miss them." },
+  starfin: { name: 'Starfin', icon: 'fish-starfin', weight: 0.0, difficulty: 0.7, dusk: true,
+    hint: 'Only at dusk, from about half past five until half past eight.', desc: 'Its fins glow like the Star Lamps. Nobody knows where it sleeps.' },
 };
+
+// ------------------------------------------------------------------------------------ captions
+// Storytelling across the top of the screen while the train is moving (at most 120 characters each).
+// arrival: the prologue, ~4 s a line, before p_arrive (which introduces Kobo and "the last train of winter").
+// ride / tour: `at` is the fraction of the way from start to end. Station to Takamori Halt, the train passes Sora's
+// cottage (~0.1), crosses the viaduct (~0.19-0.58; the Viaduct Lamp and the mended span ~0.37-0.42) and runs up the
+// east bank to the Halt. The tour runs in either direction, so its captions only name the viaduct at 0.42, the one
+// point that is on the viaduct both ways.
+export const CAPTIONS = {
+  arrival: [
+    'Ten winters ago, on star-fall night, the Star Train stopped running.',
+    'The four Star Lamps went dark. Everybody knows why. Everybody tells it differently.',
+    'This evening, one train brings one passenger up from the city.',
+    "Her name is Mika. She knows this valley only from her grandmother's letters.",
+    "She has come to clear out the cottage. She doesn't know yet that it isn't empty.",
+  ],
+  // the Star Train, Chapter Four: winter night, star-fall, both villages aboard, Tamo up front with Mika and Genzo
+  ride: [
+    { at: 0.02, text: 'For the first time in ten years, the Star Train pulls out of Hoshi Station.' },
+    { at: 0.14, text: "Past Sora's porch lamp and out onto the viaduct. Genzo keeps one hand near the brake, just in case." },
+    { at: 0.32, text: 'Over Kawabe timber and Takamori iron, past the Viaduct Lamp. For once, Tamo is very quiet.' },
+    { at: 0.52, text: 'In the first coach, Hana passes Ōta the bun basket. He says he only wants one. He takes three.' },
+    { at: 0.7, text: 'Fireworks climb from Takamori to meet the falling stars. Rin cheers the loudest. Obviously.' },
+    { at: 0.86, text: 'Four lamps lit, two villages aboard, one little red engine. And everyone, for once, is looking up.' },
+  ],
+  // the Sunday service in the epilogue (spring; Tamo is home in the Viaduct Lamp): either direction
+  tour: [
+    { at: 0.02, text: 'Sunday service. Kobo toots twice, huffs once, and rolls out with Mika up front, where the view is.' },
+    { at: 0.2, text: "Down on the river, Rin's ferry is on its forty-second crossing today. She is counting. Out loud." },
+    { at: 0.42, text: 'Across the viaduct, the Viaduct Lamp burns gold. Mika waves. The small light inside flickers back.' },
+    { at: 0.62, text: "Forest, Mill, Orchard, Viaduct: four lamps, all saying 'clear'. Not one has gone out since winter." },
+    { at: 0.82, text: 'Somewhere in Kawabe, Ōta waves at the train, then pretends he was swatting a fly.' },
+  ],
+};
+
+// ------------------------------------------------------------------------------------ valley friends
+// Say hello to every kind of creature in the valley (E next to it). The journal keeps the list.
+export const FRIENDS = [
+  { id: 'rabbit', name: 'Meadow rabbit', icon: 'rabbit', verb: 'Pet the rabbit',
+    desc: 'Nibbles clover in the meadows round Kawabe and on the slopes below Takamori.', hint: 'Walk up slowly. Rabbits bolt from anyone who runs.' },
+  { id: 'chicken', name: 'Takamori hen', icon: 'chicken', verb: 'Greet the hen',
+    desc: "Hana's hens. They believe the bakery belongs to them.", hint: 'In the lanes of Takamori, near the bakery.' },
+  { id: 'cat', name: 'Mochi the cat', icon: 'cat', verb: "Scratch Mochi's ears",
+    desc: "Sleeps in the middle of Kawabe's main street. Belongs to everybody and nobody.", hint: "Kawabe's main street, usually asleep." },
+  { id: 'duck', name: 'River duck', icon: 'duck', verb: 'Wave to the ducks',
+    desc: 'Paddles the slow water just upriver of the ferry, loudly.', hint: 'On the river by Kawabe. Swim out and say hello.' },
+  { id: 'sheep', name: 'Orchard sheep', icon: 'sheep', verb: 'Pat the sheep',
+    desc: "Hana's flock. Excellent at escaping, terrible at coming back.", hint: "In the pen on Takamori's sheep pasture, from Chapter Two." },
+  { id: 'deer', name: 'Forest deer', icon: 'deer', verb: 'Say hello to the deer',
+    desc: 'A shy family on the plateau above the orchard. The little one is the bravest.', hint: "Through the upper orchard gate. Walk, don't run." },
+  { id: 'fox', name: 'Kon the fox', icon: 'fox', verb: 'Say hello to Kon',
+    desc: "The shrine's red fox, who wears a bib and knows every path in the forest.", hint: 'Near the forest shrine, from Chapter Three.' },
+  { id: 'bear', name: 'Ōkuma the bear', icon: 'bear', verb: 'Pat the sleeping bear (gently)',
+    desc: "The forest's great sleeper. Loves honey chestnuts more than anything.", hint: 'Asleep on the shrine stairs, or in his den after Chapter Three.' },
+];
+
+// ------------------------------------------------------------------------------------ keepsakes
+// One in each home that opens its door to Mika.
+export const KEEPSAKES = [
+  { id: 'photo', home: 'cottage', where: "Sora's cottage", model: 'keepsake-photo', name: 'Festival photograph', say: 'keepsake_photo',
+    text: "Sora, Genzo, Ōta and Hana, squashed onto Kobo's buffer beam at star-fall, the year before the flood. On the back, in Sora's hand, their four names and 'Same time next year.'" },
+  { id: 'recipe', home: 'bakery', where: "Hana's bakery", model: 'keepsake-recipe', name: "Hana's bun recipe", say: 'keepsake_recipe',
+    text: "Flour, peaches, a pinch of salt—and in Hana's round handwriting: 'Three for Ōta. He'll say he only wants one.'" },
+  { id: 'float', home: 'mill', where: "Ōta's mill", model: 'keepsake-float', name: 'Pair of fishing floats', say: 'keepsake_float',
+    text: 'Two cork floats, one red and one teal, tied together with twine and carved Ō and G. Somebody has dusted them every week for ten years.' },
+  { id: 'ticket', home: 'station', where: "Genzo's station", model: 'keepsake-ticket', name: "Kobo's first ticket", say: 'keepsake_ticket',
+    text: "Hoshi Station to Takamori Halt, punched on the first day the line ran. On the back, in a child's pencil: 'Genzo, age 9. I will drive this train one day.'" },
+];
 
 // ------------------------------------------------------------------------------------ steps
 // done: condition that completes the step. talk: {npc: dialogueId} while the step is active.

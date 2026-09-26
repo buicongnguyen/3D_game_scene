@@ -18,6 +18,8 @@ import { LightPool } from '../engine/lights.js';
 import { Paddies } from '../world/paddies.js';
 import { Underwater } from '../fx/underwater.js';
 import { Riverbed } from '../world/riverbed.js';
+import { StarKite } from '../actors/kite.js';
+import { Interiors } from '../world/interiors.js';
 import { tx } from '../i18n/i18n.js';
 
 /** Owns every system and the frame loop. Story and UI plug in through hooks. */
@@ -65,19 +67,39 @@ export class Game {
     this.player = new Player(this.scene, this.assets, this.world, this.colliders);
     this.follow = new FollowCamera(this.camera, this.world, this.colliders);
     this.underwater = new Underwater(this);
+    this.kite = new StarKite(this);
+    this.interiors = new Interiors(this);
     this.riverbed = new Riverbed(this.scene, this.assets, this.world);
     this.setSeason(this.time.season);
     onProgress(1, 'Ready');
   }
 
+  /** The story's season. What is shown can be overridden in Settings (seasonOverride), without touching the story. */
   setSeason(s) {
     this.time.season = s;
-    this.world.setSeason(s);
-    this.foliage.setSeason(s);
-    this.grass.setSeason(s);
-    this.paddies.setSeason(s);
-    FX.uSnow.value = PALETTES[s].snow;
-    this.onSeason?.(s);
+    this.applyLook();
+  }
+
+  /** Apply the season on screen (story season unless overridden) and its weather (unless weather is off). */
+  applyLook() {
+    const s = this.seasonOverride || this.time.season;
+    if (this.shownSeason !== s) {
+      this.shownSeason = s;
+      this.world.setSeason(s);
+      this.foliage.setSeason(s);
+      this.grass.setSeason(s);
+      this.paddies.setSeason(s);
+      FX.uSnow.value = PALETTES[s].snow;
+      this.onSeason?.(s);
+    }
+    this.fx?.setWeather(this.weatherOff ? null : PALETTES[s].particles);
+  }
+
+  /** The hour shown on screen: the story clock, a fixed hour from Settings, or a free-running day cycle. */
+  shownHour() {
+    const o = this.timeOverride;
+    if (o === null || o === undefined) return this.time.hour;
+    return typeof o === 'number' ? o : (this.cycleHour ??= this.time.hour);
   }
 
   start() {
@@ -124,16 +146,22 @@ export class Game {
     if (running) {
       FX.uTime.value += dt;
       this.time.hour = (this.time.hour + dt * this.time.speed / 3600 * 24 + 24) % 24;
-      this.world.hour = this.time.hour;
+      if (this.timeOverride === 'cycle-slow' || this.timeOverride === 'cycle-fast') {
+        // a full day in 24 or 6 minutes
+        this.cycleHour = ((this.cycleHour ?? this.time.hour) + dt * (this.timeOverride === 'cycle-fast' ? 1 / 15 : 1 / 60)) % 24;
+      }
+      this.world.hour = this.shownHour();
       this.beforeUpdate?.(dt);
       // the train moves first: Mika (when riding) and the camera then see this frame's train, not last frame's
       this.railway.update(dt, this.night || 0);
+      this.kite?.update(dt); // the kite moves before Mika reads its handle
       this.player.update(dt, this.input, this.follow.yaw);
       this.follow.update(dt, this.player, this.input, false);
       for (const s of this.systems) s.update(dt, this);
       const L = this.world.update(dt, this.player.pos);
       this.underwater?.update(dt, L);
       this.riverbed?.update(dt);
+      this.interiors?.update(dt);
       this.fx?.update(dt, this.player.pos, L.night, this.audio, this.camera.position);
       this.night = L.night;
       this.structures.update(dt, L.night);

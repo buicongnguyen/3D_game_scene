@@ -6,7 +6,7 @@ const KEYMAP = {
   KeyW: 'up', ArrowUp: 'up', KeyS: 'down', ArrowDown: 'down', KeyA: 'left', ArrowLeft: 'left', KeyD: 'right', ArrowRight: 'right',
   Space: 'jump', KeyE: 'act', KeyF: 'act', Enter: 'act', ShiftLeft: 'sprint', ShiftRight: 'sprint',
   KeyJ: 'journal', KeyI: 'journal', Escape: 'pause', KeyP: 'pause', Backspace: 'back',
-  KeyC: 'dive', ControlLeft: 'dive', ControlRight: 'dive',
+  KeyC: 'dive', ControlLeft: 'dive', ControlRight: 'dive', KeyG: 'kite',
 };
 
 export class Input {
@@ -135,7 +135,7 @@ export class Input {
       if (rx || ry) { this.look.x += rx * 14; this.look.y += ry * 10; this.lastDevice = 'gamepad'; }
       const btn = i => gp.buttons[i]?.pressed;
       this._gpEdge('jump', btn(0)); this._gpEdge('act', btn(2) || btn(1) && false); this._gpEdge('back', btn(1));
-      this._gpEdge('journal', btn(8)); this._gpEdge('pause', btn(9));
+      this._gpEdge('journal', btn(8)); this._gpEdge('pause', btn(9)); this._gpEdge('kite', btn(3));
       // either trigger dives while swimming
       if (gp.buttons[6]?.value > 0.4 || gp.buttons[7]?.value > 0.4) { this.keys.add('dive'); this._gpDive = true; }
       else if (this._gpDive) { this.keys.delete('dive'); this._gpDive = false; }

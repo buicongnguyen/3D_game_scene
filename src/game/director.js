@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Quest } from './quest.js';
-import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST } from './story.js';
+import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST, FRIENDS, KEEPSAKES } from './story.js';
 import { tx, N_ } from '../i18n/i18n.js';
 import { NPC } from '../actors/npc.js';
 import { Tamo } from '../actors/tamo.js';
@@ -12,6 +12,7 @@ import { PALETTES, clockLabel } from '../world/seasons.js';
 import { STOPS } from '../world/railway.js';
 
 const SAVE_KEY = 'starline-save-1';
+const FRIEND_BY_KIND = Object.fromEntries(FRIENDS.map(f => [f.id, f]));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
 /** Binds the quest engine to the world: NPCs, interactions, sparks, pickups, zones, effects, saving. */
@@ -32,6 +33,7 @@ export class Director {
     this.minigame = null;
     this.stepClock = 0;
     this.saveClock = 0;
+    this.slot = 1;
     this.tamo = new Tamo(game.scene, game.assets);
     this.tamo.pool = game.lights;
     this.wildlife = new Wildlife(game.scene, game.assets, game.world, game.colliders);
@@ -95,14 +97,14 @@ export class Director {
     const epilogue = this.q.state.chapter === 5;
     if (tt.phase === 'wait') {
       const atStation = Math.abs(T.s - STOPS.station) < 20;
-      const dest = epilogue ? (T.s < STOPS.halt - 20 ? STOPS.halt : STOPS.westPortal - 12) : (atStation ? STOPS.westPortal - 12 : STOPS.station);
+      // the Sunday service shuttles between the station and Takamori Halt, stopping at both so Mika can ride
+      const dest = epilogue ? (atStation ? STOPS.halt : STOPS.station) : (atStation ? STOPS.westPortal - 12 : STOPS.station);
       r.goTo(dest, epilogue ? 9 : 8);
       if (this.game.player.pos.distanceTo(r.cars[0].obj.position) < 150) this.audio.whistle();
       tt.phase = 'run';
     } else {
       tt.phase = 'wait';
       tt.t = Math.abs(T.s - STOPS.station) < 20 || Math.abs(T.s - STOPS.halt) < 20 ? 35 : 45;
-      if (epilogue && T.s < STOPS.westPortal) { r.placeAt(STOPS.westPortal - 12); }
     }
   }
 
@@ -129,6 +131,16 @@ export class Director {
     this.interact('bearBlocked', V(PLACES.bearSpot.x, 12.6, PLACES.bearSpot.z), N_('Look at the sleeping bear'), () => !this.step('c3.bear') && this.wildlife.story.bear?.visible && !this.q.unlocked('shrineStairs'), () => this.say('bear_blocked'), 4.5);
     this.interact('gap', V(-1.2, DECK_Y, 120), N_('Look at the broken span'), () => !this.step('c4.repair') && !this.q.unlocked('viaduct'), () => this.say('gap_blocked'), 2.4);
     [118.8, 120, 121.2].forEach((z, i) => this.interact(`beam${i + 1}`, V(-1.4, DECK_Y, z), () => tx('Set beam {n}', { n: i + 1 }), () => this.step('c4.repair') && this.q.count('beams') === i, () => this.setBeam(i), 1.6));
+    // the Sunday service: once the story is done, Mika can ride Kobo whenever he waits at a platform
+    const trainWaiting = stop => {
+      const T = this.game.railway.train;
+      return this.q?.state.chapter === 5 && T.target === null && Math.abs(T.s - stop) < 20 && !this.scenes.active;
+    };
+    this.interact('rideStation', V(-90, 17.4, 116.6), N_('Ride Kobo to Takamori'), () => trainWaiting(STOPS.station), () => this.scenes.play('tour'), 3.5, null, 1);
+    this.interact('rideHalt', V(PLACES.halt.x - 3, this.world.heightAt(PLACES.halt.x - 3, PLACES.halt.z) + 0.5, PLACES.halt.z + 1), N_('Ride Kobo to Hoshi Station'), () => trainWaiting(STOPS.halt), () => this.scenes.play('tour'), 4, null, 1);
+    this.registerHomes();
+    // valley friends: say hello to whichever creature is next to Mika
+    this.interact('friend', null, () => tx(this.friendNear?.def.verb || ''), () => !!this.friendNear, () => this.befriend(this.friendNear), 6, () => this.friendNear?.a.pos, 0, 4);
     // NPC talk
     for (const [id, n] of Object.entries(this.npcs)) {
       this.interact(`talk:${id}`, null, () => (n.villager ? tx('Talk to the villager') : tx('Talk to {name}', { name: tx(CAST[id]?.name || id) })),
@@ -159,6 +171,67 @@ export class Director {
     this.zone('platform', V(-98, 17, 116), 9, () => this.step('c4.meeting'));
     // fallen stars
     for (const s of FALLEN_STARS) this.pickup(s.id, 'fallen-star', V(s.x, this.world.heightAt(s.x, s.z) + 1.1, s.z), 'star', () => !this.q.state.stars.includes(s.id));
+  }
+
+  /** Front doors that open (Sora's cottage, Hana's bakery, Ōta's mill, Genzo's station), keepsakes, the Star Kite. */
+  registerHomes() {
+    const I = this.game.interiors;
+    if (!I) return;
+    for (const d of I.doors) {
+      this.interact(`door:${d.id}`, d.outside, N_('Go inside'), () => !I.active && !I.busy && !this.game.kite?.active, () => this.enterHome(d.id), 1.8, null, 0.5);
+      this.interact(`exit:${d.id}`, d.exit, N_('Go outside'), () => I.active === d.id && !I.busy, () => this.leaveHome(), 1.8, null, 0.5);
+    }
+    for (const it of I.items) {
+      if (it.kind === 'keepsake') {
+        const k = KEEPSAKES.find(x => x.id === it.id);
+        if (!k) continue;
+        this.pickup(`keepsake-${k.id}`, k.model, it.pos, 'keepsake', () => I.active === it.interior && !this.q.state.keepsakes.includes(k.id), { keepsake: k });
+        this.pickups.get(`keepsake-${k.id}`).obj.rotation.y = it.yaw || 0;
+      } else if (it.kind === 'kite') {
+        // Sora's Star Kite rests on its cradle by the workbench: it appears once Tamo is around to recognise it
+        const obj = this.game.assets.clone('star-kite');
+        if (!obj) continue;
+        obj.position.copy(it.pos);
+        obj.rotation.y = it.yaw || 0;
+        obj.visible = false;
+        this.game.scene.add(obj);
+        this.kiteStand = { obj, when: () => I.active === it.interior && this.q.has('hasTamo') && !(this.q.count('kite') > 0) };
+        this.interact('takeKite', it.pos.clone().add(V(0, -0.8, 0)), N_('Take the Star Kite'), () => this.kiteStand.when(), () => this.takeKite(), 2.4, null, 1);
+      }
+    }
+  }
+
+  async enterHome(id) {
+    const I = this.game.interiors;
+    this.busy++;
+    try { await I.enter(id, on => this.ui.fade(on, 350)); } finally { this.busy--; }
+    const seen = `visited_${id}`;
+    if (!this.q.has(seen) && DIALOGUE[`inside_${id}`]) { this.q.state.flags[seen] = true; this.say(`inside_${id}`); }
+  }
+
+  async leaveHome() {
+    this.busy++;
+    try { await this.game.interiors.exit(on => this.ui.fade(on, 350)); } finally { this.busy--; }
+  }
+
+  takeKite() {
+    this.q.state.inv.kite = 1;
+    this.kiteStand.obj.visible = false;
+    this.game.player.gesture('Cheer', { lock: false });
+    this.audio.pickup();
+    this.fx.burst(this.kiteStand.obj.position.clone().add(V(0, 1, 0)), { n: 40, speed: 2.5 });
+    this.ui.toast(tx('Received: {item}', { item: tx(ITEMS.kite.name) }), ITEMS.kite.icon);
+    this.refreshObjective();
+    this.say('kite_found');
+  }
+
+  foundKeepsake(k) {
+    const st = this.q.state;
+    if (st.keepsakes.includes(k.id)) return;
+    st.keepsakes.push(k.id);
+    this.audio.star();
+    this.ui.toast(tx('Keepsake found: {item} ({n}/{total})', { item: tx(k.name), n: st.keepsakes.length, total: KEEPSAKES.length }), k.model);
+    this.say(k.say);
   }
 
   get q() { return this.quest; }
@@ -203,15 +276,16 @@ export class Director {
 
   zone(id, pos, r, when) { this.zones.set(id, { id, pos, r, when }); }
 
-  pickup(id, model, pos, item, when = () => true) {
+  pickup(id, model, pos, item, when = () => true, extra = {}) {
     const obj = this.game.assets.clone(model) || new THREE.Mesh(new THREE.OctahedronGeometry(0.25), new THREE.MeshStandardMaterial({ color: '#ffd45a', emissive: '#ff9a2a', emissiveIntensity: 1 }));
     obj.traverse(o => { if (o.isMesh) { o.castShadow = true; for (const m of [o.material].flat()) if (m.name === 'Lamp star') { m.emissive = new THREE.Color('#ffc23a'); m.emissiveIntensity = 2.2; } } });
     obj.position.copy(pos);
     obj.scale.setScalar(model === 'fallen-star' ? 1.25 : 1.1);
     this.game.scene.add(obj);
-    const pk = { id, obj, pos: pos.clone(), item, when, t: Math.random() * 6 };
+    const pk = { id, obj, pos: pos.clone(), item, when, t: Math.random() * 6, ...extra };
     this.pickups.set(id, pk);
-    const label = () => (item === 'star' ? tx('Pick up the fallen star') : tx('Pick up: {item}', { item: tx(ITEMS[item]?.name || item) }));
+    const label = () => (item === 'star' ? tx('Pick up the fallen star') : item === 'keepsake' ? tx('Look at: {item}', { item: tx(extra.keepsake.name) })
+      : tx('Pick up: {item}', { item: tx(ITEMS[item]?.name || item) }));
     this.interact(`pick:${id}`, null, label, () => this.pickups.has(id) && when(), () => this.collect(pk), 2.8, () => pk.obj.position, 0.5, 3.6);
   }
 
@@ -229,6 +303,7 @@ export class Director {
     this.removePickup(pk.id);
     this.fx.burst(pk.obj.position, { n: 24, speed: 2.5, size: 0.25 });
     this.game.player.gesture('Interact', { lock: false });
+    if (pk.keepsake) { this.foundKeepsake(pk.keepsake); return; }
     this.event({ type: 'pickup', item: pk.item, id: pk.id });
   }
 
@@ -256,16 +331,24 @@ export class Director {
     const p = this.game.player;
     // The logical season and hour live in the quest state (the engine sets them before any fade finishes);
     // the position is the last safe footing, never mid-air.
-    const s = p.lastSafe;
+    const I = this.game.interiors;
+    const s = I?.active ? I.doors.find(d => d.id === I.active).outside : p.lastSafe;
     const data = { v: 1, quest: this.quest.save(), player: { x: s.x, y: s.y, z: s.z, facing: p.facing }, at: Date.now() };
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify(data)); return true; } catch { return false; }
+    try { localStorage.setItem(Director.key(this.slot), JSON.stringify(data)); localStorage.setItem('starline-last-slot', String(this.slot)); return true; } catch { return false; }
   }
 
-  static loadSave() {
-    try { return JSON.parse(localStorage.getItem(SAVE_KEY)); } catch { return null; }
+  /** Three save profiles. Slot 1 keeps the original key, so older saves appear there. */
+  static key(slot = 1) { return slot === 1 ? SAVE_KEY : `starline-save-${slot}`; }
+
+  static loadSave(slot = 1) {
+    try { return JSON.parse(localStorage.getItem(Director.key(slot))); } catch { return null; }
   }
 
-  static clearSave() { try { localStorage.removeItem(SAVE_KEY); } catch { /* ignore */ } }
+  static clearSave(slot = 1) { try { localStorage.removeItem(Director.key(slot)); } catch { /* ignore */ } }
+
+  static slots() { return [1, 2, 3].map(slot => ({ slot, data: Director.loadSave(slot) })); }
+
+  static lastSlot() { try { return +localStorage.getItem('starline-last-slot') || 1; } catch { return 1; } }
 
   /** Tamo grows brighter with each lit lamp. */
   power() {
@@ -305,7 +388,9 @@ export class Director {
     const W = this.wildlife;
     if (step === 'c1.cogs' && this.q.count('cog') < 3 && !st.flags.crabBooped) W.spawnCrab();
     if (ch <= 3 && !this.q.unlocked('shrineStairs')) W.spawnBear();
-    if (this.q.unlocked('shrineStairs') && W.story.bear) W.story.bear.setVisible(false);
+    // once the lamp is lit Ōkuma has a den of his own; until then he's off wandering
+    if (idx > STEP_INDEX['c3.lamp']) W.bearToDen();
+    else if (this.q.unlocked('shrineStairs') && W.story.bear && !this.scenes.active) W.story.bear.setVisible(false);
   }
 
   // ------------------------------------------------------------------ events & effects
@@ -343,7 +428,6 @@ export class Director {
       if (g.time.season !== e.season) {
         if (!e.silent && fresh) await ui.fade(true, 700);
         g.setSeason(e.season);
-        this.fx.setWeather(PALETTES[e.season].particles);
         this.audio.setMusic(e.season);
         this.placeCast();
         if (!e.silent && fresh) await ui.fade(false, 900);
@@ -379,6 +463,8 @@ export class Director {
 
   /** Play a dialogue now: only from inside the effect queue or a cutscene running in it. */
   async sayNow(id, lines) {
+    // before the chest and after the finale there is no Tamo at Mika's side: such scenes use their Tamo-free variant
+    if (id && !lines && this.q && (!this.q.has('hasTamo') || this.q.has('tamoHome')) && DIALOGUE[`${id}_solo`]) id = `${id}_solo`;
     lines = lines || DIALOGUE[id];
     if (!lines) return;
     this.busy++;
@@ -431,6 +517,41 @@ export class Director {
     this.game.follow.cutscene({ pos: camPos, look: mid.clone().add(V(0, 1.25, 0)) }, 0.8);
   }
 
+  /** The nearest creature Mika could say hello to (the story's own uses of animals come first). */
+  findFriend() {
+    const p = this.game.player.pos;
+    let best = null, bd = 1e9;
+    for (const a of this.wildlife.actors) {
+      const def = FRIEND_BY_KIND[a.kind];
+      if (!def || !a.visible || !a.root.visible || a.flying) continue;
+      if (a.kind === 'sheep' && !a.penned) continue; // runaways are sent home first
+      if (a.kind === 'fox' && a.path) continue;
+      const reach = a.kind === 'bear' ? 4.2 : a.kind === 'duck' ? 3.6 : 2.6;
+      const d = Math.hypot(a.pos.x - p.x, a.pos.z - p.z);
+      if (d > reach || Math.abs(a.pos.y - p.y) > 2.5) continue;
+      if (d < bd) { bd = d; best = { a, def }; }
+    }
+    return best;
+  }
+
+  befriend(f) {
+    if (!f) return;
+    const { a, def } = f, g = this.game, p = g.player, st = this.q.state;
+    if (a.kind !== 'bear' && a.kind !== 'duck') a.lookAt(p.pos.x, p.pos.z);
+    p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
+    p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
+    const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look' }[a.kind];
+    if (react) a.anim?.once(react, { then: a.idleClip || 'Idle' });
+    this.fx.burst(a.pos.clone().add(V(0, a.kind === 'bear' ? 1.6 : 0.8, 0)), { n: 18, color: [1, 0.55, 0.7], speed: 1.6, size: 0.22, gravity: -1.2 });
+    this.audio.good();
+    if (st.friends[def.id]) return;
+    st.friends[def.id] = true;
+    const n = Object.keys(st.friends).length;
+    this.ui.toast(tx('New friend: {name} ({n}/{total})', { name: tx(def.name), n, total: FRIENDS.length }), def.icon);
+    this.say(`friend_${def.id}`);
+    if (n === FRIENDS.length) { this.say('friends_all'); this.ui.toast(tx('Friend of the Valley!'), 'fallen-star'); }
+  }
+
   talk(id) {
     const n = this.npcs[id];
     if (!n) return;
@@ -450,7 +571,7 @@ export class Director {
       if (S.nodes.orchardGate) S.nodes.orchardGate.visible = false;
     } else if (what === 'shrineStairs') {
       g.colliders.remove(S.solids.bear);
-      if (silent && this.wildlife.story.bear) this.wildlife.story.bear.setVisible(false);
+      if (silent && this.wildlife.story.bear && !this.wildlife.story.bear.inDen) this.wildlife.story.bear.setVisible(false);
     } else if (what === 'viaduct') {
       g.railway.setRepaired(true);
     } else if (what === 'ferry' && !silent) {
@@ -493,6 +614,7 @@ export class Director {
       }
     } else if (group === 'fox') {
       if (STEP_INDEX[q.state.step] <= STEP_INDEX['c3.follow']) W.spawnFox([[85, -86], [83, -98], [74, -108], [66, -116], [62, -114.5]]);
+      else if (!W.story.fox) W.spawnFox([[62, -114.5]]); // Kon stays by the shrine clearing
     } else if (group === 'forestFood') {
       const spots = { chestnut: [[78.5, -101.5], [89, -116], [70.8, -94.6], [94, -103.4]], mushroom: [[72, -112], [96, -96], [58, -104]] };
       for (const [item, list] of Object.entries(spots)) list.forEach(([x, z], i) => {
@@ -684,6 +806,7 @@ export class Director {
       pk.obj.visible = active;
       if (!active) continue;
       pk.t += dt;
+      if (pk.keepsake) { pk.obj.scale.setScalar(1); continue; }
       pk.obj.position.y = pk.pos.y + Math.sin(pk.t * 2.2) * 0.12;
       pk.obj.rotation.y += dt * 1.6;
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
@@ -698,8 +821,13 @@ export class Director {
     // bees chase briefly after the hive drops
     if (this.bees > 0) { this.bees -= dt; this.fx.bees(p.pos, dt); }
     // interaction prompt
+    this.friendNear = !this.busy ? this.findFriend() : null;
     this.actCooldown = Math.max(0, (this.actCooldown || 0) - dt);
-    const canAct = !this.busy && !this.minigame && !p.locked && !this.ui.overlay && this.actCooldown <= 0;
+    // the Star Kite: G (or the Kite button) launches and lands once Mika has it
+    const kite = g.kite, hasKite = this.q.count('kite') > 0;
+    if (kite && hasKite && inp.pressed('kite') && !this.busy && !this.minigame && !this.ui.overlay && !this.scenes.active && !this.game.interiors?.active) kite.toggle();
+    this.ui.kiteButton(!!kite && hasKite && !this.game.interiors?.active && (kite.active || kite.canLaunch()));
+    const canAct = !this.busy && !this.minigame && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active;
     let best = null, bd = 1e9;
     if (canAct) for (const it of this.interactables.values()) {
       const pos = it.posFn ? it.posFn() : it.pos;
@@ -720,8 +848,9 @@ export class Director {
     }
     // marker
     this.ui.marker(g.camera, this.busy ? null : this.markerTarget());
+    if (this.kiteStand) this.kiteStand.obj.visible = this.kiteStand.when();
     // clock & autosave
-    this.ui.setClock(g.time.season, clockLabel(g.time.hour));
+    this.ui.setClock(g.shownSeason || g.time.season, clockLabel(g.shownHour()));
     this.ui.swimming(p.swimming);
     this.saveClock += dt;
     if (this.saveClock > 45 && !this.busy && !this.minigame) { this.saveClock = 0; this.save(); }

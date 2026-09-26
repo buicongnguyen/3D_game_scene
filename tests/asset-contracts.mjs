@@ -6,11 +6,15 @@ const HUMAN_BONES = ['root', 'hips', 'spine', 'chest', 'neck', 'head', 'upperarm
   'upperarm_R', 'forearm_R', 'hand_R', 'grip_R', 'thigh_L', 'shin_L', 'foot_L', 'thigh_R', 'shin_R', 'foot_R'];
 const VILLAGER_MATS = ['Villager shirt', 'Villager trousers', 'Villager hair'];
 const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer'];
+// Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
+const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
+  'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
+const ROOM_MATS = ['Window view', 'Interior glow', 'Collider'];
 
 export const CONTRACTS = {
   // ---------------------------------------------------------------- characters
   mika: { family: 'characters', tris: 16000, nodes: [...HUMAN_BONES, 'scarf_1'],
-    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread'] },
+    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang'] },
   genzo: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Sad', 'ArmsCrossed', 'Bow'] },
   rin: { family: 'characters', tris: 12000, nodes: [...HUMAN_BONES, 'hat'], clips: ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cast', 'Reel', 'Pole', 'Cheer'] },
   ota: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Bow', 'Sad'] },
@@ -146,6 +150,20 @@ export const CONTRACTS = {
   timber: { family: 'props', tris: 800, icon: true },
   'iron-bolts': { family: 'props', tris: 800, icon: true },
   key: { family: 'props', tris: 800, icon: true },
+
+  // ---------------------------------------------------------------- flying machine
+  'star-kite': { family: 'kite', tris: 8000, icon: true, mats: ['Kite glow'],
+    nodes: ['Handle', 'Rotor_1', 'Rotor_2', 'Rotor_3', 'Rotor_4', 'Canopy', 'Core', 'Key', 'Tail_1', 'Tail_2', 'Tail_3'] },
+
+  // ---------------------------------------------------------------- interiors (build_interiors.py)
+  'interior-cottage': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Item_kite'], mats: ROOM_MATS },
+  'interior-bakery': { family: 'interiors', tris: 25000, nodes: ROOM_NODES, mats: [...ROOM_MATS, 'Interior fire'] },
+  'interior-mill': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Gear_pit', 'Gear_shaft', 'Gear_nut'], mats: [...ROOM_MATS, 'Interior fire'] },
+  'interior-station': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Pendulum'], mats: [...ROOM_MATS, 'Interior fire'] },
+  'keepsake-photo': { family: 'interiors', tris: 1200, icon: true },
+  'keepsake-recipe': { family: 'interiors', tris: 1200, icon: true },
+  'keepsake-float': { family: 'interiors', tris: 1200, icon: true },
+  'keepsake-ticket': { family: 'interiors', tris: 1200, icon: true },
 };
 
 export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'tamo'];

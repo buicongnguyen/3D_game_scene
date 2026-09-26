@@ -21,6 +21,18 @@ danger that night.
   float dips.
 - **Swim and dive.** The river is open: swim across, dive to the bed and watch
   the trout, weed and sunken boats in a hushed, green-blue world.
+- **Fly Sora's Star Kite.** Find it on her workbench and press **G**: Mika hangs
+  from a wind-up paper kite and soars over the whole valley.
+- **Step inside.** Sora's cottage, Hana's bakery, Ōta's mill and Genzo's station
+  open their doors, and each home keeps a keepsake that tells a little more.
+- **Valley friends.** Say hello to rabbits, hens, Mochi the cat, the ducks, the
+  sheep, a deer family, Kon the fox and Ōkuma the bear.
+- **Storytelling on the rails.** Captions tell the tale across the top of the
+  screen while the train rolls in, during the Star Train ride, and on the Sunday
+  service you can ride after the ending.
+- **Three save profiles** and an **Advanced** settings panel (season and time of
+  day to look at, weather, shadows, resolution, field of view, camera distance,
+  text size).
 - **Conversations read like a chat.** Several lines per page, with **Next** and
   **Back** to re-read, and **Skip**.
 - **English, Tiếng Việt, 한국어, 日本語.** Pick a language on the title screen or
@@ -41,6 +53,7 @@ danger that night.
 | Next / back in a conversation | E / Q | A / B | Tap / **Back** |
 | Jump · swim up | Space | A | **Jump** |
 | Dive (while swimming) | C or Ctrl | LT / RT | **Dive** |
+| Fly / land the Star Kite | G | Y | **Kite** |
 | Journal / pause | J / Esc | Back / Start | ☰ and ✎ buttons |
 
 ## How it's built

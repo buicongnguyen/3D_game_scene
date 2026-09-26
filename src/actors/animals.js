@@ -110,6 +110,16 @@ export class Wildlife {
       const c = this.add(`chicken${i}`, 'chicken', 120 + (R() - 0.5) * 16, 22 + (R() - 0.5) * 10, R() * 6.28);
       c.kind = 'chicken';
     }
+    // a small deer family grazing on the forest plateau above the orchard
+    this.deer = [];
+    for (let i = 0; i < 3; i++) {
+      const x = 100 + (R() - 0.5) * 8, z = -96 + (R() - 0.5) * 8;
+      const d = this.add(`deer${i}`, 'deer', x, z, R() * 6.28, 'Graze');
+      d.kind = 'deer';
+      d.home = { x: 100, z: -96 };
+      if (i === 2) d.root.scale.multiplyScalar(0.7); // the little one
+      this.deer.push(d);
+    }
     // a cat asleep on Kawabe's main street
     const cat = this.add('cat', 'cat', -49.5, 27, 1.2, 'Sleep');
     cat.kind = 'cat';
@@ -274,6 +284,7 @@ export class Wildlife {
         a.facing = a.targetFacing;
         a.root.visible = a.visible && game?.game?.time.season !== 'winter';
       } else if (a.kind === 'sheep') this.sheep(a, dt, player);
+      else if (a.kind === 'deer') this.deerStep(a, dt, player);
       else if (a.kind === 'crow' && a.flying) {
         a.flying.t += dt;
         const f = a.flying;
@@ -294,7 +305,7 @@ export class Wildlife {
 
   rabbit(a, dt, player) {
     const d = a.pos.distanceTo(player.pos);
-    if (d < 5 && !a.path) {
+    if (d < 6 && player.speed > 3.2 && !a.path) {
       const dx = a.pos.x - player.pos.x, dz = a.pos.z - player.pos.z, l = Math.hypot(dx, dz) || 1;
       const tx = a.pos.x + dx / l * 7, tz = a.pos.z + dz / l * 7;
       if (this.world.heightAt(tx, tz) > 0.8) { a.walk([[tx, tz]], null, 3.5); a.anim?.play('Hop', { speed: 1.6 }); }
@@ -303,6 +314,36 @@ export class Wildlife {
       const tx = a.pos.x + Math.cos(ang) * 3, tz = a.pos.z + Math.sin(ang) * 3;
       if (this.world.heightAt(tx, tz) > 0.8) { a.walk([[tx, tz]], null, 1.2); a.anim?.play('Hop'); }
     }
+  }
+
+  /** Deer graze and amble near home; a running Mika sends them trotting off a little way. */
+  deerStep(a, dt, player) {
+    const d = Math.hypot(a.pos.x - player.pos.x, a.pos.z - player.pos.z);
+    if (d < 11 && player.speed > 3.2 && !a.fleeing) {
+      const dx = a.pos.x - player.pos.x, dz = a.pos.z - player.pos.z, l = Math.hypot(dx, dz) || 1;
+      const tx = a.pos.x + dx / l * 9, tz = a.pos.z + dz / l * 9;
+      a.fleeing = true;
+      a.walk([[tx, tz]], () => { a.fleeing = false; a.setIdle('Graze'); }, 4.5);
+      a.anim?.play('Walk', { speed: 2.2 });
+      return;
+    }
+    if (!a.path && Math.random() < dt * 0.06) {
+      const ang = Math.random() * 6.28, r = Math.random() * 6;
+      a.walk([[a.home.x + Math.cos(ang) * r, a.home.z + Math.sin(ang) * r]], () => a.setIdle(Math.random() < 0.7 ? 'Graze' : 'Idle'), 0.7);
+    }
+  }
+
+  /** After the forest is open again, Ōkuma sleeps it off in a den among the chestnut trees. */
+  bearToDen() {
+    const b = this.story.bear || this.spawnBear();
+    b.path = null;
+    b.place(108, -132, 2.4, this.world.heightAt(108, -132));
+    b.setIdle('Sleep');
+    b.setVisible(true);
+    b.inDen = true;
+    const y = this.world.heightAt(108, -132);
+    if (!b.denCollider) b.denCollider = this.colliders.cylinder(108, -132, 1.1, y - 0.5, y + 1.4, { id: 'bear-den' });
+    return b;
   }
 
   sheep(s, dt, player) {
