@@ -9,7 +9,7 @@ export const SAVE_VERSION = 1;
 export function freshState() {
   return {
     v: SAVE_VERSION, step: STEPS[0].id, chapter: 0, season: 'spring', hour: 17.2,
-    inv: {}, flags: {}, unlocked: {}, lamps: {}, pages: [], stars: [], fishLog: {}, friends: {}, keepsakes: [],
+    inv: {}, flags: {}, unlocked: {}, lamps: {}, pages: [], stars: [], fishLog: {}, friends: {}, keepsakes: [], treasures: {}, letters: [],
     choice: null, pos: null, playtime: 0, chatter: {}, started: false,
   };
 }

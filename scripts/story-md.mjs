@@ -4,7 +4,7 @@
 //   node scripts/story-md.mjs --check   exit 1 if docs/STORY.md is out of date
 import { readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES } from '../src/game/story.js';
+import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES, TREASURES, SKY_LETTERS, GIFTS } from '../src/game/story.js';
 import { FALLEN_STARS, rail, PLACES, VIADUCT } from '../src/world/layout.js';
 import { STOPS } from '../src/world/railway.js';
 
@@ -56,7 +56,7 @@ const CUTSCENES = {
   tamoReturns: 'A small gold light shoots out of the Viaduct Lamp.',
 };
 // dialogue played inside a cutscene
-const CUTSCENE_SAYS = { 'celebrate:1': ['c1_party'], 'celebrate:2': ['c2_party'], 'celebrate:3': ['c3_party'], 'celebrate:4': ['c4_skytrain', 'c4_photo'], tamoReturns: ['tamo_returns'] };
+const CUTSCENE_SAYS = { 'celebrate:1': ['c1_party'], 'celebrate:2': ['c2_party'], 'celebrate:3': ['c3_party', 'bear_acorn'], 'celebrate:4': ['c4_skytrain', 'c4_photo'], tamoReturns: ['tamo_returns'] };
 const UNLOCKS = {
   drawbridge: 'The drawbridge to the mill island comes down.',
   ferry: "Rin's ferry now crosses the river.",
@@ -169,7 +169,7 @@ put('### Blocked paths', '', 'What Mika hears when she tries a way that is not o
 for (const [id, label] of BARKS) dialogue(id, label);
 used.add('sora_last_letter');
 // scenes that can happen in any chapter have their own appendices (F and G)
-const anyTime = id => /^(inside_|keepsake_|kite_found|friend_|friends_all)/.test(id);
+const anyTime = id => /^(inside_|keepsake_|kite_found|friend_|friends_all|music_box|star_tree|compass_found|sky_letter_|letters_all|gift_|home_full|starfall)/.test(id);
 const rest = Object.keys(DIALOGUE).filter(id => !used.has(id) && !anyTime(id));
 if (rest.length) {
   console.warn(`story-md: dialogue not placed in the script, listed at the end: ${rest.join(', ')}`);
@@ -253,6 +253,32 @@ put('');
 for (const f of FRIENDS) { put(`### ${f.name}`, ''); scene(`friend_${f.id}`); }
 put('### Every friend made', '');
 scene('friends_all', `After the last of the ${FRIENDS.length} first hellos`);
+
+// ---------------------------------------------------------------- Appendix H: rewards
+put('## Appendix H · Treasures, Sky Letters, gifts and Starfall Night', '');
+put('Rewards for exploring and helping. None of them block the story.', '');
+put('### Treasures', '');
+put('| Treasure | Where | Journal entry |', '|---|---|---|');
+for (const t of TREASURES) put(`| ${t.name} | ${t.hint} | ${t.text} |`);
+put('');
+scene('music_box', "When Mika brings Sora's music box up from the river bed", 'Without Tamo');
+scene('bear_acorn', 'At the autumn moon-viewing, Ōkuma brings a present');
+scene('star_tree', "When the golden acorn is planted in Sora's garden", 'Without Tamo');
+scene('compass_found', 'The lucky catch (the fourth fish Mika lands)', 'Without Tamo');
+put('### Sky Letters', '');
+put("Five letters Sora left on high places. Only the Star Kite reaches them.", '');
+for (const l of SKY_LETTERS) { put(`**${l.name}.**`, ''); scene(l.say); }
+scene('letters_all', 'After the fifth letter');
+put("### Gifts at Sora's cottage", '');
+put('Everyone Mika helps leaves a thank-you gift in the cottage. Looking at a gift shows its note.', '');
+put('| Gift | From | Appears after |', '|---|---|---|');
+for (const g of GIFTS) put(`| ${g.name} | ${g.from} | “${objective(STEPS.find(x => x.id === g.after).objective)}” |`);
+put('');
+for (const g of GIFTS) scene(g.say, g.name);
+scene('home_full', 'Entering the cottage once all six gifts are there');
+put('### Starfall Night', '');
+put("When the twelfth Fallen Star is found, night falls, the sky fills with stars, constellations of the friends draw themselves, and Sora's poem is written across the sky before her last letter.", '');
+scene('starfall');
 
 // ---------------------------------------------------------------- write
 while (out[out.length - 1] === '') out.pop();

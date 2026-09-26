@@ -77,6 +77,17 @@ together, and how the game is verified. The story itself is in
   Decorations are cumulative per lit lamp (`celebrate.decorate`), Tamo gains an
   orbiting mote per lamp, and the colour grade gets a touch more vivid.
   In the epilogue Tamo comes back on his Sundays off (`tamoBack`).
+- **Rewards** (`registerRewards` in director.js, data in story.js `TREASURES`,
+  `SKY_LETTERS`, `GIFTS`): the music box is a pickup on the river bed (diving),
+  the golden acorn comes from Ōkuma at the moon-viewing and is planted at a
+  fixed garden spot, the star compass is the fourth fish landed (a HUD needle to
+  the nearest Fallen Star), Sky Letters are high pickups with a 3.4 m grab radius
+  so a kite fly-by collects them, gifts are models at `Item_gift_*` nodes in the
+  cottage shown once their step is done, and all twelve stars trigger the
+  `starfall` cutscene and a permanent Starfall sky. People come home as lamps
+  are lit (villagers v8–v17), the bell tower chimes each hour after the Orchard
+  Lamp, the shrine has wind chimes after the Forest Lamp, and the repaired
+  viaduct gets fireworks.
 - **Storytelling on the rails.** `CAPTIONS` in story.js are shown across the top
   (letterboxed during the arrival) as the train passes landmarks, by fraction of
   the route. In the epilogue Kobo shuttles between the station and Takamori Halt

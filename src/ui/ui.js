@@ -1,4 +1,4 @@
-import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM } from '../game/story.js';
+import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, DIALOGUE } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange } from '../i18n/i18n.js';
 
@@ -590,6 +590,14 @@ export class UI {
         const n = q.fishLog[k] || 0;
         return this.cardHTML(n > 0, f.icon, tx(f.name), n ? tx(f.desc) : tx(f.hint), n ? `× ${n}` : tx('Not caught yet'), n ? tx(f.hint) : '', f.hue);
       }).join('') + '</div>';
+    } else if (tab === 'treasures') {
+      const tr = q.treasures || {}, letters = q.letters || [], gifts = this.game.director?.giftsEarned().map(x => x.g.id) || [];
+      body.innerHTML = `<h3>${esc(tx('Treasures'))} · ${TREASURES.filter(t => tr[t.id]).length} / ${TREASURES.length}</h3><div class="cards">` +
+        TREASURES.map(t => this.cardHTML(!!tr[t.id], t.icon, tx(t.name), tr[t.id] ? tx(t.text) : tx(t.hint))).join('') + '</div>' +
+        `<h3>${esc(tx('Sky Letters'))} · ${letters.length} / ${SKY_LETTERS.length}</h3><div class="cards">` +
+        SKY_LETTERS.map(l => this.cardHTML(letters.includes(l.id), 'journal-page', tx(l.name), letters.includes(l.id) ? tx(DIALOGUE[l.say][0][1]) : tx('Somewhere high. Only the Star Kite reaches it.'))).join('') + '</div>' +
+        `<h3>${esc(tx('Gifts at the cottage'))} · ${gifts.length} / ${GIFTS.length}</h3><div class="cards">` +
+        GIFTS.map(g => this.cardHTML(gifts.includes(g.id), g.model, tx(g.name), gifts.includes(g.id) ? tx(DIALOGUE[g.say][0][1]) : tx('Help {from}, and see what turns up.', { from: tx(g.from) }))).join('') + '</div>';
     } else if (tab === 'album') {
       const photos = this.game.director?.album() || {};
       body.innerHTML = `<p>${esc(tx('Every Star Lamp you light throws a party. Each one leaves a photo here.'))}</p><div class="album">` +
@@ -664,6 +672,16 @@ export class UI {
     this._kiteBtn = on;
     $('tKite').classList.toggle('hidden', !on || !this.touch);
   }
+  /** The star compass: dir = radians relative to the camera (null hides it), dist in metres. */
+  compass(dir, dist) {
+    const on = dir !== null && dir !== undefined;
+    $('compass').classList.toggle('hidden', !on);
+    if (!on) return;
+    $('compass').querySelector('svg').style.transform = `rotate(${-dir}rad)`;
+    const t = `${Math.round(dist)} m`;
+    if (this._cmp !== t) { this._cmp = t; $('compassDist').textContent = t; }
+  }
+
   leap(mul) {
     const on = mul > 1;
     if (this._leap === mul) return;

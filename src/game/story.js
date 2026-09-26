@@ -30,6 +30,8 @@ export const ITEMS = {
   timber: { name: 'Timber', icon: 'timber' },
   bolts: { name: 'Iron bolts', icon: 'iron-bolts' },
   kite: { name: 'Star Kite', icon: 'star-kite' },
+  acorn: { name: 'Golden acorn', icon: 'golden-acorn' },
+  compass: { name: 'Star compass', icon: 'star-compass' },
 };
 
 export const SEASON_OF_CHAPTER = ['spring', 'spring', 'summer', 'autumn', 'winter', 'spring'];
@@ -390,6 +392,66 @@ export const DIALOGUE = {
     ['tamo', "It's Sunday if you say it fast enough! Come on, the whole valley's waiting!", 'Happy'],
   ],
 
+  // ---- rewards: treasures, Sky Letters, gifts, Starfall Night
+  music_box: [
+    ['narrator', "Sora's music box. Inside, a tiny Kobo circles a tiny track, and the lullaby she used to hum begins to play."],
+    ['narrator', 'For a moment the riverbank fills with golden light: four young friends, dancing at the Star Train festival.'],
+    ['mika', 'Grandma… and Genzo, Ōta and Hana. Look how happy they were.'],
+    ['tamo', "They still can be. That's what the lamps are for.", 'Happy'],
+  ],
+  music_box_solo: [
+    ['narrator', "Sora's music box. Inside, a tiny Kobo circles a tiny track, and the lullaby she used to hum begins to play."],
+    ['narrator', 'For a moment the riverbank fills with golden light: four young friends, dancing at the Star Train festival.'],
+    ['mika', 'Grandma… and Genzo, Ōta and Hana. Look how happy they were. Look how happy they are again.'],
+  ],
+  bear_acorn: [
+    ['narrator', "Ōkuma pads over and drops something shiny at Mika's feet: a golden acorn."],
+    ['tamo', 'A thank-you present! Plant it somewhere special, Mika.', 'Happy'],
+    ['mika', "Somewhere special… Grandma's garden."],
+  ],
+  star_tree: [
+    ['narrator', "Mika presses the golden acorn into the soil of Sora's garden. The ground glows, and something stirs."],
+    ['narrator', 'A young tree rises up in a spiral of light, its leaves shining like small stars.'],
+    ['tamo', 'A star-tree! Sora would have LOVED this. I love this. I live here now.', 'Happy'],
+  ],
+  star_tree_solo: [
+    ['narrator', "Mika presses the golden acorn into the soil of Sora's garden. The ground glows, and something stirs."],
+    ['narrator', 'A young tree rises up in a spiral of light, its leaves shining like small stars.'],
+    ['mika', "A star-tree, in Grandma's garden. She would have loved this."],
+  ],
+  compass_found: [
+    ['narrator', 'Something heavy is tangled in the line: a brass pocket compass whose needle is a little gold star.'],
+    ['tamo', "It's pointing somewhere… at a Fallen Star! It's Sora's star compass!", 'Happy'],
+    ['mika', "Then it can help us find every star she left for me."],
+  ],
+  compass_found_solo: [
+    ['narrator', 'Something heavy is tangled in the line: a brass pocket compass whose needle is a little gold star.'],
+    ['mika', "The needle is pointing… at a Fallen Star. Grandma's star compass!"],
+  ],
+  sky_letter_1: [['sora', "You were five the summer you climbed onto the station roof to wave at Kobo. Genzo nearly fainted. I pretended to scold you. — Grandma"]],
+  sky_letter_2: [['sora', 'From the bell tower you can see both villages at once. I came up here to remind myself they are one valley. — Grandma']],
+  sky_letter_3: [['sora', "You once asked me why the mill wheel sings. It doesn't. That was Ōta, humming. Don't tell him I told you. — Grandma"]],
+  sky_letter_4: [['sora', "This lamp was always my favourite: it watches the whole line. If you're reading this up here, you found the Star Kite. Good girl."]],
+  sky_letter_5: [['sora', 'The forest is older than all of us. When you feel small, come up here and be small together with it. It helps. — Grandma']],
+  letters_all: [
+    ['sora', "Five letters, five high places. Now you've seen the valley the way I did, from above."],
+    ['sora', 'My favourite secret: from up here, nobody is on the other side of anything. — Grandma'],
+  ],
+  gift_rin: [['rin', "For your next fish. It's lucky. Probably. Don't tell Grandpa I gave you my best lure. — Rin"]],
+  gift_ota: [['ota', "Radish. Ten years' worth of stubborn. Eat it slowly. — Ōta"]],
+  gift_hana: [['hana', 'Buns for the lamp-lighter! Three of them. You know why. — Hana']],
+  gift_kon: [['narrator', 'A pine cone and a red maple leaf, tied with string. Tiny paw prints lead to the door.']],
+  gift_okuma: [['narrator', 'A honey pot, very sticky, left on the step. Something large has been sitting in the garden.']],
+  gift_genzo: [['genzo', 'My old cap. Kobo needs a junior driver on Sundays. Interested? — Genzo']],
+  home_full: [
+    ['mika', "A lure, radish, buns, a pine cone, honey, a cap… It isn't Grandma's empty house anymore."],
+    ['mika', "It's home."],
+  ],
+  starfall: [
+    ['narrator', 'The last Fallen Star wakes in Mika\'s hands, and the whole sky answers.'],
+    ['narrator', "Every star Sora ever wished on comes out at once, and the constellations remember everyone Mika met."],
+  ],
+
   // ---- homes, keepsakes and the Star Kite
   // These can play in any chapter. When Tamo isn't with Mika (before the chest, or after the finale) the director
   // plays the `<id>_solo` variant instead, so every scene that has Tamo in it has one.
@@ -483,7 +545,7 @@ export const CHATTER = {
   rin: [["The trout bite best at dusk. The starfin only bites AT dusk."], ["Grandpa's bark is worse than his bite. His bite is also bad."], ["Takamori kids have bikes. We have boats. Boats are better."], ["I tried to catch the golden ayu once. Once."], ["Race you to the dock!"]],
   ota: [["Hmph."], ["Ten years of radish. A man doesn't forget a thing like that."], ["That Hana woman makes a decent bun. Don't repeat that."], ["Rin thinks I don't know she feeds that crab. I know."], ["Keep watch, girl. That's the whole job."]],
   hana: [["Have a bun! No? Have two!"], ["Flour in my hair, flour in my tea. Flour is a way of life, love."], ["Ōta used to come to my stall every festival. Three buns. Always three."], ["My oven's older than the viaduct."], ["A bun is just a hug you can eat, sweetheart."]],
-  villager: [["Hoshi Valley's small. Everybody knows everybody's business."], ["They say the stars fall in winter."], ["Sora's granddaughter! You've got her walk."], ["The Star Train! I remember the Star Train."], ["Mind the crows."]],
+  villager: [["Heard the Mill Lamp was lit again. Packed my bags the same night."], ["My kids had never seen the Star Train. Now they won't stop drawing it."], ["The bell rang the hours again this morning. I cried into my tea."], ["Hoshi Valley's small. Everybody knows everybody's business."], ["They say the stars fall in winter."], ["Sora's granddaughter! You've got her walk."], ["The Star Train! I remember the Star Train."], ["Mind the crows."]],
 };
 
 export const JOURNAL = [
@@ -677,4 +739,33 @@ export const ALBUM = [
   { id: 'c2', title: 'Summer: the Firefly Festival' },
   { id: 'c3', title: 'Autumn: moon-viewing with the forest' },
   { id: 'c4', title: 'Winter: same time next year' },
+];
+
+// ------------------------------------------------------------------------------------ treasures, Sky Letters and gifts
+export const TREASURES = [
+  { id: 'musicBox', name: "Sora's music box", icon: 'music-box', hint: 'Somewhere on the river bed, under the viaduct. Dive!',
+    text: 'A tiny Kobo circles a tiny track while it plays the lullaby Sora used to hum.' },
+  { id: 'acorn', name: 'Golden acorn', icon: 'golden-acorn', hint: 'A present from a friend who loves honey chestnuts.',
+    text: "Ōkuma's thank-you. Planted in Sora's garden, it grew into a shining star-tree." },
+  { id: 'compass', name: 'Star compass', icon: 'star-compass', hint: "A lucky catch: keep fishing at Rin's dock.",
+    text: "Sora's pocket compass. Its star needle always points to the nearest Fallen Star." },
+];
+
+// Letters Sora hid in high places: only the Star Kite reaches them.
+export const SKY_LETTERS = [
+  { id: 'station', name: 'On the station roof', say: 'sky_letter_1' },
+  { id: 'belltower', name: 'On the bell-tower roof', say: 'sky_letter_2' },
+  { id: 'mill', name: 'On the mill roof', say: 'sky_letter_3' },
+  { id: 'viaduct', name: 'On top of the Viaduct Lamp', say: 'sky_letter_4' },
+  { id: 'shrine', name: 'On the shrine roof', say: 'sky_letter_5' },
+];
+
+// Thank-you gifts that fill Sora's cottage: each appears once the step named in `after` is done.
+export const GIFTS = [
+  { id: 'rin', model: 'gift-lure', name: "Rin's lucky lure", from: 'Rin', after: 'c1.trout', say: 'gift_rin' },
+  { id: 'ota', model: 'gift-radish', name: "Ōta's pickled radish", from: 'Grandpa Ōta', after: 'c1.page', say: 'gift_ota' },
+  { id: 'hana', model: 'gift-buns', name: "Hana's peach buns", from: 'Hana', after: 'c2.page', say: 'gift_hana' },
+  { id: 'kon', model: 'gift-pinecone', name: "Kon's pine cone", from: 'Kon the fox', after: 'c3.follow', say: 'gift_kon' },
+  { id: 'okuma', model: 'gift-honey', name: "Ōkuma's honey pot", from: 'Ōkuma the bear', after: 'c3.bear', say: 'gift_okuma' },
+  { id: 'genzo', model: 'gift-cap', name: "Genzo's old cap", from: 'Genzo', after: 'c4.ride', say: 'gift_genzo' },
 ];

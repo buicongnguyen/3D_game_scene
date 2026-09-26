@@ -856,6 +856,12 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 **Tamo:** It's a moon-viewing! Everybody sit! Kon, no, that's MY dumpling!
 
+*Ōkuma pads over and drops something shiny at Mika's feet: a golden acorn.*
+
+**Tamo:** A thank-you present! Plant it somewhere special, Mika.
+
+**Mika:** Somewhere special… Grandma's garden.
+
 ### Chapter Four · Winter: The Viaduct Lamp
 
 #### Find Genzo at the engine shed · `c4.shed`
@@ -1241,7 +1247,7 @@ What the cast says when there is nothing story-related to talk about. The lines 
 
 **Hana:** “Have a bun! No? Have two!” · “Flour in my hair, flour in my tea. Flour is a way of life, love.” · “Ōta used to come to my stall every festival. Three buns. Always three.” · “My oven's older than the viaduct.” · “A bun is just a hug you can eat, sweetheart.”
 
-**Villager:** “Hoshi Valley's small. Everybody knows everybody's business.” · “They say the stars fall in winter.” · “Sora's granddaughter! You've got her walk.” · “The Star Train! I remember the Star Train.” · “Mind the crows.”
+**Villager:** “Heard the Mill Lamp was lit again. Packed my bags the same night.” · “My kids had never seen the Star Train. Now they won't stop drawing it.” · “The bell rang the hours again this morning. I cried into my tea.” · “Hoshi Valley's small. Everybody knows everybody's business.” · “They say the stars fall in winter.” · “Sora's granddaughter! You've got her walk.” · “The Star Train! I remember the Star Train.” · “Mind the crows.”
 
 ## Appendix F · Homes, keepsakes and the Star Kite
 
@@ -1459,4 +1465,153 @@ met one, then its entry. The first hello with each plays a short scene.
 *Every creature in the valley has had a proper hello now. The ducks are still talking about it.*
 
 **Mika:** Grandma would say we've been properly introduced.
+
+## Appendix H · Treasures, Sky Letters, gifts and Starfall Night
+
+Rewards for exploring and helping. None of them block the story.
+
+### Treasures
+
+| Treasure | Where | Journal entry |
+|---|---|---|
+| Sora's music box | Somewhere on the river bed, under the viaduct. Dive! | A tiny Kobo circles a tiny track while it plays the lullaby Sora used to hum. |
+| Golden acorn | A present from a friend who loves honey chestnuts. | Ōkuma's thank-you. Planted in Sora's garden, it grew into a shining star-tree. |
+| Star compass | A lucky catch: keep fishing at Rin's dock. | Sora's pocket compass. Its star needle always points to the nearest Fallen Star. |
+
+*When Mika brings Sora's music box up from the river bed:*
+
+*Sora's music box. Inside, a tiny Kobo circles a tiny track, and the lullaby she used to hum begins to play.*
+
+*For a moment the riverbank fills with golden light: four young friends, dancing at the Star Train festival.*
+
+**Mika:** Grandma… and Genzo, Ōta and Hana. Look how happy they were.
+
+**Tamo:** They still can be. That's what the lamps are for.
+
+*Without Tamo:*
+
+*Sora's music box. Inside, a tiny Kobo circles a tiny track, and the lullaby she used to hum begins to play.*
+
+*For a moment the riverbank fills with golden light: four young friends, dancing at the Star Train festival.*
+
+**Mika:** Grandma… and Genzo, Ōta and Hana. Look how happy they were. Look how happy they are again.
+
+*At the autumn moon-viewing, Ōkuma brings a present:*
+
+*Ōkuma pads over and drops something shiny at Mika's feet: a golden acorn.*
+
+**Tamo:** A thank-you present! Plant it somewhere special, Mika.
+
+**Mika:** Somewhere special… Grandma's garden.
+
+*When the golden acorn is planted in Sora's garden:*
+
+*Mika presses the golden acorn into the soil of Sora's garden. The ground glows, and something stirs.*
+
+*A young tree rises up in a spiral of light, its leaves shining like small stars.*
+
+**Tamo:** A star-tree! Sora would have LOVED this. I love this. I live here now.
+
+*Without Tamo:*
+
+*Mika presses the golden acorn into the soil of Sora's garden. The ground glows, and something stirs.*
+
+*A young tree rises up in a spiral of light, its leaves shining like small stars.*
+
+**Mika:** A star-tree, in Grandma's garden. She would have loved this.
+
+*The lucky catch (the fourth fish Mika lands):*
+
+*Something heavy is tangled in the line: a brass pocket compass whose needle is a little gold star.*
+
+**Tamo:** It's pointing somewhere… at a Fallen Star! It's Sora's star compass!
+
+**Mika:** Then it can help us find every star she left for me.
+
+*Without Tamo:*
+
+*Something heavy is tangled in the line: a brass pocket compass whose needle is a little gold star.*
+
+**Mika:** The needle is pointing… at a Fallen Star. Grandma's star compass!
+
+### Sky Letters
+
+Five letters Sora left on high places. Only the Star Kite reaches them.
+
+**On the station roof.**
+
+**Sora:** You were five the summer you climbed onto the station roof to wave at Kobo. Genzo nearly fainted. I pretended to scold you. — Grandma
+
+**On the bell-tower roof.**
+
+**Sora:** From the bell tower you can see both villages at once. I came up here to remind myself they are one valley. — Grandma
+
+**On the mill roof.**
+
+**Sora:** You once asked me why the mill wheel sings. It doesn't. That was Ōta, humming. Don't tell him I told you. — Grandma
+
+**On top of the Viaduct Lamp.**
+
+**Sora:** This lamp was always my favourite: it watches the whole line. If you're reading this up here, you found the Star Kite. Good girl.
+
+**On the shrine roof.**
+
+**Sora:** The forest is older than all of us. When you feel small, come up here and be small together with it. It helps. — Grandma
+
+*After the fifth letter:*
+
+**Sora:** Five letters, five high places. Now you've seen the valley the way I did, from above.
+
+**Sora:** My favourite secret: from up here, nobody is on the other side of anything. — Grandma
+
+### Gifts at Sora's cottage
+
+Everyone Mika helps leaves a thank-you gift in the cottage. Looking at a gift shows its note.
+
+| Gift | From | Appears after |
+|---|---|---|
+| Rin's lucky lure | Rin | “Bring the grilled trout to Grandpa Ōta” |
+| Ōta's pickled radish | Grandpa Ōta | “Return to Grandpa Ōta” |
+| Hana's peach buns | Hana | “Return to Hana at the bakery” |
+| Kon's pine cone | Kon the fox | “Follow Kon the fox to the shrine” |
+| Ōkuma's honey pot | Ōkuma the bear | “Feed Ōkuma the honey chestnuts” |
+| Genzo's old cap | Genzo | “Light the trackside lanterns from the Star Train” |
+
+*Rin's lucky lure:*
+
+**Rin:** For your next fish. It's lucky. Probably. Don't tell Grandpa I gave you my best lure. — Rin
+
+*Ōta's pickled radish:*
+
+**Grandpa Ōta:** Radish. Ten years' worth of stubborn. Eat it slowly. — Ōta
+
+*Hana's peach buns:*
+
+**Hana:** Buns for the lamp-lighter! Three of them. You know why. — Hana
+
+*Kon's pine cone:*
+
+*A pine cone and a red maple leaf, tied with string. Tiny paw prints lead to the door.*
+
+*Ōkuma's honey pot:*
+
+*A honey pot, very sticky, left on the step. Something large has been sitting in the garden.*
+
+*Genzo's old cap:*
+
+**Genzo:** My old cap. Kobo needs a junior driver on Sundays. Interested? — Genzo
+
+*Entering the cottage once all six gifts are there:*
+
+**Mika:** A lure, radish, buns, a pine cone, honey, a cap… It isn't Grandma's empty house anymore.
+
+**Mika:** It's home.
+
+### Starfall Night
+
+When the twelfth Fallen Star is found, night falls, the sky fills with stars, constellations of the friends draw themselves, and Sora's poem is written across the sky before her last letter.
+
+*The last Fallen Star wakes in Mika's hands, and the whole sky answers.*
+
+*Every star Sora ever wished on comes out at once, and the constellations remember everyone Mika met.*
 <!-- story-md:end -->

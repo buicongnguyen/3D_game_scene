@@ -8,6 +8,11 @@ import { KodamaPool } from './cel-kodama.js';
 import { SkyTrain } from './cel-train.js';
 import { PetalStar } from './cel-star.js';
 import { Decor } from './cel-decor.js';
+import { StarField } from './cel-starfall.js';
+import { Constellation, FIGURE_NAMES } from './cel-constellations.js';
+import { GhostMaterials, aimArm, memoryDisc } from './cel-memory.js';
+import { NoteSystem, NOTE, MoteCloud } from './cel-magic.js';
+import { GlowLines } from './cel-lines.js';
 
 /*
  * Celebration & fantasy effects for the lamp-lighting endings (see the API list in the class doc).
@@ -72,6 +77,18 @@ export class Celebrate {
     this.snow = { cur: 0, target: 0 };
     this.lanternSets = [];
     this.koi = [];
+    // set 2: Starfall Night, constellations, the golden memory, the star-tree, gifts and music
+    this.starfield = new StarField(Math.round(15000 * K), q === 'Low' ? 4 : 6, q === 'Low' ? 40 : 64);
+    this.sf = { cur: 0, target: 0 };
+    this.skyFigs = new THREE.Group();
+    this.skyFigs.name = 'cel:constellations';
+    this.figs = {};
+    for (const n of FIGURE_NAMES) { this.figs[n] = new Constellation(n); this.skyFigs.add(this.figs[n].group); }
+    this.notes = new NoteSystem(Math.round(240 * Math.max(0.6, K)));
+    this.ghost = new GhostMaterials();
+    this.memDisc = memoryDisc();
+    this.treeGlows = [];
+    this.root.add(this.starfield.points, this.skyFigs, this.notes.points, this.memDisc);
     this.precompile();
   }
 
@@ -82,12 +99,30 @@ export class Celebrate {
     const probe = new THREE.Group();
     const bub = new THREE.Mesh(this.bubbleGeo, this.bubbleMat);
     probe.add(bub, this.decor.probe());
+    // set 2: a skinned ghost (the skinning variant of the ghost program) and a mote cloud; these probe
+    // materials are kept (never disposed) so their programs stay cached for every later show
+    const ghost = this.g.assets?.clone?.('hana');
+    if (ghost) probe.add(this.ghost.apply(ghost));
+    this.moteProbe = new MoteCloud(4, 1, 1);
+    probe.add(this.moteProbe.points);
+    // the orchard lanterns' instanced variant of the decor material (no shadow receiving, unlike the decor probe)
+    const lanterns = new THREE.InstancedMesh(this.decor.lanternGeometry(), this.decor.mat, 1);
+    lanterns.setColorAt(0, new THREE.Color(1, 1, 1));
+    probe.add(lanterns);
     this.root.add(probe);
+    // the scene is drawn into the composer's HDR target, whose programs differ (tone mapping, output colour
+    // space) from ones compiled for the screen: compile against a target like it
+    const comp = g.renderer?.composer, prevRT = r.getRenderTarget?.();
     try {
+      if (comp?.renderTarget1) r.setRenderTarget(comp.renderTarget1);
       r.compile(this.root, g.camera, g.scene);
       if (g.foliage?.group && this.blossom.mats.length) r.compile(g.foliage.group, g.camera, g.scene);
     } catch (e) { console.warn('celebrate precompile', e); }
+    if (comp?.renderTarget1) r.setRenderTarget(prevRT ?? null);
     this.root.remove(probe);
+    ghost?.traverse(o => o.skeleton?.dispose?.());
+    lanterns.geometry.dispose();
+    lanterns.dispose();
   }
 
   // ---------------------------------------------------------------------------------------------- plumbing
@@ -107,7 +142,10 @@ export class Celebrate {
     task.resolve();
   }
 
-  /** End every running effect at once (e.g. a skipped cutscene). Persistent effects fade out. */
+  /**
+   * End every running effect at once (e.g. a skipped cutscene). Persistent celebration effects fade out; the
+   * lasting world states (decorate, starfall, treeGlow) are left as they are.
+   */
   stopAll() {
     for (const t of this.tasks) this.finish(t);
     this.tasks.length = 0;
@@ -122,6 +160,8 @@ export class Celebrate {
     for (const t of this.tasks) this.finish(t);
     this.tasks.length = 0;
     this.decor.set(0);
+    for (const h of [...this.treeGlows]) h.end();
+    this.sf.cur = this.sf.target = 0;
     this.g.scene.remove(this.root, this.decor.group);
   }
 
@@ -866,9 +906,451 @@ export class Celebrate {
     return this.run((dt, t) => { flash.t = t; return t > 4.5; }, () => this.unlight(src));
   }
 
+  // ---------------------------------------------------------------------------------------------- 15. starfall
+  /**
+   * Starfall Night: the night sky fills with thousands of twinkling stars in several colours and sizes, a faint
+   * milky-way band (along the sky's own) and slow drifting meteors; the sky's clouds still pass in front. One
+   * Points draw, no lights. Only visible at night (fades with the night factor), so it can simply stay on.
+   * Persistent handle { stop() }; starfall(false) fades it out. Not touched by stopAll().
+   */
+  starfall(on = true) {
+    this.sf.target = on ? 1 : 0;
+    return { stop: () => { this.sf.target = 0; } };
+  }
+
+  // ---------------------------------------------------------------------------------------------- 16. constellations
+  /**
+   * The stars draw themselves, star by star, into glowing constellations of the valley's friends: kobo (the
+   * little engine), bear (Okuma), koi, fox (Kon), tamo, mika (with Sora's lantern). They are spread left to right
+   * across the sky round the viewer (default: the camera, `spread` 200 deg centred on where it faces, alternating
+   * `elev` [34, 50] deg, figure centres; each ~23 deg across) and drawn in `names` order, one every `draw` s (2.5),
+   * then hold and fade gently over the last ~3.5 s. Options: center (fixed viewpoint; default follows the
+   * camera), names, yaw (rad, 0 = -z, + toward +x), spread, elev, size (angular scale), draw. ~seconds.
+   * The promise has `.figures`: [{ name, dir (unit Vector3 from the viewer), at, done }] for camera work.
+   */
+  constellations(seconds = 30, { center, names = FIGURE_NAMES, yaw, spread = 200, elev = [34, 50], size = 1, draw = 2.5 } = {}) {
+    const g = this.g, cam = g.camera;
+    const list = names.filter(n => this.figs[n]);
+    if (!list.length) return Promise.resolve();
+    if (this.conTask && !this.conTask.done) this.finish(this.conTask);
+    const n = list.length;
+    const fwd = cam.getWorldDirection(v3());
+    const yaw0 = yaw ?? Math.atan2(fwd.x, -fwd.z);
+    const D = Math.min(draw, (seconds * 0.6) / n);
+    const fadeT = Math.min(3.5, seconds * 0.15);
+    const fixed = center ? toVec(center) : null;
+    const figs = list.map((name, i) => {
+      const f = this.figs[name];
+      const az = yaw0 + (n === 1 ? 0 : ((i + 0.5) / n - 0.5) * spread * Math.PI / 180);
+      const el = (n === 1 ? (elev[0] + elev[1]) / 2 : elev[i % 2]) * Math.PI / 180;
+      const dir = v3(Math.cos(el) * Math.sin(az), Math.sin(el), -Math.cos(el) * Math.cos(az));
+      f.aim(dir);
+      f.group.scale.set(size, size, 1);
+      const fs = seconds - fadeT + (n === 1 ? 0 : i / (n - 1)) * fadeT * 0.4;
+      return { f, name, dir, at: 0.5 + i * D, fs, fe: fs + fadeT * 0.6, done: false, i };
+    });
+    this.skyFigs.visible = true;
+    const px = () => (g.renderer?.renderer?.domElement?.height || innerHeight) / 720;
+    const pen = v3(), w = v3();
+    const promise = this.run((dt, t) => {
+      this.skyFigs.position.copy(fixed || cam.position);
+      this.skyFigs.updateMatrixWorld(true);
+      const pxs = px();
+      for (const F of figs) {
+        const lt = (t - F.at) * (F.f.draw / D);
+        const o = smooth(0, 0.25, t - F.at) * (1 - smooth(F.fs, F.fe, t));
+        F.f.set(lt, o, pxs);
+        if (lt <= 0 || o < 0.01) continue;
+        // stardust falling from the pen while it draws
+        if (lt < F.f.draw && F.f.pen(lt, pen)) {
+          F.f.group.localToWorld(w.copy(pen));
+          for (let k = 0; k < 2; k++) this.glow.emit(w, _v.set(rand(-9, 9), rand(-12, 3), rand(-9, 9)), { life: rand(0.6, 1.1), size: rand(5, 11), color: pick([[2.4, 2.1, 1.6], F.f.color, [2.2, 1.5, 0.7]]), kind: KIND.SPARK, gravity: 14, drag: 1.2, twinkle: 1 });
+        }
+        if (!F.done && lt >= F.f.draw) {
+          F.done = true;
+          this.sfx('chime', F.i);
+          const st = F.f.stars;
+          for (let k = 0; k < Math.round(36 * this.k); k++) {
+            const s = st[Math.floor(Math.random() * st.length)];
+            if (s.kind === 2) continue;
+            F.f.group.localToWorld(w.copy(s.v));
+            this.glow.emit(w, _v.set(rand(-14, 14), rand(-10, 14), rand(-14, 14)), { life: rand(1, 1.8), size: rand(6, 13), color: pick([[2.4, 2.2, 1.8], F.f.color]), kind: Math.random() < 0.4 ? KIND.STAR : KIND.SPARK, gravity: 6, drag: 1.5, twinkle: 1 });
+          }
+        }
+      }
+      return t >= seconds;
+    }, () => { for (const F of figs) F.f.set(0, 0, 1); this.skyFigs.visible = false; });
+    promise.figures = figs.map(F => ({ name: F.name, dir: F.dir.clone(), at: F.at, done: F.at + D }));
+    this.conTask = promise.task;
+    return promise;
+  }
+
+  // ---------------------------------------------------------------------------------------------- 17. golden memory
+  /**
+   * A golden memory at `pos` (on the ground): Genzo, Ota, Hana and Sora as children, translucent glowing gold
+   * ghosts, rise out of the ground in a ring holding hands, dance round, stop to cheer and wave, dance back the
+   * other way, then dissolve upward into sparkles. Options: radius (ring, 0.82 m), scale (0.88: young), light
+   * (a warm light-pool source, default true). Clones the rigged models and removes them after. ~seconds.
+   */
+  memory(pos, seconds = 12, { radius = 0.82, scale = 0.88, light = true } = {}) {
+    const g = this.g, K = this.k, P = toVec(pos);
+    if (this.memTask && !this.memTask.done) this.finish(this.memTask);
+    const cast = ['genzo', 'ota', 'hana', 'villager-woman'];
+    const GM = this.ghost, GU = GM.shared;
+    GU.uOpacity.value = 0; GU.uLow.value = 0; GU.uHigh.value = 0; GU.uBase.value = P.y; GU.uHeight.value = 1.62 * scale;
+    const holder = new THREE.Group();
+    holder.name = 'cel:memory';
+    holder.position.copy(P);
+    this.root.add(holder);
+    const dancers = [];
+    cast.forEach((name, i) => {
+      const obj = g.assets?.clone?.(name);
+      if (!obj) return;
+      GM.apply(obj);
+      obj.scale.setScalar(scale);
+      const wrap = new THREE.Group();
+      wrap.add(obj);
+      holder.add(wrap);
+      const mixer = new THREE.AnimationMixer(obj);
+      const clips = new Map((obj.userData.clips || []).map(c => [c.name, c]));
+      const bones = {};
+      obj.traverse(o => { if (o.isBone || o.type === 'Bone') bones[o.name] = o; });
+      dancers.push({ name, obj, wrap, mixer, clips, bones, a0: i * Math.PI * 2 / cast.length, cur: null, cheer: clips.has('Cheer') ? 'Cheer' : 'Wave', ph: rand(0, 6) });
+    });
+    if (!dancers.length) { this.root.remove(holder); return Promise.resolve(); }
+    const N = dancers.length;
+    const play = (d, name, speed = 1, fade = 0.35, once = false) => {
+      const clip = d.clips.get(name) || d.clips.get('Idle');
+      if (!clip) return;
+      const a = d.mixer.clipAction(clip);
+      a.timeScale = speed;
+      if (d.cur === a) return;
+      a.reset();
+      a.setLoop(once ? THREE.LoopOnce : THREE.LoopRepeat, once ? 1 : Infinity);
+      a.clampWhenFinished = once;
+      a.setEffectiveWeight(1).play();
+      if (d.cur) d.cur.crossFadeTo(a, fade, false);
+      d.cur = a;
+    };
+    dancers.forEach(d => { play(d, 'Walk', 0.5, 0); d.mixer.update(d.ph); });
+    // hands: which hand of each dancer reaches for the next one round the ring is found from the pose itself
+    const threadSegs = [];
+    for (let i = 0; i < N * 3; i++) threadSegs.push({ a: v3(), b: v3(0, 0.01, 0), color: [2.4, 1.8, 0.9], w: 1 });
+    const threads = new GlowLines(threadSegs, { width: 0.05, minPx: 1.6, shimmer: 0.8, renderOrder: 7 });
+    threads.mesh.frustumCulled = false;
+    threads.opacity = 0;
+    holder.add(threads.mesh);
+    threads.mesh.position.set(-P.x, -P.y, -P.z);   // segments are written in world space
+    const disc = this.memDisc;
+    disc.position.set(P.x, P.y + 0.04, P.z);
+    disc.visible = true;
+    disc.material.uniforms.uO.value = 0;
+    const lamp = { I: 0 }, lp = P.clone().add(v3(0, 1.3, 0));
+    const src = light ? this.light(lp, () => lamp.I, 7, '#ffc86a') : null;
+    const T = seconds;
+    const tIn = Math.min(1.8, T * 0.16), tOut = Math.min(2.4, T * 0.2);
+    const c0 = T * 0.44, c1 = c0 + Math.min(1.9, T * 0.16);
+    const H = 1.62 * scale;
+    let theta = 0, sideMap = null, cheered = false, acc = 0, accE = 0;
+    const tgt = v3(), sh = v3(), sh2 = v3(), hA = v3(), hB = v3(), mid = v3();
+    const task = this.run((dt, t) => {
+      const fadeIn = smooth(0, tIn, t), out = smooth(T - tOut, T, t);
+      GU.uHigh.value = 1.12 * fadeIn + (fadeIn >= 1 ? 1 : 0);
+      GU.uLow.value = 1.12 * out;
+      GU.uOpacity.value = smooth(0, 0.3, t) * (1 - smooth(T - 0.15, T, t));
+      const cheering = t > c0 && t < c1;
+      // ring speed: round one way, pause to cheer, then back the other way
+      const w = 0.42 * (t < c0 ? smooth(0, 0.8, t) * (1 - smooth(c0 - 0.5, c0, t)) : -smooth(c1, c1 + 0.8, t));
+      theta += w * dt;
+      const hands = (1 - smooth(c0 - 0.45, c0, t)) * smooth(0.3, 0.9, t) + smooth(c1 - 0.1, c1 + 0.5, t) * (1 - out);
+      if (cheering && !cheered) {
+        cheered = true;
+        dancers.forEach(d => play(d, d.cheer, 1, 0.25, true));
+        _p.copy(P).add(_s.set(0, 1.3, 0));
+        this.spray(_p, { n: Math.round(60 * K), speed: 3.5, life: 1.6, size: 0.14, kind: KIND.STAR, gravity: -0.4, drag: 1.4 });
+        this.spray(_p, { n: Math.round(14 * K), colors: [lin('#ff7eb6', 2), lin('#ffd46a', 2)], speed: 2.4, life: 2, size: 0.16, kind: KIND.HEART, gravity: -0.6, drag: 1.2 });
+      }
+      if (!cheering && cheered && t > c1 && dancers[0].cur?.loop === THREE.LoopOnce) dancers.forEach(d => play(d, 'Walk', 0.5, 0.4));
+      dancers.forEach((d, i) => {
+        const a = theta + d.a0;
+        const x = Math.cos(a) * radius, z = Math.sin(a) * radius;
+        const hop = Math.abs(Math.sin(t * 4.2 + i * 0.8)) * 0.05 * hands;
+        d.wrap.position.set(x, hop, z);
+        const yawC = Math.atan2(-x, -z);
+        const dirw = Math.sign(w) || (t < c0 ? 1 : -1);
+        const yawT = Math.atan2(-Math.sin(a) * dirw, Math.cos(a) * dirw);
+        let dy = yawT - yawC; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+        d.wrap.rotation.y = yawC + dy * 0.45 * (cheering ? 0.2 : 1);
+        d.mixer.update(dt);
+        if (d.bones.head) d.bones.head.scale.setScalar(1.13);
+      });
+      holder.updateMatrixWorld(true);
+      if (!sideMap) {
+        // does hand_L or hand_R point toward the next dancer?
+        sideMap = dancers.map((d, i) => {
+          const nx = dancers[(i + 1) % N].wrap.getWorldPosition(v3());
+          const L = d.bones.hand_L?.getWorldPosition(v3()), R = d.bones.hand_R?.getWorldPosition(v3());
+          return L && R ? (L.distanceTo(nx) < R.distanceTo(nx) ? 'L' : 'R') : 'L';
+        });
+      }
+      const other = s => (s === 'L' ? 'R' : 'L');
+      let seg = 0;
+      for (let i = 0; i < N; i++) {
+        const A = dancers[i], B = dancers[(i + 1) % N];
+        const sa = sideMap[i], sb = other(sideMap[(i + 1) % N]);
+        const ua = A.bones[`upperarm_${sa}`], ub = B.bones[`upperarm_${sb}`];
+        if (!ua || !ub) continue;
+        ua.getWorldPosition(sh); ub.getWorldPosition(sh2);
+        tgt.addVectors(sh, sh2).multiplyScalar(0.5);
+        tgt.y -= 0.28 * scale;
+        aimArm(ua, A.bones[`forearm_${sa}`], A.bones[`hand_${sa}`], tgt, hands);
+        aimArm(ub, B.bones[`forearm_${sb}`], B.bones[`hand_${sb}`], tgt, hands);
+        A.bones[`hand_${sa}`]?.getWorldPosition(hA);
+        B.bones[`hand_${sb}`]?.getWorldPosition(hB);
+        mid.addVectors(hA, hB).multiplyScalar(0.5);
+        mid.y -= 0.04 + hA.distanceTo(hB) * 0.15;
+        threads.setSegment(seg++, hA, _q2.copy(hA).lerp(mid, 0.9));
+        threads.setSegment(seg++, _q2.copy(hA).lerp(mid, 0.9), _q3.copy(hB).lerp(mid, 0.9));
+        threads.setSegment(seg++, _q3.copy(hB).lerp(mid, 0.9), hB);
+      }
+      threads.opacity = hands * GU.uOpacity.value * 0.9 * (1 - out);
+      // sparkles: rising off the dancers, a flurry along the dissolve edges
+      acc += dt * 46 * K * GU.uOpacity.value;
+      while (acc > 1) {
+        acc--;
+        const d = pick(dancers);
+        d.wrap.getWorldPosition(_p);
+        _p.add(_s.set(rand(-0.3, 0.3), rand(0.1, 1) * H * fadeIn, rand(-0.3, 0.3)));
+        this.glow.emit(_p, _v.set(rand(-0.15, 0.15), rand(0.4, 1.0), rand(-0.15, 0.15)), { life: rand(1.4, 2.6), size: rand(0.06, 0.13), color: pick(GOLDS), kind: Math.random() < 0.7 ? KIND.SPARK : KIND.STAR, gravity: -0.1, drag: 0.4, twinkle: 1, flutter: 0.08 });
+      }
+      const edge = fadeIn < 1 ? GU.uHigh.value : out > 0 ? GU.uLow.value : -1;
+      if (edge > 0 && edge < 1.05) {
+        accE += dt * 150 * K;
+        while (accE > 1) {
+          accE--;
+          const d = pick(dancers), ang = rand(0, 6.28), r = rand(0.1, 0.28);
+          d.wrap.getWorldPosition(_p);
+          _p.add(_s.set(Math.cos(ang) * r, edge * H, Math.sin(ang) * r));
+          this.glow.emit(_p, _v.set(Math.cos(ang) * 0.3, rand(0.5, out > 0 ? 2.2 : 0.8), Math.sin(ang) * 0.3), { life: rand(0.8, 1.8), size: rand(0.06, 0.14), color: pick([[2.4, 2.0, 1.3], ...GOLDS]), kind: KIND.SPARK, gravity: -0.2, drag: 0.6, twinkle: 1 });
+        }
+      }
+      disc.material.uniforms.uO.value = GU.uOpacity.value * (0.55 + 0.45 * fadeIn) * (1 - out * 0.8);
+      lamp.I = (2.2 + 5.5 * this.night) * GU.uOpacity.value * (1 - out * 0.7);
+      return t >= T;
+    }, () => {
+      for (const d of dancers) {
+        d.mixer.stopAllAction();
+        d.mixer.uncacheRoot(d.obj);
+        d.obj.traverse(o => o.skeleton?.dispose?.());
+      }
+      this.root.remove(holder);
+      threads.mesh.geometry.dispose(); threads.mat.dispose();
+      disc.visible = false;
+      this.unlight(src);
+    });
+    this.memTask = task.task;
+    return task;
+  }
+
+  // ---------------------------------------------------------------------------------------------- 18. grow
+  /**
+   * A magical growing animation for a model (the star-tree): it rises from nothing with an ease-out-back
+   * (height leading, crown following, a little untwist), a triple spiral of gold sparkles climbing around it,
+   * then a burst of stars from the crown. Adds `obj` to the scene if it has no parent; restores its scale and
+   * rotation exactly at the end. ~seconds + 1.4 s.
+   */
+  grow(obj, seconds = 3, { spin = 1.1 } = {}) {
+    const g = this.g, K = this.k;
+    if (!obj) return Promise.resolve();
+    if (!obj.parent) g.scene.add(obj);
+    const S = obj.scale.clone(), yaw = obj.rotation.y;
+    obj.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(obj);
+    const wp = obj.getWorldPosition(v3());
+    const base = v3(wp.x, box.isEmpty() ? wp.y : box.min.y, wp.z);
+    const H = box.isEmpty() ? 5 : Math.max(1, box.max.y - box.min.y);
+    const R = box.isEmpty() ? 2 : Math.max(0.8, Math.max(box.max.x - box.min.x, box.max.z - box.min.z) / 2);
+    const f = Math.max(0.45, Math.min(1, H / 7));   // sparkle scale: a sapling gets a finer spiral than a big tree
+    obj.scale.setScalar(1e-4);
+    const lamp = { I: 0 }, lp = base.clone();
+    const src = this.light(lp, () => lamp.I, Math.max(12, H * 2.2), '#ffd27a');
+    _p.copy(base).add(_s.set(0, 0.3, 0));
+    this.glow.emit(_p, _v.set(0, 0, 0), { life: 1.1, size: R * 0.8, color: [2.2, 1.6, 0.8], kind: KIND.RING, grow: 2.2, alpha: 0.6 });
+    this.glow.emit(_p, _v.set(0, 0, 0), { life: 0.8, size: R * 1.1, color: [2.0, 1.4, 0.6], kind: KIND.GLOW, alpha: 0.4 });
+    this.spray(_p, { n: Math.round(40 * K), speed: 3 * f, life: 1.3, size: 0.25 * f, gravity: -0.5, up: 1 });
+    this.sfx('star');
+    let acc = 0, burst = false;
+    return this.run((dt, t) => {
+      // a steady rise, a little overshoot around 75 %, settled at the end (height leads, the crown follows)
+      const k = clamp01(t / seconds), grow = x => easeOutBack(clamp01(x) ** 1.6);
+      const ey = grow(k), exz = grow(k * 1.15 - 0.15);
+      obj.scale.set(S.x * Math.max(1e-4, exz), S.y * Math.max(1e-4, ey), S.z * Math.max(1e-4, exz));
+      obj.rotation.y = yaw + spin * (1 - k) ** 2;
+      const h = H * Math.max(0.05, Math.min(1.1, ey));
+      if (t < seconds) {
+        // three comet heads spiral up round the trunk, each leaving a helical ribbon of sparkles
+        acc += dt * 240 * K * f;
+        const per = Math.floor(acc / 3);
+        acc -= per * 3;
+        for (let arm = 0; arm < 3; arm++) {
+          const u = (t * 0.75 + arm / 3) % 1;
+          const th = u * Math.PI * 4 + arm * Math.PI * 2 / 3 + t * 1.2;
+          const r = (R * (0.35 + 0.75 * Math.min(1, exz)) * (1 - 0.5 * u) + 0.35 * f);
+          _p.set(base.x + Math.cos(th) * r, base.y + 0.2 + u * h, base.z + Math.sin(th) * r);
+          this.glow.emit(_p, _v.set(0, 0.2, 0), { life: 0.2, size: 0.75 * f, color: [2.4, 1.8, 0.9], kind: KIND.GLOW, alpha: 0.55 });
+          for (let i = 0; i < per; i++) {
+            _q2.set(_p.x + rand(-0.12, 0.12), _p.y + rand(-0.12, 0.12), _p.z + rand(-0.12, 0.12));
+            this.glow.emit(_q2, _v.set(-Math.sin(th) * 0.35 + rand(-0.2, 0.2), rand(0.2, 0.7), Math.cos(th) * 0.35 + rand(-0.2, 0.2)), { life: rand(0.9, 1.6), size: rand(0.18, 0.36) * f, color: Math.random() < 0.8 ? pick(GOLDS) : pick([lin('#ff8ac4', 2.2), lin('#8ad0ff', 2.2)]), kind: Math.random() < 0.7 ? KIND.SPARK : KIND.STAR, drag: 0.8, gravity: 0.3, twinkle: 1 });
+          }
+        }
+      }
+      lp.set(base.x, base.y + h * 0.55, base.z);
+      lamp.I = (10 + 26 * this.night) * f * f * smooth(0, 0.5, t) * (1 - smooth(seconds + 0.2, seconds + 1.4, t));
+      if (!burst && t >= seconds) {
+        burst = true;
+        const crown = v3(base.x, base.y + H * 0.66, base.z);
+        this.spray(crown, { n: Math.round(130 * K), speed: Math.max(3.5, R * 2.4), life: 2.2, size: 0.5 * f, kind: KIND.STAR, gravity: 0.6, drag: 1.5, up: 0.4 });
+        this.spray(crown, { n: Math.round(110 * K), colors: [...GOLDS, lin('#ff8ac4', 2.2), lin('#9ad8ff', 2.2)], speed: Math.max(3, R * 2), life: 2.8, size: 0.26 * f, gravity: 1, drag: 1.1, up: 0.5 });
+        this.glow.emit(crown, _v.set(0, 0, 0), { life: 0.45, size: H * 0.9, color: [2.4, 1.9, 1.2], kind: KIND.GLOW, alpha: 0.28 });
+        this.glow.emit(crown, _v.set(0, 0, 0), { life: 0.8, size: R * 0.7, color: [2.3, 1.7, 1.0], kind: KIND.RING, grow: 3, alpha: 0.45 });
+        this.sfx('sparkHit');
+      }
+      return t >= seconds + 1.4;
+    }, () => { obj.scale.copy(S); obj.rotation.y = yaw; this.unlight(src); });
+  }
+
+  // ---------------------------------------------------------------------------------------------- 19. tree glow
+  /**
+   * A persistent soft aura for the star-tree: golden motes drifting up and around the tree and a gently pulsing
+   * glow in the crown, brighter at night (plus a soft night light-pool source unless light: false). `pos` is the
+   * tree's base point, or the tree Object3D itself (then radius and height are fitted to its bounds). Options:
+   * radius (1.5 m), height (3.6 m): sized for the 3 m star-tree. Handle { stop(), promise };
+   * treeGlow(null, false) stops all. Not touched by stopAll().
+   */
+  treeGlow(pos, on = true, { radius = 1.5, height = 3.6, light = true } = {}) {
+    if (!on) { for (const h of [...this.treeGlows]) h.stop(); return null; }
+    const K = this.k;
+    let P;
+    if (pos?.isObject3D) {
+      pos.updateMatrixWorld(true);
+      const b = new THREE.Box3().setFromObject(pos);
+      if (b.isEmpty()) P = pos.getWorldPosition(v3());
+      else {
+        P = v3((b.min.x + b.max.x) / 2, b.min.y, (b.min.z + b.max.z) / 2);
+        radius = Math.max(0.8, Math.max(b.max.x - b.min.x, b.max.z - b.min.z) * 0.55);
+        height = Math.max(1.5, (b.max.y - b.min.y) * 1.2);
+      }
+    } else P = toVec(pos);
+    const motes = new MoteCloud(Math.round(Math.min(170, 40 + height * 18) * Math.max(0.6, K)), radius, height, Math.max(0.5, Math.min(1, height / 7)));
+    motes.points.position.copy(P);
+    motes.intensity = 0;
+    const crown = P.clone().add(v3(0, height * 0.58, 0));
+    // an aura behind the crown (the foliage rims it with light) and a faint glow on the camera side
+    const halo = new GlowPoints([{ x: 0, y: 0, z: 0, size: height * 1.8, color: [2.1, 1.35, 0.5], alpha: 0.42 }], { kind: KIND.GLOW });
+    const front = new GlowPoints([{ x: 0, y: 0, z: 0, size: height * 0.9, color: [2.4, 1.85, 1.0], alpha: 0.12 }], { kind: KIND.GLOW });
+    halo.intensity = 0; front.intensity = 0;
+    halo.points.position.copy(crown); front.points.position.copy(crown);
+    halo.points.frustumCulled = false; front.points.frustumCulled = false;
+    const group = new THREE.Group();
+    group.name = 'cel:treeGlow';
+    group.add(motes.points, halo.points, front.points);
+    this.root.add(group);
+    const st = { fade: 0, stopping: false, t: 0, I: 0 };
+    const src = light ? this.light(crown, () => st.I, Math.max(7, height * 1.5), '#ffd27a') : null;
+    let resolve;
+    const handle = { stop: () => { st.stopping = true; }, promise: new Promise(r => { resolve = r; }) };
+    handle.step = dt => {
+      st.t += dt;
+      st.fade = st.stopping ? Math.max(0, st.fade - dt / 1.5) : Math.min(1, st.fade + dt / 1.5);
+      const night = this.night, pulse = 0.82 + 0.18 * Math.sin(st.t * 1.6);
+      _v.subVectors(this.g.camera.position, crown).setY(0);
+      if (_v.lengthSq() > 1e-4) {
+        _v.normalize();
+        halo.points.position.copy(crown).addScaledVector(_v, -radius * 0.9);
+        front.points.position.copy(crown).addScaledVector(_v, radius * 0.9);
+      }
+      motes.intensity = st.fade * (0.55 + 0.45 * night);
+      halo.intensity = st.fade * (0.28 + 0.72 * night) * pulse;
+      front.intensity = halo.intensity;
+      st.I = st.fade * night * 5 * pulse;
+      if (st.fade > 0.2 && Math.random() < dt * 3) {
+        _p.set(crown.x + rand(-1, 1) * radius * 0.7, crown.y + rand(-0.4, 0.5) * height * 0.5, crown.z + rand(-1, 1) * radius * 0.7);
+        this.glow.emit(_p, _v.set(0, rand(0.1, 0.4), 0), { life: rand(0.9, 1.5), size: rand(0.25, 0.45), color: pick(GOLDS), kind: KIND.SPARK, twinkle: 0.6 });
+      }
+      return st.stopping && st.fade <= 0;
+    };
+    handle.end = () => {
+      this.root.remove(group);
+      motes.dispose();
+      for (const gp of [halo, front]) { gp.points.geometry.dispose(); gp.mat.dispose(); }
+      this.unlight(src);
+      this.treeGlows = this.treeGlows.filter(h => h !== handle);
+      resolve();
+    };
+    this.treeGlows.push(handle);
+    return handle;
+  }
+
+  // ---------------------------------------------------------------------------------------------- 20. gift glow
+  /** A small warm sparkle and a tiny ribbon of hearts spiralling up where a thank-you gift just appeared. ~3 s. */
+  giftGlow(pos) {
+    const P = toVec(pos), K = this.k;
+    this.spray(P, { n: Math.round(36 * K), speed: 2.2, life: 1.3, size: 0.12, gravity: -0.3, drag: 1.6, up: 0.6 });
+    this.glow.emit(P, _v.set(0, 0, 0), { life: 0.5, size: 1.2, color: [2.4, 1.8, 1.0], kind: KIND.GLOW, alpha: 0.45 });
+    this.glow.emit(P, _v.set(0, 0, 0), { life: 0.7, size: 0.5, color: [2.2, 1.7, 1.0], kind: KIND.RING, grow: 3, alpha: 0.7 });
+    const lamp = { t: 0 };
+    const src = this.light(P, () => Math.max(0, 7 * (1 - lamp.t / 1.2)), 6, '#ffd6a0');
+    const HEARTS = [lin('#ff5a8a', 2.2), lin('#ff8ab8', 2.2), lin('#ffd46a', 2.1), lin('#ff6a6a', 2.1)];
+    let acc = 0, n = 0;
+    this.sfx('pickup');
+    return this.run((dt, t) => {
+      lamp.t = t;
+      acc += dt * 9;
+      while (acc > 1 && n < 16) {
+        acc--;
+        const u = n / 15, a = u * Math.PI * 3.2;
+        _p.set(P.x + Math.cos(a) * 0.32, P.y + 0.15 + u * 1.3, P.z + Math.sin(a) * 0.32);
+        this.glow.emit(_p, _v.set(-Math.sin(a) * 0.12, 0.25, Math.cos(a) * 0.12), { life: rand(1.4, 1.8), size: 0.13 + 0.06 * Math.sin(u * Math.PI), color: HEARTS[n % HEARTS.length], kind: KIND.HEART, gravity: -0.15, drag: 0.8, twinkle: 0.3, flutter: 0.04 });
+        this.glow.emit(_p, _v.set(rand(-0.2, 0.2), rand(-0.3, 0.1), rand(-0.2, 0.2)), { life: rand(0.6, 1), size: rand(0.05, 0.09), color: pick(GOLDS), kind: KIND.SPARK, twinkle: 1 });
+        n++;
+      }
+      return t > 3;
+    }, () => this.unlight(src));
+  }
+
+  // ---------------------------------------------------------------------------------------------- 21. music notes
+  /**
+   * Little glowing music notes (gold, pink and blue) float up and sway from `pos` (Sora's music box), with a
+   * few sparkles. Notes stop rising ~2.6 s before the end, so the last have faded when it resolves. ~seconds.
+   */
+  musicNotes(pos, seconds = 8) {
+    const P = toVec(pos);
+    const COLS = [lin('#ffd46a', 2.5), lin('#ffe9a8', 2.3), lin('#ff8ac4', 2.5), lin('#ffb0d8', 2.3), lin('#8ac8ff', 2.5), lin('#b8a8ff', 2.4)];
+    const KINDS = [NOTE.EIGHTH, NOTE.EIGHTH, NOTE.PAIR, NOTE.QUARTER, NOTE.SIXTEENTH, NOTE.CLEF];
+    let acc = 0.7, last = -1;
+    return this.run((dt, t) => {
+      if (t < seconds - 2.6) {
+        acc += dt * 4.2;
+        while (acc > 1) {
+          acc--;
+          let side = Math.random() < 0.5 ? -1 : 1;
+          if (side === last && Math.random() < 0.6) side = -side;
+          last = side;
+          _p.set(P.x + rand(-0.08, 0.08), P.y + 0.12, P.z + rand(-0.08, 0.08));
+          const ang = rand(0, Math.PI * 2);
+          this.notes.emit(_p, _v.set(Math.cos(ang) * 0.18, rand(0.42, 0.62), Math.sin(ang) * 0.18), { life: rand(2.2, 2.7), size: rand(0.22, 0.32), color: pick(COLS), kind: pick(KINDS), spin: rand(0.22, 0.42), flutter: rand(0.05, 0.1), drag: 0.25, gravity: -0.05, twinkle: 0.25 });
+          this.glow.emit(_p, _v.set(rand(-0.2, 0.2), rand(0.3, 0.7), rand(-0.2, 0.2)), { life: rand(0.8, 1.4), size: rand(0.04, 0.08), color: pick(GOLDS), kind: KIND.SPARK, twinkle: 1, drag: 0.5 });
+        }
+      }
+      return t >= seconds;
+    });
+  }
+
   // ---------------------------------------------------------------------------------------------- frame
   update(dt) {
     const g = this.g;
+    // the sky's environment map arrives with the first world update: compile the env-mapped variants then too
+    if (!this.envCompiled && g.scene?.environment) { this.envCompiled = true; this.precompile(); }
     this.t += dt;
     U.uTime.value = this.t;
     const cam = g.camera, h = g.renderer?.renderer?.domElement?.height || innerHeight;
@@ -893,8 +1375,12 @@ export class Celebrate {
     this.snowFx.uniforms.uI.value = this.snow.cur * (0.55 + 0.45 * night);
     this.snowFx.uniforms.uCam.value.copy(cam.position);
     this.snowFx.points.visible = this.snow.cur > 0.003;
+    ease(this.sf, 0.4);
+    this.starfield.update(this.sf.cur * smooth(0.35, 0.95, night), cam, g.world?.sky, Math.max(0.6, Math.min(3, h / 720)));
+    for (const tg of [...this.treeGlows]) if (tg.step(dt)) tg.end();
     this.decor.update(night);
     this.glow.flush();
     this.solid.flush();
+    this.notes.flush();
   }
 }

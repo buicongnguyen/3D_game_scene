@@ -128,6 +128,17 @@ export class Audio {
   sparkHit() { [0, 7, 12, 16, 19].forEach((d, i) => this.tone(mtof(79 + d), { dur: 0.5, vol: 0.06, when: i * 0.04, rev: 0.6 })); }
   miss() { this.tone(300, { type: 'triangle', dur: 0.25, vol: 0.06, glide: 0.6 }); }
   pickup() { [0, 4, 7, 12].forEach((d, i) => this.tone(mtof(76 + d), { type: 'triangle', dur: 0.35, vol: 0.09, when: i * 0.06, rev: 0.4 })); }
+  /** Sora's lullaby, as a music box would play it. */
+  lullaby() {
+    const r = 79, tune = [0, 4, 7, 9, 7, 4, 2, 4, 0, -3, 0, 2, 4, 2, 0, -5, 0];
+    tune.forEach((d, i) => this.tone(mtof(r + d), { type: 'sine', dur: 0.9, vol: 0.07, when: i * 0.42, rev: 0.7 }));
+    tune.forEach((d, i) => { if (i % 4 === 0) this.tone(mtof(r - 12 + d), { type: 'triangle', dur: 1.4, vol: 0.03, when: i * 0.42, rev: 0.6 }); });
+  }
+  /** A wind chime by the shrine. */
+  windChime() {
+    const base = [84, 86, 88, 91, 93][Math.floor(Math.random() * 5)];
+    [0, 7, 12].forEach((d, i) => { if (Math.random() < 0.7) this.tone(mtof(base + d), { type: 'sine', dur: 2.2, vol: 0.025, when: i * 0.13 + Math.random() * 0.1, rev: 0.8 }); });
+  }
   fanfare() {
     const r = (ROOTS[this.season] || 60) + 12;
     [0, 4, 7, 12, 7, 12, 16, 19, 24].forEach((d, i) => this.pluck(r + d, i * 0.11, 0.12));

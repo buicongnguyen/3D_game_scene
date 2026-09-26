@@ -291,3 +291,12 @@ button.small { border: 0; border-radius: 12px; padding: 7px 12px; font-family: v
 .album-strip img:nth-child(odd) { transform: rotate(-2deg); } .album-strip img:nth-child(even) { transform: rotate(2deg); }
 #flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 36; transition: opacity 0.6s ease-out; }
 #flash.on { opacity: 0.95; transition: none; }
+
+/* ---------- star compass ---------- */
+#compass { position: absolute; left: 16px; bottom: calc(16px + var(--safe-b)); display: flex; flex-direction: column; align-items: center; gap: 2px; }
+#compass .dial { width: 56px; height: 56px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff6dc, #e9c98a 70%, #b98a3a); border: 3px solid #8a5a1e; box-shadow: var(--shadow), inset 0 0 8px rgba(90, 50, 10, 0.4); display: grid; place-items: center; }
+#compass svg { width: 44px; height: 44px; transition: transform 0.15s linear; }
+#compass .needle { fill: #3b1c05; opacity: 0.35; }
+#compass .tip { fill: #ffd23f; stroke: #8a5a1e; stroke-width: 1.2; filter: drop-shadow(0 0 3px rgba(255, 200, 50, 0.9)); }
+#compassDist { font-family: var(--head); font-weight: 700; font-size: 12px; color: #fff; background: rgba(28, 35, 64, 0.85); border-radius: 99px; padding: 0 7px; }
+body.touch #compass { bottom: auto; top: calc(116px + var(--safe-t)); left: 16px; }

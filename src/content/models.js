@@ -16,4 +16,5 @@ export const ITEMS = ['cog', 'peach', 'chestnut', 'mushroom-item', 'honeycomb', 
   'bowl-chestnuts', 'timber', 'iron-bolts', 'key'];
 export const INTERIORS = ['interior-cottage', 'interior-bakery', 'interior-mill', 'interior-station',
   'keepsake-photo', 'keepsake-recipe', 'keepsake-float', 'keepsake-ticket'];
-export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWAY, ...NATURE, ...PROPS, ...ITEMS, ...INTERIORS];
+export const REWARDS = ['music-box', 'golden-acorn', 'star-compass', 'star-tree', 'gift-lure', 'gift-radish', 'gift-buns', 'gift-cap', 'gift-pinecone', 'gift-honey'];
+export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWAY, ...NATURE, ...PROPS, ...ITEMS, ...INTERIORS, ...REWARDS];

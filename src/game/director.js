@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Quest } from './quest.js';
-import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST, FRIENDS, KEEPSAKES } from './story.js';
+import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST, FRIENDS, KEEPSAKES, TREASURES, SKY_LETTERS, GIFTS } from './story.js';
 import { tx, N_ } from '../i18n/i18n.js';
 import { NPC } from '../actors/npc.js';
 import { Tamo } from '../actors/tamo.js';
@@ -62,11 +62,27 @@ export class Director {
       n.setIdle(i % 3 === 0 ? 'Talk' : 'Idle');
     });
     this.npcs.v7.setVisible(false);
+    // people who left the valley come home as the lamps are lit (shown by placeCast)
+    this.returning = [
+      ['v8', 'villager-man', -45, 30, 1, 1], ['v9', 'villager-woman', -40, 2, 2, 1], ['v10', 'villager-kid', -50, 12, 0.5, 1],
+      ['v11', 'villager-woman', 120, 6, 3, 2], ['v12', 'villager-man', 108, 25, 1.5, 2], ['v13', 'villager-kid', 125, 15, 2.5, 2],
+      ['v14', 'villager-man', 58, -112, 0, 3], ['v15', 'villager-woman', 65, -110, 3.1, 3],
+      ['v16', 'villager-kid', -100, 114, 1.2, 4], ['v17', 'villager-woman', -94, 118, 4, 4],
+    ];
+    this.returning.forEach(([id, model, x, z, f], i) => {
+      const n = mk(id, model, x, z, f, { tint: NPC.villagerTint(i + 8) });
+      n.villager = true;
+      n.setIdle(i % 2 ? 'Talk' : 'Idle');
+      n.setVisible(false);
+    });
     // everyday routes: villagers stroll between a few spots and pause to chat
     this.routes = {
       v1: [[-47, 36], [-45, 48], [-44, 26], [-47, 36]], v2: [[-43.5, 8], [-44, -8], [-40, 21], [-43.5, 8]],
       v3: [[-41, 23], [-38, 20], [-42, 28]], v4: [[110, 12], [104, 6], [118, 8], [110, 12]],
       v5: [[124, 2], [128, -6], [120, 16], [124, 2]], v6: [[116, 18], [112, 24], [121, 20]],
+      v8: [[-45, 30], [-42, 40], [-46, 22]], v9: [[-40, 2], [-43, -6], [-38, 10]], v10: [[-50, 12], [-46, 16], [-52, 8]],
+      v11: [[120, 6], [114, 10], [124, 0]], v12: [[108, 25], [104, 20], [112, 28]], v13: [[125, 15], [120, 20], [128, 10]],
+      v14: [[58, -112], [62, -116], [56, -118]], v15: [[65, -110], [60, -108], [66, -114]],
     };
     this.routeState = {};
   }
@@ -141,6 +157,7 @@ export class Director {
     this.interact('rideStation', V(-90, 17.4, 116.6), N_('Ride Kobo to Takamori'), () => trainWaiting(STOPS.station), () => this.scenes.play('tour'), 3.5, null, 1);
     this.interact('rideHalt', V(PLACES.halt.x - 3, this.world.heightAt(PLACES.halt.x - 3, PLACES.halt.z) + 0.5, PLACES.halt.z + 1), N_('Ride Kobo to Hoshi Station'), () => trainWaiting(STOPS.halt), () => this.scenes.play('tour'), 4, null, 1);
     this.registerHomes();
+    this.registerRewards();
     // valley friends: say hello to whichever creature is next to Mika
     this.interact('friend', null, () => tx(this.friendNear?.def.verb || ''), () => !!this.friendNear, () => this.befriend(this.friendNear), 6, () => this.friendNear?.a.pos, 0, 4);
     // NPC talk
@@ -203,12 +220,108 @@ export class Director {
     }
   }
 
+  /** Treasures, Sky Letters, the star-tree spot and the gifts in Sora's cottage. */
+  registerRewards() {
+    const S = this.game.structures, q = () => this.q;
+    // Sora's music box, on the river bed right under the viaduct
+    const rv = river.nearest(0, 121, 40);
+    const mb = V(rv ? rv.x : 4, 0, rv ? rv.z : 121);
+    mb.y = this.world.heightAt(mb.x, mb.z) + 0.35;
+    this.pickup('musicBox', 'music-box', mb, 'treasure', () => !q().state.treasures.musicBox, { treasure: TREASURES[0], grab: 1.9 });
+    // Sky Letters on high places (the Star Kite reaches them)
+    const top = obj => { if (!obj) return null; const b = new THREE.Box3().setFromObject(obj); return V((b.min.x + b.max.x) / 2, b.max.y + 1.1, (b.min.z + b.max.z) / 2); };
+    const spots = {
+      station: top(S.byId.get('station')?.obj), belltower: top(S.byId.get('belltower')?.obj), mill: top(S.byId.get('mill')?.obj),
+      viaduct: top(S.lamps.get('viaduct')?.obj), shrine: top(S.byId.get('shrine')?.obj),
+    };
+    for (const L of SKY_LETTERS) {
+      if (!spots[L.id]) continue;
+      this.pickup(`letter-${L.id}`, 'journal-page', spots[L.id], 'letter', () => !q().state.letters.includes(L.id), { letter: L, grab: 3.4 });
+    }
+    // the star-tree grows in Sora's garden, in front of the porch
+    this.treeSpot = V(-49.5, 0, 135.5);
+    this.treeSpot.y = this.world.heightAt(this.treeSpot.x, this.treeSpot.z);
+    this.interact('plantAcorn', this.treeSpot.clone().add(V(0, 0.5, 0)), N_('Plant the golden acorn'), () => this.q.count('acorn') > 0 && !this.q.has('treePlanted'), () => this.scenes.play('plantTree'), 2.8, null, 1);
+    // thank-you gifts that fill the cottage
+    const I = this.game.interiors;
+    this.giftObjs = [];
+    for (const it of I?.items || []) {
+      if (it.kind !== 'gift') continue;
+      const g = GIFTS.find(x => x.id === it.id);
+      const obj = g && this.game.assets.clone(g.model);
+      if (!obj) continue;
+      obj.position.copy(it.pos);
+      obj.rotation.y = it.yaw || 0;
+      obj.visible = false;
+      this.game.scene.add(obj);
+      const earned = () => !!this.q && STEP_INDEX[this.q.state.step] > STEP_INDEX[g.after];
+      this.giftObjs.push({ g, obj, earned });
+      this.interact(`gift:${g.id}`, it.pos, () => tx('Look at: {item}', { item: tx(g.name) }), () => I.active === 'cottage' && earned(), () => this.say(g.say), 2.4, null, 1, 4);
+    }
+  }
+
+  giftsEarned() { return (this.giftObjs || []).filter(x => x.earned()); }
+
+  /** New gifts: a note that something is waiting at the cottage. */
+  checkGifts() {
+    for (const x of this.giftsEarned()) {
+      const f = `giftSeen_${x.g.id}`;
+      if (this.q.has(f)) continue;
+      this.q.state.flags[f] = true;
+      this.ui.toast(tx('{from} left a gift at Sora\'s cottage', { from: tx(x.g.from) }), x.g.model);
+    }
+  }
+
+  foundTreasure(t) {
+    const st = this.q.state;
+    if (st.treasures[t.id]) return;
+    st.treasures[t.id] = true;
+    this.audio.star();
+    this.ui.toast(tx('Treasure found: {item}', { item: tx(t.name) }), t.icon);
+    if (t.id === 'musicBox') this.scenes.play('musicBox');
+  }
+
+  foundLetter(L) {
+    const st = this.q.state;
+    if (st.letters.includes(L.id)) return;
+    st.letters.push(L.id);
+    this.audio.star();
+    this.ui.toast(tx('Sky Letter {n}/{total}', { n: st.letters.length, total: SKY_LETTERS.length }), 'journal-page');
+    this.say(L.say);
+    if (st.letters.length === SKY_LETTERS.length) this.say('letters_all');
+  }
+
+  /** The star-tree in Sora's garden (grown when the golden acorn is planted). */
+  spawnStarTree() {
+    if (this.starTree) return this.starTree;
+    const obj = this.game.assets.clone('star-tree');
+    if (!obj) return null;
+    obj.position.copy(this.treeSpot);
+    this.game.scene.add(obj);
+    this.game.colliders.cylinder(this.treeSpot.x, this.treeSpot.z, 0.35, this.treeSpot.y - 0.5, this.treeSpot.y + 3, { id: 'star-tree' });
+    this.treeAura = this.game.celebrate?.treeGlow?.(obj, true);
+    this.starTree = obj;
+    return obj;
+  }
+
   async enterHome(id) {
     const I = this.game.interiors;
     this.busy++;
     try { await I.enter(id, on => this.ui.fade(on, 350)); } finally { this.busy--; }
     const seen = `visited_${id}`;
     if (!this.q.has(seen) && DIALOGUE[`inside_${id}`]) { this.q.state.flags[seen] = true; this.say(`inside_${id}`); }
+    if (id === 'cottage') {
+      // gifts Mika hasn't seen yet sparkle as she comes in
+      let n = 0;
+      for (const x of this.giftsEarned()) {
+        const f = `giftShown_${x.g.id}`;
+        if (this.q.has(f)) continue;
+        this.q.state.flags[f] = true;
+        // one after another, so several new gifts read as a little sequence
+        setTimeout(() => { if (this.game.interiors?.active === 'cottage') this.game.celebrate?.giftGlow?.(x.obj.position.clone()); }, 500 + n++ * 700);
+      }
+      if (this.giftsEarned().length === GIFTS.length && !this.q.has('homeFull')) { this.q.state.flags.homeFull = true; this.say('home_full'); }
+    }
   }
 
   async leaveHome() {
@@ -288,7 +401,8 @@ export class Director {
     const pk = { id, obj, pos: pos.clone(), item, when, t: Math.random() * 6, ...extra };
     this.pickups.set(id, pk);
     const label = () => (item === 'star' ? tx('Pick up the fallen star') : item === 'keepsake' ? tx('Look at: {item}', { item: tx(extra.keepsake.name) })
-      : tx('Pick up: {item}', { item: tx(ITEMS[item]?.name || item) }));
+      : item === 'treasure' ? tx('Pick up: {item}', { item: tx(extra.treasure.name) }) : item === 'letter' ? tx('Read the Sky Letter')
+        : tx('Pick up: {item}', { item: tx(ITEMS[item]?.name || item) }));
     this.interact(`pick:${id}`, null, label, () => this.pickups.has(id) && when(), () => this.collect(pk), 2.8, () => pk.obj.position, 0.5, 3.6);
   }
 
@@ -307,6 +421,8 @@ export class Director {
     this.fx.burst(pk.obj.position, { n: 24, speed: 2.5, size: 0.25 });
     this.game.player.gesture('Interact', { lock: false });
     if (pk.keepsake) { this.foundKeepsake(pk.keepsake); return; }
+    if (pk.treasure) { this.foundTreasure(pk.treasure); return; }
+    if (pk.letter) { this.foundLetter(pk.letter); return; }
     this.event({ type: 'pickup', item: pk.item, id: pk.id });
   }
 
@@ -409,6 +525,12 @@ export class Director {
       for (const [id, route] of Object.entries(this.routes)) this.npcs[id]?.place(route[0][0], route[0][1]);
     }
     this.npcs.v7.setVisible(ch >= 4 && after('c4.gather'));
+    const lit = Object.values(st.lamps).filter(Boolean).length;
+    for (const [id, , , , , need] of this.returning) this.npcs[id].setVisible(need === 4 ? ch === 5 : lit >= need);
+    // rewards that persist: the star-tree, Starfall Night skies, and news of new gifts
+    if (st.flags.treePlanted) this.spawnStarTree();
+    if (st.flags.allStars && !this.starfallSky) this.starfallSky = this.game.celebrate?.starfall?.(true);
+    this.checkGifts();
     // animals per chapter
     const W = this.wildlife;
     if (step === 'c1.cogs' && this.q.count('cog') < 3 && !st.flags.crabBooped) W.spawnCrab();
@@ -467,9 +589,19 @@ export class Director {
     else if (e.journal !== undefined) { if (fresh) { ui.toast(tx('Journal page added — press J to read'), 'journal-page'); this.audio.pickup(); } }
     else if (e.give) { const it = ITEMS[e.give[0]]; if (it) ui.toast(tx('Received: {item}', { item: tx(it.name) }), it.icon); }
     else if (e.got) { const it = ITEMS[e.got]; if (it && !e.silent) { ui.toast(`${tx(it.name)} ×${e.total}`, it.icon); this.audio.pickup(); } }
-    else if (e.caught) { ui.toast(tx('Caught a {fish}!', { fish: tx(FISH[e.caught]?.name || e.caught) }), 'plate-trout'); this.audio.good(); }
+    else if (e.caught) {
+      ui.toast(tx('Caught a {fish}!', { fish: tx(FISH[e.caught]?.name || e.caught) }), 'plate-trout'); this.audio.good();
+      const st = this.q.state, total = Object.values(st.fishLog).reduce((a, n) => a + n, 0);
+      if (!st.treasures.compass && total >= 4) {
+        st.treasures.compass = true;
+        st.inv.compass = 1;
+        ui.toast(tx('Treasure found: {item}', { item: tx(ITEMS.compass.name) }), ITEMS.compass.icon);
+        this.audio.star();
+        await this.sayNow('compass_found');
+      }
+    }
     else if (e.star) { ui.toast(tx('Fallen Star {n}/12', { n: e.count }), 'fallen-star'); this.audio.star(); }
-    else if (e.allStars) { await this.sayNow('sora_last_letter'); }
+    else if (e.allStars) { await this.scenes.play('starfall'); }
     else if (e.chapter !== undefined) { this.placeCast(); }
     else if (e.flag) { if (e.flag === 'tamoHome' && !this.q.has('tamoBack')) this.tamo.hide(); if (e.flag === 'tamoBack') this.tamo.show(this.game.player.pos.clone().add(V(0, 1.6, 0))); this.power(); }
     else if (e.autosave) this.save();
@@ -599,6 +731,7 @@ export class Director {
       if (silent && this.wildlife.story.bear && !this.wildlife.story.bear.inDen) this.wildlife.story.bear.setVisible(false);
     } else if (what === 'viaduct') {
       g.railway.setRepaired(true);
+      if (!silent) { this.fx.fireworks(true, V(0, 34, 122)); setTimeout(() => this.fx.fireworks(false), 10000); }
     } else if (what === 'ferry' && !silent) {
       this.ui.toast(tx('Rin\'s ferry now crosses the river'));
     }
@@ -821,7 +954,7 @@ export class Director {
     this.updateVillagers(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);
-    this.tamo.update(dt, p, g.night || 0, false, g.follow.yaw);
+    this.tamo.update(dt, p, g.night || 0, false, g.follow.yaw, g.camera);
     this.updateMinigame(dt);
     this.animateWorld(dt);
     this.scenes.update(dt);
@@ -835,7 +968,7 @@ export class Director {
       pk.obj.position.y = pk.pos.y + Math.sin(pk.t * 2.2) * 0.12;
       pk.obj.rotation.y += dt * 1.6;
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
-      if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < 1.45) this.collect(pk);
+      if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < (pk.grab || 1.45)) this.collect(pk);
     }
     // Rin's ferry is the story's way over, but a swimmer who lands on the east bank has crossed too
     if (this.step('c2.ferry') && !this.busy && !p.swimming && p.grounded && p.pos.x > 22 && p.pos.z > -60 && p.pos.z < 110) this.event({ type: 'ferry', side: 'east' });
@@ -875,8 +1008,11 @@ export class Director {
       best.action();
     }
     // marker
-    this.ui.marker(g.camera, this.busy ? null : this.markerTarget(), p.pos);
+    // no guide arrow inside a home: the world outside is far below
+    this.ui.marker(g.camera, this.busy || g.interiors?.active ? null : this.markerTarget(), p.pos);
     if (this.kiteStand) this.kiteStand.obj.visible = this.kiteStand.when();
+    this.updateValley(dt);
+    for (const x of this.giftObjs || []) x.obj.visible = this.game.interiors?.active === 'cottage' && x.earned();
     // clock & autosave
     this.ui.setClock(g.shownSeason || g.time.season, clockLabel(g.shownHour()));
     this.ui.swimming(p.swimming);
@@ -898,6 +1034,29 @@ export class Director {
     // river ambience
     const rv = river.nearest(p.pos.x, p.pos.z, 80);
     this.audio.ambience(dt, rv ? Math.max(0, rv.d - riverHalfWidth(rv.z)) : 80, g.night || 0, g.time.season);
+  }
+
+  /** The valley's machinery wakes up with its lamps; the star compass points the way. */
+  updateValley(dt) {
+    const g = this.game, p = g.player, st = this.q.state;
+    const hr = Math.floor(g.shownHour());
+    if (this.lastHour !== undefined && hr !== this.lastHour && st.lamps.orchard && !this.busy) {
+      const tower = V(115, 30, -4), d = tower.distanceTo(p.pos);
+      if (d < 260) { this.audio.bell(); this.bellSwing = { node: g.structures.nodes.bell, t: 0 }; }
+    }
+    this.lastHour = hr;
+    if (st.lamps.forest && Math.hypot(p.pos.x - 62, p.pos.z + 152) < 38 && (this.chimeT = (this.chimeT || 0) - dt) <= 0) {
+      this.chimeT = 2.5 + Math.random() * 4;
+      this.audio.windChime?.();
+    }
+    // the star compass: a needle toward the nearest Fallen Star still to find
+    let dir = null, dist = 0;
+    if (st.treasures.compass && !this.busy && !g.interiors?.active && st.stars.length < 12) {
+      let best = null, bd = 1e9;
+      for (const pk of this.pickups.values()) if (pk.item === 'star' && pk.when()) { const d = pk.pos.distanceTo(p.pos); if (d < bd) { bd = d; best = pk; } }
+      if (best) { dir = Math.atan2(best.pos.x - p.pos.x, best.pos.z - p.pos.z) - g.follow.yaw; dist = bd; }
+    }
+    this.ui.compass(dir, dist);
   }
 
   animateWorld(dt) {

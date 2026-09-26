@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { N_ } from '../i18n/i18n.js';
-import { CAPTIONS, DIALOGUE } from './story.js';
+import { CAPTIONS, DIALOGUE, STAR_POEM } from './story.js';
+import { tx } from '../i18n/i18n.js';
 import { STOPS } from '../world/railway.js';
 import { rail, RAIL_Y, DECK_Y, PLACES, FERRY, river, VIADUCT } from '../world/layout.js';
 
@@ -471,6 +472,13 @@ export class Scenes {
     await d.sayNow(null, DIALOGUE.c3_party.slice(3));
     await this.shot(V(60, 16.5, -106), V(60, 13, -118), 1.4, 300);
     await this.photo('c3');
+    // Ōkuma's thank-you: a golden acorn
+    bear.setIdle('Walk'); bear.walk([[59.2, -113.8]], () => bear.setIdle('Sit'), 0.9);
+    await this.shot(V(63, 14.5, -108.5), V(59.5, 12.6, -113.5), 1.6, 1200);
+    d.fx.burst(V(59.8, 12.5, -113.2), { n: 30, color: [1, 0.85, 0.3], speed: 2 });
+    d.q.state.inv.acorn = 1;
+    d.ui.toast(tx('Received: {item}', { item: tx('Golden acorn') }), 'golden-acorn');
+    await d.sayNow('bear_acorn');
   }
 
   // winter finale: aurora, star-snow, the Star Train crossing the sky with Sora at the window, then the photo
@@ -539,6 +547,84 @@ export class Scenes {
     g.railway.placeAt(STOPS.station + 8);
     d.audio.setMusic('spring', 'calm');
     await d.ui.fade(false, 1200);
+  }
+
+  // ---------------------------------------------------------------- rewards
+  /** Sora's music box: Mika climbs out onto the bank and opens it; a golden memory dances. */
+  async musicBox() {
+    const g = this.g, d = this.d, C = g.celebrate;
+    const rv = river.nearest(g.player.pos.x, g.player.pos.z, 60);
+    const side = rv ? V(-rv.tz, 0, rv.tx) : V(1, 0, 0);
+    let bank = null;
+    for (const sgn of [1, -1]) for (let k = 4; k < 30 && !bank; k += 1) {
+      const x = (rv?.x ?? g.player.pos.x) + side.x * k * sgn, z = (rv?.z ?? g.player.pos.z) + side.z * k * sgn;
+      if (g.world.heightAt(x, z) > 0.6 && g.world.grid.slopeAt(x, z) < 20) bank = V(x, g.world.heightAt(x, z), z);
+    }
+    bank ??= g.player.pos.clone();
+    await d.ui.fade(true, 500);
+    g.player.teleport(bank.x, bank.z, undefined, Math.atan2(-side.x, -side.z));
+    const box = g.assets.clone('music-box');
+    const front = V(Math.sin(g.player.facing), 0, Math.cos(g.player.facing));
+    const at = bank.clone().addScaledVector(front, 0.9).add(V(0, 0.05, 0));
+    if (box) { box.position.copy(at); box.rotation.y = g.player.facing + Math.PI; g.scene.add(box); }
+    const cam = bank.clone().addScaledVector(front, 3.4).add(V(side.x * 1.5, 1.6, side.z * 1.5));
+    g.follow.cutscene({ pos: cam, look: bank.clone().add(V(0, 0.9, 0)) }, 0.01);
+    await d.ui.fade(false, 700);
+    g.player.gesture('Interact', { lock: true });
+    d.audio.lullaby?.();
+    C?.musicNotes?.(at.clone().add(V(0, 0.3, 0)), 10);
+    const dance = C?.memory?.(bank.clone().addScaledVector(front, 4.5), 14);
+    await this.shot(bank.clone().addScaledVector(front, -2.5).add(V(0, 2.2, 0)), bank.clone().addScaledVector(front, 4.5).add(V(0, 1, 0)), 2, 300);
+    await d.sayNow('music_box');
+    await Promise.race([dance, wait(4000)]);
+    if (box) g.scene.remove(box);
+  }
+
+  /** The golden acorn goes into Sora's garden and a star-tree grows from it. */
+  async plantTree() {
+    const g = this.g, d = this.d, C = g.celebrate, spot = d.treeSpot;
+    d.q.state.inv.acorn = 0;
+    d.q.state.flags.treePlanted = true;
+    g.player.teleport(spot.x - 1.6, spot.z + 1.2, undefined, Math.atan2(1.6, -1.2));
+    await this.shot(spot.clone().add(V(-5, 2.4, 5.5)), spot.clone().add(V(0, 1.2, 0)), 1.2, 200);
+    g.player.gesture('Interact', { lock: true });
+    await wait(900);
+    d.fx.burst(spot.clone().add(V(0, 0.3, 0)), { n: 50, color: [1, 0.85, 0.35], speed: 2.5 });
+    const tree = d.spawnStarTree();
+    await this.shot(spot.clone().add(V(-7, 3.5, 8)), spot.clone().add(V(0, 2.2, 0)), 1.2, 0);
+    const grown = tree ? C?.grow?.(tree, 3.5) : null;
+    d.audio.star();
+    await d.sayNow('star_tree');
+    await grown;
+    d.refreshObjective();
+  }
+
+  /** All twelve Fallen Stars: night falls, the sky fills with stars and constellations, the poem writes itself. */
+  async starfall() {
+    const g = this.g, d = this.d, C = g.celebrate;
+    d.ui.cinema(true);
+    const h0 = g.time.hour, to = 22.3, t0 = performance.now();
+    while (performance.now() - t0 < 3200) {
+      const k = (performance.now() - t0) / 3200, e = k * k * (3 - 2 * k);
+      g.time.hour = (h0 + ((to - h0 + 24) % 24) * e) % 24;
+      await wait(16);
+    }
+    d.q.state.hour = g.time.hour;
+    d.starfallSky ??= C?.starfall?.(true);
+    d.fx.meteorShower(1);
+    d.audio.setMusic(g.shownSeason || g.time.season, 'finale');
+    const p = g.player.pos, fwd = V(Math.sin(g.follow.yaw), 0, Math.cos(g.follow.yaw));
+    await this.shot(p.clone().addScaledVector(fwd, -3).add(V(0, 1.6, 0)), p.clone().addScaledVector(fwd, 30).add(V(0, 26, 0)), 2.4, 300);
+    await d.sayNow('starfall');
+    const drawn = C?.constellations?.(30, { center: p.clone() });
+    // Sora's poem, two lines at a time, written across the sky
+    for (let i = 0; i < STAR_POEM.length; i += 2) d.ui.caption(`${tx(STAR_POEM[i])} ${tx(STAR_POEM[i + 1])}`, 4200);
+    await this.shot(p.clone().addScaledVector(fwd, -6).add(V(0, 2.4, 0)), p.clone().addScaledVector(fwd, 20).add(V(0, 34, 0)), 6, 0);
+    await Promise.race([drawn, wait(28000)]);
+    d.ui.cinema(false);
+    await d.sayNow('sora_last_letter');
+    d.fx.meteorShower(0.35);
+    d.audio.setMusic(g.shownSeason || g.time.season, 'calm');
   }
 
   /** Epilogue: Tamo pops out of the Viaduct Lamp. Sundays off! */

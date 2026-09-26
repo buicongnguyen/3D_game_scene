@@ -13,9 +13,18 @@ const HIGH = 600;                 // rooms hang this far above the valley (the v
 const V3 = THREE.Vector3;
 const toRad = d => d * Math.PI / 180;
 
-/** The rooms: GLB model, building (layout BUILDINGS id), keepsake model and where the room hangs (x, z). */
+/**
+ * The rooms: GLB model, building (layout BUILDINGS id), keepsake model and where the room hangs (x, z). `gifts`: the
+ * thank-you gifts that fill Sora's cottage, each sitting at the room's `Item_gift_<id>` node (art/blender/build_rewards.py).
+ */
 export const INTERIORS = [
-  { id: 'cottage', building: 'cottage', model: 'interior-cottage', keepsake: { id: 'photo', model: 'keepsake-photo' }, kite: { id: 'kite', model: 'star-kite' }, at: [-176, -196] },
+  {
+    id: 'cottage', building: 'cottage', model: 'interior-cottage', keepsake: { id: 'photo', model: 'keepsake-photo' }, kite: { id: 'kite', model: 'star-kite' }, at: [-176, -196],
+    gifts: [
+      { id: 'rin', model: 'gift-lure' }, { id: 'ota', model: 'gift-radish' }, { id: 'hana', model: 'gift-buns' },
+      { id: 'genzo', model: 'gift-cap' }, { id: 'kon', model: 'gift-pinecone' }, { id: 'okuma', model: 'gift-honey' },
+    ],
+  },
   { id: 'bakery', building: 'bakery', model: 'interior-bakery', keepsake: { id: 'recipe', model: 'keepsake-recipe' }, at: [-176, -150] },
   { id: 'mill', building: 'mill', model: 'interior-mill', keepsake: { id: 'float', model: 'keepsake-float' }, at: [-176, -104] },
   { id: 'station', building: 'station', model: 'interior-station', keepsake: { id: 'ticket', model: 'keepsake-ticket' }, at: [-176, -58] },
@@ -142,6 +151,12 @@ export class Interiors {
     // yaw: rotation.y that lines a model up with the room (its +Z toward the room's door)
     if (N.Item_keepsake && def.keepsake) this.items.push({ interior: def.id, id: def.keepsake.id, kind: 'keepsake', model: def.keepsake.model, pos: wp(N.Item_keepsake), yaw });
     if (N.Item_kite && def.kite) this.items.push({ interior: def.id, id: def.kite.id, kind: 'kite', model: def.kite.model, pos: wp(N.Item_kite), yaw });
+    // gifts sit on furniture: the node is 8 mm above the surface and its own rotation turns the gift toward the room
+    const yawOf = o => { const d = new V3(0, 0, 1).applyQuaternion(o.getWorldQuaternion(new THREE.Quaternion())); return Math.atan2(d.x, d.z); };
+    for (const gf of def.gifts ?? []) {
+      const o = N[`Item_gift_${gf.id}`];
+      if (o) this.items.push({ interior: def.id, id: gf.id, kind: 'gift', model: gf.model, pos: wp(o), yaw: yawOf(o) });
+    }
     room.gears = Object.entries(N).filter(([n]) => n.startsWith('Gear_')).map(([n, o]) => ({ o, axis: o.userData?.axis || 'x', ratio: o.userData?.ratio ?? 1, rest: o.rotation.clone() }));
     room.pendulum = N.Pendulum || null;
     room.motes = this.makeMotes(room);

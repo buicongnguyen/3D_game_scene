@@ -55,7 +55,7 @@ export class Tamo {
 
   react(clip) { this.anim?.once(clip, { then: 'Float' }); }
 
-  update(dt, player, night, aiming, camYaw) {
+  update(dt, player, night, aiming, camYaw, camera) {
     this.t += dt;
     if (this.hidden) return;
     // hover at Mika's left shoulder; in aim mode, move to the lantern tip in front
@@ -76,11 +76,13 @@ export class Tamo {
     this.root.rotation.y = aiming ? camYaw : f + Math.sin(this.t * 0.7) * 0.4;
     const s = 0.9 + this.power * 0.06;
     this.model.scale.setScalar(s);
-    const glow = 1.1 + Math.sin(this.t * 3) * 0.15 + this.power * 0.2;
+    // right next to the camera (small rooms, close-ups) he tones his glow down so his face stays readable
+    const near = camera ? THREE.MathUtils.smoothstep(this.pos.distanceTo(camera.position), 1.5, 4.5) : 1;
+    const glow = (1.1 + Math.sin(this.t * 3) * 0.15 + this.power * 0.2) * (0.45 + 0.55 * near);
     for (const m of this.mats) m.emissiveIntensity = glow;
     this.light.position.copy(this.pos);
-    this.light.intensity = (0.6 + night * 3.5) * (0.9 + this.power * 0.15);
-    this.halo.material.opacity = 0.35 + night * 0.4;
+    this.light.intensity = (0.6 + night * 3.5) * (0.9 + this.power * 0.15) * (0.5 + 0.5 * near);
+    this.halo.material.opacity = (0.35 + night * 0.4) * (0.3 + 0.7 * near);
     this.updateMotes(dt);
     this.anim?.update(dt);
     this.updateSparks(dt);

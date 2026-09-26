@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES, ALBUM } from '../src/game/story.js';
+import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS } from '../src/game/story.js';
 import { FALLEN_STARS, LAMPS } from '../src/world/layout.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -37,6 +37,9 @@ export function collect() {
   for (const c of CAPTIONS.tour) add(c.text, 'caption across the top while Mika rides the Sunday train in the epilogue (narration)');
   for (const f of FRIENDS) { add(f.name, 'animal friend name'); add(f.verb, 'interaction prompt shown next to the E key'); add(f.desc, 'animal friend: description'); add(f.hint, 'animal friend: where to find it'); }
   for (const a of ALBUM) add(a.title, 'photo album caption (a chapter\'s celebration photo)');
+  for (const t of TREASURES) { add(t.name, 'treasure name'); add(t.hint, 'treasure: where to look (journal hint)'); add(t.text, 'treasure: journal description'); }
+  for (const l of SKY_LETTERS) add(l.name, "where one of Sora's Sky Letters is hidden (journal)");
+  for (const g of GIFTS) add(g.name, "a thank-you gift in Sora's cottage");
   for (const k of KEEPSAKES) { add(k.name, 'keepsake name'); add(k.text, 'keepsake description (journal)'); add(k.where, 'the home a keepsake is in'); }
   for (const s of STEPS) {
     add(s.objective, 'quest objective (keep {placeholders} exactly)');

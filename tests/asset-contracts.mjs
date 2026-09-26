@@ -156,7 +156,7 @@ export const CONTRACTS = {
     nodes: ['Handle', 'Rotor_1', 'Rotor_2', 'Rotor_3', 'Rotor_4', 'Canopy', 'Core', 'Key', 'Tail_1', 'Tail_2', 'Tail_3'] },
 
   // ---------------------------------------------------------------- interiors (build_interiors.py)
-  'interior-cottage': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Item_kite'], mats: ROOM_MATS },
+  'interior-cottage': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Item_kite', 'Item_gift_rin', 'Item_gift_ota', 'Item_gift_hana', 'Item_gift_genzo', 'Item_gift_kon', 'Item_gift_okuma'], mats: ROOM_MATS },
   'interior-bakery': { family: 'interiors', tris: 25000, nodes: ROOM_NODES, mats: [...ROOM_MATS, 'Interior fire'] },
   'interior-mill': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Gear_pit', 'Gear_shaft', 'Gear_nut'], mats: [...ROOM_MATS, 'Interior fire'] },
   'interior-station': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Pendulum'], mats: [...ROOM_MATS, 'Interior fire'] },
@@ -164,6 +164,18 @@ export const CONTRACTS = {
   'keepsake-recipe': { family: 'interiors', tris: 1200, icon: true },
   'keepsake-float': { family: 'interiors', tris: 1200, icon: true },
   'keepsake-ticket': { family: 'interiors', tris: 1200, icon: true },
+
+  // ---------------------------------------------------------------- rewards (build_rewards.py)
+  'music-box': { family: 'rewards', tris: 1500, icon: true, nodes: ['Train'] },
+  'golden-acorn': { family: 'rewards', tris: 1500, icon: true },
+  'star-compass': { family: 'rewards', tris: 1500, icon: true, nodes: ['Needle'] },
+  'star-tree': { family: 'rewards', tris: 4000, mats: ['Star leaves'] },
+  'gift-lure': { family: 'rewards', tris: 1500, icon: true },
+  'gift-radish': { family: 'rewards', tris: 1500, icon: true },
+  'gift-buns': { family: 'rewards', tris: 1500, icon: true },
+  'gift-cap': { family: 'rewards', tris: 1500, icon: true },
+  'gift-pinecone': { family: 'rewards', tris: 1500, icon: true },
+  'gift-honey': { family: 'rewards', tris: 1500, icon: true },
 };
 
 export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'tamo'];

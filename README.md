@@ -33,6 +33,13 @@ danger that night.
   forest spirits, and a Star Train of starlight crossing the winter sky. Each
   party leaves a photo in the journal's Album, the valley stays decorated, and
   Tamo wears one more lamp's colour.
+- **Rewards everywhere.** Dive for Sora's music box under the viaduct and watch a
+  golden memory dance; plant Ōkuma's golden acorn and a star-tree grows in the
+  garden; fly the kite to five Sky Letters on the rooftops; fish up the star
+  compass that points to Fallen Stars; watch the cottage fill with thank-you
+  gifts; and find all twelve stars for Starfall Night. As the lamps come back,
+  the bell rings the hours again, people move home, and the viaduct gets its
+  fireworks.
 - **Storytelling on the rails.** Captions tell the tale across the top of the
   screen while the train rolls in, during the Star Train ride, and on the Sunday
   service you can ride after the ending.

@@ -295,8 +295,8 @@ def build_cottage():
     for k, z in enumerate((0,)):
         pass
     R.col_c('tansu', (-W / 2 + .23, -1.15, PZ), (.48, 1.24, 1.02), top=PZ + 1.04, rot=0)
-    # the dish, reading glasses on the tansu
-    R.cyl('K', (-W / 2 + .25, -.7, PZ + 1.05), .07, .02, '#1f9aa0', n=12, tag='dish')
+    # the dish on the tansu, beside the vase (the front end stays free for Okuma's honey pot)
+    R.cyl('K', (-W / 2 + .2, -1.44, PZ + 1.05), .07, .02, '#1f9aa0', n=12, tag='dish')
     R.lathe('K', [(0, 0), (.045, 0), (.05, .06), (.03, .14), (.035, .16), (0, .16)], (-W / 2 + .2, -1.62, PZ + 1.04),
             '#e8e0ce', n=10, tag='vase')
     for k in range(3):
@@ -345,9 +345,17 @@ def build_cottage():
     # ---- back left: the shelf of letters
     L = Loc((-1.8, D / 2 - .19, PZ), AGAINST['back'])
     tops = shelf_unit(R, L, 1.8, .36, 2.0, 5, '#9a5a32', back='#6b4027')
+    gift_slot = {3: (.44, .82)}   # shelf board -> x range kept free for Ota's radish crock (a thank-you gift)
     for i, z in enumerate(tops):
         x = -.82
+        slot = gift_slot.get(i)
         while x < .8:
+            if slot and x + .3 > slot[0]:
+                if slot[0] - x > .06:
+                    book_row(R, L.o.x + x, L.o.x + slot[0] - .02, L.o.y - .02, L.o.z + z, depth=.22, rng=rng,
+                             h=(.18, .26))
+                x = slot[1] + .02
+                continue
             kind = rng.random()
             if kind < .55:
                 letters(R, L.p(x + .1, -.02, z), rng, n=rng.randint(1, 3))
@@ -363,6 +371,7 @@ def build_cottage():
                 book_row(R, L.o.x + x, L.o.x + x + .22, L.o.y - .02, L.o.z + z, depth=.22, rng=rng, h=(.18, .26))
                 x += .25
     R.col_c('letters shelf', (-1.8, D / 2 - .19, PZ), (1.86, .4, 2.0), top=PZ + 2.0, view=True)
+    gift_ota = L.p(sum(gift_slot[3]) / 2, -.01, tops[3])
 
     # ---- back right: Sora's workbench under the big window, the Star Kite's cradle
     fb, Lb = fc['back']
@@ -463,6 +472,18 @@ def build_cottage():
     R.box('K', head + V((-.17, 0, .15)), (.08, .3, .02), '#262c38', ch=.004, rot=(0, -.3, 0), tag='signal lamp')
     R.cyl('K', head + V((0, 0, .22)), .06, .12, '#262c38', n=10, tag='signal lamp')
     R.col_c('signal lamp', (sc.x, sc.y, PZ), (.44, .44, 1.45), view=False)
+
+    # ---- the six thank-you gift spots (they fill the room as the story goes on): each node sits 8 mm above the
+    #      surface its gift rests on, and its Z rotation turns the gift's front (-Y) toward the room
+    lift = .008
+    for name, loc, yaw in (
+            ('Item_gift_hana', (tc.x - .05, tc.y - .35, top + lift), .3),                    # low table, by the tea
+            ('Item_gift_ota', gift_ota + V((0, 0, lift)), -.12),                             # letters shelf, 4th board
+            ('Item_gift_okuma', (-W / 2 + .23, -.74, PZ + 1.044 + lift), 1.25),              # tansu, by the photo spot
+            ('Item_gift_genzo', (2.08, -D / 2 + .22, .904 + lift), math.pi),                 # getabako by the door
+            ('Item_gift_kon', (2.5, -D / 2 + .24, .904 + lift), math.pi - .45),              # getabako, by the plant
+            ('Item_gift_rin', (W / 2, .42, holes['right'][0][2] + lift), -math.pi / 2)):  # right window sill
+        R.node(name, loc).rotation_euler = (0, 0, yaw)
 
     # ---- nodes, collision
     R.node('Spawn', (.1, -.85, PZ + .04))

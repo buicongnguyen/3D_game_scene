@@ -140,6 +140,21 @@
   ]
  },
  {
+  "s": "Golden acorn",
+  "ctx": [
+   "inventory item",
+   "treasure name",
+   "UI (src/game/scenes.js)"
+  ]
+ },
+ {
+  "s": "Star compass",
+  "ctx": [
+   "inventory item",
+   "treasure name"
+  ]
+ },
+ {
   "s": "Prologue",
   "ctx": [
    "chapter label"
@@ -1539,6 +1554,209 @@
   ]
  },
  {
+  "s": "Sora's music box. Inside, a tiny Kobo circles a tiny track, and the lullaby she used to hum begins to play.",
+  "ctx": [
+   "dialogue music_box, spoken by narrator",
+   "dialogue music_box_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "For a moment the riverbank fills with golden light: four young friends, dancing at the Star Train festival.",
+  "ctx": [
+   "dialogue music_box, spoken by narrator",
+   "dialogue music_box_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Grandma… and Genzo, Ōta and Hana. Look how happy they were.",
+  "ctx": [
+   "dialogue music_box, spoken by Mika"
+  ]
+ },
+ {
+  "s": "They still can be. That's what the lamps are for.",
+  "ctx": [
+   "dialogue music_box, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Grandma… and Genzo, Ōta and Hana. Look how happy they were. Look how happy they are again.",
+  "ctx": [
+   "dialogue music_box_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Ōkuma pads over and drops something shiny at Mika's feet: a golden acorn.",
+  "ctx": [
+   "dialogue bear_acorn, spoken by narrator"
+  ]
+ },
+ {
+  "s": "A thank-you present! Plant it somewhere special, Mika.",
+  "ctx": [
+   "dialogue bear_acorn, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Somewhere special… Grandma's garden.",
+  "ctx": [
+   "dialogue bear_acorn, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Mika presses the golden acorn into the soil of Sora's garden. The ground glows, and something stirs.",
+  "ctx": [
+   "dialogue star_tree, spoken by narrator",
+   "dialogue star_tree_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "A young tree rises up in a spiral of light, its leaves shining like small stars.",
+  "ctx": [
+   "dialogue star_tree, spoken by narrator",
+   "dialogue star_tree_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "A star-tree! Sora would have LOVED this. I love this. I live here now.",
+  "ctx": [
+   "dialogue star_tree, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "A star-tree, in Grandma's garden. She would have loved this.",
+  "ctx": [
+   "dialogue star_tree_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Something heavy is tangled in the line: a brass pocket compass whose needle is a little gold star.",
+  "ctx": [
+   "dialogue compass_found, spoken by narrator",
+   "dialogue compass_found_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "It's pointing somewhere… at a Fallen Star! It's Sora's star compass!",
+  "ctx": [
+   "dialogue compass_found, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Then it can help us find every star she left for me.",
+  "ctx": [
+   "dialogue compass_found, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The needle is pointing… at a Fallen Star. Grandma's star compass!",
+  "ctx": [
+   "dialogue compass_found_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "You were five the summer you climbed onto the station roof to wave at Kobo. Genzo nearly fainted. I pretended to scold you. — Grandma",
+  "ctx": [
+   "dialogue sky_letter_1, spoken by Sora"
+  ]
+ },
+ {
+  "s": "From the bell tower you can see both villages at once. I came up here to remind myself they are one valley. — Grandma",
+  "ctx": [
+   "dialogue sky_letter_2, spoken by Sora"
+  ]
+ },
+ {
+  "s": "You once asked me why the mill wheel sings. It doesn't. That was Ōta, humming. Don't tell him I told you. — Grandma",
+  "ctx": [
+   "dialogue sky_letter_3, spoken by Sora"
+  ]
+ },
+ {
+  "s": "This lamp was always my favourite: it watches the whole line. If you're reading this up here, you found the Star Kite. Good girl.",
+  "ctx": [
+   "dialogue sky_letter_4, spoken by Sora"
+  ]
+ },
+ {
+  "s": "The forest is older than all of us. When you feel small, come up here and be small together with it. It helps. — Grandma",
+  "ctx": [
+   "dialogue sky_letter_5, spoken by Sora"
+  ]
+ },
+ {
+  "s": "Five letters, five high places. Now you've seen the valley the way I did, from above.",
+  "ctx": [
+   "dialogue letters_all, spoken by Sora"
+  ]
+ },
+ {
+  "s": "My favourite secret: from up here, nobody is on the other side of anything. — Grandma",
+  "ctx": [
+   "dialogue letters_all, spoken by Sora"
+  ]
+ },
+ {
+  "s": "For your next fish. It's lucky. Probably. Don't tell Grandpa I gave you my best lure. — Rin",
+  "ctx": [
+   "dialogue gift_rin, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Radish. Ten years' worth of stubborn. Eat it slowly. — Ōta",
+  "ctx": [
+   "dialogue gift_ota, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Buns for the lamp-lighter! Three of them. You know why. — Hana",
+  "ctx": [
+   "dialogue gift_hana, spoken by Hana"
+  ]
+ },
+ {
+  "s": "A pine cone and a red maple leaf, tied with string. Tiny paw prints lead to the door.",
+  "ctx": [
+   "dialogue gift_kon, spoken by narrator"
+  ]
+ },
+ {
+  "s": "A honey pot, very sticky, left on the step. Something large has been sitting in the garden.",
+  "ctx": [
+   "dialogue gift_okuma, spoken by narrator"
+  ]
+ },
+ {
+  "s": "My old cap. Kobo needs a junior driver on Sundays. Interested? — Genzo",
+  "ctx": [
+   "dialogue gift_genzo, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "A lure, radish, buns, a pine cone, honey, a cap… It isn't Grandma's empty house anymore.",
+  "ctx": [
+   "dialogue home_full, spoken by Mika"
+  ]
+ },
+ {
+  "s": "It's home.",
+  "ctx": [
+   "dialogue home_full, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The last Fallen Star wakes in Mika's hands, and the whole sky answers.",
+  "ctx": [
+   "dialogue starfall, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Every star Sora ever wished on comes out at once, and the constellations remember everyone Mika met.",
+  "ctx": [
+   "dialogue starfall, spoken by narrator"
+  ]
+ },
+ {
   "s": "Her glasses on the table. Her teacups. A whole shelf of letters. It's like she only just stepped out.",
   "ctx": [
    "dialogue inside_cottage, spoken by Mika",
@@ -1933,6 +2151,24 @@
   "s": "A bun is just a hug you can eat, sweetheart.",
   "ctx": [
    "small talk by Hana"
+  ]
+ },
+ {
+  "s": "Heard the Mill Lamp was lit again. Packed my bags the same night.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "My kids had never seen the Star Train. Now they won't stop drawing it.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "The bell rang the hours again this morning. I cried into my tea.",
+  "ctx": [
+   "small talk by Villager"
   ]
  },
  {
@@ -2461,6 +2697,114 @@
   "s": "Winter: same time next year",
   "ctx": [
    "photo album caption (a chapter's celebration photo)"
+  ]
+ },
+ {
+  "s": "Sora's music box",
+  "ctx": [
+   "treasure name"
+  ]
+ },
+ {
+  "s": "Somewhere on the river bed, under the viaduct. Dive!",
+  "ctx": [
+   "treasure: where to look (journal hint)"
+  ]
+ },
+ {
+  "s": "A tiny Kobo circles a tiny track while it plays the lullaby Sora used to hum.",
+  "ctx": [
+   "treasure: journal description"
+  ]
+ },
+ {
+  "s": "A present from a friend who loves honey chestnuts.",
+  "ctx": [
+   "treasure: where to look (journal hint)"
+  ]
+ },
+ {
+  "s": "Ōkuma's thank-you. Planted in Sora's garden, it grew into a shining star-tree.",
+  "ctx": [
+   "treasure: journal description"
+  ]
+ },
+ {
+  "s": "A lucky catch: keep fishing at Rin's dock.",
+  "ctx": [
+   "treasure: where to look (journal hint)"
+  ]
+ },
+ {
+  "s": "Sora's pocket compass. Its star needle always points to the nearest Fallen Star.",
+  "ctx": [
+   "treasure: journal description"
+  ]
+ },
+ {
+  "s": "On the station roof",
+  "ctx": [
+   "where one of Sora's Sky Letters is hidden (journal)"
+  ]
+ },
+ {
+  "s": "On the bell-tower roof",
+  "ctx": [
+   "where one of Sora's Sky Letters is hidden (journal)"
+  ]
+ },
+ {
+  "s": "On the mill roof",
+  "ctx": [
+   "where one of Sora's Sky Letters is hidden (journal)"
+  ]
+ },
+ {
+  "s": "On top of the Viaduct Lamp",
+  "ctx": [
+   "where one of Sora's Sky Letters is hidden (journal)"
+  ]
+ },
+ {
+  "s": "On the shrine roof",
+  "ctx": [
+   "where one of Sora's Sky Letters is hidden (journal)"
+  ]
+ },
+ {
+  "s": "Rin's lucky lure",
+  "ctx": [
+   "a thank-you gift in Sora's cottage"
+  ]
+ },
+ {
+  "s": "Ōta's pickled radish",
+  "ctx": [
+   "a thank-you gift in Sora's cottage"
+  ]
+ },
+ {
+  "s": "Hana's peach buns",
+  "ctx": [
+   "a thank-you gift in Sora's cottage"
+  ]
+ },
+ {
+  "s": "Kon's pine cone",
+  "ctx": [
+   "a thank-you gift in Sora's cottage"
+  ]
+ },
+ {
+  "s": "Ōkuma's honey pot",
+  "ctx": [
+   "a thank-you gift in Sora's cottage"
+  ]
+ },
+ {
+  "s": "Genzo's old cap",
+  "ctx": [
+   "a thank-you gift in Sora's cottage"
   ]
  },
  {
@@ -3035,9 +3379,40 @@
   ]
  },
  {
-  "s": "Received: {item}",
+  "s": "Plant the golden acorn",
   "ctx": [
    "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Look at: {item}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "{from} left a gift at Sora's cottage",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Treasure found: {item}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Sky Letter {n}/{total}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Received: {item}",
+  "ctx": [
+   "UI (src/game/director.js)",
+   "UI (src/game/scenes.js)"
   ]
  },
  {
@@ -3053,13 +3428,13 @@
   ]
  },
  {
-  "s": "Look at: {item}",
+  "s": "Pick up: {item}",
   "ctx": [
    "UI (src/game/director.js)"
   ]
  },
  {
-  "s": "Pick up: {item}",
+  "s": "Read the Sky Letter",
   "ctx": [
    "UI (src/game/director.js)"
   ]
@@ -3294,6 +3669,37 @@
  },
  {
   "s": "Not caught yet",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Treasures",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sky Letters",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Somewhere high. Only the Star Kite reaches it.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Gifts at the cottage",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Help {from}, and see what turns up.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]

@@ -381,7 +381,7 @@ and turns the `Col_*` boxes into colliders.
 
 | Model | Room | Nodes (besides Spawn, Exit, Item_keepsake, Light_1–3, Col_*) | Tris |
 |---|---|---|---|
-| `interior-cottage` | Sora's cottage: stone genkan and a raised floor, six tatami, low table with the tea set, the shelf of Mika's letters, the photo wall with one pale gap, the oshiire with futons, railway-signal keepsakes (semaphore arm, signal lamp head, hand lamp, a model Viaduct Lamp), the workbench under the valley window and the Star Kite's stand. | `Item_kite`: the `star-kite` origin (its handle bar) rests here in the stand's padded cradle; 1.8 m around and 1.4 m above it are kept clear. | ≤ 25k |
+| `interior-cottage` | Sora's cottage: stone genkan and a raised floor, six tatami, low table with the tea set, the shelf of Mika's letters, the photo wall with one pale gap, the oshiire with futons, railway-signal keepsakes (semaphore arm, signal lamp head, hand lamp, a model Viaduct Lamp), the workbench under the valley window and the Star Kite's stand. | `Item_kite`: the `star-kite` origin (its handle bar) rests here in the stand's padded cradle; 1.8 m around and 1.4 m above it are kept clear. `Item_gift_rin` (right window sill), `Item_gift_ota` (letters shelf, 4th board, right end kept free), `Item_gift_hana` (low table, in front of the tea set), `Item_gift_genzo` and `Item_gift_kon` (the getabako by the door), `Item_gift_okuma` (the tansu, beside the photo spot): the base of each thank-you gift (see Rewards) sits here, 8 mm above the surface; the node's Z rotation turns the gift's front toward the room. | ≤ 25k |
 | `interior-bakery` | Hana's bakery: checker tiles, teal wainscot, the brick oven with its fire, the bread wall, the shop counter with trays of peach buns, the kneading table, peach baskets, festival bunting, a café table by the shop windows. Keepsake on the kneading table. | — (`Interior fire`) | ≤ 25k |
 | `interior-mill` | Ōta's mill: stone base and timber, the pit wheel on the water wheel's axle, wallower, main shaft, spur wheel and stone nut under the millstone tun and hopper, a raised tatami corner with brazier and a plate of pickled radish, shelves of radish crocks, pickling barrels, drying daikon, the fishing corner. Keepsake on the shelf under the rods. | `Gear_pit` (axle, about X, ratio 1), `Gear_shaft` (about three.js Y, ratio −3), `Gear_nut` (ratio 6) (`Interior fire`) | ≤ 25k |
 | `interior-station` | Genzo's office: green wainscot, the pot-belly stove, timetable board, pendulum clock, ticket window with dating press and the pigeonhole ticket rack, signal lever frame, Genzo's desk with the green lamp, his cap on the hook, flags, photos of Kobo. Keepsake on the desk. | `Pendulum` (clock pendulum, swings about X) (`Interior fire`) | ≤ 25k |
@@ -395,6 +395,26 @@ with icons in `public/icons/<name>.webp`:
 | `keepsake-recipe` | bakery | Hana's festival peach-bun recipe card: rose border, a drawn peach bun, handwriting, a floury thumbprint, a clothes peg. | ≤ 1.2k |
 | `keepsake-float` | mill | Ōta and Genzo's two old fishing floats (red and teal caps) tied together with twine and a tag with two carved stars. | ≤ 1.2k |
 | `keepsake-ticket` | station | Kobo's first ticket, No. 0001: a pale green card ticket with a red band, a gold star and its punched hole, and the torn stub. | ≤ 1.2k |
+
+### Rewards — `build_rewards.py`
+
+Treasures are floating pickups (origin at the item centre) and the gifts sit
+in Sora's cottage at its `Item_gift_*` nodes (origin at the ground centre of
+the footprint, front toward −Y). Every model except `star-tree` has an icon in
+`public/icons/<name>.webp`.
+
+| Model | Notes | Tris |
+|---|---|---|
+| `music-box` | Sora's music box, 0.25 m (found on the river bed): red lacquer on gold ball feet, cream panels with gold star inlays, the lid standing open with a big gold star inside, a teal-velvet stage with a little circular track and a gold butterfly winding key on the right. Node `Train`: tiny golden Kobo and the carousel star, pivot at the track centre with identity rest rotation; the runtime may spin it about three.js Y. | ≤ 1.5k |
+| `golden-acorn` | A plump shining gold acorn, 0.15 m (emissive-tinged `Gold`), a quilted antique-gold cupule, a curled stem, a bright oak leaf and a little raised star. | ≤ 1.5k |
+| `star-compass` | Sora's brass pocket compass, 0.12 m (0.2 m with its hunter lid open like a locket, an engraved star inside): cream dial, ink compass rose with a red north point, crown and bow on top. Node `Needle`: the gold star needle (one long ray points north), pivot at the dial centre; it turns about three.js Z (the dial faces +Z in three.js). | ≤ 1.5k |
+| `star-tree` | The star-tree grown from the golden acorn, 3 m: a slender young trunk with root flare (`Bark`, roots sunk to z=−0.25) and five limbs into a full round crown of gold and pale-yellow leaf clusters, material `Star leaves` (emissive gold, the runtime may drive it), dotted with 34 small cushioned star blossoms (`Star blossom`, emissive). Origin at the trunk's ground centre. | ≤ 4k |
+| `gift-lure` | Rin's lucky fishing lure on its teal shop card (0.2 m tall, leaning on a card strut): a red-and-gold minnow plug with a big eye, silver lip and two hooks, a white wave band, a red seal, a red lucky tassel. | ≤ 1.5k |
+| `gift-radish` | Ōta's jar of pickled radish, 0.17 m: an indigo crock with a cream drip glaze, washi paper over the mouth cinched with a red cord and bow, a label drawn with three yellow takuan slices. | ≤ 1.5k |
+| `gift-buns` | Hana's basket of peach buns, 0.24 m: a woven wicker basket with a handle and a rose bow, three peach buns with rosy tips and leaves, the back half under a rose gingham cloth. | ≤ 1.5k |
+| `gift-cap` | Genzo's old navy conductor's cap, 0.26 m: wide flat top with red piping, dark band, glossy black peak, gold chin cord and buttons, a gold winged-star badge on red enamel. | ≤ 1.5k |
+| `gift-pinecone` | Kon the fox's gift, 0.2 m: an open pine cone lying on a red-gold Japanese maple leaf with a sprig of pine needles, tied with red string and a bow. | ≤ 1.5k |
+| `gift-honey` | Ōkuma's honey pot, 0.24 m: a terracotta pot with a brown bear paw print, a knobbed lid, a wooden dipper through its notch, golden honey oozing from under the lid in fat drips. | ≤ 1.5k |
 
 ## Budgets (enforced by `tests/assets.test.mjs`)
 
