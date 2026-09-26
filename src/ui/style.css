@@ -60,11 +60,21 @@ kbd { font-family: var(--head); font-weight: 600; background: var(--ink); color:
 @keyframes leapPulse { from { transform: translateX(-50%) scale(1); } to { transform: translateX(-50%) scale(1.08); } }
 .form .note { font-size: 12.5px; color: var(--ink-soft); margin: -4px 0 6px; }
 #prompt kbd { background: var(--gold); color: #3b1c05; box-shadow: 0 2px 0 #a8661a; }
-#marker { position: absolute; width: 44px; height: 44px; margin: -22px 0 0 -22px; display: flex; align-items: center; justify-content: center; flex-direction: column; }
-#marker .arrow { width: 26px; height: 26px; background: var(--gold); clip-path: polygon(50% 0, 100% 100%, 50% 75%, 0 100%); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
-#marker.onscreen .arrow { clip-path: polygon(50% 0, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); animation: bob 1.4s ease-in-out infinite; }
-@keyframes bob { 50% { transform: translateY(-5px); } }
-#markerDist { font-family: var(--head); font-weight: 600; font-size: 12px; color: #fff; text-shadow: 0 1px 3px #000; margin-top: 2px; }
+#marker { position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 3; pointer-events: none; }
+#marker .ring { position: absolute; left: 50%; top: 22px; width: 50px; height: 50px; margin: -25px 0 0 -25px; border-radius: 50%; background: radial-gradient(circle, rgba(28, 35, 64, 0.55) 0 55%, rgba(28, 35, 64, 0) 72%); }
+#marker .arrow { position: relative; width: 44px; height: 44px; filter: drop-shadow(0 0 8px rgba(255, 196, 40, 0.95)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.7)); }
+#marker .arrow svg { width: 100%; height: 100%; overflow: visible; }
+#marker .arrow path { fill: #ffd23f; stroke: #3b1c05; stroke-width: 3.2; stroke-linejoin: round; }
+#marker .arrow .pin { display: none; }
+#marker.onscreen .arrow .edge { display: none; }
+#marker.onscreen .arrow .pin { display: block; }
+#marker.onscreen .ring { display: none; }
+#marker.onscreen .arrow { animation: bob 1.1s ease-in-out infinite; }
+#marker:not(.onscreen) .arrow svg { animation: nudgeUp 0.9s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-7px) scale(1.08); } }
+@keyframes nudgeUp { 50% { transform: translateY(-4px); } }
+#markerDist { font-family: var(--head); font-weight: 700; font-size: 14px; color: #fff; background: rgba(28, 35, 64, 0.88); border: 2px solid #ffd23f; border-radius: 99px; padding: 1px 9px; margin-top: 4px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45); }
+#markerDist:empty { display: none; }
 #reticle { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 64px; height: 64px; }
 #reticle .ring { position: absolute; inset: 0; border: 3px solid rgba(255, 255, 255, 0.85); border-radius: 50%; box-shadow: 0 0 10px rgba(0, 0, 0, 0.35); transition: all 0.15s; }
 #reticle .dot { position: absolute; left: 50%; top: 50%; width: 6px; height: 6px; margin: -3px; border-radius: 50%; background: #fff; }

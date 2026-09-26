@@ -212,17 +212,18 @@ export class UI {
   }
 
   /** Screen-space objective marker; target in world space or null. */
-  marker(camera, target) {
+  /** The yellow guide: a pin over the target when it is on screen, an arrow at the screen edge when not. from = Mika. */
+  marker(camera, target, from) {
     const m = $('marker');
     if (!target || this.dialogueOpen) { m.classList.add('hidden'); return; }
     const v = target.clone().project(camera);
     const behind = v.z > 1;
     let x = (v.x * 0.5 + 0.5) * innerWidth, y = (-v.y * 0.5 + 0.5) * innerHeight;
-    const pad = 46;
+    const pad = 54;
     const on = !behind && x > pad && x < innerWidth - pad && y > pad + 60 && y < innerHeight - pad;
     m.classList.remove('hidden');
     m.classList.toggle('onscreen', on);
-    const arrow = m.firstElementChild;
+    const arrow = m.querySelector('.arrow');
     if (!on) {
       if (behind) { x = innerWidth - x; y = innerHeight - y; }
       const cx = innerWidth / 2, cy = innerHeight / 2;
@@ -232,12 +233,13 @@ export class UI {
       arrow.style.transform = `rotate(${Math.atan2(dy, dx) + Math.PI / 2}rad)`;
     } else {
       arrow.style.transform = '';
-      y -= 30;
+      y -= 36;
     }
     m.style.left = `${x}px`;
     m.style.top = `${y}px`;
-    const d = camera.position.distanceTo(target);
-    $('markerDist').textContent = d > 8 ? `${Math.round(d)} m` : '';
+    const d = (from || camera.position).distanceTo(target);
+    const dt = d > 3.5 ? `${Math.round(d)} m` : '';
+    if (this._markerDist !== dt) { this._markerDist = dt; $('markerDist').textContent = dt; }
   }
 
   // ------------------------------------------------------------------ captions

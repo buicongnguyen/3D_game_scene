@@ -616,7 +616,7 @@ export const STEPS = [
     enter: [{ chapter: 2 }, { time: 9 }, { season: 'summer' }, { title: 2 }], done: { event: 'ferry', side: 'east' }, exit: [{ say: 'c2_arrive' }] },
   { id: 'c2.hana', chapter: 2, objective: 'Find the Orchard Lamp keeper in Takamori', marker: 'npc:hana', done: { event: 'talk', who: 'hana' },
     talk: { hana: 'c2_hana_meet' }, exit: [{ say: 'c2_hana_tasks' }, { spawn: 'sheep' }] },
-  { id: 'c2.sheep', chapter: 2, objective: 'Send the runaway sheep home to the pen ({sheep}/5)', marker: 'place:pen', done: { have: { sheep: 5 } },
+  { id: 'c2.sheep', chapter: 2, objective: 'Send the runaway sheep home to the pen ({sheep}/5)', marker: 'npc:sheep', done: { have: { sheep: 5 } },
     exit: [{ say: 'c2_sheep_done' }, { spawn: 'crows' }] },
   { id: 'c2.crows', chapter: 2, objective: 'Ring the scarecrow bells to scare off the crows ({bells}/5)', marker: 'target:bell', done: { have: { bells: 5 } },
     exit: [{ say: 'c2_crows_done' }, { spawn: 'peaches' }] },
@@ -660,10 +660,10 @@ export const STEPS = [
   { id: 'c4.lamp', chapter: 4, objective: 'Walk to the Viaduct Lamp and light it', marker: 'target:viaductLamp', done: { event: 'spark', target: 'viaductLamp' },
     exit: [{ lamp: 'viaduct' }, { cutscene: 'relay' }, { say: 'c4_lamp' }, { autosave: true }] },
   { id: 'c4.board', chapter: 4, objective: 'Board the Star Train at Hoshi Station', marker: 'npc:genzo', done: { event: 'talk', who: 'genzo' }, talk: { genzo: 'c4_board' } },
-  { id: 'c4.ride', chapter: 4, objective: 'Light the trackside lanterns from the Star Train ({lanterns}/8)', done: { event: 'ride', done: true },
+  { id: 'c4.ride', chapter: 4, objective: 'Light the trackside lanterns from the Star Train ({lanterns}/8)', marker: 'target:lantern', done: { event: 'ride', done: true },
     enter: [{ cutscene: 'starTrain' }], exit: [{ cutscene: 'finale' }, { say: 'c4_finale' }, { cutscene: 'farewell' }, { flag: 'tamoHome' }, { cutscene: 'celebrate:4' }] },
   // ---------------------------------------------------------------- epilogue
-  { id: 'e.free', chapter: 5, objective: 'Explore Hoshi Valley — find all 12 Fallen Stars ({stars}/12)',
+  { id: 'e.free', chapter: 5, objective: 'Explore Hoshi Valley — find all 12 Fallen Stars ({stars}/12)', marker: 'item:star',
     enter: [{ chapter: 5 }, { time: 10 }, { season: 'spring' }, { title: 5 }, { say: 'epilogue' }, { sayChoice: 'epilogue' }, { cutscene: 'tamoReturns' }, { flag: 'tamoBack' }, { autosave: true }],
     done: { never: true } },
 ];

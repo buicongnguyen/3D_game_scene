@@ -875,7 +875,7 @@ export class Director {
       best.action();
     }
     // marker
-    this.ui.marker(g.camera, this.busy ? null : this.markerTarget());
+    this.ui.marker(g.camera, this.busy ? null : this.markerTarget(), p.pos);
     if (this.kiteStand) this.kiteStand.obj.visible = this.kiteStand.when();
     // clock & autosave
     this.ui.setClock(g.shownSeason || g.time.season, clockLabel(g.shownHour()));
@@ -931,6 +931,11 @@ export class Director {
     if (kind === 'place') { const pl = PLACES[what] || PLACES[what === 'pen' ? 'pen' : what]; return pl ? V(pl.x, this.world.heightAt(pl.x, pl.z) + 2, pl.z) : null; }
     if (kind === 'npc') {
       if (what === 'fox') return this.wildlife.story.fox?.pos.clone().add(V(0, 1.2, 0));
+      if (what === 'sheep') {
+        // the nearest sheep still waiting to be sent home; once they're all on their way, the pen
+        const left = (this.wildlife.story.sheep || []).filter(s => !s.penned && !s.homing).sort((a, b) => a.pos.distanceTo(p) - b.pos.distanceTo(p));
+        return left[0] ? left[0].pos.clone().add(V(0, 1.3, 0)) : V(PLACES.pen.x, this.world.heightAt(PLACES.pen.x, PLACES.pen.z) + 2, PLACES.pen.z);
+      }
       if (what === 'bear') return V(PLACES.bearSpot.x, 14, PLACES.bearSpot.z);
       const opts = what.split('|').filter(w => !(w === 'ota' && this.q.has('invitedOta')) && !(w === 'hana' && this.q.has('invitedHana')));
       const list = opts.map(w => this.npcs[w]).filter(Boolean);
@@ -945,7 +950,7 @@ export class Director {
       return it?.pos?.clone().add(V(0, 1, 0)) || null;
     }
     if (kind === 'target') {
-      if (what === 'bell') { const t = [...this.targets.values()].filter(t => t.id.startsWith('bell') && t.when()).sort((a, b) => a.pos.distanceTo(p) - b.pos.distanceTo(p))[0]; return t?.pos || null; }
+      if (what === 'bell' || what === 'lantern') { const t = [...this.targets.values()].filter(t => t.id.startsWith(what) && t.when()).sort((a, b) => a.pos.distanceTo(p) - b.pos.distanceTo(p))[0]; return t?.pos || null; }
       return this.targets.get(what)?.pos || null;
     }
     if (kind === 'item') {
