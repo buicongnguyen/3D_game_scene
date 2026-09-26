@@ -95,6 +95,20 @@ export class Game {
     this.fx?.setWeather(this.weatherOff ? null : PALETTES[s].particles);
   }
 
+  /** Resolves with the next rendered frame as a small WebP data URL (for the photo album). */
+  snapshot() {
+    return new Promise(res => { (this.snapWaiters ??= []).push(res); });
+  }
+
+  takeSnapshot() {
+    const src = this.renderer.renderer.domElement, w = 480, h = Math.round(w * src.height / src.width);
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    let url = null;
+    try { c.getContext('2d').drawImage(src, 0, 0, w, h); url = c.toDataURL('image/webp', 0.8); } catch { /* ignore */ }
+    for (const r of this.snapWaiters.splice(0)) r(url);
+  }
+
   /** The hour shown on screen: the story clock, a fixed hour from Settings, or a free-running day cycle. */
   shownHour() {
     const o = this.timeOverride;
@@ -162,6 +176,7 @@ export class Game {
       this.underwater?.update(dt, L);
       this.riverbed?.update(dt);
       this.interiors?.update(dt);
+      this.celebrate?.update(dt);
       this.fx?.update(dt, this.player.pos, L.night, this.audio, this.camera.position);
       this.night = L.night;
       this.structures.update(dt, L.night);
@@ -181,6 +196,7 @@ export class Game {
     this.renderer.grade.uniforms.uNight.value = this.night || 0;
     if (this.fpsShown !== this.fps) { this.fpsShown = this.fps; this.ui?.fpsText(`${this.fps} fps · ${this.renderer.qualityName} · ${Math.round(this.renderer.scale * 100)}%`); }
     this.renderer.render(this.scene, this.camera);
+    if (this.snapWaiters?.length) this.takeSnapshot();
     this.player.events.length = 0;
     this.input.endFrame();
     this.fpsAcc = (this.fpsAcc || 0) + raw; this.fpsN = (this.fpsN || 0) + 1;

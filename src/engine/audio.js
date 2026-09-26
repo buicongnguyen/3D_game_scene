@@ -128,6 +128,12 @@ export class Audio {
   sparkHit() { [0, 7, 12, 16, 19].forEach((d, i) => this.tone(mtof(79 + d), { dur: 0.5, vol: 0.06, when: i * 0.04, rev: 0.6 })); }
   miss() { this.tone(300, { type: 'triangle', dur: 0.25, vol: 0.06, glide: 0.6 }); }
   pickup() { [0, 4, 7, 12].forEach((d, i) => this.tone(mtof(76 + d), { type: 'triangle', dur: 0.35, vol: 0.09, when: i * 0.06, rev: 0.4 })); }
+  fanfare() {
+    const r = (ROOTS[this.season] || 60) + 12;
+    [0, 4, 7, 12, 7, 12, 16, 19, 24].forEach((d, i) => this.pluck(r + d, i * 0.11, 0.12));
+    this.pad([r - 12, r - 5, r, r + 4, r + 7], 0.9, 3.5, 0.06);
+    [0, 0.45, 0.9].forEach(w => this.noise({ dur: 0.08, vol: 0.08, freq: 3200, q: 2, when: w }));
+  }
   star() { [0, 7, 12, 16, 19, 24].forEach((d, i) => this.tone(mtof(79 + d), { dur: 0.8, vol: 0.07, when: i * 0.07, rev: 0.8 })); }
   lamp() {
     const r = ROOTS[this.season] || 60;

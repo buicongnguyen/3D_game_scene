@@ -81,8 +81,30 @@ export class Tamo {
     this.light.position.copy(this.pos);
     this.light.intensity = (0.6 + night * 3.5) * (0.9 + this.power * 0.15);
     this.halo.material.opacity = 0.35 + night * 0.4;
+    this.updateMotes(dt);
     this.anim?.update(dt);
     this.updateSparks(dt);
+  }
+
+  /** One little orbiting light per lamp lit, in that lamp's colour: mill pink, orchard gold, forest green, viaduct blue. */
+  updateMotes(dt) {
+    const n = Math.max(0, Math.min(4, (this.power || 1) - 1));
+    if (!this.motes) {
+      this.motes = ['#ff9ec7', '#ffd45a', '#8ee07a', '#8fc8ff'].map(c => {
+        const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex(), color: c, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+        s.scale.setScalar(0.22);
+        s.visible = false;
+        this.scene.add(s);
+        return s;
+      });
+    }
+    this.motes.forEach((s, i) => {
+      s.visible = i < n && !this.hidden && this.root.visible;
+      if (!s.visible) return;
+      const a = this.t * (1.6 + i * 0.35) + i * Math.PI / 2, r = 0.42 + 0.05 * Math.sin(this.t * 2 + i);
+      s.position.set(this.pos.x + Math.cos(a) * r, this.pos.y + Math.sin(this.t * 1.3 + i) * 0.14, this.pos.z + Math.sin(a) * r);
+      s.scale.setScalar(0.2 + 0.05 * Math.sin(this.t * 5 + i));
+    });
   }
 
   /** Launch a spark from Tamo toward a world point; onHit(target) when it arrives. */

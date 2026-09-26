@@ -74,7 +74,7 @@
       <header><h2 data-i18n>Mika's Journal</h2><button class="close" data-close="journal">✕</button></header>
       <nav class="tabs" id="journalTabs">
         <button data-tab="story" class="on" data-i18n>Story</button><button data-tab="pages" data-i18n>Sora's Pages</button>
-        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="friends" data-i18n>Friends</button><button data-tab="help" data-i18n>Controls</button>
+        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="friends" data-i18n>Friends</button><button data-tab="album" data-i18n>Album</button><button data-tab="help" data-i18n>Controls</button>
       </nav>
       <section id="journalBody"></section>
     </div>
@@ -135,6 +135,7 @@
       <p data-i18n>A story about a railway, two villages, a tiny fallen star and the night everybody looked away.</p>
       <p><b data-i18n>Design, story, code &amp; Blender art</b><br />Bui Cong Nguyen with Claude</p>
       <p><b data-i18n>Built with</b><br />three.js · Blender 4.5 · Vite</p>
+      <div class="album-strip" id="creditsAlbum"></div>
       <p class="thanks" data-i18n>For everyone who keeps a light on for someone.</p>
     </div>
   </div>
@@ -155,6 +156,7 @@
 
   <div id="rideHud" class="hidden"><div class="panel"><span id="rideText"></span><small data-i18n>Press E as each lantern comes near</small></div></div>
   <div id="fade"></div>
+  <div id="flash"></div>
   <div id="fps" class="hidden"></div>
   <div id="err" class="hidden"></div>
 

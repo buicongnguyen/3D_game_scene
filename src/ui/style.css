@@ -268,3 +268,16 @@ details.adv summary { cursor: pointer; font-family: var(--head); font-weight: 60
 details.adv .note { font-size: 12.5px; color: var(--ink-soft); margin: 6px 0; }
 button.small { border: 0; border-radius: 12px; padding: 7px 12px; font-family: var(--head); font-weight: 600; background: rgba(28, 35, 64, 0.08); color: var(--ink); cursor: pointer; }
 #hud, #dialogue, .overlay .book, .minigame, #rideHud, #captionText { zoom: var(--ui-scale, 1); }
+
+/* ---------- photo album ---------- */
+.album { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; padding: 6px 4px 12px; }
+.polaroid { background: #fff; padding: 9px 9px 12px; border-radius: 4px; box-shadow: 0 6px 16px rgba(28, 35, 64, 0.22); transform: rotate(var(--tilt, -1.5deg)); transition: transform 0.2s; }
+.polaroid:hover { transform: rotate(0deg) scale(1.03); }
+.polaroid img, .polaroid .blank { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; display: block; border-radius: 2px; }
+.polaroid .blank { background: repeating-linear-gradient(45deg, #f4ecdc 0 10px, #efe4cf 10px 20px); display: grid; place-items: center; color: var(--ink-soft); font-size: 28px; }
+.polaroid p { margin: 8px 2px 0; font-family: var(--head); font-weight: 600; font-size: 14px; text-align: center; color: var(--ink); }
+.album-strip { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 8px 0; }
+.album-strip img { width: 150px; aspect-ratio: 16 / 9; object-fit: cover; border: 5px solid #fff; border-bottom-width: 14px; border-radius: 3px; box-shadow: 0 5px 14px rgba(0, 0, 0, 0.3); animation: rise 0.6s ease both; }
+.album-strip img:nth-child(odd) { transform: rotate(-2deg); } .album-strip img:nth-child(even) { transform: rotate(2deg); }
+#flash { position: fixed; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 36; transition: opacity 0.6s ease-out; }
+#flash.on { opacity: 0.95; transition: none; }

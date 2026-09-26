@@ -28,6 +28,11 @@ danger that night.
   open their doors, and each home keeps a keepsake that tells a little more.
 - **Valley friends.** Say hello to rabbits, hens, Mochi the cat, the ducks, the
   sheep, a deer family, Kon the fox and Ōkuma the bear.
+- **Every lamp throws a party.** Spring's Blossom Wave (a rainbow, leaping koi,
+  a star of petals), summer's Firefly Festival, autumn's moon-viewing with the
+  forest spirits, and a Star Train of starlight crossing the winter sky. Each
+  party leaves a photo in the journal's Album, the valley stays decorated, and
+  Tamo wears one more lamp's colour.
 - **Storytelling on the rails.** Captions tell the tale across the top of the
   screen while the train rolls in, during the Star Train ride, and on the Sunday
   service you can ride after the ending.

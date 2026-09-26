@@ -8,6 +8,7 @@ import { viewerCamera } from './dev/viewer.js';
 import { PALETTES } from './world/seasons.js';
 import { attachQA } from './dev/qa.js';
 import { detectLang, setLang, tx } from './i18n/i18n.js';
+import { Celebrate } from './fx/celebrate.js';
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('game');
@@ -40,6 +41,7 @@ ui.applySettings?.(); // the world exists now: apply saved view settings (season
 game.renderer.onResize = (w, h) => { game.camera.aspect = w / h; game.camera.updateProjectionMatrix(); game.fx.resize(); };
 const director = new Director(game, ui, audio, game.fx);
 game.director = director;
+game.celebrate = new Celebrate(game); // chapter celebrations and the valley's lasting decorations
 game.systems.push(director);
 window.__STARLINE__ = game;
 if (params.has('qa')) attachQA(game, director, ui);
@@ -82,7 +84,7 @@ if (params.has('view')) {
   game.player.root.visible = true;
   ui.showHud(true);
   game.follow.clearCutscene();
-  if (choice === 'new') Director.clearSave(picked.slot);
+  if (choice === 'new') { Director.clearSave(picked.slot); try { localStorage.removeItem(`starline-album-${picked.slot}`); } catch { /* ignore */ } }
   const started = director.begin(choice === 'continue' ? saved : null);
   window.__STARLINE_PLAYING__ = true;
   await started;

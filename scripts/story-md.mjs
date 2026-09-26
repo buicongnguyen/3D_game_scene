@@ -37,6 +37,7 @@ const BARKS = [
   ['gate_locked', 'The upper orchard gate, before it is opened'],
   ['bear_blocked', 'The sleeping bear, before the honey chestnuts'],
   ['gap_blocked', 'The broken viaduct span'],
+  ['ferry_frozen', "Rin's ferry, frozen in for the winter"],
 ];
 const CUTSCENES = {
   arrival: 'A little red engine winds down the valley toward Hoshi Station.',
@@ -47,8 +48,15 @@ const CUTSCENES = {
   relay: 'Down the river, Forest, Mill, Orchard and Viaduct burn one after another.',
   starTrain: 'The Star Train, Kobo hung with lanterns, leaves Hoshi Station with both villages aboard.',
   finale: "Meteors, Takamori fireworks and a line of Kawabe's lanterns glowing on the frozen river fill the valley.",
-  farewell: 'Tamo rises into the Viaduct Lamp. Credits.',
+  farewell: 'Tamo rises into the Viaduct Lamp.',
+  'celebrate:1': 'The Blossom Wave: a golden wave runs down the river, every cherry tree blooms at once, koi leap over the mill wheel, a rainbow, and a star of petals pointing to Takamori. The album gets its first photo.',
+  'celebrate:2': 'The Firefly Festival: every peach tree glows like a lantern, a river of fireflies rises into the night, fireworks, a bon-odori circle round the bell tower, and the sheep float. A lantern boat drifts over from Kawabe.',
+  'celebrate:3': 'Moon-viewing with the forest: kodama rattle their heads, maple leaves turn into golden butterflies up the shrine steps, and Ōkuma, Kon, the deer and the rabbits gather under the moon.',
+  'celebrate:4': 'Aurora and star-snow. The falling stars gather into a Star Train of light crossing the sky, with Sora waving from a window. Then everyone squashes onto Kobo for a photograph, and the credits play as the year’s album.',
+  tamoReturns: 'A small gold light shoots out of the Viaduct Lamp.',
 };
+// dialogue played inside a cutscene
+const CUTSCENE_SAYS = { 'celebrate:1': ['c1_party'], 'celebrate:2': ['c2_party'], 'celebrate:3': ['c3_party'], 'celebrate:4': ['c4_skytrain', 'c4_photo'], tamoReturns: ['tamo_returns'] };
 const UNLOCKS = {
   drawbridge: 'The drawbridge to the mill island comes down.',
   ferry: "Rin's ferry now crosses the river.",
@@ -123,6 +131,7 @@ function effects(list) {
       stage(CUTSCENES[e.cutscene]);
       const cap = CAPTIONED[e.cutscene];
       if (cap) captions(cap[0], cap[1], cap[0] === 'ride');
+      for (const id of CUTSCENE_SAYS[e.cutscene] || []) { dialogue(id); said = true; }
     }
     else if (e.lamp) stage(`The ${e.lamp[0].toUpperCase()}${e.lamp.slice(1)} Lamp is lit.`);
     else if (e.unlock && UNLOCKS[e.unlock]) stage(UNLOCKS[e.unlock]);

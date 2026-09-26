@@ -1353,6 +1353,192 @@
   ]
  },
  {
+  "s": "The light runs down the river like a wave, and every cherry tree in Kawabe blooms at once.",
+  "ctx": [
+   "dialogue c1_party, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Grandpa! GRANDPA! The koi are jumping! Right over the wheel!",
+  "ctx": [
+   "dialogue c1_party, spoken by Rin"
+  ]
+ },
+ {
+  "s": "…Hah. Hahaha! Ten years, and this valley still knows how to throw a party.",
+  "ctx": [
+   "dialogue c1_party, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "A rainbow! And look, Mika, the petals are making a star. It points across the river!",
+  "ctx": [
+   "dialogue c1_party, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "To Takamori. Then that's where we're going next.",
+  "ctx": [
+   "dialogue c1_party, spoken by Mika"
+  ]
+ },
+ {
+  "s": "The bell's last note rolls over the orchard, and every peach tree lights up like a paper lantern.",
+  "ctx": [
+   "dialogue c2_party, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Fireflies! Thousands of them! Somebody fetch the drums. The summer festival starts NOW!",
+  "ctx": [
+   "dialogue c2_party, spoken by Hana"
+  ]
+ },
+ {
+  "s": "I may have sparked a little too hard. …Why are the sheep floating?",
+  "ctx": [
+   "dialogue c2_party, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Never mind the sheep, sweetheart. Dance!",
+  "ctx": [
+   "dialogue c2_party, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Down on the river, one small lantern boat drifts over from Kawabe. Nobody from Kawabe is waving. Somebody sent it anyway.",
+  "ctx": [
+   "dialogue c2_party, spoken by narrator"
+  ]
+ },
+ {
+  "s": "…Well, well. The old radish.",
+  "ctx": [
+   "dialogue c2_party, spoken by Hana"
+  ]
+ },
+ {
+  "s": "The Forest Lamp flares gold, and the whole wood answers.",
+  "ctx": [
+   "dialogue c3_party, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Kodama! Forest spirits, hundreds of them! They're rattling their heads. That means hello!",
+  "ctx": [
+   "dialogue c3_party, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The maple leaves let go of their branches and flutter up the shrine steps as golden butterflies.",
+  "ctx": [
+   "dialogue c3_party, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Somewhere on the wind, an old woman laughs, pleased.",
+  "ctx": [
+   "dialogue c3_party, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Look who came. Ōkuma, Kon, the deer… everyone.",
+  "ctx": [
+   "dialogue c3_party, spoken by Mika"
+  ]
+ },
+ {
+  "s": "It's a moon-viewing! Everybody sit! Kon, no, that's MY dumpling!",
+  "ctx": [
+   "dialogue c3_party, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Then the falling stars gather, one by one, into a train of light that crosses the whole sky.",
+  "ctx": [
+   "dialogue c4_skytrain, spoken by narrator"
+  ]
+ },
+ {
+  "s": "That's… the Star Train. And in the window… Sora. She's waving. She's waving at us.",
+  "ctx": [
+   "dialogue c4_skytrain, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Of course she is. She always waved first.",
+  "ctx": [
+   "dialogue c4_skytrain, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Well, wave back, you two old fools! Everybody wave!",
+  "ctx": [
+   "dialogue c4_skytrain, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Three buns each. No arguments. Genzo, Ōta: shake hands. Properly.",
+  "ctx": [
+   "dialogue c4_photo, spoken by Hana"
+  ]
+ },
+ {
+  "s": "…Friends, then?",
+  "ctx": [
+   "dialogue c4_photo, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Friends. You still owe me ten years of radish.",
+  "ctx": [
+   "dialogue c4_photo, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Photo! Everybody squash in on Kobo! Grandpa, smile. Genzo, you too!",
+  "ctx": [
+   "dialogue c4_photo, spoken by Rin"
+  ]
+ },
+ {
+  "s": "I AM smiling.",
+  "ctx": [
+   "dialogue c4_photo, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Same time next year?",
+  "ctx": [
+   "dialogue c4_photo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Same time next year.",
+  "ctx": [
+   "dialogue c4_photo, spoken by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Mika! MIKA! Guess what! The lamp says I get Sundays off!",
+  "ctx": [
+   "dialogue tamo_returns, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Tamo! …Wait. Is it Sunday?",
+  "ctx": [
+   "dialogue tamo_returns, spoken by Mika"
+  ]
+ },
+ {
+  "s": "It's Sunday if you say it fast enough! Come on, the whole valley's waiting!",
+  "ctx": [
+   "dialogue tamo_returns, spoken by Tamo"
+  ]
+ },
+ {
   "s": "Her glasses on the table. Her teacups. A whole shelf of letters. It's like she only just stepped out.",
   "ctx": [
    "dialogue inside_cottage, spoken by Mika",
@@ -2254,6 +2440,30 @@
   ]
  },
  {
+  "s": "Spring: the Blossom Wave",
+  "ctx": [
+   "photo album caption (a chapter's celebration photo)"
+  ]
+ },
+ {
+  "s": "Summer: the Firefly Festival",
+  "ctx": [
+   "photo album caption (a chapter's celebration photo)"
+  ]
+ },
+ {
+  "s": "Autumn: moon-viewing with the forest",
+  "ctx": [
+   "photo album caption (a chapter's celebration photo)"
+  ]
+ },
+ {
+  "s": "Winter: same time next year",
+  "ctx": [
+   "photo album caption (a chapter's celebration photo)"
+  ]
+ },
+ {
   "s": "Festival photograph",
   "ctx": [
    "keepsake name"
@@ -2855,6 +3065,12 @@
   ]
  },
  {
+  "s": "A photo for the album!",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Journal page added — press J to read",
   "ctx": [
    "UI (src/game/director.js)"
@@ -3078,6 +3294,12 @@
  },
  {
   "s": "Not caught yet",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Every Star Lamp you light throws a party. Each one leaves a photo here.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -3311,6 +3533,12 @@
  },
  {
   "s": "Friends",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Album",
   "ctx": [
    "menu / screen text"
   ]

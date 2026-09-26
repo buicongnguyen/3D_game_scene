@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES } from '../src/game/story.js';
+import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES, ALBUM } from '../src/game/story.js';
 import { FALLEN_STARS, LAMPS } from '../src/world/layout.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -36,6 +36,7 @@ export function collect() {
   for (const c of CAPTIONS.ride) add(c.text, 'cinematic caption across the top during the Star Train ride (narration)');
   for (const c of CAPTIONS.tour) add(c.text, 'caption across the top while Mika rides the Sunday train in the epilogue (narration)');
   for (const f of FRIENDS) { add(f.name, 'animal friend name'); add(f.verb, 'interaction prompt shown next to the E key'); add(f.desc, 'animal friend: description'); add(f.hint, 'animal friend: where to find it'); }
+  for (const a of ALBUM) add(a.title, 'photo album caption (a chapter\'s celebration photo)');
   for (const k of KEEPSAKES) { add(k.name, 'keepsake name'); add(k.text, 'keepsake description (journal)'); add(k.where, 'the home a keepsake is in'); }
   for (const s of STEPS) {
     add(s.objective, 'quest objective (keep {placeholders} exactly)');

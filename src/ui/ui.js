@@ -1,4 +1,4 @@
-import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES } from '../game/story.js';
+import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange } from '../i18n/i18n.js';
 
@@ -588,6 +588,10 @@ export class UI {
         const n = q.fishLog[k] || 0;
         return this.cardHTML(n > 0, f.icon, tx(f.name), n ? tx(f.desc) : tx(f.hint), n ? `× ${n}` : tx('Not caught yet'), n ? tx(f.hint) : '', f.hue);
       }).join('') + '</div>';
+    } else if (tab === 'album') {
+      const photos = this.game.director?.album() || {};
+      body.innerHTML = `<p>${esc(tx('Every Star Lamp you light throws a party. Each one leaves a photo here.'))}</p><div class="album">` +
+        ALBUM.map((a, i) => `<div class="polaroid" style="--tilt:${[-2, 1.5, -1, 2][i % 4]}deg">${photos[a.id] ? `<img alt="" src="${photos[a.id]}">` : '<div class="blank">★</div>'}<p>${esc(tx(a.title))}</p></div>`).join('') + '</div>';
     } else if (tab === 'friends') {
       const met = q.friends || {}, n = FRIENDS.filter(f => met[f.id]).length;
       body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press E to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +
@@ -665,6 +669,18 @@ export class UI {
     $('leap').classList.toggle('hidden', !on);
     if (on) $('leap').textContent = `⚡ ×${mul}`;
   }
+  /** A camera flash (for the photographs). */
+  flash() {
+    const f = $('flash');
+    f.classList.add('on');
+    requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on')));
+  }
+
+  /** The credits show the year's photographs. */
+  creditsAlbum(photos) {
+    $('creditsAlbum').innerHTML = ALBUM.filter(a => photos?.[a.id]).map(a => `<img alt="${esc(tx(a.title))}" src="${photos[a.id]}">`).join('');
+  }
+
   swimming(on) {
     if (this._swim === on) return;
     this._swim = on;

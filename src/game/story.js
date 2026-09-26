@@ -345,6 +345,51 @@ export const DIALOGUE = {
   gap_blocked: [['tamo', "That's where the span fell. Don't even THINK about jumping."]],
   bear_blocked: [['tamo', "The bear is asleep across the whole staircase. We can't get past. We need a plan. And maybe a snack."]],
 
+  // ---- chapter celebrations: each lamp wakes the valley up
+  c1_party: [
+    ['narrator', 'The light runs down the river like a wave, and every cherry tree in Kawabe blooms at once.'],
+    ['rin', 'Grandpa! GRANDPA! The koi are jumping! Right over the wheel!', 'Cheer'],
+    ['ota', '…Hah. Hahaha! Ten years, and this valley still knows how to throw a party.', 'Wave'],
+    ['tamo', 'A rainbow! And look, Mika, the petals are making a star. It points across the river!', 'Happy'],
+    ['mika', "To Takamori. Then that's where we're going next."],
+  ],
+  c2_party: [
+    ['narrator', "The bell's last note rolls over the orchard, and every peach tree lights up like a paper lantern."],
+    ['hana', 'Fireflies! Thousands of them! Somebody fetch the drums. The summer festival starts NOW!', 'Cheer'],
+    ['tamo', 'I may have sparked a little too hard. …Why are the sheep floating?', 'Happy'],
+    ['hana', "Never mind the sheep, sweetheart. Dance!", 'Cheer'],
+    ['narrator', 'Down on the river, one small lantern boat drifts over from Kawabe. Nobody from Kawabe is waving. Somebody sent it anyway.'],
+    ['hana', '…Well, well. The old radish.', 'Cheer'],
+  ],
+  c3_party: [
+    ['narrator', 'The Forest Lamp flares gold, and the whole wood answers.'],
+    ['tamo', "Kodama! Forest spirits, hundreds of them! They're rattling their heads. That means hello!", 'Happy'],
+    ['narrator', 'The maple leaves let go of their branches and flutter up the shrine steps as golden butterflies.'],
+    ['narrator', 'Somewhere on the wind, an old woman laughs, pleased.'],
+    ['mika', 'Look who came. Ōkuma, Kon, the deer… everyone.'],
+    ['tamo', "It's a moon-viewing! Everybody sit! Kon, no, that's MY dumpling!", 'Happy'],
+  ],
+  c4_skytrain: [
+    ['narrator', 'Then the falling stars gather, one by one, into a train of light that crosses the whole sky.'],
+    ['genzo', "That's… the Star Train. And in the window… Sora. She's waving. She's waving at us.", 'Wave'],
+    ['ota', 'Of course she is. She always waved first.'],
+    ['hana', 'Well, wave back, you two old fools! Everybody wave!', 'Cheer'],
+  ],
+  c4_photo: [
+    ['hana', 'Three buns each. No arguments. Genzo, Ōta: shake hands. Properly.', 'Cheer'],
+    ['genzo', '…Friends, then?', 'Bow'],
+    ['ota', 'Friends. You still owe me ten years of radish.', 'Wave'],
+    ['rin', 'Photo! Everybody squash in on Kobo! Grandpa, smile. Genzo, you too!', 'Cheer'],
+    ['genzo', 'I AM smiling.'],
+    ['mika', 'Same time next year?'],
+    ['ota', 'Same time next year.', 'Wave'],
+  ],
+  tamo_returns: [
+    ['tamo', 'Mika! MIKA! Guess what! The lamp says I get Sundays off!', 'Happy'],
+    ['mika', "Tamo! …Wait. Is it Sunday?"],
+    ['tamo', "It's Sunday if you say it fast enough! Come on, the whole valley's waiting!", 'Happy'],
+  ],
+
   // ---- homes, keepsakes and the Star Kite
   // These can play in any chapter. When Tamo isn't with Mika (before the chest, or after the finale) the director
   // plays the `<id>_solo` variant instead, so every scene that has Tamo in it has one.
@@ -563,7 +608,7 @@ export const STEPS = [
   { id: 'c1.wheel', chapter: 1, objective: 'Repair the mill wheel', marker: 'interact:millAxle', done: { event: 'interact', target: 'millAxle' },
     exit: [{ take: ['cog', 3] }, { cutscene: 'wheelTurns' }, { unlock: 'drawbridge' }, { say: 'c1_wheel' }, { timelapse: 18.6 }] },
   { id: 'c1.lamp', chapter: 1, objective: 'Cross to the island and light the Mill Lamp', marker: 'target:millLamp', done: { event: 'spark', target: 'millLamp' },
-    exit: [{ cutscene: 'lampLit:mill' }, { lamp: 'mill' }, { say: 'c1_lamp' }] },
+    exit: [{ cutscene: 'lampLit:mill' }, { lamp: 'mill' }, { say: 'c1_lamp' }, { cutscene: 'celebrate:1' }] },
   { id: 'c1.page', chapter: 1, objective: 'Return to Grandpa Ōta', marker: 'npc:ota', done: { event: 'talk', who: 'ota' }, talk: { ota: 'c1_ota_page' },
     exit: [{ journal: 0 }, { unlock: 'ferry' }, { autosave: true }] },
   // ---------------------------------------------------------------- chapter 2 (summer, Takamori)
@@ -584,7 +629,7 @@ export const STEPS = [
   { id: 'c2.bell', chapter: 2, objective: 'Climb the bell tower and ring the bell', marker: 'interact:bell', done: { event: 'interact', target: 'bell' },
     exit: [{ say: 'c2_bell' }, { timelapse: 18.7 }] },
   { id: 'c2.lamp', chapter: 2, objective: 'Light the Orchard Lamp on the bell tower', marker: 'target:orchardLamp', done: { event: 'spark', target: 'orchardLamp' },
-    exit: [{ cutscene: 'lampLit:orchard' }, { lamp: 'orchard' }, { say: 'c2_lamp' }, { take: ['key', 1] }] },
+    exit: [{ cutscene: 'lampLit:orchard' }, { lamp: 'orchard' }, { say: 'c2_lamp' }, { take: ['key', 1] }, { cutscene: 'celebrate:2' }] },
   { id: 'c2.page', chapter: 2, objective: 'Return to Hana at the bakery', marker: 'npc:hana', done: { event: 'talk', who: 'hana' }, talk: { hana: 'c2_hana_page' },
     exit: [{ journal: 1 }, { unlock: 'orchardGate' }, { flag: 'sparkRange2' }, { autosave: true }] },
   // ---------------------------------------------------------------- chapter 3 (autumn, forest)
@@ -601,7 +646,7 @@ export const STEPS = [
   { id: 'c3.bear', chapter: 3, objective: 'Feed Ōkuma the honey chestnuts', marker: 'npc:bear', done: { event: 'interact', target: 'bear' },
     exit: [{ take: ['honeyChestnuts', 1] }, { cutscene: 'bearWakes' }, { say: 'c3_bear_fed' }, { unlock: 'shrineStairs' }, { timelapse: 18.6 }] },
   { id: 'c3.lamp', chapter: 3, objective: 'Climb the shrine steps and light the Forest Lamp', marker: 'target:forestLamp', done: { event: 'spark', target: 'forestLamp' },
-    exit: [{ cutscene: 'lampLit:forest' }, { lamp: 'forest' }, { say: 'c3_lamp' }, { say: 'c3_page' }, { journal: 2 }, { autosave: true }] },
+    exit: [{ cutscene: 'lampLit:forest' }, { lamp: 'forest' }, { say: 'c3_lamp' }, { say: 'c3_page' }, { journal: 2 }, { cutscene: 'celebrate:3' }, { autosave: true }] },
   // ---------------------------------------------------------------- chapter 4 (winter, viaduct)
   { id: 'c4.shed', chapter: 4, objective: 'Find Genzo at the engine shed', marker: 'npc:genzo',
     enter: [{ chapter: 4 }, { time: 10.5 }, { season: 'winter' }, { title: 4 }, { say: 'c4_start' }], done: { event: 'choice', id: 'confession' },
@@ -616,11 +661,20 @@ export const STEPS = [
     exit: [{ lamp: 'viaduct' }, { cutscene: 'relay' }, { say: 'c4_lamp' }, { autosave: true }] },
   { id: 'c4.board', chapter: 4, objective: 'Board the Star Train at Hoshi Station', marker: 'npc:genzo', done: { event: 'talk', who: 'genzo' }, talk: { genzo: 'c4_board' } },
   { id: 'c4.ride', chapter: 4, objective: 'Light the trackside lanterns from the Star Train ({lanterns}/8)', done: { event: 'ride', done: true },
-    enter: [{ cutscene: 'starTrain' }], exit: [{ cutscene: 'finale' }, { say: 'c4_finale' }, { cutscene: 'farewell' }, { flag: 'tamoHome' }] },
+    enter: [{ cutscene: 'starTrain' }], exit: [{ cutscene: 'finale' }, { say: 'c4_finale' }, { cutscene: 'farewell' }, { flag: 'tamoHome' }, { cutscene: 'celebrate:4' }] },
   // ---------------------------------------------------------------- epilogue
   { id: 'e.free', chapter: 5, objective: 'Explore Hoshi Valley — find all 12 Fallen Stars ({stars}/12)',
-    enter: [{ chapter: 5 }, { time: 10 }, { season: 'spring' }, { title: 5 }, { say: 'epilogue' }, { sayChoice: 'epilogue' }, { autosave: true }],
+    enter: [{ chapter: 5 }, { time: 10 }, { season: 'spring' }, { title: 5 }, { say: 'epilogue' }, { sayChoice: 'epilogue' }, { cutscene: 'tamoReturns' }, { flag: 'tamoBack' }, { autosave: true }],
     done: { never: true } },
 ];
 
 export const STEP_INDEX = Object.fromEntries(STEPS.map((s, i) => [s.id, i]));
+
+// ------------------------------------------------------------------------------------ photo album
+// Each chapter's celebration takes a photograph for the journal (and the credits).
+export const ALBUM = [
+  { id: 'c1', title: 'Spring: the Blossom Wave' },
+  { id: 'c2', title: 'Summer: the Firefly Festival' },
+  { id: 'c3', title: 'Autumn: moon-viewing with the forest' },
+  { id: 'c4', title: 'Winter: same time next year' },
+];

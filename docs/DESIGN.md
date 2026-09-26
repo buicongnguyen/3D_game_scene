@@ -67,6 +67,16 @@ together, and how the game is verified. The story itself is in
   a short scene and fills the Friends page. Rabbits and deer only bolt from a
   running Mika. Kon the fox stays by the shrine and Ōkuma sleeps in a den after
   chapter 3.
+- **Celebrations.** Every lamp ends its chapter with a party cutscene
+  (`celebrate:N` in scenes.js) built from `src/fx/celebrate.js`: blossom wave,
+  koi, rainbow and petal star (spring); orchard lanterns, firefly river, floating
+  sheep, fireworks and a bon-odori circle (summer); kodama, leaf-butterflies and
+  moon-viewing animals (autumn); aurora, star-snow and the Star Train in the sky
+  with Sora at the window, then the group photo (winter). Each takes an album
+  photo (a downscaled frame, saved per profile) and the credits show the album.
+  Decorations are cumulative per lit lamp (`celebrate.decorate`), Tamo gains an
+  orbiting mote per lamp, and the colour grade gets a touch more vivid.
+  In the epilogue Tamo comes back on his Sundays off (`tamoBack`).
 - **Storytelling on the rails.** `CAPTIONS` in story.js are shown across the top
   (letterboxed during the arrival) as the train passes landmarks, by fraction of
   the route. In the epilogue Kobo shuttles between the station and Takamori Halt

@@ -616,6 +616,18 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 **Tamo:** I'm okay. It's just a memory. A loud one.
 
+> *The Blossom Wave: a golden wave runs down the river, every cherry tree blooms at once, koi leap over the mill wheel, a rainbow, and a star of petals pointing to Takamori. The album gets its first photo.*
+
+*The light runs down the river like a wave, and every cherry tree in Kawabe blooms at once.*
+
+**Rin:** Grandpa! GRANDPA! The koi are jumping! Right over the wheel!
+
+**Grandpa Ōta:** …Hah. Hahaha! Ten years, and this valley still knows how to throw a party.
+
+**Tamo:** A rainbow! And look, Mika, the petals are making a star. It points across the river!
+
+**Mika:** To Takamori. Then that's where we're going next.
+
 #### Return to Grandpa Ōta · `c1.page`
 
 **Grandpa Ōta:** Look at it. The Mill Lamp, burning again. Sora would…
@@ -726,6 +738,20 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 **Tamo:** I don't know. It's all fog after that.
 
+> *The Firefly Festival: every peach tree glows like a lantern, a river of fireflies rises into the night, fireworks, a bon-odori circle round the bell tower, and the sheep float. A lantern boat drifts over from Kawabe.*
+
+*The bell's last note rolls over the orchard, and every peach tree lights up like a paper lantern.*
+
+**Hana:** Fireflies! Thousands of them! Somebody fetch the drums. The summer festival starts NOW!
+
+**Tamo:** I may have sparked a little too hard. …Why are the sheep floating?
+
+**Hana:** Never mind the sheep, sweetheart. Dance!
+
+*Down on the river, one small lantern boat drifts over from Kawabe. Nobody from Kawabe is waving. Somebody sent it anyway.*
+
+**Hana:** …Well, well. The old radish.
+
 #### Return to Hana at the bakery · `c2.page`
 
 **Hana:** It's lit. It's really lit. Here—Sora gave me this years ago. Said I'd know when to pass it on.
@@ -815,6 +841,20 @@ then its step id). Narration is in italics; stage directions are quoted.
 **Sora:** Old Kiku put her lamp out that night. She did her part. The rest of us didn't.
 
 > *Journal page 3 added: “Page 3 · Kiku”.*
+
+> *Moon-viewing with the forest: kodama rattle their heads, maple leaves turn into golden butterflies up the shrine steps, and Ōkuma, Kon, the deer and the rabbits gather under the moon.*
+
+*The Forest Lamp flares gold, and the whole wood answers.*
+
+**Tamo:** Kodama! Forest spirits, hundreds of them! They're rattling their heads. That means hello!
+
+*The maple leaves let go of their branches and flutter up the shrine steps as golden butterflies.*
+
+*Somewhere on the wind, an old woman laughs, pleased.*
+
+**Mika:** Look who came. Ōkuma, Kon, the deer… everyone.
+
+**Tamo:** It's a moon-viewing! Everybody sit! Kon, no, that's MY dumpling!
 
 ### Chapter Four · Winter: The Viaduct Lamp
 
@@ -985,7 +1025,31 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 **Mika:** …Okay. I'll keep watch. Goodnight, Tamo.
 
-> *Tamo rises into the Viaduct Lamp. Credits.*
+> *Tamo rises into the Viaduct Lamp.*
+
+> *Aurora and star-snow. The falling stars gather into a Star Train of light crossing the sky, with Sora waving from a window. Then everyone squashes onto Kobo for a photograph, and the credits play as the year’s album.*
+
+*Then the falling stars gather, one by one, into a train of light that crosses the whole sky.*
+
+**Genzo:** That's… the Star Train. And in the window… Sora. She's waving. She's waving at us.
+
+**Grandpa Ōta:** Of course she is. She always waved first.
+
+**Hana:** Well, wave back, you two old fools! Everybody wave!
+
+**Hana:** Three buns each. No arguments. Genzo, Ōta: shake hands. Properly.
+
+**Genzo:** …Friends, then?
+
+**Grandpa Ōta:** Friends. You still owe me ten years of radish.
+
+**Rin:** Photo! Everybody squash in on Kobo! Grandpa, smile. Genzo, you too!
+
+**Genzo:** I AM smiling.
+
+**Mika:** Same time next year?
+
+**Grandpa Ōta:** Same time next year.
 
 ### Epilogue: Keep Watch
 
@@ -1004,6 +1068,14 @@ then its step id). Narration is in italics; stage directions are quoted.
 *If Mika chose "Grandma forgave you. We'll tell them together.":*
 
 *On Sundays, Genzo saves Mika the seat up front. "You stood by me on that platform," he says. "She'd be proud of you."*
+
+> *A small gold light shoots out of the Viaduct Lamp.*
+
+**Tamo:** Mika! MIKA! Guess what! The lamp says I get Sundays off!
+
+**Mika:** Tamo! …Wait. Is it Sunday?
+
+**Tamo:** It's Sunday if you say it fast enough! Come on, the whole valley's waiting!
 
 *Riding Kobo's Sunday service between Hoshi Station and Takamori Halt (by how far along the ride, either way):*
 
@@ -1045,11 +1117,11 @@ What Mika hears when she tries a way that is not open yet.
 
 **Tamo:** That's where the span fell. Don't even THINK about jumping.
 
-### Other lines
-
-*`ferry_frozen`:*
+*Rin's ferry, frozen in for the winter:*
 
 **Tamo:** The ferry's frozen in till spring! Good news: the whole river is a road now. A slippery road.
+
+### Other lines
 
 *`ferry_frozen_solo`:*
 

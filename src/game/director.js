@@ -249,7 +249,7 @@ export class Director {
     if (!pos) return;
     const t = { id, pos: pos.clone(), label, when, onHit, posFn: reach.at || null };
     this.targets.set(id, t);
-    const tamoHere = () => this.q?.has('hasTamo') && !this.q.has('tamoHome');
+    const tamoHere = () => this.tamoAround();
     this.interact(`spark:${id}`, null, label, () => tamoHere() && !t.pending && t.when(), () => this.sparkAt(t),
       reach.r ?? 6, () => (t.posFn ? t.posFn() : t.pos), reach.prio ?? 2, reach.vy ?? 6);
     this.interactables.get(`spark:${id}`).spark = true;
@@ -317,7 +317,7 @@ export class Director {
     const effects = this.quest.start();
     const resumed = this.quest.resumed;
     if (resumed && saved?.player) this.game.player.teleport(saved.player.x, saved.player.z, saved.player.y, saved.player.facing);
-    if (this.q.has('hasTamo') && !this.q.has('tamoHome')) this.tamo.show(this.game.player.pos.clone().add(V(0, 1.6, 0)));
+    if (this.tamoAround()) this.tamo.show(this.game.player.pos.clone().add(V(0, 1.6, 0)));
     if (resumed && STEP_INDEX[this.q.state.step] > STEP_INDEX['p.porch']) this.lightPorchVisual();
     this.power();
     this.placeCast();
@@ -353,10 +353,32 @@ export class Director {
 
   static lastSlot() { try { return +localStorage.getItem('starline-last-slot') || 1; } catch { return 1; } }
 
-  /** Tamo grows brighter with each lit lamp. */
+  /** Tamo is at Mika's side: from the chest until he goes home to his lamp, and again on his Sundays off. */
+  tamoAround() {
+    const q = this.q;
+    return !!q && q.has('hasTamo') && (!q.has('tamoHome') || q.has('tamoBack'));
+  }
+
+  /** Every lit lamp: Tamo wears its colour, the valley keeps its decorations, and the world gets a little more vivid. */
   power() {
     const lit = Object.values(this.q.state.lamps).filter(Boolean).length;
     this.tamo.power = 1 + lit;
+    this.game.celebrate?.decorate?.(lit);
+    // after the summer festival the peach orchard keeps its lanterns
+    if (lit >= 2 && !this.orchardGlow && this.game.celebrate) this.orchardGlow = this.game.celebrate.orchardLanterns(V(72, 0, -48), 45, true);
+    if (this.game.renderer?.grade) this.game.renderer.grade.uniforms.uVibrance.value = 0.22 + lit * 0.035;
+  }
+
+  // ------------------------------------------------------------------ photo album (one per save profile)
+  album() {
+    try { return JSON.parse(localStorage.getItem(`starline-album-${this.slot}`)) || {}; } catch { return {}; }
+  }
+
+  addPhoto(id, url) {
+    const a = this.album();
+    a[id] = url;
+    try { localStorage.setItem(`starline-album-${this.slot}`, JSON.stringify(a)); } catch { /* storage full: the photo just isn't kept */ }
+    this.ui.toast(tx('A photo for the album!'), 'journal-page');
   }
 
   // ------------------------------------------------------------------ NPC schedule
@@ -449,7 +471,7 @@ export class Director {
     else if (e.star) { ui.toast(tx('Fallen Star {n}/12', { n: e.count }), 'fallen-star'); this.audio.star(); }
     else if (e.allStars) { await this.sayNow('sora_last_letter'); }
     else if (e.chapter !== undefined) { this.placeCast(); }
-    else if (e.flag) { if (e.flag === 'tamoHome') this.tamo.hide(); this.power(); }
+    else if (e.flag) { if (e.flag === 'tamoHome' && !this.q.has('tamoBack')) this.tamo.hide(); if (e.flag === 'tamoBack') this.tamo.show(this.game.player.pos.clone().add(V(0, 1.6, 0))); this.power(); }
     else if (e.autosave) this.save();
     else if (e.stepDone) { this.audio.chime(1); this.stepClock = 0; this.placeCast(); }
     else if (e.objective) this.refreshObjective(true);
@@ -467,7 +489,7 @@ export class Director {
   /** Play a dialogue now: only from inside the effect queue or a cutscene running in it. */
   async sayNow(id, lines) {
     // before the chest and after the finale there is no Tamo at Mika's side: such scenes use their Tamo-free variant
-    if (id && !lines && this.q && (!this.q.has('hasTamo') || this.q.has('tamoHome')) && DIALOGUE[`${id}_solo`]) id = `${id}_solo`;
+    if (id && !lines && this.q && !this.tamoAround() && DIALOGUE[`${id}_solo`]) id = `${id}_solo`;
     lines = lines || DIALOGUE[id];
     if (!lines) return;
     this.busy++;

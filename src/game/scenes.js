@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { N_ } from '../i18n/i18n.js';
-import { CAPTIONS } from './story.js';
+import { CAPTIONS, DIALOGUE } from './story.js';
 import { STOPS } from '../world/railway.js';
 import { rail, RAIL_Y, DECK_Y, PLACES, FERRY, river, VIADUCT } from '../world/layout.js';
 
@@ -34,7 +34,7 @@ export class Scenes {
       this.active = null;
       this.d.busy--;
       if (!this.d.busy) this.g.player.locked = false;
-      if (!['starTrain'].includes(name)) this.g.follow.clearCutscene();
+      if (!['starTrain', 'farewell'].includes(name)) this.g.follow.clearCutscene();
     }
   }
 
@@ -341,25 +341,226 @@ export class Scenes {
     d.audio.lamp();
     d.tamo.hide();
     await wait(1600);
-    // credits over the fireworks
+  }
+
+  // ---------------------------------------------------------------- celebrations: every lamp wakes the valley up
+  /** Place friends for a party: [[npcId, x, z, facing]]. Villager/NPC ids from director.npcs. */
+  gather(list) {
+    const d = this.d;
+    for (const [id, x, z, facing] of list) {
+      const n = d.npcs[id];
+      if (!n) continue;
+      n.path = null;
+      n.setVisible(true);
+      n.place(x, z, facing);
+      n.setIdle('Talk');
+    }
+    return list.map(([id]) => d.npcs[id]).filter(Boolean);
+  }
+
+  /** Everyone at the party cheers and waves now and then until stop() is called. */
+  partyLoop(npcs) {
+    let on = true;
+    const tick = () => {
+      if (!on) return;
+      const n = npcs[Math.floor(Math.random() * npcs.length)];
+      if (n) n.gesture(['Cheer', 'Wave', 'Talk', 'Cheer'][Math.floor(Math.random() * 4)]);
+      if (Math.random() < 0.3) this.d.tamo.react('Happy');
+      setTimeout(tick, 700 + Math.random() * 900);
+    };
+    tick();
+    return () => { on = false; };
+  }
+
+  /** A frame for the album: the next rendered frame, downscaled. */
+  async photo(id) {
+    const url = await this.g.snapshot?.();
+    if (url) this.d.addPhoto(id, url);
+  }
+
+  async celebrate(n) {
+    const g = this.g, d = this.d;
+    n = +n;
+    d.audio.fanfare?.();
+    d.audio.setMusic(g.time.season, 'finale');
+    d.ui.cinema(true);
+    try { await this[`party${n}`](g.celebrate); } finally {
+      d.ui.cinema(false);
+      d.audio.setMusic(g.shownSeason || g.time.season, 'calm');
+      g.celebrate?.decorate?.(n);
+    }
+  }
+
+  // spring: the Blossom Wave, koi over the wheel, a rainbow, and a star of petals pointing to Takamori
+  async party1(C) {
+    const g = this.g, d = this.d;
+    const lamp = g.structures.lamps.get('mill')?.flame || V(1.2, 8.8, -45.6);
+    const party = this.gather([['ota', -14, -41.5, Math.PI / 2], ['rin', -12, -39, Math.PI / 2], ['v1', -16, -37.5, 1.2], ['v2', -12.5, -35.8, 1.9], ['v3', -14.5, -34.5, 1.6]]);
+    g.player.teleport(-11.4, -40.6, undefined, Math.PI / 2);
+    const stop = this.partyLoop(party);
+    const s0 = river.nearest(lamp.x, lamp.z).s, s1 = river.nearest(8, 60).s;
+    C?.blossomWave?.(lamp, s0, s1, 9);
+    await this.shot(V(18, 30, -78), V(4, 2, -20), 2.2, 400);
+    C?.koiArc?.(V(-1, 0, -40), V(9, 0, -37), 7);
+    C?.rainbow?.(V(6, 0, 5), 90, 26);
+    await d.sayNow(null, DIALOGUE.c1_party.slice(0, 3));
+    await this.shot(V(-4, 7, -30), V(-12, 3, -39), 1.6, 300);
+    await this.photo('c1');
+    C?.petalStar?.(V(8, 18, -18), V(115, 36, -4));
+    await this.shot(V(-16, 10, -30), V(10, 36, -20), 2, 1800);
+    await d.sayNow(null, DIALOGUE.c1_party.slice(3));
+    stop();
+  }
+
+  // summer night: every peach tree a lantern, a river of fireflies, fireworks, a circle dance and floating sheep
+  async party2(C) {
+    const g = this.g, d = this.d;
+    const ring = (i, n, r = 5.5) => [115 + Math.cos(i / n * Math.PI * 2) * r, 7 + Math.sin(i / n * Math.PI * 2) * r];
+    const ids = ['hana', 'v4', 'v5', 'v6'];
+    const party = this.gather(ids.map((id, i) => [id, ...ring(i, ids.length), 0]));
+    // a bon-odori circle: everyone walks round the ring
+    let dancing = true;
+    party.forEach((n, i) => {
+      let k = i * 3;
+      const next = () => { if (!dancing) return; k = (k + 1) % 12; n.walk([ring(k, 12)], next, 1.1); };
+      next();
+    });
+    g.player.teleport(111, 11, undefined, 0.8);
+    const stop = this.partyLoop(party);
+    if (!d.orchardGlow) d.orchardGlow = C?.orchardLanterns?.(V(72, 0, -48), 45, true);
+    C?.fireflyRiver?.(V(72, 0, -48), 22);
+    d.fx.fireworks(true, V(118, 30, -12));
+    await this.shot(V(138, 30, 26), V(96, 14, -30), 2.4, 500);
+    await d.sayNow(null, DIALOGUE.c2_party.slice(0, 2));
+    C?.floatSheep?.(9);
+    await this.shot(V(132, 12, -18), V(150, 4, -38), 1.6, 1200);
+    await d.sayNow(null, DIALOGUE.c2_party.slice(2, 4));
+    await this.shot(V(122, 9, 18), V(115, 2, 6), 1.6, 300);
+    await this.photo('c2');
+    // an answer from Kawabe: one small lantern boat on the river
+    const boat = g.assets.clone('lantern-boat');
+    if (boat && !g.world.frozen) { g.scene.add(boat); this.boats.push({ obj: boat, s: river.nearest(9, -20).s, off: 0.5 }); }
+    await this.shot(V(40, 14, 10), V(9, 0, -12), 2, 600);
+    await d.sayNow(null, DIALOGUE.c2_party.slice(4));
+    dancing = false;
+    stop();
+    d.fx.fireworks(false);
+  }
+
+  // autumn: kodama, leaf-butterflies up the shrine steps, the animals gather to watch the moon
+  async party3(C) {
+    const g = this.g, d = this.d, W = d.wildlife;
+    const clearing = V(60, g.world.heightAt(60, -118), -118);
+    const bear = W.story.bear || W.spawnBear();
+    bear.path = null; bear.setVisible(true); bear.place(56.5, -115.5, 0.9); bear.setIdle('Sit');
+    const fox = W.story.fox || W.spawnFox([[63.5, -114.5]]);
+    fox.path = null; fox.trail = []; fox.place(63.5, -114.5, -2.4); fox.setIdle('Sit');
+    (W.deer || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(64 + i * 2.2, -120 - i, -1.2); a.setIdle('Graze'); });
+    (W.rabbits || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(59 + i * 1.3, -121.5, 0.3); a.setIdle('Idle'); });
+    g.player.teleport(60.5, -113, undefined, Math.PI);
+    C?.kodama?.(clearing, 36, 16);
+    C?.leafButterflies?.(V(61, 12, -121), V(71, 25, -146), 10);
+    await this.shot(V(76, 30, -104), V(62, 12, -130), 2.2, 400);
+    await d.sayNow(null, DIALOGUE.c3_party.slice(0, 3));
+    // the sky darkens for moon-viewing
+    const h0 = g.time.hour, t0 = performance.now();
+    while (performance.now() - t0 < 3000) { const k = (performance.now() - t0) / 3000; g.time.hour = h0 + (20.5 - h0) * k * k * (3 - 2 * k); await wait(16); }
+    d.q.state.hour = g.time.hour;
+    const moon = g.sky?.uniforms?.uMoonDir?.value?.clone().normalize() || V(-0.45, 0.62, 0.52).normalize();
+    await this.shot(clearing.clone().add(V(-moon.x * 9, 3, -moon.z * 9)), clearing.clone().add(moon.clone().multiplyScalar(40)), 2, 400);
+    await d.sayNow(null, DIALOGUE.c3_party.slice(3));
+    await this.shot(V(60, 16.5, -106), V(60, 13, -118), 1.4, 300);
+    await this.photo('c3');
+  }
+
+  // winter finale: aurora, star-snow, the Star Train crossing the sky with Sora at the window, then the photo
+  async party4(C) {
+    const g = this.g, d = this.d, r = g.railway;
+    const aurora = C?.aurora?.(true), snow = C?.starSnow?.(true);
+    const hx = PLACES.halt.x, hz = PLACES.halt.z, hy = g.world.heightAt(hx, hz);
+    await this.shot(V(hx - 10, hy + 5, hz - 6), V(hx - 50, hy + 60, hz + 70), 2.2, 300);
+    const train = C?.skyTrain?.(null, 20);
+    // follow the train of starlight across the sky from the halt
+    const camAt = V(hx - 6, hy + 3.2, hz - 2);
+    const trainAt = () => (train?.train ? train.train.getWorldPosition(V(0, 0, 0)) : V(hx - 40, hy + 90, hz + 90));
+    g.follow.track(() => camAt.clone(), trainAt, 2.2);
+    await wait(1600);
+    await d.sayNow(null, DIALOGUE.c4_skytrain.slice(0, 1));
+    // close on the window: Sora, waving
+    if (train?.sora) {
+      const at = () => train.sora.getWorldPosition(V(0, 0, 0));
+      g.follow.track(() => at().add(V(-5, 2, -25)), at, 3);
+      await wait(3200);
+    }
+    await d.sayNow(null, DIALOGUE.c4_skytrain.slice(1, 2));
+    g.follow.track(() => camAt.clone().add(V(-4, 0.6, -3)), trainAt, 2.2);
+    await d.sayNow(null, DIALOGUE.c4_skytrain.slice(2));
+    await Promise.race([train, wait(1500)]); // the train sails on out of sight while everyone climbs down
+    // everyone steps down in front of Kobo for the photograph
+    for (const n of Object.values(d.npcs)) if (n.riding) { n.root.removeFromParent(); g.scene.add(n.root); n.riding = false; }
+    const loco = r.cars[0].obj;
+    const p = rail.at(r.train.s), fwd = V(p.tx, 0, p.tz), side = V(-p.tz, 0, p.tx);
+    const front = loco.position.clone().addScaledVector(fwd, 5.2);
+    const row = ['ota', 'genzo', null, 'hana', 'rin'];
+    const party = this.gather(row.map((id, i) => id && [id, front.x + side.x * (i - 2) * 1.05, front.z + side.z * (i - 2) * 1.05, Math.atan2(fwd.x, fwd.z)]).filter(Boolean));
+    g.player.dismount(front.x, front.z, undefined, Math.atan2(fwd.x, fwd.z));
+    const stop = this.partyLoop(party);
+    const cam = front.clone().addScaledVector(fwd, 7.5).add(V(0, 2.1, 0));
+    await this.shot(cam, front.clone().add(V(0, 1.3, 0)), 1.6, 200);
+    await d.sayNow(null, DIALOGUE.c4_photo.slice(0, 5));
+    stop();
+    for (const n of party) { n.setIdle('Idle'); n.lookAt(cam.x, cam.z); }
+    g.player.facing = Math.atan2(fwd.x, fwd.z);
+    await d.sayNow(null, DIALOGUE.c4_photo.slice(5));
+    for (const n of party) n.gesture(n.anim?.has?.('Cheer') ? 'Cheer' : 'Wave');
+    g.player.gesture('Cheer', { lock: false });
+    await wait(450);
+    await this.photo('c4');
+    d.ui.flash?.();
+    d.audio.star();
+    C?.sparkleBurst?.(front.clone().add(V(0, 2.5, 0)));
+    await wait(1400);
+    // the credits, as a photo album of the year
+    d.ui.creditsAlbum?.(d.album());
     d.ui.open('credits');
-    await wait(7500);
+    await wait(9000);
     d.ui.closeAll();
     g.paused = false;
     await d.ui.fade(true, 1200);
+    aurora?.stop?.(); snow?.stop?.();
     d.fx.fireworks(false);
     d.fx.meteorShower(0);
     for (const b of this.boats) g.scene.remove(b.obj);
     this.boats = [];
     for (const L of this.lanterns) { g.scene.remove(L.obj); g.lights.remove(L.light); }
-    // riders step off
-    for (const n of Object.values(d.npcs)) if (n.riding) { n.root.removeFromParent(); g.scene.add(n.root); n.riding = false; }
     g.player.dismount(PLACES.halt.x - 4, PLACES.halt.z + 2, undefined, 0);
     g.railway.setFestival(false);
     g.railway.buildTrain(2);
     g.railway.placeAt(STOPS.station + 8);
     d.audio.setMusic('spring', 'calm');
     await d.ui.fade(false, 1200);
+  }
+
+  /** Epilogue: Tamo pops out of the Viaduct Lamp. Sundays off! */
+  async tamoReturns() {
+    const g = this.g, d = this.d;
+    const f = g.structures.lamps.get('viaduct')?.flame || V(0, 25, 118.6);
+    const p = g.player.pos;
+    d.tamo.show(f.clone());
+    d.tamo.override = f.clone();
+    await this.shot(p.clone().add(V(-4, 2.6, 5)), p.clone().add(V(0, 1.6, 0)), 1.2, 200);
+    d.fx.burst(f, { n: 60, speed: 4 });
+    d.audio.star();
+    const t0 = performance.now(), from = f.clone(), to = () => p.clone().add(V(0.8, 1.8, 0.4));
+    while (performance.now() - t0 < 1600) {
+      const k = (performance.now() - t0) / 1600, e = k * k * (3 - 2 * k);
+      d.tamo.override = from.clone().lerp(to(), e).add(V(0, Math.sin(k * Math.PI) * 6, 0));
+      await wait(16);
+    }
+    d.tamo.override = null;
+    d.tamo.react('Happy');
+    d.fx.burst(to(), { n: 40, speed: 2.5, color: [1, 0.85, 0.4] });
+    await d.sayNow('tamo_returns');
   }
 
   epiloguePositions() {
