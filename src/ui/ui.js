@@ -1,6 +1,7 @@
-import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, DIALOGUE } from '../game/story.js';
+import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, DIALOGUE, huntProgress } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
+import { JournalMap } from './map.js';
 
 const $ = id => document.getElementById(id);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
@@ -584,8 +585,12 @@ export class UI {
     document.querySelectorAll('#journalTabs button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
     const q = this.game.quest?.state;
     const body = $('journalBody');
+    this.map?.stop();
     if (!q) { body.textContent = ''; return; }
-    if (tab === 'story') {
+    if (tab === 'map') {
+      // the valley map lives in map.js: a painted map with live markers, redrawn while the page is open
+      (this.map ??= new JournalMap(this.game)).mount(body, this);
+    } else if (tab === 'story') {
       const cur = STEP_INDEX[q.step];
       const rows = STEPS.slice(0, cur + 1).filter(s => s.chapter === q.chapter || STEP_INDEX[s.id] === cur)
         .map(s => `<div class="step ${STEP_INDEX[s.id] < cur ? 'done' : ''}">${STEP_INDEX[s.id] < cur ? '✓' : '★'} ${esc(tx(s.objective).replace(/\s*[(（]\{\w+\}\/\d+[)）]/g, '').replace(/\{\w+\}/g, ''))}</div>`);
@@ -607,12 +612,16 @@ export class UI {
       }).join('') + '</div>';
     } else if (tab === 'treasures') {
       const tr = q.treasures || {}, letters = q.letters || [], gifts = this.game.director?.giftsEarned().map(x => x.g.id) || [];
-      body.innerHTML = `<h3>${esc(tx('Treasures'))} · ${TREASURES.filter(t => tr[t.id]).length} / ${TREASURES.length}</h3><div class="cards">` +
+      // the epilogue's treasure hunt: progress, or a button to start it
+      const hp = huntProgress(q);
+      const hunt = q.chapter >= 5 ? `<div class="hunt"><span>${esc(q.flags?.hunt ? tx('Treasure hunt: {found} of {total} found', hp) : tx("Tamo can make Sora's hidden treasures twinkle and lead you to them."))}</span>${q.flags?.hunt ? '' : `<button id="btnHunt">${esc(tx('Start the treasure hunt'))}</button>`}</div>` : '';
+      body.innerHTML = hunt + `<h3>${esc(tx('Treasures'))} · ${TREASURES.filter(t => tr[t.id]).length} / ${TREASURES.length}</h3><div class="cards">` +
         TREASURES.map(t => this.cardHTML(!!tr[t.id], t.icon, tx(t.name), tr[t.id] ? tx(t.text) : tx(t.hint))).join('') + '</div>' +
         `<h3>${esc(tx('Sky Letters'))} · ${letters.length} / ${SKY_LETTERS.length}</h3><div class="cards">` +
         SKY_LETTERS.map(l => this.cardHTML(letters.includes(l.id), 'journal-page', tx(l.name), letters.includes(l.id) ? tx(DIALOGUE[l.say][0][1]) : tx('Somewhere high. Only the Star Kite reaches it.'))).join('') + '</div>' +
         `<h3>${esc(tx('Gifts at the cottage'))} · ${gifts.length} / ${GIFTS.length}</h3><div class="cards">` +
         GIFTS.map(g => this.cardHTML(gifts.includes(g.id), g.model, tx(g.name), gifts.includes(g.id) ? tx(DIALOGUE[g.say][0][1]) : tx('Help {from}, and see what turns up.', { from: tx(g.from) }))).join('') + '</div>';
+      $('btnHunt')?.addEventListener('click', () => { this.game.director?.startHunt(); this.journalTab('treasures'); });
     } else if (tab === 'album') {
       const photos = this.game.director?.album() || {};
       body.innerHTML = `<p>${esc(tx('Every Star Lamp you light throws a party. Each one leaves a photo here.'))}</p><div class="album">` +

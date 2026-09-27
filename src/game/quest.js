@@ -2,7 +2,7 @@
 // effects the director must present (dialogue, cutscenes, toasts, world changes). State effects
 // (give/take/flag/lamp/journal/unlock/season/time/chapter) are applied here so state is always consistent.
 
-import { STEPS, STEP_INDEX, DIALOGUE, CHATTER } from './story.js';
+import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, huntProgress } from './story.js';
 
 export const SAVE_VERSION = 1;
 
@@ -48,7 +48,9 @@ export class Quest {
   /** Current objective with its counters filled in; translate() localises the template first. */
   objective(translate = s => s) {
     const st = this.state;
-    return translate(this.step.objective).replace(/\{(\w+)\}/g, (_, k) => (k === 'stars' ? st.stars.length : k === 'act' ? 'E' : this.count(k)));
+    const hunt = st.flags.hunt && this.step.hunt ? huntProgress(st) : null;
+    const text = !hunt ? this.step.objective : hunt.found >= hunt.total && this.step.huntDone ? this.step.huntDone : this.step.hunt;
+    return translate(text).replace(/\{(found|total)\}/g, (_, k) => (k === 'found' ? hunt?.found : hunt?.total)).replace(/\{(\w+)\}/g, (_, k) => (k === 'stars' ? st.stars.length : k === 'act' ? 'E' : this.count(k)));
   }
 
   /** Effects of entering the current step (call once for a new game or after loading a save). */
@@ -163,6 +165,14 @@ export class Quest {
         out.push({ got: ev.item, n: ev.n || 1, total: st.inv[ev.item], silent: ev.silent });
         break;
       case 'choice':
+        if (ev.id === 'hunt') {
+          // the epilogue's treasure hunt: yes turns on the glints and, after the stars, the arrow to every treasure left
+          st.flags.huntAsked = true;
+          st.flags.hunt = ev.value === 'yes';
+          const late = STEP_INDEX[st.step] >= STEP_INDEX['e.done'];
+          out.push({ say: ev.value === 'yes' ? (late ? 'hunt_yes_end' : 'hunt_yes') : 'hunt_no' }, { objective: true });
+          break;
+        }
         st.choice = ev.value;
         out.push({ say: `c4_choice_${ev.value}` });
         break;
@@ -189,5 +199,6 @@ export function missingDialogue() {
     for (const t of Object.values(s.talk || {})) need(typeof t === 'string' ? t : t.say);
   }
   need('c4_choice_alone'); need('c4_choice_together');
+  for (const id of ['hunt_offer', 'hunt_offer_end', 'hunt_yes', 'hunt_yes_end', 'hunt_no', 'hunt_done']) need(id);
   return missing;
 }

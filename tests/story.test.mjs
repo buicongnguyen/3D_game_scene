@@ -165,3 +165,28 @@ test('a save taken during the Star Train ride resumes at boarding, and chapter-e
   assert.equal(winter.season, 'winter');
   assert.equal(winter.hour, 10.5);
 });
+
+test('the treasure hunt: Tamo asks, yes counts every treasure, and finding them all says so', async () => {
+  const { HUNT, huntProgress, SKY_LETTERS, KEEPSAKES } = await import('../src/game/story.js');
+  const { q } = playthrough('together');
+  const fx = q.dispatch({ type: 'choice', id: 'hunt', value: 'yes' });
+  assert.ok(fx.some(e => e.say === 'hunt_yes'));
+  assert.ok(q.state.flags.hunt && q.state.flags.huntAsked);
+  assert.equal(q.state.choice, 'together', 'the confession choice is untouched');
+  assert.match(q.objective(), /then Sora's treasures \(0\/13\)/);
+  assert.equal(HUNT.length, 4 + SKY_LETTERS.length + KEEPSAKES.length);
+  for (let i = 1; i <= 12; i++) q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` });
+  q.dispatch({ type: 'cutscene', id: 'starfall' });
+  assert.equal(q.state.step, 'e.done');
+  assert.match(q.objective(), /Treasure hunt: .*\(0\/13\)/);
+  const st = q.state;
+  st.inv.kite = 1; st.treasures.musicBox = true; st.treasures.compass = true; st.flags.treePlanted = true;
+  st.letters = SKY_LETTERS.map(l => l.id); st.keepsakes = KEEPSAKES.map(k => k.id);
+  assert.deepEqual(huntProgress(st), { found: 13, total: 13 });
+  assert.match(q.objective(), /Every treasure found/);
+  // no thanks: the objective stays the plain one
+  const other = playthrough('alone').q;
+  assert.ok(other.dispatch({ type: 'choice', id: 'hunt', value: 'no' }).some(e => e.say === 'hunt_no'));
+  assert.ok(!other.state.flags.hunt);
+  assert.match(other.objective(), /find all 12 Fallen Stars/);
+});

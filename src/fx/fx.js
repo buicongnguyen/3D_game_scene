@@ -119,6 +119,26 @@ export class FX {
     if (Math.random() < 0.3) this.glow.emit(V.copy(p).add(new THREE.Vector3((Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6, (Math.random() - 0.5) * 0.6)), new THREE.Vector3(0, 0.4, 0), { life: 0.9, size: 0.2, color });
   }
 
+  /**
+   * Little blinking lights around a hidden treasure: a few gold and pink sparks winking in and out close by. During
+   * the treasure hunt (strong) there are more of them and a thin column of sparkles rises, to be seen from afar.
+   */
+  glint(p, strong = false) {
+    const n = strong ? 3 : 2;
+    for (let i = 0; i < n; i++) {
+      if (Math.random() > (strong ? 0.55 : 0.4)) continue;
+      const a = Math.random() * Math.PI * 2, r = 0.3 + Math.random() * 0.7;
+      const c = [[1, 0.78, 0.2], [1, 0.9, 0.45], [1, 0.45, 0.75], [0.5, 0.8, 1]][Math.floor(Math.random() * 4)];
+      this.glow.emit(V.copy(p).add(new THREE.Vector3(Math.cos(a) * r, (Math.random() - 0.3) * 0.9, Math.sin(a) * r)), new THREE.Vector3(0, 0.3, 0),
+        { life: 0.5 + Math.random() * 0.6, size: (strong ? 0.26 : 0.2) + Math.random() * 0.16, color: c });
+    }
+    // the treasure hunt: a thin column of sparkles rises from it, to be seen from far away
+    if (strong && Math.random() < 0.8) {
+      this.glow.emit(V.copy(p).add(new THREE.Vector3((Math.random() - 0.5) * 0.4, 0.3, (Math.random() - 0.5) * 0.4)), new THREE.Vector3(0, 3.4 + Math.random() * 2.2, 0),
+        { life: 2.2, size: 0.42, color: Math.random() < 0.6 ? [1, 0.72, 0.18] : [1, 0.42, 0.72] });
+    }
+  }
+
   splash(p) {
     for (let i = 0; i < 40; i++) this.soft.emit(p, V.set((Math.random() - 0.5) * 3, 2 + Math.random() * 3, (Math.random() - 0.5) * 3), { life: 0.9, size: 0.3, color: [0.85, 0.95, 1], alpha: 0.8, gravity: 9 });
   }

@@ -2,7 +2,8 @@
  {
   "s": "Mika",
   "ctx": [
-   "character name (mika)"
+   "character name (mika)",
+   "UI (src/ui/map.js)"
   ]
  },
  {
@@ -136,7 +137,8 @@
  {
   "s": "Star Kite",
   "ctx": [
-   "inventory item"
+   "inventory item",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
@@ -151,7 +153,8 @@
   "s": "Star compass",
   "ctx": [
    "inventory item",
-   "treasure name"
+   "treasure name",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
@@ -1554,6 +1557,85 @@
   ]
  },
  {
+  "s": "Psst. Sora hid more than stars, you know. Letters on the rooftops, a music box, keepsakes in every home…",
+  "ctx": [
+   "dialogue hunt_offer, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Want to go treasure hunting too? I can make them twinkle for you!",
+  "ctx": [
+   "dialogue hunt_offer, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "\"Yes! Let's find every treasure!\"",
+  "ctx": [
+   "dialogue hunt_offer: Mika's answer choice",
+   "dialogue hunt_offer_end: Mika's answer choice"
+  ]
+ },
+ {
+  "s": "\"Just the stars for now.\"",
+  "ctx": [
+   "dialogue hunt_offer: Mika's answer choice"
+  ]
+ },
+ {
+  "s": "The stars are home! But Sora's treasures are still hiding out there. One last adventure?",
+  "ctx": [
+   "dialogue hunt_offer_end, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "\"Not now. I just want to wander.\"",
+  "ctx": [
+   "dialogue hunt_offer_end: Mika's answer choice"
+  ]
+ },
+ {
+  "s": "Treasure hunt! Look for the little twinkles. Find the stars first, then my arrow will lead you to every treasure left.",
+  "ctx": [
+   "dialogue hunt_yes, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Treasure hunt! Follow the arrow: I'll point you to every treasure left, one by one.",
+  "ctx": [
+   "dialogue hunt_yes_end, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Okay! If you change your mind, it's in the journal: Treasures, Start the treasure hunt.",
+  "ctx": [
+   "dialogue hunt_no, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "That's EVERY treasure. Every letter, every keepsake, the music box, the kite, the tree… Sora would be so proud.",
+  "ctx": [
+   "dialogue hunt_done, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "She hid them for me to find. And I found all of them.",
+  "ctx": [
+   "dialogue hunt_done, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Sora's kite rests here when we're not flying. Out in the open, call it with the Kite button (G), and off we go!",
+  "ctx": [
+   "dialogue kite_rest, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "Grandma's kite rests here when I'm not flying. Outside, the Kite button (G) calls it.",
+  "ctx": [
+   "dialogue kite_rest_solo, spoken by Mika"
+  ]
+ },
+ {
   "s": "Sora's music box. Inside, a tiny Kobo circles a tiny track, and the lullaby she used to hum begins to play.",
   "ctx": [
    "dialogue music_box, spoken by narrator",
@@ -2774,7 +2856,8 @@
  {
   "s": "Sora's music box",
   "ctx": [
-   "treasure name"
+   "treasure name",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
@@ -2816,31 +2899,36 @@
  {
   "s": "On the station roof",
   "ctx": [
-   "where one of Sora's Sky Letters is hidden (journal)"
+   "where one of Sora's Sky Letters is hidden (journal)",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
   "s": "On the bell-tower roof",
   "ctx": [
-   "where one of Sora's Sky Letters is hidden (journal)"
+   "where one of Sora's Sky Letters is hidden (journal)",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
   "s": "On the mill roof",
   "ctx": [
-   "where one of Sora's Sky Letters is hidden (journal)"
+   "where one of Sora's Sky Letters is hidden (journal)",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
   "s": "On top of the Viaduct Lamp",
   "ctx": [
-   "where one of Sora's Sky Letters is hidden (journal)"
+   "where one of Sora's Sky Letters is hidden (journal)",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
   "s": "On the shrine roof",
   "ctx": [
-   "where one of Sora's Sky Letters is hidden (journal)"
+   "where one of Sora's Sky Letters is hidden (journal)",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
@@ -2880,8 +2968,36 @@
   ]
  },
  {
+  "s": "Star-tree",
+  "ctx": [
+   "a treasure of the epilogue's treasure hunt (journal map label)"
+  ]
+ },
+ {
   "s": "Festival photograph",
   "ctx": [
+   "a treasure of the epilogue's treasure hunt (journal map label)",
+   "keepsake name"
+  ]
+ },
+ {
+  "s": "Hana's bun recipe",
+  "ctx": [
+   "a treasure of the epilogue's treasure hunt (journal map label)",
+   "keepsake name"
+  ]
+ },
+ {
+  "s": "Pair of fishing floats",
+  "ctx": [
+   "a treasure of the epilogue's treasure hunt (journal map label)",
+   "keepsake name"
+  ]
+ },
+ {
+  "s": "Kobo's first ticket",
+  "ctx": [
+   "a treasure of the epilogue's treasure hunt (journal map label)",
    "keepsake name"
   ]
  },
@@ -2894,13 +3010,8 @@
  {
   "s": "Sora's cottage",
   "ctx": [
-   "the home a keepsake is in"
-  ]
- },
- {
-  "s": "Hana's bun recipe",
-  "ctx": [
-   "keepsake name"
+   "the home a keepsake is in",
+   "UI (src/ui/map.js)"
   ]
  },
  {
@@ -2916,12 +3027,6 @@
   ]
  },
  {
-  "s": "Pair of fishing floats",
-  "ctx": [
-   "keepsake name"
-  ]
- },
- {
   "s": "Two cork floats, one red and one teal, tied together with twine and carved Ō and G. Somebody has dusted them every week for ten years.",
   "ctx": [
    "keepsake description (journal)"
@@ -2930,13 +3035,8 @@
  {
   "s": "Ōta's mill",
   "ctx": [
-   "the home a keepsake is in"
-  ]
- },
- {
-  "s": "Kobo's first ticket",
-  "ctx": [
-   "keepsake name"
+   "the home a keepsake is in",
+   "UI (src/ui/map.js)"
   ]
  },
  {
@@ -3180,9 +3280,27 @@
   ]
  },
  {
+  "s": "Find all 12 Fallen Stars ({stars}/12), then Sora's treasures ({found}/{total})",
+  "ctx": [
+   "quest objective during the treasure hunt (keep {placeholders} exactly)"
+  ]
+ },
+ {
   "s": "The story is complete! Hoshi Valley is yours to explore",
   "ctx": [
    "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Treasure hunt: find Sora's hidden treasures ({found}/{total})",
+  "ctx": [
+   "quest objective during the treasure hunt (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Every treasure found! Hoshi Valley is yours to explore",
+  "ctx": [
+   "quest objective once every treasure is found"
   ]
  },
  {
@@ -3278,7 +3396,8 @@
  {
   "s": "Viaduct Lamp",
   "ctx": [
-   "Star Lamp name"
+   "Star Lamp name",
+   "UI (src/ui/map.js)"
   ]
  },
  {
@@ -3463,13 +3582,13 @@
   ]
  },
  {
-  "s": "Plant the golden acorn",
+  "s": "Look at: {item}",
   "ctx": [
    "UI (src/game/director.js)"
   ]
  },
  {
-  "s": "Look at: {item}",
+  "s": "Plant the golden acorn",
   "ctx": [
    "UI (src/game/director.js)"
   ]
@@ -3524,6 +3643,12 @@
   ]
  },
  {
+  "s": "Treasure hunt started! Look for the little twinkles.",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "{n} of 12 Fallen Stars",
   "ctx": [
    "UI (src/game/director.js)"
@@ -3532,7 +3657,8 @@
  {
   "s": "{n} of 4 Star Lamps",
   "ctx": [
-   "UI (src/game/director.js)"
+   "UI (src/game/director.js)",
+   "UI (src/ui/map.js)"
   ]
  },
  {
@@ -3730,6 +3856,145 @@
   ]
  },
  {
+  "s": "Kawabe",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Takamori",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Hoshi Station",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Sheep pasture",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Peach orchard",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Takamori Halt",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Forest Shrine",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Landslide scar",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Engine shed",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Map",
+  "ctx": [
+   "UI (src/ui/map.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Whole valley",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Around Mika",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Drag to move · pinch to zoom · tap a marker to see what it is",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Drag to move · scroll to zoom · point at a marker to see what it is",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Fallen Stars",
+  "ctx": [
+   "UI (src/ui/map.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Treasures",
+  "ctx": [
+   "UI (src/ui/map.js)",
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Current goal",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Found",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "N",
+  "ctx": [
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Still in {place}.",
+  "ctx": [
+   "UI (src/ui/map.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Somewhere high. Only the Star Kite reaches it.",
+  "ctx": [
+   "UI (src/ui/map.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Not found yet.",
+  "ctx": [
+   "UI (src/ui/map.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Do it",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -3808,19 +4073,7 @@
   ]
  },
  {
-  "s": "Not found yet.",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
   "s": "Keepsakes",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
-  "s": "Still in {place}.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -3856,20 +4109,25 @@
   ]
  },
  {
-  "s": "Treasures",
-  "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Sky Letters",
+  "s": "Treasure hunt: {found} of {total} found",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
  },
  {
-  "s": "Somewhere high. Only the Star Kite reaches it.",
+  "s": "Tamo can make Sora's hidden treasures twinkle and lead you to them.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Start the treasure hunt",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Sky Letters",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -4109,12 +4367,6 @@
  },
  {
   "s": "Sora's Pages",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Fallen Stars",
   "ctx": [
    "menu / screen text"
   ]

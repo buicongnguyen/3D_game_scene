@@ -37,6 +37,8 @@ const SOLO = "When Tamo isn't with Mika (before she opens the chest, or after he
 const KITE = { home: 'cottage', where: "On Sora's workbench, once Tamo has joined" };
 const BARKS = [
   ['ferry_locked', "Rin's ferry, before the Mill Lamp is lit"],
+  ['hunt_done', 'The treasure hunt: when the last treasure is found'],
+  ['kite_rest', "Looking at the Star Kite on Sora's workbench once it is Mika's"],
   ['drawbridge_up', 'The raised drawbridge, before the wheel turns'],
   ['tower_locked', 'The bell-tower door, without the key'],
   ['gate_locked', 'The upper orchard gate, before it is opened'],
@@ -59,11 +61,13 @@ const CUTSCENES = {
   'celebrate:3': 'Moon-viewing with the forest: kodama rattle their heads, maple leaves turn into golden butterflies up the shrine steps, and Ōkuma, Kon, the deer and the rabbits gather under the moon.',
   'celebrate:4': 'Aurora and star-snow. The falling stars gather into a Star Train of light crossing the sky, with Sora waving from a window. Then everyone squashes onto Kobo for a photograph, and the credits play as the year’s album.',
   tamoReturns: 'A small gold light shoots out of the Viaduct Lamp.',
+  huntAsk: 'Tamo offers a treasure hunt (Mika can also start it later from the journal).',
+  'huntAsk:end': 'If Mika said no to the treasure hunt, Tamo asks once more.',
   landslide: 'The camera finds the landslide scar: a raw chute of earth torn out of the wooded hillside, with fallen cedars and boulders at its foot.',
   theEnd: 'The camera rises from Mika over the whole starlit valley. Then the last page: The End, the year’s photographs, and a thank-you. After it, the valley is Mika’s to explore.',
 };
 // dialogue played inside a cutscene
-const CUTSCENE_SAYS = { 'celebrate:1': ['c1_party'], 'celebrate:2': ['c2_party'], 'celebrate:3': ['c3_party', 'bear_acorn'], 'celebrate:4': ['c4_skytrain', 'c4_photo'], tamoReturns: ['tamo_returns'], landslide: ['c3_landslide'] };
+const CUTSCENE_SAYS = { 'celebrate:1': ['c1_party'], 'celebrate:2': ['c2_party'], 'celebrate:3': ['c3_party', 'bear_acorn'], 'celebrate:4': ['c4_skytrain', 'c4_photo'], tamoReturns: ['tamo_returns'], landslide: ['c3_landslide'], huntAsk: ['hunt_offer'], 'huntAsk:end': ['hunt_offer_end'] };
 const UNLOCKS = {
   drawbridge: 'The drawbridge to the mill island comes down.',
   ferry: "Rin's ferry now crosses the river.",
@@ -78,7 +82,7 @@ const put = (...lines) => out.push(...lines.map(l => (typeof l === 'string' ? l.
 const stage = s => put(`> *${s}*`, '');
 const name = who => CAST[who]?.name || who;
 const objective = s => s.replace(/\s*\(\{\w+\}\/\d+\)/g, '');
-const choiceLine = () => Object.values(DIALOGUE).flat().find(l => l.choice);
+const choiceLine = () => Object.values(DIALOGUE).flat().find(l => l.choice && !l.id);
 const hourWord = (h, prev) => (h < prev ? 'the next morning' : h < 12 ? 'morning' : h < 17 ? 'afternoon' : h < 18 ? 'evening' : h < 19.5 ? 'dusk' : 'nightfall');
 
 /** A scene that can play at any time, followed by its Tamo-free variant when it has one. */
@@ -117,7 +121,9 @@ function dialogue(id, label) {
       put('> **Choice**', '>');
       l.choice.forEach((c, i) => put(`> ${i + 1}. ${c.text}`));
       put('');
-      for (const c of l.choice) dialogue(`${id.split('_')[0]}_choice_${c.value}`, `If Mika says ${c.text}`);
+      // the confession's replies are <scene>_choice_<value>; the treasure hunt's are hunt_yes(_end) / hunt_no
+      const reply = v => (l.id === 'hunt' ? (v === 'yes' ? (id.endsWith('_end') ? 'hunt_yes_end' : 'hunt_yes') : 'hunt_no') : `${id.split('_')[0]}_choice_${v}`);
+      for (const c of l.choice) dialogue(reply(c.value), `If Mika says ${c.text}`);
       continue;
     }
     const [who, text] = l;

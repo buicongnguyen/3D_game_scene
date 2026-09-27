@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Quest } from './quest.js';
-import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST, FRIENDS, KEEPSAKES, TREASURES, SKY_LETTERS, GIFTS } from './story.js';
+import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST, FRIENDS, KEEPSAKES, TREASURES, SKY_LETTERS, GIFTS, HUNT, huntProgress } from './story.js';
 import { tx, N_ } from '../i18n/i18n.js';
 import { NPC } from '../actors/npc.js';
 import { Tamo } from '../actors/tamo.js';
@@ -215,8 +215,11 @@ export class Director {
         obj.rotation.y = it.yaw || 0;
         obj.visible = false;
         this.game.scene.add(obj);
-        this.kiteStand = { obj, when: () => I.active === it.interior && this.q.has('hasTamo') && !(this.q.count('kite') > 0) };
-        this.interact('takeKite', it.pos.clone().add(V(0, -0.8, 0)), N_('Take the Star Kite'), () => this.kiteStand.when(), () => this.takeKite(), 2.4, null, 1);
+        // Sora's kite rests on her workbench whenever it isn't out flying (after it's Mika's, too)
+        this.kiteStand = { obj, pos: it.pos.clone(), interior: it.interior, when: () => I.active === it.interior && !(this.game.kite?.active) };
+        this.interact('takeKite', it.pos.clone().add(V(0, -0.8, 0)), N_('Take the Star Kite'), () => this.kiteStand.when() && !(this.q.count('kite') > 0), () => this.takeKite(), 2.4, null, 1);
+        this.interact('kiteRest', it.pos.clone().add(V(0, -0.8, 0)), () => tx('Look at: {item}', { item: tx(ITEMS.kite.name) }), () => this.kiteStand.when() && this.q.count('kite') > 0,
+          () => this.say('kite_rest'), 2.4, null, 1);
       }
     }
   }
@@ -332,7 +335,6 @@ export class Director {
 
   takeKite() {
     this.q.state.inv.kite = 1;
-    this.kiteStand.obj.visible = false;
     this.game.player.gesture('Cheer', { lock: false });
     this.audio.pickup();
     this.fx.burst(this.kiteStand.obj.position.clone().add(V(0, 1, 0)), { n: 40, speed: 2.5 });
@@ -439,7 +441,10 @@ export class Director {
     this.power();
     this.placeCast();
     await this.run(effects, !resumed);
-    if (resumed && this.q.state.step === 'e.free' && this.q.has('allStars')) this.event({ type: 'cutscene', id: 'starfall' });
+    const st = this.q.state;
+    if (STEP_INDEX[st.step] > STEP_INDEX['c3.lamp'] && !st.inv.acorn && !st.flags.treePlanted && !st.flags.acornGiven) { st.inv.acorn = 1; st.flags.acornGiven = true; }
+    if (resumed && st.step === 'e.free' && this.q.has('allStars')) this.event({ type: 'cutscene', id: 'starfall' });
+    else if (resumed && st.chapter === 5 && !st.flags.huntAsked && !st.flags.hunt) this.run([{ cutscene: 'huntAsk' }]);
   }
 
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
@@ -526,6 +531,75 @@ export class Director {
     this.audio.spark();
     this.game.player.gesture('Point', { lock: false, then: 'Aim' });
     this.tamo.fire(to, pos => { this.audio.miss(); this.fx.burst(pos, { n: 14, speed: 2, size: 0.2 }); });
+  }
+
+  // ------------------------------------------------------------------ the treasure hunt
+  /**
+   * Every treasure of the hunt with where it is: pos is the point outdoors to head for (a home's front door for
+   * things inside), at is the thing itself, inside the home it's in (or null).
+   */
+  huntTargets() {
+    const st = this.q.state, I = this.game.interiors;
+    const door = id => I?.doors.find(d => d.id === id)?.outside;
+    const pk = id => this.pickups.get(id)?.pos;
+    const out = [];
+    for (const h of HUNT) {
+      let at = null, inside = null;
+      if (h.id === 'kite') { at = this.kiteStand?.pos; inside = this.kiteStand?.interior || 'cottage'; }
+      else if (h.id === 'musicBox') at = pk('musicBox');
+      else if (h.id === 'compass') at = V(4.2, 1, 30);      // Rin's dock: keep fishing
+      else if (h.id === 'tree') at = this.treeSpot;
+      else if (h.id.startsWith('letter-')) at = pk(h.id);
+      else if (h.id.startsWith('keepsake-')) {
+        const k = KEEPSAKES.find(x => `keepsake-${x.id}` === h.id);
+        const it = I?.items.find(x => x.kind === 'keepsake' && x.id === k?.id);
+        at = it?.pos || null; inside = k?.home || null;
+      }
+      const pos = inside ? door(inside) : at;
+      out.push({ id: h.id, name: h.name, icon: h.icon, found: h.found(st), pos: pos?.clone?.() || null, at: at?.clone?.() || null, inside });
+    }
+    return out;
+  }
+
+  /** From the journal: start the treasure hunt without waiting for Tamo to ask again. */
+  startHunt() {
+    const st = this.q.state;
+    st.flags.hunt = true;
+    st.flags.huntAsked = true;
+    this.refreshObjective(true);
+    this.ui.toast(tx('Treasure hunt started! Look for the little twinkles.'), 'star-compass');
+  }
+
+  /** The arrow after the stars: the nearest treasure left (the Star Kite first while Sky Letters still wait on the roofs). */
+  huntTarget() {
+    if (!this.q.has('hunt')) return null;
+    const p = this.game.player.pos;
+    const left = this.huntTargets().filter(t => !t.found && t.pos);
+    if (!left.length) return null;
+    const kite = left.find(t => t.id === 'kite');
+    if (kite && left.some(t => t.id.startsWith('letter-'))) return kite.pos.clone().add(V(0, 1.6, 0));
+    left.sort((a, b) => a.pos.distanceTo(p) - b.pos.distanceTo(p));
+    return left[0].pos.clone().add(V(0, 1.4, 0));
+  }
+
+  huntInside() {
+    const I = this.game.interiors;
+    if (!this.q.has('hunt') || !I?.active || STEP_INDEX[this.q.state.step] < STEP_INDEX['e.done']) return null;
+    const t = this.huntTargets().find(x => !x.found && x.inside === I.active && x.at);
+    return t ? t.at.clone().add(V(0, 0.5, 0)) : null;
+  }
+
+  /** The hunt's glints on things that aren't pickups (the kite on its stand, the star-tree spot, Rin's dock), and the finale. */
+  updateHunt() {
+    const st = this.q.state, on = !!st.flags.hunt;
+    if (this.kiteStand?.obj.visible && !(st.inv.kite > 0)) this.fx.glint(this.kiteStand.pos.clone().add(V(0, 0.4, 0)), on);
+    if (this.treeSpot && st.inv.acorn > 0 && !st.flags.treePlanted) this.fx.glint(this.treeSpot.clone().add(V(0, 0.6, 0)), on);
+    if (on && !st.treasures.compass && st.step !== 'c1.fish') this.fx.glint(V(4.2, 1.2, 30), true);
+    if (on && !st.flags.huntDone && !this.busy) {
+      const { found, total } = huntProgress(st);
+      if (found !== this.huntSeen) { this.huntSeen = found; this.refreshObjective(); }
+      if (found >= total) { st.flags.huntDone = true; this.audio.fanfare?.(); this.game.celebrate?.sparkleBurst?.(this.game.player.pos.clone().add(V(0, 2.2, 0))); this.say('hunt_done'); }
+    }
   }
 
   /** Numbers for the last page. */
@@ -731,7 +805,7 @@ export class Director {
     g.input.edges.clear();
     this.actCooldown = 0.35;
     // queued: this may be running inside the effect queue
-    if (choice) this.event({ type: 'choice', id: 'confession', value: choice });
+    if (choice) this.event({ type: 'choice', id: lines.find(l => l.choice)?.id || 'confession', value: choice });
   }
 
   nearestVillager() {
@@ -1044,6 +1118,7 @@ export class Director {
       pk.obj.position.y = pk.pos.y + Math.sin(pk.t * 2.2) * 0.12;
       pk.obj.rotation.y += dt * 1.6;
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
+      else if (pk.treasure || pk.letter || pk.keepsake) this.fx.glint(pk.obj.position, this.q.has('hunt'));
       if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < (pk.grab || 1.45)) this.collect(pk);
     }
     // Rin's ferry is the story's way over; only when the river is frozen does walking across the ice count instead
@@ -1098,7 +1173,9 @@ export class Director {
     }
     // marker
     // no guide arrow inside a home: the world outside is far below
-    this.ui.marker(g.camera, this.busy || g.interiors?.active ? null : this.markerTarget(), p.pos);
+    // inside a home the arrow only leads to a treasure in this room (the world outside is far below)
+    this.ui.marker(g.camera, this.busy ? null : g.interiors?.active ? this.huntInside() : this.markerTarget(), p.pos);
+    this.updateHunt();
     if (this.kiteStand) this.kiteStand.obj.visible = this.kiteStand.when();
     this.updateValley(dt);
     for (const x of this.giftObjs || []) x.obj.visible = this.game.interiors?.active === 'cottage' && x.earned();
@@ -1201,6 +1278,7 @@ export class Director {
       if (what === 'bell' || what === 'lantern') { const t = [...this.targets.values()].filter(t => t.id.startsWith(what) && t.when()).sort((a, b) => a.pos.distanceTo(p) - b.pos.distanceTo(p))[0]; return t?.pos || null; }
       return this.targets.get(what)?.pos || null;
     }
+    if (kind === 'hunt') return this.huntTarget();
     if (kind === 'item') {
       const items = what === 'forest' ? ['chestnut', 'mushroom', 'honeycomb'] : [what];
       let best = null, bd = 1e9;

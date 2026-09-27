@@ -1111,6 +1111,25 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 **Tamo:** It's Sunday if you say it fast enough! Come on, the whole valley's waiting!
 
+> *Tamo offers a treasure hunt (Mika can also start it later from the journal).*
+
+**Tamo:** Psst. Sora hid more than stars, you know. Letters on the rooftops, a music box, keepsakes in every home…
+
+**Tamo:** Want to go treasure hunting too? I can make them twinkle for you!
+
+> **Choice**
+>
+> 1. "Yes! Let's find every treasure!"
+> 2. "Just the stars for now."
+
+*If Mika says "Yes! Let's find every treasure!":*
+
+**Tamo:** Treasure hunt! Look for the little twinkles. Find the stars first, then my arrow will lead you to every treasure left.
+
+*If Mika says "Just the stars for now.":*
+
+**Tamo:** Okay! If you change your mind, it's in the journal: Treasures, Start the treasure hunt.
+
 *Riding Kobo's Sunday service between Hoshi Station and Takamori Halt (by how far along the ride, either way):*
 
 > **2%:** Sunday service. Kobo toots twice, huffs once, and rolls out with Mika up front, where the view is.
@@ -1135,6 +1154,23 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 #### The story is complete! Hoshi Valley is yours to explore · `e.done`
 
+> *If Mika said no to the treasure hunt, Tamo asks once more.*
+
+**Tamo:** The stars are home! But Sora's treasures are still hiding out there. One last adventure?
+
+> **Choice**
+>
+> 1. "Yes! Let's find every treasure!"
+> 2. "Not now. I just want to wander."
+
+*If Mika says "Yes! Let's find every treasure!":*
+
+**Tamo:** Treasure hunt! Follow the arrow: I'll point you to every treasure left, one by one.
+
+*If Mika says "Not now. I just want to wander.":*
+
+**Tamo:** Okay! If you change your mind, it's in the journal: Treasures, Start the treasure hunt.
+
 ### Blocked paths
 
 What Mika hears when she tries a way that is not open yet.
@@ -1142,6 +1178,16 @@ What Mika hears when she tries a way that is not open yet.
 *Rin's ferry, before the Mill Lamp is lit:*
 
 **Rin:** Ferry? Not a chance. Grandpa says nobody crosses until the Mill Lamp's lit.
+
+*The treasure hunt: when the last treasure is found:*
+
+**Tamo:** That's EVERY treasure. Every letter, every keepsake, the music box, the kite, the tree… Sora would be so proud.
+
+**Mika:** She hid them for me to find. And I found all of them.
+
+*Looking at the Star Kite on Sora's workbench once it is Mika's:*
+
+**Tamo:** Sora's kite rests here when we're not flying. Out in the open, call it with the Kite button (G), and off we go!
 
 *The raised drawbridge, before the wheel turns:*
 
@@ -1172,6 +1218,10 @@ What Mika hears when she tries a way that is not open yet.
 *`ferry_frozen_solo`:*
 
 **Mika:** Frozen in till spring. Fine, I'll walk across. Carefully. Mostly.
+
+*`kite_rest_solo`:*
+
+**Mika:** Grandma's kite rests here when I'm not flying. Outside, the Kite button (G) calls it.
 
 ## Appendix B · Sora's letters and journal pages
 

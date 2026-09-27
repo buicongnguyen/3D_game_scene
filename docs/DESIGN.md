@@ -125,6 +125,17 @@ together, and how the game is verified. The story itself is in
   Mika, trees and pickups stand on the model. Keep `build_landslide()` and
   `landslide.js` in sync (`tests/landslide.test.mjs` fails if they drift). The
   step's `landslide` cutscene frames the scar before the dialogue.
+- **The treasure hunt** (`HUNT` + `huntProgress` in story.js): `huntAsk` asks at
+  the start of the epilogue (and `huntAsk:end` after The End if the answer was
+  no; the journal's Treasures tab can start it too). The choice line carries
+  `id: 'hunt'`. With `flags.hunt` the steps' `hunt`/`huntDone` objectives show
+  `{found}/{total}`, `fx.glint(pos, strong)` sparkles on every hidden treasure
+  (always faintly, strongly during the hunt), and `e.done`'s `hunt` marker
+  leads to the nearest treasure left (`director.huntTargets()`: homes resolve to
+  their front door outdoors, to the item inside; the Star Kite first while Sky
+  Letters remain).
+- **The Star Kite** rests on Sora's workbench whenever it isn't out flying (after
+  it's Mika's too); looking at it then reminds how to call it (G / Kite).
 - **Rin's ferry** is the only story crossing in summer: reaching the east bank
   another way (swimming, a speed leap) points the guide to the east landing,
   where “Call Rin's ferry” plays the ride. Only a frozen river counts as crossed.

@@ -392,6 +392,32 @@ export const DIALOGUE = {
     ['tamo', "It's Sunday if you say it fast enough! Come on, the whole valley's waiting!", 'Happy'],
   ],
 
+  // ---- the treasure hunt (epilogue)
+  hunt_offer: [
+    ['tamo', "Psst. Sora hid more than stars, you know. Letters on the rooftops, a music box, keepsakes in every home…", 'Talk'],
+    ['tamo', 'Want to go treasure hunting too? I can make them twinkle for you!', 'Happy'],
+    { id: 'hunt', choice: [
+      { text: '"Yes! Let\'s find every treasure!"', value: 'yes' },
+      { text: '"Just the stars for now."', value: 'no' },
+    ] },
+  ],
+  hunt_offer_end: [
+    ['tamo', "The stars are home! But Sora's treasures are still hiding out there. One last adventure?", 'Happy'],
+    { id: 'hunt', choice: [
+      { text: '"Yes! Let\'s find every treasure!"', value: 'yes' },
+      { text: '"Not now. I just want to wander."', value: 'no' },
+    ] },
+  ],
+  hunt_yes: [['tamo', 'Treasure hunt! Look for the little twinkles. Find the stars first, then my arrow will lead you to every treasure left.', 'Happy']],
+  hunt_yes_end: [['tamo', "Treasure hunt! Follow the arrow: I'll point you to every treasure left, one by one.", 'Happy']],
+  hunt_no: [['tamo', "Okay! If you change your mind, it's in the journal: Treasures, Start the treasure hunt.", 'Talk']],
+  hunt_done: [
+    ['tamo', "That's EVERY treasure. Every letter, every keepsake, the music box, the kite, the tree… Sora would be so proud.", 'Happy'],
+    ['mika', 'She hid them for me to find. And I found all of them.'],
+  ],
+  kite_rest: [['tamo', "Sora's kite rests here when we're not flying. Out in the open, call it with the Kite button (G), and off we go!", 'Happy']],
+  kite_rest_solo: [['mika', "Grandma's kite rests here when I'm not flying. Outside, the Kite button (G) calls it."]],
+
   // ---- rewards: treasures, Sky Letters, gifts, Starfall Night
   music_box: [
     ['narrator', "Sora's music box. Inside, a tiny Kobo circles a tiny track, and the lullaby she used to hum begins to play."],
@@ -750,10 +776,13 @@ export const STEPS = [
     enter: [{ cutscene: 'starTrain' }], exit: [{ cutscene: 'finale' }, { say: 'c4_finale' }, { cutscene: 'farewell' }, { flag: 'tamoHome' }, { cutscene: 'celebrate:4' }] },
   // ---------------------------------------------------------------- epilogue
   { id: 'e.free', chapter: 5, objective: 'Explore Hoshi Valley — find all 12 Fallen Stars ({stars}/12)', marker: 'item:star',
-    enter: [{ chapter: 5 }, { time: 10 }, { season: 'spring' }, { title: 5 }, { say: 'epilogue' }, { sayChoice: 'epilogue' }, { cutscene: 'tamoReturns' }, { flag: 'tamoBack' }, { autosave: true }],
+    hunt: 'Find all 12 Fallen Stars ({stars}/12), then Sora\'s treasures ({found}/{total})',
+    enter: [{ chapter: 5 }, { time: 10 }, { season: 'spring' }, { title: 5 }, { say: 'epilogue' }, { sayChoice: 'epilogue' }, { cutscene: 'tamoReturns' }, { flag: 'tamoBack' }, { cutscene: 'huntAsk' }, { autosave: true }],
     done: { event: 'cutscene', id: 'starfall' }, exit: [{ cutscene: 'theEnd' }] },
   // after Starfall Night and The End: the valley is Mika's to wander
-  { id: 'e.done', chapter: 5, objective: 'The story is complete! Hoshi Valley is yours to explore', enter: [{ autosave: true }], done: { never: true } },
+  { id: 'e.done', chapter: 5, objective: 'The story is complete! Hoshi Valley is yours to explore', marker: 'hunt',
+    hunt: 'Treasure hunt: find Sora\'s hidden treasures ({found}/{total})', huntDone: 'Every treasure found! Hoshi Valley is yours to explore',
+    enter: [{ cutscene: 'huntAsk:end' }, { autosave: true }], done: { never: true } },
 ];
 
 export const STEP_INDEX = Object.fromEntries(STEPS.map((s, i) => [s.id, i]));
@@ -795,3 +824,19 @@ export const GIFTS = [
   { id: 'okuma', model: 'gift-honey', name: "Ōkuma's honey pot", from: 'Ōkuma the bear', after: 'c3.bear', say: 'gift_okuma' },
   { id: 'genzo', model: 'gift-cap', name: "Genzo's old cap", from: 'Genzo', after: 'c4.ride', say: 'gift_genzo' },
 ];
+
+// ------------------------------------------------------------------------------------ the treasure hunt
+// Everything Sora hid in the valley, and how the saved state knows it has been found (the journal, the map and the
+// epilogue's arrow all read this list).
+export const HUNT = [
+  { id: 'kite', name: 'Star Kite', icon: 'star-kite', found: st => (st.inv.kite || 0) > 0 },
+  { id: 'musicBox', name: "Sora's music box", icon: 'music-box', found: st => !!st.treasures.musicBox },
+  { id: 'compass', name: 'Star compass', icon: 'star-compass', found: st => !!st.treasures.compass },
+  { id: 'tree', name: 'Star-tree', icon: 'golden-acorn', found: st => !!st.flags.treePlanted },
+  ...SKY_LETTERS.map(l => ({ id: `letter-${l.id}`, name: l.name, icon: 'journal-page', found: st => st.letters.includes(l.id) })),
+  ...KEEPSAKES.map(k => ({ id: `keepsake-${k.id}`, name: k.name, icon: k.model, found: st => st.keepsakes.includes(k.id) })),
+];
+
+export function huntProgress(st) {
+  return { found: HUNT.filter(h => h.found(st)).length, total: HUNT.length };
+}

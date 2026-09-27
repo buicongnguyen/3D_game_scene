@@ -40,7 +40,11 @@ danger that night.
   compass that points to Fallen Stars; watch the cottage fill with thank-you
   gifts; and find all twelve stars for Starfall Night, which ends the story with
   a flight over the starlit valley and **The End** (after it the valley is yours
-  to explore). As the lamps come back,
+  to explore). In the epilogue Tamo offers a **treasure hunt**: say yes and
+  every hidden treasure twinkles (a sparkle column shows it from afar), and
+  once the stars are home the arrow leads to each treasure left (13 in all:
+  the Star Kite, the music box, the star compass, the star-tree, five Sky
+  Letters and four keepsakes). As the lamps come back,
   the bell rings the hours again, people move home, and the viaduct gets its
   fireworks.
 - **Storytelling on the rails.** Captions tell the tale across the top of the

@@ -621,6 +621,7 @@ export class Scenes {
     await this.shot(this.above(63, -108.5, 2.2), this.above(59.5, -113.5, 0.6), 1.6, 1200);
     d.fx.burst(this.above(59.8, -113.2, 0.4), { n: 30, color: [1, 0.85, 0.3], speed: 2 });
     d.q.state.inv.acorn = 1;
+    d.q.state.flags.acornGiven = true;
     d.ui.toast(tx('Received: {item}', { item: tx('Golden acorn') }), 'golden-acorn');
     await d.sayNow('bear_acorn');
   }
@@ -784,6 +785,15 @@ export class Scenes {
     d.audio.setMusic(g.shownSeason || g.time.season, 'calm');
     // queued after this cutscene finishes (awaiting here would deadlock the effect queue): The End
     d.event({ type: 'cutscene', id: 'starfall' });
+  }
+
+  /** Tamo offers the treasure hunt: at the start of the epilogue, and again after The End if the answer was no. */
+  async huntAsk(when) {
+    const d = this.d, st = d.q.state;
+    if (st.flags.hunt) return;
+    const late = when === 'end' || st.step === 'e.done';
+    if (!late && st.flags.huntAsked) return;
+    await d.sayNow(late ? 'hunt_offer_end' : 'hunt_offer');
   }
 
   /** The End: the camera rises from Mika over the starlit valley, then the last page of the book. */
