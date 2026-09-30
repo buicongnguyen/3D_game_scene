@@ -155,12 +155,25 @@ root (at origin)
   held props (lantern, rod, hammer) to it, prop +Y (three) along the forearm.
 - Optional extra bones for secondary motion: `hair_1…`, `hat`, `scarf_1…`,
   `tail_1…`.
-- **Proportions:** stylised chibi-realistic with a head about 1/4.2 of height,
+- **Proportions:** stylised chibi-realistic with a head about 1/4.5 of height,
   big expressive eyes (sclera, iris, pupil, highlight, eyelid line), eyebrows,
   small nose, and a mouth line. Hands are mitten-plus-thumb or four chunky
   fingers. Chunky hair as sculpted locks, never a helmet cap.
 - Clothes carry the colour identity: seams, pockets, buttons, cuffs, belts,
   boots with soles.
+- **Body shape (`art/blender/body_shape.py`):** every builder ends with
+  `normalize_height(parts, b, H, style=<STYLES key>, head=hd)`. The pass runs
+  on the finished, unskinned parts: the torso gains a chest/bust, waist and
+  hips (width and front/back depth around the joints' own heights, by bone
+  weight, so garments, belts and straps move together), the shoulders are
+  pressed onto a trapezius slope with a round deltoid, and the legs are
+  stretched ankle-to-hip (×1.05–1.12) by a smooth vertical warp applied to
+  every part, with the joints and the builder's head moved along. Sleeves and
+  trousers also get an anatomical taper (`ARM_SHAPE`, `LEG_SHAPE` in `npcs.py`;
+  legs under skirts and robes opt out with `shape=0`, or the thigh pokes
+  through mid-stride). Vertex counts, bone names and clips are untouched.
+  `--shape-leg`, `--shape-slope` and `--shape-torso 0` switch parts of it off
+  on the Blender command line for debugging.
 
 | Model | Height | Clips (all loop unless marked *once*) | Tris |
 |---|---|---|---|

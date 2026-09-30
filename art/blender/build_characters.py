@@ -309,7 +309,7 @@ def build_mika():
                            samples=16)
         parts.append(weigh(st, torso_weights(b)))
 
-    k = normalize_height(parts, b, 1.45)
+    k = normalize_height(parts, b, 1.45, style='girl', head=hd)
     arm = make_armature('Mika', b)
     body = skin(parts, arm, 'Mika', ao=AO)
     smooth_colors(body, 3, {'Skin'})

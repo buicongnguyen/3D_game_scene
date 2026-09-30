@@ -20,11 +20,25 @@ AO = dict(rays=64, distance=0.22, strength=0.6, ground=0.0)
 # ================================================================ shared NPC parts
 
 
+# How a real limb's thickness varies along it, as a multiplier on a garment's radius profile (u = 0 at the shoulder /
+# hip, 1 at the wrist / ankle): full deltoid and thigh, a slim elbow and knee, a forearm and calf, a slim wrist and
+# ankle. `shape` (0..1) is how much of it a garment gets: 0 keeps its own profile (wide sleeves, long robes).
+ARM_SHAPE = [(0.0, 0.86), (0.1, 0.98), (0.22, 1.05), (0.36, 1.0), (0.5, 0.89), (0.64, 0.97), (0.85, 0.9), (1.0, 0.8)]
+LEG_SHAPE = [(0.0, 1.03), (0.14, 1.08), (0.36, 1.0), (0.5, 0.86), (0.68, 1.06), (0.86, 0.92), (1.0, 0.8)]
+
+
+def taper(curve, u, shape):
+    return 1.0 + shape * (interp(curve, u) - 1.0)
+
+
 def arm_parts(b, M, sleeve_m, prof, hand_m, sleeve_end=1.0, roll=None, roll_m=None, ball=0.055, hand_kw=None,
-              fold_amp=0.05, glove=None, bare_m=None, n=12, cuff=None, cuff_m=None):
+              fold_amp=0.05, glove=None, bare_m=None, n=12, cuff=None, cuff_m=None, shape=1.0):
     """Sleeve from the shoulder to `sleeve_end` (fraction of the forearm), optional rolled cuff, bare forearm,
-    hand or glove. prof: radius profile [(t, r)] along the sleeve (t over the full arm)."""
+    hand or glove. prof: radius profile [(t, r)] along the sleeve (t over the full arm); shape: how much of the
+    anatomical taper (ARM_SHAPE) the sleeve gets."""
     parts = []
+    # t runs over the sleeve; u over the whole arm (shoulder to wrist)
+    uf = (b.upper + sleeve_end * b.fore) / (b.upper + b.fore) if sleeve_end > 0 else 0.5
     for S in 'LR':
         sh, el, wr = (getattr(b, k + '_' + S) for k in ('sh', 'el', 'wr'))
         fd = (wr - el).normalized()
@@ -34,15 +48,16 @@ def arm_parts(b, M, sleeve_m, prof, hand_m, sleeve_end=1.0, roll=None, roll_m=No
         def sfold(t, ang):
             k = math.exp(-((t - 0.5) / 0.14) ** 2)
             return 1 + fold_amp * k * math.sin(ang * 3 + 1.0) + fold_amp * 0.5 * math.sin(ang * 5 + t * 9)
-        sl = limb(pts, sleeve_m, lambda t: interp(prof, t), n=n, name='sleeve', cap0='round', cap1=None, fold=sfold,
-                  per=2)
+        sl = limb(pts, sleeve_m, lambda t: interp(prof, t) * taper(ARM_SHAPE, t * uf, shape), n=n, name='sleeve',
+                  cap0='round', cap1=None, fold=sfold, per=2)
         parts.append(weigh(sl, arm_weights(S, b)))
         if ball:
             bm = MB('shoulder')
-            ellipsoid(bm, sh + V((-0.006 if S == 'L' else 0.006, 0, -0.002)), (ball, ball * 1.02, ball * 0.98),
+            ball *= 0.9
+            ellipsoid(bm, sh + V((-0.008 if S == 'L' else 0.008, 0, -0.012)), (ball, ball * 1.02, ball * 0.96),
                       sleeve_m, 10, 6)
             parts.append(weigh(bm.build('shoulder'), {'upperarm_' + S: 0.8, 'chest': 0.2}))
-        r_end = interp(prof, 1.0)
+        r_end = interp(prof, 1.0) * taper(ARM_SHAPE, uf, shape)
         if roll:
             # rolled-up sleeve: a fat torus-ish band at the sleeve end
             rb = limb([end - fd * roll * 0.9, end + fd * roll * 0.25], roll_m or sleeve_m,
@@ -78,8 +93,9 @@ def blend_fn_wrist(S, b):
 
 
 def leg_parts(b, M, trouser_m, prof, top=0.03, cuff=None, cuff_m=None, n=10, bare=None, bare_prof=None,
-              trouser_end=1.0, knee=False):
-    """Trouser tube from the hip to trouser_end (fraction hip->ankle), optional turned cuff, bare shin."""
+              trouser_end=1.0, knee=False, shape=1.0):
+    """Trouser tube from the hip to trouser_end (fraction hip->ankle), optional turned cuff, bare shin. shape: how
+    much of the anatomical taper (LEG_SHAPE: thigh, knee, calf, ankle) the leg gets."""
     parts = []
     for S in 'LR':
         hip, knee_, ank = (getattr(b, k + '_' + S) for k in ('hip', 'knee', 'ank'))
@@ -89,17 +105,20 @@ def leg_parts(b, M, trouser_m, prof, top=0.03, cuff=None, cuff_m=None, n=10, bar
             return hip.lerp(knee_, t / d1) if t < d1 else knee_.lerp(ank, (t - d1) / (1 - d1))
         tend = trouser_end
         pts = [hip + V((0, 0, top)), at(0.25), at(0.5), at(0.5 + 0.25 * (tend - 0.5) / 0.5 * 1.0), at(tend)]
-        tr = limb(pts, trouser_m, lambda t: interp(prof, t), n=n, name='trouser', cap0='round', cap1=None, per=2,
+        tr = limb(pts, trouser_m, lambda t: interp(prof, t) * taper(LEG_SHAPE, t * tend, shape), n=n, name='trouser',
+                  cap0='round', cap1=None, per=2,
                   fold=lambda t, a: 1 + 0.035 * math.exp(-((t - 0.55) / 0.12) ** 2) * math.sin(a * 3 + 0.5))
         parts.append(weigh(tr, leg_weights(S, b)))
         if cuff:
             c0 = at(tend)
             d = (at(tend) - at(tend - 0.05)).normalized()
-            cf = limb([c0 - d * cuff, c0 + d * 0.004], cuff_m or trouser_m, lambda t: interp(prof, 1.0) + 0.008, n=n,
+            cf = limb([c0 - d * cuff, c0 + d * 0.004], cuff_m or trouser_m,
+                      lambda t: interp(prof, 1.0) * taper(LEG_SHAPE, tend, shape) + 0.008, n=n,
                       name='tcuff', cap0='flat', cap1='flat')
             parts.append(weigh(cf, leg_weights(S, b)))
         if bare:
-            bp = limb([at(max(0.0, tend - 0.08)), at(1.0) + V((0, 0, 0.03))], bare, lambda t: interp(bare_prof, t),
+            bp = limb([at(max(0.0, tend - 0.08)), at(1.0) + V((0, 0, 0.03))], bare,
+                      lambda t: interp(bare_prof, t) * taper(LEG_SHAPE, lerp(max(0.0, tend - 0.08), 1.0, t), shape),
                       n=10, name='shin', cap0='round', cap1='round', per=2)
             parts.append(weigh(bp, leg_weights(S, b)))
         if knee:
@@ -356,7 +375,7 @@ def build_genzo():
                   flare=1.05, heel=0.055, tab=False, sole_t=0.026)
         parts.append(weigh(bt, leg_weights(S, b)))
 
-    k = normalize_height(parts, b, 1.62)
+    k = normalize_height(parts, b, 1.62, style='stocky', head=hd)
     from char_parts import make_armature
     arm = make_armature('Genzo', b)
     body = skin(parts, arm, 'Genzo', ao=AO)
@@ -532,7 +551,7 @@ def build_rin():
         bt = boot(b, S, M['boots'], M['dark'], shaft_top=0.26 * k0, shaft_r=0.05, width=0.05, cuff=0.01, flare=1.12)
         parts.append(weigh(bt, leg_weights(S, b)))
 
-    k = normalize_height(parts, b, 1.5)
+    k = normalize_height(parts, b, 1.5, style='teen', head=hd)
     arm = make_armature('Rin', b)
     body = skin(parts, arm, 'Rin', ao=AO)
     smooth_colors(body, 3, {'Skin'})
@@ -731,7 +750,7 @@ def build_ota():
     parts.append(weigh(cn.build('cane', angle=60), 'hand_R'))
 
     # ---- legs (inside the robe), white tabi socks and geta
-    parts += leg_parts(b, M, M['kimono'], [(0, 0.07), (0.5, 0.058), (1.0, 0.045)], n=8)
+    parts += leg_parts(b, M, M['kimono'], [(0, 0.07), (0.5, 0.058), (1.0, 0.045)], n=8, shape=0)   # under the robe
     for S in 'LR':
         ank = getattr(b, 'ank_' + S)
         tb = MB('tabi')
@@ -752,7 +771,7 @@ def build_ota():
         for o in (top, t1, t2):
             parts.append(weigh(o, 'foot_' + S))
 
-    k = normalize_height(parts, b, 1.58)
+    k = normalize_height(parts, b, 1.58, style='elder', head=hd)
     arm = make_armature('Ota', b)
     body = skin(parts, arm, 'Ota', ao=AO)
     smooth_colors(body, 3, {'Skin'})
@@ -932,13 +951,13 @@ def build_hana():
     # ---- rolled sleeves to the elbow, plump forearms; low leather boots
     parts += arm_parts(b, M, M['dress'], [(0, 0.066), (0.35, 0.066), (0.5, 0.064), (1.0, 0.062)], M['skin'],
                        sleeve_end=0.12, roll=0.035, ball=0.064, bare_m=M['skin'], hand_kw=dict(curl=0.4, s=1.1, n=6))
-    parts += leg_parts(b, M, M['skin'], [(0, 0.07), (0.5, 0.058), (0.8, 0.05), (1.0, 0.046)], n=10)
+    parts += leg_parts(b, M, M['skin'], [(0, 0.07), (0.5, 0.058), (0.8, 0.05), (1.0, 0.046)], n=10, shape=0)   # under the skirt
     for S in 'LR':
         bt = boot(b, S, M['leather'], M['dark'], shaft_top=0.17 * k0, shaft_r=0.05, width=0.05, toe_h=0.058,
                   cuff=None, flare=1.06, tab=False)
         parts.append(weigh(bt, leg_weights(S, b)))
 
-    k = normalize_height(parts, b, 1.6)
+    k = normalize_height(parts, b, 1.6, style='woman', head=hd)
     arm = make_armature('Hana', b)
     body = skin(parts, arm, 'Hana', ao=AO)
     smooth_colors(body, 3, {'Skin'})
@@ -1151,7 +1170,7 @@ def build_villager(kind):
         parts += leg_parts(b, M, M['trousers'], [(0, 0.085), (0.5, 0.072), (1.0, 0.066)], n=10, cuff=0.025,
                            trouser_end=0.94)
     elif kind == 'woman':
-        parts += leg_parts(b, M, M['skin'], [(0, 0.07), (0.5, 0.055), (1.0, 0.044)], n=8)
+        parts += leg_parts(b, M, M['skin'], [(0, 0.07), (0.5, 0.055), (1.0, 0.044)], n=8, shape=0)   # under the skirt (the taper would poke through it mid-stride)
     else:
         parts += leg_parts(b, M, M['trousers'], [(0, 0.07), (0.6, 0.066), (1.0, 0.066)], n=10, cuff=0.018,
                            trouser_end=0.36, bare=M['skin'], bare_prof=[(0, 0.042), (0.6, 0.036), (1, 0.032)])
@@ -1171,7 +1190,7 @@ def build_villager(kind):
         parts += arm_parts(b, M, M['shirt'], [(0, 0.05), (0.3, 0.05), (0.45, 0.052), (1.0, 0.05)], M['skin'],
                            sleeve_end=-0.55, roll=0.012, ball=0.048, bare_m=M['skin'],
                            hand_kw=dict(curl=0.4, s=0.85, mitten=True), n=10)
-    k = normalize_height(parts, b, H)
+    k = normalize_height(parts, b, H, style={'man': 'man', 'woman': 'villager-woman', 'kid': 'kid'}[kind], head=hd)
     arm = make_armature('Villager', b)
     body = skin(parts, arm, 'villager-' + kind, ao=AO)
     smooth_colors(body, 3, {'Skin'})

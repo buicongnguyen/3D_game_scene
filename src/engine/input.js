@@ -50,7 +50,7 @@ export class Input {
       // either mouse button drags the camera; in Hard mode the right button also aims and a left click sparks
       if (e.button === 0 || e.button === 2) { this.dragging = true; if (e.button === 0) this.edges.add('click'); }
       if (this.aimMode && e.button === 2) this.mouseAim = true;
-      if (this.aimMode && e.button === 0 && this.mouseAim) this.edges.add('fire');
+      if (this.aimMode && e.button === 0 && this.aiming) this.edges.add('fire');
     });
     addEventListener('mouseup', e => {
       if (e.button === 0 || e.button === 2) this.dragging = false;

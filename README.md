@@ -133,8 +133,13 @@ To rebuild the art, point `$B` at a Blender 4.5 LTS executable:
 & $B -b --factory-startup --python-exit-code 1 --python art/blender/build_characters.py
 ```
 
-The same applies to `build_animals`, `build_architecture`, `build_railway`,
-`build_nature` and `build_props`.
+`-- --only mika,hana` rebuilds a subset (add `--no-portraits --no-blend` to iterate
+fast; a full character build takes about a minute). The same applies to
+`build_animals`, `build_architecture`, `build_railway`, `build_nature` and
+`build_props`.
+
+The people's bodies are shaped by `art/blender/body_shape.py` (chest, waist and hips,
+sloped shoulders, longer legs), one style per character.
 
 ## Publishing
 

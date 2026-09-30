@@ -445,13 +445,16 @@ export class Scenes {
     const look = () => (g.viewFocus = L.getPoint(u()));
     g.follow.track(pos, look, 5);
     const told = new Set();
-    while (performance.now() - t0 < T) {
-      const f = (performance.now() - t0) / T;
-      for (const c of captions || []) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5600); }
-      await wait(100);
+    try {
+      while (performance.now() - t0 < T) {
+        const f = (performance.now() - t0) / T;
+        for (const c of captions || []) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5600); }
+        await wait(100);
+      }
+      await wait(500);
+    } finally {
+      g.viewFocus = null;   // level of detail goes back to following Mika, whatever happened
     }
-    await wait(500);
-    g.viewFocus = null;
   }
 
   /**

@@ -160,8 +160,13 @@ def neck_weights(body):
         return blend2('chest', 'neck', (co.z - (body.neck_z - 0.01)) / 0.04)
     return fn
 
-def normalize_height(parts, body, H, top=None):
-    """Scale every part (and the skeleton, via body.k) so the character is exactly H tall."""
+def normalize_height(parts, body, H, top=None, style=None, head=None):
+    """Scale every part (and the skeleton, via body.k) so the character is exactly H tall. `style` (one of
+    body_shape.STYLES) first gives the body its anatomy (chest, waist, hips, sloped shoulders, longer legs);
+    `head` is the builder's Head, whose centre moves with the body so the blush and soot spots land right."""
+    if style:
+        import body_shape
+        body_shape.apply(parts, body, style, head=head)
     bpy.context.view_layer.update()
     zmax = max((o.matrix_world @ v.co).z for o in parts for v in o.data.vertices)
     zmin = min((o.matrix_world @ v.co).z for o in parts for v in o.data.vertices)

@@ -74,6 +74,8 @@ canvas.addEventListener('webglcontextlost', e => {
   b.addEventListener('click', () => location.reload());
   document.body.appendChild(el);
 });
+// three.js rebuilds its GPU resources by itself when the browser gives the context back; then the game simply goes on
+canvas.addEventListener('webglcontextrestored', () => document.getElementById('glLost')?.remove());
 const audio = new Audio();
 game.audio = audio;
 const ui = new UI(game, audio);

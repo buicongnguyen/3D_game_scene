@@ -79,7 +79,7 @@ test('colliders: walls block, walkable tops can be stepped onto, the crate stack
   const wall = c.box(0, 0, 2, 1, 30, 0, 5);
   const r = c.resolve(0.5, 0.2, 0.3, 0, 1.5);
   assert.ok(!Colliders.contains(wall, r.x, r.z, 0.29), 'pushed out of the wall');
-  const deck = c.box(10, 0, 3, 1, 0, -2, 0.4, { walkable: true });
+  c.box(10, 0, 3, 1, 0, -2, 0.4, { walkable: true });
   assert.equal(c.groundAt(10, 0, 0, 0.5).y, 0.4, 'a low deck is ground');
   assert.equal(c.resolve(10, 0, 0.3, 0, 1.5).x, 10, 'low decks do not push you');
   // crates 1 m, 2 m, 3 m high: each step is reachable with the jump height

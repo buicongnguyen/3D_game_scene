@@ -1,5 +1,3 @@
-import * as THREE from 'three';
-
 // Shared uniforms for world-space material effects (snow cover on up-facing surfaces, foliage wind).
 export const FX = {
   uTime: { value: 0 },

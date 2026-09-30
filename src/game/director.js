@@ -8,7 +8,7 @@ import { Wildlife } from '../actors/animals.js';
 import { Fishing, Cooking } from './minigames.js';
 import { Scenes } from './scenes.js';
 import { PLACES, FALLEN_STARS, DECK_Y, river, riverHalfWidth } from '../world/layout.js';
-import { PALETTES, clockLabel } from '../world/seasons.js';
+import { clockLabel } from '../world/seasons.js';
 import { STOPS } from '../world/railway.js';
 
 const SAVE_KEY = 'starline-save-1';
@@ -216,7 +216,7 @@ export class Director {
         obj.visible = false;
         this.game.scene.add(obj);
         // Sora's kite rests on her workbench whenever it isn't out flying (after it's Mika's, too)
-        this.kiteStand = { obj, pos: it.pos.clone(), interior: it.interior, when: () => I.active === it.interior && !(this.game.kite?.active) };
+        this.kiteStand = { obj, pos: it.pos.clone(), interior: it.interior, when: () => I.active === it.interior && this.q.has('hasTamo') && !(this.game.kite?.active) };
         this.interact('takeKite', it.pos.clone().add(V(0, -0.8, 0)), N_('Take the Star Kite'), () => this.kiteStand.when() && !(this.q.count('kite') > 0), () => this.takeKite(), 2.4, null, 1);
         this.interact('kiteRest', it.pos.clone().add(V(0, -0.8, 0)), () => tx('Look at: {item}', { item: tx(ITEMS.kite.name) }), () => this.kiteStand.when() && this.q.count('kite') > 0,
           () => this.say('kite_rest'), 2.4, null, 1);
@@ -1114,11 +1114,11 @@ export class Director {
       pk.obj.visible = active;
       if (!active) continue;
       pk.t += dt;
-      if (pk.keepsake) { pk.obj.scale.setScalar(1); continue; }
+      if (pk.keepsake) { pk.obj.scale.setScalar(1); this.fx.glint(pk.obj.position, this.q.has('hunt')); continue; }
       pk.obj.position.y = pk.pos.y + Math.sin(pk.t * 2.2) * 0.12;
       pk.obj.rotation.y += dt * 1.6;
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
-      else if (pk.treasure || pk.letter || pk.keepsake) this.fx.glint(pk.obj.position, this.q.has('hunt'));
+      else if (pk.treasure || pk.letter) this.fx.glint(pk.obj.position, this.q.has('hunt'));
       if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < (pk.grab || 1.45)) this.collect(pk);
     }
     // Rin's ferry is the story's way over; only when the river is frozen does walking across the ice count instead
@@ -1172,7 +1172,6 @@ export class Director {
       best.action();
     }
     // marker
-    // no guide arrow inside a home: the world outside is far below
     // inside a home the arrow only leads to a treasure in this room (the world outside is far below)
     this.ui.marker(g.camera, this.busy ? null : g.interiors?.active ? this.huntInside() : this.markerTarget(), p.pos);
     this.updateHunt();

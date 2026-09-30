@@ -219,7 +219,7 @@ export class Celebrate {
       this.glow.emit(origin, _v.set(0, 0, 0), { life: 0.8, size: 3, color: [2.4, 1.6, 0.7], kind: KIND.RING, grow: 2.2, alpha: 0.7 });
       this.glow.emit(origin, _v.set(0, 0, 0), { life: 0.6, size: 7, color: [2.2, 1.5, 0.8], kind: KIND.GLOW, alpha: 0.6 });
     }
-    let acc = 0, accG = 0, accB = 0, after = 0;
+    let acc = 0, accG = 0, accB = 0;
     const lead = origin ? 0.7 : 0;   // the streak from the lamp down to the river
     this.sfx('star');
     return this.run((dt, t, task) => {
@@ -269,7 +269,7 @@ export class Celebrate {
           _p.set(p.x + nx * off - tx * Math.abs(off) * 0.25, y + 0.5, p.z + nz * off - tz * Math.abs(off) * 0.25);
           this.glow.emit(_p, _v.set(tx * 4, rand(0.5, 1.5), tz * 4), { life: 0.5, size: rand(2.2, 3.8), color: [1.9, 1.05, 0.3], kind: KIND.GLOW, alpha: 0.26, grow: 0.5 });
         }
-      } else after += dt;
+      }
       // sakura flare as the crest passes them
       for (const tr of trees) {
         if (tr.done || (s - tr.s) * dir < -6) continue;
@@ -646,7 +646,7 @@ export class Celebrate {
   leafButterflies(from, to, seconds = 9) {
     const g = this.g, A = toVec(from), B = toVec(to), BF = this.bflies;
     const n = BF.n;
-    const dir = B.clone().sub(A), len = dir.length();
+    const dir = B.clone().sub(A);
     const side = v3(-dir.z, 0, dir.x).normalize();
     // a flight path that hugs the ground (up the steps) a few metres above it
     const knots = [];
