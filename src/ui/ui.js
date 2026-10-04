@@ -126,7 +126,7 @@ export class UI {
             del.textContent = tx('Delete');
             del.onclick = () => {
               if (!confirm(tx('Delete this save? This cannot be undone.'))) return;
-              try { localStorage.removeItem(s.slot === 1 ? 'starline-save-1' : `starline-save-${s.slot}`); } catch { /* ignore */ }
+              try { localStorage.removeItem(s.slot === 1 ? 'starline-save-1' : `starline-save-${s.slot}`); localStorage.removeItem(`starline-album-${s.slot}`); } catch { /* ignore */ }
               s.data = null;
               if (!slots.some(x => x.data)) $('btnContinue').classList.add('hidden');
               if (mode === 'continue' && !slots.some(x => x.data)) { close(null); return; }
@@ -625,7 +625,7 @@ export class UI {
     } else if (tab === 'album') {
       const photos = this.game.director?.album() || {};
       body.innerHTML = `<p>${esc(tx('Every Star Lamp you light throws a party. Each one leaves a photo here.'))}</p><div class="album">` +
-        ALBUM.map((a, i) => `<div class="polaroid" style="--tilt:${[-2, 1.5, -1, 2][i % 4]}deg">${photos[a.id] ? `<img alt="" src="${photos[a.id]}">` : '<div class="blank">★</div>'}<p>${esc(tx(a.title))}</p></div>`).join('') + '</div>';
+        ALBUM.map((a, i) => `<div class="polaroid" style="--tilt:${[-2, 1.5, -1, 2][i % 4]}deg">${photos[a.id] ? `<img alt="" src="${esc(photos[a.id])}">` : '<div class="blank">★</div>'}<p>${esc(tx(a.title))}</p></div>`).join('') + '</div>';
     } else if (tab === 'friends') {
       const met = q.friends || {}, n = FRIENDS.filter(f => met[f.id]).length;
       body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press {act} to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +
@@ -656,8 +656,8 @@ export class UI {
       b.addEventListener('touchstart', down, { passive: false });
       b.addEventListener('touchend', up, { passive: false });
       b.addEventListener('touchcancel', up, { passive: false });
-      b.addEventListener('mousedown', down);
-      b.addEventListener('mouseup', up);
+      // released anywhere, not only over the button: dragging off before letting go must not leave the action held
+      b.addEventListener('mousedown', e => { down(e); addEventListener('mouseup', up, { once: true }); });
     };
     hold('tJump', 'jump');
     hold('tAct', 'act');
@@ -749,7 +749,7 @@ export class UI {
 
   /** The credits show the year's photographs. */
   creditsAlbum(photos) {
-    $('creditsAlbum').innerHTML = ALBUM.filter(a => photos?.[a.id]).map(a => `<img alt="${esc(tx(a.title))}" src="${photos[a.id]}">`).join('');
+    $('creditsAlbum').innerHTML = ALBUM.filter(a => photos?.[a.id]).map(a => `<img alt="${esc(tx(a.title))}" src="${esc(photos[a.id])}">`).join('');
   }
 
   swimming(on) {

@@ -33,7 +33,8 @@ export class Input {
     addEventListener('keydown', e => {
       const a = KEYMAP[e.code];
       if (!a) return;
-      if (e.target instanceof HTMLInputElement) return;
+      // typing in a field, or arrowing through a dropdown (settings), is the page's business, not the game's
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace'].includes(e.code)) e.preventDefault();
       if (!this.keys.has(a)) this.edges.add(a);
       this.keys.add(a);
@@ -41,6 +42,12 @@ export class Input {
     });
     addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a) this.keys.delete(a); });
     addEventListener('blur', () => this.releaseAll());
+    // a pad unplugged (or asleep) mid-hold must not leave sprint or dive on, and the next pad should take over
+    addEventListener('gamepaddisconnected', e => {
+      if (this.gamepadIndex !== null && e.gamepad.index !== this.gamepadIndex) return;
+      this.gamepadIndex = null; this._gp = {}; this._gpDive = false; this.gpAim = false;
+      this.keys.delete('dive'); this.keys.delete('sprint');
+    });
     document.addEventListener('visibilitychange', () => { if (document.hidden) this.releaseAll(); });
 
     const c = this.canvas;

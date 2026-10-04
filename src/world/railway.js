@@ -266,7 +266,7 @@ export class Railway {
       const a = rail.at(s - car.length / 2 - 2), b = rail.at(s - car.length / 2 + 2);
       car.obj.position.set(p.x, RAIL_Y, p.z);
       car.obj.rotation.y = Math.atan2(b.x - a.x, b.z - a.z) * dirSign;
-      const inTunnel = s - car.length < RAIL_PORTALS.west - 3 || s > RAIL_PORTALS.east + 3 + car.length;
+      const inTunnel = s < RAIL_PORTALS.west - 3 || s > RAIL_PORTALS.east + 3 + car.length;
       car.obj.visible = !inTunnel;
       const col = this.colliderCars[i];
       if (inTunnel) this.colliders.remove(col); else this.colliders.move(col, p.x, p.z);

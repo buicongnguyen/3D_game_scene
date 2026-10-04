@@ -147,8 +147,9 @@ export class Celebrate {
    * lasting world states (decorate, starfall, treeGlow) are left as they are.
    */
   stopAll() {
-    for (const t of this.tasks) this.finish(t);
-    this.tasks.length = 0;
+    // swap first: an onStop handler may start a new effect, which must not be dropped by the reset
+    const running = this.tasks; this.tasks = [];
+    for (const t of running) this.finish(t);
     this.aurora(false);
     this.starSnow(false);
     for (const h of [...this.lanternSets]) h.stop(true);
@@ -157,7 +158,6 @@ export class Celebrate {
   /** Remove everything from the scene (stops effects, restores borrowed materials and sheep). */
   dispose() {
     this.stopAll();
-    for (const t of this.tasks) this.finish(t);
     this.tasks.length = 0;
     this.decor.set(0);
     for (const h of [...this.treeGlows]) h.end();

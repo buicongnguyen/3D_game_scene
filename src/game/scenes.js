@@ -239,15 +239,18 @@ export class Scenes {
     r.onArrive = () => { r.onArrive = null; this.rideDone = true; };
     this.rideDone = false;
     const told = new Set();
-    while (!this.rideDone) {
-      d.ui.ride(true, d.q.count('lanterns'), this.lanterns.length);
-      const f = (r.train.s - STOPS.station) / (STOPS.halt - STOPS.station);
-      for (const c of CAPTIONS.ride) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5200); }
-      await wait(200);
+    try {
+      while (!this.rideDone) {
+        d.ui.ride(true, d.q.count('lanterns'), this.lanterns.length);
+        const f = (r.train.s - STOPS.station) / (STOPS.halt - STOPS.station);
+        for (const c of CAPTIONS.ride) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5200); }
+        await wait(200);
+      }
+    } finally {
+      d.ui.ride(false);
+      this.d.busy++;          // always re-balanced, so an error mid-ride cannot leave the game "busy" below zero for the session
+      g.player.locked = true;
     }
-    d.ui.ride(false);
-    this.d.busy++;
-    g.player.locked = true;
     d.audio.whistle();
     d.event({ type: 'ride', done: true });
   }
@@ -302,12 +305,13 @@ export class Scenes {
     const told = new Set();
     let arrived = false;
     r.onArrive = () => { r.onArrive = null; arrived = true; };
-    while (!arrived) {
-      const f = (r.train.s - s0) / (s1 - s0);
-      for (const c of CAPTIONS.tour) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5000); }
-      await wait(200);
-    }
-    this.d.busy++;
+    try {
+      while (!arrived) {
+        const f = (r.train.s - s0) / (s1 - s0);
+        for (const c of CAPTIONS.tour) if (f >= c.at && !told.has(c)) { told.add(c); d.ui.caption(c.text, 5000); }
+        await wait(200);
+      }
+    } finally { this.d.busy++; }
     d.audio.whistle();
     await d.ui.fade(true, 500);
     if (fromStation) g.player.dismount(PLACES.halt.x - 4, PLACES.halt.z + 2, undefined, 0);

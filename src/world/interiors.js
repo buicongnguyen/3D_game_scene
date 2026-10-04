@@ -323,6 +323,7 @@ export class Interiors {
       this.leaveRoom();
       const g = this.game;
       if (door) g.player.teleport(door.outside.x, door.outside.z, door.outside.y, door.outsideFacing);
+      else g.player.teleport(g.player.lastSafe.x, g.player.lastSafe.z, g.player.lastSafe.y); // a room without a door record must not strand her up in the sky
       this.snapCamera(door ? door.outsideFacing : g.player.facing, false);
       this.snapTamo();
       g.world.focus?.copy(g.player.pos);

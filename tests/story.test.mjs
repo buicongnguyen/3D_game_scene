@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { Quest, missingDialogue, freshState, migrate } from '../src/game/quest.js';
-import { STEPS, DIALOGUE, CAST, ITEMS, CHATTER } from '../src/game/story.js';
+import { STEPS, DIALOGUE, CAST, ITEMS, CHATTER, CHAPTERS } from '../src/game/story.js';
 
 const NEED_ITEMS = { cog: 'pickup', peach: 'pickup', chestnut: 'pickup', mushroom: 'pickup', honeycomb: 'pickup', sheep: 'count', bells: 'count', beams: 'count', fish: 'catch' };
 
@@ -106,6 +106,28 @@ test('fallen stars are counted once each and all twelve unlock the last letter',
   for (let i = 1; i <= 12; i++) { q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` }); q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` }); }
   assert.equal(q.state.stars.length, 12);
   assert.ok(q.state.flags.allStars);
+});
+
+test('a twelfth star found before the epilogue is remembered, and Starfall Night waits for the epilogue', () => {
+  const q = new Quest();
+  q.start();
+  const early = [];
+  for (let i = 1; i <= 12; i++) early.push(...q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` }));
+  assert.ok(q.state.flags.allStars, 'the twelve stars are remembered');
+  assert.ok(!early.some(e => e.allStars), 'Starfall Night must not play mid-chapter (its event would match no step and be lost)');
+  const epilogue = q.enter(STEPS.find(s => s.id === 'e.free'));
+  assert.ok(epilogue.some(e => e.allStars), 'it plays when the epilogue begins');
+});
+
+test('a save with fields of the wrong shape is repaired instead of crashing the title screen or journal', () => {
+  const bad = { ...freshState(), stars: null, pages: {}, inv: 'x', flags: [], lamps: 7, chapter: 99, playtime: 'soon', hour: NaN };
+  const s = migrate(bad);
+  assert.ok(Array.isArray(s.stars) && Array.isArray(s.pages));
+  assert.ok(s.inv && typeof s.inv === 'object' && !Array.isArray(s.flags) && typeof s.lamps === 'object');
+  assert.equal(typeof s.playtime, 'number');
+  assert.ok(Number.isFinite(s.hour));
+  assert.ok(s.chapter >= 0 && s.chapter < CHAPTERS.length, 'the chapter is clamped to a real one');
+  assert.equal(migrate({ ...freshState(), chapter: -3 }).chapter, 0);
 });
 
 test('all twelve stars and Starfall Night end the story: The End, then the valley to explore', () => {

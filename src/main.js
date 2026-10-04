@@ -84,7 +84,8 @@ game.ui = ui;
 await game.load((p, label) => ui.setLoad(p, label));
 game.fx = new FX(game.scene, game.renderer.q);
 ui.applySettings?.(); // the world exists now: apply saved view settings (season, time, shadows, FOV…)
-game.renderer.onResize = (w, h) => { game.camera.aspect = w / h; game.camera.updateProjectionMatrix(); game.fx.resize(); };
+game.renderer.onResize = (w, h) => { game.camera.aspect = w / h; game.camera.updateProjectionMatrix(); game.fx.resize(game.renderer.pixelRatio); };
+game.fx.resize(game.renderer.pixelRatio); // the first pass ran before the FX existed
 const director = new Director(game, ui, audio, game.fx);
 game.director = director;
 game.celebrate = new Celebrate(game); // chapter celebrations and the valley's lasting decorations

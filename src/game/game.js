@@ -129,6 +129,9 @@ export class Game {
     if (!this.director?.quest) return;
     if (on === undefined) on = !this.paused;
     if (on === this.paused) return;
+    // the menu button must not freeze the player and camera under a running cutscene: its timers keep running and it would
+    // jump ahead on resume (the keyboard path already refuses)
+    if (on && !fromUi && this.director.scenes?.active) return;
     this.paused = on;
     this.input.releaseAll();
     if (on && !fromUi) this.ui.open('pause');
@@ -136,7 +139,7 @@ export class Game {
   }
 
   saveAndQuit() {
-    if (!this.director.save()) { this.ui.toast(tx('Can\'t save during a scene — try again in a moment')); return; }
+    if (!this.director.save()) { this.ui.toast(this.director.saveFailed ? tx("Couldn't write the save: storage is full or blocked") : tx('Can\'t save during a scene — try again in a moment')); return; }
     location.reload();
   }
 

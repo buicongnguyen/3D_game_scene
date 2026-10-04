@@ -2,7 +2,7 @@
 // effects the director must present (dialogue, cutscenes, toasts, world changes). State effects
 // (give/take/flag/lamp/journal/unlock/season/time/chapter) are applied here so state is always consistent.
 
-import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, huntProgress } from './story.js';
+import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, huntProgress, CHAPTERS } from './story.js';
 
 export const SAVE_VERSION = 1;
 
@@ -19,6 +19,17 @@ export function migrate(saved) {
   if (!saved || typeof saved !== 'object') return freshState();
   const s = { ...freshState(), ...saved };
   if (!(s.step in STEP_INDEX)) return freshState();
+  // A save is only shallow-merged above, so a hand-edited, half-written or future-version file could carry a field of
+  // the wrong shape (stars: null, pages: {}). Every field takes the fresh state's type or falls back to the fresh value.
+  const base = freshState();
+  for (const k of Object.keys(base)) {
+    const want = base[k], got = s[k];
+    if (want === null) continue; // choice and pos are free-form until set
+    const ok = Array.isArray(want) ? Array.isArray(got) : typeof want === 'object' ? !!got && typeof got === 'object' && !Array.isArray(got)
+      : typeof got === typeof want && (typeof got !== 'number' || Number.isFinite(got));
+    if (!ok) s[k] = want;
+  }
+  s.chapter = Math.min(Math.max(0, Math.floor(s.chapter)), CHAPTERS.length - 1);
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.
   if (s.step === 'c4.ride') { s.step = 'c4.board'; s.inv = { ...s.inv, lanterns: 0 }; }
   s.v = SAVE_VERSION;
@@ -84,6 +95,7 @@ export class Quest {
     const out = [{ objective: true }];
     for (const e of step.enter || []) out.push(...this.apply(e));
     out.push({ objective: true });
+    if (step.id === 'e.free' && this.state.flags.allStars) out.push({ allStars: true }); // all 12 stars were found before the epilogue
     // a step may already be satisfied (e.g. items collected early)
     out.push(...this.checkComplete(null));
     return out;
@@ -149,7 +161,9 @@ export class Quest {
       case 'pickup':
         if (ev.item === 'star') {
           if (!st.stars.includes(ev.id)) { st.stars.push(ev.id); out.push({ star: ev.id, count: st.stars.length }); }
-          if (st.stars.length === 12 && !st.flags.allStars) { st.flags.allStars = true; out.push({ allStars: true }); }
+          // Starfall Night belongs to the epilogue: its cutscene is what completes e.free. A twelfth star found earlier is
+          // remembered, and the night plays when the epilogue begins (see enter), instead of being spent mid-chapter.
+          if (st.stars.length === 12 && !st.flags.allStars) { st.flags.allStars = true; if (st.step === 'e.free') out.push({ allStars: true }); }
         } else {
           st.inv[ev.item] = (st.inv[ev.item] || 0) + (ev.n || 1);
           out.push({ got: ev.item, n: ev.n || 1, total: st.inv[ev.item] });

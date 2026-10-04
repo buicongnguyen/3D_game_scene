@@ -77,7 +77,8 @@ export class FX {
     this.weatherKind = 'petals';
     this.t = 0;
     this.fireworksOn = false;
-    this.fwT = 0;
+    this.fwT = 0; this.fwLeft = Infinity;
+    this.shells = Array.from({ length: 8 }, () => ({ t: 0, p: new THREE.Vector3(), col: null }));
     this.pools = [this.glow, this.soft, this.weather, this.fireflies];
     // streak meteors (lines) for the Geminids finale
     const mg = new THREE.BufferGeometry();
@@ -92,7 +93,9 @@ export class FX {
     for (let i = 0; i < 60; i++) this.meteors.push({ life: 0 });
   }
 
-  resize() { for (const p of this.pools) p.points.material.uniforms.scale.value = innerHeight / 2; }
+  /** gl_PointSize is in framebuffer pixels: scale with the renderer's pixel ratio (DPR and the adaptive render scale) so a
+   *  particle keeps the same size on screen on a 2x phone, at the low render scale, and on a 1x desktop. */
+  resize(pixelRatio = 1) { for (const p of this.pools) p.points.material.uniforms.scale.value = innerHeight / 2 * pixelRatio; }
 
   smoke(p, rate, dt, night) {
     this.smokeAcc = (this.smokeAcc || 0) + rate * dt * 14;
@@ -176,11 +179,14 @@ export class FX {
   }
 
   /** Fireworks over a point, until stopped. */
-  fireworks(on, center) { this.fireworksOn = on; this.fwCenter = center; }
+  fireworks(on, center, seconds = Infinity) { this.fireworksOn = on && !!center; this.fwCenter = center; this.fwLeft = seconds; }
   meteorShower(intensity) { this.meteorOn = intensity; }
 
   updateFireworks(dt, audio) {
+    // a launched shell bursts 0.9 s later, on the game clock (a pause holds it; no timer outlives the scene)
+    for (const s of this.shells) if (s.t > 0 && (s.t -= dt) <= 0) this.burst(s.p, { n: 140, color: s.col, speed: 13, life: 2.2, size: 0.9, gravity: 3.5 });
     if (!this.fireworksOn) return;
+    if ((this.fwLeft -= dt) <= 0) { this.fireworksOn = false; return; }
     this.fwT -= dt;
     if (this.fwT > 0) return;
     this.fwT = 0.5 + Math.random() * 0.9;
@@ -188,7 +194,8 @@ export class FX {
     const p = new THREE.Vector3(c.x + (Math.random() - 0.5) * 60, c.y + 38 + Math.random() * 22, c.z + (Math.random() - 0.5) * 40);
     const palette = [[1, 0.45, 0.3], [1, 0.8, 0.3], [0.5, 0.8, 1], [0.95, 0.5, 0.9], [0.5, 1, 0.6]];
     const col = palette[Math.floor(Math.random() * palette.length)];
-    setTimeout(() => this.burst(p, { n: 140, color: col, speed: 13, life: 2.2, size: 0.9, gravity: 3.5 }), 900);
+    const shell = this.shells.find(s => s.t <= 0) || this.shells[0]; // a free slot (8 are plenty at one shell per 0.5 s)
+    shell.p.copy(p); shell.col = col; shell.t = 0.9;
     for (let i = 0; i < 12; i++) this.glow.emit(new THREE.Vector3(p.x, p.y - 40 + i * 3.3, p.z), new THREE.Vector3(0, 30, 0), { life: 0.12 + i * 0.02, size: 0.4, color: [1, 0.85, 0.6] });
     audio?.firework(0);
   }

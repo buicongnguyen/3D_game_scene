@@ -350,6 +350,7 @@
   "Send the sheep home": "羊を帰す",
   "Knock down the beehive": "ハチの巣を落とす",
   "Can't save during a scene — try again in a moment": "シーン中はセーブできません — 少し待ってからもう一度どうぞ",
+  "Couldn't write the save: storage is full or blocked": "セーブを書き込めません: 保存領域がいっぱいか、ブロックされています",
   "Shaping the valley": "谷をかたちづくっています",
   "Unpacking Blender models": "Blenderモデルを展開しています",
   "Planting the forests": "森に木を植えています",

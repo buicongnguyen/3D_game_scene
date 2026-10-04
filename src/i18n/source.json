@@ -3784,6 +3784,13 @@
   ]
  },
  {
+  "s": "Couldn't write the save: storage is full or blocked",
+  "ctx": [
+   "UI (src/game/director.js)",
+   "UI (src/game/game.js)"
+  ]
+ },
+ {
   "s": "Can't save during a scene — try again in a moment",
   "ctx": [
    "UI (src/game/game.js)"

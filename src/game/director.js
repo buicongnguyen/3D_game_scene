@@ -164,7 +164,7 @@ export class Director {
     // NPC talk
     for (const [id, n] of Object.entries(this.npcs)) {
       this.interact(`talk:${id}`, null, () => (n.villager ? tx('Talk to the villager') : tx('Talk to {name}', { name: tx(CAST[id]?.name || id) })),
-        () => n.visible && this.q.state.step !== 'p.arrive', () => this.talk(id), 2.6, () => n.head(), () => (this.q?.step?.talk?.[id] ? 1 : 0));
+        () => n.visible && this.q.state.step !== 'p.arrive' && this.scenes?.active !== 'starTrain', () => this.talk(id), 2.6, () => n.head(), () => (this.q?.step?.talk?.[id] ? 1 : 0));
     }
     // spark targets
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
@@ -453,6 +453,7 @@ export class Director {
   }
 
   save() {
+    this.saveFailed = false; // set again below only when the browser refuses the write (storage full or blocked)
     if (!this.canSave()) return false;
     const p = this.game.player;
     // The logical season and hour live in the quest state (the engine sets them before any fade finishes);
@@ -460,14 +461,17 @@ export class Director {
     const I = this.game.interiors;
     const s = I?.active ? I.doors.find(d => d.id === I.active).outside : p.lastSafe;
     const data = { v: 1, quest: this.quest.save(), player: { x: s.x, y: s.y, z: s.z, facing: p.facing }, at: Date.now() };
-    try { localStorage.setItem(Director.key(this.slot), JSON.stringify(data)); localStorage.setItem('starline-last-slot', String(this.slot)); return true; } catch { return false; }
+    try { localStorage.setItem(Director.key(this.slot), JSON.stringify(data)); localStorage.setItem('starline-last-slot', String(this.slot)); this.saveFailed = false; return true; } catch { this.saveFailed = true; return false; }
   }
 
   /** Three save profiles. Slot 1 keeps the original key, so older saves appear there. */
   static key(slot = 1) { return slot === 1 ? SAVE_KEY : `starline-save-${slot}`; }
 
   static loadSave(slot = 1) {
-    try { return JSON.parse(localStorage.getItem(Director.key(slot))); } catch { return null; }
+    try {
+      const d = JSON.parse(localStorage.getItem(Director.key(slot)));
+      return d && typeof d === 'object' && d.quest && typeof d.quest === 'object' ? d : null; // anything else is not a save
+    } catch { return null; }
   }
 
   static clearSave(slot = 1) { try { localStorage.removeItem(Director.key(slot)); } catch { /* ignore */ } }
@@ -679,7 +683,7 @@ export class Director {
     for (const [id, , , , , need] of this.returning) this.npcs[id].setVisible(need === 4 ? ch === 5 : lit >= need);
     // rewards that persist: the star-tree, Starfall Night skies, and news of new gifts
     if (st.flags.treePlanted) this.spawnStarTree();
-    if (st.flags.allStars && !this.starfallSky) this.starfallSky = this.game.celebrate?.starfall?.(true);
+    if (st.flags.allStars && STEP_INDEX[st.step] >= STEP_INDEX['e.free'] && !this.starfallSky) this.starfallSky = this.game.celebrate?.starfall?.(true);
     this.checkGifts();
     // animals per chapter
     const W = this.wildlife;
@@ -881,7 +885,7 @@ export class Director {
       if (silent && this.wildlife.story.bear && !this.wildlife.story.bear.inDen) this.wildlife.story.bear.setVisible(false);
     } else if (what === 'viaduct') {
       g.railway.setRepaired(true);
-      if (!silent) { this.fx.fireworks(true, V(0, 34, 122)); setTimeout(() => this.fx.fireworks(false), 10000); }
+      if (!silent) this.fx.fireworks(true, V(0, 34, 122), 10); // stops itself after 10 s on the game clock, unless a scene takes the sky over
     } else if (what === 'ferry' && !silent) {
       this.ui.toast(tx('Rin\'s ferry now crosses the river'));
     }
@@ -1183,7 +1187,10 @@ export class Director {
     this.ui.swimming(p.swimming);
     this.ui.leap(p.leapMul);
     this.saveClock += dt;
-    if (this.saveClock > 45 && !this.busy && !this.minigame) { this.saveClock = 0; this.save(); }
+    if (this.saveClock > 45 && !this.busy && !this.minigame) {
+      this.saveClock = 0;
+      if (!this.save() && this.saveFailed && !this.warnedSave) { this.warnedSave = true; this.ui.toast(tx("Couldn't write the save: storage is full or blocked")); }
+    }
     // footsteps
     if (p.grounded && p.speed > 0.8) {
       this.stepAcc = (this.stepAcc || 0) + dt * Math.min(p.speed, 7) * 0.62;

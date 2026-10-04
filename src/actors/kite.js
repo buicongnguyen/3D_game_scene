@@ -390,7 +390,7 @@ export class StarKite {
     if (s) {
       p.pivot.position.y = s.pivotY;
       p.model.position.copy(s.model);
-      if (p.lantern && s.lantern !== null) p.lantern.visible = s.lantern;
+      if (p.lantern && s.lantern !== null) p.lantern.visible = !p.swimming; // not the saved value: a kite summoned from the water saved "hidden"
     }
     p.pivot.rotation.set(0, 0, 0);
     this.saved = null;

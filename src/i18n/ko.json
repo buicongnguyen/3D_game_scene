@@ -473,6 +473,7 @@
  "Send the sheep home": "양 돌려보내기",
  "Knock down the beehive": "벌집 떨어뜨리기",
  "Can't save during a scene — try again in a moment": "장면 중에는 저장할 수 없어요 — 잠시 후 다시 시도하세요",
+ "Couldn't write the save: storage is full or blocked": "저장을 쓸 수 없어요: 저장 공간이 가득 찼거나 막혀 있어요",
  "Shaping the valley": "계곡 빚는 중",
  "Unpacking Blender models": "Blender 모델 푸는 중",
  "Planting the forests": "숲 심는 중",

@@ -88,6 +88,7 @@ export class Player {
   }
 
   teleport(x, z, y, facing) {
+    this.climb = null; // a climb-out still in progress would pull her back to the old shore
     const g = this.groundHeight(x, z, 999);
     this.pos.set(x, y ?? g, z);
     this.vel.set(0, 0, 0);
@@ -121,7 +122,7 @@ export class Player {
   }
 
   /** Ride along with a moving object (ferry deck, train cab). offset is in the object's local space. */
-  mount(obj, offset = new THREE.Vector3(), facingOffset = 0) { this.mounted = { obj, offset, facingOffset }; this.vel.set(0, 0, 0); this.setSwimming(false); }
+  mount(obj, offset = new THREE.Vector3(), facingOffset = 0) { this.climb = null; this.mounted = { obj, offset, facingOffset }; this.vel.set(0, 0, 0); this.setSwimming(false); }
   dismount(x, z, y, facing) { this.mounted = null; this.teleport(x, z, y, facing); }
 
   /** input: Input, camYaw: radians (camera look heading). */
@@ -177,7 +178,7 @@ export class Player {
       if (this.leapMul > 1) target = M.run * this.leapMul;
     }
     // ice is slippery: she builds speed slowly and slides a little when she stops or turns
-    this.onIce = !!this.world.frozen && this.world.heightAt(this.pos.x, this.pos.z) < WATER_Y + ICE_LIFT;
+    this.onIce = !!this.world.frozen && !this.onItem && this.world.heightAt(this.pos.x, this.pos.z) < WATER_Y + ICE_LIFT; // docks and decks are not ice
     const accel = this.leapMul > 1 ? 9 : this.grounded ? (this.onIce ? 2.6 : M.accel) : M.airAccel;
     const k = 1 - Math.exp(-accel * dt);
     this.vel.x += (dx * target - this.vel.x) * k;
@@ -316,7 +317,8 @@ export class Player {
     const bob = this.submerged ? 0 : Math.sin(performance.now() / 520) * 0.025;
 
     // leaving the water: wade out where the bed comes up, or climb onto a bank / dock ahead
-    if (WATER_Y - bed < S.enter - 0.25 && !diving) {
+    // (a held dive must not keep her swimming into a bank that rises above the surface: she would be squashed under the turf)
+    if (WATER_Y - bed < S.enter - 0.25 && (!diving || bed + 0.08 > surfaceY)) {
       this.setSwimming(false);
       this.swimCooldown = 0.4;
       this.pos.y = Math.max(this.pos.y, bed);

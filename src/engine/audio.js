@@ -26,6 +26,10 @@ export class Audio {
     if (!AC) return;
     const c = this.ctx = new AC();
     c.onstatechange = () => { if (c.state === 'closed') this.ctx = null; };
+    // iOS suspends or interrupts the context after a call, a tab switch or a screen lock: wake it on return or on the next touch
+    const wake = () => { if (this.ctx && this.ctx.state !== 'running') this.ctx.resume?.()?.catch?.(() => {}); };
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) wake(); });
+    addEventListener('pointerdown', wake); addEventListener('keydown', wake);
     this.master = c.createGain(); this.master.gain.value = 0.9; this.master.connect(c.destination);
     // under water everything is heard through the river: a lowpass on the whole mix
     this.muffle = c.createBiquadFilter(); this.muffle.type = 'lowpass'; this.muffle.frequency.value = 20000; this.muffle.connect(this.master);

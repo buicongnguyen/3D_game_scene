@@ -5,11 +5,12 @@ import { mkdtempSync, cpSync, readdirSync, statSync, readFileSync, rmSync } from
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { TOTAL_PACKED_BYTES, CONTRACTS } from './asset-contracts.mjs';
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname.replace(/^\/(\w:)/, '$1')), '..');
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 test('packed model library fits the download budget and every model still loads with its clips', async () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'starline-pack-'));
