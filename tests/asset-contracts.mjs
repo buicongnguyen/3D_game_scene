@@ -10,6 +10,9 @@ const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer'];
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
   'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
 const ROOM_MATS = ['Window view', 'Interior glow', 'Collider'];
+// Ordinary homes (interior_<kind>.py): no keepsake; a resident stands at each Spot_npc_* node; the decor variants Var_1..3 (one shown per house).
+const HOME_NODES = ['Spawn', 'Exit', 'Light_1', 'Light_2', 'Light_3', 'Spot_npc_1', 'Spot_npc_2', 'Var_1', 'Var_2', 'Var_3', 'Col_floor', 'Col_ceiling',
+  'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
 
 export const CONTRACTS = {
   // ---------------------------------------------------------------- characters
@@ -38,6 +41,10 @@ export const CONTRACTS = {
   cat: { family: 'animals', tris: 4000, clips: ['Idle', 'Walk', 'Sit', 'Sleep'] },
   duck: { family: 'animals', tris: 2000, clips: ['Swim', 'Idle'] },
   deer: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Graze'] },
+  cow: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Graze', 'Sleep', 'Moo'], icon: true },
+  pig: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Snuffle', 'Sleep', 'Oink'], icon: true },
+  goat: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Graze', 'Sleep', 'Bleat'], icon: true },
+  dog: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Run', 'Sit', 'Wag', 'Bark', 'Sleep'], icon: true },
 
   // ---------------------------------------------------------------- architecture
   'kawabe-house-a': { family: 'architecture', tris: 14000, mats: ['Window glow'] },
@@ -160,6 +167,13 @@ export const CONTRACTS = {
   'interior-bakery': { family: 'interiors', tris: 25000, nodes: ROOM_NODES, mats: [...ROOM_MATS, 'Interior fire'] },
   'interior-mill': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Gear_pit', 'Gear_shaft', 'Gear_nut'], mats: [...ROOM_MATS, 'Interior fire'] },
   'interior-station': { family: 'interiors', tris: 25000, nodes: [...ROOM_NODES, 'Pendulum'], mats: [...ROOM_MATS, 'Interior fire'] },
+  'interior-kawabe-a': { family: 'interiors', tris: 16000, nodes: HOME_NODES, mats: ROOM_MATS },
+  'interior-kawabe-b': { family: 'interiors', tris: 16000, nodes: HOME_NODES, mats: ROOM_MATS },
+  'interior-kawabe-shop': { family: 'interiors', tris: 16000, nodes: HOME_NODES, mats: ROOM_MATS },
+  'interior-takamori-a': { family: 'interiors', tris: 16000, nodes: HOME_NODES, mats: ROOM_MATS },
+  'interior-takamori-b': { family: 'interiors', tris: 16000, nodes: HOME_NODES, mats: ROOM_MATS },
+  'interior-boathouse': { family: 'interiors', tris: 16000, nodes: HOME_NODES, mats: ROOM_MATS },
+  'interior-shed': { family: 'interiors', tris: 16000, nodes: HOME_NODES, mats: ROOM_MATS },
   'keepsake-photo': { family: 'interiors', tris: 1200, icon: true },
   'keepsake-recipe': { family: 'interiors', tris: 1200, icon: true },
   'keepsake-float': { family: 'interiors', tris: 1200, icon: true },
@@ -180,5 +194,7 @@ export const CONTRACTS = {
 
 export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'tamo'];
 // Raw GLBs are the editable, uncompressed sources; production ships meshopt-packed copies (tests/pack.test.mjs).
-export const TOTAL_RAW_BYTES = 30_000_000;
-export const TOTAL_PACKED_BYTES = 12_000_000;
+// Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
+// and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
+export const TOTAL_RAW_BYTES = 37_000_000;
+export const TOTAL_PACKED_BYTES = 13_500_000;

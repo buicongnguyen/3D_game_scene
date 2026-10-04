@@ -7,6 +7,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, HUNT } from '../src/game/story.js';
 import { FALLEN_STARS, LAMPS } from '../src/world/layout.js';
+import { BARKS } from '../src/content/barks.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANGS = ['vi', 'ko', 'ja'];
@@ -52,6 +53,8 @@ export function collect() {
   }
   for (const s of FALLEN_STARS) add(s.hint, 'where a fallen star hides (journal hint)');
   for (const l of LAMPS) add(l.name, 'Star Lamp name');
+  // barks: one-line remarks people call out as Mika walks past (a speech bubble over their head, a few seconds)
+  for (const b of BARKS) add(b.text, `bark by ${b.who === 'any' ? 'any villager' : b.who === 'kid' ? 'a child' : CAST[b.who]?.name || b.who}`);
 
   // UI strings: tx('…') literals and interaction labels in the source, data-i18n markup in index.html
   const files = [];

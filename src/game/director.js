@@ -10,6 +10,9 @@ import { Scenes } from './scenes.js';
 import { PLACES, FALLEN_STARS, DECK_Y, river, riverHalfWidth } from '../world/layout.js';
 import { clockLabel } from '../world/seasons.js';
 import { STOPS } from '../world/railway.js';
+import { BarkBubbles } from '../ui/barks-ui.js';
+import { VILLAGERS, RETURNING, ROUTES } from '../content/villagers.js';
+import { BARK_RANGE, BARK_NEAR, BarkClock, pickBark, zoneAt } from './barks.js';
 
 const SAVE_KEY = 'starline-save-1';
 const FRIEND_BY_KIND = Object.fromEntries(FRIENDS.map(f => [f.id, f]));
@@ -40,6 +43,8 @@ export class Director {
     this.wildlife.onPenned = () => this.event({ type: 'count', item: 'sheep' });
     this.scenes = new Scenes(this);
     this.spawnCast();
+    // the remarks people call out as Mika walks past (game/barks.js says what, ui/barks-ui.js draws the bubbles)
+    this.barks = { clock: new BarkClock(), ui: new BarkBubbles(), recent: new Set(), mine: new Map(), scan: 0, lit: new Set() };
     this.registerStatic();
   }
 
@@ -51,40 +56,125 @@ export class Director {
     mk('rin', 'rin', 3.4, 31.2, Math.PI / 2);
     mk('ota', 'ota', -24, -40, Math.PI / 2);
     mk('hana', 'hana', 103.5, 16, Math.PI / 2);
-    const villagers = [
-      ['v1', 'villager-man', -47, 36, -Math.PI / 2], ['v2', 'villager-woman', -43.5, 8, Math.PI / 2], ['v3', 'villager-kid', -41, 23, 0],
-      ['v4', 'villager-woman', 110, 12, Math.PI], ['v5', 'villager-man', 124, 2, -Math.PI / 2], ['v6', 'villager-kid', 116, 18, 2.5],
-      ['v7', 'villager-man', -96, 117, 0],
-    ];
+    const villagers = VILLAGERS;
     villagers.forEach(([id, model, x, z, f], i) => {
       const n = mk(id, model, x, z, f, { tint: NPC.villagerTint(i + 1) });
       n.villager = true;
+      n.barkKind = model.slice(9);
       n.setIdle(i % 3 === 0 ? 'Talk' : 'Idle');
     });
     this.npcs.v7.setVisible(false);
     // people who left the valley come home as the lamps are lit (shown by placeCast)
-    this.returning = [
-      ['v8', 'villager-man', -45, 30, 1, 1], ['v9', 'villager-woman', -40, 2, 2, 1], ['v10', 'villager-kid', -50, 12, 0.5, 1],
-      ['v11', 'villager-woman', 120, 6, 3, 2], ['v12', 'villager-man', 108, 25, 1.5, 2], ['v13', 'villager-kid', 125, 15, 2.5, 2],
-      ['v14', 'villager-man', 58, -112, 0, 3], ['v15', 'villager-woman', 65, -110, 3.1, 3],
-      ['v16', 'villager-kid', -100, 114, 1.2, 4], ['v17', 'villager-woman', -94, 118, 4, 4],
-    ];
+    this.returning = RETURNING;
     this.returning.forEach(([id, model, x, z, f], i) => {
       const n = mk(id, model, x, z, f, { tint: NPC.villagerTint(i + 8) });
       n.villager = true;
+      n.barkKind = model.slice(9);
       n.setIdle(i % 2 ? 'Talk' : 'Idle');
       n.setVisible(false);
     });
     // everyday routes: villagers stroll between a few spots and pause to chat
-    this.routes = {
-      v1: [[-47, 36], [-45, 48], [-44, 26], [-47, 36]], v2: [[-43.5, 8], [-44, -8], [-40, 21], [-43.5, 8]],
-      v3: [[-41, 23], [-38, 20], [-42, 28]], v4: [[110, 12], [104, 6], [118, 8], [110, 12]],
-      v5: [[124, 2], [128, -6], [120, 16], [124, 2]], v6: [[116, 18], [112, 24], [121, 20]],
-      v8: [[-45, 30], [-42, 40], [-46, 22]], v9: [[-40, 2], [-43, -6], [-38, 10]], v10: [[-50, 12], [-46, 16], [-52, 8]],
-      v11: [[120, 6], [114, 10], [124, 0]], v12: [[108, 25], [104, 20], [112, 28]], v13: [[125, 15], [120, 20], [128, 10]],
-      v14: [[58, -112], [62, -116], [56, -118]], v15: [[65, -110], [60, -108], [66, -114]],
-    };
+    this.routes = ROUTES;
     this.routeState = {};
+  }
+
+  /** The "Talk to ..." interaction for one person (villagers, the cast, and the residents of the houses). */
+  registerTalk(id) {
+    const n = this.npcs[id];
+    this.interact(`talk:${id}`, null, () => (n.villager ? tx('Talk to the villager') : tx('Talk to {name}', { name: tx(CAST[id]?.name || id) })),
+      () => n.visible && this.q.state.step !== 'p.arrive' && this.scenes?.active !== 'starTrain', () => this.talk(id), 2.6, () => n.head(), () => (this.q?.step?.talk?.[id] ? 1 : 0));
+  }
+
+  // ------------------------------------------------------------------ residents of the houses
+  /** Someone lives in each ordinary house: they stand at the room's `Spot_npc_*` nodes and show only while that room does. */
+  spawnResidents() {
+    const g = this.game, I = g.interiors;
+    this.residents = [];
+    if (!I) return;
+    const hash = s => [...s].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7);
+    let k = 0;
+    for (const room of I.rooms.values()) {
+      (room.spots || []).forEach((s, i) => {
+        const h = hash(`${room.id}:${i}`);
+        if (i > 0 && h % 2) return;                                   // the second spot is filled in every other house
+        const model = i > 0 && h % 3 === 0 ? 'villager-kid' : h % 2 ? 'villager-woman' : 'villager-man';
+        const id = `res:${room.id}:${i}`;
+        const n = new NPC(g.scene, g.assets, g.world, id, model, { x: s.pos.x, z: s.pos.z, facing: s.yaw, tint: NPC.villagerTint(40 + k++) });
+        n.place(s.pos.x, s.pos.z, s.yaw, s.pos.y);
+        n.villager = true; n.barkKind = model.slice(9); n.resident = room.id; n.spotYaw = s.yaw;
+        n.setIdle(i ? 'Talk' : 'Idle');
+        n.setVisible(false);
+        this.npcs[id] = n;
+        this.residents.push(n);
+        this.registerTalk(id);
+      });
+    }
+  }
+
+  /** Residents appear while Mika is in their house, and turn to her when she comes close. */
+  updateResidents() {
+    if (!this.residents?.length) return;
+    const act = this.game.interiors?.active || null, p = this.game.player.pos;
+    for (const n of this.residents) {
+      const here = n.resident === act;
+      if (n.visible !== here) n.setVisible(here);
+      if (!here) continue;
+      if (n.pos.distanceTo(p) < 4.5) n.lookAt(p.x, p.z); else n.targetFacing = n.spotYaw;
+    }
+  }
+
+  // ------------------------------------------------------------------ barks
+  /** Who may say something now: the visible people outdoors, or the residents of the room Mika is in. */
+  barkSpeakers() {
+    const inside = this.game.interiors?.active || null, out = [];
+    for (const [id, n] of Object.entries(this.npcs)) {
+      if (!n.visible || n.riding || (n.path && n.speed > 3)) continue;
+      if ((n.resident || null) !== inside) continue;
+      out.push([id, n]);
+    }
+    return out;
+  }
+
+  /** What the remarks may depend on: the season, hour and weather shown on screen, and how far the story has come. */
+  barkContext() {
+    const g = this.game, season = g.shownSeason || g.time.season;
+    return { season, hour: g.shownHour(), weather: season === 'winter' && !g.weatherOff ? 'snow' : null, chapter: this.q.state.chapter, place: null };
+  }
+
+  updateBarks(dt) {
+    const B = this.barks, g = this.game, p = g.player;
+    for (const id of B.clock.update(dt)) {
+      const n = this.npcs[id];
+      if (n && B.lit.delete(id) && !n.path) n.setIdle(n.idleClip); // back to what they were doing
+    }
+    // while something owns the screen the bubbles are hidden (they keep their time), and nobody starts a new one
+    const hushed = !!(this.busy || this.scenes.active || this.minigame || this.ui.dialogueOpen || this.ui.overlay || g.paused);
+    B.ui.update(dt, g.camera, hushed);
+    B.scan -= dt;
+    if (hushed || B.scan > 0) return;
+    B.scan = 0.35;
+    let best = null, bd = Infinity;
+    for (const [id, n] of this.barkSpeakers()) {
+      const d = n.pos.distanceTo(p.pos);
+      if (d > BARK_RANGE) continue;
+      if (!B.clock.next.has(id)) { B.clock.prime(id, 0.6 + Math.random() * 6); continue; } // a beat before the first remark of a new face
+      if (B.clock.canSpeak(id) && d < bd) { bd = d; best = [id, n]; }
+    }
+    if (!best) return;
+    const [id, n] = best;
+    const kind = n.barkKind || id, rv = river.nearest(n.pos.x, n.pos.z, 12);
+    const ctx = { ...this.barkContext(), place: n.resident ? null : zoneAt(n.pos.x, n.pos.z, !!rv && rv.d - riverHalfWidth(rv.z) < 5) };
+    const mine = B.mine.get(id) || B.mine.set(id, new Set()).get(id);
+    const memory = new Set([...B.recent, ...mine]);
+    const text = pickBark(kind, ctx, memory);
+    if (!text) { B.clock.next.set(id, B.clock.t + 12); return; }
+    for (const s of [B.recent, mine]) { s.add(text); while (s.size > (s === mine ? 6 : 24)) s.delete(s.values().next().value); }
+    const named = !n.villager;
+    B.ui.show(id, text, out => { n.head(out); out.y += 0.3; return out; }, { name: named ? tx(CAST[id]?.name || id) : '', life: B.clock.life });
+    B.clock.spoke(id);
+    // they look up and talk with their hands while the bubble is up (unless they are mid-walk)
+    if (!n.path) { n.lookAt(p.pos.x, p.pos.z); if (n.anim?.has?.('Talk')) { n.anim.play('Talk'); B.lit.add(id); } }
+    if (bd < BARK_NEAR * 2) this.audio?.blip?.(CAST[id]?.pitch ?? { kid: 1.4, woman: 1.15, man: 0.9 }[kind] ?? 1);
   }
 
   updateVillagers(dt) {
@@ -162,10 +252,7 @@ export class Director {
     // valley friends: say hello to whichever creature is next to Mika
     this.interact('friend', null, () => tx(this.friendNear?.def.verb || ''), () => !!this.friendNear, () => this.befriend(this.friendNear), 6, () => this.friendNear?.a.pos, 0, 4);
     // NPC talk
-    for (const [id, n] of Object.entries(this.npcs)) {
-      this.interact(`talk:${id}`, null, () => (n.villager ? tx('Talk to the villager') : tx('Talk to {name}', { name: tx(CAST[id]?.name || id) })),
-        () => n.visible && this.q.state.step !== 'p.arrive' && this.scenes?.active !== 'starTrain', () => this.talk(id), 2.6, () => n.head(), () => (this.q?.step?.talk?.[id] ? 1 : 0));
-    }
+    for (const id of Object.keys(this.npcs)) this.registerTalk(id);
     // spark targets
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
     this.target('millLamp', L.get('mill')?.flame, N_('Light the Mill Lamp'), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10 });
@@ -197,6 +284,7 @@ export class Director {
   registerHomes() {
     const I = this.game.interiors;
     if (!I) return;
+    this.spawnResidents();
     for (const d of I.doors) {
       this.interact(`door:${d.id}`, d.outside, N_('Go inside'), () => !I.active && !I.busy && !this.game.kite?.active, () => this.enterHome(d.id), 1.8, null, 0.5);
       this.interact(`exit:${d.id}`, d.exit, N_('Go outside'), () => I.active === d.id && !I.busy, () => this.leaveHome(), 1.8, null, 0.5);
@@ -837,7 +925,7 @@ export class Director {
       if (!def || !a.visible || !a.root.visible || a.flying) continue;
       if (a.kind === 'sheep' && !a.penned) continue; // runaways are sent home first
       if (a.kind === 'fox' && a.path) continue;
-      const reach = a.kind === 'bear' ? 4.2 : a.kind === 'duck' ? 3.6 : 2.6;
+      const reach = a.kind === 'bear' ? 4.2 : a.kind === 'duck' ? 3.6 : a.kind === 'cow' ? 3.4 : 2.6;
       const d = Math.hypot(a.pos.x - p.x, a.pos.z - p.z);
       if (d > reach || Math.abs(a.pos.y - p.y) > 2.5) continue;
       if (d < bd) { bd = d; best = { a, def }; }
@@ -851,9 +939,10 @@ export class Director {
     if (a.kind !== 'bear' && a.kind !== 'duck') a.lookAt(p.pos.x, p.pos.z);
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
     p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
-    const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look' }[a.kind];
-    if (react) a.anim?.once(react, { then: a.idleClip || 'Idle' });
-    this.fx.burst(a.pos.clone().add(V(0, a.kind === 'bear' ? 1.6 : 0.8, 0)), { n: 18, color: [1, 0.55, 0.7], speed: 1.6, size: 0.22, gravity: -1.2 });
+    const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag' }[a.kind];
+    if (react && a.anim?.has?.(react)) a.anim.once(react, { then: a.idleClip || 'Idle' });
+    if (['cow', 'pig', 'goat', 'dog'].includes(a.kind)) this.audio.animal(a.kind, 0.9);
+    this.fx.burst(a.pos.clone().add(V(0, a.kind === 'bear' ? 1.6 : a.kind === 'cow' ? 1.3 : 0.8, 0)), { n: 18, color: [1, 0.55, 0.7], speed: 1.6, size: 0.22, gravity: -1.2 });
     this.audio.good();
     if (st.friends[def.id]) return;
     st.friends[def.id] = true;
@@ -1104,8 +1193,10 @@ export class Director {
       this.q.state.flags.crabHint = true;
       this.say('c1_crab');
     }
+    this.updateResidents();
     for (const n of Object.values(this.npcs)) n.update(dt, g.colliders);
     this.updateVillagers(dt);
+    this.updateBarks(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);
     this.tamo.update(dt, p, g.night || 0, !!p.aiming, g.follow.yaw, g.camera);

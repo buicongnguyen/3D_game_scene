@@ -2043,6 +2043,30 @@
   ]
  },
  {
+  "s": "The cow lifts her head, considers Mika for a long, kind moment, and goes back to her grass. Her bell says thank you.",
+  "ctx": [
+   "dialogue friend_cow, spoken by narrator"
+  ]
+ },
+ {
+  "s": "The pig leans into the scratching with a grunt of pure joy, then flops over, completely finished with the day.",
+  "ctx": [
+   "dialogue friend_pig, spoken by narrator"
+  ]
+ },
+ {
+  "s": "The goat sniffs Mika's sleeve, finds no snacks, and forgives her at once.",
+  "ctx": [
+   "dialogue friend_goat, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Kinako barks twice, sits, and wags so hard that the whole back half of her wags with it.",
+  "ctx": [
+   "dialogue friend_dog, spoken by narrator"
+  ]
+ },
+ {
   "s": "You're the one who got stuck in the hedge, aren't you?",
   "ctx": [
    "dialogue friend_sheep, spoken by Mika"
@@ -2830,6 +2854,102 @@
   ]
  },
  {
+  "s": "Meadow cow",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Scratch the cow's chin",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Chews slowly, thinks slowly, and has never once been in a hurry. Her bell rings with every step.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "In the meadow south of Kawabe and along the pasture road to Takamori.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Takamori pig",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Scratch the pig's back",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Snuffles through the lanes behind the houses, certain there are truffles in every garden.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Behind the houses of Takamori.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Hillside goat",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Pat the goat",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Climbs anything, eats everything, and looks very sorry about both.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "On the grassy slopes below Kawabe and above Takamori.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Kinako the dog",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Pet the dog",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "A curly-tailed shiba who walks with anyone who looks a little lost. Barks hello, wags goodbye.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "In Kawabe, in Takamori and in Sora's garden. She will find you first.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
   "s": "Spring: the Blossom Wave",
   "ctx": [
    "photo album caption (a chapter's celebration photo)"
@@ -3401,6 +3521,1902 @@
   ]
  },
  {
+  "s": "Mind the sheep. Wait, those are clouds. Mind the clouds.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I came out for something and forgot it. Nice walk, though.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Somebody borrowed my ladder in March. I'm not counting.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "My knees say hello. The rest of me is busy.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Careful on the planks, they have opinions.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "If you smell bread, follow it. That's just good sense.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The valley is small, but it keeps its secrets well.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Lost a glove. It's probably off with the odd sock.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A good walk is better than a bad nap.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Have you seen my hat? Oh. It's on my head.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I'm not lost. I'm taking the scenic route.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Thirty years here and I still mix up the lanes.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Somebody left a kite in my pear tree.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The chickens are in charge today. I just work here.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Tea first, chores second. That's the valley way.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Every path leads somewhere. Some just take longer.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "I counted the stars once. I kept falling asleep.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "My neighbour's rooster has no sense of time.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Watch your step. The cat owns the road.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "I'd wave, but my hands are full of turnips.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A little walk, a little gossip. That's a whole day.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Is it Tuesday? It feels like a Tuesday.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Some days the valley hums. Today I think it's humming.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "I keep meaning to fix that fence. Keep meaning to.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Bicycles are fast. Feet are honest.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Two buttons missing and nobody noticed. A victory.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Fresh air, full pockets, nowhere to be. Perfect.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "I know every stone on this road by its first name.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The wind carries every secret, but only tells the birds.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Soup's on! Well, it's on my mind.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Nobody here is in a hurry, and we're proud of it.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Look up! The sky is showing off tonight.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Shh, the lamps are listening.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I should be in bed. The stars said otherwise.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Careful in the dark. Roots love a late stroll.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Owls are out. I'm just their clumsy neighbour.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Can't sleep. I'm counting windows instead of sheep.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The valley sounds different at night. Softer.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Mind the lantern, it's the only one I've got.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Even the river sounds sleepy tonight.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A night walk clears the head. And fogs the glasses.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Was that a falling star, or just my eyes?",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Bed is warm, but the night is wider.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Quiet out, isn't it? I could hear a bun cool.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Every window up the hill is a tiny moon.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Night shift! I'm guarding the pie. From myself.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The dark is friendly here. Mostly.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Late for a stroll, early for a snack.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Somewhere, somebody's kettle is still singing.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I'm not wandering. I'm night-gardening.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Stars out already? I swear it was lunchtime a minute ago.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Up with the day, and the day is up with me.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The shadows are short, so it must be lunchtime.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Plenty of daylight left. Plenty of chores, too.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Off to market with nothing to sell. Moral support.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Sunday hat on a Wednesday. Why not?",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Birds are loud today. I think it's about breakfast.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Daylight's free. I'm spending it on a nap.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Kettle's on. That's a proper day.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Chores before lunch, lunch before chores. Balance.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Lunch smells are floating over every roof.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Good day! I'm out checking on nothing in particular.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I took the long way. The short way had a goose.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Nice scarf! Did somebody knit it for you?",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A tea stain on my sleeve. Medals of honour.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Blossom's out! Everything's pink and slightly sneezy.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Mud, mud, mud. Spring has arrived on my boots.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Kites are up! Mind the strings.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Lambs! Everywhere! I've stopped being useful.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Window's open for the first time since autumn.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Birds are nesting in my chimney. No fires for me.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Peach buds are fat as thumbs. Soon, soon.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The air smells of green. Doesn't it?",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Spring cleaning. Found a sock from last year.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Every puddle has a sky in it. I keep stepping in.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Hot! Even the shade is sweating.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Cicadas are shouting. I can't hear my own thoughts.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Cold barley tea, a fan, a shady step. Bliss.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Long days, short tempers, cold melon. Summer.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The river's the only sensible place today.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Hats are a must. The sun here has opinions.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Fireflies tonight, I bet. Summer's best trick.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Shaved ice, fine as snow. Worth every coin.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "I dozed under a tree. Woke with a butterfly on my nose.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Sunflowers look up. I try, but my neck is tired.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Leaves everywhere. I sweep, they cheerfully return.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Chestnuts! Roasted, they taste like a warm hug.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Harvest time. My back says no, my pantry says yes.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Smell the woodsmoke? That's autumn knocking.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Red leaves, gold leaves. The hills are showing off.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "A pumpkin on every porch. Friendly fellows.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Shorter days, longer sweaters. I approve.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The wind has a bite in it. A small, friendly bite.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Dragonflies on the water. The last of the summer crowd.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Mushrooms! If you don't know them, don't eat them.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Brr! My nose is an icicle.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Chimney smoke, warm soup, quiet lanes. Cosy winter.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Frost on every fence post. Like sugar.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Short days. I'm already waiting for supper.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Put on another scarf. Then another.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Hot tea for the hands, hot stew for the belly.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Winter nights are long. Good for stories.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Icicles on the eaves. Don't stand under them, dear.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Breath clouds! Look, I'm a dragon.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A blanket and a stove. Don't bother me till spring.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Snow! Quick, before it melts!",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Snow's piling up. Good thing I like shovels.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Every roof is wearing a white hat.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Crunch, crunch. Listen to those boots.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Snowfall is so quiet you can hear your thoughts.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "A snowman by the gate. He's guarding the lane.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Nothing like snow to find the holes in your gloves.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Snow on the hills, soup on the stove. Happy.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Mind Mochi! He's asleep in the middle of the road.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The river's in a talkative mood today.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Kawabe folk never hurry. The river doesn't either.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "That's the boathouse. It smells of tar and good stories.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The ferry leaves when it leaves. That's the schedule.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Wooden bridge, wooden houses, wooden jokes.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Fish for lunch again. The river provides.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Wash day by the water, same as always.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Hear the mill wheel? That's Kawabe's heartbeat.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Everything in Kawabe smells of rope and river.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Nets drying, kettles singing. That's Kawabe.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Takamori folk say we're damp. We say we're fresh.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Thirty-nine steps to the bell tower. I count every one.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The bakery makes the whole hill smell like heaven.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Takamori is all stairs. Strong legs, or no dinner.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Our bell rings the hours, when it feels like it.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The view from up here? Kawabe looks like a toy village.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Bicycles rattle on these cobbles. You'll hear them coming.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Hill air! Good for lungs, bad for hats.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The hill keeps us fit and the bakery keeps us round.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Takamori smells of yeast. Best alarm clock there is.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "From the tower you can see the whole valley, and my aunt.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The wind up here steals hats. The tower has a dozen.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Kawabe folk say we're snooty. We say we're high up.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Hoshi Station: where the valley says hello and goodbye.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Benches, bells and weeds. Hoshi has it all.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The platform gets swept every day. Just in case.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The sign says Hoshi. I say home.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The rails run through the valley like a long sentence.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "That little cottage on the hill has stood a long time.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Stars come out early at Hoshi. They know this place.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Smell that? Coal, tea and old wood. That's Hoshi.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Peach trees, row on row. I know every one.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "A ladder, a basket, a bee. That's orchard work.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Mind the roots. They run all the way to the river.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Pruning is a conversation with the tree. Mine argues.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Every tree here has a name. Mine are all Peach.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The orchard hums. It's the bees, or maybe the trees.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The hill smells sweet even when nothing's ripe.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Peach trees are patient. They'd like you to be, too.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Row by row, tree by tree. That's how orchards grow.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Quiet, please. The forest is thinking.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The shrine steps are old. So are my knees.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Moss on every stone. The forest keeps its own time.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Bow, clap, make a wish. Small wishes count most.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Something rustles in the trees. Probably friendly.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Tall cedars and a quiet hill. Good for the soul.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Lanterns in the moss. Someone cares for this place.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Tread softly. Up here, even the wind whispers.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Splash! Nothing to see. Just a fish with ambition.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The ferry rope sings when it's pulled. Listen.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The ducks think the river's theirs. We let them.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The river's high today, or my boots are short.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Reeds, ripples, and a very rude heron.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Watch the current. It likes to steal things.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "That water is older than the valley. Show some respect.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I'd fish here all day. The fish disagree.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Count the sheep? I always lose count at seven.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Baa. That's all they ever say. Wise creatures.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A sheep got out again. They're escape artists.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The fence is fine. The sheep are smarter than the fence.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Grass, grass, grass. Look at those lucky sheep.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Good wool this year. Soft as a rumour.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Sheep never hurry. They know something we don't.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Easy work, they say. They've never carried a ram.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "This pasture has the best view in Takamori. Ask any sheep.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The wheel turns, the flour falls. Simple and good.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Mind your sleeves near the gears. They're hungry.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The mill's been grinding since my grandfather's time.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Flour dust makes everyone look wise. Or ghostly.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "That wheel is slow, but it never stops.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Smell that? Fresh-ground flour. The best perfume.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Creak, thump, creak. The best lullaby in the valley.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Don't shout at the mill. It shouts back.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "It's so quiet since the train stopped. You get used to it.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The lamps are dark again. We tell ourselves it's fine.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I haven't heard a whistle in years. I still listen.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Not many left to say hello to. Thanks for stopping.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Takamori's quiet and Kawabe's quieter. We wave across.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "I keep the porch light on. Habit. Hope. Mostly habit.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Rust on the rails, moss on the sign. Time is patient.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Young faces are rare here now. Stay a while.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "The valley is asleep. Someone should wake it kindly.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Dark lamps, still nights. You can hear your own thoughts.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "People used to ride end to end just for fun.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Ten winters now. I count them, too.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Once you couldn't hear yourself over the train.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A new face! The valley notices, you know.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I used to wave at the evening train. Old habits.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Did you see that glow? Haven't seen that in years.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "My cousin's coming back from the city next month!",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The lamps are waking up. Slowly, like us in the morning.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "More windows are lit every week. I count them.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "People are moving home. Somebody has to bake for them.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "I swept the porch. Somebody might visit, now.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "I heard laughter on the road today. Out loud!",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "There's talk of a festival again. Talk is a start.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "A light on the hill, a light on the water. Pretty.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "My neighbour's back! Now we can argue over the fence.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The valley is yawning. It'll be up and about soon.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Kids on the lanes again. Noise has never sounded so good.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I fixed the shutters. Felt like it was time.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Smoke from a new chimney! I nearly cheered.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Four lamps! I never thought I'd see all four.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I can't stop looking at that little red engine.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The lamps say clear, the sky says clear. Perfect.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Takamori and Kawabe, one valley again. About time.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Lanterns everywhere. Mind your hat.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I made a wish list for star-fall. It's very long.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Everybody's smiling. It's a little suspicious.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "We waited ten winters. What's another ten minutes?",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "The valley hums again. I can feel it in my boots.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Star-fall and four lamps. I could get used to this.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Wear something warm and silly. That's the dress code.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Even the sheep look pleased with themselves.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Somebody hung a lantern on my gate. I'm keeping it.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Tonight the whole valley is awake. Even the cat.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I can run faster than the ferry! Sort of.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Look, I found a stick. It's a very good stick.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I'm not hiding. I'm winning at hide-and-seek.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "My shoe has a hole. Now my toes can see, too.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Teacher says stars are far away. I say not that far.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Race you to the bridge! Ready, go! Too slow!",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "One day I'll ride a bicycle. A really tall one.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Mum says no more puddles. This is a pond. Different.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I have a pebble that looks like a cat. Wanna see?",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I'm not tired. I'm just lying down very fast.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I'm the king of this wall. Bow down. Or wave.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I counted three clouds shaped like dumplings.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Do bears like bread? Asking for a friend.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I fed the ducks a little. A little a lot.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I'm gonna catch the biggest fish ever. Maybe next week.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "My kite got stuck. Tell it I said sorry.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Shh! I'm being a spy. Spy things.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Granny says the lamps used to shine like the moon.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I know a secret path. It's behind the big bush.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Can I have a bun? I'll be good. Fifty percent good.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Look at me, I'm doing a cartwheel! Don't look!",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "I'm the third fastest in school. Out of four.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "My tooth wobbles! It's my best trick.",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "In my day we walked uphill both ways. Twice.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Ah, young legs. Take them for a good long walk.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "I remember when this lane was all mud. It still is.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Come by for tea, dear. I'll find the good cups.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "My husband always said the valley hums. He was right.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Bread used to cost a smile. Now it costs two.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Mind your back, child, and mind your manners.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "My grandmother said stars fall into the river here.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Sit a while! The bench has room and so do I.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "At my age, a quiet hour is a feast.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Hello, traveller! Welcome to the valley.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Ho there! Come and say hi. We don't bite.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Hi! Don't mind us, we're just being neighbourly.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Good day! Spare a smile? I'm collecting them.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Oh, hello! Is that a new coat, or just a good one?",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Hey there! You walk like someone with plans.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Hullo! Free advice: eat something warm.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Welcome, welcome! Take any path. They all end at tea.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Hi, hi! Tell your feet I said well done.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Ahoy! That's how they say hello by the river, I think.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "Evening! Lantern oil is half price.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Morning! The bread's still warm, if you're quick.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Mind the platform edge. I'm not mopping you up.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Brass doesn't polish itself. I checked.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Humph. Don't loiter. Or do. I'm not your boss.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "My knees forecast the weather. Today: grumpy.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Good boots. Keep them.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Back when I was young, a ticket meant something.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Tea's gone cold. Forgot to drink it. Again.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "I whistle when nobody's listening. Keep that quiet.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Frost on the rails. Pretty. Hard on the knees.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Late to be walking. Wrap up warm.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Hot enough to fry an egg on the signal box.",
+  "ctx": [
+   "bark by Genzo"
+  ]
+ },
+ {
+  "s": "Catch of the day! Well, catch of the hour. Okay, minute.",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "Race you to the dock! I'll give you a head start.",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "The river told me a joke. I forgot the end.",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "Bait's in my pocket. Don't ask. Don't look.",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "Biggest fish ever! Well, bigger than yesterday's.",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "Come fishing sometime! There are almost no rules.",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "After dark the river's all stars. Fish wink at them.",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "Swim, fish, swim again. That's my whole summer!",
+  "ctx": [
+   "bark by Rin"
+  ]
+ },
+ {
+  "s": "Mm.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Turnips. Always turnips.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Wheel's turning. Good.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Flour in the air. Ignore it.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Weeds. Always weeds.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Walk on. Nothing to see here.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Mind the wheel. It bites.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Fine day for work. Every day is.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Harvest. No talking.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Cold. Fire. Soup. Enough.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Late. Go to bed.",
+  "ctx": [
+   "bark by Grandpa Ōta"
+  ]
+ },
+ {
+  "s": "Warm bun? Half price if you smile!",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "Hello, love! I've got more flour than sense.",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "Eat something, love. You look like you're overthinking.",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "The oven's singing again. That means it's ready!",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "A bun a day keeps the grumps away.",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "Cinnamon, peaches, a little luck. Come and have one!",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "First batch is out! Quick, before they're gone!",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "Hot buns for cold hands, love.",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "Peach blossom buns today. Pretty and sweet!",
+  "ctx": [
+   "bark by Hana"
+  ]
+ },
+ {
+  "s": "Talk to the villager",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Talk to {name}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Open Sora's chest",
   "ctx": [
    "UI (src/game/director.js)"
@@ -3511,18 +5527,6 @@
  },
  {
   "s": "Ride Kobo to Hoshi Station",
-  "ctx": [
-   "UI (src/game/director.js)"
-  ]
- },
- {
-  "s": "Talk to the villager",
-  "ctx": [
-   "UI (src/game/director.js)"
-  ]
- },
- {
-  "s": "Talk to {name}",
   "ctx": [
    "UI (src/game/director.js)"
   ]

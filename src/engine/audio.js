@@ -110,6 +110,27 @@ export class Audio {
   // ---------------------------------------------------------------- SFX
   click() { this.tone(1400, { type: 'triangle', dur: 0.06, vol: 0.08, rev: 0 }); }
   blip(pitch = 1) { this.tone(420 * pitch * (0.92 + Math.random() * 0.16), { type: 'square', dur: 0.05, vol: 0.035, rev: 0.05, filter: 1800 }); }
+  /** A farm animal's call; `vol` (0..1) is how near it is, so a far-off moo is a murmur. */
+  animal(kind, vol = 1) {
+    const v = 0.16 * vol;
+    if (!this.ctx || v < 0.006) return;
+    if (kind === 'cow') {            // a long low moo that sags in pitch
+      this.tone(118, { type: 'sawtooth', dur: 1.15, vol: v, attack: 0.14, glide: 0.8, filter: 520, rev: 0.3 });
+      this.tone(236, { type: 'sine', dur: 0.9, vol: v * 0.3, attack: 0.18, glide: 0.8, rev: 0.25 });
+    } else if (kind === 'pig') {     // two short snorting grunts
+      this.tone(170, { type: 'square', dur: 0.12, vol: v * 0.8, filter: 700, glide: 0.8, rev: 0.1 });
+      this.tone(140, { type: 'square', dur: 0.16, vol: v * 0.8, filter: 650, glide: 0.75, when: 0.17, rev: 0.1 });
+      this.noise({ dur: 0.1, vol: v * 0.5, freq: 1100, q: 1.2, when: 0.04 });
+    } else if (kind === 'goat') {    // a wobbling bleat
+      this.tone(540, { type: 'sawtooth', dur: 0.6, vol: v * 0.7, attack: 0.03, glide: 0.7, filter: 1500, detune: -12, rev: 0.2 });
+      this.tone(560, { type: 'sawtooth', dur: 0.6, vol: v * 0.5, attack: 0.03, glide: 0.72, filter: 1500, detune: 14, rev: 0.2 });
+    } else if (kind === 'dog') {     // a bright double bark
+      for (const w of [0, 0.22]) {
+        this.tone(330, { type: 'square', dur: 0.13, vol: v * 0.7, attack: 0.004, glide: 0.55, filter: 1800, when: w, rev: 0.15 });
+        this.noise({ dur: 0.09, vol: v * 0.55, freq: 1600, q: 0.9, when: w });
+      }
+    }
+  }
   step(surface = 'grass') {
     const f = { grass: 900, wood: 420, stone: 1500, sand: 700, snow: 600, ice: 2600 }[surface] || 900;
     this.noise({ dur: surface === 'wood' ? 0.09 : 0.07, vol: surface === 'snow' ? 0.14 : 0.09, freq: f * (0.9 + Math.random() * 0.2), q: surface === 'wood' ? 4 : 1.2 });

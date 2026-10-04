@@ -544,6 +544,10 @@ export const DIALOGUE = {
   friend_cat: [['narrator', 'Mochi opens one eye, decides Mika is acceptable, and purrs like a very small engine.']],
   friend_duck: [['tamo', "Quack! …Did I say it right? They're all looking at me. Mika, what did I SAY?"]],
   friend_duck_solo: [['narrator', 'Mika waves. The ducks discuss her at length, very loudly, and then all waggle their tails at once.']],
+  friend_cow: [['narrator', 'The cow lifts her head, considers Mika for a long, kind moment, and goes back to her grass. Her bell says thank you.']],
+  friend_pig: [['narrator', 'The pig leans into the scratching with a grunt of pure joy, then flops over, completely finished with the day.']],
+  friend_goat: [['narrator', "The goat sniffs Mika's sleeve, finds no snacks, and forgives her at once."]],
+  friend_dog: [['narrator', 'Kinako barks twice, sits, and wags so hard that the whole back half of her wags with it.']],
   friend_sheep: [['mika', "You're the one who got stuck in the hedge, aren't you?"], ['narrator', 'The sheep does not deny it.']],
   friend_deer: [['tamo', "Shh. Shh! Look at the little one. Don't breathe. Okay—breathe a little."]],
   friend_deer_solo: [['narrator', 'Mika stands very still. The littlest deer steps up, sniffs her scarf, and bounds back to its mother.']],
@@ -675,6 +679,15 @@ export const FRIENDS = [
     desc: "The shrine's red fox, who wears a bib and knows every path in the forest.", hint: 'Near the forest shrine, from Chapter Three.' },
   { id: 'bear', name: 'Ōkuma the bear', icon: 'bear', verb: 'Pat the sleeping bear (gently)',
     desc: "The forest's great sleeper. Loves honey chestnuts more than anything.", hint: 'Asleep on the shrine stairs, or in his den after Chapter Three.' },
+  // the farm animals of the two villages
+  { id: 'cow', name: 'Meadow cow', icon: 'cow', verb: "Scratch the cow's chin",
+    desc: 'Chews slowly, thinks slowly, and has never once been in a hurry. Her bell rings with every step.', hint: 'In the meadow south of Kawabe and along the pasture road to Takamori.' },
+  { id: 'pig', name: 'Takamori pig', icon: 'pig', verb: "Scratch the pig's back",
+    desc: 'Snuffles through the lanes behind the houses, certain there are truffles in every garden.', hint: 'Behind the houses of Takamori.' },
+  { id: 'goat', name: 'Hillside goat', icon: 'goat', verb: 'Pat the goat',
+    desc: 'Climbs anything, eats everything, and looks very sorry about both.', hint: 'On the grassy slopes below Kawabe and above Takamori.' },
+  { id: 'dog', name: 'Kinako the dog', icon: 'dog', verb: 'Pet the dog',
+    desc: 'A curly-tailed shiba who walks with anyone who looks a little lost. Barks hello, wags goodbye.', hint: "In Kawabe, in Takamori and in Sora's garden. She will find you first." },
 ];
 
 // ------------------------------------------------------------------------------------ keepsakes

@@ -12,16 +12,19 @@ analytic IK (animal_kit.Player) so paws plant without sliding at these runtime s
   fox   Walk 1.2 m/s, Run 5.0 m/s      sheep  Walk 0.8 m/s, Run 3.5 m/s     bear  Walk 1.0 m/s
   cat   Walk 0.6 m/s                   deer   Walk 1.3 m/s                  chicken Walk 0.5 m/s
   rabbit Hop 1.6 m/s                   crab   Walk 0.35 m/s sideways (+X, the crab's left)
+  cow   Walk 0.7 m/s                   pig    Walk 0.9 m/s                   goat   Walk 1.0 m/s
+  dog   Walk 1.1 m/s, Run 4.5 m/s      (the farm animals are authored at real size, no export scale)
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from kit import *  # noqa: F401,F403
 from rig import build_armature, bind, bind_blend, skin, export_rigged, FPS
 from animal_kit import *  # noqa: F401,F403
+from farm_animal_kit import *  # noqa: F401,F403  (farm animals: cow, pig, goat, dog)
 
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 ALL = ['fox', 'bear', 'sheep', 'crab', 'crow', 'fish-trout', 'fish-starfin', 'fish-koi', 'chicken', 'rabbit',
-       'cat', 'duck', 'deer']
+       'cat', 'duck', 'deer', 'cow', 'pig', 'goat', 'dog']
 ONLY = ALL
 if '--only' in ARGV:
     ONLY = [n.strip() for n in ARGV[ARGV.index('--only') + 1].split(',') if n.strip()]
@@ -2495,7 +2498,1068 @@ def build_deer():
     export_animal('deer', arm, P)
 
 
-BUILDERS = {'fox': build_fox, 'bear': build_bear, 'sheep': build_sheep, 'crab': build_crab, 'crow': build_crow, 'fish-trout': build_trout, 'fish-starfin': build_starfin, 'fish-koi': build_koi, 'chicken': build_chicken, 'rabbit': build_rabbit, 'cat': build_cat, 'duck': build_duck, 'deer': build_deer}
+# FARM-BEGIN
+# ====================================================================== FARM ANIMALS (cow, pig, goat, dog)
+# Shared helpers live in farm_animal_kit.py; each builder authors at real size (no export scale), so the
+# Walk/Run sweeps below are simply speed * cycle time * duty.
+
+
+def farm_eyes(parts, prefix, eyeC, eyeN, r, ew, dark, iris, lid_ms, look=(-.1, .02), iris_k=.8, pupil=.5, tall=1.1,
+              lid_open=22, seg=10, rings=6, lid_res=(5, 8), lash=None, shine=.2, glint2=True):
+    eyes = {}
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        e = Eye(f'{prefix} eye {sd}', sym(eyeC, s), sym(eyeN, s), r, ew, dark, iris, iris=iris_k, pupil=pupil, tall=tall,
+                look=(look[0] * s, look[1]), lid_m=lid_ms[sd], lash_m=lash or dark, lid_open=lid_open, seg=seg, rings=rings,
+                lid_res=lid_res, shine=shine)
+        for p_ in e.parts:
+            if not glint2 and p_.name.endswith(' shine 1'):
+                bpy.data.objects.remove(p_, do_unlink=True)
+                continue
+            parts.append(bind(p_, 'head'))
+        for p_ in e.lid_parts:
+            parts.append(bind(p_, f'lid_{sd}'))
+        eyes[sd] = e
+    return eyes
+
+
+def side_patch(surf, name, s, yc, zc, ry, rz, material, axis_z, wob=0.0, off=.002, thick=.004, rows=4, cols=5, seed=0,
+               rim=None):
+    """A soft blob of coat colour hugging the flank (s = +1 left / -1 right), centred (yc, zc), half sizes (ry, rz)."""
+    out = []
+    ph = seed * 1.7
+    fn = lambda t: ry * (math.sin(math.pi * (.06 + .88 * t)) ** .6) * (1 + .18 * math.sin(3.1 * t + ph)) + .004
+    cf = lambda t: wob * math.sin(2.3 * t + ph)
+    for p_ in conform_patch(name, surf, V(s * .6, yc, zc), Y, Z, -rz, rz, fn, rows, cols, off, thick, material,
+                            center_fn=cf, ray_axis=lambda q: V(0, q.y, axis_z), rim_m=rim, rim_r=.006 if rim else 0.0):
+        out.append(p_)
+    return out
+
+
+def slit_pupils(parts, eyes, prefix, material, w=.03, h=.011, vertical=False):
+    """Rectangular (goat) or slit pupils laid on the iris of each Eye (rounded boxes oriented to the eye normal)."""
+    for sd, e in eyes.items():
+        pos = e.c + e.n * e.r * 1.03
+        q = e.n.to_track_quat('Z', 'Y')
+        size = (h, w, .004) if vertical else (w, h, .004)
+        parts.append(bind(box(f'{prefix} pupil slit {sd}', size, pos, material, bevel=.0016, segments=1, rot=q.to_euler()),
+                          'head'))
+
+
+def build_cow():
+    """Village dairy cow: a chunky black-and-white Holstein (reads on green grass and gold stubble), a big
+    chibi head with a pink muzzle, nostrils, lashed amber-brown eyes, small cream horns, leaf ears, a forelock tuft,
+    cloven hooves, an udder, a tufted tail and a brass bell on a red collar (the bell swings). About 1.9 m nose to tail,
+    1.3 m at the back. Clips: Idle, Walk (0.7 m/s), Graze, Moo (once), Sleep."""
+    reset()
+    hide = mat('Cow hide', '#f6f1e7', rough=.7)
+    patch = mat('Cow patch', '#29232a', rough=.7)
+    pink = mat('Cow nose', '#f3a2a8', rough=.5)
+    horn = mat('Cow horn', '#f1e2b6', rough=.5)
+    hoof = mat('Cow hoof', '#3b2c28', rough=.5)
+    collar = mat('Cow collar', '#d7302a', rough=.5)
+    brass = mat('Cow bell', '#e3a823', rough=.28, metal=.85)
+    ew, dark, iris = eye_mats('Cow', '#6a4224')
+    horn = hide                                # shared materials keep the draw calls down (<= 8)
+    hoof = patch
+    parts = []
+
+    NECK1 = (V(0, -.5, 1.0), V(0, -.63, 1.07))
+    NECK2 = (NECK1[1], V(0, -.76, 1.15))
+    hk = [(0, -.78, 1.17, .15, .17), (0, -.88, 1.19, .2, .215), (0, -1.02, 1.13, .19, .19), (0, -1.14, 1.07, .18, .15),
+          (0, -1.21, 1.04, .17, .13)]
+    head = loft('Cow head', hk, [hide, pink], n=14, sub=2, dome=(.8, .7), mat_fn=lambda u, a: 1 if u > 3.35 else 0)
+    hs = Surface([head])
+    eyeN, eyeR = V(.8, -.5, .28), .052
+    eyeC = seat_eye(hs, V(.16, -.95, 1.2), eyeN, eyeR, .42)
+
+    SH, EL, WR, FT = V(.2, -.36, .85), V(.205, -.34, .54), V(.205, -.37, .22), V(.205, -.39, 0)
+    HP, KN, HK, HT = V(.2, .42, .85), V(.215, .36, .55), V(.215, .46, .27), V(.215, .44, 0)
+    bones = [('root', (0, 0, 0), (0, 0, .2), None),
+             ('hips', (0, .55, .95), (0, .2, .93), 'root'),
+             ('spine', (0, .2, .93), (0, -.15, .93), 'hips'),
+             ('chest', (0, -.15, .93), (0, -.5, .98), 'spine'),
+             ('neck_1', NECK1[0], NECK1[1], 'chest'),
+             ('neck_2', NECK2[0], NECK2[1], 'neck_1'),
+             ('head', (0, -.78, 1.17), (0, -1.2, 1.05), 'neck_2'),
+             ('jaw', (0, -1.04, 1.0), (0, -1.2, .95), 'head'),
+             ('bell', (0, -.65, .85), (0, -.65, .73), 'neck_1')]
+    tail = [V(0, .66, 1.0), V(0, .78, .92), V(0, .81, .72), V(0, .81, .5)]
+    chain_bones(bones, 'tail', tail, 'hips')
+    lid_bones(bones, eyeC, eyeN)
+    EARB = V(.13, -.86, 1.25)
+    EART = V(.35, -.85, 1.19)
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        bones.append((f'ear_{sd}', sym(EARB, s), sym(EART, s), 'head'))
+    leg_bones(bones, (SH, EL, WR, FT), (HP, KN, HK, HT))
+    arm = build_armature('Cow', bones)
+    segs = [('hips', V(0, .7, .95), V(0, .2, .93)), ('spine', V(0, .2, .93), V(0, -.15, .93)),
+            ('chest', V(0, -.15, .93), V(0, -.5, .98)), ('neck_1', NECK1[0], NECK1[1]), ('neck_2', NECK2[0], NECK2[1]),
+            ('head', V(0, -.76, 1.15), V(0, -.82, 1.17))]
+    parts.append(bind(head, 'head'))
+
+    tk = [(0, .7, 1.0, .15, .18), (0, .58, .99, .29, .33), (0, .3, .93, .35, .4), (0, .0, .91, .36, .41),
+          (0, -.28, .93, .35, .4), (0, -.5, .99, .3, .35), (0, -.65, 1.07, .22, .26), (0, -.78, 1.15, .19, .22)]
+    body = loft('Cow body', tk, hide, n=14, sub=2, dome=(.8, 0))
+    parts.append(bind_chain(body, segs, .07))
+    surf = Surface([body])
+    axz = .93
+    # black patches (flanks differ, like a real Holstein), one over the back, one on the neck
+    for nm, s, yc, zc, ry, rz, w in (('flank L', 1, .08, .98, .23, .22, .03), ('rump L', 1, .52, .84, .14, .16, -.02),
+                                     ('flank R', -1, -.16, .93, .24, .21, -.03), ('rump R', -1, .42, 1.07, .17, .15, .02),
+                                     ('neck L', 1, -.5, 1.0, .1, .14, 0), ('belly R', -1, .12, .72, .12, .1, 0)):
+        for p_ in side_patch(surf, f'Cow {nm}', s, yc, zc, ry, rz, patch, axz, wob=w, seed=len(nm)):
+            parts.append(bind_chain(p_, segs, .07))
+    for p_ in conform_patch('Cow saddle', surf, V(0, .3, 1.5), X, Y, -.15, .13,
+                            lambda t: .17 * math.sin(math.pi * (.08 + .84 * t)) ** .5 + .02, 5, 5, .002, .004, patch,
+                            center_fn=lambda t: .03 * math.sin(4 * t), ray_axis=lambda q: V(0, q.y, axz)):
+        parts.append(bind_chain(p_, segs, .07))
+    # head: dark patch around the left eye and a spot over the right ear
+    hax = lambda q: V(0, -.95, 1.05)
+    for nm, s, org, w in (('eye patch', 1, V(.45, -.9, 1.1), .075), ('crown patch', -1, V(-.45, -.8, 1.15), .06)):
+        for p_ in conform_patch(f'Cow {nm}', hs, org, Y, Z, -.07, .075,
+                                lambda t, w=w: w * math.sin(math.pi * (.1 + .8 * t)) ** .5 + .006, 5, 5, .0015, .003, patch,
+                                ray_axis=hax):
+            parts.append(bind(p_, 'head'))
+    # udder with teats
+    ud = sphere('Cow udder', (.095, .12, .075), (0, .3, .5), pink, seg=10, rings=6)
+    parts.append(bind(ud, 'hips'))
+    for k, (x, y) in enumerate(((.045, .24), (-.045, .24), (.045, .35), (-.045, .35))):
+        parts.append(bind(cyl(f'Cow teat {k}', .016, .06, V(x, y, .44), pink, verts=7, r2=.012, bevel=.005), 'hips'))
+    # tail with a tuft
+    tk2 = [(t.x, t.y, t.z, .028 - .007 * i / 3, .028 - .007 * i / 3) for i, t in enumerate(tail)]
+    tl = loft('Cow tail', tk2, hide, n=8, sub=2, dome=(0, 0))
+    parts.append(bind_chain(tl, chain_segs('tail', tail, ('hips', V(0, .6, 1.0), tail[0])), .04))
+    tuft = loft('Cow tail tuft', [(0, .81, .56, .03, .03), (0, .815, .46, .052, .05), (0, .81, .36, .03, .03)], patch, n=8, sub=2,
+                dome=(.8, 1.2))
+    parts.append(bind(tuft, 'tail_3'))
+    # face
+    for s in (1, -1):
+        parts.append(bind(sphere(f'Cow nostril {s}', (.016, .01, .02), sym(V(.065, -1.205, 1.0), s), dark, seg=6, rings=4,
+                                 rot=(.5, 0, 0)), 'head'))
+    parts.append(bind(loft('Cow chin', [(0, -1.02, .96, .09, .04), (0, -1.12, .935, .115, .04), (0, -1.2, .93, .12, .035)], pink,
+                           n=10, sub=1, dome=(.5, .9)), 'jaw'))
+    parts.append(bind(tube('Cow mouth', [V(-.09, -1.15, .985), V(-.045, -1.2, .985), V(0, -1.215, .99), V(.045, -1.2, .985),
+                                         V(.09, -1.15, .985)], .0045, dark, verts=4), 'head'))
+    eyes = farm_eyes(parts, 'Cow', eyeC, eyeN, eyeR, ew, dark, iris, {'L': patch, 'R': hide}, look=(-.1, .03), lid_open=26)
+    parts.append(bind(puff('Cow forelock', V(0, -.8, 1.24), .075, hide, seg=8, rings=5, lump=.2, seed=3), 'head'))
+    parts.append(bind(puff('Cow forelock b', V(.045, -.76, 1.22), .05, patch, seg=7, rings=4, lump=.2, seed=5), 'head'))
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        ear = leaf_ear(f'Cow ear {s}', sym(EARB, s), sym(EART, s), .085, .026, [patch, pink], Y,
+                       mat_fn=lambda u, a: 1 if (math.sin(a) < -.35 and .4 < u < 3.4) else 0, shape=((0, .7), (.3, 1.0), (.75, .9), (1, .12)))
+        parts.append(bind_chain(ear, [('head', sym(EARB, s) - sym(EART - EARB, s).normalized() * .04, sym(EARB, s)),
+                                      (f'ear_{sd}', sym(EARB, s), sym(EART, s))], .03))
+        # small curved horns
+        b0 = sym(V(.08, -.8, 1.27), s)
+        pts = [b0 - V(0, 0, .03) * 1, b0 + sym(V(.03, 0, .04), s), b0 + sym(V(.09, .005, .09), s), b0 + sym(V(.14, .0, .17), s)]
+        parts.append(bind(tube(f'Cow horn {s}', pts, .036, horn, verts=7, radius_fn=lambda t: 1 - .62 * t), 'head'))
+    # collar and bell
+    for p_ in (band('Cow collar', Surface([body]), V(0, -.64, 1.08), V(0, -.7, .5), collar, width=.05, grow=.014),):
+        parts.append(bind_chain(p_, segs, .03))
+    parts.append(bind(tube('Cow bell strap', [V(0, -.66, .84), V(0, -.65, .81), V(0, -.65, .78)], .01, collar, verts=5), 'neck_1'))
+    bell = lathe('Cow bell', [(0, .045), (.035, .04), (.05, .0), (.058, -.045), (.062, -.062), (.0, -.062)], brass, seg=14,
+                 loc=V(0, -.65, .74))
+    parts.append(bind(bell, 'bell'))
+    parts.append(bind(sphere('Cow bell clapper', .014, (0, -.65, .675), brass, seg=6, rings=4), 'bell'))
+
+    # legs
+    def cow_hoof(s, sd, kind, bone):
+        y = -.4 if kind == 'f' else .42
+        x = .205 if kind == 'f' else .215
+        out = []
+        for k, dx in enumerate((-.026, .026)):
+            out.append(cyl(f'Cow {kind}hoof {s}{k}', .033, .085, V((x + dx) * s, y, .04), hoof, verts=8,
+                           r2=.036, bevel=.01))
+        return out
+    fp = [SH + V(0, 0, .1), SH, EL, WR + V(0, .005, .1), WR, WR.lerp(FT, .55)]
+    fr = [(.1, .11), (.098, .105), (.065, .07), (.055, .057), (.054, .056), (.056, .057)]
+    hp = [HP + V(0, 0, .1), HP, KN, HK + V(0, .005, .1), HK, HK.lerp(HT, .55)]
+    hr = [(.12, .14), (.115, .13), (.07, .08), (.056, .06), (.054, .056), (.056, .057)]
+    build_legs(parts, 'Cow', (SH, EL, WR, FT), (HP, KN, HK, HT), fp, fr, hp, hr, hide, hoof=cow_hoof, blend=.045, n=6)
+
+    mesh = make_skin('cow', arm, parts, dict(rays=36, distance=.3, strength=.6, ground=0.0))
+
+    # ---------------------------------------------------------------- animation
+    P, T = quad_player(arm)
+
+    def stand():
+        return {k: (T[k].copy(), 0.0) for k in T}
+
+    # Idle: slow breathing, chewing the cud, ear flicks, a tail swish, a head turn, blinks
+    def idle(p):
+        pose = {'ik': stand()}
+        br = S(p, 3)
+        add(pose, 'spine', (.8 * br, 0, 0))
+        add(pose, 'chest', (-.5 * br, 0, 0))
+        lk = window(p, .35, .7, .28)
+        add(pose, 'neck_1', (0, 0, 8 * lk))
+        add(pose, 'neck_2', (-2 * lk, 0, 8 * lk))
+        add(pose, 'head', (2 + 2 * lk * S(p, 2), 3 * lk, 8 * lk))
+        add(pose, 'jaw', (3 * (.5 + .5 * S(p, 10)), 0, 2 * S(p, 5)))
+        add(pose, 'ear_L', (0, 0, -22 * pulse(p, .2, .03) - 6 * S(p, 3, .2)))
+        add(pose, 'ear_R', (0, 0, 22 * pulse(p, .55, .03) + 6 * S(p, 3)))
+        sw = S(p, 1) * (.4 + .6 * window(p, .5, .95, .3))
+        for i in range(3):
+            add(pose, f'tail_{i + 1}', (0, 0, (8 + 7 * i) * sw * S(p, 2, -.08 * i) * .6 + 6 * sw))
+        add(pose, 'bell', (3 * S(p, 3, .2) + 12 * lk * S(p, 4), 0, 0))
+        set_lids(pose, eyes, blink(p, (.12, .78), .018), deg=105)
+        return pose
+    P.clip('Idle', 150, idle)
+
+    # Walk: slow four-beat lateral walk, 0.7 m/s
+    WF, WD = 36, .66
+    sweep = .7 * WF / FPS * WD
+
+    def walk(p):
+        pose = {'ik': gait(P, T, p, {'HL': 0, 'FL': .25, 'HR': .5, 'FR': .75}, WD, sweep, (.09, .085), curl=(50, 38), roll=12,
+                           offset={'FL': V(0, .0, 0), 'FR': V(0, .0, 0)})}
+        add(pose, 'hips@loc', (0, 0, -.047 + .01 * C(p, 2, -.05)))
+        add(pose, 'hips', (1.2 * S(p, 2), 2.5 * S(p, 1, .1), 3 * S(p, 1)))
+        add(pose, 'spine', (0, 0, -1.5 * S(p, 1, .1)))
+        add(pose, 'chest', (-1 * S(p, 2), -2 * S(p, 1), -2 * S(p, 1, .15)))
+        add(pose, 'neck_1', (2 + 2 * S(p, 2, .1), 0, 3 * S(p, 1, .3)))
+        add(pose, 'neck_2', (3 * S(p, 2, .15), 0, 2 * S(p, 1, .3)))
+        add(pose, 'head', (-2 + -3 * S(p, 2, .2), 0, 2 * S(p, 1, .4)))
+        add(pose, 'ear_L', (0, 0, 6 * S(p, 2, .3)))
+        add(pose, 'ear_R', (0, 0, -6 * S(p, 2, .3)))
+        wave_chain(pose, ['tail_1', 'tail_2', 'tail_3'], p, 8, 1, .12)
+        add(pose, 'bell', (14 * S(p, 2, .1), 0, 0))
+        set_lids(pose, eyes, 0, deg=105)
+        return pose
+    P.clip('Walk', WF, walk)
+    foot_report(P, 'cow Walk', walk, WF, .7)
+
+    # Graze: head down to the grass, tearing and chewing, a brief look up in the middle
+    def graze_body(k):
+        pose = {'ik': stand()}
+        pose['ik']['FL'] = (T['FL'] + V(.0, -.07 * k, 0), 0)
+        pose['ik']['FR'] = (T['FR'] + V(-.0, -.01 * k, 0), 0)
+        add(pose, 'hips@loc', (0, 0, -.07 * k))
+        add(pose, 'chest', (15 * k, 0, 0))
+        return pose
+    GAIM = P.aim_chain(graze_body(1), ['neck_1', 'neck_2', 'head'], [V(0, -.62, .74), V(0, -.74, .52), V(0, -.84, .16)])
+
+    def graze_base(k):
+        pose = graze_body(k)
+        for bn in ('neck_1', 'neck_2', 'head'):
+            pose[bn] = Quaternion().slerp(GAIM[bn], k)
+        return pose
+
+    def graze(p):
+        up = window(p, .6, .8, .3)
+        dn = 1 - up
+        pose = graze_base(dn)
+        pose['head'] = Euler((D(5 * dn * S(p, 6)), 0, D(4 * dn * S(p, 1))), 'XYZ').to_quaternion() @ pose['head']
+        add(pose, 'jaw', (7 * (.5 + .5 * S(p, 12)) * (.4 + .6 * up), 0, 3 * S(p, 6)))
+        add(pose, 'ear_L', (0, 0, -20 * pulse(p, .3, .03) + 8 * up))
+        add(pose, 'ear_R', (0, 0, 20 * pulse(p, .45, .03) - 8 * up))
+        pose['head'] = Euler((D(-5 * up), 0, D(14 * up * S(p, 2, .1))), 'XYZ').to_quaternion() @ pose['head']
+        wave_chain(pose, ['tail_1', 'tail_2', 'tail_3'], p, 7, 2, .1)
+        add(pose, 'bell', (10 * dn * S(p, 6) + 4 * up * S(p, 2), 0, 0))
+        set_lids(pose, eyes, blink(p, (.25,), .015) + .15 * dn, deg=105)
+        return pose
+    P.clip('Graze', 150, graze)
+
+    # Moo (once): head up, big mouth open with a throat pulse, ears out, tail lifts
+    def moo(p):
+        pose = idle(0.0)
+        k = window(p, .08, .92, .26)
+        m = window(p, .3, .78, .15)
+        add(pose, 'chest', (-3 * k, 0, 0))
+        add(pose, 'neck_1', (-14 * k, 0, 0))
+        add(pose, 'neck_2', (-16 * k, 0, 0))
+        add(pose, 'head', (-14 * k, 0, 0))
+        add(pose, 'jaw', (22 * m + 4 * m * S(p, 8), 0, 0))
+        add(pose, 'ear_L', (0, 0, -14 * k))
+        add(pose, 'ear_R', (0, 0, 14 * k))
+        pose['neck_1@scale'] = (1 + .05 * m * S(p, 6) ** 2, 1, 1 + .06 * m)
+        add(pose, 'tail_1', (-16 * k, 0, 0))
+        add(pose, 'bell', (16 * k * S(p, 5), 0, 0))
+        set_lids(pose, eyes, .6 * m, deg=105)
+        return pose
+    P.clip('Moo', 75, moo, loop=False)
+
+    # Sleep: lying on the belly with the legs folded, head resting round to the flank, slow breathing
+    def lie(dz):
+        return {'ik': {'FL': (T['FL'] + V(-.04, -.14, .095), -75), 'FR': (T['FR'] + V(.04, -.14, .095), -75),
+                       'HL': (T['HL'] + V(-.12, -.18, .095), -70), 'HR': (T['HR'] + V(.12, -.18, .095), -70)},
+                'hips@loc': (0, 0, dz), 'chest': (-2, 0, 0), 'neck_1': (6, 0, 26), 'neck_2': (4, 0, 32), 'head': (4, 10, 30),
+                'ear_L': (0, 0, 14), 'ear_R': (0, 0, -14)}
+    ldz = lying_dz(P, mesh, lie, {'spine', 'chest', 'hips'}, start=-.25)
+
+    def sleep(p):
+        pose = lie(ldz)
+        br = (S(p, 2, -.25) + 1) / 2
+        pose['chest@scale'] = (1 + .03 * br, 1, 1 + .035 * br)
+        pose['spine@scale'] = (1 + .035 * br, 1, 1 + .03 * br)
+        pose['hips@loc'] = (0, 0, ldz + .004 * br)
+        add(pose, 'ear_R', (0, 0, 16 * pulse(p, .7, .02)))
+        add(pose, 'tail_2', (0, 0, 12 * pulse(p, .3, .05)))
+        add(pose, 'jaw', (1.5 * (.5 + .5 * S(p, 8)), 0, 0))
+        set_lids(pose, eyes, 1.0, deg=105)
+        return pose
+    P.clip('Sleep', 150, sleep)
+
+    export_animal('cow', arm, P)
+
+
+def build_pig():
+    """Village pig: round pink porker with a big chibi head, a lighter disc snout with two nostrils, big floppy ears
+    (one with a yellow farm tag), cheek blush, lashed eyes, a soft charcoal saddle and rump patch, short legs with
+    cloven hooves and a proper curly tail. About 1.2 m long. Clips: Idle, Walk (0.9 m/s), Snuffle (nose to the
+    ground), Oink (once), Sleep."""
+    reset()
+    skin_m = mat('Pig skin', '#f4a3a8', rough=.55)
+    patch = mat('Pig patch', '#5d4a54', rough=.65)
+    snout_m = mat('Pig snout', '#f9bcc0', rough=.45)
+    inner = mat('Pig ear inner', '#e98592', rough=.55)
+    nostril = mat('Pig nostril', '#b24d5c', rough=.4)
+    blush = mat('Pig blush', '#ef7886', rough=.55)
+    hoof = mat('Pig hoof', '#4b3a3a', rough=.5)
+    tag = mat('Pig ear tag', '#f2c230', rough=.4)
+    ew, dark, iris = eye_mats('Pig', '#6a3b1e')
+    blush = nostril = inner                    # shared materials keep the draw calls down (<= 8)
+    hoof = patch
+    parts = []
+
+    hk = [(0, -.4, .52, .17, .19), (0, -.52, .54, .235, .235), (0, -.64, .53, .21, .2), (0, -.7, .5, .16, .15)]
+    head = loft('Pig head', hk, skin_m, n=14, sub=2, dome=(.8, .3))
+    hs = Surface([head])
+    eyeN, eyeR = V(.75, -.55, .3), .04
+    eyeC = seat_eye(hs, V(.16, -.6, .63), eyeN, eyeR, .42)
+
+    SH, EL, WR, FT = V(.16, -.2, .4), V(.165, -.19, .23), V(.165, -.21, .09), V(.165, -.23, 0)
+    HP, KN, HK, HT = V(.16, .27, .4), V(.17, .23, .23), V(.17, .3, .1), V(.17, .28, 0)
+    bones = [('root', (0, 0, 0), (0, 0, .2), None),
+             ('hips', (0, .42, .5), (0, .1, .48), 'root'),
+             ('spine', (0, .1, .48), (0, -.15, .48), 'hips'),
+             ('chest', (0, -.15, .48), (0, -.34, .49), 'spine'),
+             ('neck', (0, -.36, .5), (0, -.47, .52), 'chest'),
+             ('head', (0, -.47, .52), (0, -.8, .49), 'neck'),
+             ('jaw', (0, -.58, .45), (0, -.73, .42), 'head')]
+    tail = [V(0, .44, .6), V(0, .52, .62), V(0, .56, .7), V(0, .5, .74)]
+    chain_bones(bones, 'tail', tail, 'hips')
+    lid_bones(bones, eyeC, eyeN)
+    EARB, EARM, EART = V(.1, -.5, .73), V(.19, -.55, .75), V(.25, -.66, .65)
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        bones.append((f'ear_{sd}', sym(EARB, s), sym(EART, s), 'head'))
+    leg_bones(bones, (SH, EL, WR, FT), (HP, KN, HK, HT))
+    arm = build_armature('Pig', bones)
+    segs = [('hips', V(0, .56, .52), V(0, .1, .48)), ('spine', V(0, .1, .48), V(0, -.15, .48)),
+            ('chest', V(0, -.15, .48), V(0, -.34, .49)), ('neck', V(0, -.36, .5), V(0, -.47, .52)),
+            ('head', V(0, -.47, .52), V(0, -.55, .53))]
+    parts.append(bind(head, 'head'))
+
+    tk = [(0, .46, .52, .15, .18), (0, .36, .5, .25, .28), (0, .12, .48, .31, .31), (0, -.12, .48, .31, .31),
+          (0, -.3, .49, .27, .28), (0, -.44, .51, .21, .22)]
+    body = loft('Pig body', tk, skin_m, n=16, sub=2, dome=(.9, 0))
+    parts.append(bind_chain(body, segs, .06))
+    surf = Surface([body])
+    axz = .48
+    for nm, s, yc, zc, ry, rz, w in (('saddle', -1, .02, .5, .24, .24, .03), ('rump', 1, .32, .56, .14, .15, 0)):
+        for p_ in side_patch(surf, f'Pig {nm}', s, yc, zc, ry, rz, patch, axz, wob=w, seed=len(nm), rows=5, cols=6):
+            parts.append(bind_chain(p_, segs, .06))
+    hax = lambda q: V(0, -.62, .5)
+    for p_ in conform_patch('Pig eye patch', hs, V(-.45, -.6, .56), Y, Z, -.07, .07,
+                            lambda t: .08 * math.sin(math.pi * (.1 + .8 * t)) ** .5 + .006, 5, 5, .0015, .003, patch,
+                            ray_axis=hax):
+        parts.append(bind(p_, 'head'))
+    for s in (1, -1):
+        parts.append(bind(hs.spot(f'Pig blush {s}', V(s * .4, -.6, .46), (.045, .035), blush, thick=.3,
+                                  dirn=V(-s, 0, 0)), 'head'))
+    # disc snout, nostrils, mouth, chin
+    snout = cyl('Pig snout', .095, .06, V(0, -.745, .49), snout_m, verts=14, r2=.09, bevel=.016, segments=2,
+                rot=(math.pi / 2 + .1, 0, 0))
+    parts.append(bind(snout, 'head'))
+    for s in (1, -1):
+        parts.append(bind(sphere(f'Pig nostril {s}', (.017, .01, .026), V(s * .038, -.777, .49), nostril, seg=8, rings=5,
+                                 rot=(0, 0, s * .15)), 'head'))
+    parts.append(bind(loft('Pig chin', [(0, -.56, .43, .09, .035), (0, -.64, .415, .1, .035), (0, -.7, .415, .085, .03)], skin_m,
+                           n=10, sub=1, dome=(.5, .9)), 'jaw'))
+    parts.append(bind(tube('Pig mouth', [V(-.07, -.64, .41), V(-.035, -.69, .405), V(0, -.705, .41), V(.035, -.69, .405),
+                                         V(.07, -.64, .41)], .004, dark, verts=4), 'head'))
+    lids = {'L': skin_m, 'R': patch}
+    eyes = farm_eyes(parts, 'Pig', eyeC, eyeN, eyeR, ew, dark, iris, lids, look=(-.1, .02), lid_open=58)
+    # floppy ears folded forward, one tagged
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        pts = [sym(EARB, s), sym(EARM, s), sym(EART, s)]
+        keys = [(pts[0].x, pts[0].y, pts[0].z, .05, .014), (pts[1].x, pts[1].y, pts[1].z, .085, .016),
+                (pts[2].x, pts[2].y, pts[2].z, .045, .012)]
+        side_v = (pts[2] - pts[0]).cross(V(.6 * s, -.3, .75)).normalized()
+        ear = loft(f'Pig ear {s}', keys, [skin_m, inner], n=8, sub=2, side=side_v, dome=(0, .8),
+                   mat_fn=lambda u, a: 1 if (math.sin(a) < -.4 and .3 < u < 1.7) else 0)
+        parts.append(bind_chain(ear, [('head', sym(EARB, s) - V(0, 0, .03), sym(EARB, s)), (f'ear_{sd}', sym(EARB, s), sym(EART, s))],
+                                .03))
+    tb = V(.205, -.58, .735)
+    parts.append(bind(plate('Pig tag', [(-.014, -.03), (.014, -.03), (.017, -.004), (.008, .004), (-.008, .004), (-.017, -.004)],
+                            .006, tag, V(.3, -1, 0), V(0, 0, 1), tb + V(.02, -.012, -.03), bevel=.002), 'ear_L'))
+    # curly tail
+    cp = curl_points(V(0, .55, .68), .05, -150, 215, 14, Y, Z, shrink=.55)
+    cp[0] = V(0, .43, .59)
+    cp.insert(1, V(0, .475, .6))
+    ct = tube('Pig tail', cp, .014, skin_m, verts=6, radius_fn=lambda t: 1 - .45 * t)
+    parts.append(bind_chain(ct, chain_segs('tail', tail, ('hips', V(0, .38, .58), tail[0])), .02))
+
+    # legs
+    def pig_hoof(s, sd, kind, bone):
+        y, x = (-.23, .18) if kind == 'f' else (.28, .19)
+        return [cyl(f'Pig {kind}hoof {s}{k}', .024, .05, V((x + dx) * s, y, .022), hoof, verts=7, r2=.026, bevel=.007)
+                for k, dx in enumerate((-.017, .017))]
+    fp = [SH + V(0, 0, .08), SH, EL, WR + V(0, .003, .05), WR, WR.lerp(FT, .5)]
+    fr = [(.075, .08), (.078, .08), (.06, .062), (.05, .05), (.05, .05), (.05, .05)]
+    hp = [HP + V(0, 0, .08), HP, KN, HK + V(0, .003, .05), HK, HK.lerp(HT, .5)]
+    hr = [(.08, .09), (.088, .095), (.065, .068), (.05, .052), (.05, .05), (.05, .05)]
+    build_legs(parts, 'Pig', (SH, EL, WR, FT), (HP, KN, HK, HT), fp, fr, hp, hr, skin_m, hoof=pig_hoof, blend=.035, n=7)
+
+    mesh = make_skin('pig', arm, parts, dict(rays=36, distance=.2, strength=.6, ground=0.0))
+
+    # ---------------------------------------------------------------- animation
+    P, T = quad_player(arm)
+    TAILB = ['tail_1', 'tail_2', 'tail_3']
+
+    def stand():
+        return {k: (T[k].copy(), 0.0) for k in T}
+
+    # Idle: breathing, snout twitch, ear flicks, tail wiggle, a little look round, blinks
+    def idle(p):
+        pose = {'ik': stand()}
+        br = S(p, 3)
+        add(pose, 'spine', (1.0 * br, 0, 0))
+        add(pose, 'chest', (-.6 * br, 0, 0))
+        lk = window(p, .4, .72, .25)
+        add(pose, 'neck', (0, 0, 10 * lk))
+        add(pose, 'head', (-2 * lk + 1.5 * S(p, 6) * pulse(p, .2, .08), 0, 12 * lk))
+        add(pose, 'jaw', (1.2 * (.5 + .5 * S(p, 9)), 0, 0))
+        add(pose, 'ear_L', (0, 0, -16 * pulse(p, .25, .03) + 3 * S(p, 3, .2)))
+        add(pose, 'ear_R', (0, 0, 16 * pulse(p, .62, .03) - 3 * S(p, 3)))
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (0, 0, (10 + 7 * i) * S(p, 3, -.1 * i) * (.5 + .5 * pulse(p, .5, .3))))
+        set_lids(pose, eyes, blink(p, (.1, .55, .9), .018), deg=105)
+        return pose
+    P.clip('Idle', 150, idle)
+
+    # Walk: brisk short-legged walk, 0.9 m/s
+    WF, WD = 18, .64
+    K = .95
+    sweep = .9 / K * WF / FPS * WD
+
+    def walk(p):
+        pose = {'ik': gait(P, T, p, {'HL': 0, 'FL': .25, 'HR': .5, 'FR': .75}, WD, sweep, (.05, .05), curl=(45, 35), roll=10)}
+        add(pose, 'hips@loc', (0, 0, -.034 + .008 * C(p, 2, -.05)))
+        add(pose, 'hips', (1.5 * S(p, 2), 2.5 * S(p, 1, .1), 4 * S(p, 1)))
+        add(pose, 'chest', (-1 * S(p, 2), -2 * S(p, 1), -3 * S(p, 1, .15)))
+        add(pose, 'neck', (3 + 2 * S(p, 2, .1), 0, 3 * S(p, 1, .3)))
+        add(pose, 'head', (3 + 3 * S(p, 2, .2), 0, 3 * S(p, 1, .4)))
+        add(pose, 'ear_L', (0, 0, 7 * S(p, 2, .3)))
+        add(pose, 'ear_R', (0, 0, -7 * S(p, 2, .3)))
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (0, 0, (6 + 5 * i) * S(p, 2, -.1 * i)))
+        set_lids(pose, eyes, 0, deg=105)
+        return pose
+    P.clip('Walk', WF, walk)
+    foot_report(P, 'pig Walk', walk, WF, .9, K)
+
+    # Snuffle: nose rooting along the ground, side to side, tail wiggling
+    def sn_body(k):
+        pose = {'ik': stand()}
+        add(pose, 'hips@loc', (0, 0, -.025 * k))
+        add(pose, 'chest', (6 * k, 0, 0))
+        return pose
+    SAIM = P.aim_chain(sn_body(1), ['neck', 'head'], [V(0, -.52, .33), V(0, -.66, .08)])
+
+    def snuffle(p):
+        pose = sn_body(1)
+        for bn in ('neck', 'head'):
+            pose[bn] = SAIM[bn]
+        pose['head'] = Euler((D(5 * S(p, 6)), 0, D(14 * S(p, 3))), 'XYZ').to_quaternion() @ pose['head']
+        pose['neck'] = Euler((0, 0, D(6 * S(p, 3, .1))), 'XYZ').to_quaternion() @ pose['neck']
+        add(pose, 'jaw', (2 * (.5 + .5 * S(p, 12)), 0, 0))
+        add(pose, 'ear_L', (0, 0, 8 + 5 * S(p, 6)))
+        add(pose, 'ear_R', (0, 0, -8 - 5 * S(p, 6)))
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (0, 0, (8 + 6 * i) * S(p, 6, -.1 * i)))
+        set_lids(pose, eyes, blink(p, (.5,), .02) + .2, deg=105)
+        return pose
+    P.clip('Snuffle', 90, snuffle)
+
+    # Oink (once): head tosses up, mouth opens, ears flap, tail springs
+    def oink(p):
+        pose = idle(0.0)
+        k = window(p, .06, .94, .3)
+        m = window(p, .3, .7, .2)
+        add(pose, 'chest', (-2 * k, 0, 0))
+        add(pose, 'neck', (-14 * k, 0, 0))
+        add(pose, 'head', (-20 * k + 3 * m * S(p, 7), 0, 0))
+        add(pose, 'jaw', (16 * m, 0, 0))
+        add(pose, 'ear_L', (0, 0, -18 * k * (1 + .5 * S(p, 6))))
+        add(pose, 'ear_R', (0, 0, 18 * k * (1 + .5 * S(p, 6, .3))))
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (0, 0, 14 * k * S(p, 4, -.1 * i)))
+        pose['chest@scale'] = (1 + .03 * m, 1, 1 + .025 * m)
+        set_lids(pose, eyes, .5 * m, deg=105)
+        return pose
+    P.clip('Oink', 60, oink, loop=False)
+
+    # Sleep: lying on its belly, legs folded, snout resting on the ground, curled
+    def lie(dz):
+        return {'ik': {'FL': (T['FL'] + V(-.03, -.06, .06), -70), 'FR': (T['FR'] + V(.03, -.06, .06), -70),
+                       'HL': (T['HL'] + V(-.07, -.1, .06), -70), 'HR': (T['HR'] + V(.07, -.1, .06), -70)},
+                'hips@loc': (0, 0, dz), 'neck': (14, 0, 16), 'head': (14, 10, 22), 'ear_L': (0, 0, 10), 'ear_R': (0, 0, -10)}
+    ldz = lying_dz(P, mesh, lie, {'spine', 'chest', 'hips'}, start=-.15)
+
+    def sleep(p):
+        pose = lie(ldz)
+        br = (S(p, 2, -.25) + 1) / 2
+        pose['chest@scale'] = (1 + .035 * br, 1, 1 + .04 * br)
+        pose['spine@scale'] = (1 + .04 * br, 1, 1 + .035 * br)
+        pose['hips@loc'] = (0, 0, ldz + .004 * br)
+        add(pose, 'ear_R', (0, 0, 12 * pulse(p, .7, .02)))
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (0, 0, 8 * pulse(p, .3, .06)))
+        add(pose, 'jaw', (1.5 * (.5 + .5 * S(p, 8)), 0, 0))
+        set_lids(pose, eyes, 1.0, deg=105)
+        return pose
+    P.clip('Sleep', 150, sleep)
+
+    export_animal('pig', arm, P, scale=K)
+
+
+def build_goat():
+    """Hill goat: white coat with tan patches and tan stockings, a wedge head with amber eyes and rectangular
+    pupils, swept-back ridged horns, sideways ears, a wagging beard, a pink-grey nose and a little tail held up.
+    About 1.0 m long. Clips: Idle, Walk (1.0 m/s), Graze, Bleat (once, beard wag), Sleep."""
+    reset()
+    wool = mat('Goat coat', '#f7f3ea', rough=.75)
+    tan = mat('Goat patch', '#c98c52', rough=.75)
+    tan_d = mat('Goat tan dark', '#8e5a33', rough=.7)
+    nose_m = mat('Goat nose', '#b88a86', rough=.5)
+    pink = mat('Goat pink', '#eba2a2', rough=.55)
+    horn = mat('Goat horn', '#d8c49a', rough=.55)
+    hoof = mat('Goat hoof', '#46372f', rough=.5)
+    beard_m = mat('Goat beard', '#ebdcc0', rough=.8)
+    ew, dark, iris = eye_mats('Goat', '#eaa51e')
+    pink = nose_m                              # shared materials keep the draw calls down (<= 8)
+    beard_m = wool
+    parts = []
+    K = .92
+
+    hk = [(0, -.37, .85, .095, .11), (0, -.45, .87, .125, .13), (0, -.55, .81, .105, .105), (0, -.63, .745, .076, .074),
+          (0, -.68, .715, .062, .058)]
+    head = loft('Goat head', hk, wool, n=14, sub=2, dome=(.8, .7))
+    hs = Surface([head])
+    eyeN, eyeR = V(.85, -.42, .22), .04
+    eyeC = seat_eye(hs, V(.085, -.5, .89), eyeN, eyeR, .4)
+
+    SH, EL, WR, FT = V(.1, -.2, .62), V(.1, -.18, .4), V(.1, -.2, .14), V(.1, -.215, 0)
+    HP, KN, HK, HT = V(.1, .25, .62), V(.11, .21, .4), V(.11, .29, .2), V(.11, .27, 0)
+    bones = [('root', (0, 0, 0), (0, 0, .2), None),
+             ('hips', (0, .33, .66), (0, .08, .63), 'root'),
+             ('spine', (0, .08, .63), (0, -.12, .63), 'hips'),
+             ('chest', (0, -.12, .63), (0, -.3, .68), 'spine'),
+             ('neck_1', (0, -.3, .7), (0, -.36, .78), 'chest'),
+             ('neck_2', (0, -.36, .78), (0, -.41, .86), 'neck_1'),
+             ('head', (0, -.41, .86), (0, -.69, .71), 'neck_2'),
+             ('jaw', (0, -.55, .75), (0, -.67, .67), 'head')]
+    beard = [V(0, -.6, .69), V(0, -.615, .6), V(0, -.62, .52)]
+    chain_bones(bones, 'beard', beard, 'jaw')
+    tail = [V(0, .38, .72), V(0, .43, .8), V(0, .44, .87)]
+    chain_bones(bones, 'tail', tail, 'hips')
+    lid_bones(bones, eyeC, eyeN)
+    EARB, EART = V(.07, -.43, .9), V(.21, -.42, .83)
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        bones.append((f'ear_{sd}', sym(EARB, s), sym(EART, s), 'head'))
+    leg_bones(bones, (SH, EL, WR, FT), (HP, KN, HK, HT))
+    arm = build_armature('Goat', bones)
+    segs = [('hips', V(0, .44, .7), V(0, .08, .63)), ('spine', V(0, .08, .63), V(0, -.12, .63)),
+            ('chest', V(0, -.12, .63), V(0, -.3, .68)), ('neck_1', V(0, -.3, .7), V(0, -.36, .78)),
+            ('neck_2', V(0, -.36, .78), V(0, -.41, .86)), ('head', V(0, -.41, .86), V(0, -.47, .86))]
+    parts.append(bind(head, 'head'))
+
+    tk = [(0, .4, .7, .1, .13), (0, .32, .68, .17, .2), (0, .1, .63, .2, .22), (0, -.1, .63, .2, .22),
+          (0, -.26, .67, .17, .2), (0, -.34, .74, .12, .14), (0, -.4, .83, .095, .11)]
+    body = loft('Goat body', tk, wool, n=14, sub=2, dome=(.8, 0))
+    parts.append(bind_chain(body, segs, .06))
+    surf = Surface([body])
+    axz = .64
+    for nm, s, yc, zc, ry, rz, w in (('flank L', 1, .1, .66, .17, .17, .02), ('rump R', -1, .26, .72, .13, .13, 0),
+                                     ('shoulder R', -1, -.16, .62, .1, .14, .01)):
+        for p_ in side_patch(surf, f'Goat {nm}', s, yc, zc, ry, rz, tan, axz, wob=w, seed=len(nm)):
+            parts.append(bind_chain(p_, segs, .06))
+    for p_ in conform_patch('Goat saddle', surf, V(0, .05, 1.2), X, Y, -.12, .1,
+                            lambda t: .13 * math.sin(math.pi * (.08 + .84 * t)) ** .5 + .02, 5, 5, .002, .004, tan,
+                            center_fn=lambda t: .02 * math.sin(3 * t), ray_axis=lambda q: V(0, q.y, axz)):
+        parts.append(bind_chain(p_, segs, .06))
+    hax = lambda q: V(0, -.52, .8)
+    for p_ in conform_patch('Goat cheek patch', hs, V(-.45, -.52, .84), Y, Z, -.07, .075,
+                            lambda t: .075 * math.sin(math.pi * (.1 + .8 * t)) ** .5 + .006, 5, 5, .0015, .003, tan,
+                            ray_axis=hax):
+        parts.append(bind(p_, 'head'))
+    # face
+    parts.append(bind(sphere('Goat nose', (.034, .02, .022), (0, -.7, .715), nose_m, seg=8, rings=5), 'head'))
+    for s in (1, -1):
+        parts.append(bind(sphere(f'Goat nostril {s}', (.009, .006, .011), V(s * .018, -.718, .72), dark, seg=6, rings=4), 'head'))
+    parts.append(bind(loft('Goat chin', [(0, -.55, .735, .055, .03), (0, -.63, .685, .05, .028), (0, -.675, .67, .036, .022)],
+                           wool, n=8, sub=1, dome=(.5, .8)), 'jaw'))
+    parts.append(bind(tube('Goat mouth', [V(-.038, -.64, .69), V(-.016, -.685, .69), V(0, -.693, .695), V(.016, -.685, .69),
+                                          V(.038, -.64, .69)], .004, dark, verts=4), 'head'))
+    parts.append(bind(sphere('Goat mouth inside', (.04, .06, .02), (0, -.6, .715), pink, seg=8, rings=4), 'head'))
+    eyes = farm_eyes(parts, 'Goat', eyeC, eyeN, eyeR, ew, dark, iris, {'L': wool, 'R': wool}, look=(-.1, .0), lid_open=34,
+                     iris_k=.95, pupil=.02, tall=.9)
+    slit_pupils(parts, eyes, 'Goat', dark, w=.034, h=.012)
+    # tuft between the horns
+    parts.append(bind(puff('Goat forelock', V(0, -.4, .96), .05, wool, seg=7, rings=5, lump=.2, seed=2), 'head'))
+    # ears (tan, pink inside), horns
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        ear = leaf_ear(f'Goat ear {s}', sym(EARB, s), sym(EART, s), .055, .016, [tan, pink], Y,
+                       mat_fn=lambda u, a: 1 if (math.sin(a) < -.35 and .4 < u < 3.4) else 0,
+                       shape=((0, .7), (.3, 1.0), (.75, .8), (1, .1)))
+        parts.append(bind_chain(ear, [('head', sym(EARB, s) - V(.03 * s, 0, 0), sym(EARB, s)), (f'ear_{sd}', sym(EARB, s), sym(EART, s))], .02))
+        b0 = sym(V(.04, -.42, .93), s)
+        pts = [b0 - V(0, 0, .02), b0 + sym(V(.012, .0, .05), s), b0 + sym(V(.03, .03, .105), s), b0 + sym(V(.04, .09, .14), s),
+               b0 + sym(V(.032, .15, .145), s), b0 + sym(V(.02, .2, .12), s)]
+        parts.append(bind(tube(f'Goat horn {s}', pts, .026, horn, verts=7, radius_fn=lambda t: 1 - .7 * t), 'head'))
+        for k in range(1, 4):                 # growth ridges
+            c = pts[k] + (pts[k + 1] - pts[k]) * .3
+            d = (pts[k + 1] - pts[k]).normalized()
+            parts.append(bind(cyl(f'Goat horn ridge {s}{k}', .0285 * (1 - .7 * (k / 5)), .008, c, horn, verts=7,
+                                  rot=d.to_track_quat('Z', 'Y').to_euler()), 'head'))
+    # beard and tail
+    bk = [(beard[0].x, beard[0].y, beard[0].z, .02, .022), (beard[1].x, beard[1].y, beard[1].z, .027, .024),
+          (beard[2].x, beard[2].y, beard[2].z, .012, .012)]
+    bd = loft('Goat beard', bk, beard_m, n=7, sub=2, dome=(.5, 1.2))
+    parts.append(bind_chain(bd, chain_segs('beard', beard, ('jaw', V(0, -.56, .72), beard[0])), .02))
+    tl = loft('Goat tail', [(0, .38, .72, .034, .036), (0, .43, .8, .034, .036), (0, .445, .89, .016, .018)], [wool, tan], n=7, sub=2,
+              dome=(.4, 1.0), mat_fn=lambda u, a: 1 if u > 1.5 else 0)
+    parts.append(bind_chain(tl, chain_segs('tail', tail, ('hips', V(0, .34, .7), tail[0])), .02))
+    # legs: white with tan stockings, dark cloven hooves
+    def goat_hoof(s, sd, kind, bone):
+        y, x = (-.215, .1) if kind == 'f' else (.27, .11)
+        return [cyl(f'Goat {kind}hoof {s}{k}', .018, .05, V((x + dx) * s, y, .024), hoof, verts=7, r2=.02, bevel=.006)
+                for k, dx in enumerate((-.013, .013))]
+    fp = [SH + V(0, 0, .09), SH, EL, WR + V(0, .003, .08), WR, WR.lerp(FT, .5)]
+    fr = [(.05, .065), (.052, .062), (.038, .042), (.03, .032), (.03, .031), (.031, .032)]
+    hp = [HP + V(0, 0, .09), HP, KN, HK + V(0, .003, .08), HK, HK.lerp(HT, .5)]
+    hr = [(.058, .08), (.06, .078), (.042, .046), (.031, .034), (.03, .031), (.031, .032)]
+    mf = lambda u, a, s: 1 if u > 3.5 else 0
+    build_legs(parts, 'Goat', (SH, EL, WR, FT), (HP, KN, HK, HT), fp, fr, hp, hr, [wool, tan], mat_fn=mf, hoof=goat_hoof,
+               blend=.03, n=7)
+
+    mesh = make_skin('goat', arm, parts, dict(rays=36, distance=.22, strength=.6, ground=0.0))
+
+    # ---------------------------------------------------------------- animation
+    P, T = quad_player(arm)
+    TAILB = ['tail_1', 'tail_2']
+    BEARD = ['beard_1', 'beard_2']
+
+    def stand():
+        return {k: (T[k].copy(), 0.0) for k in T}
+
+    # Idle: chewing, beard swing, ear swivels, a look round, tail flicks, blinks
+    def idle(p):
+        pose = {'ik': stand()}
+        br = S(p, 3)
+        add(pose, 'spine', (.9 * br, 0, 0))
+        add(pose, 'chest', (-.6 * br, 0, 0))
+        lk = window(p, .3, .62, .25)
+        add(pose, 'neck_1', (0, 0, 9 * lk))
+        add(pose, 'neck_2', (-3 * lk, 0, 9 * lk))
+        add(pose, 'head', (-3 * lk + 1.5 * S(p, 2), 4 * lk, 12 * lk))
+        add(pose, 'jaw', (4 * (.5 + .5 * S(p, 10)), 0, 3 * S(p, 5)))
+        add(pose, 'ear_L', (0, 0, -20 * pulse(p, .2, .03) + 4 * S(p, 3, .2)))
+        add(pose, 'ear_R', (0, 0, 20 * pulse(p, .7, .03) - 4 * S(p, 3)))
+        for i, nm in enumerate(BEARD):
+            add(pose, nm, (6 * S(p, 10, -.1 * i), 0, 8 * S(p, 5, -.1 * i)))
+        add(pose, 'tail_1', (-18 * pulse(p, .5, .04) - 12 * pulse(p, .58, .03), 0, 0))
+        set_lids(pose, eyes, blink(p, (.1, .45, .85), .016), deg=105)
+        return pose
+    P.clip('Idle', 150, idle)
+
+    # Walk: nimble four-beat, 1.0 m/s (authored at 1.0 / export scale)
+    WF, WD = 22, .62
+    sweep = 1.0 / K * WF / FPS * WD
+
+    def walk(p):
+        pose = {'ik': gait(P, T, p, {'HL': 0, 'FL': .25, 'HR': .5, 'FR': .75}, WD, sweep, (.075, .07), curl=(55, 38), roll=12,
+                           offset={'FL': V(0, .0, 0), 'FR': V(0, .0, 0)})}
+        add(pose, 'hips@loc', (0, 0, -.047 + .01 * C(p, 2, -.05)))
+        add(pose, 'hips', (1.2 * S(p, 2), 2.5 * S(p, 1, .1), 3 * S(p, 1)))
+        add(pose, 'chest', (-1 * S(p, 2), -2 * S(p, 1), -2 * S(p, 1, .15)))
+        add(pose, 'neck_1', (2 + 2 * S(p, 2, .1), 0, 2 * S(p, 1, .3)))
+        add(pose, 'neck_2', (2 * S(p, 2, .15), 0, 2 * S(p, 1, .3)))
+        add(pose, 'head', (-2 - 3 * S(p, 2, .2), 0, 2 * S(p, 1, .4)))
+        add(pose, 'ear_L', (0, 0, 7 * S(p, 2, .3)))
+        add(pose, 'ear_R', (0, 0, -7 * S(p, 2, .3)))
+        for i, nm in enumerate(BEARD):
+            add(pose, nm, (8 * S(p, 2, -.15 * i), 0, 4 * S(p, 1, -.1 * i)))
+        add(pose, 'tail_1', (-6 * S(p, 2, .1), 0, 6 * S(p, 1, .3)))
+        set_lids(pose, eyes, 0, deg=105)
+        return pose
+    P.clip('Walk', WF, walk)
+    foot_report(P, 'goat Walk', walk, WF, 1.0, K)
+
+    # Graze: head down nibbling the grass, chewing, a quick look up
+    def gz_body(k):
+        pose = {'ik': stand()}
+        pose['ik']['FL'] = (T['FL'] + V(0, -.05 * k, 0), 0)
+        add(pose, 'hips@loc', (0, 0, -.06 * k))
+        add(pose, 'chest', (15 * k, 0, 0))
+        return pose
+    GAIM = P.aim_chain(gz_body(1), ['neck_1', 'neck_2', 'head'], [V(0, -.38, .6), V(0, -.46, .44), V(0, -.52, .12)])
+
+    def gz_base(k):
+        pose = gz_body(k)
+        for bn in ('neck_1', 'neck_2', 'head'):
+            pose[bn] = Quaternion().slerp(GAIM[bn], k)
+        return pose
+
+    def graze(p):
+        up = window(p, .62, .82, .3)
+        dn = 1 - up
+        pose = gz_base(dn)
+        pose['head'] = Euler((D(5 * dn * S(p, 8)), 0, D(4 * dn * S(p, 1))), 'XYZ').to_quaternion() @ pose['head']
+        add(pose, 'jaw', (7 * (.5 + .5 * S(p, 14)), 0, 3 * S(p, 7)))
+        add(pose, 'ear_L', (0, 0, -18 * pulse(p, .3, .03) + 6 * up))
+        add(pose, 'ear_R', (0, 0, 18 * pulse(p, .45, .03) - 6 * up))
+        pose['head'] = Euler((D(-5 * up), 0, D(16 * up * S(p, 2, .1))), 'XYZ').to_quaternion() @ pose['head']
+        for i, nm in enumerate(BEARD):
+            add(pose, nm, (6 * S(p, 8, -.1 * i), 0, 0))
+        add(pose, 'tail_1', (-14 * pulse(p, .7, .03), 0, 0))
+        set_lids(pose, eyes, blink(p, (.3,), .015) + .15 * dn, deg=105)
+        return pose
+    P.clip('Graze', 150, graze)
+
+    # Bleat (once): head thrown up, mouth wide, beard wagging, ears back
+    def bleat(p):
+        pose = idle(0.0)
+        k = window(p, .08, .92, .26)
+        b = window(p, .26, .8, .15)
+        add(pose, 'chest', (-3 * k, 0, 0))
+        add(pose, 'neck_1', (-12 * k, 0, 0))
+        add(pose, 'neck_2', (-14 * k, 0, 0))
+        add(pose, 'head', (-10 * k, 0, 3 * k))
+        add(pose, 'jaw', (26 * b + 6 * b * S(p, 9), 0, 0))
+        add(pose, 'ear_L', (0, 0, -20 * k + 6 * b * S(p, 9)))
+        add(pose, 'ear_R', (0, 0, 20 * k - 6 * b * S(p, 9, .5)))
+        for i, nm in enumerate(BEARD):
+            add(pose, nm, (10 * b * S(p, 9, -.1 * i), 0, 26 * b * S(p, 4.5, -.12 * i)))
+        pose['neck_2@scale'] = (1 + .04 * b * S(p, 9) ** 2, 1, 1 + .05 * b)
+        add(pose, 'tail_1', (-16 * k, 0, 0))
+        set_lids(pose, eyes, .55 * b, deg=105)
+        return pose
+    P.clip('Bleat', 60, bleat, loop=False)
+
+    # Sleep: lying with the legs tucked, head turned back along the flank, chewing slowly
+    def lie(dz):
+        return {'ik': {'FL': (T['FL'] + V(-.03, -.1, .06), -75), 'FR': (T['FR'] + V(.03, -.1, .06), -75),
+                       'HL': (T['HL'] + V(-.08, -.12, .06), -70), 'HR': (T['HR'] + V(.08, -.12, .06), -70)},
+                'hips@loc': (0, 0, dz), 'chest': (-2, 0, 0), 'neck_1': (10, 0, 24), 'neck_2': (6, 0, 34), 'head': (6, 8, 34),
+                'ear_L': (0, 0, 14), 'ear_R': (0, 0, -14)}
+    ldz = lying_dz(P, mesh, lie, {'spine', 'chest', 'hips'}, start=-.2)
+
+    def sleep(p):
+        pose = lie(ldz)
+        br = (S(p, 2, -.25) + 1) / 2
+        pose['chest@scale'] = (1 + .03 * br, 1, 1 + .04 * br)
+        pose['spine@scale'] = (1 + .035 * br, 1, 1 + .03 * br)
+        pose['hips@loc'] = (0, 0, ldz + .004 * br)
+        add(pose, 'ear_R', (0, 0, 14 * pulse(p, .7, .02)))
+        add(pose, 'jaw', (2 * (.5 + .5 * S(p, 6)), 0, 0))
+        add(pose, 'tail_1', (0, 0, 10 * pulse(p, .35, .05)))
+        set_lids(pose, eyes, 1.0, deg=105)
+        return pose
+    P.clip('Sleep', 150, sleep)
+
+    export_animal('goat', arm, P, scale=K)
+
+
+def build_dog():
+    """Village shiba: a cream-and-orange pup with urajiro white cheeks, muzzle, chest and socks, cream brow dots,
+    pricked triangle ears, big shiny eyes, a fat curled tail, a darker sesame saddle and a red collar with a
+    small brass bell. About 0.85 m nose to rump, 0.5 m at the back. Clips: Idle, Walk (1.1 m/s), Run (4.5 m/s
+    gallop), Sit, Wag (sitting, big tail wag, 2 s, once), Bark (once, hop), Sleep (curled up)."""
+    reset()
+    fur = mat('Dog fur', '#ea8d3b', rough=.7)
+    saddle_m = mat('Dog saddle', '#dc7a2e', rough=.72)
+    cream = mat('Dog cream', '#fcf1de', rough=.72)
+    nose_m = mat('Dog nose', '#2b2226', rough=.35)
+    pink = mat('Dog tongue', '#ef7b8c', rough=.5)
+    collar = mat('Dog collar', '#d7302a', rough=.5)
+    brass = mat('Dog bell', '#e3a823', rough=.28, metal=.85)
+    ew, dark, iris = eye_mats('Dog', '#3b2418')
+    saddle_m = fur                             # shared materials keep the draw calls down (<= 8)
+    nose_m = dark
+    parts = []
+
+    hk = [(0, -.3, .47, .088, .095), (0, -.35, .488, .122, .113), (0, -.405, .47, .116, .102), (0, -.44, .45, .09, .08)]
+    head = loft('Dog head', hk, fur, n=14, sub=2, dome=(.8, .5))
+    hs = Surface([head])
+    muzzle = loft('Dog muzzle', [(0, -.4, .432, .078, .062), (0, -.48, .415, .064, .052), (0, -.53, .405, .054, .046)],
+                  [cream, fur], n=12, sub=2, dome=(.3, .45), mat_fn=lambda u, a: 1 if math.sin(a) > .55 else 0)
+    eyeN, eyeR = V(.75, -.6, .25), .027
+    eyeC = seat_eye(hs, V(.062, -.425, .515), eyeN, eyeR, .4)
+
+    SH, EL, WR, FT = V(.09, -.17, .33), V(.095, -.155, .2), V(.095, -.175, .085), V(.095, -.19, 0)
+    HP, KN, HK, HT = V(.09, .2, .33), V(.105, .15, .2), V(.105, .22, .1), V(.105, .2, 0)
+    bones = [('root', (0, 0, 0), (0, 0, .2), None),
+             ('hips', (0, .27, .35), (0, .08, .32), 'root'),
+             ('spine', (0, .08, .32), (0, -.1, .33), 'hips'),
+             ('chest', (0, -.1, .33), (0, -.24, .36), 'spine'),
+             ('neck', (0, -.25, .38), (0, -.31, .45), 'chest'),
+             ('head', (0, -.31, .47), (0, -.54, .4), 'neck'),
+             ('jaw', (0, -.41, .4), (0, -.52, .38), 'head'),
+             ('bell', (0, -.275, .325), (0, -.275, .285), 'neck')]
+    tail = [V(0, .3, .38), V(0, .37, .43), V(0, .385, .52), V(0, .335, .575), V(0, .27, .56)]
+    chain_bones(bones, 'tail', tail, 'hips')
+    lid_bones(bones, eyeC, eyeN)
+    EARB, EART = V(.058, -.355, .56), V(.085, -.335, .665)
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        bones.append((f'ear_{sd}', sym(EARB, s), sym(EART, s), 'head'))
+    leg_bones(bones, (SH, EL, WR, FT), (HP, KN, HK, HT))
+    arm = build_armature('Dog', bones)
+    segs = [('hips', V(0, .36, .38), V(0, .08, .32)), ('spine', V(0, .08, .32), V(0, -.1, .33)),
+            ('chest', V(0, -.1, .33), V(0, -.24, .36)), ('neck', V(0, -.25, .38), V(0, -.31, .45)),
+            ('head', V(0, -.31, .47), V(0, -.37, .48))]
+    parts.append(bind(head, 'head'))
+    parts.append(bind(muzzle, 'head'))
+
+    tk = [(0, .29, .36, .075, .095), (0, .22, .35, .128, .148), (0, .07, .32, .152, .162), (0, -.09, .33, .157, .166),
+          (0, -.2, .36, .134, .152), (0, -.265, .41, .1, .11), (0, -.3, .46, .09, .1)]
+    body = loft('Dog body', tk, [fur, cream], n=14, sub=2, dome=(.8, 0),
+                mat_fn=lambda u, a: 1 if (math.sin(a) < -.55 or (u > 3.9 and math.sin(a) < .2)) else 0)
+    parts.append(bind_chain(body, segs, .05))
+    surf = Surface([body])
+    axz = .33
+    for p_ in conform_patch('Dog saddle', surf, V(0, 0, .62), X, Y, -.2, .24,
+                            lambda t: .2 * math.sin(math.pi * (.06 + .88 * t)) ** .45 + .012, 7, 6, .0015, .003, saddle_m,
+                            center_fn=lambda t: .012 * math.sin(4 * t), ray_axis=lambda q: V(0, q.y, axz)):
+        parts.append(bind_chain(p_, segs, .05))
+    # face: nose, mouth, chin, tongue, cheek fluff, brow dots
+    parts.append(bind(sphere('Dog nose', (.03, .022, .022), (0, -.548, .412), nose_m, seg=10, rings=6), 'head'))
+    parts.append(bind(tube('Dog mouth', [V(-.052, -.455, .385), V(-.03, -.505, .379), V(-.012, -.528, .39), V(0, -.534, .396), V(.012, -.528, .39), V(.03, -.505, .379),
+                                         V(.052, -.455, .385)], .0028, dark, verts=4), 'head'))
+    parts.append(bind(rod('Dog philtrum', V(0, -.55, .405), V(0, -.546, .393), .0028, dark, verts=4), 'head'))
+    parts.append(bind(loft('Dog chin', [(0, -.41, .405, .06, .026), (0, -.47, .385, .052, .022), (0, -.515, .38, .036, .018)],
+                           cream, n=8, sub=1, dome=(.5, .8)), 'jaw'))
+    parts.append(bind(sphere('Dog tongue', (.022, .045, .009), (0, -.47, .39), pink, seg=8, rings=4), 'jaw'))
+    for s in (1, -1):
+        parts.append(bind(puff(f'Dog cheek {s}', V(s * .075, -.4, .43), .042, cream, seg=8, rings=5, lump=.16, seed=7 + s),
+                          'head'))
+        for k, (dx, dy, dz) in enumerate(((.05, .0, -.035), (.07, .03, -.005))):
+            parts.append(bind(hs.tuft(f'Dog cheek tuft {s}{k}', V(s * (.1 + dx * .4), -.4 + dy, .42 + dz), V(s * .5, .9, -.25),
+                                      .065, .026, cream, lift=.3, flat=.55, tip=.2), 'head'))
+        parts.append(bind(hs.spot(f'Dog brow dot {s}', V(s * .1, -.45, .56), (.014, .011), cream, thick=.3,
+                                  dirn=V(-s * .3, 0, -1)), 'head'))
+    eyes = farm_eyes(parts, 'Dog', eyeC, eyeN, eyeR, ew, dark, iris, {'L': fur, 'R': fur}, look=(-.08, .02), lid_open=36,
+                     iris_k=1.1, pupil=.78, tall=1.0, shine=.26, glint2=False)
+    # ears: pricked triangles, orange outside, cream inside
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        ear = leaf_ear(f'Dog ear {s}', sym(EARB, s), sym(EART, s), .048, .026, [fur, cream], X,
+                       mat_fn=lambda u, a: 1 if (math.sin(a) < -.2 and .25 < u < 1.8) else 0,
+                       shape=((0, 1.0), (.5, .78), (1.0, .08)))
+        parts.append(bind_chain(ear, [('head', sym(EARB, s) - V(0, 0, .03), sym(EARB, s)), (f'ear_{sd}', sym(EARB, s), sym(EART, s))],
+                                .02))
+    parts.append(bind(puff('Dog chest fluff', V(0, -.27, .335), .062, cream, seg=8, rings=5, lump=.18, seed=11), 'chest'))
+    # curled tail
+    tk2 = [(0, .3, .38, .03, .034), (0, .37, .43, .036, .04), (0, .385, .52, .042, .046), (0, .335, .575, .04, .044),
+           (0, .27, .56, .03, .033)]
+    tl = loft('Dog tail', tk2, [fur, cream], n=9, sub=2, dome=(0, 1.0), mat_fn=lambda u, a: 1 if u > 3.1 else 0)
+    parts.append(bind_chain(tl, chain_segs('tail', tail, ('hips', V(0, .26, .36), tail[0])), .03))
+    # collar and bell
+    for p_ in (band('Dog collar', Surface([body]), V(0, -.275, .41), V(0, -.06, .07), collar, width=.026, grow=.005),):
+        parts.append(bind_chain(p_, segs, .02))
+    parts.append(bind(tube('Dog bell strap', [V(0, -.28, .328), V(0, -.28, .312), V(0, -.28, .3)], .005, collar, verts=5), 'neck'))
+    bell = lathe('Dog bell', [(0, .02), (.016, .018), (.022, .0), (.026, -.02), (.028, -.028), (0, -.028)], brass, seg=12,
+                 loc=V(0, -.28, .278))
+    parts.append(bind(bell, 'bell'))
+
+    # legs: orange with cream socks, cream paws
+    def dog_paw(s, sd, kind, bone):
+        y, x = (-.19, .095) if kind == 'f' else (.2, .105)
+        return paw(f'Dog {kind}paw {s}', V(x * s, y - .006, .026), (.034, .05, .026), cream, toes=3, seg=8, rings=5)
+    fp = [SH + V(0, 0, .07), SH, EL, WR + V(0, .003, .05), WR, WR.lerp(FT, .45)]
+    fr = [(.05, .058), (.05, .057), (.037, .041), (.031, .033), (.031, .032), (.033, .033)]
+    hp = [HP + V(0, 0, .07), HP, KN, HK + V(0, .003, .05), HK, HK.lerp(HT, .45)]
+    hr = [(.06, .078), (.062, .074), (.043, .048), (.033, .036), (.032, .033), (.033, .033)]
+    mf = lambda u, a, s: 1 if u > 2.5 else 0
+    build_legs(parts, 'Dog', (SH, EL, WR, FT), (HP, KN, HK, HT), fp, fr, hp, hr, [fur, cream], mat_fn=mf, hoof=dog_paw, blend=.03,
+               n=7, top=.06)
+
+    mesh = make_skin('dog', arm, parts, dict(rays=36, distance=.15, strength=.6, ground=0.0))
+
+    # ---------------------------------------------------------------- animation
+    P, T = quad_player(arm)
+    TAILB = ['tail_1', 'tail_2', 'tail_3', 'tail_4']
+
+    def stand():
+        return {k: (T[k].copy(), 0.0) for k in T}
+
+    def tail_wag(pose, amp, p, cycles, lag=.08, base=(0, 0, 0)):
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (base[0], base[1], amp * (.5 + .22 * i) * S(p, cycles, -lag * i)))
+        return pose
+
+    # Idle: panting-calm breathing, ear swivels, head tilt, tail wiggles, blinks
+    def idle(p):
+        pose = {'ik': stand()}
+        br = S(p, 3)
+        add(pose, 'spine', (.8 * br, 0, 0))
+        add(pose, 'chest', (-.5 * br, 0, 0))
+        lk = window(p, .35, .65, .25)
+        add(pose, 'neck', (-3 * lk, 0, 8 * lk))
+        add(pose, 'head', (-3 * lk, 12 * lk, 14 * lk))
+        add(pose, 'jaw', (2.0 * (.5 + .5 * S(p, 6)) * window(p, .0, .3, .3), 0, 0))
+        add(pose, 'ear_L', (-16 * pulse(p, .2, .03), 0, 12 * pulse(p, .2, .03)))
+        add(pose, 'ear_R', (-16 * pulse(p, .75, .03), 0, -12 * pulse(p, .75, .03)))
+        tail_wag(pose, 8, p, 2, base=(0, 0, 0))
+        add(pose, 'bell', (3 * S(p, 3, .2), 0, 0))
+        set_lids(pose, eyes, blink(p, (.1, .55, .88), .016), deg=105)
+        return pose
+    P.clip('Idle', 150, idle)
+
+    # Walk: trotty four-beat, 1.1 m/s, tail bobbing
+    WF, WD = 16, .6
+    K = .88                                    # export scale -> ~0.88 m nose to tail tip
+    sweep = 1.1 / K * WF / FPS * WD
+
+    def walk(p):
+        pose = {'ik': gait(P, T, p, {'HL': 0, 'FL': .25, 'HR': .5, 'FR': .75}, WD, sweep, (.06, .055), curl=(55, 38), roll=12)}
+        add(pose, 'hips@loc', (0, 0, -.057 + .008 * C(p, 2, -.05)))
+        add(pose, 'hips', (1.5 * S(p, 2), 3 * S(p, 1, .1), 3 * S(p, 1)))
+        add(pose, 'spine', (0, 0, -2 * S(p, 1, .1)))
+        add(pose, 'chest', (-1 * S(p, 2), -2.5 * S(p, 1), -2.5 * S(p, 1, .15)))
+        add(pose, 'neck', (2 + 2 * S(p, 2, .1), 0, 2 * S(p, 1, .3)))
+        add(pose, 'head', (-2 - 2.5 * S(p, 2, .15), 0, 2 * S(p, 1, .35)))
+        add(pose, 'ear_L', (5 * S(p, 2, .3), 0, 0))
+        add(pose, 'ear_R', (5 * S(p, 2, .3), 0, 0))
+        tail_wag(pose, 10, p, 2, base=(0, 0, 0))
+        add(pose, 'bell', (12 * S(p, 2, .1), 0, 0))
+        set_lids(pose, eyes, 0, deg=105)
+        return pose
+    P.clip('Walk', WF, walk)
+    foot_report(P, 'dog Walk', walk, WF, 1.1, K)
+
+    # Run: rotary gallop with spine flex and a gathered suspension, 4.5 m/s
+    RF, RD = 9, .22
+    rsweep = 4.5 / K * RF / FPS * RD
+
+    def run(p):
+        pose = {'ik': gait(P, T, p, {'HL': 0, 'HR': .1, 'FR': .44, 'FL': .54}, RD, rsweep, (.09, .08), curl=(75, 50), roll=18,
+                           tangent=.4, offset={'FL': V(0, .03, 0), 'FR': V(0, .03, 0)})}
+        flex = C(p, 1, -.93)
+        add(pose, 'hips@loc', (0, 0, -.07 + .035 * C(p, 1, -.88)))
+        add(pose, 'hips', (-4 * flex + 2 * S(p, 1, .1), 0, 0))
+        add(pose, 'spine', (7 * flex, 0, 0))
+        add(pose, 'chest', (3 * flex, 0, 0))
+        add(pose, 'neck', (-3 - 4 * flex, 0, 0))
+        add(pose, 'head', (6 + 2 * flex, 0, 0))
+        add(pose, 'ear_L', (40, 0, -8 + 6 * S(p, 1)))
+        add(pose, 'ear_R', (40, 0, 8 - 6 * S(p, 1)))
+        add(pose, 'jaw', (10 * (.5 + .5 * S(p, 1, .2)), 0, 0))
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (-8 + 3 * i, 0, 5 * S(p, 1, -.1 * i)))
+        add(pose, 'bell', (18 * S(p, 1, .1), 0, 0))
+        set_lids(pose, eyes, 0, deg=105)
+        return pose
+    P.clip('Run', RF, run)
+    foot_report(P, 'dog Run', run, RF, 4.5, K)
+
+    # Sit: bum down, forelegs straight, hind feet flat, tail curled behind
+    def sit_pose():
+        pose = {'ik': {'FL': (T['FL'] + V(0, .045, 0), 0), 'FR': (T['FR'] + V(0, .045, 0), 0),
+                       'HL': (T['HL'] + V(.01, -.07, 0), -62), 'HR': (T['HR'] + V(-.01, -.07, 0), -62)}}
+        add(pose, 'hips@loc', (0, .05, -.24))
+        add(pose, 'hips', (-29, 0, 0))
+        add(pose, 'spine', (-5, 0, 0))
+        add(pose, 'chest', (-2, 0, 0))
+        add(pose, 'neck', (14, 0, 0))
+        add(pose, 'head', (16, 0, 0))
+        return pose
+
+    def sit(p):
+        pose = sit_pose()
+        br = S(p, 2)
+        add(pose, 'chest', (-.8 * br, 0, 0))
+        add(pose, 'head', (-3 * pulse(p, .45, .12), 0, 8 * pulse(p, .45, .14)))
+        add(pose, 'ear_L', (-16 * pulse(p, .2, .03), 0, 10 * pulse(p, .2, .03)))
+        add(pose, 'ear_R', (-16 * pulse(p, .62, .03), 0, -10 * pulse(p, .62, .03)))
+        tail_wag(pose, 6, p, 1)
+        add(pose, 'jaw', (3 * window(p, .7, .95, .3) * (.5 + .5 * S(p, 6)), 0, 0))
+        set_lids(pose, eyes, blink(p, (.3, .9), .02), deg=105)
+        return pose
+    P.clip('Sit', 90, sit)
+
+    # Wag (once, 2 s): sitting and wagging the whole tail hard, ears up, happy head tilt, pant
+    def wag(p):
+        pose = sit_pose()
+        k = min(1.0, smooth(p / .1)) * min(1.0, smooth((1 - p) / .1))
+        tail_wag(pose, 38 * k, p, 6, lag=.07)
+        add(pose, 'hips', (0, 0, 4 * k * S(p, 6, .05)))
+        add(pose, 'chest', (-1.2 * S(p, 2), 0, -2 * k * S(p, 6, .2)))
+        add(pose, 'head', (-6 * k, 10 * k * S(p, 1.5), 4 * k * S(p, 3)))
+        add(pose, 'neck', (-3 * k, 0, 0))
+        add(pose, 'ear_L', (-6 * k, 0, 8 * k + 3 * S(p, 3)))
+        add(pose, 'ear_R', (-6 * k, 0, -8 * k - 3 * S(p, 3)))
+        add(pose, 'jaw', (7 * k * (.5 + .5 * S(p, 6, .1)), 0, 0))
+        add(pose, 'bell', (8 * k * S(p, 6, .1), 0, 0))
+        set_lids(pose, eyes, blink(p, (.35, .8), .02), deg=105)
+        return pose
+    P.clip('Wag', 60, wag, loop=False)
+
+    # Bark (once): a crouch, a hop with the head thrown up and the mouth open, then settle
+    def bark(p):
+        cr = window(p, .0, .28, .6)
+        hop = math.sin(math.pi * max(0.0, min(1.0, (p - .22) / .3))) if .22 < p < .52 else 0.0
+        land = window(p, .5, .72, .5)
+        h = .075 * hop
+        pose = {'ik': {}}
+        for k in T:
+            lift = h * (1.1 if k[0] == 'F' else 1.0)
+            tuck = 20 * hop
+            pose['ik'][k] = (T[k] + V(0, -.04 * hop if k[0] == 'H' else .05 * hop, lift), tuck if k[0] == 'F' else -tuck * .5)
+        add(pose, 'hips@loc', (0, 0, -.025 * cr - .02 * land + h + 0.0))
+        k2 = window(p, .1, .85, .3)
+        m = max(pulse(p, .36, .07), pulse(p, .5, .06))
+        add(pose, 'chest', (6 * cr - 8 * hop - 3 * m, 0, 0))
+        add(pose, 'neck', (8 * cr - 14 * k2, 0, 0))
+        add(pose, 'head', (6 * cr - 12 * k2 - 6 * m, 0, 0))
+        add(pose, 'jaw', (28 * m, 0, 0))
+        add(pose, 'ear_L', (-10 * k2, 0, 8 * k2))
+        add(pose, 'ear_R', (-10 * k2, 0, -8 * k2))
+        for i, nm in enumerate(TAILB):
+            add(pose, nm, (-6 * hop, 0, 6 * k2 * S(p, 4, -.1 * i)))
+        add(pose, 'bell', (20 * hop, 0, 0))
+        set_lids(pose, eyes, .3 * m, deg=105)
+        return pose
+    P.clip('Bark', 36, bark, loop=False)
+
+    # Sleep: curled up on the ground like a donut, chin on the paws, tail wrapped round
+    def curl(dz):
+        pose = {'ik': {'FL': (T['FL'] + V(-.02, .02, .04), -80), 'FR': (T['FR'] + V(.02, .0, .04), -80),
+                       'HL': (T['HL'] + V(.0, -.07, .0), -62), 'HR': (T['HR'] + V(-.02, -.07, 0), -62)},
+                'hips@loc': (0, 0, dz), 'spine': (0, 0, 8), 'chest': (10, 0, 22), 'neck': (30, 0, 26), 'head': (4, 14, 26),
+                'ear_L': (20, 0, -12), 'ear_R': (20, 0, 12)}
+        return pose
+    ldz = lying_dz(P, mesh, curl, {'spine', 'chest', 'hips'}, start=-.2, margin=.004)
+    WRAP = [V(.1, .36, .06), V(.18, .3, .06), V(.19, .18, .06), V(.17, .08, .05)]
+
+    def sleep(p):
+        pose = curl(ldz)
+        pose = P.aim_chain(pose, TAILB, WRAP)
+        br = (S(p, 2, -.25) + 1) / 2
+        pose['chest@scale'] = (1 + .04 * br, 1, 1 + .05 * br)
+        pose['spine@scale'] = (1 + .05 * br, 1, 1 + .04 * br)
+        pose['hips@loc'] = (0, 0, ldz + .004 * br)
+        add(pose, 'ear_R', (-12 * pulse(p, .7, .02), 0, 0))
+        pose['tail_4'] = Quaternion(Z, D(12 * pulse(p, .3, .05))) @ pose['tail_4']
+        set_lids(pose, eyes, 1.0, deg=105)
+        return pose
+    P.clip('Sleep', 150, sleep)
+
+    export_animal('dog', arm, P, scale=K)
+# FARM-END
+
+
+BUILDERS = {'fox': build_fox, 'bear': build_bear, 'sheep': build_sheep, 'crab': build_crab, 'crow': build_crow, 'fish-trout': build_trout, 'fish-starfin': build_starfin, 'fish-koi': build_koi, 'chicken': build_chicken, 'rabbit': build_rabbit, 'cat': build_cat, 'duck': build_duck, 'deer': build_deer,
+            'cow': build_cow, 'pig': build_pig, 'goat': build_goat, 'dog': build_dog}
 
 
 def main():

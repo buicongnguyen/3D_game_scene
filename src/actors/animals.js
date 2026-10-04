@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { NPC } from './npc.js';
+import { spawnFarm, farmStep } from './farm-animals.js';
 import { rng } from '../engine/spline.js';
 import { PLACES, river, riverHalfWidth } from '../world/layout.js';
 
@@ -78,6 +79,7 @@ export class Wildlife {
     this.story = {};
     this.R = rng(99);
     this.spawnAmbient();
+    spawnFarm(this);
   }
 
   add(id, model, x, z, facing = 0, idle = 'Idle') {
@@ -285,6 +287,7 @@ export class Wildlife {
         a.facing = a.targetFacing;
         a.root.visible = a.visible && game?.game?.time.season !== 'winter';
       } else if (a.kind === 'sheep') this.sheep(a, dt, player);
+      else if (a.farm) farmStep(this, a, dt, player, game);
       else if (a.kind === 'deer') this.deerStep(a, dt, player);
       else if (a.kind === 'crow' && a.flying) {
         a.flying.t += dt;

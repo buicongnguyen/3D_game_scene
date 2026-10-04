@@ -22,7 +22,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import kit
 import arch_lib
 import interior_rooms, interior_keepsakes
-for _m in ('interior_bakery', 'interior_mill', 'interior_station'):
+for _m in ('interior_bakery', 'interior_mill', 'interior_station', 'interior_kawabe_a', 'interior_kawabe_b', 'interior_kawabe_shop',
+           'interior_takamori_a', 'interior_takamori_b', 'interior_boathouse', 'interior_shed'):
     try:
         __import__(_m)
     except ModuleNotFoundError as e:
@@ -30,6 +31,8 @@ for _m in ('interior_bakery', 'interior_mill', 'interior_station'):
             raise
 
 ORDER = ['interior-cottage', 'interior-bakery', 'interior-mill', 'interior-station',
+         'interior-kawabe-a', 'interior-kawabe-b', 'interior-kawabe-shop', 'interior-takamori-a', 'interior-takamori-b',
+         'interior-boathouse', 'interior-shed',
          'keepsake-photo', 'keepsake-recipe', 'keepsake-float', 'keepsake-ticket']
 BUILDERS = {**interior_rooms.BUILD, **interior_keepsakes.BUILD}
 SHORT = {n.split('-', 1)[1]: n for n in ORDER}

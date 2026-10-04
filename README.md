@@ -26,6 +26,10 @@ danger that night.
   from a wind-up paper kite and soars over the whole valley.
 - **Step inside.** Sora's cottage, Hana's bakery, Ōta's mill and Genzo's station
   open their doors, and each home keeps a keepsake that tells a little more.
+  So do nearly all the houses and shops of Kawabe and Takamori, the boathouse and the engine shed: 21 rooms,
+  each home in one of three looks, with a resident to talk to.
+- **A busier valley.** Many more villagers call out little remarks as you pass (300+ lines, in four languages),
+  and cows, pigs, goats and dogs live in the villages and can be befriended.
 - **Valley friends.** Say hello to rabbits, hens, Mochi the cat, the ducks, the
   sheep, a deer family, Kon the fox and Ōkuma the bear.
 - **Every lamp throws a party.** Spring's Blossom Wave (a rainbow, leaping koi,

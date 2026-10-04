@@ -233,6 +233,10 @@ Bone names are free, but every clip listed must exist.
 | `cat` | 0.55 m | Idle, Walk, Sit, Sleep | ≤ 4k | Calico. |
 | `duck` | 0.4 m | Swim, Idle | ≤ 2k | — |
 | `deer` | 1.5 m | Idle, Walk, Graze | ≤ 6k | — |
+| `cow` | 1.9 m long | Idle, Walk, Graze, Sleep, Moo *once* | ≤ 6k | Authored walk 0.7 m/s. |
+| `pig` | 1.1 m long | Idle, Walk, Snuffle, Sleep, Oink *once* | ≤ 6k | Authored walk 0.9 m/s. |
+| `goat` | 1.0 m long | Idle, Walk, Graze, Sleep, Bleat *once* | ≤ 6k | Authored walk 1.0 m/s. |
+| `dog` | 0.7 m long | Idle, Walk, Run, Sit, Wag *once*, Bark *once* | ≤ 6k | Walk 1.1 m/s, Run 4.5 m/s. Farm animals have a `public/icons/<kind>.webp` journal icon. |
 
 ## Static assets
 
@@ -398,6 +402,36 @@ and turns the `Col_*` boxes into colliders.
 | `interior-bakery` | Hana's bakery: checker tiles, teal wainscot, the brick oven with its fire, the bread wall, the shop counter with trays of peach buns, the kneading table, peach baskets, festival bunting, a café table by the shop windows. Keepsake on the kneading table. | — (`Interior fire`) | ≤ 25k |
 | `interior-mill` | Ōta's mill: stone base and timber, the pit wheel on the water wheel's axle, wallower, main shaft, spur wheel and stone nut under the millstone tun and hopper, a raised tatami corner with brazier and a plate of pickled radish, shelves of radish crocks, pickling barrels, drying daikon, the fishing corner. Keepsake on the shelf under the rods. | `Gear_pit` (axle, about X, ratio 1), `Gear_shaft` (about three.js Y, ratio −3), `Gear_nut` (ratio 6) (`Interior fire`) | ≤ 25k |
 | `interior-station` | Genzo's office: green wainscot, the pot-belly stove, timetable board, pendulum clock, ticket window with dating press and the pigeonhole ticket rack, signal lever frame, Genzo's desk with the green lamp, his cap on the hook, flags, photos of Kobo. Keepsake on the desk. | `Pendulum` (clock pendulum, swings about X) (`Interior fire`) | ≤ 25k |
+
+### Homes — one room behind every ordinary front door
+
+Every house, shop and workshop except the bell tower, the shrine and the platforms can be entered. Buildings of the same
+kind share one room model (`interior-<kind>`, built by `interior_<kind>.py`; the list is `HOMES` in
+`src/world/interiors.js`), and the room id is the building id. Rooms hang in a grid high above the valley, 32 m apart.
+
+Extra contract for homes (on top of the room conventions above, minus `Item_keepsake`):
+
+- `Spot_npc_1`, `Spot_npc_2`: empty nodes on the floor where a resident stands (+Z of the node is the way they face). The
+  runtime places a villager at the first spot of every home and at the second in about half of them
+  (`Director.spawnResidents`); residents are shown only while their room is the active one, and can be talked to.
+- `Var_1`, `Var_2`, `Var_3`: empty groups of small decor meshes (no `Col_*` inside). A home shows exactly one, chosen by its
+  position in `HOMES` (`variant`), so three neighbours of one kind look different: rugs, curtains, small props, shelf contents.
+  Large furniture and every collider are identical in all variants.
+- Budget per room: ≤ 16k triangles, 8 or fewer materials; the files are 0.55–0.8 MB raw.
+- Door spots (`DOOR_SPOTS`, in the building model's own space, +Z = front; `out` = how far in front of the door face Mika
+  stands, negative for a back door): `kawabe-house-a` { 0, 2.45, 1.0 }, `kawabe-house-b` { -0.3, 2.35, 0.6 }, `kawabe-shop` { 0, 2.0, 1.0 },
+  `takamori-house-a` { 1.25, 2.55, 0.8 }, `takamori-house-b` { 0, 1.55, 0.9 }, `boathouse` { -1.0, -3.7, -1.2 } (the land door
+  at the back), `engine-shed` { 0, 8.9, 1.4 } (the arched opening on the front wall).
+
+| Model | Used by | Room (m) | Variants | Tris |
+|---|---|---|---|---|
+| `interior-kawabe-a` | kw1, kw3, kw5, kw7 | 6.0 × 5.0 | young family · elderly couple · fisher's home | 12.4k |
+| `interior-kawabe-b` | kw4, kw6, otaHouse | 7.8 × 5.8 | young family with a baby · retired teacher · tailor's home | 11.1k |
+| `interior-kawabe-shop` | kw2, kw8 (tea and noodle shops) | 5.0 × 4.3 | grocer · stationery and sweets · hardware and rope | ≤ 13k |
+| `interior-takamori-a` | tk1, tk3, tk5 | 6.9 × 5.6 | baker's family · musician's home · gardener's | ≤ 12.3k |
+| `interior-takamori-b` | tk2, tk4, tk6 | 4.9 × 4.5 | a young couple's first home · bell-ringer's family · grandmother's sewing room | ≤ 11.9k |
+| `interior-boathouse` | boathouse | 5.0 × 7.0 | Rin's fishing nook · net mending · a festival boat being painted | ≤ 10.1k |
+| `interior-shed` | engineShed | 8.0 × 10.0 | busy workshop · tidy museum corner · festival preparations | ≤ 14.4k |
 
 Keepsakes are floating pickups (origin at the item centre, about 0.35 m across)
 with icons in `public/icons/<name>.webp`:

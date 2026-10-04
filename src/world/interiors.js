@@ -31,6 +31,28 @@ export const INTERIORS = [
 ];
 
 /**
+ * Ordinary homes: every house, shop and workshop can be entered. Buildings of the same kind share one room model
+ * (art/blender/interior_<kind>.py) and differ in which decor variant (`Var_1..3` groups in the model) they show, so
+ * three neighbours never look alike. The room id is the building id; a resident stands at each `Spot_npc_*` node.
+ */
+export const HOMES = [
+  ['kawabe-a', ['kw1', 'kw3', 'kw5', 'kw7']],
+  ['kawabe-b', ['kw4', 'kw6', 'otaHouse']],
+  ['kawabe-shop', ['kw2', 'kw8']],
+  ['takamori-a', ['tk1', 'tk3', 'tk5']],
+  ['takamori-b', ['tk2', 'tk4', 'tk6']],
+  ['boathouse', ['boathouse']],
+  ['shed', ['engineShed']],
+];
+// the rooms hang in a grid above the valley, well apart (their lamps only reach ~8 m)
+const HOME_SLOTS = [-196, -160, -124].flatMap(z => [-140, -108, -76, -44, -12, 20].map(x => [x, z]));
+for (const [kind, buildings] of HOMES) {
+  buildings.forEach((building, i) => INTERIORS.push({
+    id: building, building, model: `interior-${kind}`, kind, variant: (i % 3) + 1, at: HOME_SLOTS[INTERIORS.length - 4],
+  }));
+}
+
+/**
  * Front doors in each building model's own space (three.js: +Z is the model's front), read from the Blender
  * generators (build_architecture.py). out: how far in front of the door face the player stands (negative = the
  * door is on the back wall, like the boathouse's land door). A model's own `Door` node wins when it has one.
@@ -41,6 +63,12 @@ export const DOOR_SPOTS = {
   mill: { x: 0, z: 2.8, out: 1.3 },               // double doors under the pent roof
   station: { x: 0, z: 1.3, out: 1.1 },            // waiting-room doors on the platform side
   boathouse: { x: -1.0, z: -3.7, out: -1.2 },     // land door at the back
+  'engine-shed': { x: 0, z: 8.9, out: 1.4 },      // the big arched opening on the front wall
+  'takamori-house-a': { x: 1.25, z: 2.55, out: 0.8 }, // on the porch deck, door right of centre
+  'kawabe-shop': { x: 0, z: 2.0, out: 1.0 },          // under the pent roof, between the hatch window and the front window
+  'takamori-house-b': { x: 0, z: 1.55, out: 0.9 },    // on the raised veranda
+  'kawabe-house-a': { x: 0, z: 2.45, out: 1.0 },    // lattice door in the front wall, between the lattice windows
+  'kawabe-house-b': { x: -0.3, z: 2.35, out: 0.6 },   // glass doors, standing on the veranda
 };
 
 const LAMP = { color: '#ffb35a', range: 7.5 };
@@ -93,7 +121,7 @@ export class Interiors {
 
     const room = { id: def.id, def, root, model, inv, yaw, lights: [], glow: [], fire: [], nodes: {}, cols: [], motes: null, bounds: new THREE.Box3() };
     const wp = o => o.getWorldPosition(new V3());
-    const cols = [];
+    const cols = [], variants = [];
     model.traverse(o => {
       if (o.isMesh && o.name.startsWith('Col_')) { cols.push(o); return; }
       if (o.isMesh) {
@@ -106,8 +134,11 @@ export class Interiors {
           (m.name === 'Interior fire' ? room.fire : room.glow).push(m);
         }
       }
-      if (/^(Spawn|Exit|Item_|Light_|Gear_|Pendulum)/.test(o.name)) room.nodes[o.name] = o;
+      if (/^(Spawn|Exit|Item_|Light_|Gear_|Pendulum|Spot_)/.test(o.name)) room.nodes[o.name] = o;
+      if (/^Var_\d+$/.test(o.name)) variants.push(o);
     });
+    // a home shows ONE of its decor variants; the others stay hidden
+    for (const v of variants) v.visible = v.name === `Var_${def.variant ?? 1}`;
 
     // collision boxes -> kinematic colliders (hidden meshes)
     const q = new THREE.Quaternion(), e = new THREE.Euler(), s = new V3(), c = new V3(), size = new V3();
@@ -157,6 +188,8 @@ export class Interiors {
       const o = N[`Item_gift_${gf.id}`];
       if (o) this.items.push({ interior: def.id, id: gf.id, kind: 'gift', model: gf.model, pos: wp(o), yaw: yawOf(o) });
     }
+    // where the people who live here stand (+Z of the node is the way they face)
+    room.spots = Object.entries(N).filter(([n]) => n.startsWith('Spot_npc_')).sort(([a], [b]) => a.localeCompare(b)).map(([, o]) => ({ pos: wp(o), yaw: yawOf(o) }));
     room.gears = Object.entries(N).filter(([n]) => n.startsWith('Gear_')).map(([n, o]) => ({ o, axis: o.userData?.axis || 'x', ratio: o.userData?.ratio ?? 1, rest: o.rotation.clone() }));
     room.pendulum = N.Pendulum || null;
     room.motes = this.makeMotes(room);
