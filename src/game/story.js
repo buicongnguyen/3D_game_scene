@@ -1,6 +1,8 @@
 // Starline — the whole story as data. docs/STORY.md tells it in prose; after editing, run npm run story:md
 // to regenerate its script appendix from this file.
 // Pure module (no DOM/three): used by the quest engine, the director and the Node playthrough test.
+import { FOLK_CAST } from '../content/townsfolk.js';
+import { GOODS, ERRANDS } from '../content/shops.js';
 
 export const CAST = {
   mika: { name: 'Mika', color: '#f2b53a', pitch: 1.18 },
@@ -14,6 +16,8 @@ export const CAST = {
   villager: { name: 'Villager', color: '#6b7a8a', pitch: 1 },
   narrator: { name: '', color: '#cbd5e1', pitch: 1 },
 };
+// the valley's named neighbours speak in the dialogue box too (content/townsfolk.js)
+Object.assign(CAST, FOLK_CAST);
 
 export const ITEMS = {
   cog: { name: 'Mill cog', icon: 'cog' },
@@ -33,6 +37,9 @@ export const ITEMS = {
   acorn: { name: 'Golden acorn', icon: 'golden-acorn' },
   compass: { name: 'Star compass', icon: 'star-compass' },
 };
+// the neighbours' goods and errand parcels (content/shops.js), and Mika's purse of mon, are items too
+for (const [k, g] of Object.entries({ ...GOODS, ...ERRANDS })) ITEMS[k] = { name: g.name, icon: g.icon };
+ITEMS.mon = { name: 'Mon', icon: 'mon' };
 
 export const SEASON_OF_CHAPTER = ['spring', 'spring', 'summer', 'autumn', 'winter', 'spring'];
 export const CHAPTERS = [

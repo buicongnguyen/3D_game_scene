@@ -7,9 +7,9 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 
 // Quality tiers. `grass` scales instanced grass, `trees` the scatter density, `shadow` the map size.
 export const QUALITY = {
-  low: { name: 'Low', dpr: 1.0, maxPixels: 1.3e6, shadow: 1024, shadowRange: 30, bloom: true, bloomHalf: true, msaa: 0, grass: 0.3, trees: 0.6, terrainStep: 3, clouds: 3, env: true, propDist: 80, buildDist: 300, propShadows: false },
-  medium: { name: 'Medium', dpr: 1.25, maxPixels: 2.6e6, shadow: 2048, shadowRange: 42, bloom: true, bloomHalf: false, msaa: 4, grass: 0.65, trees: 0.85, terrainStep: 2, clouds: 4, env: true, propDist: 150, buildDist: 520, propShadows: true },
-  high: { name: 'High', dpr: 2.0, maxPixels: 5.0e6, shadow: 4096, shadowRange: 55, bloom: true, bloomHalf: false, msaa: 4, grass: 1, trees: 1, terrainStep: 2, clouds: 5, env: true, propDist: 240, buildDist: 900, propShadows: true },
+  low: { name: 'Low', dpr: 1.0, maxPixels: 1.3e6, shadow: 1024, shadowRange: 30, bloom: true, bloomHalf: true, msaa: 0, grass: 0.3, trees: 0.6, terrainStep: 3, clouds: 3, env: true, propDist: 80, buildDist: 300, propShadows: false, npcAnim: 26, npcDraw: 75, npcShadow: 16 },
+  medium: { name: 'Medium', dpr: 1.25, maxPixels: 2.6e6, shadow: 2048, shadowRange: 42, bloom: true, bloomHalf: false, msaa: 4, grass: 0.65, trees: 0.85, terrainStep: 2, clouds: 4, env: true, propDist: 150, buildDist: 520, propShadows: true, npcAnim: 40, npcDraw: 115, npcShadow: 30 },
+  high: { name: 'High', dpr: 2.0, maxPixels: 5.0e6, shadow: 4096, shadowRange: 55, bloom: true, bloomHalf: false, msaa: 4, grass: 1, trees: 1, terrainStep: 2, clouds: 5, env: true, propDist: 240, buildDist: 900, propShadows: true, npcAnim: 55, npcDraw: 150, npcShadow: 45 },
 };
 
 export function isMobile() {

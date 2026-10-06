@@ -11,6 +11,10 @@ import { PLACES, FALLEN_STARS, DECK_Y, river, riverHalfWidth } from '../world/la
 import { clockLabel } from '../world/seasons.js';
 import { STOPS } from '../world/railway.js';
 import { BarkBubbles } from '../ui/barks-ui.js';
+import { TownLife } from './townlife.js';
+import { SHOPS } from '../content/shops.js';
+
+const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
 import { VILLAGERS, RETURNING, ROUTES } from '../content/villagers.js';
 import { BARK_RANGE, BARK_NEAR, BarkClock, pickBark, zoneAt } from './barks.js';
 
@@ -97,6 +101,7 @@ export class Director {
       (room.spots || []).forEach((s, i) => {
         const h = hash(`${room.id}:${i}`);
         if (i > 0 && h % 2) return;                                   // the second spot is filled in every other house
+        if (i === 0 && SHOP_ROOMS.has(room.id)) return;               // the shopkeeper stands behind the counter (townlife.js)
         const model = i > 0 && h % 3 === 0 ? 'villager-kid' : h % 2 ? 'villager-woman' : 'villager-man';
         const id = `res:${room.id}:${i}`;
         const n = new NPC(g.scene, g.assets, g.world, id, model, { x: s.pos.x, z: s.pos.z, facing: s.yaw, tint: NPC.villagerTint(40 + k++) });
@@ -169,12 +174,34 @@ export class Director {
     const text = pickBark(kind, ctx, memory);
     if (!text) { B.clock.next.set(id, B.clock.t + 12); return; }
     for (const s of [B.recent, mine]) { s.add(text); while (s.size > (s === mine ? 6 : 24)) s.delete(s.values().next().value); }
-    const named = !n.villager;
-    B.ui.show(id, text, out => { n.head(out); out.y += 0.3; return out; }, { name: named ? tx(CAST[id]?.name || id) : '', life: B.clock.life });
+    const named = !n.villager || !!n.folk;
+    B.ui.show(id, text, out => { n.head(out); out.y += 0.3; return out; }, { name: named ? tx(n.folk?.name || CAST[id]?.name || id) : '', life: B.clock.life });
     B.clock.spoke(id);
     // they look up and talk with their hands while the bubble is up (unless they are mid-walk)
     if (!n.path) { n.lookAt(p.pos.x, p.pos.z); if (n.anim?.has?.('Talk')) { n.anim.play('Talk'); B.lit.add(id); } }
     if (bd < BARK_NEAR * 2) this.audio?.blip?.(CAST[id]?.pitch ?? { kid: 1.4, woman: 1.15, man: 0.9 }[kind] ?? 1);
+  }
+
+  /** Level of detail for people, a few times a second: near ones full, mid-range ones cheaper, far ones not drawn. */
+  updateDetail(dt) {
+    if ((this.detailT = (this.detailT ?? 0) - dt) > 0) return;
+    this.detailT = 0.3;
+    const q = this.game.renderer?.q || {}, c = this.game.camera.position, p = this.game.player.pos;
+    const anim = q.npcAnim ?? 40, draw = q.npcDraw ?? 115, shade = q.npcShadow ?? 30;
+    const story = this.scenes.active || this.busy;            // cut-scenes and dialogue frame anyone: keep everyone whole
+    let i = 0;
+    for (const n of Object.values(this.npcs)) {
+      if (n.animTick === 0) n.animTick = i++;                 // stagger the reduced-rate updates
+      const d = Math.min(n.pos.distanceTo(p), n.pos.distanceTo(c));
+      const hyst = n.far ? -5 : 5;                            // a little hysteresis so nobody flickers at the edge
+      const tier = story || n.resident ? 0 : d > draw + hyst ? 2 : d > anim + (n.animEvery > 1 ? -3 : 3) ? 1 : 0;
+      n.setDetail(tier, tier === 0 && d < shade + (n.shadow ? 3 : -3));
+    }
+  }
+
+  /** The meeting in the square holds everyone in place (and the neighbours' day plans pause). */
+  townFrozen() {
+    return this.scenes.active === 'meeting' || this.q.state.step === 'c4.meeting' || this.q.state.chapter === 4 && STEP_INDEX[this.q.state.step] > STEP_INDEX['c4.gather'] && STEP_INDEX[this.q.state.step] < STEP_INDEX['e.free'];
   }
 
   updateVillagers(dt) {
@@ -253,6 +280,9 @@ export class Director {
     this.interact('friend', null, () => tx(this.friendNear?.def.verb || ''), () => !!this.friendNear, () => this.befriend(this.friendNear), 6, () => this.friendNear?.a.pos, 0, 4);
     // NPC talk
     for (const id of Object.keys(this.npcs)) this.registerTalk(id);
+    // the named neighbours: day plans, shops, games and their own stories (game/townlife.js)
+    this.town = new TownLife(this);
+    this.town.spawn();
     // spark targets
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
     this.target('millLamp', L.get('mill')?.flame, N_('Light the Mill Lamp'), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10 });
@@ -854,7 +884,13 @@ export class Director {
   refreshObjective(pulse = false) {
     if (!this.quest) return;
     this.ui.setObjective(this.q.state.chapter, this.q.objective(tx), pulse);
-    this.ui.setInventory(this.q.state.inv);
+    this.refreshHud();
+  }
+
+  /** The items strip, with Mika's purse of mon when she has any. */
+  refreshHud() {
+    const st = this.q.state;
+    this.ui.setInventory(st.mon > 0 ? { ...st.inv, mon: st.mon } : st.inv);
   }
 
   /** Queue a dialogue: safe from anywhere (interactions, spark hits, scenes outside the effect queue). */
@@ -871,7 +907,7 @@ export class Director {
   }
 
   /** Dialogue with speaker gestures and a gentle camera framing. */
-  async dialogueBody(lines) {
+  async dialogueBody(lines, { local = false } = {}) {
     const g = this.game;
     g.player.locked = true;
     g.player.vel.set(0, 0, 0);
@@ -897,7 +933,9 @@ export class Director {
     g.input.edges.clear();
     this.actCooldown = 0.35;
     // queued: this may be running inside the effect queue
-    if (choice) this.event({ type: 'choice', id: lines.find(l => l.choice)?.id || 'confession', value: choice });
+    // a local choice (a shop menu) is answered by its caller, not by the story
+    if (choice && !local) this.event({ type: 'choice', id: lines.find(l => l.choice)?.id || 'confession', value: choice });
+    return choice;
   }
 
   nearestVillager() {
@@ -1194,8 +1232,10 @@ export class Director {
       this.say('c1_crab');
     }
     this.updateResidents();
-    for (const n of Object.values(this.npcs)) n.update(dt, g.colliders);
+    this.updateDetail(dt);
+    for (const n of new Set(Object.values(this.npcs))) n.update(dt, g.colliders);   // a shopkeeper can be listed twice while talking
     this.updateVillagers(dt);
+    this.town?.update(dt);
     this.updateBarks(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);

@@ -5,7 +5,8 @@
 const HUMAN_BONES = ['root', 'hips', 'spine', 'chest', 'neck', 'head', 'upperarm_L', 'forearm_L', 'hand_L',
   'upperarm_R', 'forearm_R', 'hand_R', 'grip_R', 'thigh_L', 'shin_L', 'foot_L', 'thigh_R', 'shin_R', 'foot_R'];
 const VILLAGER_MATS = ['Villager shirt', 'Villager trousers', 'Villager hair'];
-const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer'];
+// Town Life adds chores and play: Run, Jump (in-place hop), Bow, Interact, Hammer, Sweep, Carry, Sit, Throw, Kick.
+const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Run', 'Jump', 'Bow', 'Interact', 'Hammer', 'Sweep', 'Carry', 'Sit', 'Throw', 'Kick'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
   'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
@@ -122,6 +123,13 @@ export const CONTRACTS = {
   'hand-lantern': { family: 'props', tris: 2000, nodes: ['Flame'], mats: ['Lantern glow'] },
   'fishing-rod': { family: 'props', tris: 800, nodes: ['Tip'] },
   hammer: { family: 'props', tris: 400 },
+  // Town Life held props (build_townlife.py): origin at the grip, parented to grip_R by the runtime.
+  ball: { family: 'townlife', tris: 300, icon: true },
+  broom: { family: 'townlife', tris: 800 },
+  bucket: { family: 'townlife', tris: 800 },
+  basket: { family: 'townlife', tris: 800 },
+  letters: { family: 'townlife', tris: 800, icon: true },
+  hoe: { family: 'townlife', tris: 800 },
   hearth: { family: 'props', tris: 3000, nodes: ['Fire'] },
   crate: { family: 'props', tris: 1200 },
   barrel: { family: 'props', tris: 1200 },
@@ -197,4 +205,5 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'tamo'];
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
 export const TOTAL_RAW_BYTES = 37_000_000;
-export const TOTAL_PACKED_BYTES = 13_500_000;
+// 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
+export const TOTAL_PACKED_BYTES = 13_800_000;

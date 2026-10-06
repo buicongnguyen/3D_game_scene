@@ -8,6 +8,9 @@ import { fileURLToPath } from 'node:url';
 import { CAST, ITEMS, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, STAR_POEM, FISH, STEPS, CAPTIONS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, HUNT } from '../src/game/story.js';
 import { FALLEN_STARS, LAMPS } from '../src/world/layout.js';
 import { BARKS } from '../src/content/barks.js';
+import { PEOPLE } from '../src/content/townsfolk.js';
+import { GOODS, ERRANDS, SHOPS } from '../src/content/shops.js';
+import { CONVOS } from '../src/content/convos.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANGS = ['vi', 'ko', 'ja'];
@@ -55,6 +58,24 @@ export function collect() {
   for (const l of LAMPS) add(l.name, 'Star Lamp name');
   // barks: one-line remarks people call out as Mika walks past (a speech bubble over their head, a few seconds)
   for (const b of BARKS) add(b.text, `bark by ${b.who === 'any' ? 'any villager' : b.who === 'kid' ? 'a child' : CAST[b.who]?.name || b.who}`);
+  // Town Life: the named neighbours, their stories, the shops and the conversations Mika overhears
+  for (const p of PEOPLE) {
+    add(p.name, "a neighbour's name"); add(p.role, `what ${p.name} does (journal)`);
+    for (const s of p.story || []) {
+      for (const l of s.lines || []) add(l[1], `${p.name}'s story, said by ${CAST[l[0]]?.name || l[0]}`);
+      for (const l of s.askLines || []) add(l[1], `${p.name} asks Mika for something`);
+      add(s.ask, `${p.name} asks Mika for something (also shown in the journal)`); add(s.journal, `journal note on ${p.name}`);
+    }
+    for (const c of p.chatter || []) add(c, `${p.name}, small talk`);
+  }
+  for (const g of Object.values(GOODS)) { add(g.name, 'shop goods'); add(g.desc, 'shop goods description'); }
+  for (const g of Object.values(ERRANDS)) add(g.name, 'an errand item Mika carries for a neighbour');
+  for (const s of Object.values(SHOPS)) {
+    add(s.name, 'shop name');
+    for (const k of ['hello', 'bye', 'broke']) for (const l of s[k] || []) add(l, `shopkeeper (${s.name}): ${k}`);
+    for (const l of Object.values(s.thanks || {})) add(l, `shopkeeper (${s.name}) after a sale`);
+  }
+  for (const c of CONVOS) for (const l of c.lines) add(l[1], 'overheard conversation between two villagers (speech bubble, short)');
 
   // UI strings: tx('…') literals and interaction labels in the source, data-i18n markup in index.html
   const files = [];

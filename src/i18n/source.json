@@ -55,6 +55,146 @@
   ]
  },
  {
+  "s": "Mr. Fujita",
+  "ctx": [
+   "character name (t1)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mrs. Komori",
+  "ctx": [
+   "character name (t2)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mr. Hirano",
+  "ctx": [
+   "character name (v1)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mrs. Nakano",
+  "ctx": [
+   "character name (v2)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mr. Nakano",
+  "ctx": [
+   "character name (v8)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Granny Tsuru",
+  "ctx": [
+   "character name (v18)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mr. Kubo",
+  "ctx": [
+   "character name (v19)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Miss Endo",
+  "ctx": [
+   "character name (v9)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mr. Ishida",
+  "ctx": [
+   "character name (v24)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mrs. Ishida",
+  "ctx": [
+   "character name (v25)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Kenta",
+  "ctx": [
+   "character name (v3)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Yui",
+  "ctx": [
+   "character name (v20)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Daichi",
+  "ctx": [
+   "character name (v10)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Aiko",
+  "ctx": [
+   "character name (v4)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mr. Sato",
+  "ctx": [
+   "character name (v5)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mr. Oda",
+  "ctx": [
+   "character name (v22)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Mr. Tanabe",
+  "ctx": [
+   "character name (v27)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Sumi",
+  "ctx": [
+   "character name (v13)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Hiro",
+  "ctx": [
+   "character name (v6)",
+   "a neighbour's name"
+  ]
+ },
+ {
+  "s": "Nao",
+  "ctx": [
+   "character name (v23)",
+   "a neighbour's name"
+  ]
+ },
+ {
   "s": "Mill cog",
   "ctx": [
    "inventory item"
@@ -155,6 +295,131 @@
    "inventory item",
    "treasure name",
    "a treasure of the epilogue's treasure hunt (journal map label)"
+  ]
+ },
+ {
+  "s": "Rice ball",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Pickled radish",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Dango",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Roasted tea",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Red-bean candy",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Pinwheel",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Rubber ball",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Letter paper",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Wildflowers",
+  "ctx": [
+   "inventory item",
+   "shop goods"
+  ]
+ },
+ {
+  "s": "Parcel for Miss Endo",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Thank-you card for Mr. Fujita",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Goro's old shirt",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Toy boat",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Hirano's mailbag",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Sato's note for Hirano",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Sato's letter for Aiko",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Aiko's reply",
+  "ctx": [
+   "inventory item",
+   "an errand item Mika carries for a neighbour"
+  ]
+ },
+ {
+  "s": "Mon",
+  "ctx": [
+   "inventory item"
   ]
  },
  {
@@ -5405,6 +5670,3668 @@
   ]
  },
  {
+  "s": "Grocer",
+  "ctx": [
+   "what Mr. Fujita does (journal)"
+  ]
+ },
+ {
+  "s": "Welcome to Fujita Grocery! Rice balls, pickles, tea, and the best gossip on the river. The gossip is free.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "What's the gossip today?",
+  "ctx": [
+   "Mr. Fujita's story, said by Mika"
+  ]
+ },
+ {
+  "s": "That Sora's granddaughter is about. Raincoat, boots, looks like she'd haggle. ...Ah. It's you, isn't it?",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "I do haggle.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Then we'll get on fine. Carry these empty crates out back for me? There. Two mon, your first wage in Kawabe.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "I'll buy any fish, chestnut or mushroom you bring me, too. Fair prices. Mostly fair.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "You walk a lot, don't you? I've a parcel for Miss Endo. Chalk, copybooks, and one book of poems she pretends isn't hers.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "I'll be very discreet about the poems.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Good girl. She teaches the little ones on the lawn at the south end of the street. Here, it's lighter than it looks.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "A thank-you card from Miss Endo? In verse. I've never been thanked in verse.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "How was it?",
+  "ctx": [
+   "Mr. Fujita's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It rhymed 'Fujita' with 'sweeter'. I've pinned it by the till. Here, a little something for your trouble.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "Did Miss Endo get her parcel? She's a woman of words, she'll have something to say.",
+  "ctx": [
+   "Mr. Fujita asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "So nobody's lamp was the only dark one. Ten years I wouldn't stock a single thing from across the river.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "And now?",
+  "ctx": [
+   "Mr. Fujita's story, said by Mika",
+   "Mr. Tanabe's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Now I'm writing to Hana about her buns. Wholesale. Don't tell Grandpa Ōta until I've worked out how to tell Grandpa Ōta.",
+  "ctx": [
+   "Mr. Fujita's story, said by Mr. Fujita"
+  ]
+ },
+ {
+  "s": "Rice balls this morning, still warm. Well, warm-ish.",
+  "ctx": [
+   "Mr. Fujita, small talk"
+  ]
+ },
+ {
+  "s": "A good grocer knows every family's pickle. Mine's radish.",
+  "ctx": [
+   "Mr. Fujita, small talk"
+  ]
+ },
+ {
+  "s": "Bring me chestnuts and I'll pay in mon, not in compliments.",
+  "ctx": [
+   "Mr. Fujita, small talk"
+  ]
+ },
+ {
+  "s": "My father kept this shop. His father swept that same step.",
+  "ctx": [
+   "Mr. Fujita, small talk"
+  ]
+ },
+ {
+  "s": "Tea's on the shelf by the door. Smell it, it's free.",
+  "ctx": [
+   "Mr. Fujita, small talk"
+  ]
+ },
+ {
+  "s": "Sweets & paper shop",
+  "ctx": [
+   "what Mrs. Komori does (journal)"
+  ]
+ },
+ {
+  "s": "Komori Sweets and Paper. Red-bean candy for the tongue, good paper for the heart. Mind the pinwheels.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "Sweets and stationery. Bold combination.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mika"
+  ]
+ },
+ {
+  "s": "People write better letters with something sweet in their mouths. It's science. My science.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "Your grandmother bought her paper here. Pale blue, always. She said grey paper made letters sound tired.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "My letters from her were always blue.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Then you know she meant every word. I still have half a ream put by for her. It's yours, whenever you write to someone.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "Chestnuts! Plump ones! You've a good eye, girl.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "The squirrels have a better one. I was second.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Chestnut candy, then. If it sets right I'll name it after you. If it doesn't, after Fujita.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "Bring me two chestnuts? I want to try making chestnut candy. My mother's recipe, never once attempted.",
+  "ctx": [
+   "Mrs. Komori asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "The children paste stars on everything now. I've sold more gold paper this spring than in ten years together.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "Sorry. Probably my fault.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Never apologise for good business, dear. Have a candy. The chestnut ones are called 'Mika's'. They set beautifully.",
+  "ctx": [
+   "Mrs. Komori's story, said by Mrs. Komori"
+  ]
+ },
+ {
+  "s": "Pinwheels turn best facing the river.",
+  "ctx": [
+   "Mrs. Komori, small talk"
+  ]
+ },
+ {
+  "s": "One candy each. Two if you've been brave today.",
+  "ctx": [
+   "Mrs. Komori, small talk"
+  ]
+ },
+ {
+  "s": "Blue paper for good news, white for thank-yous, never grey.",
+  "ctx": [
+   "Mrs. Komori, small talk"
+  ]
+ },
+ {
+  "s": "The children count their coins on my counter. Very slowly.",
+  "ctx": [
+   "Mrs. Komori, small talk"
+  ]
+ },
+ {
+  "s": "Kawabe postman",
+  "ctx": [
+   "what Mr. Hirano does (journal)"
+  ]
+ },
+ {
+  "s": "Post! Oh, it's you. Sorry, I say 'post' at everyone. Hirano, the Kawabe postman. Eleven doors, twenty-two years.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "Eleven doors. Must be quick.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It would be, if nobody offered me tea. Everybody offers me tea.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "Our post for Takamori goes over with Rin's ferry. I hand it to her, she hands it to Sato, nobody says hello.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "That sounds exhausting.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Ten years of it. Today, would you carry it across? You talk to both sides. Somebody has to.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "A note from Sato? 'Thank you, Hirano.' Ten years, and that's the first thing he's said to me. I've read it eleven times.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "It's three words.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Three very good words. Here, for the ferry fare you didn't pay.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "Did Sato say anything when you gave him the bag? He never says anything. Not to me.",
+  "ctx": [
+   "Mr. Hirano asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Sato and I are going to swap rounds one day. He'll walk Kawabe, I'll walk Takamori. A holiday!",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "Walking someone else's route is a holiday?",
+  "ctx": [
+   "Mr. Hirano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "New doors, girl. New people offering me tea.",
+  "ctx": [
+   "Mr. Hirano's story, said by Mr. Hirano"
+  ]
+ },
+ {
+  "s": "Post! Sorry. Habit.",
+  "ctx": [
+   "Mr. Hirano, small talk"
+  ]
+ },
+ {
+  "s": "Mrs. Tsuru gets the most letters. Her grandchildren write in crayon.",
+  "ctx": [
+   "Mr. Hirano, small talk"
+  ]
+ },
+ {
+  "s": "Rain or shine, the post comes. Mostly shine, thank goodness.",
+  "ctx": [
+   "Mr. Hirano, small talk"
+  ]
+ },
+ {
+  "s": "A letter is a person arriving slowly.",
+  "ctx": [
+   "Mr. Hirano, small talk"
+  ]
+ },
+ {
+  "s": "Washes at the river",
+  "ctx": [
+   "what Mrs. Nakano does (journal)"
+  ]
+ },
+ {
+  "s": "Mind my sheets, love. The river does the washing. I just stand here and take the credit.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "Doesn't the river mind?",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It's been doing my washing for twenty years, love. Nakano's the name. Ask anyone, they'll tell you I talk too much.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "He came home! My Goro saw the Mill Lamp burning from the hill road and got straight off the bus.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "He was on a bus?",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "On his way to somewhere else. He says the lamp looked like the house calling him for supper. Thank you, love.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "Goro's old work shirt. Holes you could post a cat through. He won't throw it out.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "So you're giving it away behind his back.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "To a scarecrow. It'll still be in the family view. Mr. Kubo, by the vegetable plots. Off you go.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "Sunday trains, a husband who's home for supper, and a son who smells of river. I've nothing left to wish for.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "Drier sheets?",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Ha! Cheeky. Now I've one thing left to wish for.",
+  "ctx": [
+   "Mrs. Nakano's story, said by Mrs. Nakano"
+  ]
+ },
+ {
+  "s": "Wring it, shake it, hang it. Life's the same.",
+  "ctx": [
+   "Mrs. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "The river's in a good mood today. You can hear it.",
+  "ctx": [
+   "Mrs. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "My Daichi swims like an otter and eats like two.",
+  "ctx": [
+   "Mrs. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "Sun on the sheets is the best smell there is.",
+  "ctx": [
+   "Mrs. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "Fisher",
+  "ctx": [
+   "what Mr. Nakano does (journal)"
+  ]
+ },
+ {
+  "s": "Goro Nakano. Ten years gutting someone else's fish in the city port. Then I saw the Mill Lamp from a bus window.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mr. Nakano"
+  ]
+ },
+ {
+  "s": "And you just got off?",
+  "ctx": [
+   "Mr. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Left my umbrella on it. Worth it. The river smells exactly the same, and so, my wife says, do I.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mr. Nakano"
+  ]
+ },
+ {
+  "s": "That's the one. Roasted. Ōta pretends he likes green, but he drinks roasted when he thinks nobody's looking.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mr. Nakano"
+  ]
+ },
+ {
+  "s": "What are you apologising for?",
+  "ctx": [
+   "Mr. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "For leaving without saying goodbye. Ten years late. Tea first, sorry second. Here, for your legs.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mr. Nakano"
+  ]
+ },
+ {
+  "s": "Fetch me a tin of tea from Fujita's? I owe Grandpa Ōta an apology, and he only accepts them with tea.",
+  "ctx": [
+   "Mr. Nakano asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Ōta took the tea. Said 'Hmph.' Then he said 'Sit down, you fool.' That's practically a hug.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mr. Nakano"
+  ]
+ },
+ {
+  "s": "From him, that's a parade.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I fish for the Sunday train now. Fujita grills, Hana buns, and nobody argues. Much.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mr. Nakano"
+  ]
+ },
+ {
+  "s": "How much?",
+  "ctx": [
+   "Mr. Nakano's story, said by Mika"
+  ]
+ },
+ {
+  "s": "About buns. Mostly about how many buns. Peaceful arguing. The best kind.",
+  "ctx": [
+   "Mr. Nakano's story, said by Mr. Nakano"
+  ]
+ },
+ {
+  "s": "Fish don't care what village you're from.",
+  "ctx": [
+   "Mr. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "Patience is just waiting with a rod in your hand.",
+  "ctx": [
+   "Mr. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "Never trust a calm river. Respect it, though.",
+  "ctx": [
+   "Mr. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "Rin's a better fisher than me. Don't tell her I said so.",
+  "ctx": [
+   "Mr. Nakano, small talk"
+  ]
+ },
+ {
+  "s": "Widow, keeps a shrine to her husband",
+  "ctx": [
+   "what Granny Tsuru does (journal)"
+  ]
+ },
+ {
+  "s": "Come here, let me look at you. Yes. Sora's chin. She'd stick it out just like that when she was right.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "I'm sticking it out?",
+  "ctx": [
+   "Granny Tsuru's story, said by Mika"
+  ]
+ },
+ {
+  "s": "You are, dear. I'm Tsuru. Eighty-one, two good knees out of four, and I know every secret on this street.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "My Isamu built half the boats on this river. Every morning I tell his photograph the news.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "What did you tell him today?",
+  "ctx": [
+   "Granny Tsuru's story, said by Mika"
+  ]
+ },
+ {
+  "s": "That Sora's girl is clearing out the cottage and not clearing off. He'd have liked that.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "Oh. Oh, that's them. Yellow ones and the little blue ones. He'd come back from across the river smelling of them.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "You couldn't get them yourself?",
+  "ctx": [
+   "Granny Tsuru's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Not with my knees and Rin's driving. They're for his shrine. Here, love, take this. No, take it. Don't argue with an old woman.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "Bring me a bunch of wildflowers from the stall in Takamori? Isamu always bought them there, every week, for my table.",
+  "ctx": [
+   "Granny Tsuru asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Fujita told me what was said on the platform. Nobody's villain. Isamu always said that about everybody.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "Was he right?",
+  "ctx": [
+   "Granny Tsuru's story, said by Mika"
+  ]
+ },
+ {
+  "s": "About people, always. About the weather, never. Go on, dear. Keep that chin up.",
+  "ctx": [
+   "Granny Tsuru's story, said by Granny Tsuru"
+  ]
+ },
+ {
+  "s": "My husband built that boathouse. Mind the third step.",
+  "ctx": [
+   "Granny Tsuru, small talk"
+  ]
+ },
+ {
+  "s": "Eighty-one and still the first awake on this street.",
+  "ctx": [
+   "Granny Tsuru, small talk"
+  ]
+ },
+ {
+  "s": "Tea, dear? No? Your loss.",
+  "ctx": [
+   "Granny Tsuru, small talk"
+  ]
+ },
+ {
+  "s": "Sora and I were girls together on this river. She was always faster.",
+  "ctx": [
+   "Granny Tsuru, small talk"
+  ]
+ },
+ {
+  "s": "Farmer, keeps the vegetable plots",
+  "ctx": [
+   "what Mr. Kubo does (journal)"
+  ]
+ },
+ {
+  "s": "Radishes, beans, cabbages and one scarecrow called Mr. Kakashi. Kubo. That's me, not the scarecrow.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "Hello, Mr. Kubo. Hello, Mr. Kakashi.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Ha! You're the first to greet him in years. He's lost his shirt and his dignity. The crows can tell.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "Goro Nakano's work shirt! I'd know those holes anywhere. Perfect. It still smells of fish. The crows will hate it.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "Mrs. Nakano said it stays in the family view.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "He can wave at it from the bank. There. Mr. Kakashi, you look like a man with a future.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "Mr. Kakashi needs a shirt. Anything with sleeves. The crows laugh at a bare scarecrow.",
+  "ctx": [
+   "Mr. Kubo asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Best radishes in ten years. Fujita's pickling half of them. Ōta will complain about every one.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "He complains about radish a lot.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Longest feud in the valley, Ōta and radish. Older than the other one. Kinder, too.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "Takamori asked for my seed beans. Takamori! I sent them two bags and a drawing of Mr. Kakashi.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "For instructions?",
+  "ctx": [
+   "Mr. Kubo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "For inspiration. Every field deserves a scarecrow with a past.",
+  "ctx": [
+   "Mr. Kubo's story, said by Mr. Kubo"
+  ]
+ },
+ {
+  "s": "Soil's warm. Good sign.",
+  "ctx": [
+   "Mr. Kubo, small talk"
+  ]
+ },
+ {
+  "s": "Mr. Kakashi sends his regards.",
+  "ctx": [
+   "Mr. Kubo, small talk"
+  ]
+ },
+ {
+  "s": "A radish is honest. What you see is what you pickle.",
+  "ctx": [
+   "Mr. Kubo, small talk"
+  ]
+ },
+ {
+  "s": "My Yui says she'll be a train driver. I said: and who'll grow the beans?",
+  "ctx": [
+   "Mr. Kubo, small talk"
+  ]
+ },
+ {
+  "s": "Schoolteacher",
+  "ctx": [
+   "what Miss Endo does (journal)"
+  ]
+ },
+ {
+  "s": "Miss Endo. I teach on the lawn till the schoolroom roof is mended. Daichi came home, so that's three pupils. School's open!",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "You came back with the lamp too?",
+  "ctx": [
+   "Miss Endo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I'd been teaching sums in the city to children who'd never seen a river. When I heard, I packed my chalk.",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "Chalk! Copybooks! And, er, a book of poems. That one's for a pupil. A grown-up pupil. Me.",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "Your secret's safe.",
+  "ctx": [
+   "Miss Endo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Here, for your trouble, and a thank-you card for Mr. Fujita. Don't read it. It rhymes.",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "Mr. Fujita has a parcel for me, I'm told. Chalk, I hope. I'm writing sums in the dirt with a stick.",
+  "ctx": [
+   "Miss Endo asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Daifuku! Come down, you big dumpling. Look, Mika brought fish. ...And he's down. Traitor.",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "Simple appetites.",
+  "ctx": [
+   "Miss Endo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "He's not my cat really. He belongs to the whole street and lets me think otherwise. Thank you, truly.",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "Daifuku, my cat, is sulking on the boathouse roof. A fish would bring him down. He's a creature of simple appetites.",
+  "ctx": [
+   "Miss Endo asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Today's lesson was 'a lamp is only useful if someone watches it'. Kenta asked if that's why he has to watch Yui.",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "Is it?",
+  "ctx": [
+   "Miss Endo's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I said yes. Education is mostly agreeing with whatever gets them to sit down.",
+  "ctx": [
+   "Miss Endo's story, said by Miss Endo"
+  ]
+ },
+ {
+  "s": "Seven times eight is fifty-six. Somebody remember that for me.",
+  "ctx": [
+   "Miss Endo, small talk"
+  ]
+ },
+ {
+  "s": "The best classroom has a river beside it.",
+  "ctx": [
+   "Miss Endo, small talk"
+  ]
+ },
+ {
+  "s": "Kenta, Yui and Daichi are three different weathers in one morning.",
+  "ctx": [
+   "Miss Endo, small talk"
+  ]
+ },
+ {
+  "s": "Chalk in my hair again. It's a teacher's glitter.",
+  "ctx": [
+   "Miss Endo, small talk"
+  ]
+ },
+ {
+  "s": "Carpenter",
+  "ctx": [
+   "what Mr. Ishida does (journal)"
+  ]
+ },
+ {
+  "s": "Ishida. Carpenter. I made furniture in the city for people who never sat on it. Then the Mill Lamp came on.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "Everyone keeps saying that.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Because it's true. A lamp across a valley is a big thing when you've been waiting ten years for one.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "Offcuts, mostly. Cedar hull, a paper sail from Komori's. Floats better than my first real boat did.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "Why not give it to him yourself?",
+  "ctx": [
+   "Mr. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Then I'd have to watch him be happy. Very bad for a carpenter's reputation. Off you go.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "Ōta's giving timber for the viaduct. Seasoned forty years in the mill loft. I've been planing it with tears in my eyes.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "Sad tears?",
+  "ctx": [
+   "Mr. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Sawdust. Partly sawdust. Mostly sawdust. Go on.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "I'm building a bench for the viaduct platform. One end Kawabe cedar, the other Takamori oak. Meets in the middle.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "Very symbolic.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Very wobbly, so far. Symbolism takes a few goes.",
+  "ctx": [
+   "Mr. Ishida's story, said by Mr. Ishida"
+  ]
+ },
+ {
+  "s": "Measure twice, cut once, apologise to the wood.",
+  "ctx": [
+   "Mr. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "Every boat on this bank has a bit of me in it now.",
+  "ctx": [
+   "Mr. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "Good timber remembers the tree.",
+  "ctx": [
+   "Mr. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "My wife lights the lamps; I mend the posts they hang on. Teamwork.",
+  "ctx": [
+   "Mr. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "Lamplighter",
+  "ctx": [
+   "what Mrs. Ishida does (journal)"
+  ]
+ },
+ {
+  "s": "I light the street lanterns. Little lamps. Somebody has to, now the big one's lit again.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "Is that a real job?",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It is now. I gave it to myself the night we came home. Eleven lanterns. I've named them all.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "Good paper. Komori's best. A dab of rice paste and Ume, Kiri and Little Tora are mended.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "Little Tora?",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "The small one by the well. Burns the brightest. Like some people I've met. Thank you, Mika.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "Fetch me letter paper from Mrs. Komori's? Three of my lanterns have holes and the moths are taking liberties.",
+  "ctx": [
+   "Mrs. Ishida asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Sora showed me how to trim a wick when I was your age. She said: a lamp you can't see is just a jar of hope.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "That sounds like her.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I think about it every evening. Every lantern I light, I look up the valley afterwards. Just to check.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "Every night I light Little Tora, then I look up at the viaduct, and there's yours. Answering.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "I wave, you know. At the lamp.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I know. We can see you from here. The whole street waves back.",
+  "ctx": [
+   "Mrs. Ishida's story, said by Mrs. Ishida"
+  ]
+ },
+ {
+  "s": "Eleven lanterns. Ume's my favourite. Don't tell the others.",
+  "ctx": [
+   "Mrs. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "A trimmed wick doesn't smoke. Neither should a lamplighter.",
+  "ctx": [
+   "Mrs. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "Evening's the best part of the day. Everything gets a little glow.",
+  "ctx": [
+   "Mrs. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "My husband makes the posts. I make them useful.",
+  "ctx": [
+   "Mrs. Ishida, small talk"
+  ]
+ },
+ {
+  "s": "Postman's son, ball captain",
+  "ctx": [
+   "what Kenta does (journal)"
+  ]
+ },
+ {
+  "s": "Are you the city girl? Can you kick? We need a fourth. Yui cheats and Daichi's always in the river.",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "I can kick. Do you have a ball?",
+  "ctx": [
+   "Kenta's story, said by Mika"
+  ]
+ },
+ {
+  "s": "...We had a ball. It's in the river now. With the fish. The fish have a ball and we don't.",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "A BALL! A real one! It's even round!",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "They usually are.",
+  "ctx": [
+   "Kenta's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Our old one was more of an egg. Here, two mon, the button's in there too, and Yui's candy. She'll understand. Later.",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "Could you get us a ball from Komori's? I've got two mon and a button. That's not enough. I checked.",
+  "ctx": [
+   "Kenta asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Takamori kids say they've got a bigger ball. Bigger isn't better. Everyone knows that.",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "Do they?",
+  "ctx": [
+   "Kenta's story, said by Mika"
+  ]
+ },
+ {
+  "s": "...Their ball is very big. One day we'll play them properly. And lose properly. With dignity.",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "We played Takamori at the festival! On the viaduct! Nobody kicked the ball in the river this time.",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "Who won?",
+  "ctx": [
+   "Kenta's story, said by Mika"
+  ]
+ },
+ {
+  "s": "The river. Daichi kicked it in on purpose so the game would never end. Genius.",
+  "ctx": [
+   "Kenta's story, said by Kenta"
+  ]
+ },
+ {
+  "s": "I'm the captain. Yui says she is. She's wrong.",
+  "ctx": [
+   "Kenta, small talk"
+  ]
+ },
+ {
+  "s": "If you stand there you're in goal.",
+  "ctx": [
+   "Kenta, small talk"
+  ]
+ },
+ {
+  "s": "Dad says I run like the post: always late but always arriving.",
+  "ctx": [
+   "Kenta, small talk"
+  ]
+ },
+ {
+  "s": "Want to see me kick it over the well? Watch. ...Watch again.",
+  "ctx": [
+   "Kenta, small talk"
+  ]
+ },
+ {
+  "s": "Farmer's daughter, hopscotch champion",
+  "ctx": [
+   "what Yui does (journal)"
+  ]
+ },
+ {
+  "s": "I'm Yui. I've never lost at hopscotch. Kenta says that's because I draw the squares. That's not cheating, that's art.",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "Sounds like cheating.",
+  "ctx": [
+   "Yui's story, said by Mika"
+  ]
+ },
+ {
+  "s": "You sound like Kenta. Do you want to be on my side or wrong?",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "When I grow up I'm going to drive the Star Train. Like Genzo. With a moustache.",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "The moustache is optional.",
+  "ctx": [
+   "Yui's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Not on MY train. Dad says I should grow beans. I'll grow beans on the train. Problem solved.",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "It's spinning! See? The wind says I win. It's official.",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "I'm not sure the wind's a referee.",
+  "ctx": [
+   "Yui's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It's the only one Kenta can't argue with. Here, three mon. That's my whole bean money.",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "Bring me a pinwheel from Komori's? If it spins on the hop squares, the wind's on my side. Kenta can't argue with wind.",
+  "ctx": [
+   "Yui asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Genzo let me sit in Kobo's cab on Sunday! I pulled the whistle! Twice! He said once, but my hand slipped.",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "Slipped twice?",
+  "ctx": [
+   "Yui's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It's a very slippy whistle.",
+  "ctx": [
+   "Yui's story, said by Yui"
+  ]
+ },
+ {
+  "s": "One-two-HOP. Easy.",
+  "ctx": [
+   "Yui, small talk"
+  ]
+ },
+ {
+  "s": "Kenta's ball is always flat. Like his jokes.",
+  "ctx": [
+   "Yui, small talk"
+  ]
+ },
+ {
+  "s": "Daichi smells like river. All the time. Even at dinner.",
+  "ctx": [
+   "Yui, small talk"
+  ]
+ },
+ {
+  "s": "When I drive the train I'll stop at every house.",
+  "ctx": [
+   "Yui, small talk"
+  ]
+ },
+ {
+  "s": "Fisher's son, always in the river",
+  "ctx": [
+   "what Daichi does (journal)"
+  ]
+ },
+ {
+  "s": "I'm Daichi. I lived in the city. The city river is in a box. A concrete box. Fish hate it.",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "This one's better?",
+  "ctx": [
+   "Daichi's story, said by Mika"
+  ]
+ },
+ {
+  "s": "This one has a crab with a cog! Well, had. Rin says you took it. Was he upset? Did he pinch?",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "It's the boat! The one I wasn't watching him make! It's got a sail! It floats! I haven't tried yet but it floats!",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "He said he never noticed you.",
+  "ctx": [
+   "Daichi's story, said by Mika"
+  ]
+ },
+ {
+  "s": "He winked at me every single day. Grown-ups are bad at secrets. Here, I found these three mon in the river.",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "Mr. Ishida's making something in the boatyard. A boat, I think. A tiny one. Not that I've been watching.",
+  "ctx": [
+   "Daichi asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Dad says the river was angry the night of the flood. Mum says rivers don't get angry, they get full.",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "I think your mum's right.",
+  "ctx": [
+   "Daichi's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Me too. I like this river. It's just very big sometimes. That's allowed.",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "My boat went all the way from the dock to the sandbar! The crab rode it! Nobody believes me.",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "I believe you.",
+  "ctx": [
+   "Daichi's story, said by Mika"
+  ]
+ },
+ {
+  "s": "You've met the crab. You know what he's like.",
+  "ctx": [
+   "Daichi's story, said by Daichi"
+  ]
+ },
+ {
+  "s": "I can hold my breath for thirty seconds. Twenty. Fifteen, properly.",
+  "ctx": [
+   "Daichi, small talk"
+  ]
+ },
+ {
+  "s": "Dad says the river smells the same. I think it smells better.",
+  "ctx": [
+   "Daichi, small talk"
+  ]
+ },
+ {
+  "s": "My boat's called Little Ishida. Don't tell him.",
+  "ctx": [
+   "Daichi, small talk"
+  ]
+ },
+ {
+  "s": "Wanna see a frog? He's in my pocket. He was.",
+  "ctx": [
+   "Daichi, small talk"
+  ]
+ },
+ {
+  "s": "Market stall: flowers & pickles",
+  "ctx": [
+   "what Aiko does (journal)"
+  ]
+ },
+ {
+  "s": "Flowers for the table, pickles for the soul! Aiko's stall. You're the one who's been crossing on Rin's ferry.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "Word travels fast up here.",
+  "ctx": [
+   "Aiko's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Word travels on Sato's bicycle, and Sato talks to everyone. Well. Everyone but me. He just goes pink.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "Old Isamu from Kawabe used to buy wildflowers here every week. Yellow and blue. Then the ferry went quiet.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "His wife still talks to his photograph about them.",
+  "ctx": [
+   "Aiko's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Tsuru? Oh. Tell her the yellow ones are back in. I'll always keep a bunch for Kawabe.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "A letter. From Sato. Pale blue paper. Four pages! He spelled 'chrysanthemum' right. Nobody spells that right.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "Is that the important part?",
+  "ctx": [
+   "Aiko's story, said by Mika"
+  ]
+ },
+ {
+  "s": "...No. Give him this, would you? It's one line. I'm braver than him, but not by much.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "Sato's been hovering by my stall with something in his satchel for a week. You wouldn't know what, would you?",
+  "ctx": [
+   "Aiko asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Sato and I are walking out on Sundays. To the viaduct. On the train. He still goes pink.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "Is that a good sign?",
+  "ctx": [
+   "Aiko's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It's a lovely sign. I've got a whole stall of things that go pink in the sun. Peaches. Radishes. Postmen.",
+  "ctx": [
+   "Aiko's story, said by Aiko"
+  ]
+ },
+ {
+  "s": "Fresh flowers, crunchy pickles, both in a jar if you like.",
+  "ctx": [
+   "Aiko, small talk"
+  ]
+ },
+ {
+  "s": "The yellow ones are for remembering. The blue ones are just pretty.",
+  "ctx": [
+   "Aiko, small talk"
+  ]
+ },
+ {
+  "s": "Hana gives away more buns than she sells. I sell more pickles than I give.",
+  "ctx": [
+   "Aiko, small talk"
+  ]
+ },
+ {
+  "s": "Mind the step, the stall leans when it's happy.",
+  "ctx": [
+   "Aiko, small talk"
+  ]
+ },
+ {
+  "s": "Takamori postman",
+  "ctx": [
+   "what Mr. Sato does (journal)"
+  ]
+ },
+ {
+  "s": "Sato. Takamori post. Six doors, a bakery and a bell tower nobody writes to. Sorry, did you need something?",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "You look like you've lost something.",
+  "ctx": [
+   "Mr. Sato's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Only my nerve. I keep it in the bottom of my satchel. Under the letters. I never seem to get down to it.",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "Hirano's bag! He trusted you with it? He doesn't let RIN hold it, and she drives the boat.",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "He said somebody has to talk to both sides.",
+  "ctx": [
+   "Mr. Sato's story, said by Mika"
+  ]
+ },
+ {
+  "s": "...Take him this note, would you? It says thank you. I wrote it years ago. Here, ferry money.",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "Hirano sends Kawabe's post across with Rin. If he ever sends it with a person instead, I'd like to know.",
+  "ctx": [
+   "Mr. Sato asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "If Genzo can stand on a platform and say the hardest thing in the world, I can post one letter. Four pages.",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "Why not hand it to her yourself?",
+  "ctx": [
+   "Mr. Sato's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I'm a postman. I deliver everyone's words but mine. Please, Mika. Before I go pink again.",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "One line. 'Sunday. The viaduct. Bring buns.' She wants to see me! On a Sunday!",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "You're very pink.",
+  "ctx": [
+   "Mr. Sato's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I'm a postman who just got post. Here, take all of this, it's a special delivery fee. I insist.",
+  "ctx": [
+   "Mr. Sato's story, said by Mr. Sato"
+  ]
+ },
+ {
+  "s": "Did she… say anything? You can tell me. I'm sitting down. Well, I'll sit down.",
+  "ctx": [
+   "Mr. Sato asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Six doors and a bakery. Hana always gives me a bun for the road.",
+  "ctx": [
+   "Mr. Sato, small talk"
+  ]
+ },
+ {
+  "s": "Rain makes the ink run. I write the addresses twice.",
+  "ctx": [
+   "Mr. Sato, small talk"
+  ]
+ },
+ {
+  "s": "The bell tower gets one letter a year. From the bell foundry. Asking how it is.",
+  "ctx": [
+   "Mr. Sato, small talk"
+  ]
+ },
+ {
+  "s": "Uphill both ways. It's Takamori, it really is.",
+  "ctx": [
+   "Mr. Sato, small talk"
+  ]
+ },
+ {
+  "s": "Shepherd at the pasture",
+  "ctx": [
+   "what Mr. Oda does (journal)"
+  ]
+ },
+ {
+  "s": "Oda. I mind Hana's sheep. Well, the sheep mind themselves. I stand nearby and take responsibility.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "Five of them ran off, I heard.",
+  "ctx": [
+   "Mr. Oda's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Took a holiday. We don't say 'ran away' in front of them. They're sensitive.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "A rice ball! From Fujita's, by the wrapper? Kawabe rice! I haven't had Kawabe rice since...",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "Since the flood?",
+  "ctx": [
+   "Mr. Oda's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Since I was too proud to cross the river for it. Tastes like being young. Here. And don't tell Hana.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "Bring me a rice ball for lunch? Hana's buns are lovely, but a man can't live on buns. I've tried. Ten years.",
+  "ctx": [
+   "Mr. Oda asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Hana's giving the smithy's iron to mend the viaduct. She cried when she said it. Then she gave me a bun.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "That's very Hana.",
+  "ctx": [
+   "Mr. Oda's story, said by Mika"
+  ]
+ },
+ {
+  "s": "That's very Takamori. We feel things and then we feed people.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "Sheep went on the Sunday train. All of them. Genzo says never again. The sheep say it was their best day.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "You asked the sheep?",
+  "ctx": [
+   "Mr. Oda's story, said by Mika"
+  ]
+ },
+ {
+  "s": "I didn't have to. Look at their faces.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "Count them? I tried. They move.",
+  "ctx": [
+   "Mr. Oda, small talk"
+  ]
+ },
+ {
+  "s": "A good fence is half the job. The other half is apologising to the fence.",
+  "ctx": [
+   "Mr. Oda, small talk"
+  ]
+ },
+ {
+  "s": "The black-faced one is called Boss. He isn't, but don't tell him.",
+  "ctx": [
+   "Mr. Oda, small talk"
+  ]
+ },
+ {
+  "s": "Up here you can see weather coming an hour away.",
+  "ctx": [
+   "Mr. Oda, small talk"
+  ]
+ },
+ {
+  "s": "Bell-ringer",
+  "ctx": [
+   "what Mr. Tanabe does (journal)"
+  ]
+ },
+ {
+  "s": "Tanabe. My father rang that bell, and his before him. We left after the flood. I couldn't bear a silent tower.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "Now the Orchard Lamp's burning on top of it. I saw it from the valley road and turned the cart round. Sumi cheered for an hour.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "You rang it, didn't you? The day we came back. Not bad. A bit eager on the third stroke.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "It was my first bell.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Everyone's eager on their first bell. My first, I rang it nineteen times. The whole village came out in their nightclothes.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "Roasted. Kawabe tea, from Fujita's. My father swore by it and never admitted it.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "That seems to be the valley's hobby.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Ha! Liking the other side in secret? Oldest tradition we've got. Here.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "Bring me a tin of tea? Ringing the hours is thirsty work, and Hana only does buns.",
+  "ctx": [
+   "Mr. Tanabe asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "On Sundays I ring the bell when Kobo crosses the viaduct. Kawabe rings a pot lid back. It's not music. It's better.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "It's a conversation.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mika"
+  ]
+ },
+ {
+  "s": "That's it exactly. Ten years of silence, and now we can't stop talking.",
+  "ctx": [
+   "Mr. Tanabe's story, said by Mr. Tanabe"
+  ]
+ },
+ {
+  "s": "Six bells for morning, twelve for noon. Don't make me count the evening.",
+  "ctx": [
+   "Mr. Tanabe, small talk"
+  ]
+ },
+ {
+  "s": "A bell is a lamp you can hear.",
+  "ctx": [
+   "Mr. Tanabe, small talk"
+  ]
+ },
+ {
+  "s": "Sumi wants to ring it. She'll have to grow a bit. And stop jumping on the rope.",
+  "ctx": [
+   "Mr. Tanabe, small talk"
+  ]
+ },
+ {
+  "s": "The tower sways in a high wind. So do I.",
+  "ctx": [
+   "Mr. Tanabe, small talk"
+  ]
+ },
+ {
+  "s": "Bell-ringer's daughter",
+  "ctx": [
+   "what Sumi does (journal)"
+  ]
+ },
+ {
+  "s": "I'm Sumi! We came home because the lamp's on top of Dad's tower! I was born here but I don't remember it.",
+  "ctx": [
+   "Sumi's story, said by Sumi"
+  ]
+ },
+ {
+  "s": "What do you think so far?",
+  "ctx": [
+   "Sumi's story, said by Mika"
+  ]
+ },
+ {
+  "s": "It's got sheep! And a bakery! And Hiro, who's annoying, and Nao, who's my best friend since Tuesday.",
+  "ctx": [
+   "Sumi's story, said by Sumi"
+  ]
+ },
+ {
+  "s": "Red and gold! It's perfect! The bell's going to be so pleased.",
+  "ctx": [
+   "Sumi's story, said by Sumi"
+  ]
+ },
+ {
+  "s": "Do bells get pleased?",
+  "ctx": [
+   "Sumi's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Dad says it rings sweeter on sunny days. That's pleased. Here's my money. All of it. It's three.",
+  "ctx": [
+   "Sumi's story, said by Sumi"
+  ]
+ },
+ {
+  "s": "Can you get me a pinwheel? I want to stick it on the tower rail so the bell knows which way the wind is.",
+  "ctx": [
+   "Sumi asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "I rode the Star Train! Dad let me ring the bell for it. Only once. I rang it once. Mostly once.",
+  "ctx": [
+   "Sumi's story, said by Sumi"
+  ]
+ },
+ {
+  "s": "Like father, like daughter.",
+  "ctx": [
+   "Sumi's story, said by Mika"
+  ]
+ },
+ {
+  "s": "He says I'm eager on the third stroke. I said everyone is.",
+  "ctx": [
+   "Sumi's story, said by Sumi"
+  ]
+ },
+ {
+  "s": "The bell's called Big Hiro. Not after Hiro. Hiro wishes.",
+  "ctx": [
+   "Sumi, small talk"
+  ]
+ },
+ {
+  "s": "I'm fast. Faster than Nao. Not faster than sheep.",
+  "ctx": [
+   "Sumi, small talk"
+  ]
+ },
+ {
+  "s": "Dad says the tower can see Kawabe. I can see Kawabe too, from the steps.",
+  "ctx": [
+   "Sumi, small talk"
+  ]
+ },
+ {
+  "s": "Hop, hop, skip, turn. That's the rule.",
+  "ctx": [
+   "Sumi, small talk"
+  ]
+ },
+ {
+  "s": "Takamori's self-appointed team captain",
+  "ctx": [
+   "what Hiro does (journal)"
+  ]
+ },
+ {
+  "s": "Halt! Who goes there! Oh, the ferry girl. I'm Hiro, captain of everything in Takamori under twelve.",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "Everything?",
+  "ctx": [
+   "Hiro's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Ball, tag, and the sheep-counting club. Nao says she's captain of tag. She's vice-captain. I decided.",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "Is it true Kawabe kids eat fish for breakfast? And lunch? And swim with their clothes ON?",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "Sometimes. They say you have a giant ball.",
+  "ctx": [
+   "Hiro's story, said by Mika"
+  ]
+ },
+ {
+  "s": "...It's normal-sized. We said giant to scare them. Don't tell them. Actually, do. It's working.",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "Team spirit! One for me, one for Nao, one for Sumi, and the rest for the captain's emergency fund.",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "That's most of the bag.",
+  "ctx": [
+   "Hiro's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Captaincy is a heavy burden. Here, four mon. That's the team's whole treasury.",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "Bring us a bag of red-bean candy? It's for team spirit. Team spirit costs candy. Everyone knows.",
+  "ctx": [
+   "Hiro asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "We played Kawabe on the viaduct. Kenta's actually good. I told him he's vice-captain of both villages.",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "Did he accept?",
+  "ctx": [
+   "Hiro's story, said by Mika"
+  ]
+ },
+ {
+  "s": "He said he's captain. We're having a meeting about it. On Sunday. On the train.",
+  "ctx": [
+   "Hiro's story, said by Hiro"
+  ]
+ },
+ {
+  "s": "Captain's orders: nobody kicks it in the sheep.",
+  "ctx": [
+   "Hiro, small talk"
+  ]
+ },
+ {
+  "s": "I'm not short, the plateau's high.",
+  "ctx": [
+   "Hiro, small talk"
+  ]
+ },
+ {
+  "s": "Hana gives a bun to whoever wins. I win a lot. For the team.",
+  "ctx": [
+   "Hiro, small talk"
+  ]
+ },
+ {
+  "s": "Kawabe kids are probably fine. Probably.",
+  "ctx": [
+   "Hiro, small talk"
+  ]
+ },
+ {
+  "s": "Quiet one, never misses",
+  "ctx": [
+   "what Nao does (journal)"
+  ]
+ },
+ {
+  "s": "...Hi. I'm Nao. Hiro does the talking. I do the scoring.",
+  "ctx": [
+   "Nao's story, said by Nao"
+  ]
+ },
+ {
+  "s": "Scoring goals or scoring points?",
+  "ctx": [
+   "Nao's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Both. And I keep the book of who owes who a bun. Hiro owes everyone.",
+  "ctx": [
+   "Nao's story, said by Nao"
+  ]
+ },
+ {
+  "s": "Blue paper. Good. I'll draw the rules on it, so they can practise. It's only fair if they know them.",
+  "ctx": [
+   "Nao's story, said by Nao"
+  ]
+ },
+ {
+  "s": "Hiro said you'd beat them.",
+  "ctx": [
+   "Nao's story, said by Mika"
+  ]
+ },
+ {
+  "s": "We will. Fairly. That's the best way to beat someone. Then they stay friends.",
+  "ctx": [
+   "Nao's story, said by Nao"
+  ]
+ },
+ {
+  "s": "Could you get me some letter paper? I want to write to the Kawabe kids. Hiro mustn't know. It's diplomacy.",
+  "ctx": [
+   "Nao asks Mika for something (also shown in the journal)"
+  ]
+ },
+ {
+  "s": "Kenta wrote back. Through Sato and Hirano. He says they've been practising and they're ready.",
+  "ctx": [
+   "Nao's story, said by Nao"
+  ]
+ },
+ {
+  "s": "Diplomacy works.",
+  "ctx": [
+   "Nao's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Diplomacy and a stamp. Mr. Sato let me lick it.",
+  "ctx": [
+   "Nao's story, said by Nao"
+  ]
+ },
+ {
+  "s": "Score: us 4, wind 2.",
+  "ctx": [
+   "Nao, small talk"
+  ]
+ },
+ {
+  "s": "Hiro owes me three buns.",
+  "ctx": [
+   "Nao, small talk"
+  ]
+ },
+ {
+  "s": "I like the bell steps. You can see everything and nobody sees you.",
+  "ctx": [
+   "Nao, small talk"
+  ]
+ },
+ {
+  "s": "Sumi runs fast. I aim better.",
+  "ctx": [
+   "Nao, small talk"
+  ]
+ },
+ {
+  "s": "Kawabe rice, a pickled plum in the middle, wrapped in a leaf.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "Yellow, crunchy, loud. Grandpa Ōta has opinions about it.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "Three sweet rice dumplings on a stick. Pink, white and green.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "A tin of roasted tea. Smells like a warm kitchen.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "Komori's red-bean candy. One each. Two if you've been brave.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "Red and gold paper on a stick. Spins at the slightest breeze.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "A proper round ball. Not an egg. Bounces.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "Pale blue paper and a little pot of ink, for words that matter.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "Yellow and blue wildflowers from the Takamori meadows.",
+  "ctx": [
+   "shop goods description"
+  ]
+ },
+ {
+  "s": "Fujita Grocery",
+  "ctx": [
+   "shop name"
+  ]
+ },
+ {
+  "s": "Welcome, welcome! Mind the radish barrel.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): hello"
+  ]
+ },
+ {
+  "s": "Ah, Sora's girl. What'll it be?",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): hello"
+  ]
+ },
+ {
+  "s": "Fresh rice balls! Well, this morning's.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): hello"
+  ]
+ },
+ {
+  "s": "Come in, come in, the tea's brewing.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): hello"
+  ]
+ },
+ {
+  "s": "Mind how you go!",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): bye"
+  ]
+ },
+ {
+  "s": "Come back when your pockets jingle.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): bye"
+  ]
+ },
+ {
+  "s": "Say hello to the river for me.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): bye"
+  ]
+ },
+ {
+  "s": "Thank you kindly!",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): bye",
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Short a mon or two? Sell me a fish and we're even.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): broke"
+  ]
+ },
+ {
+  "s": "Ah. The purse says no. Chestnuts say yes, bring me some.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): broke"
+  ]
+ },
+ {
+  "s": "No money, no rice ball. I'm sorry, love, my father would haunt me.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery): broke"
+  ]
+ },
+ {
+  "s": "Eat it while it's warm-ish!",
+  "ctx": [
+   "shopkeeper (Fujita Grocery) after a sale"
+  ]
+ },
+ {
+  "s": "Don't let Ōta smell it on you.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery) after a sale"
+  ]
+ },
+ {
+  "s": "Roasted. The good stuff.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery) after a sale"
+  ]
+ },
+ {
+  "s": "Pink first. It's the rule.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery) after a sale"
+  ]
+ },
+ {
+  "s": "A fine fish! I'll grill it for the lunch crowd.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery) after a sale"
+  ]
+ },
+ {
+  "s": "Plump! Into the roasting pan.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery) after a sale"
+  ]
+ },
+ {
+  "s": "Good forest mushroom, that.",
+  "ctx": [
+   "shopkeeper (Fujita Grocery) after a sale"
+  ]
+ },
+ {
+  "s": "Komori Sweets & Paper",
+  "ctx": [
+   "shop name"
+  ]
+ },
+ {
+  "s": "Welcome, dear. Something sweet, or something to write on?",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): hello"
+  ]
+ },
+ {
+  "s": "Mind the pinwheels, they're shy.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): hello"
+  ]
+ },
+ {
+  "s": "Ah, the girl who writes on blue paper.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): hello"
+  ]
+ },
+ {
+  "s": "Come in! Kenta's counted his coins three times already.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): hello"
+  ]
+ },
+ {
+  "s": "Write to someone today!",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): bye"
+  ]
+ },
+ {
+  "s": "Don't eat it all at once. Or do.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): bye"
+  ]
+ },
+ {
+  "s": "Goodbye, dear!",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): bye"
+  ]
+ },
+ {
+  "s": "Spin it facing the river.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): bye"
+  ]
+ },
+ {
+  "s": "Not quite enough, dear. Come back after an errand or two.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): broke"
+  ]
+ },
+ {
+  "s": "Ah, a few mon short. The candy will wait for you.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): broke"
+  ]
+ },
+ {
+  "s": "Pockets light today? Mine were too, at your age.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper): broke"
+  ]
+ },
+ {
+  "s": "One for you, one for later.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper) after a sale"
+  ]
+ },
+ {
+  "s": "Hold it up! There, it's spinning.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper) after a sale"
+  ]
+ },
+ {
+  "s": "Blue for good news.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper) after a sale"
+  ]
+ },
+ {
+  "s": "Somebody's going to be very happy.",
+  "ctx": [
+   "shopkeeper (Komori Sweets & Paper) after a sale"
+  ]
+ },
+ {
+  "s": "Takamori Market Stall",
+  "ctx": [
+   "shop name"
+  ]
+ },
+ {
+  "s": "Flowers for the table, pickles for the soul!",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): hello"
+  ]
+ },
+ {
+  "s": "Hello, ferry girl! Fresh today.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): hello"
+  ]
+ },
+ {
+  "s": "Step up, step up! Mind the lean.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): hello"
+  ]
+ },
+ {
+  "s": "Back again? Good taste.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): hello"
+  ]
+ },
+ {
+  "s": "Come again!",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): bye"
+  ]
+ },
+ {
+  "s": "Give the flowers some water!",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): bye"
+  ]
+ },
+ {
+  "s": "Mind the hill on the way down.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): bye"
+  ]
+ },
+ {
+  "s": "Say hello to Kawabe for me!",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): bye"
+  ]
+ },
+ {
+  "s": "Ah, not quite. I can't do discounts, Hana does enough of those.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): broke"
+  ]
+ },
+ {
+  "s": "Short a mon? Bring me mushrooms from the forest.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): broke"
+  ]
+ },
+ {
+  "s": "Next time, love. The flowers aren't going anywhere. Well, they'll wilt, but slowly.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall): broke"
+  ]
+ },
+ {
+  "s": "Yellow for remembering.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall) after a sale"
+  ]
+ },
+ {
+  "s": "Crunchy! Crunch loudly.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall) after a sale"
+  ]
+ },
+ {
+  "s": "Rice from across the river. Don't tell Hana.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall) after a sale"
+  ]
+ },
+ {
+  "s": "Lovely. Hana will want these for her buns.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall) after a sale"
+  ]
+ },
+ {
+  "s": "Ooh, forest ones.",
+  "ctx": [
+   "shopkeeper (Takamori Market Stall) after a sale"
+  ]
+ },
+ {
+  "s": "Morning, Hirano. Any post for me?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "A bill, a seed catalogue, and a bill.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Keep the bills. I'll take the catalogue.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Sora's girl bought a rice ball from you yet?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Haggled me down a mon. Proud of her.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Sora haggled too. Family trait.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Eleven doors on my round again. Full houses!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Full houses, empty shelves. I've sold out of tea.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Best problem a grocer ever had.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I'm ordering buns from Hana. Takamori buns!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Does Ōta know?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ōta will find out when he's eating one.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You'll scrub a hole in that sheet, Emi.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It came with the hole. I'm just making it tidier.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Sora's girl walked past. Waved at me.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "She waves like Sora. Whole arm.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Whole heart, Sora used to say.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Goro snores again. I missed it, Tsuru.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Give it a month. You'll miss the quiet.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ha! Probably.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Leaves in the washing water already.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Autumn rinse. Free with every sheet.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Isamu loved autumn. Said the river wore red.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ice at the edges this morning.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Then wash quick and gossip slow, dear.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Letter for you, Mrs. Tsuru. In crayon again.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "From my great-grandson. He draws me as a cat.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It's a good likeness.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Cheeky man. Come in for tea.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You used to carry Sora's letters to the city.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Every week. Blue envelopes.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "And now her girl is here. Funny old river.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I sent the Takamori post with Mika today.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Not with Rin? Hirano, that's practically a visit.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Don't make it a big thing.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It's a very big thing.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Goro Nakano! The city spat you back out.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I spat it out, Kubo. Too much concrete.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Welcome home, you old trout.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "My scarecrow's wearing your shirt, you know.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "My WHAT? That's my lucky shirt!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Crows agree. They won't go near it.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Hot one. Fish are hiding under the dock.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Beans are hiding under the leaves. Wise beans.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "So it was nobody's fault. Or everybody's.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I left, Kubo. That's my bit of it.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "And you came back. That's your other bit.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "How are the little ones, Miss Endo?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Kenta ate a crayon. Yui says it's art.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Yui says everything's art.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Have you seen Daifuku? He's not come home.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That cat? He has five homes on this street.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Mine's the one with the good cushion.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Daifuku's on the boathouse roof. Sulking.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "What's he sulking about?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Fish. The lack of it.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ah. A Kawabe cat, then.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I'm trying chestnut candy this year.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "For the star-fall? Save me one.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I'll save you two. You're a good customer.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "The children paste gold stars on their sums.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That's my gold paper. They've cleared me out.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Best marks I've ever given.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "All eleven lit. Little Tora's the brightest.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You say that every night.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It's true every night.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I made the Nakano boy a boat.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "The boy who stared at you for a week?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "He thinks I didn't notice.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Everyone noticed, dear.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Look, the Orchard Lamp. Across the river.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Two lamps. Like two houses with the light on.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Like neighbours.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Snow on the lantern hoods. Mind the posts.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I mind the posts. You mind your fingers.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "There it is. The Viaduct Lamp.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "All four, every night now.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I still look. Every night. Just to check.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That was IN. I'm captain, I say it was in.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You can't be captain AND referee.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I can if nobody else wants to.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I want to!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You stepped on the line.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You drew the line under my foot!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That's called planning.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Takamori kids have a GIANT ball.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Who said?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Everyone. Rin heard it from a sheep.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Nao from Takamori wrote us the rules.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Their rules or real rules?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Fair rules. She drew pictures.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "...They're good pictures.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Snowball rules: no ice in the middle.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Says who?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Says me, after last time.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Letters for you, Aiko.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Again? You came by an hour ago.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Did I? Well. This one's… also a bill.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Flowers for your table, Mr. Sato?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I don't have a table. I mean, I do. Yes.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "The yellow ones?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Whichever you like. I mean, yes.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Your satchel's very full today.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It's mostly… nerve. At the bottom.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Is that a joke?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I'm not sure yet.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You've no gloves. Your hands are blue.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ink. Mostly ink. Some cold.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Here. Hold the tea jar a minute.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Sunday. The viaduct. You're bringing buns.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Three. Hana says three is traditional.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Then three it is.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Any pickles for a man who lost five sheep?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "They came back, Oda.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Then pickles for a man who found five sheep.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Sato went pink again this morning.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "He's been pink since spring.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Since five springs, Oda.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Mushrooms coming down from the forest!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Nobody's been up there since Kiku left.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That girl has. With a fox.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I'm keeping yellow flowers for Kawabe again.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "For Tsuru?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "For whoever crosses. Somebody always will now.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Tanabe! You're back. The bell sounds right again.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It sounded right without me. Just lonely.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Sumi tried to climb the bell rope.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "How far did she get?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Far enough to ring it upside down.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Bit of mist on the river this morning.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I rang the seven anyway. Mist can hear.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Hana and Ōta both stood up on that platform.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ten years too late.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Better than eleven.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Captain's orders: you're in goal.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I was in goal yesterday.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You're very good at it.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That's not a reason.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You owe me three buns.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Two.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It's in the book.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "...Three.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Too hot for tag. Let's play shade.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "What's shade?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "We sit in it. First to move loses.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I wrote to the Kawabe kids.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You WHAT? That's fraternising!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "It's diplomacy. Also, they're nice.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Sora's granddaughter came on the last train.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Clearing out the cottage, I heard.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Doesn't look like a girl who clears off.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "They say Sora's girl lit the Mill Lamp.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "With a star, I heard. A talking one.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Well. She is Sora's.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Two lamps lit. Can you believe it?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I keep looking out the window to check.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Even the Forest Lamp's burning now.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Kiku would be glad. Wherever she is.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ten years since the Star Train ran.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Genzo still oils Kobo every morning.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Hope's a kind of grease, I suppose.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Going on the Sunday train?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Wouldn't miss it. Genzo waves at everyone.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "He waved at a cow last week.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Blossom in my tea again.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That's spring for you. Drink round it.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Hot enough to cook rice on the step.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Don't tell Fujita. He'll charge for it.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Smell that? Somebody's roasting chestnuts.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Somebody should roast them near me.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Snow on the viaduct. Like sugar.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "My grandmother said snow is how stars rest.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Then let's be worth looking at.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Tag, you're it!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "I wasn't playing!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You are now!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "If you could have one wish?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "A ball that comes back by itself.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "That's a dog.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Is it true there's a bear in the forest?",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Big as a house. Asleep, mostly.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Mostly?!",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Looks like rain later.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "You said that yesterday.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "And one day I'll be right.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ten years of blaming the other side.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "And it was the river all along.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "The river, and us not watching.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Look at all those stars.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Feels like they're looking back.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Three buns each at the festival, Hana says.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "Ōta took four.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
+  "s": "And said they were dry. With his mouth full.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
   "s": "Talk to the villager",
   "ctx": [
    "UI (src/game/director.js)"
@@ -5413,7 +9340,8 @@
  {
   "s": "Talk to {name}",
   "ctx": [
-   "UI (src/game/director.js)"
+   "UI (src/game/director.js)",
+   "UI (src/game/townlife.js)"
   ]
  },
  {
@@ -5619,7 +9547,8 @@
   "s": "Received: {item}",
   "ctx": [
    "UI (src/game/director.js)",
-   "UI (src/game/scenes.js)"
+   "UI (src/game/scenes.js)",
+   "UI (src/game/townlife.js)"
   ]
  },
  {
@@ -5834,6 +9763,66 @@
   "s": "Light the trackside lantern",
   "ctx": [
    "UI (src/game/scenes.js)"
+  ]
+ },
+ {
+  "s": "Shop at {shop}",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "+{n} mon",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Gave: {item}",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Lovely day for it.",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Buy {item} ({price} mon)",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Sell {item} (+{price} mon, have {n})",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Just chat",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Goodbye",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "You have {n} mon.",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Hm, not today.",
+  "ctx": [
+   "UI (src/game/townlife.js)"
   ]
  },
  {
@@ -6162,13 +10151,49 @@
   ]
  },
  {
-  "s": "{n} of {total} friends made. Walk up to a creature and press {act} to say hello.",
+  "s": "{n} of {total} neighbours met. Talk to people in Kawabe and Takamori; some will ask for a hand.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Purse: {n} mon",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Someone in the valley",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "You have heard their story.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "They may have more to tell later.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
  },
  {
   "s": "Not met yet",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "{n}/{total}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "{n} of {total} friends made. Walk up to a creature and press {act} to say hello.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -6384,6 +10409,12 @@
  },
  {
   "s": "Friends",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Neighbours",
   "ctx": [
    "menu / screen text"
   ]

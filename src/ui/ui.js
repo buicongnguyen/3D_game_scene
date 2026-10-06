@@ -188,7 +188,7 @@ export class UI {
       const it = ITEMS[k];
       const d = document.createElement('div');
       d.className = 'inv';
-      d.innerHTML = `<img alt="" src="${this.icon(it.icon)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph'}))"><span>${tx(it.name)}${n > 1 ? ` ×${n}` : ''}</span>`;
+      d.innerHTML = `<img alt="" src="${this.icon(it.icon)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph'}))"><span>${tx(it.name)}${n > 1 || k === 'mon' ? ` ×${n}` : ''}</span>`;
       el.appendChild(d);
     }
   }
@@ -626,6 +626,12 @@ export class UI {
       const photos = this.game.director?.album() || {};
       body.innerHTML = `<p>${esc(tx('Every Star Lamp you light throws a party. Each one leaves a photo here.'))}</p><div class="album">` +
         ALBUM.map((a, i) => `<div class="polaroid" style="--tilt:${[-2, 1.5, -1, 2][i % 4]}deg">${photos[a.id] ? `<img alt="" src="${esc(photos[a.id])}">` : '<div class="blank">★</div>'}<p>${esc(tx(a.title))}</p></div>`).join('') + '</div>';
+    } else if (tab === 'folk') {
+      const rows = this.game.director?.town?.journal() || [], met = rows.filter(r => r.met);
+      body.innerHTML = `<p>${esc(tx('{n} of {total} neighbours met. Talk to people in Kawabe and Takamori; some will ask for a hand.', { n: met.length, total: rows.length }))}</p>` +
+        `<p>${esc(tx('Purse: {n} mon', { n: q.mon || 0 }))}</p><div class="cards">` +
+        rows.map(r => this.cardHTML(r.met, null, r.met ? tx(r.name) : tx('Someone in the valley'), r.met ? (r.ask ? tx(r.ask) : r.done >= r.total ? tx('You have heard their story.') : tx('They may have more to tell later.')) : tx('Not met yet'),
+          r.met ? tx(r.role) : '', r.met && r.total ? tx('{n}/{total}', { n: r.done, total: r.total }) : '')).join('') + '</div>';
     } else if (tab === 'friends') {
       const met = q.friends || {}, n = FRIENDS.filter(f => met[f.id]).length;
       body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press {act} to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +

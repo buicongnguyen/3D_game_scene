@@ -1197,7 +1197,8 @@ def build_villager(kind):
     face_tints(body, hd, k, blush={'man': 0.3, 'woman': 0.6, 'kid': 0.75}[kind], az=40)
     style = {'man': dict(energy=0.9, arm_swing=0.9), 'woman': dict(energy=0.9, idle_hands=PA.hands_clasped_front, sway=1.1),
              'kid': dict(energy=1.35, bounce=1.4, arm_swing=1.3, step=1.05)}[kind]
-    anims.humanoid_clips(arm, b, 'villager-' + kind, ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer'], **style)
+    anims.humanoid_clips(arm, b, 'villager-' + kind, ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Run', 'Jump', 'Bow', 'Interact', 'Hammer',
+                                                     'Sweep', 'Carry', 'Sit', 'Throw', 'Kick'], **style)
     return export_rigged('villager-' + kind, arm)
 
 

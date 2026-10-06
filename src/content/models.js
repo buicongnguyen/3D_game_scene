@@ -11,7 +11,7 @@ export const NATURE = [...TREES, ...TREES.map(t => `${t}-lod`), 'bush-a', 'bush-
   'lilypads', 'flowers-a', 'flowers-b', 'mushrooms', 'log', 'stump', 'beehive-branch', 'grass-tuft'];
 export const PROPS = ['star-kite', 'hand-lantern', 'fishing-rod', 'hammer', 'hearth', 'crate', 'barrel', 'sacks', 'fence-wood', 'fence-bamboo', 'wall-stone',
   'bench', 'well', 'market-stall', 'street-lamp', 'postbox', 'signpost', 'cart', 'haybale', 'scarecrow', 'sheep-pen', 'laundry-line',
-  'flowerpot', 'noren-lantern', 'fireworks-rack', 'festival-stall'];
+  'flowerpot', 'noren-lantern', 'fireworks-rack', 'festival-stall', 'ball', 'broom', 'bucket', 'basket', 'letters', 'hoe'];
 export const ITEMS = ['cog', 'peach', 'chestnut', 'mushroom-item', 'honeycomb', 'journal-page', 'fallen-star', 'peach-bun', 'plate-trout',
   'bowl-chestnuts', 'timber', 'iron-bolts', 'key'];
 export const INTERIORS = ['interior-cottage', 'interior-bakery', 'interior-mill', 'interior-station',

@@ -384,8 +384,176 @@ def hang(A, frames=72):
     return 'Hang', frames, pose, True
 
 
+# ---------------------------------------------------------------- villagers (Town Life)
+
+SEAT_H = 0.45   # Sit: seat top above the feet's ground (m); the clip drops the hips onto it
+
+
+def hop(A, frames=24):
+    """In-place two-footed hop (hopscotch); the root stays put, the runtime may slide it forward
+    during the air time (p 0.3-0.7). Kids get more height from their bounce style."""
+    hgt = 0.13 * A.st['bounce']
+
+    def pose(p):
+        s = {}
+        crouch = env(p, 0.0, 0.18, 0.22, 0.3) + 0.8 * env(p, 0.68, 0.74, 0.78, 0.98)
+        air = bump(p, 0.24, 0.74)
+        hz = -0.06 * A.k * crouch + hgt * A.k * air
+        s['hips@loc'] = (0, 0, hz)
+        s['hips'] = (10 * crouch - 3 * air, 0, 0)
+        s['spine'] = (6 * crouch - 4 * air, 0, 0)
+        s['chest'] = (3 * crouch - 3 * air, 0, 0)
+        s['head'] = (-4 * crouch + 4 * air, 0, 0)
+        tuck = air
+        for S in 'LR':
+            A.plant(s, S, (0, 0.01 * A.k * tuck, 0.1 * A.k * tuck * A.st['bounce']), pitch=22 * tuck)
+            arms = env(p, 0.12, 0.3, 0.62, 0.9)
+            s['upperarm_' + S] = add(A.arm_rot(S, fwd=-22 * crouch, out=6),
+                                     tuple(x * arms for x in A.arm_rot(S, fwd=28, out=26, twist=0)))
+            s['forearm_' + S] = (-(20 + 30 * arms), 0, 0)
+            s['hand_' + S] = (-8, 0, 0)
+        A.secondary(s, p, drag=0, k=2, amp=1.2, up=-15 * air)
+        return s
+    return 'Jump', frames, pose, False
+
+
+def sweep(A, frames=48):
+    """Straw-broom sweeping: two strokes per loop. Right hand low on the handle, left hand high near
+    the chest; each stroke pushes the bristles from the right foot toward the centre, then a lighter
+    lifted return. The torso turns with the stroke, feet planted wide."""
+    def pose(p):
+        s = A.standing({}, p, breathe=0.3, shift=0.2, lk=0)
+        u = (p * 2) % 1.0
+        x = (1 - ease(u / 0.55)) if u < 0.55 else ease((u - 0.55) / 0.45)   # 1 = right end, 0 = centre
+        lift = bump(u, 0.55, 1.0)
+        yaw = -10 + 16 * (1 - x)
+        s['hips@loc'] = (-0.01 * A.k * x, 0.01 * A.k, -0.03 * A.k)
+        s['hips'] = (8, 0, yaw * 0.3)
+        s['spine'] = (8, 0, yaw * 0.3)
+        s['chest'] = (6, 0, yaw * 0.3)
+        s['head'] = (14, 0, -yaw * 0.4)
+        A.plant(s, 'L', (0.03 * A.k, -0.04 * A.k, 0), yaw=8)
+        A.plant(s, 'R', (-0.04 * A.k, 0.03 * A.k, 0), yaw=-10)
+        dx = 0.06 * (x - 0.5)
+        A.arm_to(s, 'R', 1, A.L(0.12 + dx, -0.3, 0.64 + 0.02 * lift), pole=(-1, 0.6, -0.3), end_rel=(0, 0, 0))
+        A.arm_to(s, 'L', 1, A.L(0.02 + dx * 0.4, -0.16, 0.9 + 0.01 * lift), pole=(1, 0.4, -0.6), end_rel=(0, 0, 0))
+        A.secondary(s, p, drag=0, k=2, amp=0.4)
+        return s
+    return 'Sweep', frames, pose, True
+
+
+def carry(A, frames=48):
+    """Holding a bucket / basket handle in front with both hands at waist height (forearms forward);
+    loops as an idle with a gentle breath and weight shift. The prop hangs from the right grip."""
+    def pose(p):
+        s = A.standing({}, p, breathe=0.8, shift=0.4, lk=0.5)
+        s['spine'] = add(s['spine'], (-3, 0, 0))     # leans back a touch against the weight
+        s['chest'] = add(s['chest'], (-2, 0, 0))
+        s['head'] = add(s['head'], (5, 0, 0))
+        br = 0.004 * A.k * sn(p, 2)
+        for S in 'RL':
+            A.arm_to(s, S, 1, A.L(0.075, -0.27, 0.72, S) + V((0, 0, br)), pole=(A.sx(S), 0.6, -0.3),
+                     end_rel=(-30, 0, A.sx(S) * -70))
+        return s
+    return 'Carry', frames, pose, True
+
+
+def sit(A, frames=60):
+    """Sitting upright on a seat SEAT_H high, hands resting on the thighs. Rotation clip plus a hips
+    drop (hips@loc), so the runtime keeps the root ON THE GROUND directly under the hips, i.e. at the
+    seat's centre line, facing away from the backrest. Kids swing their dangling feet."""
+    k = A.k
+    hip0 = (A.hip['L'] + A.hip['R']) / 2
+    drop = (SEAT_H + 0.075 * k) - hip0.z          # hip joints sit ~7.5 cm (scaled) above the seat top
+    l_th = (A.knee['L'] - A.hip['L']).length
+    l_sh = (A.ank['L'] - A.knee['L']).length
+    kid = A.st['bounce'] > 1.2
+
+    def pose(p):
+        s = A.standing({}, p, breathe=0.9, shift=0.0, lk=0.8)
+        s['hips@loc'] = (0, 0, drop)
+        s['hips'] = (-4, 0, 0)
+        s['spine'] = add(s['spine'], (5, 0, 0))
+        s['chest'] = add(s['chest'], (3, 0, 0))
+        for S in 'LR':
+            sx = A.sx(S)
+            knee = A.hip[S] + V((sx * 0.02 * k, -l_th, drop))
+            ank_y = knee.y + 0.04 * k
+            ank_z = knee.z - l_sh * 0.97
+            swing = 0.0
+            if kid:
+                swing = sn(p, 2, 0.0 if S == 'L' else 0.5)
+            if ank_z < A.ank[S].z:               # feet reach the ground: rest them flat, a little forward
+                ank_z = A.ank[S].z
+                ank_y = knee.y - math.sqrt(max((l_sh * 0.97) ** 2 - (knee.z - ank_z) ** 2, 0)) * 0.35
+            tgt = V((A.ank[S].x + sx * 0.02 * k, ank_y - 0.07 * k * swing, ank_z + 0.03 * k * max(swing, 0)))
+            A.plant(s, S, tgt - A.ank[S], pitch=(15 * swing if kid else 0), pole=(sx * 0.1, -1, 0.2))
+            # hands on the thighs, a little in front of the hip
+            wr = A.hip[S] + V((sx * 0.01 * k, -0.17 * k, 0.07 * k + drop)) + V((0, 0, 0.003 * k * sn(p, 2)))
+            A.arm_ik(s, S, wr, pole=(sx * 0.8, 0.6, 0.0), end=(70, 0, 0))
+            s['ik']['arm_' + S]['target'] = wr
+        A.secondary(s, p, drag=2, k=1, amp=0.3)
+        return s
+    return 'Sit', frames, pose, True
+
+
+def throw(A, frames=30):
+    """Underarm toss with the right hand (ball in grip_R): back-swing 0-.4, forward swing, release at
+    p = 0.55 (frame 16 of 30), follow-through."""
+    def pose(p):
+        s = A.standing({}, 0.0, breathe=0.2, shift=0.0, lk=0)
+        back = env(p, 0.0, 0.38, 0.4, 0.55)
+        fwd = smooth((p - 0.4) / 0.2) * (1 - smooth((p - 0.75) / 0.25))
+        a = -45 * back + 85 * fwd
+        s['hips@loc'] = (0, (0.02 * back - 0.03 * fwd) * A.k, -0.02 * A.k * back)
+        s['hips'] = (4 * back, 0, -8 * back + 6 * fwd)
+        s['spine'] = (6 * back - 4 * fwd, 0, -6 * back + 6 * fwd)
+        s['chest'] = (2 * back - 3 * fwd, 0, -4 * back + 4 * fwd)
+        s['head'] = (-4 * fwd, 0, 4 * back - 6 * fwd)
+        A.plant(s, 'L', (0.0, -0.08 * A.k, 0), yaw=4)
+        A.plant(s, 'R', (-0.01 * A.k, 0.08 * A.k, 0), yaw=-10)
+        s['upperarm_R'] = A.arm_rot('R', fwd=a, out=6, twist=6)
+        s['forearm_R'] = (-(12 + 18 * fwd), 0, 0)
+        s['hand_R'] = (-15 * back + 25 * fwd, 0, 0)
+        s['upperarm_L'] = A.arm_rot('L', fwd=20 * back - 15 * fwd, out=14, twist=0)
+        s['forearm_L'] = (-25, 0, 0)
+        A.secondary(s, p, drag=0, k=2, amp=0.8 * (back + fwd))
+        return s
+    return 'Throw', frames, pose, False
+
+
+def kick(A, frames=30):
+    """Right-foot kick of a ball lying ~0.3 m (adult scale) in front of the right foot: wind-up back
+    0-.35, strike at p = 0.48 (frame 14 of 30), follow-through, recover. Left foot planted."""
+    k = A.k
+
+    def pose(p):
+        s = A.standing({}, 0.0, breathe=0.2, shift=0.0, lk=0)
+        wind = env(p, 0.0, 0.32, 0.36, 0.48)
+        hit = env(p, 0.38, 0.5, 0.58, 0.9)
+        s['hips@loc'] = (-0.03 * k * (wind + hit), 0.0, -0.02 * k * (wind + hit))
+        s['hips'] = (6 * wind - 8 * hit, 0, 0)
+        s['spine'] = (4 * wind + 6 * hit, 0, 0)
+        s['chest'] = (2 * wind + 4 * hit, 0, 0)
+        s['head'] = (8 * wind + 10 * hit, 0, 0)
+        A.plant(s, 'L', (0.0, 0.0, 0))
+        y = 0.18 * k * wind - 0.32 * k * hit
+        z = 0.12 * k * wind + 0.14 * k * hit
+        A.plant(s, 'R', (0.0, y, z), pitch=-40 * wind + 25 * hit)
+        for S in 'LR':
+            c = 1 if S == 'L' else -1
+            s['upperarm_' + S] = A.arm_rot(S, fwd=c * (20 * hit - 15 * wind), out=22 * (wind + hit) + 4, twist=0)
+            s['forearm_' + S] = (-(20 + 15 * hit), 0, 0)
+        A.secondary(s, p, drag=0, k=2, amp=1.0 * (wind + hit))
+        return s
+    return 'Kick', frames, pose, False
+
+
 def extras(A, who):
     ex = {}
+    if who.startswith('villager-'):
+        ex.update(Interact=lambda: interact(A), Hammer=lambda: hammer(A), Jump=lambda: hop(A), Sweep=lambda: sweep(A),
+                  Carry=lambda: carry(A), Sit=lambda: sit(A), Throw=lambda: throw(A), Kick=lambda: kick(A))
     if who == 'mika':
         ex.update(Aim=lambda: aim(A), Point=lambda: point(A), Cast=lambda: cast(A), Reel=lambda: reel(A),
                   Interact=lambda: interact(A), Stir=lambda: stir(A), Hammer=lambda: hammer(A),

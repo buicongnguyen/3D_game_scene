@@ -161,6 +161,7 @@ export class Scenes {
     n.ota.place(-106, 115.2, Math.PI / 2 + 0.3, y);
     n.rin.place(-107.5, 113.6, Math.PI / 2, y);
     n.hana.place(-90, 115.2, -Math.PI / 2 - 0.3, y);
+    for (const id of ['v4', 'v1', 'v5']) this.d.town?.release(id);   // the neighbours leave their day plans for the meeting
     n.v4.place(-88.5, 113.6, -Math.PI / 2, y);
     n.v1.place(-108.5, 116.3, Math.PI / 2, y);
     n.v5.place(-87, 116.2, -Math.PI / 2, y);
@@ -365,6 +366,7 @@ export class Scenes {
       const n = d.npcs[id];
       if (!n) continue;
       n.path = null;
+      this.d.town?.release(id);                 // out of their day plan (indoors, mid-errand) and into the party
       n.setVisible(true);
       n.place(x, z, facing, this.standY(x, z));
       n.setIdle('Talk');

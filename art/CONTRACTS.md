@@ -182,7 +182,11 @@ root (at origin)
 | `rin` | 1.50 m | Idle, Walk, Run, Talk, Wave *once*, Cast *once*, Reel, Pole, Cheer *once* | ≤ 12k |
 | `ota` | 1.58 m | Idle (leaning on cane), Walk (with cane), Talk, Wave *once*, Bow *once*, Sad | ≤ 12k |
 | `hana` | 1.60 m | Idle, Walk, Talk, Wave *once*, Knead, Cheer *once*, Bow *once* | ≤ 12k |
-| `villager-man`, `villager-woman`, `villager-kid` (1.72 / 1.62 / 1.20 m) | — | Idle, Walk, Talk, Wave *once*, Cheer *once* | ≤ 8k each |
+| `villager-man`, `villager-woman`, `villager-kid` (1.72 / 1.62 / 1.20 m) | — | Idle, Walk, Talk, Wave *once*, Cheer *once*, Run, Jump *once* (in-place hop, 24 f), Bow *once*, Interact *once*, Hammer, Sweep, Carry, Sit, Throw *once*, Kick *once* | ≤ 8k each |
+
+**Town Life villager clips.** Walk is 1.6 m/s and Run 4.2 m/s at 1.0x (root motion in place, scale `timeScale = speed / ref`). **Sit** bakes the hip drop onto a seat 0.45 m high (`SEAT_H` in player_anims.py): keep the root on the GROUND (y = seat base, no extra y offset), directly under the seat centre line, facing away from the backrest; the feet land about 0.3–0.6 m in front (kids dangle and swing them). **Jump** is an in-place hop (air time p 0.3–0.7); slide the root forward during it for hopscotch. **Throw** releases at frame 16/30 (p 0.55), **Kick** strikes at frame 14/30 (p 0.48). **Carry** holds a bucket/basket handle with both hands at the waist (loops, also an idle).
+
+**Held props on `grip_R`** (rotation = three Euler XYZ on the prop root; position 0 unless noted): broom with Sweep (0.603, −0.457, 3.086); bucket/basket with Carry (−0.19, −0.39, 2.21); bucket/basket/hand-lantern hanging in Walk/Idle (π, 0, 0); letters (0, 0, 0); hoe with Hammer (0.0, −1.118, −0.548) so the blade bites the ground at the strike; ball (0, 0, 0) at position (0.1, 0.03, 0) × height/1.72 for kids (0.07, 0.02, 0).
 
 Villager models use the `Villager shirt`, `Villager trousers` and
 `Villager hair` materials for runtime recolouring.
@@ -320,6 +324,12 @@ material.
 | `hand-lantern` | Sora's brass hand lantern, 0.32 m. Origin at the handle grip (the runtime parents it to `grip_R`). Node `Flame`, material `Lantern glow`. | ≤ 2k |
 | `fishing-rod` | 2.2 m bamboo rod with reel. Origin at the grip; the rod extends along −Y then up. Node `Tip`. | ≤ 800 |
 | `hammer` | Wooden mallet. Origin at the grip. | ≤ 400 |
+| `ball` | Red-and-cream rubber ball, 0.2 m. Origin at the centre. Icon `ball.webp`. (build_townlife.py) | ≤ 300 |
+| `broom` | Straw houki, 1.3 m. Origin at the lower-hand grip, handle +Y (three) 0.5 m, bristles −Y to −0.8 m. | ≤ 800 |
+| `bucket` | Wooden bucket with rope handle, 0.38 m tall. Origin at the handle top; hangs below. | ≤ 800 |
+| `basket` | Woven basket of vegetables. Origin at the handle top; hangs below. | ≤ 800 |
+| `letters` | Bundle of five letters tied with red string, 0.11 × 0.16 m. Origin at the pinched edge; extends along +Y (three). Icon `letters.webp`. | ≤ 800 |
+| `hoe` | Kuwa hoe, 1.2 m. Origin at the grip 0.12 m above the butt; blade at the +Y (three) end. | ≤ 800 |
 | `hearth` | Outdoor cooking hearth: stone ring, logs, iron pot on a tripod; node `Fire` (empty at flame base). | ≤ 3k |
 | `crate`, `barrel`, `sacks` | — | ≤ 1.2k each |
 | `fence-wood` | 2 m segment | ≤ 400 |

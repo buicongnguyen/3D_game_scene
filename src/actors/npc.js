@@ -4,6 +4,7 @@ import { placeholder } from '../engine/assets.js';
 
 const SHIRTS = ['#e0567a', '#3a8fd8', '#f2b53a', '#5fae3e', '#8a5ad8', '#e2702a', '#1fa5a0'];
 const TROUSERS = ['#2d3a5a', '#5a3a2a', '#3a4a3a', '#6a6a7a', '#2a2a3a'];
+const RUN_SPEED = 4.2;       // m/s a Run clip is authored for at 1.0x (art/CONTRACTS.md)
 const HAIR = ['#2a1d16', '#4a3020', '#1a1a1a', '#6a4a2a', '#d8d0c0', '#8a8a8a'];
 
 /**
@@ -42,6 +43,9 @@ export class NPC {
     this.path = null;
     this.speed = 1.5;
     this.visible = true;
+    // level of detail (set by the director every few frames): far people are not drawn, mid-range ones animate at a
+    // lower rate and cast no shadow. `visible` stays the logical state; `far` only hides the drawing.
+    this.far = false; this.animEvery = 1; this.animAcc = 0; this.animTick = 0; this.shadow = true;
     this.place(x, z, facing);
     this.anim?.play(this.idleClip);
   }
@@ -61,7 +65,18 @@ export class NPC {
     this.root.rotation.y = this.facing;
   }
 
-  setVisible(v) { this.visible = v; this.root.visible = v; }
+  // `visible` = shown by the story (setVisible) and not away indoors or asleep by their day plan (setHidden)
+  setVisible(v) { this.storyVisible = v; this.applyVisible(); }
+  setHidden(h) { this.hiddenBy = h; this.applyVisible(); }
+  applyVisible() { this.visible = this.storyVisible !== false && !this.hiddenBy; this.root.visible = this.visible && !this.far; }
+
+  /** Detail for this distance: tier 0 full, 1 = animate every 3rd frame and no shadow, 2 = not drawn. */
+  setDetail(tier, shadow) {
+    const far = tier >= 2;
+    if (far !== this.far) { this.far = far; this.root.visible = this.visible && !far; }
+    this.animEvery = tier === 1 ? 3 : 1;
+    if (shadow !== this.shadow) { this.shadow = shadow; this.model.traverse(o => { if (o.isMesh) o.castShadow = shadow; }); }
+  }
 
   /** Talk anchor (head height). */
   head(out = new THREE.Vector3()) { return out.copy(this.pos).add(new THREE.Vector3(0, 1.55, 0)); }
@@ -79,12 +94,14 @@ export class NPC {
     if (!this.path && !this.anim?.busy) this.anim?.play(clip);
   }
 
-  /** Walk along [[x, z], ...] then call done. */
-  walk(points, done, speed = 1.5) {
+  /** Walk along [[x, z], ...] then call done. `clip` picks Walk or Run (by speed when not given). */
+  walk(points, done, speed = 1.5, clip) {
     this.path = points.slice();
     this.speed = speed;
     this.onPathDone = done;
-    this.anim?.play(speed > 3 ? 'Run' : 'Walk', { speed: speed > 3 ? speed / 4.2 : speed / 1.6 });
+    this.walkClip = clip;
+    const run = (clip ? clip === 'Run' : speed > 3) && this.anim?.has('Run');
+    this.anim?.play(run ? 'Run' : 'Walk', { speed: run ? speed / RUN_SPEED : speed / 1.6 });
   }
 
   update(dt, colliders) {
@@ -105,7 +122,7 @@ export class NPC {
         const step = Math.min(d, this.speed * dt);
         this.pos.x += dx / d * step; this.pos.z += dz / d * step;
         this.pos.y = this.world.heightAt(this.pos.x, this.pos.z);
-        const g = colliders?.groundAt(this.pos.x, this.pos.z, this.pos.y + 0.6, 0.8);
+        const g = this.far ? null : colliders?.groundAt(this.pos.x, this.pos.z, this.pos.y + 0.6, 0.8);
         if (g && g.y > this.pos.y) this.pos.y = g.y;
         this.targetFacing = Math.atan2(dx, dz);
       }
@@ -115,6 +132,11 @@ export class NPC {
     this.facing += df * (1 - Math.exp(-dt * 7));
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.facing;
-    this.anim?.update(dt);
+    if (this.far) return;
+    // mid-range people step their animation less often (staggered so they do not all tick on the same frame)
+    this.animAcc += dt;
+    if (++this.animTick % this.animEvery) return;
+    this.anim?.update(this.animAcc);
+    this.animAcc = 0;
   }
 }

@@ -30,6 +30,12 @@ danger that night.
   each home in one of three looks, with a resident to talk to.
 - **A busier valley.** Many more villagers call out little remarks as you pass (300+ lines, in four languages),
   and cows, pigs, goats and dogs live in the villages and can be befriended.
+- **Neighbours with lives of their own.** Twenty named townsfolk keep a daily routine along the roads: the postmen
+  deliver door to door, the grocer sweeps his shop front, friends meet on benches and you can overhear them, kids play
+  ball, tag and hopscotch. Each neighbour has a small story told across the chapters, with errands that pay in **mon**.
+- **Shops.** Buy rice balls, dango, candy, a ball for the kids or flowers at Fujita Grocery, Komori Sweets & Paper and
+  the Takamori market stall, and sell your fish and forest finds. The journal's **Neighbours** tab keeps track.
+  See [docs/TOWNLIFE.md](docs/TOWNLIFE.md).
 - **Valley friends.** Say hello to rabbits, hens, Mochi the cat, the ducks, the
   sheep, a deer family, Kon the fox and Ōkuma the bear.
 - **Every lamp throws a party.** Spring's Blossom Wave (a rainbow, leaping koi,

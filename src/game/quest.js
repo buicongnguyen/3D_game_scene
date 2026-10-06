@@ -11,6 +11,7 @@ export function freshState() {
     v: SAVE_VERSION, step: STEPS[0].id, chapter: 0, season: 'spring', hour: 17.2,
     inv: {}, flags: {}, unlocked: {}, lamps: {}, pages: [], stars: [], fishLog: {}, friends: {}, keepsakes: [], treasures: {}, letters: [],
     choice: null, pos: null, playtime: 0, chatter: {}, started: false,
+    folk: {}, mon: 0, heard: [], // the neighbours' own stories ({ id: { stage, asked, met } }), Mika's coins, conversations overheard
   };
 }
 
@@ -30,6 +31,16 @@ export function migrate(saved) {
     if (!ok) s[k] = want;
   }
   s.chapter = Math.min(Math.max(0, Math.floor(s.chapter)), CHAPTERS.length - 1);
+  // the neighbours' stories: a whole number of coins, and each person's progress a clean { stage, asked, met, chat }
+  s.mon = Math.max(0, Math.floor(s.mon));
+  const folk = {};
+  for (const [id, f] of Object.entries(s.folk)) {
+    if (!f || typeof f !== 'object') continue;
+    const int = v => (Number.isFinite(v) ? Math.max(0, Math.floor(v)) : 0);
+    folk[id] = { stage: int(f.stage), asked: !!f.asked, met: !!f.met, chat: int(f.chat) };
+  }
+  s.folk = folk;
+  s.heard = s.heard.filter(h => typeof h === 'string');
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.
   if (s.step === 'c4.ride') { s.step = 'c4.board'; s.inv = { ...s.inv, lanterns: 0 }; }
   s.v = SAVE_VERSION;
