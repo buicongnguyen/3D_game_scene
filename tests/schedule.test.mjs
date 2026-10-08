@@ -182,3 +182,11 @@ test('a conditional block takes over from a plain one with the same hour while i
   assert.equal(blockAt(plan, 10, w => w.lamps <= 1).tasks[0].do, 'Sit');
   assert.equal(blockAt(plan, 16, () => true).from, 15);
 });
+
+test('a friend who starts a game calls the others over to it', () => {
+  const m = new Meetings();
+  m.play('a', 'ball', 'green', ['b']);
+  assert.deepEqual(m.games.get('a'), { game: 'ball', at: 'green', with: ['b'] });
+  m.leave('a');
+  assert.equal(m.games.size, 0);
+});

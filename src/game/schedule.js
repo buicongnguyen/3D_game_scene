@@ -16,6 +16,7 @@ import { route, pointOf, pathLength, legClear } from '../world/roads.js';
 
 export const isNight = hour => hour >= 20 || hour < 5;
 export const CHAT_WAIT = 40;
+const ALONE = 8;              // seconds a kid plays a game alone before going to find the others
 const JUMP = 0.75;            // an hour step bigger than this in one update is a timelapse: teleport, don't walk
 const wrap24 = h => ((h % 24) + 24) % 24;
 
@@ -85,9 +86,11 @@ function blockSpan(plan, b) {
 
 /** Rendezvous board shared by every planner (chat tasks). */
 export class Meetings {
-  constructor() { this.here = new Map(); }
+  constructor() { this.here = new Map(); this.games = new Map(); }
   arrive(me, partner, at) { this.here.set(me, { with: partner, at }); }
-  leave(me) { this.here.delete(me); }
+  leave(me) { this.here.delete(me); this.games.delete(me); }
+  /** A kid has started a game at a spot: the friends named in `with` may come and join (Planner.answerCall). */
+  play(me, game, at, friends) { this.games.set(me, { game, at, with: friends || [] }); }
   /** True when both have arrived for each other. */
   met(me, partner) { const a = this.here.get(me), b = this.here.get(partner); return !!(a && b && a.with === partner && b.with === me); }
 }
@@ -169,7 +172,7 @@ export class Planner {
         break;
       case 'timed':
       case 'indoors':
-        if (this.timer !== Infinity) { this.timer -= dt; if (this.timer <= 0) this.finishTimed(out); }
+        if (this.timer !== Infinity) { this.timer -= dt; if (this.timer <= 0 || this.playingAlone(dt)) this.finishTimed(out); }
         break;
       case 'wait': {
         const t = this.task();
@@ -193,16 +196,29 @@ export class Planner {
     const cur = this.task();
     if (cur?.chat || cur?.play) return false;
     const tasks = ((this.person.plan || [])[this.block] || {}).tasks || [];
+    const go = i => { this.onTimedEnd = null; this.after = null; this.phase = 'idle'; this.ti = i - 1; this.next(out); return true; };
     for (const [who, m] of this.meetings.here) {
       if (m.with !== this.id) continue;
       const i = tasks.findIndex(t => t.chat === who);
-      if (i < 0) continue;
-      this.onTimedEnd = null; this.after = null; this.phase = 'idle';
-      this.ti = i - 1;
-      this.next(out);
-      return true;
+      if (i >= 0) return go(i);
+    }
+    // a friend started a game I play too in this block: run over and join in
+    for (const [who, g] of this.meetings.games) {
+      if (who === this.id || !g.with.includes(this.id)) continue;
+      const i = tasks.findIndex(t => t.play === g.game && t.at === g.at);
+      if (i >= 0) return go(i);
     }
     return false;
+  }
+
+  /** Nobody came to play: after a short wait the kid gives up and goes on to the next thing (often the friends' game). */
+  playingAlone(dt) {
+    const g = this.meetings?.games.get(this.id);
+    if (!g) { this.aloneT = 0; return false; }
+    let n = 0;
+    for (const [who, o] of this.meetings.games) if (who !== this.id && o.game === g.game && o.at === g.at) n++;
+    this.aloneT = n ? 0 : (this.aloneT || 0) + dt;
+    return this.aloneT > ALONE;
   }
 
   flush(out) { if (out.length) this.teleportNext = false; return out; }
@@ -342,7 +358,10 @@ export class Planner {
     }
     if (t.play) {
       const spot = this.roads ? pointOf(this.roads, t.at) : null;
-      const begin = o => this.timed(o, t.t ?? 30, { type: 'play', game: t.play, at: spot ? [spot.x, spot.z] : this.pos.slice(), with: t.with || [], t: t.t ?? 30 });
+      const begin = o => {
+        this.meetings?.play(this.id, t.play, t.at, t.with);
+        this.timed(o, t.t ?? 30, { type: 'play', game: t.play, at: spot ? [spot.x, spot.z] : this.pos.slice(), with: t.with || [], t: t.t ?? 30 }, () => this.meetings?.games.delete(this.id));
+      };
       this.walkTo(out, t.at, begin, { speed: t.speed ?? 2.6 });
       return;
     }

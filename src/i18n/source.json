@@ -9766,7 +9766,55 @@
   ]
  },
  {
+  "s": "Catch, Mika!",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Over here! Over here!",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Nice throw!",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Again! Again!",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "You throw like Rin!",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Mika is on our team!",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
   "s": "Shop at {shop}",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Throw the ball",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Join the ball game",
   "ctx": [
    "UI (src/game/townlife.js)"
   ]

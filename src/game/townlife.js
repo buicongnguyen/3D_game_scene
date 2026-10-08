@@ -13,7 +13,7 @@ import { Planner, Meetings, isNight } from './schedule.js';
 import { talkTo, applyEffects, shopOffer, buy, sell, folkJournal } from './folk.js';
 import { STEPS, STEP_INDEX, ITEMS } from './story.js';
 import { BARK_RANGE } from './barks.js';
-import { tx } from '../i18n/i18n.js';
+import { tx, N_ } from '../i18n/i18n.js';
 
 const PERSON = new Map(PEOPLE.map(p => [p.id, p]));
 // how a prop sits in the right hand (grip_R: +Y along the fingers, +X the palm normal), per clip, from the review
@@ -32,6 +32,10 @@ const GRIP = {
 const LINE_TIME = 3.3;        // seconds each line of an overheard conversation stays up
 const CONVO_COOL = 40;        // a pair rests this long between conversations
 const V = new THREE.Vector3();
+const GREET = 2.2;            // a walker who meets Mika this close (and her not running) stops and says hello
+const SPACE = 0.7;            // people keep this far apart when they pass
+// what the kids call out while Mika plays ball with them
+const BALL_LINES = [N_('Catch, Mika!'), N_('Over here! Over here!'), N_('Nice throw!'), N_('Again! Again!'), N_('You throw like Rin!'), N_('Mika is on our team!')];
 
 export class TownLife {
   constructor(director) {
@@ -71,6 +75,7 @@ export class TownLife {
     this.spawnKeepers();
     this.placeBenches();
     this.ball = this.makeBall();
+    this.registerBall();
     console.info(`[town] ${this.people.length} neighbours, roads ${this.roads.nodes.length} nodes, ${Math.round(performance.now() - t0)} ms`);
   }
 
@@ -163,12 +168,21 @@ export class TownLife {
       const n = it.n;
       this.updateKeeper(it);
       if (frozen) continue;
+      if (this.courtesy(it, dt)) continue;          // stopped to say hello: the day plan waits
+      if (it.game && it.game === this.mikaPlays) continue;   // nobody leaves a game Mika is playing in
       // a scene moved them (place() drops the walk): the planner takes it as arrived and carries on from there
       if (it.plan.phase === 'walk' && !n.path) it.plan.arrived([n.pos.x, n.pos.z]);
       const cmds = it.plan.update(dt, hour, { pos: [n.pos.x, n.pos.z], ok });
       for (const c of cmds) this.exec(it, c);
     }
-    if (!frozen) this.updateGames(dt);
+    if (!frozen) { this.updateGames(dt); this.keepApart(dt); }
+    // Mika's game ended (the kids went home) or she wandered off: she is no longer playing
+    const mg = this.mikaPlays;
+    if (mg && (!this.games.has(mg.key) || Math.hypot(mg.at[0] - g.player.pos.x, mg.at[1] - g.player.pos.z) > 12)) {
+      if (mg.holder === this.mika) mg.holder = mg.kids[0] || null;
+      if (mg.flight?.to === this.mika) mg.flight = null;
+      this.mikaPlays = null;
+    }
     if (frozen || !this.ballGame || !this.games.has(this.ballGame.key)) this.ball.visible = false;
     this.updateConvos(dt, frozen);
   }
@@ -267,7 +281,117 @@ export class TownLife {
     n.setHidden(false);
     this.meetings.leave(id);
     Object.assign(P, { phase: 'idle', hidden: false, selling: false, after: null, pending: null, onTimedEnd: null });
-    it.cmd = null; it.chatWith = null;
+    it.cmd = null; it.chatWith = null; it.paused = null;
+  }
+
+  // ------------------------------------------------------------------ manners
+  /**
+   * A neighbour walking along who comes face to face with Mika (and she is not running past) stops, turns to her and
+   * waves, then goes on once she steps away. Returns true while they wait (the planner is held).
+   */
+  courtesy(it, dt) {
+    const n = it.n, p = this.g.player;
+    it.greetCool = (it.greetCool || 0) - dt;
+    if (it.paused) {
+      const w = it.paused;
+      w.t += dt;
+      n.lookAt(p.pos.x, p.pos.z);
+      if (n.pos.distanceTo(p.pos) < GREET + 1.4 && w.t < 14 && n.visible) return true;
+      it.paused = null;
+      it.greetCool = 25;
+      n.walk(w.path, w.done, w.speed, w.clip);
+      return false;
+    }
+    if (!n.path || !n.visible || n.far || it.game || (n.speed > 2.2) || it.greetCool > 0) return false;
+    if ((p.speed ?? 0) > 2.6 || p.locked || n.pos.distanceTo(p.pos) > GREET) return false;
+    // only when Mika is ahead of them, not when she is behind their back
+    const [tx_, tz] = n.path[0], hx = tx_ - n.pos.x, hz = tz - n.pos.z, mx = p.pos.x - n.pos.x, mz = p.pos.z - n.pos.z;
+    if (hx * mx + hz * mz < 0) return false;
+    it.paused = { path: n.path, done: n.onPathDone, speed: n.speed, clip: n.walkClip, t: 0 };
+    n.path = null; n.onPathDone = null;
+    n.setIdle('Idle');
+    n.anim?.play('Idle');
+    if (n.anim?.has?.('Wave')) n.anim.once('Wave', { then: 'Idle' });
+    return true;
+  }
+
+  /** People passing each other (or Mika) step a little aside instead of walking through. */
+  keepApart(dt) {
+    const p = this.g.player.pos, list = this.people.filter(x => x.n.visible && !x.n.far && !x.n.sitting);
+    const push = (n, ax, az, d) => {
+      if (!n.path) return;                       // only walkers give way; people at work stay where they are
+      const k = Math.min(SPACE - d, dt * 1.6) / (d || 1);
+      n.pos.x += ax * k; n.pos.z += az * k;
+    };
+    for (let i = 0; i < list.length; i++) {
+      const a = list[i].n;
+      const mx = a.pos.x - p.x, mz = a.pos.z - p.z, md = Math.hypot(mx, mz);
+      if (md < SPACE && Math.abs(a.pos.y - p.y) < 1.5) push(a, mx, mz, md);
+      for (let j = i + 1; j < list.length; j++) {
+        const b = list[j].n, dx = a.pos.x - b.pos.x, dz = a.pos.z - b.pos.z;
+        if (Math.abs(dx) > SPACE || Math.abs(dz) > SPACE) continue;
+        const d = Math.hypot(dx, dz);
+        if (d >= SPACE) continue;
+        push(a, dx, dz, d); push(b, -dx, -dz, d);
+      }
+    }
+  }
+
+  // ------------------------------------------------------------------ Mika plays ball
+  registerBall() {
+    const p = this.g.player;
+    // Mika as a player in the kids' game: same shape as a kid entry
+    this.mika = { mika: true, p: { id: 'mika' }, n: {
+      pos: p.pos, visible: true, far: false, path: null, barkKind: 'kid',
+      head: out => out.copy(p.pos).setY(p.pos.y + 1.25), lookAt: () => {},
+      anim: { once: (clip, o) => p.anim?.has?.(clip) && p.anim.once(clip, o), has: c => !!p.anim?.has?.(c) },
+    } };
+    this.d.interact('ballGame', null,
+      () => (this.mikaPlays && this.ballGame?.holder === this.mika ? tx('Throw the ball') : tx('Join the ball game')),
+      () => this.ballWhen(), () => this.ballAct(), 5.5,
+      () => {
+        const gm = this.ballGame;   // (asked for even while the prompt is off, so never assume a game)
+        if (this.mikaPlays || !gm) return V.copy(p.pos).setY(p.pos.y + 1);
+        return V.set(gm.at[0], this.g.world.heightAt(gm.at[0], gm.at[1]) + 1, gm.at[1]);
+      }, 0.3);
+  }
+
+  ballWhen() {
+    const gm = this.ballGame, d = this.d;
+    if (!gm || !this.games.has(gm.key) || d.busy || d.scenes.active || this.g.interiors?.active) return false;
+    if (this.mikaPlays === gm) return gm.holder === this.mika && !gm.flight;
+    return !this.mikaPlays && gm.kids.some(k => k.n.visible);
+  }
+
+  ballAct() {
+    const gm = this.ballGame;
+    if (!gm) return;
+    if (this.mikaPlays !== gm) { this.mikaPlays = gm; gm.passes = 0; gm.t = 0.6; this.shout(gm, BALL_LINES[0]); return; }
+    const kids = gm.kids.filter(k => k.n.visible);
+    if (!kids.length) return;
+    this.throwBall(gm, this.mika, kids[Math.floor(Math.random() * kids.length)]);
+  }
+
+  /** One of the kids calls out (a speech bubble with their name). */
+  shout(gm, text) {
+    const k = gm.kids.find(x => x.n.visible);
+    if (!k) return;
+    this.d.barks.ui.show(`ball:${k.p.id}`, text, out => { k.n.head(out); out.y += 0.3; return out; }, { name: tx(k.p.name || ''), life: 2.6 });
+    this.d.audio?.blip?.(1.4);
+  }
+
+  throwBall(gm, from, to) {
+    from.n.path = null;
+    from.n.lookAt(to.n.pos.x, to.n.pos.z);
+    const kick = !from.mika && Math.random() < 0.5 && from.n.anim?.has?.('Kick');
+    const clip = from.mika ? (from.n.anim.has('Cast') ? 'Cast' : 'Interact') : kick ? 'Kick' : this.clipFor(from.n, 'Throw');
+    from.n.anim?.once?.(clip, { then: from.mika ? 'Idle' : from.n.idleClip });
+    if (from.mika) this.g.player.turnTo?.(Math.atan2(to.n.pos.x - from.n.pos.x, to.n.pos.z - from.n.pos.z), 1, 50);
+    const a = new THREE.Vector3().copy(from.n.pos).setY(from.n.pos.y + (kick ? 0.1 : 0.8));
+    const b = new THREE.Vector3().copy(to.n.pos).setY(to.n.pos.y + 0.8);
+    // a beat for the wind-up before the ball leaves the hand (t starts below zero)
+    gm.flight = { a, b, t: kick ? -0.25 : -0.35, dur: 0.6 + a.distanceTo(b) * 0.09, h: kick ? 0.6 : 1.4, to };
+    if (from.mika && ++gm.passes % 3 === 0) this.shout(gm, BALL_LINES[1 + Math.floor(Math.random() * (BALL_LINES.length - 1))]);
   }
 
   // ------------------------------------------------------------------ kids' games
@@ -322,7 +446,14 @@ export class TownLife {
       if (Math.hypot(gm.at[0] - p.pos.x, gm.at[1] - p.pos.z) < mine) { this.ballGame = gm; gm.flight = null; }
     }
     const hasBall = this.ballGame === gm;
-    if (!gm.holder || !kids.includes(gm.holder)) gm.holder = kids[0];
+    // Mika plays while she stays near; walking off with the ball tosses it back first
+    let mika = this.mikaPlays === gm;
+    if (mika && (this.ballGame !== gm || Math.hypot(gm.at[0] - p.pos.x, gm.at[1] - p.pos.z) > 9)) {
+      if (gm.holder === this.mika && !gm.flight && kids.length) this.throwBall(gm, this.mika, kids[0]);
+      if (!gm.flight || gm.flight.to !== this.mika) { this.mikaPlays = null; mika = false; }
+    }
+    const players = mika ? [...kids, this.mika] : kids;
+    if (!gm.holder || !players.includes(gm.holder)) gm.holder = kids[0];
     const B = this.ball;
     if (gm.flight && !hasBall) gm.flight = null;      // only the game that has the ball throws it
     if (gm.flight) {
@@ -339,29 +470,21 @@ export class TownLife {
         if (hasBall && f.to.n.pos.distanceTo(p.pos) < 14) this.d.audio?.land?.(0.2);
       }
     } else if (hasBall) {
-      gm.holder.n.head(B.position); B.position.y -= 0.75;
+      gm.holder.n.head(B.position); B.position.y -= gm.holder === this.mika ? 0.45 : 0.75;
     }
     if (hasBall) B.visible = gm.holder.n.visible && !gm.holder.n.far;
     for (const k of kids) {
       if (k === gm.holder || k.n.path) continue;
-      const target = gm.flight ? B.position : gm.holder.n.pos;
+      const target = gm.flight ? B.position : gm.holder.n.pos;   // (Mika's pos when she holds it)
       k.n.lookAt(target.x, target.z);
       // shuffle about a little while waiting
       if (Math.random() < dt * 0.25) { const q = this.roam(gm, k.n, 3.5); if (q) k.n.walk([q], null, 1.4); }
     }
-    if (!hasBall || gm.flight || gm.t > 0 || kids.length < 2) return;
-    const others = kids.filter(k => k !== gm.holder);
-    const to = others[Math.floor(Math.random() * others.length)];
-    const from = gm.holder;
-    from.n.path = null;
-    from.n.lookAt(to.n.pos.x, to.n.pos.z);
-    const kick = Math.random() < 0.5 && from.n.anim?.has?.('Kick');
-    const clip = kick ? 'Kick' : this.clipFor(from.n, 'Throw');
-    from.n.anim?.once?.(clip, { then: from.n.idleClip });
-    const a = new THREE.Vector3().copy(from.n.pos).setY(from.n.pos.y + (kick ? 0.1 : 0.8));
-    const b = new THREE.Vector3().copy(to.n.pos).setY(to.n.pos.y + 0.8);
-    // a beat for the wind-up before the ball leaves the hand (t starts below zero)
-    gm.flight = { a, b, t: kick ? -0.25 : -0.35, dur: 0.6 + a.distanceTo(b) * 0.09, h: kick ? 0.6 : 1.4, to };
+    // Mika throws when she likes (ballAct); the kids throw on their own, to her half the time
+    if (!hasBall || gm.flight || gm.t > 0 || gm.holder === this.mika || players.length < 2) return;
+    const others = players.filter(k => k !== gm.holder);
+    const to = mika && Math.random() < 0.5 ? this.mika : others[Math.floor(Math.random() * others.length)];
+    this.throwBall(gm, gm.holder, to);
   }
 
   tagStep(gm, kids, dt) {

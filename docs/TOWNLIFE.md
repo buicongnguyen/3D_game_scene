@@ -54,6 +54,10 @@ Movement rules:
   chore or errand they are on.
 - **Hour jumps:** an hour jump over 0.75 h (a story time-lapse) teleports people instead of walking them across the
   village.
+- **Games:** a kid who starts a game calls over the friends named in its `with` list, if they have the same game in
+  their current block. A kid left alone at a game for 8 s moves on to their next task.
+- **Manners:** a walker who meets Mika face to face (within 2.2 m, and she isn't running) stops, turns to her and
+  waves, then walks on once she steps away. Walkers sidestep each other and Mika to keep 0.7 m apart.
 - **Scenes:** scenes that need a neighbour (the parties, the meeting) call `town.release(id)`. That brings them back
   into sight and resets their plan.
 
@@ -73,6 +77,13 @@ plays the stage's `ask` line. The journal's **Neighbours** tab then shows the re
 - Shops never buy or sell story items (`PROTECTED` in folk.js), nor anything a current or later step still needs.
 - Every line must stay true for the whole range in which it can play. Because stages run in order and their ranges
   end at the epilogue, a line about "next week's festival" has to survive being heard months later.
+
+## Playing ball with the kids
+
+Near a ball game, Mika can **Join the ball game**. The kids throw to her about half the time; **Throw the ball** sends
+it to one of them, and every third throw someone cheers. While she plays, the kids stay in the game. Walking more
+than 9 m away tosses the ball back and ends her turn. There is one ball in the valley: it belongs to the ball game
+nearest Mika.
 
 ## Overheard conversations
 
