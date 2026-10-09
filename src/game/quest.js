@@ -4,6 +4,7 @@
 
 import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, huntProgress, CHAPTERS } from './story.js';
 import { useStory, DEFAULT_STORY, STORIES } from './stories/index.js';
+import { cleanTricks } from '../content/tricks.js';
 
 export const SAVE_VERSION = 1;
 
@@ -14,6 +15,8 @@ export function freshState(story = DEFAULT_STORY) {
     inv: {}, flags: {}, unlocked: {}, lamps: {}, pages: [], stars: [], fishLog: {}, friends: {}, keepsakes: [], treasures: {}, letters: [],
     choice: null, pos: null, playtime: 0, chatter: {}, started: false,
     folk: {}, mon: 0, heard: [], memories: [], // the neighbours' own stories ({ id: { stage, asked, met } }), Mika's coins, conversations overheard
+    tricks: {}, fishSeen: {},   // fishSeen: fish named by lantern light on the night river (not catches)
+        // Grandma's countryside tricks: { id: { learned, best, stars, plays, intro?, note? } } (content/tricks.js)
   };
 }
 
@@ -46,6 +49,7 @@ export function migrate(saved) {
   s.folk = folk;
   s.heard = s.heard.filter(h => typeof h === 'string');
   s.memories = s.memories.filter(h => typeof h === 'string');
+  s.tricks = cleanTricks(s.tricks);
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.
   if (s.step === 'c4.ride') { s.step = 'c4.board'; s.inv = { ...s.inv, lanterns: 0 }; }
   s.v = SAVE_VERSION;

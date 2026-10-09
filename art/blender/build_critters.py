@@ -21,21 +21,25 @@ cost no extra materials. Heads and eyes are a little oversized so they read at a
   dragonfly  7 cm span   Fly (loop: wing buzz)
   butterfly  6 cm span   Fly (loop flap), Rest (wings slowly open/close); 'Butterfly wing' is tinted
                          by the runtime (material extras: variants = two sRGB hex colours)
+  frog-tree  4 cm      Idle, Croak (loop: the throat bone scales up), Hop (once, 5 cm arc), Swim (loop kick)
+  frog-pond  7 cm      same rig and clips (frog-tree x 1.75), olive with painted blotches
+  firefly    1.5 cm    Rest, Fly (loop); tail on the emissive 'Firefly glow' the runtime pulses
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from kit import *  # noqa: F401,F403
 from rig import build_armature, bind, bind_blend, ramp, skin, export_rigged, clip, FPS
 from animal_kit import S, C, pulse, window, smooth, lerp, tri_count
-from mathutils import Quaternion
+from mathutils import Quaternion, noise
 
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-ALL = ['cricket', 'spider', 'spider-web', 'ladybug', 'dragonfly', 'butterfly']
+ALL = ['cricket', 'spider', 'spider-web', 'ladybug', 'dragonfly', 'butterfly', 'frog-tree', 'frog-pond', 'firefly']
 ONLY = ALL
 if '--only' in ARGV:
     ONLY = [n.strip() for n in ARGV[ARGV.index('--only') + 1].split(',') if n.strip()]
 NO_SAVE = '--no-save' in ARGV
-BUDGET = {'cricket': 300, 'spider': 300, 'spider-web': 400, 'ladybug': 300, 'dragonfly': 300, 'butterfly': 300}
+BUDGET = {'cricket': 300, 'spider': 300, 'spider-web': 400, 'ladybug': 300, 'dragonfly': 300, 'butterfly': 300, 'frog-tree': 300, 'frog-pond': 300,
+          'firefly': 300}
 RESULTS = {}
 Xv, Yv, Zv = Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
 
@@ -645,8 +649,242 @@ def build_butterfly():
     export_critter('butterfly', arm)
 
 
+# ====================================================================== FROGS
+
+
+def scale_keys(arm, act, bone, frames, fn, loop=True):
+    """Key a bone's uniform scale into an action made by rig.clip (the throat sac inflates by scale)."""
+    arm.animation_data.action = act
+    try:
+        if act.slots:
+            arm.animation_data.action_slot = act.slots[0]
+    except Exception:
+        pass
+    pb = arm.pose.bones[bone]
+    for f in range(frames + 1):
+        p = 0.0 if (loop and f == frames) else f / frames
+        s = fn(p)
+        pb.scale = (s, s, s)
+        pb.keyframe_insert('scale', frame=f)
+    pb.scale = (1, 1, 1)
+    arm.animation_data.action = None
+
+
+def foot_fan(name, base, direction, length, spread, n, material, z=None):
+    """Webbed foot/hand: a fan of n toe tips spread around `direction` (degrees), flat on the ground."""
+    base = Vector(base)
+    d = Vector((direction[0], direction[1], 0)).normalized()
+    ring = []
+    for i in range(n):
+        a = math.radians(lerp(-spread, spread, i / (n - 1)))
+        tip = base + (Quaternion(Zv, a) @ d) * length * (1.0 if i % 2 == 0 else .82)
+        tip.z = base.z if z is None else z
+        ring.append(tip)
+    return fan(name, base + d * length * .15, [base] + ring, material, up=Zv)
+
+
+def build_frog(name, k, skin_hex, belly_hex, eye_hex, hop_h, look):
+    """Frog at real size (k = 1 is a 4 cm tree frog). Faces -Y, origin on the ground under the body.
+    One skin material (spots and stripes painted), a cream belly + throat sac material, glossy eyes
+    with a painted horizontal pupil. The throat sac is its own bone ('throat') that Croak scales up."""
+    reset()
+    skin_m = mat('Frog skin', skin_hex, rough=.32)
+    belly_m = mat('Frog belly', belly_hex, rough=.45)
+    eye_m = mat('Frog eye', eye_hex, rough=.08)
+
+    def K(x, y, z):
+        return V(x * k, y * k, z * k)
+
+    B, Br = K(0, .0030, .0088), tuple(r * k for r in (.0108, .0148, .0080))
+    Hc, Hr = K(0, -.0102, .0120), tuple(r * k for r in (.0112, .0088, .0070))
+    bones = [('root', (0, 0, 0), K(0, 0, .004), None),
+             ('body', K(0, .0120, .0090), K(0, -.0040, .0110), 'root'),
+             ('head', K(0, -.0060, .0125), K(0, -.0180, .0135), 'body'),
+             ("throat", K(0, -.0140, .0058), K(0, -.0140, .0088), 'head')]
+    legs = {}
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        sh, hand = sx(K(.0072, -.0072, .0072), s), sx(K(.0098, -.0138, .0006), s)
+        hip, knee, ankle = sx(K(.0078, .0122, .0072), s), sx(K(.0168, .0040, .0060), s), sx(K(.0118, .0172, .0022), s)
+        toe = sx(K(.0182, .0050, .0006), s)
+        legs[sd] = (sh, hand, hip, knee, ankle, toe)
+        bones += [(f'arm_{sd}', sh, hand, 'body'), (f'thigh_{sd}', hip, knee, 'body'),
+                  (f'shin_{sd}', knee, ankle, f'thigh_{sd}'), (f'foot_{sd}', ankle, toe, f'shin_{sd}')]
+    arm = build_armature(''.join(w.title() for w in name.split('-')), bones)
+
+    P = Parts()
+    P.add(sphere(f'{name} body', Br, B, skin_m, seg=7, rings=4), 'body', look['back'])
+    P.add(sphere(f'{name} belly', tuple(r * f for r, f in zip(Br, (.9, .9, .62))), B + K(0, -.0005, -.0030), belly_m,
+                 seg=5, rings=3), 'body', 1.0)
+    P.add(sphere(f'{name} head', Hr, Hc, skin_m, seg=7, rings=4), 'head', look['head'])
+    P.add(sphere(f"{name} sac", tuple(r * k for r in (.0060, .0052, .0040)), K(0, -.0140, .0060), belly_m, seg=7, rings=4),
+          'throat', 1.0)
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        ec, er = sx(K(.0066, -.0118, .0178), s), .0043 * k
+        P.add(sphere(f'{name} eye {sd}', er, ec, eye_m, seg=6, rings=4), 'head', 1.0)
+        P.add(surface_disc(f'{name} pupil {sd}', ec, (er,) * 3, sx(V(.38, -.88, .28), s), er * .66, eye_m, count=6,
+                           off=er * .03, shape=lambda a: (math.cos(a), .72 * math.sin(a))), 'head', .05)
+        sh, hand, hip, knee, ankle, toe = legs[sd]
+        elbow = sx(K(.0102, -.0098, .0042), s)
+        P.add(stick(f"{name} arm {sd}", [sh, hand + K(0, 0, .0006)], .0021 * k, skin_m, taper=.7), f'arm_{sd}',
+              look['limb'])
+        P.add(foot_fan(f'{name} hand {sd}', hand, sx(V(.25, -1, 0), s), .0040 * k, 50, 4, skin_m, z=hand.z),
+              f'arm_{sd}', look['limb'])
+        P.add(stick(f'{name} thigh {sd}', [hip, knee], .0042 * k, skin_m, verts=5, taper=.55), f'thigh_{sd}', look['leg'])
+        P.add(stick(f'{name} shin {sd}', [knee, ankle], .0025 * k, skin_m, taper=.65), f'shin_{sd}', look['leg'])
+        P.add(foot_fan(f'{name} foot {sd}', ankle + K(0, 0, -.0016), sx(V(.45, -1, 0), s), .0105 * k, 24, 4, skin_m,
+                       z=.0004 * k), f'foot_{sd}', look['limb'])
+    finish(name, arm, P, dict(rays=32, distance=.012 * k, strength=.5, ground=0.0))
+
+    acts = {}
+    # Idle (loop 3 s): breathing, the throat pumps, the head looks about
+    acts['Idle'] = clip(arm, 'Idle', 90, {
+        'body@loc': lambda p: (0, 0, .00018 * k * S(p, 3)),
+        'body': lambda p: (1.0 * S(p, 3), 0, 0),
+        'head': lambda p: (-2 * pulse(p, .55, .12), 0, 7 * S(p, 1, .2) * (1 - .5 * pulse(p, .5, .2)))})
+
+    # Croak (loop 1.2 s): the sac swells to ~2.2x and trembles, the body squeezes, the head lifts
+    def inflate(p):
+        return smooth(p / .28) * (1 - smooth((p - .62) / .26))
+    acts['Croak'] = clip(arm, 'Croak', 36, {
+        'body@loc': lambda p: (0, 0, -.0005 * k * inflate(p)),
+        'body': lambda p: (-3 * inflate(p), 0, 0),
+        'head': lambda p: (-9 * inflate(p), 0, 0)})
+
+    # Hop (once, 0.6 s): crouch, the hind legs kick straight back, in-place arc, arms reach for the landing
+    def air(p):
+        return math.sin(math.pi * (p - .25) / .55) if .25 < p < .8 else 0.0
+
+    def crouch(p):
+        return window(p, 0, .3, .5) + .7 * window(p, .78, 1.0, .5)
+
+    def kick(p):
+        return window(p, .22, .78, .25)
+    hop = {'body@loc': lambda p: (0, 0, hop_h * air(p) - .0018 * k * crouch(p)),
+           'body': lambda p: (4 * crouch(p) - 22 * window(p, .22, .52, .4) + 14 * window(p, .52, .82, .4), 0, 0),
+           'head': lambda p: (6 * window(p, .25, .6, .4), 0, 0)}
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        hop[f'thigh_{sd}'] = lambda p: (-10 * crouch(p) + 120 * kick(p), 0, 0)
+        hop[f'shin_{sd}'] = lambda p: (8 * crouch(p) - 140 * kick(p), 0, 0)
+        hop[f'foot_{sd}'] = lambda p: (120 * kick(p), 0, 0)
+        hop[f'arm_{sd}'] = lambda p: (40 * window(p, .25, .55, .4) - 35 * window(p, .55, .85, .4), 0, 0)
+    acts['Hop'] = clip(arm, 'Hop', 18, hop, loop=False)
+
+    # Swim (loop 0.8 s): a quick frog kick (legs push back and together), then a slow glide and refold
+    def ext(p):
+        return smooth(p / .22) if p < .22 else 1 - smooth((p - .3) / .65)
+    sw = {'body@loc': lambda p: (0, 0, .0006 * k * S(p, 1, .1)),
+          'body': lambda p: (-6 + 2 * ext(p), 0, 0),
+          'head': lambda p: (-4, 0, 0)}
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        sw[f"thigh_{sd}"] = (lambda s: lambda p: rot((Zv, -s * 12 * ext(p)), (Xv, 150 * ext(p))))(s)
+        sw[f"shin_{sd}"] = lambda p: (-145 * ext(p), 0, 0)
+        sw[f"foot_{sd}"] = lambda p: (125 * ext(p), 0, 0)
+        sw[f"arm_{sd}"] = (lambda s: lambda p: rot((Xv, 80), (Zv, -s * 25)))(s)
+    acts['Swim'] = clip(arm, 'Swim', 24, sw)
+
+    scale_keys(arm, acts['Idle'], 'throat', 90, lambda p: 1 + .14 * max(0.0, S(p, 6)))
+    scale_keys(arm, acts['Croak'], 'throat', 36, lambda p: 1 + .95 * inflate(p) + .05 * S(p, 9) * inflate(p))
+    scale_keys(arm, acts['Hop'], 'throat', 18, lambda p: 1.0, loop=False)
+    scale_keys(arm, acts['Swim'], 'throat', 24, lambda p: 1.0)
+    export_critter(name, arm)
+
+
+def build_frog_tree():
+    """Japanese tree frog, 4 cm: bright leaf green with a darker stripe from the nose through the eye,
+    cream belly and throat sac, big golden eyes."""
+    def head(co):
+        side = abs(co.x) > .0068 and abs(co.z - .0128) < .0017 and co.y > -.0170
+        return .14 if side else (.8 if co.z < .0095 else 1.0)
+    build_frog('frog-tree', 1.0, '#5fd42a', '#fff2c4', '#f7b52a', .05,
+               dict(back=lambda co: (.14 if abs(co.x) > .0092 and co.z > .0095 and co.y < .0060 else 1.0) *
+                    (.84 if co.z < .0070 else 1.0),
+                    head=head, limb=.9, leg=lambda co: .85 if co.z < .0035 else 1.0))
+
+
+def build_frog_pond():
+    """Pond frog, 7 cm: warm olive brown-green with dark brown blotches, a pale stripe down the back,
+    cream belly, coppery eyes."""
+    k = 1.75
+    SPOTS = [(.006, .010, .016), (-.007, .006, .016), (.009, -.001, .013), (-.010, .013, .011), (.002, .015, .015),
+             (-.004, -.004, .018), (.007, -.012, .017), (-.006, -.013, .016), (.013, .010, .008), (-.013, .002, .008),
+             (.015, .006, .004), (-.016, .008, .004)]
+
+    def K_(x, y, z):
+        return Vector((x * k, y * k, z * k))
+
+    def blotch(co, base=1.0):
+        n = max((1.0 - (co - K_(*c)).length / (.0048 * k)) for c in SPOTS)
+        mid = abs(co.x) < .0011 * k and co.z > .0130 * k        # pale dorsal stripe
+        return (1.35, 1.3, .95) if mid else ((.16, .12, .06) if n > 0 else (base, base, base))
+    build_frog('frog-pond', k, '#7f9a2e', '#fbe7b4', '#e0832e', .085,
+               dict(back=lambda co: blotch(co, .85 if co.z < .0070 * k else 1.0),
+                    head=lambda co: blotch(co, .86 if co.z < .0095 * k else 1.0),
+                    limb=lambda co: blotch(co, .9), leg=lambda co: blotch(co, .85 if co.z < .0035 * k else 1.0)))
+
+# ====================================================================== FIREFLY
+
+
+def build_firefly():
+    """Genji firefly, 1.5 cm: black wing cases, a pink-red shield with a dark cross behind the big
+    head, a pale belly and a glowing yellow-green tail (material 'Firefly glow', emissive: the runtime
+    pulses its emissiveIntensity). Fly opens the cases and buzzes the clear hind wings."""
+    reset()
+    dark = mat('Firefly body', '#2c2733', rough=.3)
+    pale = mat('Firefly pale', '#fff1e4', rough=.4, double=True)
+    glow = mat('Firefly glow', '#e6ff6a', rough=.4, emit=2.5, emit_color='#d4ff4a')
+    Ec, Er = V(0, .0018, .0034), (.0026, .0058, .0020)
+    bones = [('root', (0, 0, 0), (0, 0, .002), None),
+             ('body', (0, .002, .0032), (0, -.004, .0032), 'root')]
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        bones += [(f'elytron_{sd}', sx(V(.0005, -.0035, .0052), s), sx(V(.0005, .0060, .0052), s), 'body'),
+                  (f'wing_{sd}', sx(V(.0010, -.0026, .0046), s), sx(V(.0010, .0050, .0046), s), 'body')]
+    arm = build_armature('Firefly', bones)
+
+    P = Parts()
+    # belly (pale) and the glowing tail lantern under the back end
+    P.add(sphere('Firefly belly', (.0021, .0052, .0016), V(0, .0010, .0026), pale, seg=6, rings=3), 'body', (1.0, .86, .7))
+    P.add(sphere('Firefly lantern', (.0020, .0024, .0017), V(0, .0062, .0027), glow, seg=6, rings=3), 'body')
+    # shield (pronotum): pink-red with a dark cross painted down the middle
+    P.add(sphere('Firefly shield', (.0030, .0021, .0012), V(0, -.0042, .0042), pale, seg=7, rings=3), 'body',
+          lambda co: (.14, .12, .16) if ((abs(co.x) < .0005 and co.z > .0046) or
+                                         (abs(co.y + .0042) < .00035 and co.z > .0049)) else (1.0, .36, .32))
+    P.add(sphere('Firefly head', (.0016, .0014, .0014), V(0, -.0064, .0034), dark, seg=6, rings=3), 'body')
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        a0, a1 = (2, 104) if s > 0 else (-104, -2)
+        P.add(ell_patch(f'Firefly elytron {sd}', Ec, Er, a0, a1, math.radians(26), math.radians(176), 3, 3, dark),
+              f'elytron_{sd}', lambda co: 1.6 if abs(co.x) > .0022 else 1.0)
+        P.add(sphere(f'Firefly eye {sd}', .0011, sx(V(.0012, -.0071, .0036), s), dark, seg=5, rings=3), 'body', .4)
+        P.add(stick(f'Firefly antenna {sd}', [sx(V(.0006, -.0076, .0041), s), sx(V(.0018, -.0098, .0056), s),
+                                             sx(V(.0030, -.0114, .0058), s)], .00025, dark), 'body')
+        for kk, y in enumerate((-.0034, -.0012, .0010)):
+            P.add(stick(f'Firefly leg {sd}{kk}', [sx(V(.0012, y, .0018), s), sx(V(.0034, y * 1.2, .0012), s),
+                                                 sx(V(.0042, y * 1.35, .0001), s)], .00026, dark), 'body')
+        root = sx(V(.0010, -.0026, .0046), s)
+        out = [sx(V(.0006, -.0016, .0046), s), sx(V(.0021, .0004, .0046), s), sx(V(.0024, .0030, .0045), s),
+               sx(V(.0016, .0052, .0044), s), sx(V(.0004, .0040, .0045), s), sx(V(.0001, .0012, .0046), s)]
+        P.add(fan(f'Firefly wing {sd}', root, out, pale, up=Zv), f'wing_{sd}', (.72, .74, .8))
+    finish('firefly', arm, P, dict(rays=24, distance=.003, strength=.45, ground=0.0))
+
+    # Rest (loop 3 s, listed first so importers show it): breathing, a slow look about, a case twitch
+    clip(arm, 'Rest', 90, {
+        'body@loc': lambda p: (0, 0, .00005 * S(p, 2)),
+        'body': lambda p: (1.5 * S(p, 2), 0, 6 * S(p, 1) * pulse(p, .5, .3)),
+        'elytron_L': lambda p: (2 * pulse(p, .7, .04), -4 * pulse(p, .7, .04), 0),
+        'elytron_R': lambda p: (2 * pulse(p, .7, .04), 4 * pulse(p, .7, .04), 0)})
+
+    # Fly (loop 0.4 s): cases held open and up, hind wings spread and buzz (8 beats), body nose-up, bobbing
+    ch = {'body@loc': lambda p: (0, 0, .0010 * S(p, 1)),
+          'body': lambda p: (-18 + 3 * S(p, 1, .25), 0, 0)}
+    for s, sd in ((1, 'L'), (-1, 'R')):
+        ch[f'elytron_{sd}'] = (lambda s: lambda p: rot((Zv, -20 * s), (Yv, -64 * s), (Xv, 18)))(s)
+        ch[f'wing_{sd}'] = (lambda s: lambda p: rot((Zv, -80 * s), (Xv, 8 + 34 * S(p, 8))))(s)
+    clip(arm, 'Fly', 12, ch)
+    export_critter('firefly', arm)
+
+
 BUILDERS = {'cricket': build_cricket, 'spider': build_spider, 'spider-web': build_web, 'ladybug': build_ladybug,
-            'dragonfly': build_dragonfly, 'butterfly': build_butterfly}
+            'dragonfly': build_dragonfly, 'butterfly': build_butterfly,
+            'frog-tree': build_frog_tree, 'frog-pond': build_frog_pond, 'firefly': build_firefly}
 
 
 def main():
@@ -660,4 +898,5 @@ def main():
         save_kit('critters', have, spacing=.05)
 
 
-main()
+if __name__ == '__main__':
+    main()

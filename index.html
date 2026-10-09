@@ -79,7 +79,7 @@
       <header><h2 data-i18n>Mika's Journal</h2><button class="close" data-close="journal">✕</button></header>
       <nav class="tabs" id="journalTabs">
         <button data-tab="story" class="on" data-i18n>Story</button><button data-tab="map" data-i18n>Map</button><button data-tab="pages" id="tabPages">Sora's Pages</button>
-        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="friends" data-i18n>Friends</button><button data-tab="folk" data-i18n>Neighbours</button><button data-tab="album" data-i18n>Album</button><button data-tab="treasures" data-i18n>Treasures</button><button data-tab="help" data-i18n>Controls</button>
+        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="friends" data-i18n>Friends</button><button data-tab="tricks" data-i18n>Tricks</button><button data-tab="folk" data-i18n>Neighbours</button><button data-tab="album" data-i18n>Album</button><button data-tab="treasures" data-i18n>Treasures</button><button data-tab="help" data-i18n>Controls</button>
       </nav>
       <section id="journalBody"></section>
     </div>
@@ -92,6 +92,7 @@
         <button id="btnResume" class="primary" data-i18n>Resume</button>
         <button id="btnPauseJournal" data-i18n>Journal</button>
         <button id="btnPauseSettings" data-i18n>Settings</button>
+        <button id="btnPauseControls" data-i18n>Controls</button>
         <button id="btnSaveQuit" data-i18n>Save &amp; return to title</button>
       </nav>
     </div>
@@ -104,10 +105,18 @@
     </div>
   </div>
 
+  <div id="controls" class="overlay hidden">
+    <div class="book small">
+      <header><h2 data-i18n>Controls</h2><button class="close" data-close="controls">✕</button></header>
+      <div id="controlsBody" class="controls"></div>
+    </div>
+  </div>
+
   <div id="settings" class="overlay hidden">
     <div class="book small">
       <header><h2 data-i18n>Settings</h2><button class="close" data-close="settings">✕</button></header>
       <div class="form">
+        <button id="btnControls" class="controls-btn" type="button" data-i18n>Controls: how to play</button>
         <label><span data-i18n>Language</span> <select id="optLang"></select></label>
         <label><span data-i18n>Story for new games</span> <select id="optStory"><option value="grandma" data-i18n>A Year with Grandma</option><option value="classic" data-i18n>Starline Classic</option></select></label>
         <label><span data-i18n>Difficulty</span> <select id="optDifficulty"><option value="easy" data-i18n>Easy</option><option value="normal" data-i18n>Normal</option><option value="hard" data-i18n>Hard (aim and spark)</option></select></label>

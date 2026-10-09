@@ -12,6 +12,7 @@ import { PEOPLE } from '../src/content/townsfolk.js';
 import { GOODS, ERRANDS, SHOPS } from '../src/content/shops.js';
 import { CONVOS } from '../src/content/convos.js';
 import { HOTSPOTS, MEMORIES } from '../src/content/hotspots.js';
+import { TRICKS } from '../src/content/tricks.js';
 import { STORIES, useStory } from '../src/game/stories/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -89,6 +90,13 @@ export function collect() {
     add(h.label, `prompt: something Mika can do inside (${room})`);
     const groups = Object.entries(h.lines || {}).flatMap(([k, v]) => (k === 'grandma' ? Object.values(v) : [v]));
     for (const lines of groups) for (const l of lines) add(l, `Mika's thought indoors (${room}, ${h.kind})`);
+  }
+  // Grandma's countryside tricks: names, places, seasons and the real-world texts on the journal cards and results
+  for (const t of TRICKS) {
+    add(t.name, 'countryside trick name (journal, sign prompt, results card)'); add(t.where, 'where a countryside trick is played (journal)');
+    add(t.when, 'when a countryside trick can be played (journal, sign)'); add(t.unit, 'what a trick score counts (after the number)');
+    add(t.howReal, 'countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)');
+    add(t.why, 'countryside trick: why it works, a true fun fact for kids'); add(t.safety, 'countryside trick: safety line for kids');
   }
   for (const m of Object.values(MEMORIES)) for (const v of [m, m.grandma].filter(Boolean)) { add(v.name, 'house memory: a small found object (journal)'); add(v.text, 'house memory description (journal)'); }
 

@@ -58,11 +58,16 @@ VIEW = {
     'peach-bun': (-30, 32),
     'star-kite': (-24, 34),
     'cricket': (-40, 36), 'spider': (-28, 36), 'ladybug': (-32, 40), 'dragonfly': (-35, 76), 'butterfly': (-22, 62),
+    'frog': (-38, 24), 'firefly': (-35, 42),
+    # trick-card scenes (build_tricks.py --icons -> .tools/review/trick-scenes; render with --models there)
+    'trick-firefly': (-25, 18), 'trick-river': (-30, 30), 'trick-stars': (0, 4), 'trick-frogs': (-30, 30),
 }
 # Rigged items: the glTF importer leaves the first clip (alphabetical) on the armature; pose these explicitly.
 POSE = {'butterfly': ('Rest', 0.0), 'dragonfly': ('Fly', 0.0), 'ladybug': ('Idle', 0.0), 'spider': ('Idle', 0.0),
-        'cricket': ('Idle', 0.0)}
-GLOW = {'fallen-star': 1.0}
+        'cricket': ('Idle', 0.0), 'frog-tree': ('Idle', 0.0), 'firefly': ('Rest', 0.0)}
+# Icons named differently from their model (icon name -> model file).
+ALIAS = {'frog': 'frog-tree'}
+GLOW = {'fallen-star': 1.0, 'trick-firefly': .8, 'trick-river': .7, 'trick-stars': .6, 'firefly': .5}
 TMP = os.path.join(ROOT, '.tools', 'review', 'props', 'icons-raw')
 os.makedirs(TMP, exist_ok=True)
 os.makedirs(out_dir, exist_ok=True)
@@ -149,14 +154,15 @@ def sun(rot, energy, color, angle=6):
 
 def render(name):
     s = reset()
-    bpy.ops.import_scene.gltf(filepath=os.path.join(models, name + '.glb'))
+    model = ALIAS.get(name, name)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(models, model + '.glb'))
     bpy.context.view_layer.update()
     # the glTF importer adds a bone-display shape (an Icosphere) for rigged models: not part of the item
     shapes = {pb.custom_shape for a in bpy.data.objects if a.type == 'ARMATURE' for pb in a.pose.bones if pb.custom_shape}
     for o in shapes:
         o.hide_render = True
-    if name in POSE:
-        act = bpy.data.actions.get(POSE[name][0])
+    if model in POSE:
+        act = bpy.data.actions.get(POSE[model][0])
         for a in [o for o in bpy.data.objects if o.type == 'ARMATURE' and act]:
             a.animation_data_create()
             a.animation_data.action = act
@@ -166,7 +172,7 @@ def render(name):
             except Exception:
                 pass
             f0, f1 = act.frame_range
-            s.frame_set(int(round(f0 + (f1 - f0) * POSE[name][1])))
+            s.frame_set(int(round(f0 + (f1 - f0) * POSE[model][1])))
         bpy.context.view_layer.update()
     objs = [o for o in bpy.data.objects if o.type == 'MESH' and o not in shapes]
     ao_into_base(objs)
@@ -219,7 +225,7 @@ def render(name):
 
 raw = {}
 for n in names:
-    if not os.path.exists(os.path.join(models, n + '.glb')):
+    if not os.path.exists(os.path.join(models, ALIAS.get(n, n) + '.glb')):
         print('SKIP (no model)', n)
         continue
     raw[n] = render(n)

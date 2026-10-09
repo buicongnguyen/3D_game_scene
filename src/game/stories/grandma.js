@@ -19,6 +19,35 @@ export const STORY = {
 
   // ---------------------------------------------------------------------------------------------- dialogue
   DIALOGUE: {
+    // Grandma's countryside tricks (content/tricks.js): she teaches each one once, the first time Mika talks to her in season
+    trick_firefly_intro: [
+      ['sora', "Summer night, Mi-chan. Fireflies by the paddies. Bring a jar.", 'Talk'],
+      ['mika', "Grandma, I'm from the city. Bugs come in one setting: no."],
+      ['sora', "These ones carry their own little lamps. Sweep the net just as one glows. Ten will light your way home."],
+      ['sora', "And before bed, every one goes back. Even the nicest lamp belongs outside."],
+    ],
+    trick_river_intro: [
+      ['sora', "When the river's quiet at night, take my lantern down to the shallows by the dock.", 'Talk'],
+      ['sora', "The fish doze near the bottom, and shrimp eyes twinkle back at the light like little stars."],
+      ['mika', "Stars in the river. Sure. Next you'll tell me the frogs sing."],
+      ['sora', "They do! Another night. Ankle-deep only, Mi-chan, and I'll be watching from the bank."],
+    ],
+    trick_stars_intro: [
+      ['sora', "Clear tonight. Lie on the hill behind the cottage and look up. You lie down. My back stays in its chair.", 'Talk'],
+      ['mika', "At home I counted the stars once. It took about four seconds."],
+      ['sora', "Here you'd need all summer. Find the Big Dipper first. Its two end stars point to the North Star."],
+      ['sora', "The North Star hardly moves. Your great-grandpa walked home by it more than once."],
+    ],
+    trick_frogs_intro: [
+      ['sora', "After a warm rain the frogs sing in the bottom paddies at dusk. A whole choir, and no conductor.", 'Talk'],
+      ['mika', "So, noise. Wet noise."],
+      ['sora', "Creep up while they sing, stand still when they hush. Wet your hands first, and put them back after."],
+    ],
+    trick_firefly_note: [
+      ['narrator', 'In the jar-light, a folded paper by the path: a drawing of a small girl holding a jar of fireflies.'],
+      ['sora', "\"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\" I kept it for tonight.", 'Talk'],
+      ['mika', "I don't remember that. …I'd still wave."],
+    ],
   // review fixes: the peaches are three for Hana's basket and two for Grandma's jam
   c2_hana_tasks: [
     ['hana', "The lamp's up in the bell tower and the key's in my apron. But the Firefly Festival is tomorrow, and it's a disaster.", 'Talk'],

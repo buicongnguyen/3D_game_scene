@@ -141,6 +141,28 @@ export class Audio {
       this.tone(f * 2.01, { type: 'sine', dur: 0.02, vol: v * 0.25, attack: 0.003, when: i * 0.052, bus: this.ambBus, rev: 0 });
     }
   }
+  /**
+   * A frog's croak: a burst of throaty pulses through a resonant band (the throat pouch). `vol` (0..1) is how near it
+   * is; `pitch` tells one frog from another; kind 'tree' is the bright "kero-kero" of a tree frog, 'pond' a deep "gwa".
+   */
+  croak(vol = 1, pitch = 1, kind = 'pond') {
+    const v = 0.07 * vol;
+    if (!this.ctx || v < 0.002) return;
+    const tree = kind === 'tree', f = (tree ? 520 : 150) * pitch, n = tree ? 2 : 3 + (Math.random() < 0.4 ? 1 : 0);
+    const gap = tree ? 0.11 : 0.045;
+    for (let i = 0; i < n; i++) {
+      this.tone(f, { type: 'sawtooth', dur: tree ? 0.07 : 0.05, vol: v, attack: 0.006, when: i * gap, bus: this.ambBus, rev: 0.15, filter: f * 5, glide: tree ? 1.15 : 0.92 });
+      this.tone(f * 0.5, { type: 'square', dur: 0.04, vol: v * 0.35, attack: 0.004, when: i * gap, bus: this.ambBus, rev: 0, filter: f * 3 });
+    }
+  }
+  /** A small thing slipping into still water (a frog jumping in, a fish turning). */
+  plop(vol = 1) {
+    if (!this.ctx) return;
+    this.tone(260 + Math.random() * 120, { dur: 0.09, vol: 0.06 * vol, glide: 2.6, rev: 0.3 });
+    this.noise({ dur: 0.18, vol: 0.05 * vol, freq: 900, q: 0.7, type: 'lowpass', sweep: 0.4 });
+  }
+  /** A tiny glassy twinkle (shrimp eyes catching the lantern). */
+  twinkle(vol = 1) { if (this.ctx) this.tone(mtof(91 + Math.floor(Math.random() * 5)), { dur: 0.18, vol: 0.025 * vol, rev: 0.6 }); }
   step(surface = 'grass') {
     const f = { grass: 900, wood: 420, stone: 1500, sand: 700, snow: 600, ice: 2600 }[surface] || 900;
     this.noise({ dur: surface === 'wood' ? 0.09 : 0.07, vol: surface === 'snow' ? 0.14 : 0.09, freq: f * (0.9 + Math.random() * 0.2), q: surface === 'wood' ? 4 : 1.2 });

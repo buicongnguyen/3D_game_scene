@@ -2405,6 +2405,24 @@
   ]
  },
  {
+  "s": "It's puffing its throat at me! Is that rude? That feels rude.",
+  "ctx": [
+   "dialogue friend_frog, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The frog blinks slowly, swells its throat like a little balloon, and sings one deep note, just for Mika.",
+  "ctx": [
+   "dialogue friend_frog, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika holds out a wet palm. The frog sits on it, cool and light, croaks once, and hops back to the bund.",
+  "ctx": [
+   "dialogue friend_frog_solo, spoken by narrator"
+  ]
+ },
+ {
   "s": "Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.",
   "ctx": [
    "dialogue friend_spider, spoken by Tamo"
@@ -2499,6 +2517,96 @@
   "s": "Every creature in the valley has had a proper hello now. The ducks are still talking about it.",
   "ctx": [
    "dialogue friends_all_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Summer night, city girl. Know what lives by the paddies after dark? Fireflies. Hundreds of them.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Hundreds of bugs. In the dark. You're really selling it.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Take my net. Sweep it when one glows, not after. Ten in a jar make a lantern. The paddy edge, west of Kawabe.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "And then you let them go. That's the deal.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "The river's best at night. Take a lantern into the shallows by the dock. Fish sleep with their eyes open.",
+  "ctx": [
+   "dialogue trick_river_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Rude of them.",
+  "ctx": [
+   "dialogue trick_river_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Look for tiny sparkles too: shrimp eyes, shining back at you. Ankle-deep only. Promise?",
+  "ctx": [
+   "dialogue trick_river_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Clear night. Go and lie on the hill behind the signal cottage and look up. Properly up.",
+  "ctx": [
+   "dialogue trick_stars_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "I've seen stars. There were four of them over our building.",
+  "ctx": [
+   "dialogue trick_stars_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Ha. Find the Big Dipper, then follow its two end stars. They point straight at the North Star.",
+  "ctx": [
+   "dialogue trick_stars_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Hear that racket by the bottom paddies at dusk? Frogs. Bet you can't get close to one.",
+  "ctx": [
+   "dialogue trick_frogs_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Bet I can. How hard can sneaking up on a frog be?",
+  "ctx": [
+   "dialogue trick_frogs_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Walk while they sing, freeze when they stop. They go quiet the moment they hear you.",
+  "ctx": [
+   "dialogue trick_frogs_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "In the jar-light, a folded paper by the path: a drawing of a girl with a jar of fireflies, and a note.",
+  "ctx": [
+   "dialogue trick_firefly_note, spoken by narrator"
+  ]
+ },
+ {
+  "s": "\"Not bad for a city girl.\" …Sora drew that one years ago. I just kept it for the right night.",
+  "ctx": [
+   "dialogue trick_firefly_note, spoken by Rin"
   ]
  },
  {
@@ -3427,6 +3535,30 @@
  },
  {
   "s": "Over the meadows and gardens on spring and summer days.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Paddy frog",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Hold out your hand to the frog",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Sings all evening with a throat that puffs up like a balloon. Loudest after rain, and gone with a plop the moment you run.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "On the paddy bunds and the low river banks, on spring and summer evenings. Walk, and it will wait for you.",
   "ctx": [
    "animal friend: where to find it"
   ]
@@ -5107,6 +5239,114 @@
   "ctx": [
    "dialogue kite_found, spoken by narrator",
    "dialogue kite_found_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Summer night, Mi-chan. Fireflies by the paddies. Bring a jar.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Grandma, I'm from the city. Bugs come in one setting: no.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "These ones carry their own little lamps. Sweep the net just as one glows. Ten will light your way home.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "And before bed, every one goes back. Even the nicest lamp belongs outside.",
+  "ctx": [
+   "dialogue trick_firefly_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "When the river's quiet at night, take my lantern down to the shallows by the dock.",
+  "ctx": [
+   "dialogue trick_river_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "The fish doze near the bottom, and shrimp eyes twinkle back at the light like little stars.",
+  "ctx": [
+   "dialogue trick_river_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Stars in the river. Sure. Next you'll tell me the frogs sing.",
+  "ctx": [
+   "dialogue trick_river_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "They do! Another night. Ankle-deep only, Mi-chan, and I'll be watching from the bank.",
+  "ctx": [
+   "dialogue trick_river_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Clear tonight. Lie on the hill behind the cottage and look up. You lie down. My back stays in its chair.",
+  "ctx": [
+   "dialogue trick_stars_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "At home I counted the stars once. It took about four seconds.",
+  "ctx": [
+   "dialogue trick_stars_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Here you'd need all summer. Find the Big Dipper first. Its two end stars point to the North Star.",
+  "ctx": [
+   "dialogue trick_stars_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "The North Star hardly moves. Your great-grandpa walked home by it more than once.",
+  "ctx": [
+   "dialogue trick_stars_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "After a warm rain the frogs sing in the bottom paddies at dusk. A whole choir, and no conductor.",
+  "ctx": [
+   "dialogue trick_frogs_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "So, noise. Wet noise.",
+  "ctx": [
+   "dialogue trick_frogs_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Creep up while they sing, stand still when they hush. Wet your hands first, and put them back after.",
+  "ctx": [
+   "dialogue trick_frogs_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "In the jar-light, a folded paper by the path: a drawing of a small girl holding a jar of fireflies.",
+  "ctx": [
+   "dialogue trick_firefly_note, spoken by narrator"
+  ]
+ },
+ {
+  "s": "\"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\" I kept it for tonight.",
+  "ctx": [
+   "dialogue trick_firefly_note, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "I don't remember that. …I'd still wave.",
+  "ctx": [
+   "dialogue trick_firefly_note, spoken by Mika"
   ]
  },
  {
@@ -12428,6 +12668,168 @@
   ]
  },
  {
+  "s": "Firefly jar",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the paddy edge, west of Kawabe",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Summer, dusk to night",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "fireflies",
+  "ctx": [
+   "what a trick score counts (after the number)"
+  ]
+ },
+ {
+  "s": "On a warm, still summer night, go with a grown-up to a clean stream far from street lights. Wait quietly, then scoop gently with a soft net.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Fireflies flash to talk to each other, and each kind has its own blink pattern. They need clean water and real darkness.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Always let them go before bed, right where you found them.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Night river lantern",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the Kawabe shallows, by the dock",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Spring to autumn, at night",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "fish spotted",
+  "ctx": [
+   "what a trick score counts (after the number)"
+  ]
+ },
+ {
+  "s": "With a grown-up, wade only ankle-deep shallows with a torch. Move slowly and look straight down into the circle of light.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Many fish rest near the bottom at night. Shrimp eyes shine back in a torch beam like a cat's: that is called eyeshine.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Only go to the river at night with a grown-up, and stay in the shallows.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Stargazing",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the hill behind the signal cottage",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Any clear night",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "points",
+  "ctx": [
+   "what a trick score counts (after the number)"
+  ]
+ },
+ {
+  "s": "Find a dark place away from town lights and give your eyes 15 minutes to get used to the dark. Find the Big Dipper, then follow its two end stars.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Without city lights you can see about ten times more stars. The North Star barely moves all night, so travellers used it to find north.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Wrap up warm, and go with a grown-up.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Frog chorus",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the bottom paddies, west of Kawabe",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Spring and summer, at dusk",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "After a warm rain, visit a paddy or pond at dusk. Walk only while the frogs sing, and freeze when they stop.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Frogs sing loudest after rain. The puffed-up throat pouch works like a speaker, and only the males call.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Wet your hands before you hold a frog, and put it back where you found it.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Pressed bellflower",
   "ctx": [
    "house memory: a small found object (journal)"
@@ -13258,6 +13660,405 @@
   ]
  },
  {
+  "s": "Sweep the net when a firefly glows: press {act} right next to one.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Catch them while they glow!",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Got one! Into the jar it goes.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Halfway to a lantern. Keep going!",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Ten! The jar is a real lantern now.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Too early: it went dark. Wait for the glow, then sweep!",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Walk right up close. They glow, then go dark, then glow again.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Look for a cluster of blinks. Low ones are easier.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "the jar lit the path",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Now walk the dark path by its light. Look on the ground, toward the village.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "There! Something pale in the jar-light, just ahead.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Lid off. Goodnight, fireflies, and thank you for the light.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Shh… the frogs stopped. Freeze!",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "They're singing again. Go!",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Oh! The singer hopped away. Find it by its voice.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Plop! You moved in the quiet.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "It hopped onto your hand! Cool and light, and very calm.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Listen to the order they sing in, then copy it: choose with left/right and press E, or tap the frogs.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Copy the frogs' song: same order!",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Perfect! A longer song now…",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Not quite. Listen again…",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Your turn!",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Sneak up on the singing frog on the far bund. Walk while they sing; freeze when they go quiet.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Walk while the frogs sing, freeze when they stop.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "{n} songs copied",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "The frog got away",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "River catfish",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Whiskers like a grandpa, and it only comes out after dark to feel along the bottom for supper.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Night eel",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Lies in the stones all day and slides out at night like a ribbon of dark water.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "A {fish}! It only comes out at night.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "A {fish}, fast asleep.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Too deep! Stay in the shallows, where the water is below your knees.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Walk slowly through the shallows. Hold the lantern's light over a fish for a moment to name it.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Find the sleepy fish in the lantern light, and look for twinkling shrimp eyes.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Only with a grown-up at night, and only ankle-deep.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "{n} kinds, {s} shrimp eyes",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Alkaid, the tip of the handle",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Megrez, where the handle meets the bowl",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Merak, a pointer star",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Dubhe, a pointer star",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Polaris, the North Star",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "See the pale band across the sky? The Milky Way: billions of stars, too far away to see one by one.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Find the Big Dipper: seven bright stars like a ladle. Tap them in order, from either end.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Find the Big Dipper: seven bright stars like a ladle. Point with the mouse or WASD, click or press {act} on each, in order.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "The Big Dipper! Now follow the two stars at the end of the bowl, about five times their gap, to the North Star.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Polaris, the North Star. It hardly moves all night, so travellers always knew where north was.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Further along the pointer line. The North Star sits on its own.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Not that one. The next star along the ladle.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Start at either end: the tip of the handle or the edge of the bowl.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Look! A shooting star! Quick, press to make a wish!",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Wish made. Don't tell anyone, or it won't come true.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Too quick for a wish tonight. There will be others.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Missed it! Keep watching, they come in showers.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Time to head in. The stars will still be here tomorrow.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "a wish made",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "{name}: back in {when}",
+  "ctx": [
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
+  "s": "Try: {name}",
+  "ctx": [
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
+  "s": "New trick: {name} (see the journal)",
+  "ctx": [
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
+  "s": "{name} is not ready yet",
+  "ctx": [
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
+  "s": "New best!",
+  "ctx": [
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
+  "s": "Best: {n}",
+  "ctx": [
+   "UI (src/game/tricks.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Why it works",
+  "ctx": [
+   "UI (src/game/tricks.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "How to do it for real",
+  "ctx": [
+   "UI (src/game/tricks.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Play again",
+  "ctx": [
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
+  "s": "Done",
+  "ctx": [
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
   "s": "Starline needs WebGL 2, and this browser only offers WebGL 1. Please try a recent Chrome, Edge, Firefox or Safari.",
   "ctx": [
    "UI (src/main.js)"
@@ -13774,13 +14575,13 @@
   ]
  },
  {
-  "s": "Left thumb: move. Drag the right side: look.",
+  "s": "Walking",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
  },
  {
-  "s": "Talk, pick up, light lamps — anything nearby",
+  "s": "Left thumb: move. Drag the right side: look.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -13812,6 +14613,44 @@
   ]
  },
  {
+  "s": "Run and tap Jump twice for a ×4 speed leap (four taps: ×16)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Doing things",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Talk, pick up, light lamps — anything nearby",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Journal",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text",
+   "button label (screen readers)"
+  ]
+ },
+ {
+  "s": "Pause",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Flying the Star Kite",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Kite",
   "ctx": [
    "UI (src/ui/ui.js)",
@@ -13819,13 +14658,37 @@
   ]
  },
  {
-  "s": "Fly or land the Star Kite, once you have it",
+  "s": "Take off, or land the kite",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
  },
  {
-  "s": "Run and tap Jump twice for a ×4 speed leap (four taps: ×16)",
+  "s": "Left thumb: steer",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Climb (hold)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Descend (hold)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Countryside tricks",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Walk up to a trick sign to play; the grown-up who teaches you gives the first tips",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -13849,12 +14712,6 @@
   ]
  },
  {
-  "s": "Next / back in conversations",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
   "s": "Mouse",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -13867,15 +14724,25 @@
   ]
  },
  {
-  "s": "Journal",
+  "s": "Next / back in conversations",
   "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text",
-   "button label (screen readers)"
+   "UI (src/ui/ui.js)"
   ]
  },
  {
-  "s": "Pause",
+  "s": "Steer",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Fly faster",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Stop a trick early",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -13894,6 +14761,36 @@
  },
  {
   "s": "One small thing is tucked away in every home. Look around the rooms.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Countryside tricks learned: {n} of {total}. Every one is real: try it with a grown-up!",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "{when} · {where}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Not learned yet",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Ask {teacher} when the season comes.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Not tried yet",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -13995,6 +14892,12 @@
   ]
  },
  {
+  "s": "Tricks",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "Neighbours",
   "ctx": [
    "menu / screen text"
@@ -14026,6 +14929,12 @@
  },
  {
   "s": "Save & return to title",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Controls: how to play",
   "ctx": [
    "menu / screen text"
   ]

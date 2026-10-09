@@ -1,7 +1,7 @@
 // Every model the runtime may load (see art/CONTRACTS.md). Missing files fall back to placeholders.
 export const CHARACTERS = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid'];
 export const ANIMALS = ['fox', 'bear', 'sheep', 'chicken', 'crow', 'rabbit', 'crab', 'fish-trout', 'fish-koi', 'fish-starfin', 'cat', 'duck', 'deer', 'cow', 'pig', 'goat', 'dog',
-  'cricket', 'spider', 'spider-web', 'ladybug', 'dragonfly', 'butterfly'];
+  'cricket', 'spider', 'spider-web', 'ladybug', 'dragonfly', 'butterfly', 'frog-pond', 'frog-tree', 'firefly'];
 export const ARCHITECTURE = ['kawabe-house-a', 'kawabe-house-b', 'kawabe-shop', 'boathouse', 'mill', 'drawbridge', 'star-lamp',
   'takamori-house-a', 'takamori-house-b', 'bakery', 'belltower', 'station', 'platform', 'signal-cottage', 'engine-shed', 'shrine',
   'torii', 'stone-lantern', 'shrine-stairs'];
@@ -12,7 +12,7 @@ export const NATURE = [...TREES, ...TREES.map(t => `${t}-lod`), 'bush-a', 'bush-
   'lilypads', 'flowers-a', 'flowers-b', 'mushrooms', 'log', 'stump', 'beehive-branch', 'grass-tuft'];
 export const PROPS = ['star-kite', 'hand-lantern', 'fishing-rod', 'hammer', 'hearth', 'crate', 'barrel', 'sacks', 'fence-wood', 'fence-bamboo', 'wall-stone',
   'bench', 'well', 'market-stall', 'street-lamp', 'postbox', 'signpost', 'cart', 'haybale', 'scarecrow', 'sheep-pen', 'laundry-line',
-  'flowerpot', 'noren-lantern', 'fireworks-rack', 'festival-stall', 'ball', 'broom', 'bucket', 'basket', 'letters', 'hoe'];
+  'flowerpot', 'noren-lantern', 'fireworks-rack', 'festival-stall', 'ball', 'broom', 'bucket', 'basket', 'letters', 'hoe', 'glass-jar', 'bug-net'];
 export const ITEMS = ['cog', 'peach', 'chestnut', 'mushroom-item', 'honeycomb', 'journal-page', 'fallen-star', 'peach-bun', 'plate-trout',
   'bowl-chestnuts', 'timber', 'iron-bolts', 'key'];
 export const INTERIORS = ['interior-cottage', 'interior-bakery', 'interior-mill', 'interior-station',

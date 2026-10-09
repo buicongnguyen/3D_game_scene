@@ -257,6 +257,9 @@ Bone names are free, but every clip listed must exist.
 | `ladybug` | 1 cm long | Idle (3 s), Fly *once* (0.8 s: wing cases open, hind wings unfold and buzz, body lifts nose-up) | ≤ 300 | Red wing cases with six black spots, black head with white cheek-eyes. Hold Fly's last frame (or loop its buzzing tail) while airborne. |
 | `dragonfly` | 7 cm span, 5.5 cm long | Fly (loop 0.8 s, six wing beats, hind wings a quarter beat behind) | ≤ 300 | Teal banded body, big blue eyes, translucent `Dragonfly wing` (alpha 0.5, double-sided) with amber roots and dark wing-tip spots. Origin under the thorax. |
 | `butterfly` | 6 cm span | Fly (loop 0.4 s flap), Rest (loop 4 s: wings ease from 18° open to 82° closed and back) | ≤ 300 | `Butterfly wing` is tinted by the runtime (`material.color`); the dark border and dusky root are vertex paint, so any tint keeps the pattern. Material extras `variants` = `#ff8c2e,#62b8ff` (orange, sky blue). Origin at the perch under the body. |
+| `frog-tree` | 4 cm long, ~2.2 cm tall (real size) | Idle (loop 3 s: breathing, throat pumps, head looks about), Croak (loop 1.2 s: the `throat` bone scales 1 → 1.95, body squeezes, head lifts), Hop *once* (0.6 s: crouch, hind legs kick straight back, 5 cm in-place arc, air p 0.25–0.8, arms reach for the landing), Swim (loop 0.8 s: quick kick p 0–0.22, glide and refold) | ≤ 300 | `build_critters.py`. Japanese tree frog: bright leaf green `Frog skin`, cream `Frog belly` (belly + throat sac), big golden `Frog eye` with a painted horizontal pupil, dark stripe through the eye. Origin on the ground under the body, faces −Y (three +Z). The throat sac is skinned only to the bone **`throat`**, whose scale is keyed in every clip (1.0 outside Idle/Croak) so crossfades never leave it puffed. Hop carries its own arc; the runtime adds the travel (~0.12 m per hop). Swim stays in place: put the origin ~1 cm under the water line and move the frog. Journal icon `public/icons/frog.webp` (rendered from `frog-tree`). |
+| `frog-pond` | 7 cm long (real size, = `frog-tree` × 1.75) | Same clips and durations as `frog-tree`; Hop arc 8.5 cm | ≤ 300 | Pond frog: warm olive `Frog skin` with dark brown blotches (painted), cream belly and sac, coppery eyes. Same rig and bone names as `frog-tree`. |
+| `firefly` | 1.5 cm long | Rest (loop 3 s: breathing, a slow look, a wing-case twitch), Fly (loop 0.4 s: cases open and up, hind wings spread and buzz 8 beats, body nose-up 18°) | ≤ 300 | Genji firefly: black `Firefly body`, pink-red shield and pale belly/wings on `Firefly pale`, and a glowing tail on **`Firefly glow`** (emissive `#d4ff4a` at strength 2.5 in the file): the runtime pulses its `emissiveIntensity` (clone the material per firefly, or drive the instanced glow points and keep the model for close-ups). Origin at the perch under the body. Icon `public/icons/firefly.webp`. |
 
 ## Static assets
 
@@ -381,6 +384,30 @@ centre:
 
 **Icons:** render every pickup item at 160×160 on a transparent background, a
 3/4 view, to `public/icons/<name>.webp`.
+
+### Rural tricks — `build_tricks.py`
+
+Held props for docs/RURAL-TRICKS.md (Phase 1). The frogs and the firefly are in `build_critters.py`. Trick-card
+icons `public/icons/trick-{firefly,river,stars,frogs}.webp` are renders of review-only scenes:
+`build_tricks.py -- --icons` writes `.tools/review/trick-scenes/trick-*.glb`, then
+`render_icons.py -- --models .tools/review/trick-scenes trick-firefly trick-river trick-stars trick-frogs`
+(a glowing firefly jar; a paper lantern on water with a leaping koi; the Big Dipper over a hill; the tree frog
+croaking on a lily pad). `render_icons.py -- frog firefly` renders the creature icons (`frog` → `frog-tree`).
+
+| Model | Notes | Tris |
+|---|---|---|
+| `glass-jar` | 14 cm mason jar, 7.7 cm across: `Jar glass` (light blue, alpha 0.22, blended, faintly emissive), a red `Jar cloth` cap with five dark air holes and a ruffled skirt, tied with cream `Jar string`. **Origin at the centre of the base**, up = three +Y. Node `Inside` (empty at the jar centre, 5.8 cm up) for the runtime's firefly glow points. | ≤ 300 |
+| `bug-net` | 1.1 m bamboo handle (`Net bamboo`, nodes painted) with a green cord grip wrap and a 0.30 m hoop at the far end, plus a sagging translucent `Net mesh` bag (alpha 0.5, double-sided). **Origin at the grip**, 0.15 m above the butt; the handle runs along three +Y to the hoop (hoop centre at +Y 1.10 m, node `Hoop` there for catch tests), the hoop lies in the three XY plane and the bag hangs toward three −Z. | ≤ 300 |
+
+**On Mika's `grip_R`** (rotation = three Euler XYZ on the prop root, radians; position in grip space, metres). In
+Idle/Walk `grip_R` +Y points from the palm toward the fingertips (down when the arm hangs), +X toward her body,
++Z backward:
+- `glass-jar` carried by the neck (cloth cap in the fist, jar hanging beside the thigh, clear of the coat):
+  rotation (π, 0, 0), position (0, 0.115, −0.02).
+- `bug-net` carried upright (Idle/Walk; the net rises behind her head): rotation (π, 0, 0), position 0.
+- `bug-net` sweep/scoop with Interact (frame p 0.5): low forward scoop, opening up, hoop on the ground ~1 m ahead:
+  rotation (1.512, −1.861, −0.626); raised catch (net forward and up at ~40°, for fireflies in the air):
+  rotation (−2.478, 1.281, −0.626). Slerp between the two for a swing.
 
 ### Flying machine — `build_kite.py`
 

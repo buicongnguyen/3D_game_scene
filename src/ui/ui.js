@@ -580,6 +580,8 @@ export class UI {
     $('btnResume').addEventListener('click', () => this.game.togglePause?.(false));
     $('btnPauseJournal').addEventListener('click', () => this.openJournal());
     $('btnPauseSettings').addEventListener('click', () => this.open('settings'));
+    $('btnPauseControls').addEventListener('click', () => this.openControls());
+    $('btnControls').addEventListener('click', () => this.openControls());
     $('btnSaveQuit').addEventListener('click', () => this.game.saveAndQuit?.());
     // Esc and J work on the menus themselves: game input is switched off while paused
     addEventListener('keydown', e => {
@@ -737,18 +739,44 @@ export class UI {
         this.memoriesHTML() +
         rows.map(r => this.cardHTML(r.met, null, r.met ? tx(r.name) : tx('Someone in the valley'), r.met ? (r.ask ? tx(r.ask) : r.done >= r.total ? tx('You have heard their story.') : tx('They may have more to tell later.')) : tx('Not met yet'),
           r.met ? tx(r.role) : '', r.met && r.total ? tx('{n}/{total}', { n: r.done, total: r.total }) : '')).join('') + '</div>';
+    } else if (tab === 'tricks') {
+      body.innerHTML = this.tricksHTML();
     } else if (tab === 'friends') {
       const met = q.friends || {}, n = FRIENDS.filter(f => met[f.id]).length;
       body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press {act} to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +
         FRIENDS.map(f => this.cardHTML(!!met[f.id], f.icon, tx(f.name), met[f.id] ? tx(f.desc) : tx(f.hint), met[f.id] ? '♥' : tx('Not met yet'))).join('') + '</div>';
     } else {
-      const row = (keys, text) => `<div class="step">${keys.map(k => `<kbd>${k}</kbd>`).join(' ')} ${esc(tx(text))}</div>`;
-      body.innerHTML = this.touch
-        ? [row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Do it')], N_('Talk, pick up, light lamps — anything nearby')), row([tx('Jump')], N_('Jump, or swim up in the water')), row([tx('Dive')], N_('Dive while swimming')), row([tx('Kite')], N_('Fly or land the Star Kite, once you have it')), row([tx('Jump'), tx('Jump')], N_('Run and tap Jump twice for a ×4 speed leap (four taps: ×16)'))].join('')
-        : [row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')), row(['C'], N_('Dive while swimming')), row(['G'], N_('Fly or land the Star Kite, once you have it')), row(['W', 'Space', 'Space'], N_('Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)')),
-          row(['E'], N_('Talk, pick up, light lamps — anything nearby')), row(['E', 'Q'], N_('Next / back in conversations')), row([tx('Mouse')], N_('Drag to look · wheel to zoom')),
-          row(['J'], N_('Journal')), row(['Esc'], N_('Pause')), row(['🎮'], N_('Gamepad supported'))].join('');
+      body.innerHTML = this.controlsHTML();
     }
+  }
+
+  /** How to play, for this device: walking, doing things, flying the Star Kite, tricks (Settings, pause menu, journal). */
+  controlsHTML() {
+    const row = (keys, text) => `<div class="step">${keys.map(k => `<kbd>${esc(k)}</kbd>`).join(' ')} ${esc(tx(text))}</div>`;
+    const head = text => `<h3 class="controls-h">${esc(tx(text))}</h3>`;
+    if (this.touch) {
+      return [head(N_('Walking')), row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Jump')], N_('Jump, or swim up in the water')),
+        row([tx('Dive')], N_('Dive while swimming')), row([tx('Jump'), tx('Jump')], N_('Run and tap Jump twice for a ×4 speed leap (four taps: ×16)')),
+        head(N_('Doing things')), row([tx('Do it')], N_('Talk, pick up, light lamps — anything nearby')), row(['✎'], N_('Journal')), row(['☰'], N_('Pause')),
+        head(N_('Flying the Star Kite')), row([tx('Kite')], N_('Take off, or land the kite')), row([], N_('Left thumb: steer')),
+        row([tx('Jump')], N_('Climb (hold)')), row([tx('Dive')], N_('Descend (hold)')),
+        head(N_('Countryside tricks')), row([tx('Do it')], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips'))].join('');
+    }
+    return [head(N_('Walking')), row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')),
+      row(['C'], N_('Dive while swimming')), row(['W', 'Space', 'Space'], N_('Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)')),
+      row([tx('Mouse')], N_('Drag to look · wheel to zoom')),
+      head(N_('Doing things')), row(['E'], N_('Talk, pick up, light lamps — anything nearby')), row(['E', 'Q'], N_('Next / back in conversations')),
+      row(['J'], N_('Journal')), row(['Esc'], N_('Pause')),
+      head(N_('Flying the Star Kite')), row(['G'], N_('Take off, or land the kite')), row(['W', 'A', 'S', 'D'], N_('Steer')),
+      row(['Space'], N_('Climb (hold)')), row(['C', 'N'], N_('Descend (hold)')), row(['Shift'], N_('Fly faster')),
+      head(N_('Countryside tricks')), row(['E'], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips')),
+      row(['Backspace'], N_('Stop a trick early')),
+      row(['🎮'], N_('Gamepad supported'))].join('');
+  }
+
+  openControls() {
+    $('controlsBody').innerHTML = this.controlsHTML();
+    this.open('controls');
   }
 
   /** A journal card: picture (a silhouette until found), name, tag and a line or two. */
@@ -759,6 +787,27 @@ export class UI {
     const got = list.filter(m => m.found);
     return `<p><b>${esc(tx('House memories: {n} of {total}', { n: got.length, total: list.length }))}</b> ${esc(tx('One small thing is tucked away in every home. Look around the rooms.'))}</p>` +
       (got.length ? '<div class="cards">' + got.map(m => this.cardHTML(true, 'journal-page', tx(m.name), tx(m.text))).join('') + '</div>' : '');
+  }
+
+  /** Grandma's countryside tricks (game/tricks.js): one card each, with the real-world how-to and the fun fact. */
+  tricksHTML() {
+    const rows = this.game.director?.tricks?.journal() || [];
+    const n = rows.filter(r => r.learned).length;
+    const head = `<p>${esc(tx('Countryside tricks learned: {n} of {total}. Every one is real: try it with a grown-up!', { n, total: rows.length }))}</p>`;
+    return head + '<div class="cards">' + rows.map(r => {
+      const t = r.t;
+      if (!r.learned) {
+        return this.cardHTML(false, t.icon, tx(t.name), tx('{when} · {where}', { when: tx(t.when), where: tx(t.where) }), tx('Not learned yet'),
+          tx('Ask {teacher} when the season comes.', { teacher: r.teacher }));
+      }
+      const tag = r.plays ? `${'★'.repeat(r.stars)}${'☆'.repeat(3 - r.stars)} · ${tx('Best: {n}', { n: r.best })}` : tx('Not tried yet');
+      const img = `<span class="pic"><img alt="" src="${this.icon(t.icon)}" onerror="this.style.visibility='hidden'"></span>`;
+      return `<div class="jcard">${img}<div><b>${esc(tx(t.name))}</b> <span class="tag">${esc(tag)}</span>` +
+        `<p><b>${esc(tx('How to do it for real'))}:</b> ${esc(tx(t.howReal))}</p>` +
+        `<p><b>${esc(tx('Why it works'))}:</b> ${esc(tx(t.why))}</p>` +
+        (t.safety ? `<p class="sub">${esc(tx(t.safety))}</p>` : '') +
+        `<p class="sub">${esc(tx('{when} · {where}', { when: tx(t.when), where: tx(t.where) }))}</p></div></div>`;
+    }).join('') + '</div>';
   }
 
   cardHTML(known, icon, name, text, tag = '', sub = '', hue = 0) {

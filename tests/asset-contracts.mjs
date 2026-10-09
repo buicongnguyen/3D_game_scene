@@ -55,6 +55,11 @@ export const CONTRACTS = {
   ladybug: { family: 'critters', tris: 300, clips: ['Idle', 'Fly'], icon: true },
   dragonfly: { family: 'critters', tris: 300, clips: ['Fly'], mats: ['Dragonfly wing'], icon: true },
   butterfly: { family: 'critters', tris: 300, clips: ['Fly', 'Rest'], mats: ['Butterfly wing'], icon: true },
+  // Rural tricks (docs/RURAL-TRICKS.md): frogs (the 'throat' bone scales up in Croak) and the firefly (runtime pulses 'Firefly glow').
+  // The frog journal icon is public/icons/frog.webp (rendered from frog-tree), so the frogs carry no icon flag.
+  'frog-tree': { family: 'critters', tris: 300, nodes: ['throat'], clips: ['Idle', 'Croak', 'Hop', 'Swim'] },
+  'frog-pond': { family: 'critters', tris: 300, nodes: ['throat'], clips: ['Idle', 'Croak', 'Hop', 'Swim'] },
+  firefly: { family: 'critters', tris: 300, clips: ['Fly', 'Rest'], mats: ['Firefly glow'], icon: true },
 
   // ---------------------------------------------------------------- architecture
   'kawabe-house-a': { family: 'architecture', tris: 14000, mats: ['Window glow'] },
@@ -139,6 +144,9 @@ export const CONTRACTS = {
   basket: { family: 'townlife', tris: 800 },
   letters: { family: 'townlife', tris: 800, icon: true },
   hoe: { family: 'townlife', tris: 800 },
+  // Rural tricks held props (build_tricks.py): parented to grip_R, rotations in art/CONTRACTS.md "Rural tricks".
+  'glass-jar': { family: 'tricks', tris: 300, nodes: ['Inside'], mats: ['Jar glass', 'Jar cloth'] },
+  'bug-net': { family: 'tricks', tris: 300, nodes: ['Hoop'], mats: ['Net mesh'] },
   hearth: { family: 'props', tris: 3000, nodes: ['Fire'] },
   crate: { family: 'props', tris: 1200 },
   barrel: { family: 'props', tris: 1200 },
@@ -215,8 +223,10 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
 // 37.0 -> 37.6 MB: Grandma Sora (sora.glb, 0.70 MB raw, eight clips).
 // 37.6 -> 37.75 MB: critters (cricket, spider, spider-web, ladybug, dragonfly, butterfly: 0.22 MB raw together).
-export const TOTAL_RAW_BYTES = 37_750_000;
+// 37.75 -> 37.92 MB: rural tricks (frog-tree, frog-pond, firefly, glass-jar, bug-net: 0.18 MB raw together, mostly frog clips).
+export const TOTAL_RAW_BYTES = 37_920_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
-export const TOTAL_PACKED_BYTES = 14_300_000;
+// 14.3 -> 14.4 MB: rural tricks (frogs, firefly, jar, net: ~0.09 MB packed together).
+export const TOTAL_PACKED_BYTES = 14_400_000;

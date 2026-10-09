@@ -14,6 +14,7 @@ import { STOPS } from '../world/railway.js';
 import { BarkBubbles } from '../ui/barks-ui.js';
 import { TownLife } from './townlife.js';
 import { Indoors } from './indoor.js';
+import { Tricks } from './tricks.js';
 import { SHOPS } from '../content/shops.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
@@ -327,6 +328,8 @@ export class Director {
     // things to do inside the houses, and the house memories (game/indoor.js)
     this.indoor = new Indoors(this);
     this.indoor.spawn();
+    // Grandma's countryside tricks: signs, teaching, rounds and the journal Tricks tab (game/tricks.js)
+    this.tricks = new Tricks(this);
     // spark targets
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
     this.target('millLamp', L.get('mill')?.flame, N_('Light the Mill Lamp'), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10 });
@@ -612,7 +615,7 @@ export class Director {
 
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
   canSave() {
-    return !!this.quest && !this.scenes.active && !this.minigame && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
+    return !!this.quest && !this.scenes.active && !this.minigame && !this.tricks?.round && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
   }
 
   save() {
@@ -1071,6 +1074,8 @@ export class Director {
       this.q.state.flags.porchTalk = true;
       return this.say('porch_talk');
     }
+    // a countryside trick in season: the teacher's first talk teaches it (once)
+    if (this.tricks?.onTalk(id)) return;
     return this.event({ type: 'talk', who: n.villager ? 'villager' : id });
   }
 
@@ -1301,7 +1306,7 @@ export class Director {
     const g = this.game, p = g.player, inp = g.input;
     if (!this.quest) return;
     // the player is locked exactly while something owns the screen (dialogue, cutscene, minigame, transition)
-    p.locked = this.busy > 0 || !!this.minigame;
+    p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks;
     this.q.state.playtime += dt;
     // a gentle hint the first time Mika gets near the thieving crab
     const crab = this.wildlife.story.crab;
@@ -1315,6 +1320,7 @@ export class Director {
     this.updateVillagers(dt);
     this.town?.update(dt);
     this.indoor?.update();
+    this.tricks?.update(dt);
     this.updateBarks(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);
@@ -1350,7 +1356,7 @@ export class Director {
     const kite = g.kite, hasKite = this.q.count('kite') > 0;
     if (kite && hasKite && inp.pressed('kite') && !this.busy && !this.minigame && !this.ui.overlay && !this.scenes.active && !this.game.interiors?.active) kite.toggle();
     this.ui.kiteButton(!!kite && hasKite && !this.game.interiors?.active && (kite.active || kite.canLaunch()));
-    const canAct = !this.busy && !this.minigame && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active && !p.aiming;
+    const canAct = !this.busy && !this.minigame && !this.tricks?.round && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active && !p.aiming;
     const hard = !!this.game.hard;
     let best = null, bd = 1e9, aimHint = null, ad = 1e9;
     if (canAct) for (const it of this.interactables.values()) {
@@ -1387,7 +1393,7 @@ export class Director {
     }
     // marker
     // inside a home the arrow only leads to a treasure in this room (the world outside is far below)
-    this.ui.marker(g.camera, this.busy ? null : g.interiors?.active ? this.huntInside() : this.markerTarget(), p.pos);
+    this.ui.marker(g.camera, this.busy || this.tricks?.round ? null : g.interiors?.active ? this.huntInside() : this.markerTarget(), p.pos);
     this.updateHunt();
     if (this.kiteStand) this.kiteStand.obj.visible = this.kiteStand.when();
     this.updateValley(dt);

@@ -570,6 +570,12 @@ export const DIALOGUE = {
     ['narrator', 'The cricket waits until Tamo is truly quiet, then plays one very loud note, just for Mika.'],
   ],
   friend_cricket_solo: [['narrator', 'Mika crouches in the grass and holds her breath. The cricket looks her over, then chirps three times: hello, hello, hello.']],
+  // [tricks-B: frog friend] the paddy frogs (ambient critters, src/actors/critters.js)
+  friend_frog: [
+    ['tamo', "It's puffing its throat at me! Is that rude? That feels rude.", 'Happy'],
+    ['narrator', 'The frog blinks slowly, swells its throat like a little balloon, and sings one deep note, just for Mika.'],
+  ],
+  friend_frog_solo: [['narrator', 'Mika holds out a wet palm. The frog sits on it, cool and light, croaks once, and hops back to the bund.']],
   friend_spider: [
     ['tamo', 'Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.'],
     ['narrator', 'The spider plucks one thread, and the whole web shivers like a little harp.'],
@@ -597,6 +603,32 @@ export const DIALOGUE = {
   friends_all_solo: [
     ['narrator', 'Every creature in the valley has had a proper hello now. The ducks are still talking about it.'],
     ['mika', "Grandma would say we've been properly introduced."],
+  ],
+  // Grandma's countryside tricks (content/tricks.js): Rin teaches them in Classic, once, the first time Mika talks to her in season
+  trick_firefly_intro: [
+    ['rin', "Summer night, city girl. Know what lives by the paddies after dark? Fireflies. Hundreds of them.", 'Talk'],
+    ['mika', "Hundreds of bugs. In the dark. You're really selling it."],
+    ['rin', "Take my net. Sweep it when one glows, not after. Ten in a jar make a lantern. The paddy edge, west of Kawabe."],
+    ['rin', "And then you let them go. That's the deal."],
+  ],
+  trick_river_intro: [
+    ['rin', "The river's best at night. Take a lantern into the shallows by the dock. Fish sleep with their eyes open.", 'Talk'],
+    ['mika', "Rude of them."],
+    ['rin', "Look for tiny sparkles too: shrimp eyes, shining back at you. Ankle-deep only. Promise?"],
+  ],
+  trick_stars_intro: [
+    ['rin', "Clear night. Go and lie on the hill behind the signal cottage and look up. Properly up.", 'Talk'],
+    ['mika', "I've seen stars. There were four of them over our building."],
+    ['rin', "Ha. Find the Big Dipper, then follow its two end stars. They point straight at the North Star."],
+  ],
+  trick_frogs_intro: [
+    ['rin', "Hear that racket by the bottom paddies at dusk? Frogs. Bet you can't get close to one.", 'Talk'],
+    ['mika', "Bet I can. How hard can sneaking up on a frog be?"],
+    ['rin', "Walk while they sing, freeze when they stop. They go quiet the moment they hear you."],
+  ],
+  trick_firefly_note: [
+    ['narrator', 'In the jar-light, a folded paper by the path: a drawing of a girl with a jar of fireflies, and a note.'],
+    ['rin', "\"Not bad for a city girl.\" …Sora drew that one years ago. I just kept it for the right night.", 'Talk'],
   ],
 };
 
@@ -732,6 +764,9 @@ export const FRIENDS = [
     desc: 'Darts over the water like a little blue needle, then stops dead in the air to have a look at you.', hint: 'Over the river and the rice paddies on summer and autumn days. Stand still by the water and it will come to you.' },
   { id: 'butterfly', name: 'Meadow butterfly', icon: 'butterfly', verb: 'Follow the butterfly',
     desc: 'Never flies in a straight line. Rests on a flower just long enough to be admired.', hint: 'Over the meadows and gardens on spring and summer days.' },
+  // [tricks-B: frog friend]
+  { id: 'frog', name: 'Paddy frog', icon: 'frog', verb: 'Hold out your hand to the frog',
+    desc: 'Sings all evening with a throat that puffs up like a balloon. Loudest after rain, and gone with a plop the moment you run.', hint: 'On the paddy bunds and the low river banks, on spring and summer evenings. Walk, and it will wait for you.' },
 ];
 
 // ------------------------------------------------------------------------------------ keepsakes

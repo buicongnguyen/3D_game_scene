@@ -1,6 +1,7 @@
 // The valley's small living things: crickets singing in the grass, spiders on their webs under the eaves, on fences and
 // between forest trees, ladybugs on flowers and bushes, dragonflies darting over the river and the rice paddies, and
-// butterflies drifting over meadows and gardens.
+// butterflies drifting over meadows and gardens, and frogs on the paddy bunds and the river banks that sing at dusk
+//   in spring and summer and plop into the water when Mika runs up.
 //
 // Cheap by construction (see the lightweight-game-objects skill):
 // - Where they live is planned once, as plain data (planCritters, Node-testable), with its own seeded RNG.
@@ -34,7 +35,15 @@ export const CRITTER_KINDS = {
   ladybug: { model: 'ladybug', pool: 4, scale: 6, seasons: { spring: 1, summer: 1, autumn: 0.6, winter: 0 }, day: 1, night: 0 },
   dragonfly: { model: 'dragonfly', pool: 4, scale: 2.6, seasons: { spring: 0.3, summer: 1, autumn: 0.9, winter: 0 }, day: 1, night: 0 },
   butterfly: { model: 'butterfly', pool: 6, scale: 2.8, seasons: { spring: 1, summer: 1, autumn: 0.4, winter: 0 }, day: 1, night: 0 },
+  // two looks (7 cm brown pond frog, 4 cm green tree frog) share one pool, drawn 2.6x like the other critters
+  frog: { model: 'frog-pond', models: ['frog-pond', 'frog-tree'], pool: 6, scale: 2.6, seasons: { spring: 0.9, summer: 1, autumn: 0.25, winter: 0 }, day: 0.35, night: 1 },
 };
+/** Croaks per minute for one frog at this hour: a swell at dusk (18:00-22:30), a murmur through the night, little by day. */
+export function croakRate(hour) {
+  const dusk = Math.max(0, 1 - Math.abs(hour - 20.2) / 2.2);
+  const night = hour >= 22 || hour < 5 ? 0.45 : 0;
+  return 1 + 11 * Math.max(dusk, night);
+}
 /** Wing colours for the butterflies (the model's tintable material is 'Butterfly wing'). */
 export const BUTTERFLY_TINTS = ['#ffffff', '#ffb13b', '#8fd0ff', '#ffe36b', '#ff9ec4'];
 
@@ -66,7 +75,7 @@ const near = (x, z, list) => list.some(([cx, cz, r]) => Math.hypot(x - cx, z - c
 export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
   const R = rng(seed);
   const ok = (x, z) => !placeProblems(x, z, grid).length;
-  const out = { cricket: [], spider: [], ladybug: [], dragonfly: [], butterfly: [] };
+  const out = { cricket: [], spider: [], ladybug: [], dragonfly: [], butterfly: [], frog: [] };
   const slot = (kind, x, y, z, extra) => {
     const s = { kind, i: out[kind].length, hx: x, hy: y, hz: z, x, y, z, face: R() * Math.PI * 2, luck: R(), ph: R() * 10,
       st: 'idle', t: R() * 3, u: 0, dur: 0, fx: 0, fy: 0, fz: 0, tx: 0, ty: 0, tz: 0, arc: 0, d: 1e9, want: false, vis: null, hold: 0, ...extra };
@@ -152,6 +161,29 @@ export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
     slot('dragonfly', p.x - p.tz * off, 0.95, p.z + p.tx * off, {});
   }
   for (const p of PADDIES) slot('dragonfly', p.x, p.t + 0.85, p.z, { paddy: true });
+  // frogs: two on the bunds of every paddy (diving into the paddy water), and on the low river banks (into the river)
+  for (const p of PADDIES) {
+    for (let n = 0; n < 2; n++) {
+      const side = Math.floor(R() * 4), u = (R() - 0.5) * 0.8;
+      const ex = side < 2 ? u * p.w : (side === 2 ? -0.5 : 0.5) * p.w, ez = side < 2 ? (side === 0 ? -0.5 : 0.5) * p.d : u * p.d;
+      const ix = side < 2 ? 0 : -Math.sign(ex), iz = side < 2 ? -Math.sign(ez) : 0;
+      slot('frog', p.x + ex, p.t + 0.29, p.z + ez, { tree: R() < 0.35, pitch: 0.85 + R() * 0.3, wx: p.x + ex + ix * 0.9, wy: p.t + 0.06, wz: p.z + ez + iz * 0.9 });
+    }
+  }
+  for (let z = -100; z <= 66; z += 15) {
+    const w = river.nearest(10, z, 80);
+    if (!w) continue;
+    const c = river.at(w.s);
+    for (const side of [-1, 1]) {
+      for (let k = 0; k < 8; k++) {
+        const off = (riverHalfWidth(c.z) - 1 + k * 0.7) * side, x = c.x - c.tz * off, zz = c.z + c.tx * off, h = grid.heightAt(x, zz);
+        if (h < 0.04 || h > 0.8 || placeProblems(x, zz, grid).some(q => !q.startsWith('wet') && q !== 'on the river')) continue;
+        const wo = off - 1.4 * side;
+        slot('frog', x, h, zz, { tree: R() < 0.2, pitch: 0.85 + R() * 0.3, wx: c.x - c.tz * wo, wy: -0.04, wz: c.z + c.tx * wo });
+        break;
+      }
+    }
+  }
   return out;
 }
 
@@ -175,6 +207,9 @@ export class Critters {
     this.assignT = 0;
     this.stillT = 0;
     this.chorusT = 2;
+    this.frogChorusT = 1;
+    this.nearFrogs = 0;
+    this.nearestFrog = 1e9;
     this.nearCrickets = 0;
     this.nearestCricket = 1e9;
     this.visitor = null;
@@ -194,12 +229,13 @@ export class Critters {
     const tops = {};
     this.slots = planCritters(game.placed || {}, grid, m => (tops[m] ??= this.topOf(m)));
     for (const [kind, def] of Object.entries(CRITTER_KINDS)) {
-      if (!this.assets.has(def.model) || (def.web && !this.assets.has(def.web))) continue;
+      const models = (def.models || [def.model]).filter(m => this.assets.has(m));
+      if (!models.length || (def.web && !this.assets.has(def.web))) continue;
       if (def.web && !this.makeWebs(def)) continue;
       const quality = game.renderer?.q?.name === 'Low' ? 0.6 : 1;
       const pool = this.pools[kind] = [];
       for (let i = 0; i < Math.max(2, Math.round(def.pool * quality)); i++) {
-        const v = this.makeVisual(kind, def);
+        const v = this.makeVisual(kind, def, models[i % models.length]);
         if (!v) break;
         pool.push(v);
         this.visuals.push(v);
@@ -244,13 +280,16 @@ export class Critters {
     for (const o of solid.slice(1)) o.removeFromParent();
   }
 
-  makeVisual(kind, def) {
-    const m = this.assets.clone(def.model);
+  makeVisual(kind, def, model = def.model) {
+    const m = this.assets.clone(model);
     if (!m) return null;
     const root = new THREE.Group();
     root.name = `critter:${kind}`;
-    m.scale.multiplyScalar(def.scale);
-    try { this.bake(kind, m); } catch (e) { console.warn(`critter bake skipped for ${kind}`, e); }
+    if (def.size) {
+      const sz = new THREE.Box3().setFromObject(m).getSize(V());
+      m.scale.multiplyScalar(def.size / (Math.max(sz.x, sz.z) || def.size));
+    } else m.scale.multiplyScalar(def.scale);
+    try { this.bake(model, m); } catch (e) { console.warn(`critter bake skipped for ${kind}`, e); }
     const wings = [];
     m.traverse(o => {
       if (!o.isMesh) return;
@@ -262,7 +301,7 @@ export class Critters {
     this.scene.add(root);
     const anim = m.userData.clips?.length ? new Animator(m) : null;
     const v = {
-      kind, root, model: m, anim, wings, pos: root.position, visible: true, idleClip: 'Idle', slot: null, near: false, clip: '', chirpT: 1 + Math.random() * 6,
+      kind, look: model, root, model: m, anim, wings, pos: root.position, visible: true, idleClip: 'Idle', slot: null, near: false, clip: '', chirpT: 1 + Math.random() * 6,
       lookAt() {},                                // critters do not turn to face Mika; they have their own business
       hold: () => { if (v.slot) v.slot.hold = 4; },
     };
@@ -351,6 +390,7 @@ export class Critters {
     if (kind === 'butterfly') return s.st === 'rest' ? 'Rest' : 'Fly';
     if (kind === 'ladybug') return s.st === 'fly' ? 'Fly' : 'Idle';
     if (kind === 'spider') return s.st === 'walk' ? 'Walk' : 'Idle';
+    if (kind === 'frog') return s.st === 'swim' ? 'Swim' : 'Idle';
     return 'Idle';
   }
 
@@ -364,7 +404,7 @@ export class Critters {
   assign(p, g) {
     const indoor = !!g.interiors?.active;
     const season = g.shownSeason || g.time?.season || 'spring', hour = g.shownHour ? g.shownHour() : 12;
-    this.nearCrickets = 0; this.nearestCricket = 1e9;
+    this.nearCrickets = 0; this.nearestCricket = 1e9; this.nearFrogs = 0; this.nearestFrog = 1e9;
     for (const kind in CRITTER_KINDS) {
       const slots = this.slots[kind], pool = this.pools[kind];
       const share = indoor ? 0 : presence(kind, season, hour);
@@ -377,6 +417,7 @@ export class Critters {
         if (s.on && s.d < DRAW) cand.push(s);
       }
       if (kind === 'cricket') for (const s of cand) { this.nearCrickets++; if (s.d < this.nearestCricket) this.nearestCricket = s.d; }
+      if (kind === 'frog') for (const s of cand) { this.nearFrogs++; if (s.d < this.nearestFrog) this.nearestFrog = s.d; }
       if (!pool) continue;
       cand.sort(byD);
       for (let i = 0; i < cand.length && i < pool.length; i++) cand[i].want = true;
@@ -412,6 +453,7 @@ export class Critters {
       else if (v.kind === 'spider') this.spider(v, s, dt);
       else if (v.kind === 'ladybug') this.ladybug(v, s, dt, startled);
       else if (v.kind === 'dragonfly') this.dragonfly(v, s, dt, player);
+      else if (v.kind === 'frog') this.frog(v, s, dt, startled || d < 2.2 && player.speed > 2.2, d, audio, g);
       else this.butterfly(v, s, dt, startled || d < 2 && player.speed > 3.2 && s.hold <= 0);
       v.anim?.update(dt);
     }
@@ -420,6 +462,12 @@ export class Critters {
       const rate = (0.4 + night * 2.6) * Math.min(1, this.nearCrickets / 6);
       this.chorusT = (0.4 + Math.random()) / Math.max(0.1, rate);
       audio?.chirp?.((0.12 + night * 0.3) * Math.max(0, 1 - this.nearestCricket / DRAW), 0.9 + Math.random() * 0.25);
+    }
+    // ...and the frogs further off, swelling at dusk
+    if (this.nearFrogs && (this.frogChorusT -= dt) <= 0) {
+      const rate = croakRate(g.shownHour ? g.shownHour() : 12) / 60 * Math.min(4, this.nearFrogs);
+      this.frogChorusT = (0.5 + Math.random()) / Math.max(0.02, rate);
+      audio?.croak?.(0.35 * Math.max(0, 1 - this.nearestFrog / DRAW), 0.85 + Math.random() * 0.3, Math.random() < 0.3 ? 'tree' : 'pond');
     }
   }
 
@@ -473,6 +521,42 @@ export class Critters {
     this.launch(s, tx, this.world.heightAt(tx, tz), tz, 0.42, 0.32);
     s.st = 'hop';
     if (v.anim?.has('Hop')) { v.anim.once('Hop', { then: 'Idle', speed: 1.2 }); v.clip = 'Idle'; }
+  }
+
+  /** Sits on the bund or bank and sings; hops into the water when startled, swims a while, then climbs back. */
+  frog(v, s, dt, startled, d, audio, g) {
+    if (s.st === 'hop') {
+      if (this.fly(s, dt, false)) {
+        if (s.into) { s.st = 'swim'; s.t = 5 + Math.random() * 6; this.play(v, 'Swim'); audio?.plop?.(Math.max(0, 1 - d / 20)); }
+        else { s.st = 'idle'; s.t = 3 + Math.random() * 8; this.play(v, 'Idle'); }
+      }
+    } else if (s.st === 'swim') {
+      s.face += Math.sin(s.ph * 0.8) * dt * 0.6;
+      s.y = s.wy - 0.02 + Math.sin(s.ph * 2) * 0.01;
+      if ((s.t -= dt) <= 0 && d > 4) this.frogHop(v, s, s.hx, s.hy, s.hz, false);
+    } else if (startled && s.hold <= 0) {
+      this.frogHop(v, s, s.wx, s.wy - 0.02, s.wz, true);
+    } else {
+      if ((s.t -= dt) <= 0 && s.hold <= 0) {             // a little shuffle round its spot, facing the water
+        const a = Math.random() * 6.28, tx = s.hx + Math.cos(a) * 0.4, tz = s.hz + Math.sin(a) * 0.4;
+        this.frogHop(v, s, tx, s.hy, tz, false);
+        s.face = Math.atan2(s.wx - tx, s.wz - tz);
+      }
+      if ((v.chirpT -= dt) <= 0) {
+        v.chirpT = 60 / croakRate(g?.shownHour ? g.shownHour() : 12) * (0.5 + Math.random());
+        if (d < 30) {
+          if (v.anim?.has('Croak')) { v.clip = ''; v.anim.once('Croak', { then: 'Idle' }); v.clip = 'Idle'; }
+          audio?.croak?.((1 - d / 30) ** 1.5, s.pitch, s.tree ? 'tree' : 'pond');
+        }
+      }
+    }
+    this.place(v, s);
+  }
+
+  frogHop(v, s, tx, ty, tz, into) {
+    this.launch(s, tx, ty, tz, into ? 0.45 : 0.32, into ? 0.4 : 0.18);
+    s.st = 'hop'; s.into = into;
+    if (v.anim?.has('Hop')) { v.anim.once('Hop', { then: into ? 'Swim' : 'Idle', speed: 1.3 }); v.clip = into ? 'Swim' : 'Idle'; }
   }
 
   /** The spider sits on its web, now and then walks a little way across it. */
