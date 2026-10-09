@@ -791,7 +791,12 @@ export class Director {
     n.genzo.setIdle(ch === 4 && !after('c4.meeting') ? 'Sad' : ch >= 1 && ch <= 3 ? 'ArmsCrossed' : 'Idle');
     // Rin
     if (ch <= 1 && !this.q.unlocked('ferry')) { n.rin.place(3.6, 31.2, Math.PI / 2, 0.72); n.rin.setIdle(step === 'c1.fish' || step === 'c1.rin' ? 'Reel' : 'Idle'); }
-    else { n.rin.place(-0.4, 31.6, Math.PI / 2, 0.72); n.rin.setIdle('Idle'); }
+    else {
+      // Rin waits with her ferry, on whichever bank it is moored at
+      const east = (this.game.structures?.nodes?.ferry?.position.x ?? 0) > 12;
+      n.rin.place(east ? PLACES.eastDock.x - 0.8 : -0.4, 31.6, east ? -Math.PI / 2 : Math.PI / 2, 0.72);
+      n.rin.setIdle('Idle');
+    }
     // Ōta
     n.ota.place(-24, -40.5, Math.PI / 2);
     n.ota.setIdle('Idle');

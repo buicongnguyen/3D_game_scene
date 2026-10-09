@@ -867,8 +867,9 @@ export class Scenes {
     rin.place(from.x, from.z, 0, 0.55);
     rin.setIdle('Pole');
     await d.ui.fade(false, 350);
-    const t0 = performance.now(), dur = 6500;
     await d.say('ferry_ride');
+    // the crossing starts once Rin has had her say (timed from here, so a slow reader never sees the boat jump)
+    const t0 = performance.now(), dur = 6500;
     this.g.follow.cutscene({ pos: V((from.x + to.x) / 2, 7, from.z + 16), look: V((from.x + to.x) / 2, 0.5, from.z) }, 1.2);
     await new Promise(res => {
       const tick = () => {
