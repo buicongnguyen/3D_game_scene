@@ -177,7 +177,7 @@ root (at origin)
 
 | Model | Height | Clips (all loop unless marked *once*) | Tris |
 |---|---|---|---|
-| `mika` | 1.45 m | Idle, Walk, Run, Jump *once*, Fall, Land *once*, Aim, Point *once*, Cast *once*, Reel, Interact *once*, Stir, Hammer, Cheer *once*, Talk, Wave *once*, Swim, Tread, Hang (from the Star Kite's bar: straight arms up in a wide Y with the palms ~1.32 m above the feet and ~0.11 m in front of the body line, head tipped back, legs dangling, scarf streaming) | ≤ 16k |
+| `mika` | 1.45 m | Idle, Walk, Run, Jump *once*, Fall, Land *once*, Aim, Point *once*, Cast *once*, Reel, Interact *once*, Stir, Hammer, Cheer *once*, Talk, Wave *once*, Swim, Tread, Hang (from the Star Kite's bar: straight arms up in a wide Y with the palms ~1.32 m above the feet and ~0.11 m in front of the body line, head tipped back, legs dangling, scarf streaming), Sit, SitFloor, Pet *once* | ≤ 16k |
 | `genzo` | 1.62 m (stout) | Idle, Walk, Talk, Wave *once*, Sad, ArmsCrossed, Bow *once* | ≤ 12k |
 | `rin` | 1.50 m | Idle, Walk, Run, Talk, Wave *once*, Cast *once*, Reel, Pole, Cheer *once* | ≤ 12k |
 | `ota` | 1.58 m | Idle (leaning on cane), Walk (with cane), Talk, Wave *once*, Bow *once*, Sad | ≤ 12k |
@@ -185,6 +185,8 @@ root (at origin)
 | `villager-man`, `villager-woman`, `villager-kid` (1.72 / 1.62 / 1.20 m) | — | Idle, Walk, Talk, Wave *once*, Cheer *once*, Run, Jump *once* (in-place hop, 24 f), Bow *once*, Interact *once*, Hammer, Sweep, Carry, Sit, Throw *once*, Kick *once* | ≤ 8k each |
 
 **Town Life villager clips.** Walk is 1.6 m/s and Run 4.2 m/s at 1.0x (root motion in place, scale `timeScale = speed / ref`). **Sit** bakes the hip drop onto a seat 0.45 m high (`SEAT_H` in player_anims.py): keep the root on the GROUND (y = seat base, no extra y offset), directly under the seat centre line, facing away from the backrest; the feet land about 0.3–0.6 m in front (kids dangle and swing them). **Jump** is an in-place hop (air time p 0.3–0.7); slide the root forward during it for hopscotch. **Throw** releases at frame 16/30 (p 0.55), **Kick** strikes at frame 14/30 (p 0.48). **Carry** holds a bucket/basket handle with both hands at the waist (loops, also an idle).
+
+**Mika sitting / petting.** **Sit** (60 f loop) is the villagers' Sit (same `SEAT_H` = 0.45 m hip drop): put the root on the GROUND directly under the hip line, i.e. about 0.30 m behind the seat's front edge (thighs 0.30 m long; knees reach the edge, feet rest flat ~0.26 m in front of the root), facing away from the backrest (model forward = +Z in three.js). **SitFloor** (90 f loop) is cross-legged on a floor cushion `CUSHION_H` = 0.10 m high: root on the FLOOR at the cushion centre, facing out; hip joints sit 0.185 m up, knees rest on the floor ~0.3 m out to each side, crossed ankles ~0.2 m in front (cushion ≤ ~0.4 m across so knees stay on the floor). **Pet** (42 f once, 1.4 s) crouches and strokes with the right hand at ~0.36 m high, 0.40 m in front of the root (two strokes p 0.3–0.8): place the animal's back about 0.45–0.5 m ahead.
 
 **Held props on `grip_R`** (rotation = three Euler XYZ on the prop root; position 0 unless noted): broom with Sweep (0.603, −0.457, 3.086); bucket/basket with Carry (−0.19, −0.39, 2.21); bucket/basket/hand-lantern hanging in Walk/Idle (π, 0, 0); letters (0, 0, 0); hoe with Hammer (0.0, −1.118, −0.548) so the blade bites the ground at the strike; ball (0, 0, 0) at position (0.1, 0.03, 0) × height/1.72 for kids (0.07, 0.02, 0).
 

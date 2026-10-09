@@ -36,6 +36,10 @@ danger that night.
 - **Shops.** Buy rice balls, dango, candy, a ball for the kids or flowers at Fujita Grocery, Komori Sweets & Paper and
   the Takamori market stall, and sell your fish and forest finds. The journal's **Neighbours** tab keeps track.
   See [docs/TOWNLIFE.md](docs/TOWNLIFE.md).
+- **Things to do indoors.** Sit at the low table, look out of the window, open the tansu, pet the cat, ring the
+  altar bell: every room has a few, and each home hides one small house memory for the journal (21 in all).
+- **Explore mode.** "Explore the valley" on the title screen: free roam in the valley after the story, in any season
+  and time of day, on its own save.
 - **Valley friends.** Say hello to rabbits, hens, Mochi the cat, the ducks, the
   sheep, a deer family, Kon the fox and Ōkuma the bear.
 - **Every lamp throws a party.** Spring's Blossom Wave (a rainbow, leaping koi,

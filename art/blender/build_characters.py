@@ -315,7 +315,8 @@ def build_mika():
     smooth_colors(body, 3, {'Skin'})
     face_tints(body, hd, k, blush=0.7)
     anims.humanoid_clips(arm, b, 'mika', ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel',
-                                          'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang'],
+                                          'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang',
+                                          'Sit', 'SitFloor', 'Pet'],
                          scarf=True, hair=True, wave_side='L', energy=1.0)
     return export_rigged('mika', arm)
 

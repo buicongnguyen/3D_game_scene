@@ -549,6 +549,79 @@ def kick(A, frames=30):
     return 'Kick', frames, pose, False
 
 
+CUSHION_H = 0.10   # SitFloor: floor-cushion top (m); root on the floor at the cushion centre
+
+
+def sit_floor(A, frames=90):
+    """Cross-legged on a floor cushion CUSHION_H high: hips rest on the cushion (root on the floor at
+    its centre, facing -Y like every clip), knees out to the sides on the floor, ankles crossed in
+    front, hands resting on the knees; slow breath and a look-around head turn."""
+    k = A.k
+    hip0 = (A.hip['L'] + A.hip['R']) / 2
+    drop = (CUSHION_H + 0.085 * k) - hip0.z
+    l_th = (A.knee['L'] - A.hip['L']).length
+    l_sh = (A.ank['L'] - A.knee['L']).length
+    knee_z, ank_z = 0.055 * k, {'L': 0.05 * k, 'R': 0.075 * k}
+
+    def flat(v, z, length, d):
+        dz = z - v.z
+        h = math.sqrt(max(length ** 2 - dz ** 2, 1e-6))
+        d = V((d[0], d[1], 0)).normalized()
+        return V((v.x + d.x * h, v.y + d.y * h, z))
+
+    def pose(p):
+        s = A.standing({}, p, breathe=0.9, shift=0.0, lk=1.0)
+        s['hips@loc'] = (0, 0.01 * k, drop)
+        s['hips'] = (-6, 0, 0)
+        s['spine'] = add(s['spine'], (9, 0, 0))
+        s['chest'] = add(s['chest'], (4, 0, 0))
+        s['head'] = add(s['head'], (-6, 0, 0))
+        for S in 'LR':
+            sx = A.sx(S)
+            hp = A.hip[S] + V((0, 0.01 * k, drop))
+            knee = flat(hp, knee_z, l_th, (sx * 0.85, -0.5))
+            ank = flat(knee, ank_z[S], l_sh * 0.99, (-sx * 0.9, -0.35 if S == 'L' else -0.15))
+            s.setdefault('ik', {})['leg_' + S] = dict(target=ank, end=eul((-10, sx * 35, -sx * 70)),
+                                                      pole=tuple(knee - hp))
+            br = 0.003 * k * sn(p, 2)
+            wr = knee + V((-sx * 0.03 * k, -0.01 * k, 0.085 * k + br))
+            A.arm_ik(s, S, wr, pole=(sx * 0.8, 0.5, -0.2), end=(60, 0, sx * -20))
+            s['ik']['arm_' + S]['target'] = wr
+        A.secondary(s, p, drag=2, k=1, amp=0.3)
+        return s
+    return 'SitFloor', frames, pose, True
+
+
+def pet(A, frames=42):
+    """Crouch and stroke something at knee height ~0.5 m (scaled) in front: down 0-.3, two strokes of
+    the right hand .3-.8, back up. Left hand braces on the left knee. Root stays put."""
+    k = A.k
+
+    def pose(p):
+        s = A.standing({}, 0.0, breathe=0.2, shift=0.0, lk=0)
+        g = smooth(env(p, 0.0, 0.3, 0.8, 1.0))
+        u = clamp((p - 0.3) / 0.5)
+        stroke = sn(u, 2, -0.25) * bump(p, 0.28, 0.82)
+        s['hips@loc'] = (0, 0.07 * k * g, -0.3 * k * g)
+        s['hips'] = (30 * g, 0, 0)
+        s['spine'] = (20 * g, 0, -4 * g)
+        s['chest'] = (8 * g, 0, -3 * g)
+        s['head'] = (6 * g, 0, 4 * g)
+        A.plant(s, 'L', (0.01 * k * g, -0.06 * k * g, 0), pole=(0.3, -1, 0.2))
+        A.plant(s, 'R', (-0.02 * k * g, 0.06 * k * g, 0), pole=(-0.3, -1, 0.2))
+        tgt = V((-0.05 * k, -0.4 * k - 0.05 * k * stroke, 0.36 * k + 0.012 * k * abs(stroke)))
+        rest = A.wr['R']
+        A.arm_ik(s, 'R', rest.lerp(tgt, g), pole=(-0.8, 0.5, -0.4), end=(20 * g + 5 * stroke, 0, 0))
+        s['ik']['arm_R']['target'] = rest.lerp(tgt, g)
+        knee = A.knee['L'] + V((0.01 * k, -0.15 * k, -0.18 * k))
+        wl = A.wr['L'].lerp(knee + V((0, -0.02 * k, 0.07 * k)), g)
+        A.arm_ik(s, 'L', wl, pole=(0.8, 0.6, -0.2), end=(60 * g, 0, 0))
+        s['ik']['arm_L']['target'] = wl
+        A.secondary(s, p, drag=-6 * g, k=2, amp=0.4)
+        return s
+    return 'Pet', frames, pose, False
+
+
 def extras(A, who):
     ex = {}
     if who.startswith('villager-'):
@@ -557,7 +630,8 @@ def extras(A, who):
     if who == 'mika':
         ex.update(Aim=lambda: aim(A), Point=lambda: point(A), Cast=lambda: cast(A), Reel=lambda: reel(A),
                   Interact=lambda: interact(A), Stir=lambda: stir(A), Hammer=lambda: hammer(A),
-                  Swim=lambda: swim(A), Tread=lambda: tread(A), Hang=lambda: hang(A))
+                  Swim=lambda: swim(A), Tread=lambda: tread(A), Hang=lambda: hang(A),
+                  Sit=lambda: sit(A), SitFloor=lambda: sit_floor(A), Pet=lambda: pet(A))
     if who == 'rin':
         ex.update(Cast=lambda: cast(A, energy=1.4), Reel=lambda: reel(A), Pole=lambda: pole(A))
     if who == 'genzo':

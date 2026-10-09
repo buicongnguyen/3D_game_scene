@@ -12,6 +12,7 @@ import { clockLabel } from '../world/seasons.js';
 import { STOPS } from '../world/railway.js';
 import { BarkBubbles } from '../ui/barks-ui.js';
 import { TownLife } from './townlife.js';
+import { Indoors } from './indoor.js';
 import { SHOPS } from '../content/shops.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
@@ -283,6 +284,9 @@ export class Director {
     // the named neighbours: day plans, shops, games and their own stories (game/townlife.js)
     this.town = new TownLife(this);
     this.town.spawn();
+    // things to do inside the houses, and the house memories (game/indoor.js)
+    this.indoor = new Indoors(this);
+    this.indoor.spawn();
     // spark targets
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
     this.target('millLamp', L.get('mill')?.flame, N_('Light the Mill Lamp'), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10 });
@@ -579,7 +583,11 @@ export class Director {
     const I = this.game.interiors;
     const s = I?.active ? I.doors.find(d => d.id === I.active).outside : p.lastSafe;
     const data = { v: 1, quest: this.quest.save(), player: { x: s.x, y: s.y, z: s.z, facing: p.facing }, at: Date.now() };
-    try { localStorage.setItem(Director.key(this.slot), JSON.stringify(data)); localStorage.setItem('starline-last-slot', String(this.slot)); this.saveFailed = false; return true; } catch { this.saveFailed = true; return false; }
+    try {
+      localStorage.setItem(Director.key(this.slot), JSON.stringify(data));
+      if (!this.explore) localStorage.setItem('starline-last-slot', String(this.slot));   // Explore never becomes the "last story"
+      this.saveFailed = false; return true;
+    } catch { this.saveFailed = true; return false; }
   }
 
   /** Three save profiles. Slot 1 keeps the original key, so older saves appear there. */
@@ -883,6 +891,7 @@ export class Director {
 
   refreshObjective(pulse = false) {
     if (!this.quest) return;
+    if (this.explore) { this.ui.setObjective(-1, tx('Explore Hoshi Valley: wander, shop, play ball and visit the neighbours.'), pulse); this.refreshHud(); return; }
     this.ui.setObjective(this.q.state.chapter, this.q.objective(tx), pulse);
     this.refreshHud();
   }
@@ -1241,6 +1250,7 @@ export class Director {
     for (const n of new Set(Object.values(this.npcs))) n.update(dt, g.colliders);   // a shopkeeper can be listed twice while talking
     this.updateVillagers(dt);
     this.town?.update(dt);
+    this.indoor?.update();
     this.updateBarks(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);

@@ -18,7 +18,7 @@ const HOME_NODES = ['Spawn', 'Exit', 'Light_1', 'Light_2', 'Light_3', 'Spot_npc_
 export const CONTRACTS = {
   // ---------------------------------------------------------------- characters
   mika: { family: 'characters', tris: 16000, nodes: [...HUMAN_BONES, 'scarf_1'],
-    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang'] },
+    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang', 'Sit', 'SitFloor', 'Pet'] },
   genzo: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Sad', 'ArmsCrossed', 'Bow'] },
   rin: { family: 'characters', tris: 12000, nodes: [...HUMAN_BONES, 'hat'], clips: ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cast', 'Reel', 'Pole', 'Cheer'] },
   ota: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Bow', 'Sad'] },

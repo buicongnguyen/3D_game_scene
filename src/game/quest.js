@@ -11,7 +11,7 @@ export function freshState() {
     v: SAVE_VERSION, step: STEPS[0].id, chapter: 0, season: 'spring', hour: 17.2,
     inv: {}, flags: {}, unlocked: {}, lamps: {}, pages: [], stars: [], fishLog: {}, friends: {}, keepsakes: [], treasures: {}, letters: [],
     choice: null, pos: null, playtime: 0, chatter: {}, started: false,
-    folk: {}, mon: 0, heard: [], // the neighbours' own stories ({ id: { stage, asked, met } }), Mika's coins, conversations overheard
+    folk: {}, mon: 0, heard: [], memories: [], // the neighbours' own stories ({ id: { stage, asked, met } }), Mika's coins, conversations overheard
   };
 }
 
@@ -41,6 +41,7 @@ export function migrate(saved) {
   }
   s.folk = folk;
   s.heard = s.heard.filter(h => typeof h === 'string');
+  s.memories = s.memories.filter(h => typeof h === 'string');
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.
   if (s.step === 'c4.ride') { s.step = 'c4.board'; s.inv = { ...s.inv, lanterns: 0 }; }
   s.v = SAVE_VERSION;

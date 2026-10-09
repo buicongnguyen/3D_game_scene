@@ -93,10 +93,59 @@ export class UI {
       const done = v => { $('title').classList.add('hidden'); cleanup(); this.audio?.click(); resolve(v); };
       const onNew = async () => { const slot = await this.pickSlot('new', slots, last); if (slot) done({ mode: 'new', slot }); };
       const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot) done({ mode: 'continue', slot }); };
-      const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); };
+      const onExplore = async () => { const v = await this.pickExplore(); if (v) done({ mode: 'explore', slot: 'explore', ...v }); };
+      const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); };
       $('btnNew').addEventListener('click', onNew);
       $('btnContinue').addEventListener('click', onCont);
+      $('btnExplore').addEventListener('click', onExplore);
       (any ? $('btnContinue') : $('btnNew')).focus();
+    });
+  }
+
+  /**
+   * Explore mode's picker (in the profile box): a season and a time of day, then go. Resolves with
+   * { season, hour, fresh } or null. The valley is the one after the story: every lamp lit, every way open.
+   */
+  pickExplore() {
+    const box = $('slots'), list = $('slotList');
+    const has = !!this.game.director?.constructor?.loadSave?.('explore');
+    $('slotsTitle').textContent = tx('Explore the valley');
+    box.classList.remove('hidden');
+    const pick = { season: 'spring', hour: 10 };
+    return new Promise(resolve => {
+      const close = v => { box.classList.add('hidden'); $('slotsClose').onclick = null; resolve(v); };
+      $('slotsClose').onclick = () => close(null);
+      const row = (label, options, key) => {
+        const wrap = document.createElement('div'); wrap.className = 'explore-row';
+        const h = document.createElement('p'); h.className = 'explore-h'; h.textContent = label; wrap.appendChild(h);
+        const btns = document.createElement('div'); btns.className = 'explore-chips';
+        for (const [value, text] of options) {
+          const b = document.createElement('button');
+          b.className = 'chip' + (pick[key] === value ? ' on' : '');
+          b.textContent = text;
+          b.onclick = () => { pick[key] = value; this.audio?.click(); btns.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); };
+          btns.appendChild(b);
+        }
+        wrap.appendChild(btns);
+        return wrap;
+      };
+      list.innerHTML = '';
+      const intro = document.createElement('p'); intro.className = 'explore-intro';
+      intro.textContent = tx('No story, no hurry: the valley after the four lamps are lit. Wander, shop, play and visit the neighbours.');
+      list.append(intro,
+        row(tx('Season'), [['spring', tx('Spring')], ['summer', tx('Summer')], ['autumn', tx('Autumn')], ['winter', tx('Winter')]], 'season'),
+        row(tx('Time of day'), [[8, tx('Morning')], [12, tx('Noon')], [18, tx('Evening')], [21.5, tx('Night')], ['cycle-slow', tx('A day passes')]], 'hour'));
+      const go = document.createElement('button'); go.className = 'primary explore-go';
+      go.textContent = has ? tx('Keep exploring') : tx('Start exploring');
+      go.onclick = () => { this.audio?.click(); close({ ...pick, fresh: false }); };
+      list.appendChild(go);
+      if (has) {
+        const again = document.createElement('button'); again.className = 'explore-again';
+        again.textContent = tx('Start over (keeps your stories)');
+        again.onclick = () => { this.audio?.click(); close({ ...pick, fresh: true }); };
+        list.appendChild(again);
+      }
+      go.focus();
     });
   }
 
@@ -634,6 +683,7 @@ export class UI {
       const rows = this.game.director?.town?.journal() || [], met = rows.filter(r => r.met);
       body.innerHTML = `<p>${esc(tx('{n} of {total} neighbours met. Talk to people in Kawabe and Takamori; some will ask for a hand.', { n: met.length, total: rows.length }))}</p>` +
         `<p>${esc(tx('Purse: {n} mon', { n: q.mon || 0 }))}</p><div class="cards">` +
+        this.memoriesHTML() +
         rows.map(r => this.cardHTML(r.met, null, r.met ? tx(r.name) : tx('Someone in the valley'), r.met ? (r.ask ? tx(r.ask) : r.done >= r.total ? tx('You have heard their story.') : tx('They may have more to tell later.')) : tx('Not met yet'),
           r.met ? tx(r.role) : '', r.met && r.total ? tx('{n}/{total}', { n: r.done, total: r.total }) : '')).join('') + '</div>';
     } else if (tab === 'friends') {
@@ -651,6 +701,15 @@ export class UI {
   }
 
   /** A journal card: picture (a silhouette until found), name, tag and a line or two. */
+  /** House memories (one hidden in each home) at the top of the Neighbours tab. */
+  memoriesHTML() {
+    const list = this.game.director?.indoor?.journal() || [];
+    if (!list.length) return '';
+    const got = list.filter(m => m.found);
+    return `<p><b>${esc(tx('House memories: {n} of {total}', { n: got.length, total: list.length }))}</b> ${esc(tx('One small thing is tucked away in every home. Look around the rooms.'))}</p>` +
+      (got.length ? '<div class="cards">' + got.map(m => this.cardHTML(true, 'journal-page', tx(m.name), tx(m.text))).join('') + '</div>' : '');
+  }
+
   cardHTML(known, icon, name, text, tag = '', sub = '', hue = 0) {
     const img = icon ? `<span class="pic"><img alt="" src="${this.icon(icon)}" style="${hue ? `filter:hue-rotate(${hue}deg)` : ''}" onerror="this.style.visibility='hidden'"></span>` : '';
     return `<div class="jcard ${known ? '' : 'unknown'}">${img}<div><b>${esc(name)}</b>${tag ? ` <span class="tag">${esc(tag)}</span>` : ''}<p>${esc(text)}</p>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}</div></div>`;

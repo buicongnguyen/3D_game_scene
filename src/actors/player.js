@@ -387,6 +387,8 @@ export class Player {
   animate(dt, hs) {
     const a = this.anim;
     if (!a) return;
+    // a held pose (sitting indoors) wins over the walk cycle until it is cleared
+    if (this.pose && !a.busy) { a.play(this.pose, { fade: 0.3 }); a.update(dt); return; }
     if (!a.busy) {
       if (!this.grounded && this.airTime > 0.22 && this.vel.y < 0) a.play('Fall', { fade: 0.2 });
       else if (this.grounded) {

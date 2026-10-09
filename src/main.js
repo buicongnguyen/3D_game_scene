@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Game } from './game/game.js';
+import { exploreState } from './game/fastforward.js';
 import { UI } from './ui/ui.js';
 import { Audio } from './engine/audio.js';
 import { FX } from './fx/fx.js';
@@ -125,14 +126,22 @@ if (params.has('view')) {
   const picked = auto ? { mode: auto, slot: +params.get('slot') || 1 } : await ui.title(Director.slots(), Director.lastSlot());
   const choice = picked.mode;
   director.slot = picked.slot;
-  const saved = Director.loadSave(picked.slot);
+  let saved = Director.loadSave(picked.slot);
+  if (choice === 'explore') {
+    // Explore mode: its own save; the first time (or "start over") it begins in a valley where the story is done
+    director.explore = true;
+    if (!saved || picked.fresh) saved = { v: 1, quest: exploreState(), player: { x: -45, y: 4, z: 27, facing: Math.PI }, at: Date.now() };
+    game.seasonOverride = picked.season || null;
+    game.timeOverride = picked.hour ?? null;
+    game.cycleHour = undefined;
+  }
   if (!params.has('mute')) { try { audio.unlock(); } catch (e) { console.warn('audio unavailable', e); } }
   game.beforeUpdate = null;
   game.player.root.visible = true;
   ui.showHud(true);
   game.follow.clearCutscene();
   if (choice === 'new') { Director.clearSave(picked.slot); try { localStorage.removeItem(`starline-album-${picked.slot}`); } catch { /* ignore */ } }
-  const started = director.begin(choice === 'continue' ? saved : null);
+  const started = director.begin(choice === 'continue' || choice === 'explore' ? saved : null);
   window.__STARLINE_PLAYING__ = true;
   await started;
 }

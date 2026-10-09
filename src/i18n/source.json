@@ -9332,6 +9332,1028 @@
   ]
  },
  {
+  "s": "Sit at the low table",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-a)",
+   "prompt: something Mika can do inside (cottage)"
+  ]
+ },
+ {
+  "s": "Two rice balls, one bitten exactly once. Someone small lost interest halfway.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, sit)"
+  ]
+ },
+ {
+  "s": "Reading glasses folded on the paper, tea still warm. A whole slow morning on one tray.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, sit)"
+  ]
+ },
+ {
+  "s": "Grilled fish, two bowls of rice and a little sake. The river pays the rent here.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, sit)"
+  ]
+ },
+ {
+  "s": "Open the tansu",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-a)"
+  ]
+ },
+ {
+  "s": "Socks, a rubber duck, and one sock that is definitely not a pair with anything.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, open)"
+  ]
+ },
+ {
+  "s": "Spare hooks sorted by size in a sweet tin. Tidier than my entire life.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, open)"
+  ]
+ },
+ {
+  "s": "Ring the altar bell",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-a)"
+  ]
+ },
+ {
+  "s": "A small photo, fresh flowers, a candle. They still set out a sweet for someone every day.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, ring)"
+  ]
+ },
+ {
+  "s": "The bell rings longer than you expect. Grandma said that is the polite part.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, ring)"
+  ]
+ },
+ {
+  "s": "Play with the toy train",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-a)"
+  ]
+ },
+ {
+  "s": "Three carriages and a bear for a driver. The bear has clearly never passed an exam.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, play)"
+  ]
+ },
+ {
+  "s": "Pet the cat",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-a)"
+  ]
+ },
+ {
+  "s": "The cat opens one eye, judges me, and allows it. High praise.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, pet)"
+  ]
+ },
+ {
+  "s": "Look at the old net",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-a)"
+  ]
+ },
+ {
+  "s": "Every knot in this net was tied by hand. Some of them have clearly been re-tied in a temper.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, look)"
+  ]
+ },
+ {
+  "s": "Look at the shelf",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-a)"
+  ]
+ },
+ {
+  "s": "Picture books, a plush bear and a pot plant that has survived several \"helpers\".",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, look)"
+  ]
+ },
+ {
+  "s": "A radio older than the station clock, and a photo of two people who look like trouble.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, look)"
+  ]
+ },
+ {
+  "s": "Cork floats, a coil of rope, a toy boat. Even the shelf would like to go fishing.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-a, look)"
+  ]
+ },
+ {
+  "s": "Warm up by the hearth",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-b)",
+   "prompt: something Mika can do inside (takamori-a)"
+  ]
+ },
+ {
+  "s": "The kettle hangs high over the fire here. Out of reach of very small, very curious hands.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, warm)"
+  ]
+ },
+ {
+  "s": "Ash raked flat as a page. I bet nobody has ever been late for tea in this house.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, warm)"
+  ]
+ },
+ {
+  "s": "A pin glints in the hearth frame. Even the fire gets mended here.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, warm)"
+  ]
+ },
+ {
+  "s": "Look at the sewing table",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-b)"
+  ]
+ },
+ {
+  "s": "A tiny onesie with a mended elbow. Babies apparently wear things out at speed.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, use)"
+  ]
+ },
+ {
+  "s": "Ink, a red pencil and a stack of old essays. He still marks things. For fun.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, use)"
+  ]
+ },
+ {
+  "s": "Scissors, spools, a pattern sheet. Everything sorted by colour, including the dust.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, use)"
+  ]
+ },
+ {
+  "s": "Look at the sewing chest",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-b)"
+  ]
+ },
+ {
+  "s": "An old radio, tuned to the weather. Retired people take clouds very seriously.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, look)"
+  ]
+ },
+ {
+  "s": "A dress form in a half-pinned dress. It looks like it is about to go somewhere nice.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, look)"
+  ]
+ },
+ {
+  "s": "Browse the bookcase",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-b)"
+  ]
+ },
+ {
+  "s": "Picture books chewed at the corners. Somebody here reads with their teeth.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, look)"
+  ]
+ },
+ {
+  "s": "Every shelf full, and slips of paper sticking out of half the books like little flags.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, look)"
+  ]
+ },
+ {
+  "s": "Bolts of fabric where books should be. I respect a house that knows what it loves.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, look)"
+  ]
+ },
+ {
+  "s": "Play on the mat",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-b)"
+  ]
+ },
+ {
+  "s": "I spin the mobile. Four wooden stars go round. I may be thirteen, but that was satisfying.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-b, play)"
+  ]
+ },
+ {
+  "s": "Pet the shop cat",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-shop)"
+  ]
+ },
+ {
+  "s": "The shop cat is in charge of the window. The onions are in charge of everything else.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, pet)"
+  ]
+ },
+ {
+  "s": "The cat smells faintly of candy. I do not want to know how.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, pet)"
+  ]
+ },
+ {
+  "s": "The cat sleeps on, unbothered by forty kinds of nail. A true professional.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, pet)"
+  ]
+ },
+ {
+  "s": "Look at the display",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-shop)"
+  ]
+ },
+ {
+  "s": "Crates of radishes, cabbages and mikan. The mikan are arranged like they are on parade.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, look)"
+  ]
+ },
+ {
+  "s": "Paper rolls, ink and candy jars. A whole shop of things grown-ups say we do not need.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, look)"
+  ]
+ },
+ {
+  "s": "Rope coils on the table like sleeping snakes. Very tidy snakes.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, look)"
+  ]
+ },
+ {
+  "s": "Read the notice board",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-shop)"
+  ]
+ },
+ {
+  "s": "\"Found: one glove, left, very sad.\" \"Wanted: someone who can fix a gramophone. Again.\"",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, read)"
+  ]
+ },
+ {
+  "s": "Look out of the hatch",
+  "ctx": [
+   "prompt: something Mika can do inside (kawabe-shop)"
+  ]
+ },
+ {
+  "s": "The hatch opens on the lane. Half the valley buys its tea here without coming in.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, look)"
+  ]
+ },
+ {
+  "s": "Little fingerprints all along the hatch sill, exactly at sweet-jar height.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, look)"
+  ]
+ },
+ {
+  "s": "A teapot by the hatch. Even hardware people stop for tea.",
+  "ctx": [
+   "Mika's thought indoors (kawabe-shop, look)"
+  ]
+ },
+ {
+  "s": "Sit in the window seat",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-a)"
+  ]
+ },
+ {
+  "s": "From up here the whole valley looks like it was arranged on purpose.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, sit)"
+  ]
+ },
+ {
+  "s": "The cushion is warm from the sun. I could stay. I will not, but I could.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, sit)"
+  ]
+ },
+ {
+  "s": "A wheat sheaf over the hearth, for luck. Bakers trust bread more than stars.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, warm)"
+  ]
+ },
+ {
+  "s": "A flute on the mantel, next to a cold cup of tea. Practice won, tea lost.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, warm)"
+  ]
+ },
+ {
+  "s": "A trailing plant on the mantel is slowly taking over the chimney. Nobody is stopping it.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, warm)"
+  ]
+ },
+ {
+  "s": "Open the bedside chest",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-a)"
+  ]
+ },
+ {
+  "s": "Clean aprons folded in a stack. Each one still smells faintly of toast.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, open)"
+  ]
+ },
+ {
+  "s": "Spare strings, rosin and a tuning fork. Even the drawer is in tune.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, open)"
+  ]
+ },
+ {
+  "s": "Pressed leaves between paper, every one labelled. Some labels just say \"nice\".",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, open)"
+  ]
+ },
+ {
+  "s": "Pluck the koto",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-a)"
+  ]
+ },
+ {
+  "s": "I pluck one string. It hums for ages, like it has been waiting for someone to ask.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, play)"
+  ]
+ },
+ {
+  "s": "Pick up the watering can",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-a)"
+  ]
+ },
+ {
+  "s": "Half full and dented in three places. A watering can with a long, honest career.",
+  "ctx": [
+   "Mika's thought indoors (takamori-a, use)"
+  ]
+ },
+ {
+  "s": "Look out of the window",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-b)"
+  ]
+ },
+ {
+  "s": "Fresh flowers on the sill and a box labelled \"MISC (MORE)\". Still moving in, then.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, look)"
+  ]
+ },
+ {
+  "s": "From here you can just see the bell tower. I bet they set every clock by it.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, look)"
+  ]
+ },
+ {
+  "s": "Roses in pots on the sill, every one with a little name tag. One is called \"Stubborn\".",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, look)"
+  ]
+ },
+ {
+  "s": "Sit on the tatami",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-b)"
+  ]
+ },
+ {
+  "s": "A paper heart garland over the window. Slightly crooked. Clearly hung together.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, sit)"
+  ]
+ },
+ {
+  "s": "A small bell on the shelf and a bright lantern runner. Even the floor is festive.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, sit)"
+  ]
+ },
+ {
+  "s": "A patchwork quilt folded over the futon. I find three squares from the same old apron.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, sit)"
+  ]
+ },
+ {
+  "s": "Ring a handbell",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-b)"
+  ]
+ },
+ {
+  "s": "Eight handbells, smallest to biggest. I ring the smallest. It sounds like a polite sparrow.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, ring)"
+  ]
+ },
+ {
+  "s": "Open the wardrobe",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-b)"
+  ]
+ },
+ {
+  "s": "Half the hangers are empty. The other half hold two very good festival yukata.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, open)"
+  ]
+ },
+ {
+  "s": "Heavy coats for winter mornings in the tower, and a scarf longer than me.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, open)"
+  ]
+ },
+ {
+  "s": "Lavender bags in every pocket. The moths have given up and moved valleys.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, open)"
+  ]
+ },
+ {
+  "s": "Turn the spinning wheel",
+  "ctx": [
+   "prompt: something Mika can do inside (takamori-b)"
+  ]
+ },
+ {
+  "s": "The wheel turns with a soft click-click. It sounds like somebody humming without words.",
+  "ctx": [
+   "Mika's thought indoors (takamori-b, use)"
+  ]
+ },
+ {
+  "s": "Look out at the river",
+  "ctx": [
+   "prompt: something Mika can do inside (boathouse)"
+  ]
+ },
+ {
+  "s": "The river slides right under the hatch. You could fish from bed, if you were brave.",
+  "ctx": [
+   "Mika's thought indoors (boathouse, look)"
+  ]
+ },
+ {
+  "s": "Peer into the bucket",
+  "ctx": [
+   "prompt: something Mika can do inside (boathouse)"
+  ]
+ },
+ {
+  "s": "Three fish in the bucket, all looking at me like this is my fault.",
+  "ctx": [
+   "Mika's thought indoors (boathouse, look)"
+  ]
+ },
+ {
+  "s": "Bow at the little shrine",
+  "ctx": [
+   "prompt: something Mika can do inside (boathouse)"
+  ]
+ },
+ {
+  "s": "A tiny shrine for safe water. I bow. It costs nothing and the river is very big.",
+  "ctx": [
+   "Mika's thought indoors (boathouse, use)"
+  ]
+ },
+ {
+  "s": "Open the sea chest",
+  "ctx": [
+   "prompt: something Mika can do inside (boathouse)"
+  ]
+ },
+ {
+  "s": "Oilskins, spare line and a tin of biscuits hidden under everything. Strategic.",
+  "ctx": [
+   "Mika's thought indoors (boathouse, open)"
+  ]
+ },
+ {
+  "s": "Warm up by the forge",
+  "ctx": [
+   "prompt: something Mika can do inside (shed)"
+  ]
+ },
+ {
+  "s": "The forge breathes in and out like something asleep. Something very hot and asleep.",
+  "ctx": [
+   "Mika's thought indoors (shed, warm)"
+  ]
+ },
+ {
+  "s": "Look at the workbench",
+  "ctx": [
+   "prompt: something Mika can do inside (shed)"
+  ]
+ },
+ {
+  "s": "A wheel with three spokes missing and a mug still steaming. Someone just stepped away.",
+  "ctx": [
+   "Mika's thought indoors (shed, look)"
+  ]
+ },
+ {
+  "s": "Sit on the cot",
+  "ctx": [
+   "prompt: something Mika can do inside (shed)"
+  ]
+ },
+ {
+  "s": "A cot for long nights and early trains. The pillow has a dent shaped like overtime.",
+  "ctx": [
+   "Mika's thought indoors (shed, sit)"
+  ]
+ },
+ {
+  "s": "Search the parts shelves",
+  "ctx": [
+   "prompt: something Mika can do inside (shed)"
+  ]
+ },
+ {
+  "s": "Bolts, springs, gauges. A box marked \"DO NOT SORT\". I respect that system.",
+  "ctx": [
+   "Mika's thought indoors (shed, open)"
+  ]
+ },
+ {
+  "s": "Read the letters",
+  "ctx": [
+   "prompt: something Mika can do inside (cottage)"
+  ]
+ },
+ {
+  "s": "Letters from half the valley, tied in bundles. Grandma answered every one. Eventually.",
+  "ctx": [
+   "Mika's thought indoors (cottage, read)"
+  ]
+ },
+ {
+  "s": "Look at the signal things",
+  "ctx": [
+   "prompt: something Mika can do inside (cottage)"
+  ]
+ },
+ {
+  "s": "A semaphore arm, a hand lamp, a model of the Viaduct Lamp. Grandma loved a good signal.",
+  "ctx": [
+   "Mika's thought indoors (cottage, look)"
+  ]
+ },
+ {
+  "s": "Open the oshiire",
+  "ctx": [
+   "prompt: something Mika can do inside (cottage)"
+  ]
+ },
+ {
+  "s": "Futons that still smell of sun and her soap. I close it again, slowly.",
+  "ctx": [
+   "Mika's thought indoors (cottage, open)"
+  ]
+ },
+ {
+  "s": "Grandma's cushion is the flat one. She said the flat ones had the best stories.",
+  "ctx": [
+   "Mika's thought indoors (cottage, sit)"
+  ]
+ },
+ {
+  "s": "Warm up by the oven",
+  "ctx": [
+   "prompt: something Mika can do inside (bakery)"
+  ]
+ },
+ {
+  "s": "The oven is older than the viaduct and twice as warm. Possibly twice as stubborn.",
+  "ctx": [
+   "Mika's thought indoors (bakery, warm)"
+  ]
+ },
+ {
+  "s": "Smell the bread shelves",
+  "ctx": [
+   "prompt: something Mika can do inside (bakery)"
+  ]
+ },
+ {
+  "s": "I breathe in. I am now legally part bread.",
+  "ctx": [
+   "Mika's thought indoors (bakery, look)"
+  ]
+ },
+ {
+  "s": "Sit at the cafe table",
+  "ctx": [
+   "prompt: something Mika can do inside (bakery)"
+  ]
+ },
+ {
+  "s": "The window table. Half the valley's gossip has been eaten off this table with buns.",
+  "ctx": [
+   "Mika's thought indoors (bakery, sit)"
+  ]
+ },
+ {
+  "s": "Count the peaches",
+  "ctx": [
+   "prompt: something Mika can do inside (bakery)"
+  ]
+ },
+ {
+  "s": "Twenty-three peaches. Twenty-two if Hana is not looking. She is always looking.",
+  "ctx": [
+   "Mika's thought indoors (bakery, look)"
+  ]
+ },
+ {
+  "s": "Warm up by the brazier",
+  "ctx": [
+   "prompt: something Mika can do inside (mill)"
+  ]
+ },
+ {
+  "s": "Coals ticking, a plate of pickled radish within reach. A very serious sitting corner.",
+  "ctx": [
+   "Mika's thought indoors (mill, warm)"
+  ]
+ },
+ {
+  "s": "Watch the gears",
+  "ctx": [
+   "prompt: something Mika can do inside (mill)"
+  ]
+ },
+ {
+  "s": "Wooden teeth, iron pins, a whole river turning one stone. I could watch this all day.",
+  "ctx": [
+   "Mika's thought indoors (mill, look)"
+  ]
+ },
+ {
+  "s": "Lift a crock lid",
+  "ctx": [
+   "prompt: something Mika can do inside (mill)"
+  ]
+ },
+ {
+  "s": "Ten years of radish, by the smell. My eyes are watering with respect.",
+  "ctx": [
+   "Mika's thought indoors (mill, open)"
+  ]
+ },
+ {
+  "s": "Try the balance scale",
+  "ctx": [
+   "prompt: something Mika can do inside (mill)"
+  ]
+ },
+ {
+  "s": "I put one finger on the pan. The scale says I am mostly flour. Fair.",
+  "ctx": [
+   "Mika's thought indoors (mill, use)"
+  ]
+ },
+ {
+  "s": "Warm up by the stove",
+  "ctx": [
+   "prompt: something Mika can do inside (station)"
+  ]
+ },
+ {
+  "s": "The kettle on the stove is always just about to boil. Like a stationmaster.",
+  "ctx": [
+   "Mika's thought indoors (station, warm)"
+  ]
+ },
+ {
+  "s": "Sit on the bench",
+  "ctx": [
+   "prompt: something Mika can do inside (station)"
+  ]
+ },
+ {
+  "s": "A waiting bench, polished smooth by a hundred years of waiting.",
+  "ctx": [
+   "Mika's thought indoors (station, sit)"
+  ]
+ },
+ {
+  "s": "Look at the clock",
+  "ctx": [
+   "prompt: something Mika can do inside (station)"
+  ]
+ },
+ {
+  "s": "Tick. Tock. The pendulum has never once been late. Unlike some people. Me.",
+  "ctx": [
+   "Mika's thought indoors (station, look)"
+  ]
+ },
+ {
+  "s": "Read the ticket rack",
+  "ctx": [
+   "prompt: something Mika can do inside (station)"
+  ]
+ },
+ {
+  "s": "Little card tickets in pigeonholes, one for every stop. Some stops I have never heard of.",
+  "ctx": [
+   "Mika's thought indoors (station, read)"
+  ]
+ },
+ {
+  "s": "Pressed bellflower",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A bellflower Grandma pressed in a train timetable, on the page for the last train home.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Napkin doodle",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A peach bun with a face, drawn on a napkin and signed \"S.\" It looks very pleased with itself.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Lucky radish tag",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A wooden tag from a radish crock, carved \"Year one: don't open till it's good.\"",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Star-punched ticket",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A blank ticket punched with a star-shaped hole. Somebody once made the punch just for fun.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Crayon Star Train",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A crayon drawing of the Star Train with nine wheels and a very happy moon driving it.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Old festival fan",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A paper festival fan, the stars on it faded to gold. Someone fanned a lot of summers with it.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Lucky lure",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A hand-carved lure painted like a star. It has never caught a fish, and never will.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Toy carriage number 4",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "The missing fourth carriage of the toy train, found under the rug, where carriages go to rest.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Wooden star rattle",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A little wooden rattle shaped like a star, with tooth marks on every point.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Class photo",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A class photo by the river, every child named on the back in tidy ink, one marked \"Sora, chatty\".",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Indigo yukata scrap",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A scrap of indigo yukata with tiny white stars, pinned to a note: \"save for something special\".",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Lost-kite notice",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "An old notice in a child's hand: \"Lost: red kite. Answers to nothing. Please return anyway.\"",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Paper crane wrapper",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A sweet wrapper folded into a tiny crane. It still smells of plum.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "First bun mould",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A dented little bun mould, the first one the baker ever owned. Every bun from it came out lopsided.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Star koto pick",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A spare koto pick with a star scratched into it, for good luck on festival nights.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Seed packet",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A paper seed packet, labelled \"night violets, from S., plant where you can see the stars\".",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Two festival ribbons",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "Two festival ribbons knotted together, one red, one blue, from the night they first danced.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Wrapped bell clapper",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "An old bell clapper wrapped in paper, marked \"retired after 40 years of very good work\".",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Spindle of gold yarn",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A spindle of yarn the exact gold of a festival lantern. Grandma Sora always asked for a scarf.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Ferry ticket stub",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "A ferry ticket stub from the old river crossing, the date faded, \"ROUND TRIP\" still clear.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Brass whistle knob",
+  "ctx": [
+   "house memory: a small found object (journal)"
+  ]
+ },
+ {
+  "s": "The brass knob off an old train whistle, polished so often its star has nearly worn away.",
+  "ctx": [
+   "house memory description (journal)"
+  ]
+ },
+ {
   "s": "Talk to the villager",
   "ctx": [
    "UI (src/game/director.js)"
@@ -9643,6 +10665,12 @@
   ]
  },
  {
+  "s": "Explore Hoshi Valley: wander, shop, play ball and visit the neighbours.",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "New friend: {name} ({n}/{total})",
   "ctx": [
    "UI (src/game/director.js)"
@@ -9757,6 +10785,24 @@
   "s": "Ready",
   "ctx": [
    "loading screen"
+  ]
+ },
+ {
+  "s": "Stand up",
+  "ctx": [
+   "UI (src/game/indoor.js)"
+  ]
+ },
+ {
+  "s": "House memory: {name}. {text}",
+  "ctx": [
+   "UI (src/game/indoor.js)"
+  ]
+ },
+ {
+  "s": "House memory {n}/{total}: {name}",
+  "ctx": [
+   "UI (src/game/indoor.js)"
   ]
  },
  {
@@ -10061,6 +11107,113 @@
   ]
  },
  {
+  "s": "Explore the valley",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "No story, no hurry: the valley after the four lamps are lit. Wander, shop, play and visit the neighbours.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Season",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Spring",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Summer",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Autumn",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Winter",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Time of day",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Morning",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Noon",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Evening",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Night",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "A day passes",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Keep exploring",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Start exploring",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Start over (keeps your stories)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Start a new game in this slot? The story saved here will be replaced.",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -10360,6 +11513,18 @@
   ]
  },
  {
+  "s": "House memories: {n} of {total}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "One small thing is tucked away in every home. Look around the rooms.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Trackside lanterns lit {n} / {total}",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -10594,67 +11759,13 @@
   ]
  },
  {
-  "s": "Season",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
   "s": "Follow the story",
   "ctx": [
    "menu / screen text"
   ]
  },
  {
-  "s": "Spring",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Summer",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Autumn",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Winter",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Time of day",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Morning",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Noon",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
   "s": "Sunset",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Night",
   "ctx": [
    "menu / screen text"
   ]
@@ -10751,12 +11862,6 @@
  },
  {
   "s": "Thank you for playing Starline! The valley is yours to explore, and Tamo visits every Sunday.",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Keep exploring",
   "ctx": [
    "menu / screen text"
   ]

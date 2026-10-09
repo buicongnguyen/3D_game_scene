@@ -11,6 +11,7 @@ import { BARKS } from '../src/content/barks.js';
 import { PEOPLE } from '../src/content/townsfolk.js';
 import { GOODS, ERRANDS, SHOPS } from '../src/content/shops.js';
 import { CONVOS } from '../src/content/convos.js';
+import { HOTSPOTS, MEMORIES } from '../src/content/hotspots.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANGS = ['vi', 'ko', 'ja'];
@@ -76,6 +77,12 @@ export function collect() {
     for (const l of Object.values(s.thanks || {})) add(l, `shopkeeper (${s.name}) after a sale`);
   }
   for (const c of CONVOS) for (const l of c.lines) add(l[1], 'overheard conversation between two villagers (speech bubble, short)');
+  // indoors: what Mika can do in each room (prompts), what she thinks there, and the house memories
+  for (const [room, list] of Object.entries(HOTSPOTS)) for (const h of list) {
+    add(h.label, `prompt: something Mika can do inside (${room})`);
+    for (const lines of Object.values(h.lines || {})) for (const l of lines) add(l, `Mika's thought indoors (${room}, ${h.kind})`);
+  }
+  for (const m of Object.values(MEMORIES)) { add(m.name, 'house memory: a small found object (journal)'); add(m.text, 'house memory description (journal)'); }
 
   // UI strings: tx('…') literals and interaction labels in the source, data-i18n markup in index.html
   const files = [];

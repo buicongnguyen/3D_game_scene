@@ -85,6 +85,29 @@ it to one of them, and every third throw someone cheers. While she plays, the ki
 than 9 m away tosses the ball back and ends her turn. There is one ball in the valley: it belongs to the ball game
 nearest Mika.
 
+## Inside the houses
+
+Every room has 2–4 things to do, matched to its furniture and to who lives there (`src/content/hotspots.js`,
+run by `src/game/indoor.js`): sit at the table or on the bench, look out of the window, open the tansu, pet the cat,
+ring the altar bell, play the koto, warm your hands at the hearth. Mika says what she notices. Positions are in
+**Blender room coordinates** as in the generators (`art/blender/interior_*.py`; three.js = Blender (x, z, −y) in the
+room model's space), and each hotspot lists the decor variants its prop exists in.
+
+- **Sitting** uses the player's mount (no physics) with a held pose: `Sit` on a raised seat (her hips land 0.45 m over
+  the root, so the root goes 0.45 m below the furniture top read from the colliders) and `SitFloor` on a cushion.
+  A held camera shot frames her from the front, kept inside the room. Moving, jumping or **Stand up** gets her up.
+- **House memories:** one small thing hidden in each of the 21 homes (`MEMORIES`), found by using a particular spot.
+  They are listed at the top of the journal's Neighbours tab and saved in `quest.state.memories`.
+- **Focus:** a spot reaches 1.2 m. Standing right on it (within 0.4 m) it wins over the room's door, a keepsake or the
+  shopkeeper; anywhere else those win.
+
+## Explore mode
+
+**Explore the valley** on the title screen starts a separate free-roam save (`starline-save-explore`, never a story
+slot): the valley after the story (`exploreState()` in `src/game/fastforward.js`, which the autopilot's `--from` also
+uses), every lamp lit and every way open, no objectives. The picker chooses the season and time of day (or lets a day
+pass). **Start over** rebuilds it; story saves are untouched.
+
 ## Overheard conversations
 
 When two people's `chat` tasks bring them together and Mika is within 20 m, they trade 2–4 bubble lines. Their own
