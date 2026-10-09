@@ -300,6 +300,23 @@ export class Interiors {
     };
   }
 
+  /** Is a world point inside the active room (with a margin from the walls, floor and ceiling)? */
+  roomHas(p, m = 0.45) {
+    const room = this.rooms.get(this.active);
+    if (!room || room.bounds.isEmpty()) return true;
+    const q = p.clone().applyMatrix4(room.inv), b = room.bounds;
+    return q.x > b.min.x + m && q.x < b.max.x - m && q.y > b.min.y + 0.3 && q.y < b.max.y - 0.25 && q.z > b.min.z + m && q.z < b.max.z - m;
+  }
+
+  /** The nearest point inside the active room to a world point. */
+  clampToRoom(p, m = 0.45) {
+    const room = this.rooms.get(this.active);
+    if (!room || room.bounds.isEmpty()) return p;
+    const b = room.bounds, q = p.clone().applyMatrix4(room.inv);
+    q.clamp(new V3(b.min.x + m, b.min.y + 0.3, b.min.z + m), new V3(b.max.x - m, b.max.y - 0.25, b.max.z - m));
+    return q.applyMatrix4(room.root.matrixWorld);
+  }
+
   clampCamera() {
     const room = this.rooms.get(this.active);
     const cam = this.game.camera, f = this.game.follow;

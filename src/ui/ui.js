@@ -3,6 +3,10 @@ import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 import { JournalMap } from './map.js';
 
+// the letter in a speaker's avatar circle: the name's, not its title's ("Mr. Fujita" → F, "Bà Tsuru" → T)
+const TITLES = /^(mr|mrs|miss|ms|granny|grandpa|old|ông|bà|cô|anh|chú|bác|cụ|bé|chị|em)\.?$/i;
+const initial = name => [...(name.split(/\s+/).find(w => !TITLES.test(w)) || name)][0] || '?';
+
 const $ = id => document.getElementById(id);
 const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -407,7 +411,7 @@ export class UI {
         const av = document.createElement('div');
         av.className = 'av';
         if (hasPortrait) av.style.backgroundImage = `url(./portraits/${who}.webp)`;
-        else { av.style.background = c.color; av.textContent = [...tx(c.name || '?')][0]; }
+        else { av.style.background = c.color; av.textContent = initial(tx(c.name || '?')); }
         row.appendChild(av);
       }
       const bub = document.createElement('div');

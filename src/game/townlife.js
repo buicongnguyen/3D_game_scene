@@ -134,6 +134,7 @@ export class TownLife {
   makeBall() {
     const m = this.g.assets.clone('ball') || new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 1), new THREE.MeshStandardMaterial({ color: '#e0433a', roughness: 0.6 }));
     m.visible = false;
+    m.scale.setScalar(1.4);                       // a touch bigger than life, so it reads from the camera's distance
     m.traverse(o => { if (o.isMesh) o.castShadow = true; });
     this.g.scene.add(m);
     return m;

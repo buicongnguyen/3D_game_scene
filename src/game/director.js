@@ -949,8 +949,13 @@ export class Director {
     const mid = p.clone().lerp(n, 0.5);
     const dx = n.x - p.x, dz = n.z - p.z, l = Math.hypot(dx, dz) || 1;
     const side = V(-dz / l, 0, dx / l);
-    const camPos = mid.clone().addScaledVector(side, 4.2).add(V(0, 1.9, 0)).addScaledVector(V(-dx / l, 0, -dz / l), 1.2);
-    if (this.world.heightAt(camPos.x, camPos.z) > camPos.y - 0.6) camPos.y = this.world.heightAt(camPos.x, camPos.z) + 1.2;
+    const shot = (s, r, up, back) => mid.clone().addScaledVector(side, s * r).add(V(0, up, 0)).addScaledVector(V(-dx / l, 0, -dz / l), back);
+    let camPos = shot(1, 4.2, 1.9, 1.2);
+    const I = this.game.interiors;
+    if (I?.active) {
+      // indoors the usual shot is outside the walls: try both sides and closer in, else the nearest point inside
+      camPos = [[1, 2.6, 1.5, 0.6], [-1, 2.6, 1.5, 0.6], [1, 1.9, 1.4, 0.3], [-1, 1.9, 1.4, 0.3]].map(a => shot(...a)).find(c => I.roomHas(c)) || I.clampToRoom(shot(1, 2.2, 1.5, 0.4));
+    } else if (this.world.heightAt(camPos.x, camPos.z) > camPos.y - 0.6) camPos.y = this.world.heightAt(camPos.x, camPos.z) + 1.2;
     this.game.follow.cutscene({ pos: camPos, look: mid.clone().add(V(0, 1.25, 0)) }, 0.8);
   }
 
