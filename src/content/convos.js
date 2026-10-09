@@ -148,8 +148,10 @@ export const CONVOS = [
     ['a', 'They say Sora\'s girl lit the Mill Lamp.'], ['b', 'With a star, I heard. A talking one.'], ['a', 'Well. She is Sora\'s.'] ] },
   { id: 'g-lamps-2', a: 'any', b: 'any', when: { chapter: [2, 5], lamps: 2 }, lines: [
     ['a', 'Two lamps lit. Can you believe it?'], ['b', 'I keep looking out the window to check.'] ] },
-  { id: 'g-lamps-3', a: 'any', b: 'any', when: { chapter: [3, 5], lamps: 3 }, lines: [
+  { id: 'g-lamps-3', a: 'any', b: 'any', story: 'classic', when: { chapter: [3, 5], lamps: 3 }, lines: [
     ['a', 'Even the Forest Lamp\'s burning now.'], ['b', 'Kiku would be glad. Wherever she is.'] ] },
+  { id: 'g-lamps-3-g', a: 'any', b: 'any', story: 'grandma', when: { chapter: [3, 5], lamps: 3 }, lines: [
+    ['a', 'Even the Forest Lamp\'s burning now.'], ['b', 'Kiku would be glad. I\'ll write and tell her.'] ] },
   { id: 'g-train-1', a: 'man', b: 'any', story: 'classic', when: { chapter: [0, 3] }, lines: [
     ['a', 'Ten years since the Star Train ran.'], ['b', 'Genzo still oils Kobo every morning.'], ['a', 'Hope\'s a kind of grease, I suppose.'] ] },
   { id: 'g-train-1-g', a: 'man', b: 'any', story: 'grandma', when: { chapter: [0, 3] }, lines: [

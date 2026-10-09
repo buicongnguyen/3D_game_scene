@@ -36,6 +36,6 @@ export function stateAt(stepId, choice = 'alone', story) {
 /** Explore mode: the valley after the story, every lamp lit and every way open, nothing asked of Mika. */
 export function exploreState() {
   const st = stateAt('e.done', 'together', 'grandma');   // the valley of the default story: Grandma at home
-  st.flags = { ...st.flags, huntAsked: true, explore: true };
+  st.flags = { ...st.flags, huntAsked: true, explore: true, porchTalk: true };   // no story secrets in Explore
   return st;
 }

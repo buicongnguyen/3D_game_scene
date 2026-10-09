@@ -2,7 +2,9 @@ import * as THREE from 'three';
 import { NPC } from './npc.js';
 import { spawnFarm, farmStep } from './farm-animals.js';
 import { rng } from '../engine/spline.js';
+import { Critters } from './critters.js';
 import { PLACES, river, riverHalfWidth } from '../world/layout.js';
+import { placeProblems } from '../world/roads.js';
 
 /** Sheep closer than this to the pen drift home by themselves. */
 export const HOME_RADIUS = 22;
@@ -78,8 +80,11 @@ export class Wildlife {
     this.actors = [];
     this.story = {};
     this.R = rng(99);
+    this.grid = world.grid;
     this.spawnAmbient();
     spawnFarm(this);
+    // small living things (crickets, spiders, ladybugs, dragonflies, butterflies): pooled, near Mika only
+    this.critters = new Critters(scene, assets, world);
   }
 
   add(id, model, x, z, facing = 0, idle = 'Idle') {
@@ -95,41 +100,60 @@ export class Wildlife {
     this.actors = this.actors.filter(x => x !== a);
   }
 
+  /** A dry, gentle spot (same rules as the villagers' placement test) near (cx, cz), or null after a few tries. */
+  spot(cx, cz, r, R = this.R) {
+    for (let k = 0; k < 12; k++) {
+      const x = cx + (R() - 0.5) * 2 * r, z = cz + (R() - 0.5) * 2 * r;
+      if (!placeProblems(x, z, this.grid).length) return [x, z];
+    }
+    return null;
+  }
+
   spawnAmbient() {
     const R = this.R;
-    // rabbits in the meadows around Kawabe and the orchard
+    // rabbits in the meadows around Kawabe, below the cottage, the orchard slopes and the lanes under Takamori
     this.rabbits = [];
-    for (let i = 0; i < 7; i++) {
-      const cx = i < 4 ? -70 : 60, cz = i < 4 ? -20 : 10;
-      const x = cx + (R() - 0.5) * 40, z = cz + (R() - 0.5) * 40;
-      if (this.world.heightAt(x, z) < 1) continue;
-      const r = this.add(`rabbit${i}`, 'rabbit', x, z, R() * 6.28);
-      r.kind = 'rabbit';
-      this.rabbits.push(r);
+    const warrens = [[-70, -20, 20, 4], [60, 10, 20, 3], [-74, 62, 14, 3], [84, 30, 10, 2]];
+    let ri = 0;
+    for (const [cx, cz, r, n] of warrens) for (let i = 0; i < n; i++) {
+      const p = this.spot(cx, cz, r);
+      if (!p) continue;
+      const a = this.add(`rabbit${ri++}`, 'rabbit', p[0], p[1], R() * 6.28);
+      a.kind = 'rabbit';
+      this.rabbits.push(a);
     }
-    // chickens in Takamori
-    for (let i = 0; i < 5; i++) {
-      const c = this.add(`chicken${i}`, 'chicken', 120 + (R() - 0.5) * 16, 22 + (R() - 0.5) * 10, R() * 6.28);
+    // chickens: Hana's flock in Takamori, and a few more scratching round the bakery yard
+    for (const [cx, cz, n, roam] of [[120, 22, 5, 5], [92, 8, 3, 3.5]]) for (let i = 0; i < n; i++) {
+      const c = this.add(`chicken${cx}_${i}`, 'chicken', cx + (R() - 0.5) * roam * 2, cz + (R() - 0.5) * roam * 1.6, R() * 6.28);
       c.kind = 'chicken';
+      c.yard = [cx, cz, roam];
     }
-    // a small deer family grazing on the forest plateau above the orchard
+    // two deer families: on the forest plateau above the orchard, and in the woods along the west forest trail
     this.deer = [];
-    for (let i = 0; i < 3; i++) {
-      const x = 100 + (R() - 0.5) * 8, z = -96 + (R() - 0.5) * 8;
-      const d = this.add(`deer${i}`, 'deer', x, z, R() * 6.28, 'Graze');
-      d.kind = 'deer';
-      d.home = { x: 100, z: -96 };
-      if (i === 2) d.root.scale.multiplyScalar(0.7); // the little one
-      this.deer.push(d);
+    for (const [hx, hz, tag] of [[100, -96, ''], [-36, -84, 'w']]) {
+      for (let i = 0; i < 3; i++) {
+        const x = hx + (R() - 0.5) * 8, z = hz + (R() - 0.5) * 8;
+        const d = this.add(`deer${tag}${i}`, 'deer', x, z, R() * 6.28, 'Graze');
+        d.kind = 'deer';
+        d.home = { x: hx, z: hz };
+        if (i === 2) d.root.scale.multiplyScalar(0.7); // the little one
+        this.deer.push(d);
+      }
     }
-    // a cat asleep on Kawabe's main street
-    const cat = this.add('cat', 'cat', -49.5, 27, 1.2, 'Sleep');
-    cat.kind = 'cat';
-    // ducks on the river near Kawabe
+    // cats: Mochi asleep on Kawabe's main street, and his cousins by the cottage porch, on the bakery doorstep,
+    // curled up at the foot of the orchard fence and in the shade of the peach trees
+    for (const [id, x, z, facing, idle] of [
+      ['cat', -49.5, 27, 1.2, 'Sleep'], ['cat-cottage', -56.2, 141.8, 2.0, 'Sleep'], ['cat-bakery', 102.4, 16.2, 1.9, 'Sit'],
+      ['cat-fence', 96.6, -78.9, Math.PI / 2, 'Sleep'], ['cat-orchard', 64, -43.2, 4.1, 'Sleep'],
+    ]) {
+      const cat = this.add(id, 'cat', x, z, facing, idle);
+      cat.kind = 'cat';
+    }
+    // ducks on the river near Kawabe, and a pair by the mill race
     this.ducks = [];
-    const duckS = river.nearest(9, 4).s;
-    for (let i = 0; i < 4; i++) {
-      const s = duckS + i * 6;
+    const duckS = river.nearest(9, 4).s, millS = river.nearest(4, -32).s;
+    for (let i = 0; i < 6; i++) {
+      const s = i < 4 ? duckS + i * 6 : millS + (i - 4) * 5;
       const p = river.at(s);
       const d = this.add(`duck${i}`, 'duck', p.x + 3, p.z, 0, 'Swim');
       d.kind = 'duck';
@@ -149,14 +173,17 @@ export class Wildlife {
         this.flocks.push(b);
       }
     }
-    // fish under the water near the dock and the mill race
+    // fish under the water: by the Kawabe dock and the mill race, off Takamori Landing, below the boathouse and
+    // upstream of the stepping stones
     this.fish = [];
-    for (let i = 0; i < 8; i++) {
-      const model = i === 3 ? 'fish-koi' : 'fish-trout';
-      const f = this.add(`fish${i}`, model, 8 + (R() - 0.5) * 6, 26 + (R() - 0.5) * 12, 0, 'Swim');
+    const shoals = [[9, 28, 5], [0, -34, 3], [18, 50, 2], [10, 0, 2], [0, -90, 2]];
+    let fi = 0;
+    for (const [cx, cz, n] of shoals) for (let i = 0; i < n; i++) {
+      const model = fi % 4 === 3 ? 'fish-koi' : 'fish-trout';
+      const f = this.add(`fish${fi++}`, model, cx + (R() - 0.5) * 6, cz + (R() - 0.5) * 8, 0, 'Swim');
       f.kind = 'fish';
       f.phase = R() * 10;
-      f.center = new THREE.Vector3(i < 5 ? 9 : 0, 0, i < 5 ? 28 : -34);
+      f.center = new THREE.Vector3(cx, 0, cz);
       this.fish.push(f);
     }
   }
@@ -263,12 +290,13 @@ export class Wildlife {
   // ---------------------------------------------------------------- update
   update(dt, player, game) {
     const t = performance.now() / 1000;
+    this.updateDetail(dt, player, game);
     for (const a of this.actors) {
-      const far = a.kind !== 'bird' && a.pos.distanceToSquared(player.pos) > 140 * 140;
+      const far = a.far;
       a.root.visible = a.visible && !far;
       if (far && a.kind !== 'fox' && a.kind !== 'sheep') continue;
       if (a.kind === 'rabbit') this.rabbit(a, dt, player);
-      else if (a.kind === 'chicken') this.wander(a, dt, 0.6, 5, [120, 22]);
+      else if (a.kind === 'chicken') this.wander(a, dt, 0.6, a.yard[2], a.yard);
       else if (a.kind === 'duck' && game?.game?.world?.frozen) { a.root.visible = false; continue; } // gone south for the winter
       else if (a.kind === 'duck') {
         const p = river.at(a.s0 + Math.sin(t * 0.05 + a.phase) * 25);
@@ -297,6 +325,30 @@ export class Wildlife {
         if (f.t > 5) { a.setVisible(false); a.flying = null; }
       } else if (a.kind === 'fox') this.fox(a, dt, player, game);
       a.update(dt, a.kind === 'sheep' || a.kind === 'fox' ? this.colliders : null);
+    }
+    this.critters.update(dt, player, game);
+  }
+
+  /**
+   * Level of detail for the animals, a few times a second (the same tiers as people, see director.updateDetail):
+   * near ones whole, mid-range ones animate at a third of the rate and cast no shadow, far ones are not drawn.
+   * The birds circle high over the villages and are always drawn.
+   */
+  updateDetail(dt, player, game) {
+    if ((this.detailT = (this.detailT ?? 0) - dt) > 0) return;
+    this.detailT = 0.3;
+    const q = game?.game?.renderer?.q || {}, p = player.pos;
+    const anim = q.npcAnim ?? 40, draw = (q.npcDraw ?? 115) + 15, shade = q.npcShadow ?? 30;
+    const story = game?.scenes?.active || game?.busy;
+    let i = 0;
+    for (const a of this.actors) {
+      if (a.animTick === 0) a.animTick = i++;
+      const d = Math.hypot(a.pos.x - p.x, a.pos.z - p.z);
+      const hyst = a.far ? -5 : 5;
+      const tier = a.kind === 'bird' ? (d > anim ? 1 : 0)
+        : story ? (d > draw + hyst ? 2 : 0)
+        : d > draw + hyst ? 2 : d > anim + (a.animEvery > 1 ? -3 : 3) ? 1 : 0;
+      a.setDetail(tier, tier === 0 && d < shade + (a.shadow ? 3 : -3));
     }
   }
 

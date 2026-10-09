@@ -170,7 +170,7 @@ for name in names:
     lo = Vector(tuple(min(v[j] for v in coords) for j in range(3)))
     hi = Vector(tuple(max(v[j] for v in coords) for j in range(3)))
     c = (lo + hi) / 2
-    r = max((hi - lo).length / 2, 0.05)
+    r = max((hi - lo).length / 2, 0.004)  # 4 mm floor: critters (a 1 cm ladybug) must fill the frame
     bpy.ops.mesh.primitive_plane_add(size=r * 14, location=(c.x, c.y, lo.z - 0.002))
     fl = bpy.context.object
     fm = bpy.data.materials.new('floor')
@@ -194,6 +194,7 @@ for name in names:
         cam.location = target + d * dist
         cam.rotation_euler = (target - cam.location).to_track_quat('-Z', 'Y').to_euler()
         cam.data.clip_end = dist * 20
+        cam.data.clip_start = min(.1, dist * .01)  # critters sit closer than the 0.1 m default
         s.camera = cam
         tag = '' if v == 'front' else '-' + v
         s.render.filepath = os.path.join(OUT, name + suffix + tag + '.png')

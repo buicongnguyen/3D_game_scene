@@ -210,7 +210,10 @@ export class Scenes {
     r.update(0, 1);
     const loco = r.cars[0];
     // passengers ride the coach balconies
-    const riders = [['ota', 1, 1], ['hana', 1, 2], ['rin', 2, 1], ['v1', 2, 2], ['v4', 3, 1], ['v5', 3, 2]];
+    // (the Grandma story: Grandma rides up front, on the first coach, right behind Mika and Genzo)
+    const riders = storyId() === 'grandma'
+      ? [['sora', 1, 1], ['hana', 1, 2], ['ota', 2, 1], ['rin', 2, 2], ['v1', 3, 1], ['v4', 3, 2]]
+      : [['ota', 1, 1], ['hana', 1, 2], ['rin', 2, 1], ['v1', 2, 2], ['v4', 3, 1], ['v5', 3, 2]];
     for (const [id, car, seat] of riders) {
       const n = d.npcs[id];
       const c = r.cars[car];
@@ -656,7 +659,7 @@ export class Scenes {
     await wait(1600);
     await d.sayNow(null, DIALOGUE.c4_skytrain.slice(0, 1));
     // close on the window: Sora, waving
-    if (train?.sora && storyId() !== 'grandma') {   // Classic: Sora waves from the window of the train of starlight
+    if (train?.sora) {   // Sora waves from the window of the train of starlight (in the Grandma story: young Sora, at thirteen)
       const at = () => train.sora.getWorldPosition(V(0, 0, 0));
       g.follow.track(() => at().add(V(-5, 2, -25)), at, 3);
       await wait(3200);

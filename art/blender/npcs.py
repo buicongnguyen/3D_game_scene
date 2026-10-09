@@ -1219,7 +1219,7 @@ def build_sora():
                    head_up=4.0, step=0.85, walk_lift=0.6, wave_side='L', walk_speed=SORA_WALK, arm_out=3.0,
                    talk_extra=_sora_talk)
     A.st['post'] = _sora_post
-    ex = {'Cheer': lambda: A.cheer(frames=44, jump=0.02), 'Bow': lambda: A.bow(frames=54, depth=26),
+    ex = {'Cheer': lambda: _sora_cheer(A), 'Bow': lambda: A.bow(frames=54, depth=26),
           'Sit': lambda: PA.sit(A), 'Hug': lambda: _sora_hug(A)}
     anims.make_clips(A, ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Bow', 'Sit', 'Hug'], ex)
     return export_rigged('sora', arm)
@@ -1256,12 +1256,6 @@ def _sora_post(A, s, p, clip):
     """The stick: planted for standing clips, swung with the left foot in Walk, both hands on it in Idle."""
     k = A.k
     tip0 = A.P.t['stick']
-    if clip == 'Cheer':
-        # bad knees: no hop; she bobs on planted feet and throws both arms up, waving the stick
-        hl = s['hips@loc']
-        s['hips@loc'] = (hl[0], hl[1], min(hl[2], 0.0) * 0.6)
-        A.plant_both(s)
-        return s
     if clip == 'Hug':
         return s
     if clip == 'Walk':
@@ -1291,6 +1285,34 @@ def _sora_talk(A, s, p):
         beat = sn(p, 6, 0.1) * g
         A.arm_to(s, 'L', g, A.L(0.12, -0.26, 0.9 + 0.03 * beat, 'L'), pole=(1, 0.4, -0.8),
                  end_rel=(-25 + 18 * beat, 0, -30))
+
+
+def _sora_cheer(A, frames=44):
+    """Cheer (44 f once, 1.47 s): no hop (bad knees). The right hand keeps the stick planted (_sora_post); the LEFT arm
+    shoots up in a fist-pump (two pumps p 0.3-0.7), the shoulders bounce, the head tilts back and to the side with
+    joy, then everything settles back to the standing pose."""
+    k = A.k
+
+    def pose(p):
+        s = A.standing({}, p * 0.4, breathe=0.4, shift=0.2, lk=0)
+        up = env(p, 0.06, 0.24, 0.76, 0.96)
+        pump = sn(clamp((p - 0.28) / 0.44), 2) * env(p, 0.26, 0.32, 0.66, 0.74)
+        bob = bump(p, 0.22, 0.46) + bump(p, 0.46, 0.7)
+        hl = s['hips@loc']
+        s['hips@loc'] = (hl[0] + 0.008 * k * up, hl[1], hl[2] - 0.018 * k * bob)
+        s['spine'] = add(s['spine'], (-4 * up, -2 * up, 0))
+        s['chest'] = add(s['chest'], (-4 * up - 2 * bob, -3 * up, 3 * up))
+        s['neck'] = add(s['neck'], (-3 * up, 0, 0))
+        s['head'] = add(s['head'], (-9 * up - 2 * bob, -12 * up, 6 * up))
+        S = 'L'
+        s['upperarm_' + S] = add(tuple(x * (1 - up) for x in s['upperarm_' + S]),
+                                 tuple(x * up for x in A.arm_rot(S, fwd=6, out=152 + 8 * pump, twist=0)))
+        s['forearm_' + S] = (-(14 + 26 * max(0.0, pump)) * up, 0, 18 * up)
+        s['hand_' + S] = (-10 * up, 0, 0)
+        A.plant_both(s)
+        A.secondary(s, p, drag=0, k=2, amp=0.6, up=-8 * up)
+        return s
+    return 'Cheer', frames, pose, False
 
 
 def _sora_hug(A, frames=60):

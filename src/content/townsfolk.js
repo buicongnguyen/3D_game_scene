@@ -617,7 +617,11 @@ export const PEOPLE = [
       { when: { chapter: [4, 5], after: 'c4.meeting' }, lines: [
         ['v22', "Hana's giving the smithy's iron to mend the viaduct. She cried when she said it. Then she gave me a bun."],
         ['mika', "That's very Hana."],
-        ['v22', "That's very Takamori. We feel things and then we feed people."] ] },
+        ['v22', "That's very Takamori. We feel things and then we feed people."] ],
+        grandma: { lines: [
+          ['v22', "Hana's giving the smithy's iron for the viaduct. She argued with Ōta about it for an hour. Then she gave me a bun."],
+          ['mika', "That's very Hana."],
+          ['v22', "That's very Takamori. We argue, and then we feed people."] ] } },
       { when: { chapter: [5, 5] }, lines: [
         ['v22', "Sheep went on the Sunday train. All of them. Genzo says never again. The sheep say it was their best day."],
         ['mika', "You asked the sheep?"],

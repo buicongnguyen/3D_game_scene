@@ -131,6 +131,16 @@ export class Audio {
       }
     }
   }
+  /** A cricket's chirp: three quick bright pulses. `vol` (0..1) is how near it is; `pitch` tells one cricket from another. */
+  chirp(vol = 1, pitch = 1) {
+    const v = 0.022 * vol;
+    if (!this.ctx || v < 0.0015) return;
+    const f = 4400 * pitch, n = 3 + (Math.random() < 0.3 ? 1 : 0);
+    for (let i = 0; i < n; i++) {
+      this.tone(f, { type: 'sine', dur: 0.032, vol: v, attack: 0.004, when: i * 0.052, bus: this.ambBus, rev: 0.12 });
+      this.tone(f * 2.01, { type: 'sine', dur: 0.02, vol: v * 0.25, attack: 0.003, when: i * 0.052, bus: this.ambBus, rev: 0 });
+    }
+  }
   step(surface = 'grass') {
     const f = { grass: 900, wood: 420, stone: 1500, sand: 700, snow: 600, ice: 2600 }[surface] || 900;
     this.noise({ dur: surface === 'wood' ? 0.09 : 0.07, vol: surface === 'snow' ? 0.14 : 0.09, freq: f * (0.9 + Math.random() * 0.2), q: surface === 'wood' ? 4 : 1.2 });

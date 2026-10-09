@@ -1,6 +1,7 @@
 // Every model the runtime may load (see art/CONTRACTS.md). Missing files fall back to placeholders.
 export const CHARACTERS = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid'];
-export const ANIMALS = ['fox', 'bear', 'sheep', 'chicken', 'crow', 'rabbit', 'crab', 'fish-trout', 'fish-koi', 'fish-starfin', 'cat', 'duck', 'deer', 'cow', 'pig', 'goat', 'dog'];
+export const ANIMALS = ['fox', 'bear', 'sheep', 'chicken', 'crow', 'rabbit', 'crab', 'fish-trout', 'fish-koi', 'fish-starfin', 'cat', 'duck', 'deer', 'cow', 'pig', 'goat', 'dog',
+  'cricket', 'spider', 'spider-web', 'ladybug', 'dragonfly', 'butterfly'];
 export const ARCHITECTURE = ['kawabe-house-a', 'kawabe-house-b', 'kawabe-shop', 'boathouse', 'mill', 'drawbridge', 'star-lamp',
   'takamori-house-a', 'takamori-house-b', 'bakery', 'belltower', 'station', 'platform', 'signal-cottage', 'engine-shed', 'shrine',
   'torii', 'stone-lantern', 'shrine-stairs'];

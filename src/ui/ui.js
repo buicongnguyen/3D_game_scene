@@ -2,7 +2,7 @@ import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRI
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 import { JournalMap } from './map.js';
-import { STORIES, DEFAULT_STORY } from '../game/stories/index.js';
+import { STORIES, DEFAULT_STORY, storyId } from '../game/stories/index.js';
 
 /** The story a new game starts with (Settings → Story for new games). */
 export function defaultStory() {
@@ -60,6 +60,7 @@ export class UI {
       sel.value = l;
       pills.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.lang === l));
       this.refreshText();
+      this.applyStory();
     };
     onLangChange(sync);
     sync();
@@ -158,6 +159,15 @@ export class UI {
       }
       go.focus();
     });
+  }
+
+  /** Labels that differ between the two stories (the journal's diary tab, the credits line). Called on start and language change. */
+  applyStory() {
+    const g = storyId() === 'grandma';
+    const tab = $('tabPages'), line = $('creditsLine');
+    if (tab) tab.textContent = g ? tx("Grandma's Diary") : tx("Sora's Pages");
+    if (line) line.textContent = g ? tx('A story about a railway, two villages, a tiny fallen star and a year with Grandma.')
+      : tx('A story about a railway, two villages, a tiny fallen star and the night everybody looked away.');
   }
 
   /** Which story a new game plays: "A Year with Grandma" (the default) or "Starline Classic". Resolves with an id or null. */
@@ -488,7 +498,7 @@ export class UI {
     page.lines.forEach(([who, text, anim], k) => {
       const c = CAST[who] || CAST.narrator;
       const row = document.createElement('div');
-      row.className = 'dl-row' + (who === 'narrator' ? ' narr' : '') + (who === 'mika' ? ' me' : '') + (who === 'sora' ? ' letter' : '');
+      row.className = 'dl-row' + (who === 'narrator' ? ' narr' : '') + (who === 'mika' ? ' me' : '') + (who === 'sora' && storyId() !== 'grandma' ? ' letter' : '')   // Classic: Sora speaks only in her letters;
       row.style.setProperty('--c', c.color);
       row.style.animationDelay = `${k * 0.14}s`;
       const hasPortrait = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora'].includes(who);
@@ -696,7 +706,7 @@ export class UI {
         `<h3>${esc(tx('Keepsakes'))} · ${keep.length} / ${KEEPSAKES.length}</h3><div class="cards">` +
         KEEPSAKES.map(k => this.cardHTML(keep.includes(k.id), k.model, tx(k.name), keep.includes(k.id) ? tx(k.text) : tx('Still in {place}.', { place: tx(k.where) }))).join('') + '</div>';
     } else if (tab === 'stars') {
-      body.innerHTML = `<p>${esc(tx('{n} / 12 found.', { n: q.stars.length }))} ${esc(q.stars.length === 12 ? tx('Sora left one more letter…') : tx('Each star holds a line of Sora\'s poem.'))}</p><div class="grid">` +
+      body.innerHTML = `<p>${esc(tx('{n} / 12 found.', { n: q.stars.length }))} ${esc(q.stars.length === 12 ? (storyId() === 'grandma' ? tx('Grandma will want to hear every detail…') : tx('Sora left one more letter…')) : tx('Each star holds a line of Sora\'s poem.'))}</p><div class="grid">` +
         FALLEN_STARS.map((s, i) => q.stars.includes(s.id) ? `<div class="star">★ ${esc(tx(STAR_POEM[i]))}</div>` : `<div class="star locked">☆ ${esc(tx(s.hint))}</div>`).join('') + '</div>';
     } else if (tab === 'fish') {
       const kinds = Object.entries(FISH), caught = kinds.filter(([k]) => q.fishLog[k]).length;

@@ -251,6 +251,12 @@ Bone names are free, but every clip listed must exist.
 | `pig` | 1.1 m long | Idle, Walk, Snuffle, Sleep, Oink *once* | ≤ 6k | Authored walk 0.9 m/s. |
 | `goat` | 1.0 m long | Idle, Walk, Graze, Sleep, Bleat *once* | ≤ 6k | Authored walk 1.0 m/s. |
 | `dog` | 0.7 m long | Idle, Walk, Run, Sit, Wag *once*, Bark *once* | ≤ 6k | Walk 1.1 m/s, Run 4.5 m/s. Farm animals have a `public/icons/<kind>.webp` journal icon. |
+| `cricket` | 5 cm long (real size) | Idle (3 s), Chirp (loop 0.8 s: wings up, hind legs rub), Hop *once* (0.6 s) | ≤ 300 | `build_critters.py`. Olive brown-green, dark folded wings, big head, long antennae. Hop carries its own 4 cm in-place arc; the runtime adds the forward travel. Critters: ≤ 3 materials, colour (bands, spots, borders, pupils) painted into COLOR_0, a `public/icons/<kind>.webp` journal icon. |
+| `spider` | 3.3 cm body, ~5 cm with legs | Idle (3 s, legs shift and tap), Walk (loop 0.4 s, ~0.05 m/s) | ≤ 300 | Round warm-brown body, orange heart on the back, two big white eyes with dark pupils; cute, not scary. |
+| `spider-web` | 0.6 m across | — (static) | ≤ 400 | Origin at the hub, web in the XZ plane facing +Z (three.js). Double-sided `Web silk` ribbons (slightly emissive so threads read) and `Web dew` drops. |
+| `ladybug` | 1 cm long | Idle (3 s), Fly *once* (0.8 s: wing cases open, hind wings unfold and buzz, body lifts nose-up) | ≤ 300 | Red wing cases with six black spots, black head with white cheek-eyes. Hold Fly's last frame (or loop its buzzing tail) while airborne. |
+| `dragonfly` | 7 cm span, 5.5 cm long | Fly (loop 0.8 s, six wing beats, hind wings a quarter beat behind) | ≤ 300 | Teal banded body, big blue eyes, translucent `Dragonfly wing` (alpha 0.5, double-sided) with amber roots and dark wing-tip spots. Origin under the thorax. |
+| `butterfly` | 6 cm span | Fly (loop 0.4 s flap), Rest (loop 4 s: wings ease from 18° open to 82° closed and back) | ≤ 300 | `Butterfly wing` is tinted by the runtime (`material.color`); the dark border and dusky root are vertex paint, so any tint keeps the pattern. Material extras `variants` = `#ff8c2e,#62b8ff` (orange, sky blue). Origin at the perch under the body. |
 
 ## Static assets
 

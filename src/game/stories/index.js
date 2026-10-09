@@ -2,7 +2,7 @@
 // original story ("Starline Classic"). The default story, "A Year with Grandma" (./grandma.js), overrides its words
 // and a few step rules. useStory() swaps the chosen story's text into the shared tables *in place*, so every module
 // that imported DIALOGUE, STEPS… keeps working without knowing which story is on.
-import { CAST, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, SKY_LETTERS, KEEPSAKES, GIFTS, CAPTIONS, STEPS, TREASURES } from '../story.js';
+import { CAST, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, SKY_LETTERS, KEEPSAKES, GIFTS, CAPTIONS, STEPS, TREASURES, HUNT } from '../story.js';
 import { STORY as GRANDMA } from './grandma.js';
 
 export const DEFAULT_STORY = 'grandma';
@@ -16,6 +16,7 @@ const clone = o => JSON.parse(JSON.stringify(o));
 const BASE = {
   CAST: clone(CAST), CHAPTERS: clone(CHAPTERS), DIALOGUE: clone(DIALOGUE), CHATTER: clone(CHATTER), JOURNAL: clone(JOURNAL),
   SKY_LETTERS: clone(SKY_LETTERS), KEEPSAKES: clone(KEEPSAKES), TREASURES: TREASURES.map(t => ({ ...t })), GIFTS: GIFTS.map(g => ({ ...g })), CAPTIONS: clone(CAPTIONS),
+  HUNT: HUNT.map(h => h),              // hunt entries hold found() functions: overridden by copy
   STEPS: STEPS.map(s => s),            // step objects hold functions in places: keep the originals, override by copy
 };
 
@@ -40,6 +41,7 @@ export function useStory(id) {
   refillArray(KEEPSAKES, byId(clone(BASE.KEEPSAKES), d.KEEPSAKES));
   refillArray(GIFTS, byId(BASE.GIFTS.map(g => ({ ...g })), d.GIFTS));
   refillArray(TREASURES, byId(BASE.TREASURES.map(t => ({ ...t })), d.TREASURES));
+  refillArray(HUNT, byId(BASE.HUNT, d.HUNT));
   refill(CAPTIONS, { ...clone(BASE.CAPTIONS), ...clone(d.CAPTIONS || {}) });
   refillArray(STEPS, BASE.STEPS.map(st => (d.STEPS?.[st.id] ? { ...st, ...d.STEPS[st.id] } : st)));
   return s;

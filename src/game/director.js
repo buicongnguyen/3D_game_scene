@@ -100,6 +100,7 @@ export class Director {
       const n = this.npcs[id];
       if (!n) return;
       const x = p.x + fwd.x * a + side.x * b, z = p.z + fwd.z * a + side.z * b;
+      if (n.riding) { n.root.removeFromParent(); this.game.scene.add(n.root); n.riding = false; n.root.rotation.set(0, 0, 0); }
       n.setVisible(true);
       n.place(x, z, Math.atan2(p.x - x, p.z - z), p.y);
       n.setIdle('Wave');
@@ -108,13 +109,11 @@ export class Director {
 
   placeGrandma(step, ch, after) {
     const n = this.npcs, so = n.sora, grandma = storyId() === 'grandma', y = 16.95;
-    for (const [id, x, z] of [['mom', -55.1, 137.4], ['dad', -55.1, 141.6]]) {
-      n[id]?.setVisible(grandma && ch === 5);
-      if (grandma && ch === 5) { n[id].place(x, z, Math.PI / 2); n[id].setIdle('Idle'); }
-    }
+    // Mum and Dad are only seen arriving on the Star Train (parentsArrive): afterwards they went back to work
+    for (const id of ['mom', 'dad']) if (n[id] && !n[id].riding) n[id].setVisible(false);
     if (!so) return;
     so.setVisible(grandma);
-    if (!grandma) return;
+    if (!grandma || so.riding) return;     // on the Star Train she keeps her seat until the ride is over
     if (step === 'p.arrive') so.place(-91.2, 117.2, -Math.PI / 2, y);
     else if (step === 'p.cottage' || step === 'p.chest' || step === 'p.porch') so.place(-55.6, 139.4, Math.PI / 2);
     else if (step === 'c4.board' || step === 'c4.ride') so.place(-93.2, 117.3, -Math.PI / 2, y);   // down the platform: Genzo is the one to board with
@@ -319,7 +318,7 @@ export class Director {
     this.registerHomes();
     this.registerRewards();
     // valley friends: say hello to whichever creature is next to Mika
-    this.interact('friend', null, () => tx(this.friendNear?.def.verb || ''), () => !!this.friendNear, () => this.befriend(this.friendNear), 6, () => this.friendNear?.a.pos, 0, 4);
+    this.interact('friend', null, () => tx(this.friendNear?.def.verb || ''), () => !!this.friendNear, () => this.befriend(this.friendNear), 6, () => this.friendNear?.a.pos, -0.4, 4);   // a hello never takes the place of the story (a cat by the chest)
     // NPC talk
     for (const id of Object.keys(this.npcs)) this.registerTalk(id);
     // the named neighbours: day plans, shops, games and their own stories (game/townlife.js)
@@ -435,7 +434,7 @@ export class Director {
       const f = `giftSeen_${x.g.id}`;
       if (this.q.has(f)) continue;
       this.q.state.flags[f] = true;
-      this.ui.toast(tx('{from} left a gift at Sora\'s cottage', { from: tx(x.g.from) }), x.g.model);
+      this.ui.toast((storyId() === 'grandma' ? tx('{from} left a gift for you and Grandma', { from: tx(x.g.from) }) : tx('{from} left a gift at Sora\'s cottage', { from: tx(x.g.from) })), x.g.model);
     }
   }
 
@@ -595,6 +594,7 @@ export class Director {
   // ------------------------------------------------------------------ game start / load
   async begin(saved) {
     this.quest = new Quest(saved?.quest, { story: this.newStory });
+    this.ui.applyStory?.();              // the diary tab and credits line of this save's story
     this.game.quest = this.quest;
     const effects = this.quest.start();
     const resumed = this.quest.resumed;
@@ -1030,6 +1030,14 @@ export class Director {
       if (d > reach || Math.abs(a.pos.y - p.y) > 2.5) continue;
       if (d < bd) { bd = d; best = { a, def }; }
     }
+    // the little ones (crickets, spiders, ladybugs, dragonflies, butterflies) that are near enough to be drawn
+    for (const a of this.wildlife.critters?.visuals || []) {
+      const def = FRIEND_BY_KIND[a.kind];
+      if (!def || !a.slot || !a.near || !a.root.visible) continue;
+      const d = Math.hypot(a.pos.x - p.x, a.pos.z - p.z);
+      if (d > 2.6 || Math.abs(a.pos.y - p.y) > 2.5) continue;
+      if (d < bd) { bd = d; best = { a, def }; }
+    }
     return best;
   }
 
@@ -1039,10 +1047,13 @@ export class Director {
     if (a.kind !== 'bear' && a.kind !== 'duck') a.lookAt(p.pos.x, p.pos.z);
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
     p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
-    const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag' }[a.kind];
+    a.hold?.();                                                // a critter stays put for the hello
+    const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag', cricket: 'Chirp' }[a.kind];
     if (react && a.anim?.has?.(react)) a.anim.once(react, { then: a.idleClip || 'Idle' });
     if (['cow', 'pig', 'goat', 'dog'].includes(a.kind)) this.audio.animal(a.kind, 0.9);
-    this.fx.burst(a.pos.clone().add(V(0, a.kind === 'bear' ? 1.6 : a.kind === 'cow' ? 1.3 : 0.8, 0)), { n: 18, color: [1, 0.55, 0.7], speed: 1.6, size: 0.22, gravity: -1.2 });
+    if (a.kind === 'cricket') this.audio.chirp?.(1, a.slot?.pitch ?? 1);
+    const small = !!a.slot, up = small ? 0.25 : a.kind === 'bear' ? 1.6 : a.kind === 'cow' ? 1.3 : 0.8;
+    this.fx.burst(a.pos.clone().add(V(0, up, 0)), small ? { n: 10, color: [1, 0.55, 0.7], speed: 0.9, size: 0.12, gravity: -1.2 } : { n: 18, color: [1, 0.55, 0.7], speed: 1.6, size: 0.22, gravity: -1.2 });
     this.audio.good();
     if (st.friends[def.id]) return;
     st.friends[def.id] = true;

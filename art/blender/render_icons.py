@@ -57,7 +57,11 @@ VIEW = {
     'timber': (-40, 30),
     'peach-bun': (-30, 32),
     'star-kite': (-24, 34),
+    'cricket': (-40, 36), 'spider': (-28, 36), 'ladybug': (-32, 40), 'dragonfly': (-35, 76), 'butterfly': (-22, 62),
 }
+# Rigged items: the glTF importer leaves the first clip (alphabetical) on the armature; pose these explicitly.
+POSE = {'butterfly': ('Rest', 0.0), 'dragonfly': ('Fly', 0.0), 'ladybug': ('Idle', 0.0), 'spider': ('Idle', 0.0),
+        'cricket': ('Idle', 0.0)}
 GLOW = {'fallen-star': 1.0}
 TMP = os.path.join(ROOT, '.tools', 'review', 'props', 'icons-raw')
 os.makedirs(TMP, exist_ok=True)
@@ -151,6 +155,19 @@ def render(name):
     shapes = {pb.custom_shape for a in bpy.data.objects if a.type == 'ARMATURE' for pb in a.pose.bones if pb.custom_shape}
     for o in shapes:
         o.hide_render = True
+    if name in POSE:
+        act = bpy.data.actions.get(POSE[name][0])
+        for a in [o for o in bpy.data.objects if o.type == 'ARMATURE' and act]:
+            a.animation_data_create()
+            a.animation_data.action = act
+            try:
+                if act.slots:
+                    a.animation_data.action_slot = act.slots[0]
+            except Exception:
+                pass
+            f0, f1 = act.frame_range
+            s.frame_set(int(round(f0 + (f1 - f0) * POSE[name][1])))
+        bpy.context.view_layer.update()
     objs = [o for o in bpy.data.objects if o.type == 'MESH' and o not in shapes]
     ao_into_base(objs)
     az, el = VIEW.get(name, VIEW['default'])
@@ -185,6 +202,7 @@ def render(name):
     cam.location = mid
     cam.data.ortho_scale = max(w, h) * 1.1
     cam.data.clip_end = R * 10
+    cam.data.clip_start = min(.1, R * .5)  # tiny critters: the camera sits closer than the 0.1 m default
     s.camera = cam
     # warm key from upper left-front, cool fill, and a strong warm rim from behind
     key_dir = Vector((-.6, -.7, .8)).normalized()

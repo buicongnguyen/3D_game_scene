@@ -48,6 +48,13 @@ export const CONTRACTS = {
   pig: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Snuffle', 'Sleep', 'Oink'], icon: true },
   goat: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Graze', 'Sleep', 'Bleat'], icon: true },
   dog: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Run', 'Sit', 'Wag', 'Bark', 'Sleep'], icon: true },
+  // Critters (build_critters.py): real-size bugs at scatter-scale budgets (<= 300 tris, <= 3 materials, colour in COLOR_0).
+  cricket: { family: 'critters', tris: 300, clips: ['Idle', 'Chirp', 'Hop'], icon: true },
+  spider: { family: 'critters', tris: 300, clips: ['Idle', 'Walk'], icon: true },
+  'spider-web': { family: 'critters', tris: 400, mats: ['Web silk', 'Web dew'] },
+  ladybug: { family: 'critters', tris: 300, clips: ['Idle', 'Fly'], icon: true },
+  dragonfly: { family: 'critters', tris: 300, clips: ['Fly'], mats: ['Dragonfly wing'], icon: true },
+  butterfly: { family: 'critters', tris: 300, clips: ['Fly', 'Rest'], mats: ['Butterfly wing'], icon: true },
 
   // ---------------------------------------------------------------- architecture
   'kawabe-house-a': { family: 'architecture', tris: 14000, mats: ['Window glow'] },
@@ -207,7 +214,9 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
 // 37.0 -> 37.6 MB: Grandma Sora (sora.glb, 0.70 MB raw, eight clips).
-export const TOTAL_RAW_BYTES = 37_600_000;
+// 37.6 -> 37.75 MB: critters (cricket, spider, spider-web, ladybug, dragonfly, butterfly: 0.22 MB raw together).
+export const TOTAL_RAW_BYTES = 37_750_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
-export const TOTAL_PACKED_BYTES = 14_200_000;
+// 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
+export const TOTAL_PACKED_BYTES = 14_300_000;

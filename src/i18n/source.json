@@ -2291,7 +2291,7 @@
   ]
  },
  {
-  "s": "Mochi opens one eye, decides Mika is acceptable, and purrs like a very small engine.",
+  "s": "The cat opens one eye, decides Mika is acceptable, and purrs like a very small engine.",
   "ctx": [
    "dialogue friend_cat, spoken by narrator"
   ]
@@ -2384,6 +2384,102 @@
   "s": "Brave or silly? …Both. Definitely both.",
   "ctx": [
    "dialogue friend_bear_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "He stopped singing! Was it me? I'll be quiet. …I'm being SO quiet.",
+  "ctx": [
+   "dialogue friend_cricket, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The cricket waits until Tamo is truly quiet, then plays one very loud note, just for Mika.",
+  "ctx": [
+   "dialogue friend_cricket, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika crouches in the grass and holds her breath. The cricket looks her over, then chirps three times: hello, hello, hello.",
+  "ctx": [
+   "dialogue friend_cricket_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.",
+  "ctx": [
+   "dialogue friend_spider, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The spider plucks one thread, and the whole web shivers like a little harp.",
+  "ctx": [
+   "dialogue friend_spider, spoken by narrator"
+  ]
+ },
+ {
+  "s": "The spider plucks one thread, and the whole web shivers like a little harp. Mika decides that was a wave.",
+  "ctx": [
+   "dialogue friend_spider_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "The ladybug climbs Mika's finger all the way to the tip, thinks it over, and flies off somewhere better.",
+  "ctx": [
+   "dialogue friend_ladybug, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Seven spots! I counted twice. It was seven both times!",
+  "ctx": [
+   "dialogue friend_ladybug, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The ladybug climbs Mika's finger all the way to the tip, opens her spotted shell, and zips away.",
+  "ctx": [
+   "dialogue friend_ladybug_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Seven spots. That has to be lucky.",
+  "ctx": [
+   "dialogue friend_ladybug_solo, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Don't. Move. It's looking at us with its whole face!",
+  "ctx": [
+   "dialogue friend_dragonfly, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The dragonfly hangs in the air at the end of Mika's nose for one long, glittering second, then darts off over the water.",
+  "ctx": [
+   "dialogue friend_dragonfly, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika stands as still as a fence post. The dragonfly hangs in the air at the end of her nose for one long, glittering second, then darts away.",
+  "ctx": [
+   "dialogue friend_dragonfly_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "It landed on me! It thinks I'm a flower! Mika, I'm a FLOWER!",
+  "ctx": [
+   "dialogue friend_butterfly, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The butterfly decides Tamo is not a flower after all, and drifts off to find a real one.",
+  "ctx": [
+   "dialogue friend_butterfly, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika follows the butterfly round and round the meadow until it lands on her sleeve, as if that had been the plan all along.",
+  "ctx": [
+   "dialogue friend_butterfly_solo, spoken by narrator"
   ]
  },
  {
@@ -2976,25 +3072,25 @@
   ]
  },
  {
-  "s": "Mochi the cat",
+  "s": "Village cat",
   "ctx": [
    "animal friend name"
   ]
  },
  {
-  "s": "Scratch Mochi's ears",
+  "s": "Scratch the cat's ears",
   "ctx": [
    "interaction prompt shown next to the E key"
   ]
  },
  {
-  "s": "Sleeps in the middle of Kawabe's main street. Belongs to everybody and nobody.",
+  "s": "Mochi sleeps in the middle of Kawabe's main street; his cousins doze on porches, doorsteps and fences. They all belong to everybody and nobody.",
   "ctx": [
    "animal friend: description"
   ]
  },
  {
-  "s": "Kawabe's main street, usually asleep.",
+  "s": "Kawabe's main street, the cottage porch, the bakery doorstep, the orchard fence and the shade of the peach trees. Usually asleep.",
   "ctx": [
    "animal friend: where to find it"
   ]
@@ -3060,13 +3156,13 @@
   ]
  },
  {
-  "s": "A shy family on the plateau above the orchard. The little one is the bravest.",
+  "s": "Two shy families: one on the plateau above the orchard, one in the woods along the west forest trail. The little ones are the bravest.",
   "ctx": [
    "animal friend: description"
   ]
  },
  {
-  "s": "Through the upper orchard gate. Walk, don't run.",
+  "s": "Along the west forest trail, or through the upper orchard gate. Walk, don't run.",
   "ctx": [
    "animal friend: where to find it"
   ]
@@ -3211,6 +3307,126 @@
  },
  {
   "s": "In Kawabe, in Takamori and in Sora's garden. She will find you first.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Field cricket",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Listen to the cricket",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Sings all night with his back legs and never once runs out of song. Very shy up close.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "In the long grass round the villages, on summer and autumn evenings. Follow the chirping, and walk softly.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Garden spider",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Watch the spider",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Mends her web every evening and lets the morning dew decorate it. Eats the mosquitoes, so everybody likes her.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "On her web under the eaves in Kawabe and Takamori, on the fences, and between trees in the forest. Not in winter.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Ladybug",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Let the ladybug climb on your finger",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Seven spots, all of them lucky. Climbs to the very top of whatever she is on, and then flies off.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "On flowers and bushes near the villages, on warm days. Walk up slowly or she'll fly away.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "River dragonfly",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Hold still for the dragonfly",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Darts over the water like a little blue needle, then stops dead in the air to have a look at you.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Over the river and the rice paddies on summer and autumn days. Stand still by the water and it will come to you.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Meadow butterfly",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Follow the butterfly",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Never flies in a straight line. Rests on a flower just long enough to be admired.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Over the meadows and gardens on spring and summer days.",
   "ctx": [
    "animal friend: where to find it"
   ]
@@ -4092,6 +4308,30 @@
   ]
  },
  {
+  "s": "The lamp's up in the bell tower and the key's in my apron. But the Firefly Festival is tomorrow, and it's a disaster.",
+  "ctx": [
+   "dialogue c2_hana_tasks, spoken by Hana"
+  ]
+ },
+ {
+  "s": "My sheep are loose, the crows are at my peaches, and I need five ripe ones: three for my basket, two for Sora's jam.",
+  "ctx": [
+   "dialogue c2_hana_tasks, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Help me save my festival and the key is yours. Sheep first—walk up to each one and it'll trot home to the pen.",
+  "ctx": [
+   "dialogue c2_hana_tasks, spoken by Hana"
+  ]
+ },
+ {
+  "s": "Listen to that! Not a crow left. Now five ripe peaches: three for Hana, two for Sora's jam.",
+  "ctx": [
+   "dialogue c2_crows_done, spoken by Hana"
+  ]
+ },
+ {
   "s": "Three peaches go into Hana's fair basket and two into a bag for Grandma's jam. Under the cloth: a warm bun and a note.",
   "ctx": [
    "dialogue c2_peaches_done, spoken by narrator"
@@ -4410,7 +4650,7 @@
   ]
  },
  {
-  "s": "He always was, dear. That's how it works. Lamps need their stars.",
+  "s": "He was always going to, dear. Lamps need their stars.",
   "ctx": [
    "dialogue c4_finale, spoken by Grandma Sora"
   ]
@@ -4428,7 +4668,7 @@
   ]
  },
  {
-  "s": "Mum and Dad went back to work with a jar of jam each. Their letters come every Friday, and they promise: star-fall.",
+  "s": "Mum and Dad went back to work with a jar of jam each. Their letters come every Friday. They've promised: next star-fall.",
   "ctx": [
    "dialogue epilogue, spoken by narrator"
   ]
@@ -4472,7 +4712,7 @@
   ]
  },
  {
-  "s": "That's where the old span came out. Don't even THINK about jumping.",
+  "s": "That's where the old span was taken down. Don't even THINK about jumping.",
   "ctx": [
    "dialogue gap_blocked, spoken by Tamo"
   ]
@@ -4532,7 +4772,7 @@
   ]
  },
  {
-  "s": "Up the shrine path comes Grandma, one slow step at a time, with an enormous pot of soup.",
+  "s": "Grandma has made it up the shrine path, one slow step at a time, with an enormous pot of soup.",
   "ctx": [
    "dialogue c3_party, spoken by narrator"
   ]
@@ -4556,7 +4796,7 @@
   ]
  },
  {
-  "s": "Oh! That's me. Thirteen, my first star-fall. The stars never forget a good waver.",
+  "s": "Oh! That's me. Thirteen, the year I met Tamo. The stars never forget a good waver.",
   "ctx": [
    "dialogue c4_skytrain, spoken by Grandma Sora"
   ]
@@ -4616,7 +4856,7 @@
   ]
  },
  {
-  "s": "Psst. Sora's been losing things in this valley for sixty years. Notes on rooftops, a music box, keepsakes in every home…",
+  "s": "Psst. Sora's been leaving bits of her story all over this valley for sixty years. Notes on rooftops, a music box, keepsakes in every home…",
   "ctx": [
    "dialogue hunt_offer, spoken by Tamo"
   ]
@@ -4640,7 +4880,7 @@
   ]
  },
  {
-  "s": "She lost them over sixty years. I found them in one spring. I'm telling her right now.",
+  "s": "Sixty years of Grandma, all over the valley. I found it all in one spring. I'm telling her right now.",
   "ctx": [
    "dialogue hunt_done, spoken by Mika"
   ]
@@ -4894,7 +5134,7 @@
   ]
  },
  {
-  "s": "But the viaduct. Three beams, where the old span came out. That's a job for two villages, not one old man.",
+  "s": "But the viaduct. Three beams, where the old span was taken down. That's a job for two villages, not one old man.",
   "ctx": [
    "dialogue c4_shed, spoken by Genzo"
   ]
@@ -5025,7 +5265,7 @@
   ]
  },
  {
-  "s": "And I wrote to your parents before you'd lit two lamps. I knew you'd finish. You eat like me. You finish things.",
+  "s": "And I wrote to your parents in autumn, before you'd even lit the Forest Lamp. I knew you'd finish. You eat like me.",
   "ctx": [
    "dialogue porch_talk, spoken by Grandma Sora",
    "dialogue porch_talk_solo, spoken by Grandma Sora"
@@ -5085,6 +5325,18 @@
   "s": "Ōta comes to my stall every festival. Three buns. Always three. Says he only wants one.",
   "ctx": [
    "small talk by Hana"
+  ]
+ },
+ {
+  "s": "Star Festival this winter, they say.",
+  "ctx": [
+   "small talk by Villager"
+  ]
+ },
+ {
+  "s": "Your grandma's soup is the best in the valley. Don't tell Hana.",
+  "ctx": [
+   "small talk by Villager"
   ]
  },
  {
@@ -5252,7 +5504,8 @@
  {
   "s": "Grandma's music box",
   "ctx": [
-   "treasure name"
+   "treasure name",
+   "a treasure of the epilogue's treasure hunt (journal map label)"
   ]
  },
  {
@@ -5358,13 +5611,19 @@
   ]
  },
  {
-  "s": "Grandma's list: five ripe peaches for the jam ({peach}/5)",
+  "s": "Grandma's list: ripe peaches for Hana and the jam ({peach}/5)",
   "ctx": [
    "quest objective (keep {placeholders} exactly)"
   ]
  },
  {
   "s": "Grandma's list: light the Orchard Lamp on the bell tower",
+  "ctx": [
+   "quest objective (keep {placeholders} exactly)"
+  ]
+ },
+ {
+  "s": "Grandma's list: soup from the forest. Go through the upper orchard gate",
   "ctx": [
    "quest objective (keep {placeholders} exactly)"
   ]
@@ -9278,6 +9537,18 @@
   ]
  },
  {
+  "s": "Hana's giving the smithy's iron for the viaduct. She argued with Ōta about it for an hour. Then she gave me a bun.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
+  "s": "That's very Takamori. We argue, and then we feed people.",
+  "ctx": [
+   "Mr. Oda's story, said by Mr. Oda"
+  ]
+ },
+ {
   "s": "Sheep went on the Sunday train. All of them. Genzo says never again. The sheep say it was their best day.",
   "ctx": [
    "Mr. Oda's story, said by Mr. Oda"
@@ -11097,6 +11368,12 @@
   ]
  },
  {
+  "s": "Kiku would be glad. I'll write and tell her.",
+  "ctx": [
+   "overheard conversation between two villagers (speech bubble, short)"
+  ]
+ },
+ {
   "s": "Ten years since the Star Train ran.",
   "ctx": [
    "overheard conversation between two villagers (speech bubble, short)"
@@ -12603,6 +12880,12 @@
   ]
  },
  {
+  "s": "{from} left a gift for you and Grandma",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "{from} left a gift at Sora's cottage",
   "ctx": [
    "UI (src/game/director.js)"
@@ -13269,6 +13552,30 @@
   ]
  },
  {
+  "s": "Grandma's Diary",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Sora's Pages",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "A story about a railway, two villages, a tiny fallen star and a year with Grandma.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "A story about a railway, two villages, a tiny fallen star and the night everybody looked away.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Which story?",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -13342,6 +13649,12 @@
  },
  {
   "s": "{n} / 12 found.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Grandma will want to hear every detail…",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -13676,12 +13989,6 @@
   ]
  },
  {
-  "s": "Sora's Pages",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
   "s": "Friends",
   "ctx": [
    "menu / screen text"
@@ -13929,12 +14236,6 @@
  },
  {
   "s": "Thank you for playing Starline! The valley is yours to explore, and Tamo visits every Sunday.",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "A story about a railway, two villages, a tiny fallen star and the night everybody looked away.",
   "ctx": [
    "menu / screen text"
   ]
