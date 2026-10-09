@@ -55,6 +55,8 @@ STYLES = {
     # Ota, the tall miller in a long coat and robe
     'elder': dict(leg=1.05, slope=0.8, chest=(0.0, 0.07, 0.0), waist=(-0.03, 0.05, 0.0), hips=(0.0, 0.0, 0.05)),
     'kid': dict(leg=1.05, slope=0.7, chest=(0.0, 0.04, 0.0), waist=(0.0, 0.07, 0.0), hips=(0.0, 0.0, 0.04)),
+    # Grandma Sora, 72: soft and round, a full bosom and a little tummy under the cardigan, shorter legs
+    'granny': dict(leg=1.04, slope=0.85, chest=(0.02, 0.12, 0.02), waist=(-0.04, 0.08, 0.0), hips=(0.08, 0.03, 0.1)),
 }
 
 

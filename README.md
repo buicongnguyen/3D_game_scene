@@ -13,6 +13,9 @@ from the river village of Kawabe to the orchard town of Takamori and up to the
 forest shrine. Along the way she finds out who really let the train run into
 danger that night.
 
+- **Two stories.** **A Year with Grandma** (the default): Mika stays the year with Grandma Sora and helps her light
+  up the valley, ending with a happy surprise on the Star Train. **Starline Classic**: the original, more
+  bittersweet story. Choose on New Game, or in Settings. See [docs/STORY-GRANDMA.md](docs/STORY-GRANDMA.md).
 - **A prologue, four seasonal chapters and an epilogue.** About 35 story steps, a
   twist, and a choice that changes the finale.
 - **One button does it.** Walk up to anything and press **E**: talk, pick up,

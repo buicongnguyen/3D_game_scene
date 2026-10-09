@@ -182,11 +182,14 @@ root (at origin)
 | `rin` | 1.50 m | Idle, Walk, Run, Talk, Wave *once*, Cast *once*, Reel, Pole, Cheer *once* | ≤ 12k |
 | `ota` | 1.58 m | Idle (leaning on cane), Walk (with cane), Talk, Wave *once*, Bow *once*, Sad | ≤ 12k |
 | `hana` | 1.60 m | Idle, Walk, Talk, Wave *once*, Knead, Cheer *once*, Bow *once* | ≤ 12k |
+| `sora` | 1.52 m rest, ~1.50 m stooped in Idle | Idle (leaning on the stick, both hands on the crook), Walk (with the stick, **1.0 m/s**), Talk, Wave *once*, Cheer *once*, Bow *once*, Sit, Hug *once* | ≤ 11k |
 | `villager-man`, `villager-woman`, `villager-kid` (1.72 / 1.62 / 1.20 m) | — | Idle, Walk, Talk, Wave *once*, Cheer *once*, Run, Jump *once* (in-place hop, 24 f), Bow *once*, Interact *once*, Hammer, Sweep, Carry, Sit, Throw *once*, Kick *once* | ≤ 8k each |
 
 **Town Life villager clips.** Walk is 1.6 m/s and Run 4.2 m/s at 1.0x (root motion in place, scale `timeScale = speed / ref`). **Sit** bakes the hip drop onto a seat 0.45 m high (`SEAT_H` in player_anims.py): keep the root on the GROUND (y = seat base, no extra y offset), directly under the seat centre line, facing away from the backrest; the feet land about 0.3–0.6 m in front (kids dangle and swing them). **Jump** is an in-place hop (air time p 0.3–0.7); slide the root forward during it for hopscotch. **Throw** releases at frame 16/30 (p 0.55), **Kick** strikes at frame 14/30 (p 0.48). **Carry** holds a bucket/basket handle with both hands at the waist (loops, also an idle).
 
 **Mika sitting / petting.** **Sit** (60 f loop) is the villagers' Sit (same `SEAT_H` = 0.45 m hip drop): put the root on the GROUND directly under the hip line, i.e. about 0.30 m behind the seat's front edge (thighs 0.30 m long; knees reach the edge, feet rest flat ~0.26 m in front of the root), facing away from the backrest (model forward = +Z in three.js). **SitFloor** (90 f loop) is cross-legged on a floor cushion `CUSHION_H` = 0.10 m high: root on the FLOOR at the cushion centre, facing out; hip joints sit 0.185 m up, knees rest on the floor ~0.3 m out to each side, crossed ankles ~0.2 m in front (cushion ≤ ~0.4 m across so knees stay on the floor). **Pet** (42 f once, 1.4 s) crouches and strokes with the right hand at ~0.36 m high, 0.40 m in front of the root (two strokes p 0.3–0.8): place the animal's back about 0.45–0.5 m ahead.
+
+**Grandma Sora's clips.** All clips are 30 fps. Idle 120 f (4.0 s) loop, Walk 30 f (1.0 s) loop authored for **1.0 m/s** (one cycle = two 0.5 m steps; scale `timeScale = speed / 1.0`, not the villagers' 1.6), Talk 120 f loop (left-hand finger-wag, the right hand stays on the stick), Wave 48 f *once* (left hand), Cheer 44 f *once* (no hop, feet planted, stick waved overhead), Bow 54 f *once*, Sit 60 f loop, Hug 60 f *once* (2.0 s). The stick is skinned to its own bone **`stick`** (child of `hand_R`, head in the palm, tail at the ferrule): planted on the ground in every standing clip, swung with the left foot in Walk, standing beside the right knee in Sit (ferrule ~0.34 m to her right and 0.36 m in front of the root: keep that clear of bench arms). **Sit** is the villagers' Sit (`SEAT_H` = 0.45 m hip drop; root on the ground under the hip line, facing away from the backrest). **Hug**: put the hugged person's root **0.45 m in front of Sora's root along her facing, turned to face her**; arms open p 0–0.26, she leans in and her wrists land on their upper back at ~0.92–0.97 m high, 0.50 m ahead (Mika's shoulder blades; Mika's shoulders are at 0.99 m), holds and sways p 0.42–0.8 with two pats of the right hand (p 0.5–0.72), lets go by p 0.97. The stick swings down and out to her right during the hug so it clears the hugged person.
 
 **Held props on `grip_R`** (rotation = three Euler XYZ on the prop root; position 0 unless noted): broom with Sweep (0.603, −0.457, 3.086); bucket/basket with Carry (−0.19, −0.39, 2.21); bucket/basket/hand-lantern hanging in Walk/Idle (π, 0, 0); letters (0, 0, 0); hoe with Hammer (0.0, −1.118, −0.548) so the blade bites the ground at the strike; ball (0, 0, 0) at position (0.1, 0.03, 0) × height/1.72 for kids (0.07, 0.02, 0).
 
@@ -209,6 +212,11 @@ Character looks:
   grey kimono, geta, a gnarled cane (in `hand_R`, part of the skinned mesh).
 - **Hana:** plump, rose headscarf (`#e0567a`), cream apron with flour marks,
   rolled sleeves, rosy cheeks, bun of dark hair.
+- **Sora:** 72, round and slightly stooped; persimmon headscarf (`#ec6a2e`)
+  tied at the nape over grey hair, round dark-rimmed glasses, berry cardigan
+  (`#b4363f`) with wooden buttons and a white collar, mustard waist apron
+  (`#eab040`) over a long plum skirt (`#5a3346`), dark shoes, a crook-handled
+  walking stick (bone `stick`, part of the skinned mesh).
 
 #### Tamo — `tamo`
 

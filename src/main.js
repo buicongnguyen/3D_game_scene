@@ -123,9 +123,10 @@ if (params.has('view')) {
   game.start();
   window.__STARLINE_READY__ = true;
   const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
-  const picked = auto ? { mode: auto, slot: +params.get('slot') || 1 } : await ui.title(Director.slots(), Director.lastSlot());
+  const picked = auto ? { mode: auto, slot: +params.get('slot') || 1, story: params.get('story') || undefined } : await ui.title(Director.slots(), Director.lastSlot());
   const choice = picked.mode;
   director.slot = picked.slot;
+  director.newStory = picked.story;      // which story a new game plays (the title's story card)
   let saved = Director.loadSave(picked.slot);
   if (choice === 'explore') {
     // Explore mode: its own save; the first time (or "start over") it begins in a valley where the story is done

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { Quest } from './quest.js';
+import { storyId } from './stories/index.js';
 import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST, FRIENDS, KEEPSAKES, TREASURES, SKY_LETTERS, GIFTS, HUNT, huntProgress } from './story.js';
 import { tx, N_ } from '../i18n/i18n.js';
 import { NPC } from '../actors/npc.js';
@@ -61,6 +62,9 @@ export class Director {
     mk('rin', 'rin', 3.4, 31.2, Math.PI / 2);
     mk('ota', 'ota', -24, -40, Math.PI / 2);
     mk('hana', 'hana', 103.5, 16, Math.PI / 2);
+    // the Grandma story: Grandma Sora herself, and Mika's parents for the ending (hidden in Classic; see placeGrandma)
+    if (g.assets.has('sora')) mk('sora', 'sora', -54.6, 135.2, Math.PI / 2).setVisible(false);
+    for (const [id, model, seed] of [['mom', 'villager-woman', 91], ['dad', 'villager-man', 97]]) mk(id, model, -55, 137, Math.PI / 2, { tint: NPC.villagerTint(seed) }).setVisible(false);
     const villagers = VILLAGERS;
     villagers.forEach(([id, model, x, z, f], i) => {
       const n = mk(id, model, x, z, f, { tint: NPC.villagerTint(i + 1) });
@@ -83,11 +87,48 @@ export class Director {
     this.routeState = {};
   }
 
+  /**
+   * Where Grandma Sora is in her story: on the platform to meet Mika, at the cottage for the prologue, in her garden
+   * through the year (always there to talk to), with the crowd at the meeting and on the platform for the Star Train,
+   * and at home with Mika's parents after the festival. Classic has no Grandma on screen.
+   */
+  /** Mika's parents (and Grandma) on the platform beside Mika, just off the Star Train, for the ending. */
+  parentsArrive() {
+    const p = this.game.player.pos, f = this.game.player.facing;
+    const fwd = V(Math.sin(f), 0, Math.cos(f)), side = V(Math.cos(f), 0, -Math.sin(f));
+    [['mom', 1.6, -0.6], ['dad', 1.6, 0.6], ['sora', 1.2, -1.6]].forEach(([id, a, b]) => {
+      const n = this.npcs[id];
+      if (!n) return;
+      const x = p.x + fwd.x * a + side.x * b, z = p.z + fwd.z * a + side.z * b;
+      n.setVisible(true);
+      n.place(x, z, Math.atan2(p.x - x, p.z - z), p.y);
+      n.setIdle('Wave');
+    });
+  }
+
+  placeGrandma(step, ch, after) {
+    const n = this.npcs, so = n.sora, grandma = storyId() === 'grandma', y = 16.95;
+    for (const [id, x, z] of [['mom', -55.1, 137.4], ['dad', -55.1, 141.6]]) {
+      n[id]?.setVisible(grandma && ch === 5);
+      if (grandma && ch === 5) { n[id].place(x, z, Math.PI / 2); n[id].setIdle('Idle'); }
+    }
+    if (!so) return;
+    so.setVisible(grandma);
+    if (!grandma) return;
+    if (step === 'p.arrive') so.place(-91.2, 117.2, -Math.PI / 2, y);
+    else if (step === 'p.cottage' || step === 'p.chest' || step === 'p.porch') so.place(-55.6, 139.4, Math.PI / 2);
+    else if (step === 'c4.board' || step === 'c4.ride') so.place(-93.2, 117.3, -Math.PI / 2, y);   // down the platform: Genzo is the one to board with
+    else if (step === 'c4.meeting' || (ch === 4 && after('c4.meeting') && !after('c4.lamp'))) so.place(-96.6, 116.6, Math.PI, y);
+    else if (ch === 5) so.place(-55.6, 139.4, Math.PI / 2);
+    else so.place(-54.6, 135.2, Math.PI / 2);   // her garden beside the cottage
+    so.setIdle('Idle');
+  }
+
   /** The "Talk to ..." interaction for one person (villagers, the cast, and the residents of the houses). */
   registerTalk(id) {
     const n = this.npcs[id];
     this.interact(`talk:${id}`, null, () => (n.villager ? tx('Talk to the villager') : tx('Talk to {name}', { name: tx(CAST[id]?.name || id) })),
-      () => n.visible && this.q.state.step !== 'p.arrive' && this.scenes?.active !== 'starTrain', () => this.talk(id), 2.6, () => n.head(), () => (this.q?.step?.talk?.[id] ? 1 : 0));
+      () => n.visible && this.q.state.step !== 'p.arrive' && this.scenes?.active !== 'starTrain', () => this.talk(id), 2.6, () => n.head(), () => (this.q?.step?.talk?.[id] ? 1 : id === 'sora' ? 0.6 : 0));   // Grandma wins over her dog in the garden
   }
 
   // ------------------------------------------------------------------ residents of the houses
@@ -553,7 +594,7 @@ export class Director {
 
   // ------------------------------------------------------------------ game start / load
   async begin(saved) {
-    this.quest = new Quest(saved?.quest);
+    this.quest = new Quest(saved?.quest, { story: this.newStory });
     this.game.quest = this.quest;
     const effects = this.quest.start();
     const resumed = this.quest.resumed;
@@ -809,6 +850,7 @@ export class Director {
       this.scenes.epiloguePositions();
       for (const [id, route] of Object.entries(this.routes)) this.npcs[id]?.place(route[0][0], route[0][1]);
     }
+    this.placeGrandma(step, ch, after);
     this.npcs.v7.setVisible(ch >= 4 && after('c4.gather'));
     const lit = Object.values(st.lamps).filter(Boolean).length;
     for (const [id, , , , , need] of this.returning) this.npcs[id].setVisible(need === 4 ? ch === 5 : lit >= need);
@@ -850,6 +892,7 @@ export class Director {
 
   async effect(e, fresh) {
     const g = this.game, ui = this.ui;
+    if (e.say === 'ending_parents') this.parentsArrive();   // Grandma story: they step off the Star Train
     if (e.say || e.lines) await this.sayNow(e.say, e.lines);
     else if (e.line) await this.sayNow(null, [e.line]);
     else if (e.cutscene) await this.scenes.play(e.cutscene, e);
@@ -1012,6 +1055,11 @@ export class Director {
   talk(id) {
     const n = this.npcs[id];
     if (!n) return;
+    // after the festival Grandma tells Mika the happy secret of her year, once; her chatter after that
+    if (id === 'sora' && storyId() === 'grandma' && this.q.state.chapter === 5 && !this.q.has('porchTalk')) {
+      this.q.state.flags.porchTalk = true;
+      return this.say('porch_talk');
+    }
     return this.event({ type: 'talk', who: n.villager ? 'villager' : id });
   }
 

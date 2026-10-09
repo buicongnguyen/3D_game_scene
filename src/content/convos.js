@@ -8,19 +8,28 @@ export const CONVOS = [
   // ---- Fujita (grocer) and Hirano (postman), mornings at the street corner
   { id: 'fujita-hirano-1', a: 't1', b: 'v1', when: { chapter: [0, 5] }, lines: [
     ['a', 'Morning, Hirano. Any post for me?'], ['b', 'A bill, a seed catalogue, and a bill.'], ['a', 'Keep the bills. I\'ll take the catalogue.'] ] },
-  { id: 'fujita-hirano-2', a: 't1', b: 'v1', after: 'fujita-hirano-1', when: { chapter: [0, 5] }, lines: [
+  { id: 'fujita-hirano-2', a: 't1', b: 'v1', after: 'fujita-hirano-1', story: 'classic', when: { chapter: [0, 5] }, lines: [
     ['b', 'Sora\'s girl bought a rice ball from you yet?'], ['a', 'Haggled me down a mon. Proud of her.'], ['b', 'Sora haggled too. Family trait.'] ] },
-  { id: 'fujita-hirano-3', a: 't1', b: 'v1', after: 'fujita-hirano-2', when: { chapter: [1, 5], lamps: 1 }, lines: [
+  { id: 'fujita-hirano-2-g', a: 't1', b: 'v1', after: 'fujita-hirano-1', story: 'grandma', when: { chapter: [0, 5] }, lines: [
+    ['b', 'Sora\'s girl bought a rice ball from you yet?'], ['a', 'Haggled me down a mon. Proud of her.'], ['b', 'Sora haggles too. Family trait.'] ] },
+  { id: 'fujita-hirano-3', a: 't1', b: 'v1', after: 'fujita-hirano-2', story: 'classic', when: { chapter: [1, 5], lamps: 1 }, lines: [
     ['b', 'Eleven doors on my round again. Full houses!'], ['a', 'Full houses, empty shelves. I\'ve sold out of tea.'],
     ['b', 'Best problem a grocer ever had.'] ] },
-  { id: 'fujita-hirano-4', a: 't1', b: 'v1', after: 'fujita-hirano-3', when: { chapter: [5, 5] }, lines: [
+  { id: 'fujita-hirano-3-g', a: 't1', b: 'v1', after: 'fujita-hirano-2-g', story: 'grandma', when: { chapter: [1, 5], lamps: 1 }, lines: [
+    ['b', 'Eleven doors on my round again. Full houses!'], ['a', 'Full houses, empty shelves. I\'ve sold out of tea.'],
+    ['b', 'Best problem a grocer ever had.'] ] },
+  { id: 'fujita-hirano-4', a: 't1', b: 'v1', after: 'fujita-hirano-3', story: 'classic', when: { chapter: [5, 5] }, lines: [
+    ['a', 'I\'m ordering buns from Hana. Takamori buns!'], ['b', 'Does Ōta know?'], ['a', 'Ōta will find out when he\'s eating one.'] ] },
+  { id: 'fujita-hirano-4-g', a: 't1', b: 'v1', after: 'fujita-hirano-3-g', story: 'grandma', when: { chapter: [5, 5] }, lines: [
     ['a', 'I\'m ordering buns from Hana. Takamori buns!'], ['b', 'Does Ōta know?'], ['a', 'Ōta will find out when he\'s eating one.'] ] },
 
   // ---- Mrs. Nakano and Granny Tsuru, washing day at the river
   { id: 'nakano-tsuru-1', a: 'v2', b: 'v18', when: { chapter: [0, 5] }, lines: [
     ['b', 'You\'ll scrub a hole in that sheet, Emi.'], ['a', 'It came with the hole. I\'m just making it tidier.'] ] },
-  { id: 'nakano-tsuru-2', a: 'v2', b: 'v18', after: 'nakano-tsuru-1', when: { chapter: [0, 5] }, lines: [
+  { id: 'nakano-tsuru-2', a: 'v2', b: 'v18', after: 'nakano-tsuru-1', story: 'classic', when: { chapter: [0, 5] }, lines: [
     ['b', "Sora's girl walked past. Waved at me."], ['a', 'She waves like Sora. Whole arm.'], ['b', 'Whole heart, Sora used to say.'] ] },
+  { id: 'nakano-tsuru-2-g', a: 'v2', b: 'v18', after: 'nakano-tsuru-1', story: 'grandma', when: { chapter: [0, 5] }, lines: [
+    ['b', 'Sora\'s girl walked past. Waved at me.'], ['a', 'She waves like Sora. Whole arm.'], ['b', 'Whole heart, Sora always says.'] ] },
   { id: 'nakano-tsuru-3', a: 'v2', b: 'v18', after: 'nakano-tsuru-1', when: { chapter: [1, 5], lamps: 1 }, lines: [
     ['a', 'Goro snores again. I missed it, Tsuru.'], ['b', 'Give it a month. You\'ll miss the quiet.'], ['a', 'Ha! Probably.'] ] },
   { id: 'nakano-tsuru-4', a: 'v2', b: 'v18', after: 'nakano-tsuru-3', when: { chapter: [3, 3] }, lines: [
@@ -45,8 +54,10 @@ export const CONVOS = [
     ['b', 'My scarecrow\'s wearing your shirt, you know.'], ['a', 'My WHAT? That\'s my lucky shirt!'], ['b', 'Crows agree. They won\'t go near it.'] ] },
   { id: 'nakano-kubo-3', a: 'v8', b: 'v19', after: 'nakano-kubo-1', when: { chapter: [2, 2] }, lines: [
     ['a', 'Hot one. Fish are hiding under the dock.'], ['b', 'Beans are hiding under the leaves. Wise beans.'] ] },
-  { id: 'nakano-kubo-4', a: 'v8', b: 'v19', after: 'nakano-kubo-1', when: { chapter: [5, 5] }, lines: [
+  { id: 'nakano-kubo-4', a: 'v8', b: 'v19', after: 'nakano-kubo-1', story: 'classic', when: { chapter: [5, 5] }, lines: [
     ['b', 'So it was nobody\'s fault. Or everybody\'s.'], ['a', 'I left, Kubo. That\'s my bit of it.'], ['b', 'And you came back. That\'s your other bit.'] ] },
+  { id: 'nakano-kubo-4-g', a: 'v8', b: 'v19', after: 'nakano-kubo-1', story: 'grandma', when: { chapter: [5, 5] }, lines: [
+    ['b', 'Genzo said please. Out loud. In public.'], ['a', 'I was there, Kubo. Sora cried laughing.'], ['b', 'Then she baked him a cake. With a ribbon.'] ] },
 
   // ---- Mrs. Komori and Miss Endo at lunch on the bench
   { id: 'komori-endo-1', a: 't2', b: 'v9', when: { chapter: [1, 5], lamps: 1 }, lines: [
@@ -113,8 +124,10 @@ export const CONVOS = [
     ['b', 'Sumi tried to climb the bell rope.'], ['a', 'How far did she get?'], ['b', 'Far enough to ring it upside down.'] ] },
   { id: 'oda-tanabe-3', a: 'v22', b: 'v27', after: 'oda-tanabe-1', when: { chapter: [3, 5] }, lines: [
     ['a', 'Bit of mist on the river this morning.'], ['b', 'I rang the seven anyway. Mist can hear.'] ] },
-  { id: 'oda-tanabe-4', a: 'v22', b: 'v27', after: 'oda-tanabe-1', when: { chapter: [5, 5] }, lines: [
+  { id: 'oda-tanabe-4', a: 'v22', b: 'v27', after: 'oda-tanabe-1', story: 'classic', when: { chapter: [5, 5] }, lines: [
     ['b', 'Hana and Ōta both stood up on that platform.'], ['a', 'Ten years too late.'], ['b', 'Better than eleven.'] ] },
+  { id: 'oda-tanabe-4-g', a: 'v22', b: 'v27', after: 'oda-tanabe-1', story: 'grandma', when: { chapter: [5, 5] }, lines: [
+    ['b', 'Hana and Ōta carried beams side by side.'], ['a', 'Arguing about who carried more.'], ['b', 'Ōta says Ōta won. Hana says Hana did.'] ] },
 
   // ---- Takamori kids: Hiro and Nao
   { id: 'hiro-nao-1', a: 'v6', b: 'v23', when: { chapter: [0, 5] }, lines: [
@@ -127,16 +140,20 @@ export const CONVOS = [
     ['b', 'I wrote to the Kawabe kids.'], ['a', 'You WHAT? That\'s fraternising!'], ['b', 'It\'s diplomacy. Also, they\'re nice.'] ] },
 
   // ---- generic: any two people
-  { id: 'g-mika-1', a: 'woman', b: 'man', when: { chapter: [0, 1] }, lines: [
+  { id: 'g-mika-1', a: 'woman', b: 'man', story: 'classic', when: { chapter: [0, 1] }, lines: [
     ['a', 'Sora\'s granddaughter came on the last train.'], ['b', 'Clearing out the cottage, I heard.'], ['a', 'Doesn\'t look like a girl who clears off.'] ] },
+  { id: 'g-mika-1-g', a: 'woman', b: 'man', story: 'grandma', when: { chapter: [0, 1] }, lines: [
+    ['a', 'Sora\'s granddaughter came on the last train.'], ['b', 'Staying the year, I heard. Sora\'s thrilled.'], ['a', 'Sora has her up ladders already.'] ] },
   { id: 'g-mika-2', a: 'any', b: 'any', when: { chapter: [1, 5], lamps: 1 }, lines: [
     ['a', 'They say Sora\'s girl lit the Mill Lamp.'], ['b', 'With a star, I heard. A talking one.'], ['a', 'Well. She is Sora\'s.'] ] },
   { id: 'g-lamps-2', a: 'any', b: 'any', when: { chapter: [2, 5], lamps: 2 }, lines: [
     ['a', 'Two lamps lit. Can you believe it?'], ['b', 'I keep looking out the window to check.'] ] },
   { id: 'g-lamps-3', a: 'any', b: 'any', when: { chapter: [3, 5], lamps: 3 }, lines: [
     ['a', 'Even the Forest Lamp\'s burning now.'], ['b', 'Kiku would be glad. Wherever she is.'] ] },
-  { id: 'g-train-1', a: 'man', b: 'any', when: { chapter: [0, 3] }, lines: [
+  { id: 'g-train-1', a: 'man', b: 'any', story: 'classic', when: { chapter: [0, 3] }, lines: [
     ['a', 'Ten years since the Star Train ran.'], ['b', 'Genzo still oils Kobo every morning.'], ['a', 'Hope\'s a kind of grease, I suppose.'] ] },
+  { id: 'g-train-1-g', a: 'man', b: 'any', story: 'grandma', when: { chapter: [0, 3] }, lines: [
+    ['a', 'Star Train for the festival this winter, they say.'], ['b', 'Genzo still oils Kobo every morning.'], ['a', 'Hope\'s a kind of grease, I suppose.'] ] },
   { id: 'g-train-2', a: 'any', b: 'any', when: { chapter: [5, 5] }, lines: [
     ['a', 'Going on the Sunday train?'], ['b', 'Wouldn\'t miss it. Genzo waves at everyone.'], ['a', 'He waved at a cow last week.'] ] },
   { id: 'g-spring', a: 'woman', b: 'any', when: { season: 'spring' }, lines: [
@@ -155,8 +172,10 @@ export const CONVOS = [
     ['a', 'Is it true there\'s a bear in the forest?'], ['b', 'Big as a house. Asleep, mostly.'], ['a', 'Mostly?!'] ] },
   { id: 'g-weather', a: 'any', b: 'any', when: {}, lines: [
     ['a', 'Looks like rain later.'], ['b', 'You said that yesterday.'], ['a', 'And one day I\'ll be right.'] ] },
-  { id: 'g-feud', a: 'man', b: 'any', when: { chapter: [5, 5] }, lines: [
+  { id: 'g-feud', a: 'man', b: 'any', story: 'classic', when: { chapter: [5, 5] }, lines: [
     ['a', 'Ten years of blaming the other side.'], ['b', 'And it was the river all along.'], ['a', 'The river, and us not watching.'] ] },
+  { id: 'g-feud-g', a: 'man', b: 'any', story: 'grandma', when: { chapter: [5, 5] }, lines: [
+    ['a', 'Both villages carried beams for Genzo.'], ['b', 'And argued all the way about who carried more.'], ['a', 'Best argument this valley ever had.'] ] },
   { id: 'g-night', a: 'any', b: 'any', when: { night: true }, lines: [
     ['a', 'Look at all those stars.'], ['b', 'Feels like they\'re looking back.'] ] },
   { id: 'g-buns', a: 'woman', b: 'any', when: { chapter: [5, 5] }, lines: [

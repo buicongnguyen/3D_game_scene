@@ -332,6 +332,7 @@ export const HOTSPOTS = {
       label: 'Read the letters', variants: [1],
       lines: {
         any: ['Letters from half the valley, tied in bundles. Grandma answered every one. Eventually.'],
+        grandma: { any: ['Letters from half the valley, tied in bundles. Grandma answers every one. Eventually. Mine are on top.'] },
       },
     },
     {
@@ -339,6 +340,7 @@ export const HOTSPOTS = {
       label: 'Look at the signal things', variants: [1],
       lines: {
         any: ['A semaphore arm, a hand lamp, a model of the Viaduct Lamp. Grandma loved a good signal.'],
+        grandma: { any: ['A semaphore arm, a hand lamp, a model of the Viaduct Lamp. Grandma waves the lamp at Genzo every night.'] },
       },
     },
     {
@@ -346,6 +348,7 @@ export const HOTSPOTS = {
       label: 'Open the oshiire', variants: [1],
       lines: {
         any: ['Futons that still smell of sun and her soap. I close it again, slowly.'],
+        grandma: { any: ['Futons that smell of sun and her soap. Grandma airs them every Tuesday, whether they need it or not.'] },
       },
     },
     {
@@ -353,6 +356,7 @@ export const HOTSPOTS = {
       label: 'Sit at the low table', variants: [1],
       lines: {
         any: ['Grandma\'s cushion is the flat one. She said the flat ones had the best stories.'],
+        grandma: { any: ['Grandma\'s cushion is the flat one. She says the flat ones have the best stories. Then she tells one.'] },
       },
     },
   ],
@@ -531,6 +535,7 @@ export const MEMORIES = {
   tk6: {
     hotspot: 'takamori-b.wheel', name: 'Spindle of gold yarn', icon: 'memory', mon: 3,
     text: 'A spindle of yarn the exact gold of a festival lantern. Grandma Sora always asked for a scarf.',
+    grandma: { text: 'A spindle of yarn the exact gold of a festival lantern. Grandma Sora is getting a scarf this year. Shh.' },
   },
   boathouse: {
     hotspot: 'boathouse.chest', name: 'Ferry ticket stub', icon: 'memory', mon: 2,

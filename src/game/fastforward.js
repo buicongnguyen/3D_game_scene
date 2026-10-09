@@ -6,7 +6,8 @@ const NEED = { cog: 'pickup', peach: 'pickup', chestnut: 'pickup', mushroom: 'pi
 
 function eventsFor(q, choice) {
   const s = q.step, d = s.done;
-  if (s.id === 'c4.shed') return [{ type: 'talk', who: 'genzo' }, { type: 'choice', id: 'confession', value: choice }];
+  // only the Classic story asks how Genzo should confess
+  if (s.id === 'c4.shed' && q.state.story === 'classic') return [{ type: 'talk', who: 'genzo' }, { type: 'choice', id: 'confession', value: choice }];
   if (d.event === 'talk') return [{ type: 'talk', who: d.who }];
   if (d.event) return [{ ...Object.fromEntries(Object.entries(d).filter(([k]) => k !== 'event')), type: d.event }];
   if (d.have) {
@@ -22,8 +23,8 @@ function eventsFor(q, choice) {
 }
 
 /** Quest save data positioned at the start of `stepId`. */
-export function stateAt(stepId, choice = 'alone') {
-  const q = new Quest();
+export function stateAt(stepId, choice = 'alone', story) {
+  const q = new Quest(null, story ? { story } : undefined);
   q.start();
   let guard = 0;
   while (q.state.step !== stepId && guard++ < 300) for (const ev of eventsFor(q, choice)) q.dispatch(ev);
@@ -34,7 +35,7 @@ export function stateAt(stepId, choice = 'alone') {
 
 /** Explore mode: the valley after the story, every lamp lit and every way open, nothing asked of Mika. */
 export function exploreState() {
-  const st = stateAt('e.done', 'together');
+  const st = stateAt('e.done', 'together', 'grandma');   // the valley of the default story: Grandma at home
   st.flags = { ...st.flags, huntAsked: true, explore: true };
   return st;
 }

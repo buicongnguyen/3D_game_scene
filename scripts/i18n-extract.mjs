@@ -12,6 +12,7 @@ import { PEOPLE } from '../src/content/townsfolk.js';
 import { GOODS, ERRANDS, SHOPS } from '../src/content/shops.js';
 import { CONVOS } from '../src/content/convos.js';
 import { HOTSPOTS, MEMORIES } from '../src/content/hotspots.js';
+import { STORIES, useStory } from '../src/game/stories/index.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const LANGS = ['vi', 'ko', 'ja'];
@@ -24,6 +25,9 @@ export function collect() {
     if (ctx && !e.ctx.includes(ctx) && e.ctx.length < 3) e.ctx.push(ctx);
     out.set(s, e);
   };
+  // the story tables are read once per story: Classic, then the Grandma story swapped in (stories/index.js)
+  for (const story of ['classic', 'grandma']) {
+  useStory(story);
   for (const [id, c] of Object.entries(CAST)) add(c.name, `character name (${id})`);
   for (const it of Object.values(ITEMS)) add(it.name, 'inventory item');
   for (const c of CHAPTERS) { add(c.title, 'chapter label'); add(c.name, 'chapter name'); }
@@ -55,6 +59,8 @@ export function collect() {
     if (s.huntDone) add(s.huntDone, 'quest objective once every treasure is found');
     for (const e of [...(s.enter || []), ...(s.exit || [])]) if (e.toast) add(e.toast, 'toast');
   }
+  }
+  useStory('classic');
   for (const s of FALLEN_STARS) add(s.hint, 'where a fallen star hides (journal hint)');
   for (const l of LAMPS) add(l.name, 'Star Lamp name');
   // barks: one-line remarks people call out as Mika walks past (a speech bubble over their head, a few seconds)
@@ -62,27 +68,29 @@ export function collect() {
   // Town Life: the named neighbours, their stories, the shops and the conversations Mika overhears
   for (const p of PEOPLE) {
     add(p.name, "a neighbour's name"); add(p.role, `what ${p.name} does (journal)`);
-    for (const s of p.story || []) {
+    for (const s0 of p.story || []) for (const s of [s0, s0.grandma].filter(Boolean)) {
       for (const l of s.lines || []) add(l[1], `${p.name}'s story, said by ${CAST[l[0]]?.name || l[0]}`);
       for (const l of s.askLines || []) add(l[1], `${p.name} asks Mika for something`);
       add(s.ask, `${p.name} asks Mika for something (also shown in the journal)`); add(s.journal, `journal note on ${p.name}`);
     }
-    for (const c of p.chatter || []) add(c, `${p.name}, small talk`);
+    for (const c of [...(p.chatter || []), ...(p.chatterGrandma || [])]) add(c, `${p.name}, small talk`);
   }
   for (const g of Object.values(GOODS)) { add(g.name, 'shop goods'); add(g.desc, 'shop goods description'); }
   for (const g of Object.values(ERRANDS)) add(g.name, 'an errand item Mika carries for a neighbour');
-  for (const s of Object.values(SHOPS)) {
+  for (const s of Object.values(SHOPS).flatMap(x => [x, x.grandma ? { ...x, ...x.grandma } : null]).filter(Boolean)) {
     add(s.name, 'shop name');
     for (const k of ['hello', 'bye', 'broke']) for (const l of s[k] || []) add(l, `shopkeeper (${s.name}): ${k}`);
     for (const l of Object.values(s.thanks || {})) add(l, `shopkeeper (${s.name}) after a sale`);
   }
   for (const c of CONVOS) for (const l of c.lines) add(l[1], 'overheard conversation between two villagers (speech bubble, short)');
+  for (const s of Object.values(STORIES)) { add(s.name, 'story name (New Game choice, Settings)'); add(s.blurb, 'story description (New Game choice)'); }
   // indoors: what Mika can do in each room (prompts), what she thinks there, and the house memories
   for (const [room, list] of Object.entries(HOTSPOTS)) for (const h of list) {
     add(h.label, `prompt: something Mika can do inside (${room})`);
-    for (const lines of Object.values(h.lines || {})) for (const l of lines) add(l, `Mika's thought indoors (${room}, ${h.kind})`);
+    const groups = Object.entries(h.lines || {}).flatMap(([k, v]) => (k === 'grandma' ? Object.values(v) : [v]));
+    for (const lines of groups) for (const l of lines) add(l, `Mika's thought indoors (${room}, ${h.kind})`);
   }
-  for (const m of Object.values(MEMORIES)) { add(m.name, 'house memory: a small found object (journal)'); add(m.text, 'house memory description (journal)'); }
+  for (const m of Object.values(MEMORIES)) for (const v of [m, m.grandma].filter(Boolean)) { add(v.name, 'house memory: a small found object (journal)'); add(v.text, 'house memory description (journal)'); }
 
   // UI strings: tx('…') literals and interaction labels in the source, data-i18n markup in index.html
   const files = [];

@@ -1,4 +1,4 @@
-"""Starline supporting cast: Genzo, Rin, Ota, Hana and the three recolourable villagers.
+"""Starline supporting cast: Genzo, Rin, Ota, Hana, Grandma Sora and the three recolourable villagers.
 
 Each build_<name>() resets the scene, models the character around a Body skeleton, weights every part,
 normalises the height to the contract, skins (with baked AO), authors clips and exports the GLB.
@@ -13,6 +13,7 @@ from char_parts import *
 from garments import *
 import anims
 import player_anims as PA
+from anims import sn, env, bump, add
 
 V = Vector
 AO = dict(rays=64, distance=0.22, strength=0.6, ground=0.0)
@@ -982,6 +983,361 @@ def build_hana():
     return export_rigged('hana', arm)
 
 
+# ================================================================ Grandma Sora
+
+SORA_WALK = 1.0     # m/s: Sora's Walk is authored for this ground speed (runtime timeScale = speed / 1.0)
+HUG_D = 0.45        # Hug: the hugged person's root stands this far in front of Sora's root, facing her
+HUG_Z = 0.94        # Hug: wrist height on their upper back (Mika: shoulders 0.99 m, chest joint 0.88 m)
+
+
+def build_sora():
+    """Grandma Sora, 72: persimmon headscarf over grey hair, round glasses, berry cardigan, mustard apron over a long
+    plum skirt, a walking stick with a crook in the right hand. The stick is skinned to its own bone `stick` (child of
+    hand_R, head in the palm, tail at the ferrule) so Hug can swing it clear of the person she hugs."""
+    reset()
+    M = dict(skin=mat('Skin', '#efb990', .56), hair=mat('Hair', '#dcd6cc', .62), eye=mat('Eye white', '#f6f3ec', .18),
+             iris=mat('Iris', '#5a3a26', .25), dark=mat('Dark', '#2a2028', .45),
+             scarf=mat('Headscarf', '#ec6a2e', .66), cardigan=mat('Cardigan', '#b4363f', .82),
+             apron=mat('Apron', '#eab040', .72), skirt=mat('Skirt', '#5a3346', .74), wood=mat('Wood', '#8a5a34', .6))
+    M['lash'] = M['dark']
+    b = Body(1.5, arm_out=14.0, sh_x=0.152, hip_x=0.09, upper=0.2, fore=0.188, hand=0.082, elbow_bend=10)
+    k0 = b.H / 1.45
+    parts = []
+    hd = std_head(b, M, dict(w=1.03, jaw=1.0, cheek=1.2, chin=0.95, scale=1.0), seg=26, rings=19)
+    parts.append(weigh(hd.ob, 'head'))
+    f = Face(hd, M, s=1.0)
+    f.eyes(az=24, el=-8, w=0.018, h=0.017, lashes=1, iris_w=0.86, iris_h=1.0, iris_dv=0.03, pupil=(0.42, 0.5), top=0.6,
+           lid_w=0.006, tilt=-5, lower=True, brow=M['hair'], brow_el=9, brow_arch=0.007, brow_w=0.0052)
+    f.mouth(el=-29, w=0.02, smile=0.007, open_=0.005, m=M['dark'])
+    # laughter lines: crow's feet and soft smile folds (raised skin, AO makes them read)
+    for sx in (1, -1):
+        for j in range(2):
+            d = f.decal(sx * 41, -7 - 5 * j)
+            path = [(0.0, 0.0), (sx * 0.012, -0.002 - 0.003 * j), (sx * 0.02, -0.006 - 0.004 * j)]
+            d.strip(f.mb, path, [0.0022, 0.0018, 0.0006], M['skin'], lift=0.0004, thick=0.0012)
+        d = f.decal(sx * 15, -21)
+        path = [(0.0, 0.008), (sx * 0.004, -0.004), (sx * 0.005, -0.016)]
+        d.strip(f.mb, path, [0.0008, 0.0022, 0.0008], M['skin'], lift=0.0004, thick=0.0014)
+    parts.append(weigh(f.build(), 'head'))
+    parts.append(weigh(nose(hd, M['skin'], el=-16, size=(0.014, 0.013, 0.012), off=-0.006, seg=10), 'head'))
+    parts.append(weigh(ears(hd, M['skin'], el=-10, s=1.05), 'head'))
+    parts.append(neck_part(b, M, r=0.045))
+
+    # ---- grey hair (shows under the scarf at the forehead and temples), two soft temple waves
+    def hairline(az):
+        a = abs(((az + 180) % 360) - 180)
+        return interp([(0, 20), (40, 16), (70, 2), (100, -10), (140, -24), (180, -28)], a)
+    parts.append(weigh(hair_cap(hd, M['hair'], hairline, off=0.008, seg=20, rows=4), 'head'))
+    lk = MB('locks')
+    for sx in (1, -1):
+        for az0, el0 in ((40, 22), (56, 14)):
+            keys = [(sx * az0, el0 + 6, 0.01), (sx * (az0 + 14), el0 - 8, 0.018), (sx * (az0 + 18), el0 - 22, 0.014)]
+            lock(lk, lock_path(hd, keys), M['hair'], 0.034, 0.016, hd.c, n=8, samples=6, flat_in=0.6)
+    parts.append(weigh(radial_normals(lk.build('locks', angle=180), hd.c, 0.5), 'head'))
+
+    # ---- headscarf: a dome over the crown down to the nape, rolled hem, knot and two tails at the back
+    def edge(az):
+        a = abs(((az + 180) % 360) - 180)
+        return interp([(0, 26), (40, 21), (75, 8), (100, 2), (140, -12), (180, -22)], a)
+    seg_s, rows_s = 24, 6
+    rings_s = []
+    for i in range(rows_s):
+        t = i / (rows_s - 1)        # 0 at the crown, 1 at the hem
+        row = []
+        for j in range(seg_s):
+            az = -180 + 360 * j / seg_s
+            a = abs(((az + 180) % 360) - 180)
+            el = lerp(84, edge(az), t)
+            puff = 0.02 * math.exp(-((a - 180) / 55) ** 2) * math.exp(-((el - 15) / 28) ** 2)   # the bun under it
+            off = lerp(0.03, 0.013, t * t) + puff + 0.004 * math.sin(math.radians(az) * 6 + 1) * math.sin(math.pi * t)
+            row.append(hd.pt(az, el, off))
+        rings_s.append(row)
+    sc = MB('scarf')
+    sc.loft(rings_s, M['scarf'], [hd.c] * rows_s, cap0=hd.pt(0, 90, 0.032))
+    inner = [hd.c + (p - hd.c) * 0.93 for p in rings_s[-1]]
+    sc.loft([rings_s[-1], inner], M['scarf'], [hd.c + V((0, 0, -0.03))] * 2)
+    hem = rings_s[-1] + rings_s[-1][:2]
+    sweep(sc, hem, M['scarf'], radius=0.0075, n=6, up_fn=lambda q, T: q - hd.c, cap0=None, cap1=None)
+    kc = hd.pt(180, -20, 0.03)
+    ellipsoid(sc, kc, (0.03, 0.022, 0.024), M['scarf'], 10, 6)
+    for sx in (1, -1):
+        sweep(sc, [kc + V((sx * 0.01, 0.006, -0.004)), kc + V((sx * 0.022, 0.026, -0.03)),
+                   kc + V((sx * 0.028, 0.036, -0.06))], M['scarf'], rfn=lambda t: (0.02 - 0.005 * t, 0.006), n=8,
+              up_fn=lambda q, T: V((0, 1, 0.2)), e=3, cap0='round', cap1='flat')
+    parts.append(weigh(sc.build('scarf', angle=60), 'head'))
+
+    # ---- round glasses: two rims, a bridge over the nose, arms back to the ears (Dark frames, no lenses)
+    gl = MB('glasses')
+    rr = 0.026
+    rims = {}
+    for sx in (1, -1):
+        cen = hd.pt(sx * 24, -8, 0.016)
+        nrm = hd.dir(sx * 9, -6)
+        X = V((0, 0, 1)).cross(nrm).normalized()
+        Y = nrm.cross(X).normalized()
+        pts = [cen + (X * math.cos(a) + Y * math.sin(a)) * rr for a in [TAU * i / 18 for i in range(20)]]
+        sweep(gl, pts, M['dark'], radius=0.0029, n=5, up_fn=lambda q, T, n_=nrm: n_, cap0=None, cap1=None)
+        rims[sx] = (cen, X, Y)
+    a_ = rims[1][0] - rims[1][1] * rr
+    b_ = rims[-1][0] + rims[-1][1] * rr
+    sweep(gl, [a_, (a_ + b_) / 2 + V((0, -0.004, 0.006)), b_], M['dark'], radius=0.0028, n=5)
+    for sx in (1, -1):
+        cen, X, Y = rims[sx]
+        o = cen + X * sx * rr
+        sweep(gl, [o, hd.pt(sx * 58, -4, 0.012), hd.pt(sx * 84, -6, 0.013)], M['dark'], radius=0.0026, n=5,
+              cap0='round', cap1='round')
+    parts.append(weigh(gl.build('glasses', angle=50), 'head'))
+
+    # ---- long plum skirt (waist to mid-calf), worn under the cardigan
+    kz = b.knee_z
+
+    def skirt_w(co):
+        w = torso_weights(b)(co)
+        if co.z < b.hip_z + 0.02:
+            front = sstep(0.0, -0.1, co.y)
+            f_ = sstep(b.hip_z + 0.02, b.hip_z - 0.3, co.z) * (0.62 + 0.3 * front)
+            # below the knee the front of the long skirt hangs from the shins (drapes over the knees in Sit)
+            g = sstep(kz + 0.08, kz - 0.14, co.z) * (0.3 + 0.6 * front)
+            s_ = sstep(-0.05, 0.05, co.x)
+            w = mix_w((w, 1 - f_), ({'thigh_L': s_ * (1 - g), 'thigh_R': (1 - s_) * (1 - g), 'shin_L': s_ * g,
+                                     'shin_R': (1 - s_) * g}, f_))
+        return w
+    sk = [(0.16, 0.218, 0.19, 0.2), (0.3, 0.21, 0.18, 0.19), (0.45, 0.2, 0.17, 0.18), (0.55, 0.193, 0.163, 0.173),
+          (0.63, 0.186, 0.156, 0.164), (0.72, 0.17, 0.148, 0.15)]
+    sk = [(z * k0, a * k0, f_ * k0, g * k0) for z, a, f_, g in sk]
+    zs = [z * k0 for z in dense(0.16, 0.72, 10)]
+    rings, cs = torso_rings(sk, 24, zs, e=2.2, fn=lambda z, ang: 1 + 0.03 * sstep(0.55 * k0, 0.16 * k0, z) *
+                            math.sin(ang * 7 + 0.4))
+    skm = MB('skirt')
+    inner = [[cs[0] + (p - cs[0]) * 0.94 + V((0, 0, 0.04)) for p in rings[0]]]
+    skm.loft(inner + rings, M['skirt'], [cs[0] + V((0, 0, 0.04))] + cs)
+    sk_rings, sk_zs = rings, zs
+    sk_ob = skm.build('skirt', angle=60)
+    parts.append(weigh(sk_ob, skirt_w))
+    parts.append(weigh(ring_band((0, 0.005, 0.163 * k0), 0.22 * k0, 0.193 * k0, 0.01, M['skirt'], 22, 'hem', sides=6),
+                       skirt_w))
+
+    # ---- berry cardigan to the hips: ribbed hem, button band with wooden buttons, white blouse collar
+    ck = [(0.56, 0.2, 0.172, 0.182), (0.64, 0.198, 0.168, 0.178), (0.72, 0.186, 0.162, 0.164), (0.8, 0.178, 0.164, 0.154),
+          (0.9, 0.18, 0.17, 0.15), (0.97, 0.176, 0.154, 0.142), (1.01, 0.162, 0.126, 0.128), (1.04, 0.138, 0.1, 0.108),
+          (1.065, 0.098, 0.078, 0.082), (1.085, 0.066, 0.06, 0.062)]
+    ck = [(z * k0, a * k0, f_ * k0, g * k0) for z, a, f_, g in ck]
+    zs = [z * k0 for z in dense(0.56, 1.085, 16)]
+    rings, cs = torso_rings(ck, 26, zs, e=2.3, fn=lambda z, ang: 1 + 0.012 * math.sin(ang * 9 + z * 20))
+    cm = MB('cardigan')
+    inner = [[cs[0] + (p - cs[0]) * 0.93 + V((0, 0, 0.03)) for p in rings[0]]]
+    cm.loft(inner + rings, M['cardigan'], [cs[0] + V((0, 0, 0.03))] + cs)
+    cd_ob = cm.build('cardigan', angle=60)
+    csurf = Surface([cd_ob])
+    parts.append(weigh(cd_ob, skirt_w))
+    rib = weigh(ring_band((0, 0.004, 0.567 * k0), 0.203 * k0, 0.178 * k0, 0.012, M['cardigan'], 22, 'rib', sides=6),
+                skirt_w)
+    parts.append(rib)
+    pl = surface_strip(csurf, [V((0.0, -0.3, z * k0)) for z in (0.985, 0.9, 0.82, 0.76)], M['cardigan'], 0.03,
+                       0.006, off=0.002, name='placket', out_ref=(0, 0, 0.8))
+    parts.append(weigh(pl, torso_weights(b)))
+    bt = MB('buttons')
+    for z in (0.95, 0.88, 0.81):
+        loc, nrm = csurf.nearest(V((0.0, -0.3, z * k0)))
+        ellipsoid(bt, loc + nrm * 0.011, (0.009, 0.009, 0.009), M['wood'], 8, 5)
+    parts.append(weigh(bt.build('buttons'), torso_weights(b)))
+    parts.append(weigh(ring_band((0, 0.002, 1.08 * k0), 0.076 * k0, 0.069 * k0, 0.013, M['eye'], 18, 'collar',
+                                 squash=0.5, sides=6), neck_weights(b)))
+
+    # ---- mustard waist apron (over cardigan hem and skirt): panel, pocket, waist tie with a bow at the back
+    # Below the cardigan the apron is the skirt's own front vertices (rings x columns, +-60 deg) pushed outward, so
+    # the two layers bend identically when the thighs swing (Walk, Sit); above, the same column directions are
+    # ray-cast onto the cardigan at its ring heights.
+    dsurf = Surface([cd_ob, sk_ob, rib])
+    js = [20, 21, 22, 23, 0, 1, 2, 3, 4]
+    dirs = [V((sk_rings[-1][j].x, sk_rings[-1][j].y, 0)).normalized() for j in js]
+
+    def ap_off(z):
+        return 0.011 + 0.012 * sstep(0.55 * k0, 0.3 * k0, z)
+    rows = []
+    for ring_, z in zip(sk_rings, sk_zs):
+        if 0.2 * k0 < z < 0.55 * k0:
+            rows.append([ring_[j] + V((ring_[j].x, ring_[j].y, 0)).normalized() * ap_off(z) for j in js])
+    for z in [zz * k0 for zz in dense(0.56, 1.085, 16) if zz < 0.74] + [0.745 * k0]:
+        row = []
+        for d in dirs:
+            loc, nrm = dsurf.hit(V((0, 0, z)) + d * 0.5, -d)
+            if loc is None:
+                loc = V((0, 0, z)) + d * 0.2
+            row.append(loc + d * ap_off(z))
+        rows.append(row)
+    apm = MB('apron')
+    apm.loft(rows, M['apron'], [V((0, 0.05, r[0].z)) for r in rows], wrap=False)
+    ap_ob = apm.build('apron', angle=60)
+    parts.append(weigh(ap_ob, skirt_w))
+    asurf = Surface([ap_ob])
+    parts.append(weigh(patch(asurf, (0, 0, 0.5 * k0), (-0.3, -1, 0), rounded_rect(0.09, 0.075, 0.012), M['apron'],
+                             lift=0.006, name='pocket'), skirt_w))
+    parts.append(weigh(ring_band((0, 0.006, 0.745 * k0), 0.19 * k0, 0.178 * k0, 0.011, M['apron'], 22, 'tie',
+                                 squash=0.5, sides=6, e=2.6), torso_weights(b)))
+    bow = MB('bow')
+    bc = V((0, 0.172 * k0, 0.745 * k0))
+    ellipsoid(bow, bc, (0.018, 0.014, 0.016), M['apron'], 8, 6)
+    for sx in (1, -1):
+        ellipsoid(bow, bc + V((sx * 0.034, 0.004, 0.006)), (0.032, 0.011, 0.022), M['apron'], 10, 6,
+                  M=Matrix.Rotation(math.radians(sx * 15), 3, 'Y'))
+        sweep(bow, [bc + V((sx * 0.01, 0.01, -0.01)), bc + V((sx * 0.028, 0.02, -0.07)), bc + V((sx * 0.036, 0.022, -0.12))],
+              M['apron'], rfn=lambda t: (0.015, 0.004), n=6, up_fn=lambda q, T: V((0, 1, 0)), e=3, cap0='round',
+              cap1='flat')
+    parts.append(weigh(bow.build('bow'), torso_weights(b)))
+
+    # ---- cardigan sleeves to the wrist with ribbed cuffs; hands
+    parts += arm_parts(b, M, M['cardigan'], [(0, 0.064), (0.35, 0.062), (0.6, 0.056), (1.0, 0.05)], M['skin'],
+                       sleeve_end=1.0, ball=0.06, cuff=0.03, cuff_m=M['cardigan'], hand_kw=dict(curl=0.55, s=1.04, n=6),
+                       n=10, fold_amp=0.04)
+    # ---- legs (stockinged, under the skirt) and dark lace-up shoes
+    parts += leg_parts(b, M, M['skin'], [(0, 0.066), (0.5, 0.054), (0.8, 0.046), (1.0, 0.043)], n=8, shape=0)
+    for S in 'LR':
+        sh_ = boot(b, S, M['dark'], M['wood'], shaft_top=0.13 * k0, shaft_r=0.047, width=0.049, toe_h=0.056,
+                   cuff=None, flare=1.04, tab=False)
+        parts.append(weigh(sh_, leg_weights(S, b)))
+
+    # ---- walking stick: a straight wooden shaft with a crook handle and a dark rubber ferrule
+    g = b.palm_center('R')
+    tip = V((g.x - 0.012, g.y - 0.03, 0.016))
+    st = MB('stick')
+    sweep(st, [g + V((0, 0, 0.0)), g.lerp(tip, 0.5), tip + V((0, 0, 0.03))], M['wood'],
+          rfn=lambda t: 0.0125 - 0.002 * t, n=8, cap0='round', cap1=None)
+    sweep(st, [tip + V((0, 0, 0.034)), tip], M['dark'], radius=0.0125, n=8, cap0='flat', cap1='round')
+    crook = [g + V((0, 0.0, -0.01)), g + V((0, -0.004, 0.05)), g + V((0.0, -0.042, 0.078)), g + V((0, -0.078, 0.058)),
+             g + V((0, -0.084, 0.032))]
+    sweep(st, catmull(crook, 3), M['wood'], radius=0.0135, n=8, cap0='round', cap1='round')
+    parts.append(weigh(st.build('stick', angle=60), 'stick'))
+    b.extra.append(('stick', V(g), V(tip), 'hand_R'))
+
+    k = normalize_height(parts, b, 1.52, style='granny', head=hd)
+    arm = make_armature('Sora', b)
+    body = skin(parts, arm, 'Sora', ao=AO)
+    smooth_colors(body, 3, {'Skin'})
+    face_tints(body, hd, k, blush=0.8, blush_col=(1.0, 0.6, 0.58), radius=0.036, az=42)
+    A = anims.Anim(arm, b, 'sora', energy=0.85, bounce=0.5, arm_swing=0.45, sway=1.1, stout=0.2, hunch=12.0, lean=4.0,
+                   head_up=4.0, step=0.85, walk_lift=0.6, wave_side='L', walk_speed=SORA_WALK, arm_out=3.0,
+                   talk_extra=_sora_talk)
+    A.st['post'] = _sora_post
+    ex = {'Cheer': lambda: A.cheer(frames=44, jump=0.02), 'Bow': lambda: A.bow(frames=54, depth=26),
+          'Sit': lambda: PA.sit(A), 'Hug': lambda: _sora_hug(A)}
+    anims.make_clips(A, ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Bow', 'Sit', 'Hug'], ex)
+    return export_rigged('sora', arm)
+
+
+def _hold_stick(A, s, tip, tilt):
+    """Right hand on the stick with its ferrule on `tip` (armature space): the rest hand+stick set rotated by `tilt`."""
+    tip0, wr0 = A.P.t['stick'], A.wr['R']
+    R = eul(tilt)
+    wrist = V(tip) + R @ (wr0 - tip0)
+    s.setdefault('ik', {})['arm_R'] = dict(target=wrist, pole=(-1, 0.6, -0.3), end=R)
+    return R, wrist
+
+
+def _left_on_crook(A, s, R, wrist_r):
+    """Left hand resting palm-down on top of the crook (over the right hand)."""
+    from human_lib import _frame_rot
+    k, P = A.k, A.P
+    crook = P.h['stick'] + V((0, -0.04 * k, 0.092 * k))        # top surface of the crook's arch (rest)
+    top = wrist_r + R @ (crook - A.wr['R'])
+    aL = (P.t['hand_L'] - P.h['hand_L'])
+    hl = aL.length
+    aL.normalize()
+    pL = V((-1, 0, 0))
+    pL = (pL - aL * pL.dot(aL)).normalized()
+    a2 = V((-0.62, -0.3, -0.72)).normalized()
+    p2 = V((0, 0, -1))
+    p2 = (p2 - a2 * p2.dot(a2)).normalized()
+    wl = top - a2 * hl * 0.55 - p2 * 0.013 * k
+    s['ik']['arm_L'] = dict(target=wl, pole=(1, 0.5, -0.5), end=_frame_rot(aL, pL, a2, p2))
+
+
+def _sora_post(A, s, p, clip):
+    """The stick: planted for standing clips, swung with the left foot in Walk, both hands on it in Idle."""
+    k = A.k
+    tip0 = A.P.t['stick']
+    if clip == 'Cheer':
+        # bad knees: no hop; she bobs on planted feet and throws both arms up, waving the stick
+        hl = s['hips@loc']
+        s['hips@loc'] = (hl[0], hl[1], min(hl[2], 0.0) * 0.6)
+        A.plant_both(s)
+        return s
+    if clip == 'Hug':
+        return s
+    if clip == 'Walk':
+        g = A._walk_g
+        a, th = A.foot_track('L', p % 1, g['S'], g['beta'], g['lift'] * 0.8, 0, 0, g['yc'])
+        tip = V((tip0.x - 0.03 * k, a.y - A.ank['L'].y + tip0.y - 0.1 * k, tip0.z + max(0.0, a.z - A.ank['L'].z)))
+        _hold_stick(A, s, tip, (-6 - 6 * sn(p, 1, 0.1), 0, 0))
+    elif clip == 'Idle':
+        # leaning on the stick in front, both hands on the crook; she sways, the stick barely moves
+        s['spine'] = add(s['spine'], (5, 0, 0))
+        s['chest'] = add(s['chest'], (4, 0, 0))
+        s['head'] = add(s['head'], (-7, 0, 0))
+        R, wr = _hold_stick(A, s, (-0.03, -0.4, tip0.z), (-8 + 0.8 * sn(p, 1, 0.2), 0.6 * sn(p, 1, 0.45), 20))
+        _left_on_crook(A, s, R, wr)
+    elif clip == 'Sit':
+        # seated: the stick stands beside the right knee, right hand on it; the left hand stays on the lap
+        _hold_stick(A, s, (-0.34, -0.36, tip0.z), (-10, 0, 0))
+    else:
+        _hold_stick(A, s, tip0 + V((0, -0.1 * k, 0)), (-5, 3, 0))
+    return s
+
+
+def _sora_talk(A, s, p):
+    """Talk: a bossy little finger-wag with the left hand in the first half (the right hand keeps the stick)."""
+    g = env(p, 0.06, 0.16, 0.42, 0.55)
+    if g > 0.001:
+        beat = sn(p, 6, 0.1) * g
+        A.arm_to(s, 'L', g, A.L(0.12, -0.26, 0.9 + 0.03 * beat, 'L'), pole=(1, 0.4, -0.8),
+                 end_rel=(-25 + 18 * beat, 0, -30))
+
+
+def _sora_hug(A, frames=60):
+    """Hug (60 f once, 2 s): arms open wide (p 0-0.26), she leans in and wraps someone whose root stands HUG_D in front,
+    facing her (wrists on their upper back at HUG_Z), sways and pats twice with the right hand (p 0.5-0.72), lets go
+    (p 0.8-0.97). The stick stays in the right hand, swung down and out to her right (bone `stick`)."""
+    k = A.k
+    d_stick = V((-0.5, 0.3, -0.81)).normalized()
+
+    def pose(p):
+        s = A.standing({}, p * 0.5, breathe=0.5, shift=0.15, lk=0)
+        o = env(p, 0.0, 0.16, 0.26, 0.42)
+        h = env(p, 0.24, 0.42, 0.8, 0.97)
+        hold = env(p, 0.42, 0.48, 0.76, 0.84)
+        sway = sn(clamp((p - 0.42) / 0.4), 1) * hold
+        pat = bump(p, 0.5, 0.61) + bump(p, 0.61, 0.72)
+        hl = s['hips@loc']
+        s['hips@loc'] = (hl[0] + 0.012 * k * sway, hl[1] - 0.04 * h, hl[2] - 0.01 * h)
+        s['hips'] = add(s['hips'], (4 * h - 2 * o, 0, 3 * sway))
+        s['spine'] = add(s['spine'], (3 * h - 4 * o, 2.5 * sway, 0))
+        s['chest'] = add(s['chest'], (3 * h - 3 * o, 2.5 * sway, 0))
+        s['neck'] = add(s['neck'], (-3 * h, 0, 8 * h))
+        s['head'] = add(s['head'], (-6 * o - 5 * h, 6 * h, 18 * h))
+        for S in 'LR':
+            sx = A.sx(S)
+            rest = A.wr[S]
+            opn = A.L(0.44, -0.2, 0.96, S)
+            hug = V((sx * 0.12, -(HUG_D + 0.05), HUG_Z + (0.03 if S == 'L' else -0.02)))
+            if S == 'R':
+                hug = hug + V((0, 0, 0.025 * pat))
+
+            def tgt(P, D, rest=rest, opn=opn, hug=hug, o=o, h=h):
+                a = P.apply(D['chest'], rest).lerp(P.apply(D['chest'], opn), o)
+                return a.lerp(hug, h)
+            s.setdefault('ik', {})['arm_' + S] = dict(target=tgt, pole=(sx * 1.0, 0.2, -0.6),
+                                                      end_rel=(-10 * h, 0, sx * -25 * h))
+
+        def stick(P, D, h=h):
+            d0 = (P.t['stick'] - P.h['stick']).normalized()
+            q = D['hand_R'][0].inverted() @ d0.rotation_difference(d_stick)
+            return Quaternion().slerp(q, h)
+        s['stick'] = stick
+        A.secondary(s, p, drag=0, k=1, amp=0.3)
+        return s
+    return 'Hug', frames, pose, False
+
+
 # ================================================================ villagers (recoloured per instance)
 
 
@@ -1202,6 +1558,6 @@ def build_villager(kind):
     return export_rigged('villager-' + kind, arm)
 
 
-BUILDERS = {'genzo': build_genzo, 'rin': build_rin, 'ota': build_ota, 'hana': build_hana,
+BUILDERS = {'genzo': build_genzo, 'rin': build_rin, 'ota': build_ota, 'hana': build_hana, 'sora': build_sora,
             'villager-man': lambda: build_villager('man'), 'villager-woman': lambda: build_villager('woman'),
             'villager-kid': lambda: build_villager('kid')}

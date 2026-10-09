@@ -1,6 +1,7 @@
 // Barks: the one-line remarks people call out as Mika walks past, with no interaction needed. Pure logic (no DOM, no
 // three.js) so it can be tested: which lines fit this speaker and this moment, and which one to say now.
 import { BARKS } from '../content/barks.js';
+import { inStory } from './stories/index.js';
 
 /** How far away (metres) a villager still says something, and how close counts as "passing by". */
 export const BARK_RANGE = 20;
@@ -46,6 +47,7 @@ export function fits(entry, kind, ctx) {
 export function pickBark(kind, ctx, recent, rand = Math.random, keep = 24) {
   const pool = [];
   for (const e of BARKS) {
+    if (!inStory(e)) continue;            // a line written for the other story
     if (!fits(e, kind, ctx)) continue;
     const w = e.when || {};
     // how specific the line is: each condition it names adds weight, so a winter-and-Kawabe line beats a generic one

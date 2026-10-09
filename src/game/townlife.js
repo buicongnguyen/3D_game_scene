@@ -14,6 +14,10 @@ import { talkTo, applyEffects, shopOffer, buy, sell, folkJournal } from './folk.
 import { STEPS, STEP_INDEX, ITEMS } from './story.js';
 import { BARK_RANGE } from './barks.js';
 import { tx, N_ } from '../i18n/i18n.js';
+import { inStory, forStory, storyId } from './stories/index.js';
+
+/** A neighbour as the chosen story tells them: Grandma-story stage lines and chatter where they differ. */
+const storyPerson = p => (storyId() !== 'grandma' ? p : { ...p, story: (p.story || []).map(forStory), chatter: p.chatterGrandma || p.chatter });
 
 const PERSON = new Map(PEOPLE.map(p => [p.id, p]));
 // how a prop sits in the right hand (grip_R: +Y along the fingers, +X the palm normal), per clip, from the review
@@ -542,6 +546,7 @@ export class TownLife {
 
   // ------------------------------------------------------------------ overheard conversations
   convoFits(c, a, b, ctx, heard) {
+    if (!inStory(c)) return false;
     if (heard.has(c.id) && !c.generic) return false;
     if (c.after && !heard.has(c.after)) return false;
     const w = c.when || {};
@@ -674,7 +679,7 @@ export class TownLife {
 
   async chat(it) {
     const st = this.foldState();
-    const r = talkTo(it.p, st, this.storyNeeds());
+    const r = talkTo(storyPerson(it.p), st, this.storyNeeds());
     let lines = r.lines;
     if (!lines.length) lines = [[it.p.id, tx('Lovely day for it.')]];
     await this.d.dialogueBody(lines, { local: true });
@@ -682,7 +687,7 @@ export class TownLife {
   }
 
   async shop(it, body, key) {
-    const d = this.d, s = SHOPS[key], st = d.q.state, id = it.p.id;
+    const d = this.d, s = forStory(SHOPS[key]), st = d.q.state, id = it.p.id;
     const pick = arr => arr[Math.floor(Math.random() * arr.length)];
     let opening = [[id, pick(s.hello)]];
     for (let guard = 0; guard < 30; guard++) {
@@ -708,7 +713,7 @@ export class TownLife {
   }
 
   /** For the journal: the neighbours Mika has met and how their stories stand. */
-  journal() { return folkJournal(PEOPLE, this.foldState()); }
+  journal() { return folkJournal(PEOPLE.map(storyPerson), this.foldState()); }
 }
 
 export { PERSON };

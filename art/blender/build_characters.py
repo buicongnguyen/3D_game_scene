@@ -28,7 +28,7 @@ def arg(name, default=None):
     return default
 
 
-ORDER = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'villager-man', 'villager-woman', 'villager-kid']
+ORDER = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid']
 ONLY = [s.strip() for s in arg('--only', ','.join(ORDER)).split(',') if s.strip()]
 AO = dict(rays=64, distance=0.22, strength=0.6, ground=0.0)
 

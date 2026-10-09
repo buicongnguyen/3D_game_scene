@@ -1,5 +1,5 @@
 // Starline browser autopilot: plays the whole story through real keyboard/mouse input on a GPU browser.
-//   node tests/e2e/run.mjs [--choice=alone|together] [--quality=low|medium|high] [--out=.tools/e2e]
+//   node tests/e2e/run.mjs [--story=grandma|classic] [--choice=alone|together] [--quality=low|medium|high] [--out=.tools/e2e]
 // Uses GAME_URL if set; otherwise starts `vite` on port 5263. Needs Playwright (PLAYWRIGHT_MODULE_PATH or
 // a local install) and prefers the real GPU (ANGLE d3d11 on Windows).
 import { createRequire } from 'module';
@@ -12,6 +12,7 @@ import { stateAt, RESUME_AT } from './fastforward.mjs';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, '').split('=')));
 const CHOICE = args.choice || 'alone';
+const STORY = args.story || 'grandma';     // --story=grandma (the default) | classic
 const OUT = path.resolve(ROOT, args.out || '.tools/e2e');
 mkdirSync(OUT, { recursive: true });
 const require = createRequire(import.meta.url);
@@ -296,7 +297,7 @@ try {
   const qual = args.quality ? `&quality=${args.quality}` : '';
   if (args.from) {
     // resume from a synthetic save produced by the pure quest engine
-    const quest = stateAt(args.from, CHOICE);
+    const quest = stateAt(args.from, CHOICE, STORY);
     const [x, z] = RESUME_AT[args.from.split('.')[0]] || [-95, 116];
     await page.goto(`${url}?qa=1&mute=1&view=0,40,0,0,0,-10`);
     await page.waitForFunction(() => window.__STARLINE_READY__, null, { timeout: 120000 });
@@ -305,7 +306,7 @@ try {
     await page.waitForFunction(() => window.__STARLINE_PLAYING__, null, { timeout: 120000 });
     await sleep(1500);
     await tp(x, z);
-  } else await page.goto(`${url}?qa=1&mute=1&start=new${qual}`);
+  } else await page.goto(`${url}?qa=1&mute=1&start=new&story=${STORY}${qual}`);
   if (!args.from) await page.waitForFunction(() => window.__STARLINE_PLAYING__, null, { timeout: 120000 });
   log('game started', args.from || '');
   let lastChapter = -1;

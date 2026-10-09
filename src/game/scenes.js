@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { N_ } from '../i18n/i18n.js';
 import { CAPTIONS, DIALOGUE, STAR_POEM } from './story.js';
 import { tx } from '../i18n/i18n.js';
+import { storyId } from './stories/index.js';
+
+/** Grandma (Grandma story only) joins the party: the row or ring gets one more place. */
+const withGrandma = (ids, extra = []) => (storyId() === 'grandma' ? [...ids, 'sora', ...extra] : ids);
 import { STOPS } from '../world/railway.js';
 import { rail, RAIL_Y, DECK_Y, PLACES, FERRY, river, VIADUCT } from '../world/layout.js';
 
@@ -507,6 +511,7 @@ export class Scenes {
     const golden = this.easeHour(17.6, 2600);
     // everyone on the west bank, in a row facing the river and the lamp
     const row = [['v3', -13.4, -31.6], ['v1', -12.8, -33.4], ['ota', -12.9, -35.1], ['rin', -12.5, -38.7], ['v2', -12.9, -40.4]];
+    if (storyId() === 'grandma') row.push(['sora', -12.7, -42.1]);
     const party = this.gather(row.map(([id, x, z]) => [id, x, z, Math.PI / 2]));
     g.player.teleport(-12.3, -36.9, undefined, Math.PI / 2);
     const stop = this.partyLoop(party);
@@ -541,7 +546,7 @@ export class Scenes {
     const g = this.g, d = this.d;
     const blue = this.easeHour(19.7, 2600);
     const ring = (i, n, r = 5.5) => [115 + Math.cos(i / n * Math.PI * 2) * r, 7 + Math.sin(i / n * Math.PI * 2) * r];
-    const ids = ['hana', 'v4', 'v5', 'v6'];
+    const ids = withGrandma(['hana', 'v4', 'v5', 'v6']);
     const party = this.gather(ids.map((id, i) => [id, ...ring(i, ids.length), 0]));
     // a bon-odori circle: everyone walks round the ring
     let dancing = true;
@@ -601,6 +606,7 @@ export class Scenes {
     fox.path = null; fox.trail = []; fox.place(63.4, -114.8, face(63.4, -114.8)); fox.setIdle('Sit');
     (W.deer || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(64.4 + i * 2.2, -119.5 - i, face(64.4 + i * 2.2, -119.5 - i)); a.setIdle('Graze'); });
     (W.rabbits || []).slice(0, 2).forEach((a, i) => { a.path = null; a.place(58.6 + i * 1.4, -112.6 + i * 0.4, face(58.6 + i * 1.4, -112.6)); a.setIdle('Idle'); });
+    if (storyId() === 'grandma') this.gather([['sora', 61.8, -112.2, face(61.8, -112.2)]]);   // Grandma brought the soup up
     g.player.teleport(60.6, -114, undefined, 0);
     C?.leafButterflies?.(V(61, 12, -121), V(71, 25, -146), 10);
     await this.shot(this.above(76, -104, 17), this.above(62, -130, 0), 2.2, 400);
@@ -650,7 +656,7 @@ export class Scenes {
     await wait(1600);
     await d.sayNow(null, DIALOGUE.c4_skytrain.slice(0, 1));
     // close on the window: Sora, waving
-    if (train?.sora) {
+    if (train?.sora && storyId() !== 'grandma') {   // Classic: Sora waves from the window of the train of starlight
       const at = () => train.sora.getWorldPosition(V(0, 0, 0));
       g.follow.track(() => at().add(V(-5, 2, -25)), at, 3);
       await wait(3200);
@@ -666,8 +672,8 @@ export class Scenes {
     const front = loco.position.clone().addScaledVector(fwd, 5.2);
     front.y = this.standY(front.x, front.z);
     // a row across the platform, everyone on the same level as Mika (nobody off the edge on the track bed)
-    const slots = this.rowSlots(front, side, 4, 0.9);
-    const ids = ['ota', 'genzo', 'hana', 'rin'];
+    const ids = withGrandma(['ota', 'genzo', 'hana', 'rin'], ['mom', 'dad']);   // Grandma story: and Mika's parents, off the train
+    const slots = this.rowSlots(front, side, ids.length, 0.9);
     const party = this.gather(slots.map(([x, z], i) => [ids[i], x, z, Math.atan2(fwd.x, fwd.z)]));
     g.player.dismount(front.x, front.z, front.y, Math.atan2(fwd.x, fwd.z));
     const stop = this.partyLoop(party);

@@ -3,12 +3,14 @@
 // (give/take/flag/lamp/journal/unlock/season/time/chapter) are applied here so state is always consistent.
 
 import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, huntProgress, CHAPTERS } from './story.js';
+import { useStory, DEFAULT_STORY, STORIES } from './stories/index.js';
 
 export const SAVE_VERSION = 1;
 
-export function freshState() {
+export function freshState(story = DEFAULT_STORY) {
   return {
-    v: SAVE_VERSION, step: STEPS[0].id, chapter: 0, season: 'spring', hour: 17.2,
+    // story: which story this save plays, 'grandma' (the default) or 'classic'
+    v: SAVE_VERSION, story, step: STEPS[0].id, chapter: 0, season: 'spring', hour: 17.2,
     inv: {}, flags: {}, unlocked: {}, lamps: {}, pages: [], stars: [], fishLog: {}, friends: {}, keepsakes: [], treasures: {}, letters: [],
     choice: null, pos: null, playtime: 0, chatter: {}, started: false,
     folk: {}, mon: 0, heard: [], memories: [], // the neighbours' own stories ({ id: { stage, asked, met } }), Mika's coins, conversations overheard
@@ -19,6 +21,8 @@ export function freshState() {
 export function migrate(saved) {
   if (!saved || typeof saved !== 'object') return freshState();
   const s = { ...freshState(), ...saved };
+  // saves from before there were two stories played the original one
+  s.story = STORIES[saved.story] ? saved.story : 'classic';
   if (!(s.step in STEP_INDEX)) return freshState();
   // A save is only shallow-merged above, so a hand-edited, half-written or future-version file could carry a field of
   // the wrong shape (stars: null, pages: {}). Every field takes the fresh state's type or falls back to the fresh value.
@@ -58,8 +62,9 @@ function matches(done, ev) {
 }
 
 export class Quest {
-  constructor(saved) {
-    this.state = saved ? migrate(saved) : freshState();
+  constructor(saved, { story = DEFAULT_STORY } = {}) {
+    this.state = saved ? migrate(saved) : freshState(STORIES[story] ? story : DEFAULT_STORY);
+    useStory(this.state.story);          // every story table now speaks this save's story
   }
 
   get step() { return STEPS[STEP_INDEX[this.state.step]]; }

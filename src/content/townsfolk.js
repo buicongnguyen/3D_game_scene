@@ -75,7 +75,11 @@ export const PEOPLE = [
       { when: { chapter: [4, 5], after: 'c4.meeting' }, lines: [
         ['t1', "So nobody's lamp was the only dark one. Ten years I wouldn't stock a single thing from across the river."],
         ['mika', "And now?"],
-        ['t1', "Now I'm writing to Hana about her buns. Wholesale. Don't tell Grandpa Ōta until I've worked out how to tell Grandpa Ōta."] ] },
+        ['t1', "Now I'm writing to Hana about her buns. Wholesale. Don't tell Grandpa Ōta until I've worked out how to tell Grandpa Ōta."] ],
+        grandma: { lines: [
+          ['t1', "Genzo said 'please' on that platform. Seventy years! Your grandma nearly fell off the bench laughing."],
+          ['mika', "She says she's waited her whole life to hear it."],
+          ['t1', "Now I'm writing to Hana about her buns. Wholesale. Don't tell Grandpa Ōta until I've worked out how to tell Grandpa Ōta."] ] } },
     ],
     chatter: ["Rice balls this morning, still warm. Well, warm-ish.", "A good grocer knows every family's pickle. Mine's radish.",
       "Bring me chestnuts and I'll pay in mon, not in compliments.", "My father kept this shop. His father swept that same step.",
@@ -99,7 +103,11 @@ export const PEOPLE = [
       { when: { chapter: [1, 5] }, lines: [
         ['t2', "Your grandmother bought her paper here. Pale blue, always. She said grey paper made letters sound tired."],
         ['mika', "My letters from her were always blue."],
-        ['t2', "Then you know she meant every word. I still have half a ream put by for her. It's yours, whenever you write to someone."] ] },
+        ['t2', "Then you know she meant every word. I still have half a ream put by for her. It's yours, whenever you write to someone."] ],
+        grandma: { lines: [
+          ['t2', "Your grandmother buys her paper here. Pale blue, always. She says grey paper makes letters sound tired."],
+          ['mika', "All her letters to me were blue."],
+          ['t2', "Then you know she meant every word. Tell her a new ream's in. And take a sheet yourself. Write to your parents."] ] } },
       { when: { chapter: [3, 5] }, ask: "Bring me two chestnuts? I want to try making chestnut candy. My mother's recipe, never once attempted.",
         needs: { chestnut: 2 }, give: { mon: 8 }, lines: [
         ['t2', "Chestnuts! Plump ones! You've a good eye, girl.", 'Cheer'],
@@ -131,11 +139,19 @@ export const PEOPLE = [
       { when: { chapter: [2, 5] }, give: { mailbag: 1 }, lines: [
         ['v1', "Our post for Takamori goes over with Rin's ferry. I hand it to her, she hands it to Sato, nobody says hello."],
         ['mika', "That sounds exhausting."],
-        ['v1', "Ten years of it. Today, would you carry it across? You talk to both sides. Somebody has to."] ] },
+        ['v1', "Ten years of it. Today, would you carry it across? You talk to both sides. Somebody has to."] ],
+        grandma: { lines: [
+          ['v1', "Our post for Takamori goes over with Rin's ferry. Twenty years I've swapped bags with Sato, and we've never once met."],
+          ['mika', "Never? It's one river."],
+          ['v1', "Our rounds cross at the same hour. Your grandma says you know everyone already. Would you carry it across today?"] ] } },
       { when: { chapter: [2, 5] }, needs: { note_hirano: 1 }, ask: "Did Sato say anything when you gave him the bag? He never says anything. Not to me.", lines: [
         ['v1', "A note from Sato? 'Thank you, Hirano.' Ten years, and that's the first thing he's said to me. I've read it eleven times."],
         ['mika', "It's three words."],
-        ['v1', "Three very good words. Here, for the ferry fare you didn't pay."] ], give: { mon: 4 } },
+        ['v1', "Three very good words. Here, for the ferry fare you didn't pay."] ],
+        grandma: { lines: [
+          ['v1', "A note from Sato? 'Thank you, Hirano.' Twenty years of post, and my first letter. I've read it eleven times."],
+          ['mika', "It's three words."],
+          ['v1', "Three very good words. Here, for the ferry fare you didn't pay."] ] }, give: { mon: 4 } },
       { when: { chapter: [4, 5], after: 'c4.meeting' }, lines: [
         ['v1', "Sato and I are going to swap rounds one day. He'll walk Kawabe, I'll walk Takamori. A holiday!", 'Cheer'],
         ['mika', "Walking someone else's route is a holiday?"],
@@ -224,7 +240,11 @@ export const PEOPLE = [
       { when: { chapter: [1, 5] }, lines: [
         ['v18', "My Isamu built half the boats on this river. Every morning I tell his photograph the news."],
         ['mika', "What did you tell him today?"],
-        ['v18', "That Sora's girl is clearing out the cottage and not clearing off. He'd have liked that."] ] },
+        ['v18', "That Sora's girl is clearing out the cottage and not clearing off. He'd have liked that."] ],
+        grandma: { lines: [
+          ['v18', "My Isamu built half the boats on this river. Every morning I tell his photograph the news."],
+          ['mika', "What did you tell him today?"],
+          ['v18', "That Sora's girl carries her shopping up the bluff and still beats her at cards. He'd have liked that."] ] } },
       { when: { chapter: [2, 5] }, ask: "Bring me a bunch of wildflowers from the stall in Takamori? Isamu always bought them there, every week, for my table.",
         needs: { flowers: 1 }, give: { mon: 9 }, lines: [
         ['v18', "Oh. Oh, that's them. Yellow ones and the little blue ones. He'd come back from across the river smelling of them."],
@@ -233,10 +253,17 @@ export const PEOPLE = [
       { when: { chapter: [4, 5], after: 'c4.meeting' }, lines: [
         ['v18', "Fujita told me what was said on the platform. Nobody's villain. Isamu always said that about everybody."],
         ['mika', "Was he right?"],
-        ['v18', "About people, always. About the weather, never. Go on, dear. Keep that chin up."] ] },
+        ['v18', "About people, always. About the weather, never. Go on, dear. Keep that chin up."] ],
+        grandma: { lines: [
+          ['v18', "Fujita told me Genzo said 'please' on the platform. Sora must be insufferable. I'm going round to be insufferable with her."],
+          ['mika', "She's made a cake about it."],
+          ['v18', "Of course she has. Isamu always said Genzo would ask for help one day. Right about people, always. Go on, dear."] ] } },
     ],
     chatter: ["My husband built that boathouse. Mind the third step.", "Eighty-one and still the first awake on this street.",
       "Tea, dear? No? Your loss.", "Sora and I were girls together on this river. She was always faster."],
+    chatterGrandma: ["My husband built that boathouse. Mind the third step.", "Eighty-one and still the first awake on this street.",
+      "Tea, dear? No? Your loss.", "Sora and I were girls together on this river. She's still faster. With a stick.",
+      "Tell your grandma it's my turn to host cards. She cheats. Lovingly."],
   },
   {
     id: 'v19', name: 'Mr. Kubo', role: 'Farmer, keeps the vegetable plots', village: 'kawabe', home: 'kw3',
@@ -261,7 +288,11 @@ export const PEOPLE = [
       { when: { chapter: [3, 5] }, lines: [
         ['v19', "Best radishes in ten years. Fujita's pickling half of them. Ōta will complain about every one."],
         ['mika', "He complains about radish a lot."],
-        ['v19', "Longest feud in the valley, Ōta and radish. Older than the other one. Kinder, too."] ] },
+        ['v19', "Longest feud in the valley, Ōta and radish. Older than the other one. Kinder, too."] ],
+        grandma: { lines: [
+          ['v19', "Best radishes in years. Fujita's pickling half of them. Ōta will complain about every one."],
+          ['mika', "He complains about radish a lot."],
+          ['v19', "Longest feud in the valley, Ōta and radish. Your grandma says it's the only thing keeping him young."] ] } },
       { when: { chapter: [5, 5] }, lines: [
         ['v19', "Takamori asked for my seed beans. Takamori! I sent them two bags and a drawing of Mr. Kakashi."],
         ['mika', "For instructions?"],
@@ -317,7 +348,11 @@ export const PEOPLE = [
       { when: { chapter: [1, 5], after: 'c1.lamp' }, lines: [
         ['v24', "Ishida. Carpenter. I made furniture in the city for people who never sat on it. Then the Mill Lamp came on."],
         ['mika', "Everyone keeps saying that."],
-        ['v24', "Because it's true. A lamp across a valley is a big thing when you've been waiting ten years for one."] ] },
+        ['v24', "Because it's true. A lamp across a valley is a big thing when you've been waiting ten years for one."] ],
+        grandma: { lines: [
+          ['v24', "Ishida. Carpenter. I made furniture in the city for people who never sat on it. Then the Mill Lamp came on."],
+          ['mika', "Everyone keeps saying that."],
+          ['v24', "Because it's true. A lamp across a valley is a big thing. It looks like somebody's grandma left the porch light on."] ] } },
       { when: { chapter: [1, 5], after: 'c1.lamp' }, give: { toy_boat: 1 }, lines: [
         ['v24', "Offcuts, mostly. Cedar hull, a paper sail from Komori's. Floats better than my first real boat did."],
         ['mika', "Why not give it to him yourself?"],
@@ -467,7 +502,11 @@ export const PEOPLE = [
       { when: { chapter: [3, 5] }, lines: [
         ['v10', "Dad says the river was angry the night of the flood. Mum says rivers don't get angry, they get full."],
         ['mika', "I think your mum's right."],
-        ['v10', "Me too. I like this river. It's just very big sometimes. That's allowed."] ] },
+        ['v10', "Me too. I like this river. It's just very big sometimes. That's allowed."] ],
+        grandma: { lines: [
+          ['v10', "Your grandma says she fell in this river in 1968. On purpose. To catch a hat. Did she get the hat?"],
+          ['mika', "She says yes. Genzo says no."],
+          ['v10', "I'm on her side. I'd jump in for a hat. It's just very big sometimes, this river. That's allowed."] ] } },
       { when: { chapter: [5, 5] }, lines: [
         ['v10', "My boat went all the way from the dock to the sandbar! The crab rode it! Nobody believes me.", 'Cheer'],
         ['mika', "I believe you."],
@@ -528,12 +567,20 @@ export const PEOPLE = [
         ['v5', "Hirano's bag! He trusted you with it? He doesn't let RIN hold it, and she drives the boat."],
         ['mika', "He said somebody has to talk to both sides."],
         ['v5', "...Take him this note, would you? It says thank you. I wrote it years ago. Here, ferry money."] ],
+        grandma: { lines: [
+          ['v5', "Hirano's bag! He trusted you with it? He doesn't let RIN hold it, and she drives the boat."],
+          ['mika', "He says you've swapped bags for twenty years and never met."],
+          ['v5', "...Take him this note, would you? It says thank you. I wrote it years ago. Here, ferry money."] ] },
         ask: "Hirano sends Kawabe's post across with Rin. If he ever sends it with a person instead, I'd like to know." },
       { when: { chapter: [4, 5], after: 'c4.meeting' }, give: { letter_aiko: 1 },
         lines: [
         ['v5', "If Genzo can stand on a platform and say the hardest thing in the world, I can post one letter. Four pages."],
         ['mika', "Why not hand it to her yourself?"],
-        ['v5', "I'm a postman. I deliver everyone's words but mine. Please, Mika. Before I go pink again."] ] },
+        ['v5', "I'm a postman. I deliver everyone's words but mine. Please, Mika. Before I go pink again."] ],
+        grandma: { lines: [
+          ['v5', "If Genzo can stand on a platform and say 'please' in front of both villages, I can post one letter. Four pages."],
+          ['mika', "Why not hand it to her yourself?"],
+          ['v5', "I'm a postman. I deliver everyone's words but mine. Please, Mika. Before I go pink again."] ] } },
       { when: { chapter: [4, 5] }, needs: { letter_sato: 1 }, give: { mon: 10 }, ask: "Did she… say anything? You can tell me. I'm sitting down. Well, I'll sit down.",
         lines: [
         ['v5', "One line. 'Sunday. The viaduct. Bring buns.' She wants to see me! On a Sunday!", 'Cheer'],
@@ -562,7 +609,11 @@ export const PEOPLE = [
         needs: { onigiri: 1 }, give: { mon: 5 }, lines: [
         ['v22', "A rice ball! From Fujita's, by the wrapper? Kawabe rice! I haven't had Kawabe rice since..."],
         ['mika', "Since the flood?"],
-        ['v22', "Since I was too proud to cross the river for it. Tastes like being young. Here. And don't tell Hana."] ] },
+        ['v22', "Since I was too proud to cross the river for it. Tastes like being young. Here. And don't tell Hana."] ],
+        grandma: { lines: [
+          ['v22', "A rice ball! From Fujita's, by the wrapper? Kawabe rice! I haven't had Kawabe rice since..."],
+          ['mika', "Since last week?"],
+          ['v22', "Since your grandma's picnic, years back. Tastes like being young. Here. And don't tell Hana."] ] } },
       { when: { chapter: [4, 5], after: 'c4.meeting' }, lines: [
         ['v22', "Hana's giving the smithy's iron to mend the viaduct. She cried when she said it. Then she gave me a bun."],
         ['mika', "That's very Hana."],
@@ -589,7 +640,11 @@ export const PEOPLE = [
       { when: { chapter: [2, 5], after: 'c2.lamp' }, lines: [
         ['v27', "Tanabe. My father rang that bell, and his before him. We left after the flood. I couldn't bear a silent tower."],
         ['mika', "And now?"],
-        ['v27', "Now the Orchard Lamp's burning on top of it. I saw it from the valley road and turned the cart round. Sumi cheered for an hour."] ] },
+        ['v27', "Now the Orchard Lamp's burning on top of it. I saw it from the valley road and turned the cart round. Sumi cheered for an hour."] ],
+        grandma: { lines: [
+          ['v27', "Tanabe. My father rang that bell, and his before him. We went to the city for work. I couldn't bear a silent tower."],
+          ['mika', "And now?"],
+          ['v27', "Now the Orchard Lamp's burning on top of it. I saw it from the valley road and turned the cart round. Sumi cheered for an hour."] ] } },
       { when: { chapter: [2, 5], after: 'c2.lamp' }, lines: [
         ['v27', "You rang it, didn't you? The day we came back. Not bad. A bit eager on the third stroke."],
         ['mika', "It was my first bell."],
@@ -602,7 +657,11 @@ export const PEOPLE = [
       { when: { chapter: [5, 5] }, lines: [
         ['v27', "On Sundays I ring the bell when Kobo crosses the viaduct. Kawabe rings a pot lid back. It's not music. It's better."],
         ['mika', "It's a conversation."],
-        ['v27', "That's it exactly. Ten years of silence, and now we can't stop talking."] ] },
+        ['v27', "That's it exactly. Ten years of silence, and now we can't stop talking."] ],
+        grandma: { lines: [
+          ['v27', "On Sundays I ring the bell when Kobo crosses the viaduct. Kawabe rings a pot lid back. It's not music. It's better."],
+          ['mika', "It's a conversation."],
+          ['v27', "That's it exactly. Your grandma bangs the loudest pot. I'd know that pot anywhere."] ] } },
     ],
     chatter: ["Six bells for morning, twelve for noon. Don't make me count the evening.", "A bell is a lamp you can hear.",
       "Sumi wants to ring it. She'll have to grow a bit. And stop jumping on the rope.", "The tower sways in a high wind. So do I."],

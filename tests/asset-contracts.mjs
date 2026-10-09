@@ -23,6 +23,8 @@ export const CONTRACTS = {
   rin: { family: 'characters', tris: 12000, nodes: [...HUMAN_BONES, 'hat'], clips: ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cast', 'Reel', 'Pole', 'Cheer'] },
   ota: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Bow', 'Sad'] },
   hana: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Knead', 'Cheer', 'Bow'] },
+  // Grandma Sora (A Year with Grandma): Walk authored for 1.0 m/s; the walking stick rides its own 'stick' bone under hand_R.
+  sora: { family: 'characters', tris: 11000, nodes: [...HUMAN_BONES, 'stick'], clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Bow', 'Sit', 'Hug'] },
   'villager-man': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
   'villager-woman': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
   'villager-kid': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
@@ -200,10 +202,12 @@ export const CONTRACTS = {
   'gift-honey': { family: 'rewards', tris: 1500, icon: true },
 };
 
-export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'tamo'];
+export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo'];
 // Raw GLBs are the editable, uncompressed sources; production ships meshopt-packed copies (tests/pack.test.mjs).
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
-export const TOTAL_RAW_BYTES = 37_000_000;
+// 37.0 -> 37.6 MB: Grandma Sora (sora.glb, 0.70 MB raw, eight clips).
+export const TOTAL_RAW_BYTES = 37_600_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
-export const TOTAL_PACKED_BYTES = 13_800_000;
+// 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
+export const TOTAL_PACKED_BYTES = 14_200_000;

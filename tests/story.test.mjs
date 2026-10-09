@@ -22,7 +22,7 @@ function eventsFor(q) {
 }
 
 function playthrough(choice, { saveAt } = {}) {
-  let q = new Quest();
+  let q = new Quest(null, { story: 'classic' });
   q.choiceToMake = choice;
   const effects = [...q.start()];
   let guard = 0;
@@ -76,7 +76,7 @@ test('the "together" choice changes the platform scene and the epilogue', () => 
 test('saving mid-game and loading resumes the same step with state intact', () => {
   const { q } = playthrough('alone', { saveAt: 'c2.crows' });
   assert.equal(q.state.step, 'e.free');
-  const mid = new Quest();
+  const mid = new Quest(null, { story: 'classic' });
   mid.start();
   while (mid.state.step !== 'c3.gather') for (const ev of (mid.step.id === 'c4.shed' ? [] : eventsFor(mid))) mid.dispatch(ev);
   const loaded = new Quest(JSON.parse(JSON.stringify(mid.save())));
@@ -88,7 +88,7 @@ test('saving mid-game and loading resumes the same step with state intact', () =
 });
 
 test('picking items early satisfies a later step immediately, and counts show in objectives', () => {
-  const q = new Quest();
+  const q = new Quest(null, { story: 'classic' });
   q.start();
   while (q.state.step !== 'c1.trout') for (const ev of eventsFor(q)) q.dispatch(ev);
   q.dispatch({ type: 'pickup', item: 'cog' });
@@ -101,7 +101,7 @@ test('picking items early satisfies a later step immediately, and counts show in
 });
 
 test('fallen stars are counted once each and all twelve unlock the last letter', () => {
-  const q = new Quest();
+  const q = new Quest(null, { story: 'classic' });
   q.start();
   for (let i = 1; i <= 12; i++) { q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` }); q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` }); }
   assert.equal(q.state.stars.length, 12);
@@ -109,7 +109,7 @@ test('fallen stars are counted once each and all twelve unlock the last letter',
 });
 
 test('a twelfth star found before the epilogue is remembered, and Starfall Night waits for the epilogue', () => {
-  const q = new Quest();
+  const q = new Quest(null, { story: 'classic' });
   q.start();
   const early = [];
   for (let i = 1; i <= 12; i++) early.push(...q.dispatch({ type: 'pickup', item: 'star', id: `fs${i}` }));
@@ -148,7 +148,7 @@ test('all twelve stars and Starfall Night end the story: The End, then the valle
 });
 
 test('chatter never runs out and unknown NPCs fall back to villager lines', () => {
-  const q = new Quest();
+  const q = new Quest(null, { story: 'classic' });
   for (const who of [...Object.keys(CHATTER), 'stranger']) for (let i = 0; i < 12; i++) {
     const t = q.talkFor(who);
     assert.ok(t.line?.[1], `${who} says something`);
@@ -168,7 +168,7 @@ test('every step has an objective and inventory items have names and icons', () 
 
 test('resume re-applies world spawns before unlocks, so a repaired viaduct stays repaired', async () => {
   const { stateAt } = await import('./e2e/fastforward.mjs');
-  const q = new Quest(stateAt('c4.board'));
+  const q = new Quest(stateAt('c4.board', 'alone', 'classic'));
   const fx = q.start();
   const iRepair = fx.findIndex(e => e.spawn === 'repair'), iViaduct = fx.findIndex(e => e.unlock === 'viaduct');
   assert.ok(iRepair >= 0 && iViaduct > iRepair, 'repair spawn comes before the viaduct unlock');
@@ -177,13 +177,13 @@ test('resume re-applies world spawns before unlocks, so a repaired viaduct stays
 
 test('a save taken during the Star Train ride resumes at boarding, and chapter-end saves keep the next season', async () => {
   const { stateAt } = await import('./e2e/fastforward.mjs');
-  const ride = stateAt('c4.ride');
+  const ride = stateAt('c4.ride', 'alone', 'classic');
   ride.inv.lanterns = 5;
   const q = new Quest(ride);
   assert.equal(q.state.step, 'c4.board');
   assert.equal(q.count('lanterns'), 0);
   // the engine applies the next chapter's season/time synchronously with the step change
-  const winter = stateAt('c4.shed');
+  const winter = stateAt('c4.shed', 'alone', 'classic');
   assert.equal(winter.season, 'winter');
   assert.equal(winter.hour, 10.5);
 });

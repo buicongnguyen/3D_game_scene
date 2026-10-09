@@ -2,6 +2,12 @@ import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRI
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 import { JournalMap } from './map.js';
+import { STORIES, DEFAULT_STORY } from '../game/stories/index.js';
+
+/** The story a new game starts with (Settings → Story for new games). */
+export function defaultStory() {
+  try { const s = localStorage.getItem('starline-story'); return STORIES[s] ? s : DEFAULT_STORY; } catch { return DEFAULT_STORY; }
+}
 
 // the letter in a speaker's avatar circle: the name's, not its title's ("Mr. Fujita" → F, "Bà Tsuru" → T)
 const TITLES = /^(mr|mrs|miss|ms|granny|grandpa|old|ông|bà|cô|anh|chú|bác|cụ|bé|chị|em)\.?$/i;
@@ -91,7 +97,12 @@ export class UI {
     this.setTitleHint();
     return new Promise(resolve => {
       const done = v => { $('title').classList.add('hidden'); cleanup(); this.audio?.click(); resolve(v); };
-      const onNew = async () => { const slot = await this.pickSlot('new', slots, last); if (slot) done({ mode: 'new', slot }); };
+      const onNew = async () => {
+        const slot = await this.pickSlot('new', slots, last);
+        if (!slot) return;
+        const story = await this.pickStory();
+        if (story) done({ mode: 'new', slot, story });
+      };
       const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot) done({ mode: 'continue', slot }); };
       const onExplore = async () => { const v = await this.pickExplore(); if (v) done({ mode: 'explore', slot: 'explore', ...v }); };
       const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); };
@@ -146,6 +157,30 @@ export class UI {
         list.appendChild(again);
       }
       go.focus();
+    });
+  }
+
+  /** Which story a new game plays: "A Year with Grandma" (the default) or "Starline Classic". Resolves with an id or null. */
+  pickStory() {
+    const box = $('slots'), list = $('slotList');
+    $('slotsTitle').textContent = tx('Which story?');
+    box.classList.remove('hidden');
+    return new Promise(resolve => {
+      const close = v => { box.classList.add('hidden'); $('slotsClose').onclick = null; resolve(v); };
+      $('slotsClose').onclick = () => close(null);
+      list.innerHTML = '';
+      const pre = defaultStory();
+      for (const s of [STORIES.grandma, STORIES.classic]) {
+        const row = document.createElement('div');
+        row.className = 'slot';
+        const b = document.createElement('button');
+        b.className = 'pick' + (s.id === pre ? ' last' : '');
+        b.innerHTML = `<span class="num">${s.id === 'grandma' ? '☀' : '★'}</span><span class="info"><b>${esc(tx(s.name))}</b><span>${esc(tx(s.blurb))}</span></span>`;
+        b.onclick = () => { this.audio?.click(); close(s.id); };
+        row.appendChild(b);
+        list.appendChild(row);
+        if (s.id === pre) setTimeout(() => b.focus(), 0);
+      }
     });
   }
 
@@ -204,7 +239,8 @@ export class UI {
     const obj = step ? tx(step.objective).replace(/\s*[(（]\{\w+\}\/\d+[)）]/g, '').replace(/\{\w+\}/g, '') : '';
     let when = '';
     try { when = new Date(data.at).toLocaleString(getLang(), { dateStyle: 'medium', timeStyle: 'short' }); } catch { /* ignore */ }
-    return `<b>${esc(tx(c.title))} — ${esc(tx(c.name))}</b><span>${esc(obj)}</span>` +
+    const story = STORIES[q.story] || STORIES.classic;   // saves from before the two stories are Classic
+    return `<b>${esc(tx(c.title))} — ${esc(tx(c.name))}</b><span>${esc(tx(story.name))} · ${esc(obj)}</span>` +
       `<span>${esc(tx('Lamps {n}/4 · Stars {s}/12 · {time}', { n: lamps, s: (q.stars || []).length, time }))}${when ? ` · ${esc(when)}` : ''}</span>`;
   }
 
@@ -455,7 +491,7 @@ export class UI {
       row.className = 'dl-row' + (who === 'narrator' ? ' narr' : '') + (who === 'mika' ? ' me' : '') + (who === 'sora' ? ' letter' : '');
       row.style.setProperty('--c', c.color);
       row.style.animationDelay = `${k * 0.14}s`;
-      const hasPortrait = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana'].includes(who);
+      const hasPortrait = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora'].includes(who);
       if (who !== 'narrator') {
         const av = document.createElement('div');
         av.className = 'av';
@@ -550,6 +586,11 @@ export class UI {
     const load = (k, d) => { try { return JSON.parse(localStorage.getItem(`starline-opt-${k}`)) ?? d; } catch { return d; } };
     const save = (k, v) => { try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify(v)); } catch { /* ignore */ } };
     const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps'), diff = $('optDifficulty');
+    const story = $('optStory');
+    if (story) {
+      story.value = defaultStory();
+      story.addEventListener('change', () => { try { localStorage.setItem('starline-story', story.value); } catch { /* private mode */ } });
+    }
     diff.value = load('difficulty', 'easy');
     sens.value = load('sens', 1); inv.checked = load('invert', false); mus.value = load('music', 0.55); sfx.value = load('sfx', 0.8); fps.checked = load('fps', false);
     // advanced: what you see (season, time, weather), how it renders, how big the words are

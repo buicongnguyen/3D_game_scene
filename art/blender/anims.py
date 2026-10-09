@@ -53,6 +53,7 @@ STYLE = dict(
     energy=1.0, bounce=1.0, arm_swing=1.0, sway=1.0, lean=3.0, stance=0.0, hunch=0.0, head_up=0.0,
     wave_side='R', elbow=12.0, arm_out=0.0, walk_lift=1.0, step=0.95, run_step=1.0, cane=False,
     idle_hands=None, talk='open', stout=0.0, scarf=False, hair=False, hat=False, ponytail=False,
+    walk_speed=WALK_SPEED,   # authored Walk speed (m/s); Sora walks slowly at 1.0
 )
 
 
@@ -182,12 +183,12 @@ class Anim:
         leg = self.l_leg
         if frames is None:
             step = st['step'] * leg
-            frames = max(16, int(round(2 * step / WALK_SPEED * 30)))
+            frames = max(16, int(round(2 * step / st['walk_speed'] * 30)))
         bob_a = 0.014 * self.k * st['bounce']
 
         def bob(p):
             return bob_a * (-cs(p, 2, -0.1))
-        g = self.gait_setup(WALK_SPEED, frames, 0.6, 0.075 * leg * st['walk_lift'], 16, 34, bob, reach=0.95)
+        g = self.gait_setup(st['walk_speed'], frames, 0.6, 0.075 * leg * st['walk_lift'], 16, 34, bob, reach=0.95)
         self._walk_g = g
         sway = 0.012 * self.k * st['sway'] * (1 + st['stout'])
         yaw = 5.0 * e

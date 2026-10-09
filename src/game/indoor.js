@@ -3,6 +3,7 @@
 import * as THREE from 'three';
 import { HOTSPOTS, MEMORIES } from '../content/hotspots.js';
 import { tx } from '../i18n/i18n.js';
+import { forStory, storyId } from './stories/index.js';
 
 const V3 = THREE.Vector3;
 const MEMORY_OF = new Map(Object.entries(MEMORIES).map(([home, m]) => [`${home}:${m.hotspot}`, { home, ...m }]));
@@ -33,7 +34,7 @@ export class Indoors {
         const s = {
           h, room, id: `${room.id}:${h.id}`, stand, look: toWorld(...h.look),
           seat: h.seat ? toWorld(h.seat[0], h.seat[1]) : null,
-          lines: h.lines?.[variant] || h.lines?.any || [], memory: MEMORY_OF.get(`${room.id}:${h.id}`) || null,
+          variant, memory: MEMORY_OF.get(`${room.id}:${h.id}`) || null,
         };
         this.spots.push(s);
         const at = stand.clone().setY(stand.y + 0.9);
@@ -105,8 +106,8 @@ export class Indoors {
       else if (h.kind === 'open') d.audio?.click?.();
     }
     // what she thinks (Mika's own voice); seated she stays seated while she talks
-    const lines = s.lines.map(t => ['mika', t, pose ? 'None' : undefined]);
-    const found = this.memoryAt(s);
+    const lines = this.linesFor(s).map(t => ['mika', t, pose ? 'None' : undefined]);
+    const found = this.memoryAt(s) && forStory(this.memoryAt(s));
     if (found) lines.push(['narrator', tx('House memory: {name}. {text}', { name: tx(found.name), text: tx(found.text) })]);
     if (lines.length) await d.say(null, lines);
     if (found) this.keep(found);
@@ -123,6 +124,12 @@ export class Indoors {
     return best;
   }
 
+  /** What Mika thinks at a spot, in the chosen story (a hotspot may carry Grandma-story lines). */
+  linesFor(s) {
+    const L = s.h.lines || {}, g = storyId() === 'grandma' ? L.grandma : null;
+    return g?.[s.variant] || g?.any || L[s.variant] || L.any || [];
+  }
+
   /** The memory hidden at this spot, if Mika has not found it yet. */
   memoryAt(s) {
     const m = s.memory;
@@ -133,7 +140,7 @@ export class Indoors {
     const st = this.d.q.state, ui = this.d.ui;
     st.memories.push(m.home);
     if (m.mon) st.mon = (st.mon || 0) + m.mon;
-    ui.toast(tx('House memory {n}/{total}: {name}', { n: st.memories.length, total: MEMORY_COUNT, name: tx(m.name) }), 'journal-page');
+    ui.toast(tx('House memory {n}/{total}: {name}', { n: st.memories.length, total: MEMORY_COUNT, name: tx(forStory(m).name) }), 'journal-page');
     this.d.audio?.pickup?.();
     this.d.refreshHud?.();
     this.d.save?.();
@@ -153,6 +160,6 @@ export class Indoors {
   /** For the journal: every memory, found or not, with the home it belongs to. */
   journal() {
     const found = new Set(this.d.q.state.memories);
-    return Object.entries(MEMORIES).map(([home, m]) => ({ home, found: found.has(home), name: m.name, text: m.text }));
+    return Object.entries(MEMORIES).map(([home, m0]) => { const m = forStory(m0); return { home, found: found.has(home), name: m.name, text: m.text }; });
   }
 }
