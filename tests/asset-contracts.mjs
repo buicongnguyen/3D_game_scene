@@ -224,7 +224,10 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // 37.0 -> 37.6 MB: Grandma Sora (sora.glb, 0.70 MB raw, eight clips).
 // 37.6 -> 37.75 MB: critters (cricket, spider, spider-web, ladybug, dragonfly, butterfly: 0.22 MB raw together).
 // 37.75 -> 37.92 MB: rural tricks (frog-tree, frog-pond, firefly, glass-jar, bug-net: 0.18 MB raw together, mostly frog clips).
-export const TOTAL_RAW_BYTES = 37_920_000;
+// 37.92 -> 37.95 MB: creature anatomy audit (+16 KB raw: six legs each for the dragonfly and butterfly, the cricket's two
+// forewings with their own bones plus cerci, the spider's six small eyes, the frogs' toes and stripes). The library sat
+// 1 KB under the old cap, so this is the smallest round step that also leaves a little room for the people audit.
+export const TOTAL_RAW_BYTES = 37_950_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).

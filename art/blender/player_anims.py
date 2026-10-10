@@ -387,6 +387,7 @@ def hang(A, frames=72):
 # ---------------------------------------------------------------- villagers (Town Life)
 
 SEAT_H = 0.45   # Sit: seat top above the feet's ground (m); the clip drops the hips onto it
+SIT_TOE = 24.0  # Sit: grown-ups point their toes down by up to this many degrees to reach the ground
 
 
 def hop(A, frames=24):
@@ -417,10 +418,52 @@ def hop(A, frames=24):
     return 'Jump', frames, pose, False
 
 
+BROOM_GRIP = (0.603, -0.457, 3.086)   # three.js Euler XYZ of the broom on grip_R with Sweep (src/game/townlife.js GRIP)
+
+
+def three_euler(r):
+    """three.js Euler XYZ (radians) as a quaternion: R = Rx @ Ry @ Rz."""
+    return (Quaternion((1, 0, 0), r[0]) @ Quaternion((0, 1, 0), r[1]) @ Quaternion((0, 0, 1), r[2]))
+
+
+def grip_point(A, D, euler, local):
+    """Posed armature-space position of a point of a prop parented to grip_R with the three.js Euler `euler`;
+    `local` is in the prop's three.js space (+Y = Blender +Z of the prop)."""
+    P = A.P
+    rest = P.h['grip_R'] + P.R['grip_R'] @ (three_euler(euler) @ V(local))
+    return P.apply(D['grip_R'], rest)
+
+
+def left_grasp(A, at, axis, fingers=(0, -1, 0), radius=0.014):
+    """IK spec for the LEFT hand closed round a pole through `at` along `axis` (armature space): fingers point along
+    `fingers` (made perpendicular to the pole), the palm faces the pole."""
+    from human_lib import _frame_rot
+    P = A.P
+    u = V(axis).normalized()
+    a0 = (P.t['hand_L'] - P.h['hand_L']).normalized()
+    p0 = V((-1, 0, 0))
+    p0 = (p0 - a0 * p0.dot(a0)).normalized()
+    a1 = V(fingers)
+    a1 = (a1 - u * a1.dot(u)).normalized()
+    p1 = a1.cross(u)
+    if p1.x > 0:                       # the left hand comes from the left: its palm faces -X
+        p1 = -p1
+    R = _frame_rot(a0, p0, a1, p1)
+    g = P.h['grip_R']
+    palm0 = V((-g.x, g.y, g.z))        # the left palm centre (mirror of grip_R)
+    wrist = V(at) - R @ (palm0 - P.h['hand_L']) - p1 * radius
+    return dict(target=wrist, pole=(1, 0.5, -0.5), end=R)
+
+
 def sweep(A, frames=48):
-    """Straw-broom sweeping: two strokes per loop. Right hand low on the handle, left hand high near
-    the chest; each stroke pushes the bristles from the right foot toward the centre, then a lighter
-    lifted return. The torso turns with the stroke, feet planted wide."""
+    """Straw-broom sweeping: two strokes per loop. Right hand low on the handle (the broom is on grip_R with
+    BROOM_GRIP), left hand closed round the handle 0.36 m higher; each stroke pushes the bristles from the right
+    foot toward the centre, then a lighter lifted return. The right wrist height is solved so the bristle tips
+    brush the ground (kids hold a 0.75x broom), and the left hand is put on the handle where it really is."""
+    bs = 0.75 if A.st['bounce'] > 1.2 else 1.0      # the runtime scales a kid's broom to 0.75
+    top_l = (0, 0.33 * bs, 0)
+    tips = [(sx_ * 0.17 * bs, -0.79 * bs, 0) for sx_ in (-1, 0, 1)]      # the straw fan's lower edge
+
     def pose(p):
         s = A.standing({}, p, breathe=0.3, shift=0.2, lk=0)
         u = (p * 2) % 1.0
@@ -435,8 +478,34 @@ def sweep(A, frames=48):
         A.plant(s, 'L', (0.03 * A.k, -0.04 * A.k, 0), yaw=8)
         A.plant(s, 'R', (-0.04 * A.k, 0.03 * A.k, 0), yaw=-10)
         dx = 0.06 * (x - 0.5)
-        A.arm_to(s, 'R', 1, A.L(0.12 + dx, -0.3, 0.64 + 0.02 * lift), pole=(-1, 0.6, -0.3), end_rel=(0, 0, 0))
+        pt = A.L(0.12 + dx, -0.3, 0.64 + 0.02 * lift)
         A.arm_to(s, 'L', 1, A.L(0.02 + dx * 0.4, -0.16, 0.9 + 0.01 * lift), pole=(1, 0.4, -0.6), end_rel=(0, 0, 0))
+        want = (0.004 + 0.035 * lift) * A.k
+        # Solve once with a relaxed wrist, then put the lowest bristle tip at `want`: first by tipping the broom
+        # about the grip (up to 16 degrees of wrist: the handle top swings away from the face), the rest by moving
+        # the wrist straight up or down with the hand's orientation kept (pure translation, so it is exact).
+        s['ik']['arm_R'] = dict(target=A.chest_pt(pt), pole=(-1, 0.6, -0.3), end_rel=(0, 0, 0))
+        A.P.solve(s)
+        D = A.P.D
+        hand_q = D['hand_R'][0].copy()
+        wrist = A.P.apply(D['hand_R'], A.P.h['hand_R'])
+        g0 = grip_point(A, D, BROOM_GRIP, (0, 0, 0))
+        tp = [grip_point(A, D, BROOM_GRIP, t) for t in tips]
+        ax = (tp[1] - g0).cross(V((0, 0, 1)))
+        best = (1e9, Quaternion())
+        if ax.length > 1e-5:
+            for i in range(-16, 17):
+                q = Quaternion(ax.normalized(), math.radians(i))
+                e = abs(want - min((g0 + q @ (t - g0)).z for t in tp)) + 0.0004 * abs(i)
+                if e < best[0]:
+                    best = (e, q)
+        q = best[1]
+        dz = want - min((g0 + q @ (t - g0)).z for t in tp)
+        s['ik']['arm_R'] = dict(target=g0 + q @ (wrist - g0) + V((0, 0, dz)), pole=(-1, 0.6, -0.3), end=q @ hand_q)
+        A.P.solve(s)
+        D = A.P.D
+        g0, g1 = grip_point(A, D, BROOM_GRIP, (0, 0, 0)), grip_point(A, D, BROOM_GRIP, top_l)
+        s['ik']['arm_L'] = left_grasp(A, g1, g1 - g0)
         A.secondary(s, p, drag=0, k=2, amp=0.4)
         return s
     return 'Sweep', frames, pose, True
@@ -468,6 +537,14 @@ def sit(A, frames=60):
     l_th = (A.knee['L'] - A.hip['L']).length
     l_sh = (A.ank['L'] - A.knee['L']).length
     kid = A.st['bounce'] > 1.2
+    # The seat is tall for these short-legged people: with level thighs nobody's feet reach the ground. Grown-ups
+    # let the thighs slope down over the seat's front edge (the knee drops up to 4.5 cm) and point the toes down to
+    # the ground (up to SIT_TOE degrees); who still cannot reach (Mika, Sora) dangles relaxed, toes down.
+    miss = (hip0.z + drop - l_sh * 0.97) - A.ank['L'].z
+    slope = 0.0 if kid else clamp(miss, 0.0, 0.045 * k)
+    foot_l = (V((A.toe['L'].x, A.toe['L'].y, 0)) - V((A.ank['L'].x, A.ank['L'].y, 0))).length
+    gap = max(0.0, miss - slope)
+    toe = 0.0 if kid else min(SIT_TOE, math.degrees(math.asin(min(1.0, gap / max(foot_l, 1e-3)))))
 
     def pose(p):
         s = A.standing({}, p, breathe=0.9, shift=0.0, lk=0.8)
@@ -477,7 +554,7 @@ def sit(A, frames=60):
         s['chest'] = add(s['chest'], (3, 0, 0))
         for S in 'LR':
             sx = A.sx(S)
-            knee = A.hip[S] + V((sx * 0.02 * k, -l_th, drop))
+            knee = A.hip[S] + V((sx * 0.02 * k, -math.sqrt(l_th ** 2 - slope ** 2), drop - slope))
             ank_y = knee.y + 0.04 * k
             ank_z = knee.z - l_sh * 0.97
             swing = 0.0
@@ -487,9 +564,10 @@ def sit(A, frames=60):
                 ank_z = A.ank[S].z
                 ank_y = knee.y - math.sqrt(max((l_sh * 0.97) ** 2 - (knee.z - ank_z) ** 2, 0)) * 0.35
             tgt = V((A.ank[S].x + sx * 0.02 * k, ank_y - 0.07 * k * swing, ank_z + 0.03 * k * max(swing, 0)))
-            A.plant(s, S, tgt - A.ank[S], pitch=(15 * swing if kid else 0), pole=(sx * 0.1, -1, 0.2))
+            A.plant(s, S, tgt - A.ank[S], pitch=(15 * swing if kid else toe), pole=(sx * 0.1, -1, 0.2))
             # hands on the thighs, a little in front of the hip
-            wr = A.hip[S] + V((sx * 0.01 * k, -0.17 * k, 0.07 * k + drop)) + V((0, 0, 0.003 * k * sn(p, 2)))
+            wr = A.hip[S] + V((sx * 0.01 * k, -0.17 * k, 0.07 * k + drop - slope * 0.17 * k / l_th + A.st.get('lap', 0.0)))
+            wr = wr + V((0, 0, 0.003 * k * sn(p, 2)))
             A.arm_ik(s, S, wr, pole=(sx * 0.8, 0.6, 0.0), end=(70, 0, 0))
             s['ik']['arm_' + S]['target'] = wr
         A.secondary(s, p, drag=2, k=1, amp=0.3)
@@ -561,7 +639,8 @@ def sit_floor(A, frames=90):
     drop = (CUSHION_H + 0.085 * k) - hip0.z
     l_th = (A.knee['L'] - A.hip['L']).length
     l_sh = (A.ank['L'] - A.knee['L']).length
-    knee_z, ank_z = 0.055 * k, {'L': 0.05 * k, 'R': 0.075 * k}
+    # joint heights that keep the boots, shins and knees ON the floor (they were up to 4 cm under it)
+    knee_z, ank_z = 0.092 * k, {'L': 0.095 * k, 'R': 0.105 * k}
 
     def flat(v, z, length, d):
         dz = z - v.z

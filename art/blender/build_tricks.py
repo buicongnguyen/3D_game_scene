@@ -161,20 +161,46 @@ def scene_firefly():
 
 
 def koi(name, at, yaw, pitch, scale):
-    """A tiny leaping koi: body, tail fan and a white-and-orange coat painted."""
-    orange = mat('Koi', '#ff7a2a', rough=.35)
-    body = sphere(name, (.020 * scale, .055 * scale, .022 * scale), (0, 0, 0), orange, seg=8, rings=5)
-    paint(body, lambda co: (1.0, 1.0, 1.0) if co.y > .012 * scale else ((1.6, 1.6, 1.6) if co.z > .008 * scale else .95))
-    tail = fan(name + ' tail', Vector((0, .05 * scale, 0)), [Vector((0, .05 * scale, 0)) + Vector((0, .035, z)) * scale
-                                                          for z in (-.028, -.012, 0, .012, .028)], orange, up=Xv)
-    paint(tail, 1.0)
-    eye = sphere(name + ' eye', .0045 * scale, (.016 * scale, -.040 * scale, .006 * scale), mat('Ink', '#1c1a22'), seg=5,
-                 rings=3)
-    paint(eye, 1.0)
-    obs = [body, tail, eye]
+    """A tiny leaping koi seen from the side: a tapered white body with orange saddle patches (painted), a forked
+    tail, a dorsal and a pectoral fin, a dark eye. Local head toward -Y, back up +Z."""
+    white = mat('Koi', '#fff4e6', rough=.3, double=True)
+    s = scale
+    body = sphere(name, (.019 * s, .056 * s, .024 * s), (0, 0, 0), white, seg=10, rings=7)
+    for v in body.data.vertices:                      # taper toward the tail, a blunt round head
+        t = max(0.0, v.co.y / (.056 * s))
+        v.co.x *= 1 - .62 * t
+        v.co.z *= 1 - .5 * t
+    orange = (1.0, .42, .08)
+
+    def coat(co):
+        l = body.matrix_world.inverted() @ co
+        u = l.y / (.056 * s)
+        if l.z > -.004 * s and (u < -.45 or -.12 < u < .38 or u > .7):
+            return orange
+        return 1.0
+    obs = [body]
+    y0 = .05 * s
+    for k, zz in enumerate((1, -1)):                  # forked tail
+        t_ = fan(f'{name} tail {k}', Vector((0, y0 - .008 * s, 0)),
+                 [Vector((0, y0 - .008 * s, 0)), Vector((0, y0 + .034 * s, zz * .034 * s)),
+                  Vector((0, y0 + .03 * s, zz * .012 * s)), Vector((0, y0 + .012 * s, 0))], white, up=Xv)
+        obs.append(t_)
+    obs.append(fan(name + ' dorsal', Vector((0, -.004 * s, .02 * s)),
+                   [Vector((0, -.022 * s, .02 * s)), Vector((0, -.004 * s, .04 * s)), Vector((0, .022 * s, .03 * s)),
+                    Vector((0, .028 * s, .014 * s))], white, up=Xv))
+    for sx_ in (1, -1):
+        obs.append(fan(f'{name} fin {sx_}', Vector((sx_ * .014 * s, -.02 * s, -.012 * s)),
+                       [Vector((sx_ * .014 * s, -.03 * s, -.012 * s)), Vector((sx_ * .03 * s, -.012 * s, -.032 * s)),
+                        Vector((sx_ * .018 * s, -.006 * s, -.016 * s))], white, up=Zv))
+        obs.append(sphere(f'{name} eye {sx_}', .0048 * s, (sx_ * .0135 * s, -.04 * s, .006 * s), mat('Ink', '#1c1a22'),
+                          seg=5, rings=3))
     m = Matrix.Translation(at) @ Matrix.Rotation(math.radians(yaw), 4, 'Z') @ Matrix.Rotation(math.radians(pitch), 4, 'X')
     for o in obs:
         o.matrix_world = m @ o.matrix_world
+    bpy.context.view_layer.update()
+    paint(body, coat)
+    for o in obs[1:]:
+        paint(o, orange if 'tail' in o.name or 'dorsal' in o.name else 1.0)
     return obs
 
 
@@ -195,7 +221,7 @@ def scene_river():
                          segments=1))
     parts.append(box('Paper', (.074, .074, .085), (0, 0, .060), paper, bevel=.002, segments=1))
     parts.append(box('Rim', (.098, .098, .010), (0, 0, .110), wood, bevel=.003, segments=1))
-    parts += koi('Koi', Vector((.10, -.03, .06)), 60, -30, 1.7)
+    parts += koi('Koi', Vector((.118, -.06, .07)), -52, 38, 1.55)
     for p in parts:
         if 'Paint' not in p.data.color_attributes:
             paint(p, 1.0)

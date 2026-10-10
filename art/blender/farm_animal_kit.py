@@ -92,13 +92,14 @@ def band(name, surf, centre, tang, mat_, width=.05, grow=.012, n=14):
 
 
 def leaf_ear(name, base, tip, w, thick, mats, side, mat_fn=None, shape=((0, 1.0), (.35, 1.0), (.75, .72), (1.0, .08)),
-             n=8, back=.03, bone='head'):
-    """A rounded ear lobe from base to tip. shape = [(t, width factor)]. Returns (loft, chain segments) for bind_chain."""
+             n=8, back=.03, bone='head', thin=.35):
+    """A rounded ear lobe from base to tip. shape = [(t, width factor)]; thin = how much of its thickness the ear
+    loses by the tip (0.35 keeps a fleshy slab, ~0.85 gives a pricked ear that comes to a point from the side too)."""
     base, tip = Vector(base), Vector(tip)
     ek = []
     for t, f in shape:
         c = base.lerp(tip, t)
-        ek.append((c.x, c.y, c.z, w * f, thick * (1 - .35 * t)))
+        ek.append((c.x, c.y, c.z, w * f, thick * (1 - thin * t)))
     ear = loft(name, ek, mats, n=n, sub=2, side=side, dome=(0, .7), mat_fn=mat_fn)
     return ear
 

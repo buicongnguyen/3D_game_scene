@@ -838,7 +838,7 @@ export const STEPS = [
     exit: [{ journal: 1 }, { unlock: 'orchardGate' }, { flag: 'sparkRange2' }, { autosave: true }] },
   // ---------------------------------------------------------------- chapter 3 (autumn, forest)
   { id: 'c3.fox', chapter: 3, objective: 'Go through the upper orchard gate', marker: 'place:orchardGate',
-    enter: [{ chapter: 3 }, { time: 10 }, { season: 'autumn' }, { title: 3 }], done: { event: 'arrive', zone: 'orchardGate' }, exit: [{ say: 'c3_fox' }, { spawn: 'fox' }] },
+    enter: [{ chapter: 3 }, { time: 10 }, { season: 'autumn' }, { title: 3 }], done: { event: 'arrive', zone: 'orchardGate' }, exit: [{ spawn: 'fox' }, { say: 'c3_fox' }] },
   { id: 'c3.follow', chapter: 3, objective: 'Follow Kon the fox to the shrine', marker: 'npc:fox', done: { event: 'arrive', zone: 'bear' },
     exit: [{ say: 'c3_bear' }, { spawn: 'forestFood' }, { say: 'c3_hive' }] },
   { id: 'c3.gather', chapter: 3, objective: 'Gather 3 chestnuts ({chestnut}/3), 2 mushrooms ({mushroom}/2) and a honeycomb ({honeycomb}/1)',

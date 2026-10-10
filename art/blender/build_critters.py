@@ -15,7 +15,7 @@ These are scatter-scale creatures (lightweight-game-objects: 16-48 px on a phone
 and the paint is multiplied into the baked AO in COLOR_0, so spots, bands, wing borders and pupils
 cost no extra materials. Heads and eyes are a little oversized so they read at a few metres.
 
-  cricket    5 cm long   Idle, Chirp (loop: wings up, hind legs rub), Hop (once, in-place arc 4 cm)
+  cricket    5 cm long   Idle, Chirp (loop: the two forewings lift and scissor), Hop (once, in-place arc 4 cm)
   spider     3.3 cm body Idle (legs shift), Walk (~0.05 m/s)        + static 'spider-web' (0.6 m)
   ladybug    1 cm        Idle, Fly (once: wing cases open, wings unfold and buzz)
   dragonfly  7 cm span   Fly (loop: wing buzz)
@@ -219,49 +219,59 @@ def export_critter(name, arm):
 
 
 def build_cricket():
-    """Field cricket, 5 cm: olive-brown with darker folded wings, a big round head with glossy eyes,
-    long sweeping antennae and chunky jumping legs (the silhouette that reads at a few metres)."""
+    """Field cricket (enma-korogi), 5 cm: glossy chestnut brown, a round head as wide as the saddle-shaped
+    pronotum, a stout abdomen that follows on without a waist, two dark forewings lying flat on the back
+    (right over left), two tail spikes (cerci), long sweeping antennae and chunky jumping legs. Six legs,
+    all on the thorax. Males sing by rubbing the two raised forewings together, so Chirp moves the wings,
+    not the legs."""
     reset()
-    body_m = mat('Cricket body', '#7f7a2c', rough=.55)
-    wing_m = mat('Cricket wing', '#6a3f1c', rough=.4)
-    eye_m = mat('Cricket eye', '#2a1d16', rough=.12)
-    H, Hr = V(0, -.0155, .0108), (.0068, .0066, .0076)
-    T, Tr = V(0, -.0062, .0098), (.0060, .0060, .0056)
-    A, Ar = V(0, .0095, .0090), (.0068, .0155, .0062)
+    body_m = mat('Cricket body', '#8f5626', rough=.5)
+    wing_m = mat('Cricket wing', '#4f2b14', rough=.38)
+    eye_m = mat('Cricket eye', '#241812', rough=.12)
+    H, Hr = V(0, -.0146, .0106), (.0064, .0060, .0068)
+    T, Tr = V(0, -.0066, .0102), (.0066, .0070, .0062)
+    A, Ar = V(0, .0090, .0090), (.0066, .0150, .0060)
 
     bones = [('root', (0, 0, 0), (0, 0, .004), None),
              ('body', (0, -.006, .010), (0, -.016, .010), 'root'),
-             ('wings', (0, -.002, .0150), (0, .012, .0150), 'body')]
+             ('wings', (0, -.0030, .0142), (0, .012, .0142), 'body')]
     hind = {}
     for s, sd in ((1, 'L'), (-1, 'R')):
-        hip, knee, foot = sx(V(.0055, .000, .0068), s), sx(V(.0105, .0155, .0168), s), sx(V(.0125, .0265, .0006), s)
+        hip, knee, foot = sx(V(.0058, -.0008, .0068), s), sx(V(.0108, .0150, .0168), s), sx(V(.0128, .0262, .0006), s)
         hind[sd] = (hip, knee, foot)
-        ab = sx(V(.0022, -.0212, .0158), s)
+        ab = sx(V(.0022, -.0200, .0152), s)
         bones += [(f'antenna_{sd}', ab, sx(V(.0070, -.0350, .0240), s), 'body'),
+                  (f'wing_{sd}', sx(V(.0016, -.0030, .0142), s), sx(V(.0016, .012, .0142), s), 'wings'),
                   (f'thigh_{sd}', hip, knee, 'body'), (f'shin_{sd}', knee, foot, f'thigh_{sd}')]
     arm = build_armature('Cricket', bones)
 
     P = Parts()
     underside = lambda co: .72 if co.z < .0075 else 1.0
     P.add(sphere('Cricket head', Hr, H, body_m, seg=7, rings=4), 'body', lambda co: .78 if co.z < .008 else 1.0)
-    P.add(sphere('Cricket thorax', Tr, T, body_m, seg=6, rings=4), 'body', underside)
+    # pronotum: darker than the head, like a little saddle
+    P.add(sphere('Cricket thorax', Tr, T, body_m, seg=6, rings=3), 'body', lambda co: .55 if co.z < .0075 else .72)
     P.add(sphere('Cricket abdomen', Ar, A, body_m, seg=7, rings=4), 'body',
-          lambda co: (.7 if co.z < .0075 else 1.0) * (.82 if int((co.y - .0) / .0055) % 2 else 1.0))
-    # folded wings: a roof over the abdomen, darker with a pale edge vein
-    P.add(ell_patch('Cricket wings', A + V(0, -.0015, .0004), (Ar[0] * 1.14, Ar[1] * 1.06, Ar[2] * 1.2),
-                    -78, 78, math.radians(42), math.radians(168), 3, 3, wing_m), 'wings',
-          lambda co: 1.25 if abs(co.x) > .0055 else 1.0)
+          lambda co: (.7 if co.z < .0075 else 1.0) * (.8 if int((co.y - .0) / .0055) % 2 else 1.0))
+    # two forewings (tegmina) flat on the back, the right one over the left; a pale vein along the outer edge
+    for s, sd, grow in ((1, 'L', 1.0), (-1, 'R', 1.035)):
+        a0, a1 = (-10, 76) if s > 0 else (-76, 10)
+        P.add(ell_patch(f'Cricket wing {sd}', A, (Ar[0] * 1.07 * grow, Ar[1] * .98, Ar[2] * 1.1 * grow),
+                        a0, a1, math.radians(36), math.radians(150), 2, 3, wing_m), f'wing_{sd}',
+              lambda co: 1.45 if abs(co.x) > .0056 else 1.0)
     for s, sd in ((1, 'L'), (-1, 'R')):
-        P.add(sphere(f'Cricket eye {sd}', .0026, sx(V(.0053, -.0185, .0138), s), eye_m, seg=5, rings=3), 'body')
-        P.add(stick(f'Cricket antenna {sd}', [sx(V(.0022, -.0212, .0158), s), sx(V(.0070, -.0350, .0240), s),
-                                              sx(V(.0165, -.0500, .0255), s)], .0007, body_m, taper=.5), f'antenna_{sd}', .7)
-        for nm, pts in (('front', (V(.0040, -.0090, .0062), V(.0100, -.0125, .0085), V(.0125, -.0170, .0004))),
-                        ('mid', (V(.0045, -.0040, .0062), V(.0120, -.0025, .0085), V(.0165, .0000, .0004)))):
-            P.add(stick(f'Cricket {nm} leg {sd}', [sx(p, s) for p in pts], .0009, body_m, taper=.6), 'body', .8)
+        P.add(sphere(f'Cricket eye {sd}', .0025, sx(V(.0050, -.0176, .0134), s), eye_m, seg=5, rings=3), 'body')
+        P.add(stick(f'Cricket antenna {sd}', [sx(V(.0022, -.0200, .0152), s), sx(V(.0070, -.0350, .0240), s),
+                                              sx(V(.0165, -.0500, .0255), s)], .0007, body_m, taper=.5), f'antenna_{sd}', .6)
+        # cerci: the two tail spikes every cricket carries
+        P.add(stick(f'Cricket cercus {sd}', [sx(V(.0022, .0222, .0086), s), sx(V(.0058, .0330, .0112), s)], .0007, body_m,
+                    taper=.4), 'body', .6)
+        for nm, pts in (('front', (V(.0042, -.0100, .0064), V(.0100, -.0132, .0085), V(.0125, -.0176, .0004))),
+                        ('mid', (V(.0048, -.0050, .0064), V(.0122, -.0034, .0085), V(.0165, -.0006, .0004)))):
+            P.add(stick(f'Cricket {nm} leg {sd}', [sx(p, s) for p in pts], .0009, body_m, taper=.6), 'body', 1.15)
         hip, knee, foot = hind[sd]
         P.add(stick(f'Cricket thigh {sd}', [hip, hip.lerp(knee, .45) + sx(V(.0006, 0, .0008), s), knee], .0024, body_m,
                     verts=4, taper=.45), f'thigh_{sd}', lambda co: .85 if co.z < .011 else 1.0)
-        P.add(stick(f'Cricket shin {sd}', [knee, foot], .0008, body_m, taper=.7), f'shin_{sd}', .7)
+        P.add(stick(f'Cricket shin {sd}', [knee, foot], .0008, body_m, taper=.7), f'shin_{sd}', 1.1)
     finish('cricket', arm, P, dict(rays=32, distance=.012, strength=.55, ground=0.0))
 
     def antennae(p, amp=1.0, ph=0.0, sweep=0.0):
@@ -282,13 +292,19 @@ def build_cricket():
         return ch
     clip(arm, 'Idle', 90, idle_ch())
 
-    # Chirp (loop, 0.8 s): wings raised and trembling, hind femurs rubbing up and down against them
+    # Chirp (loop, 0.8 s): the forewings lift off the back and scissor quickly across each other (the file on one
+    # wing scrapes the edge of the other: that is the song). Three bursts with short rests, like the real call;
+    # the body hums along and the legs stay planted.
+    def burst(p):
+        return max(window(p, .02, .26, .25), window(p, .35, .59, .25), window(p, .68, .92, .25))
+
     def chirp_ch():
-        ch = {'wings': lambda p: (20 + 4 * S(p, 8), 0, 0),
-              'body': lambda p: (-3 + .8 * S(p, 8), 0, 0),
-              'body@loc': lambda p: (0, 0, .0002 * S(p, 8)),
-              'thigh_L': lambda p: (14 + 9 * S(p, 4), 0, -4), 'shin_L': lambda p: (-10 - 6 * S(p, 4), 0, 0),
-              'thigh_R': lambda p: (14 + 9 * S(p, 4, .5), 0, 4), 'shin_R': lambda p: (-10 - 6 * S(p, 4, .5), 0, 0)}
+        lift = lambda p: 30 + 6 * burst(p)
+        ch = {'wings': lambda p: (lift(p), 0, 0),
+              'wing_L': lambda p: (0, 0, 3 + 5 * S(p, 6) * burst(p)),
+              'wing_R': lambda p: (0, 0, -3 - 5 * S(p, 6) * burst(p)),
+              'body': lambda p: (-4 + .7 * S(p, 6) * burst(p), 0, 0),
+              'body@loc': lambda p: (0, 0, .00018 * S(p, 6) * burst(p))}      # no leg channels: the legs rest
         for b in ('antenna_L', 'antenna_R'):
             ch[b] = (lambda b: lambda p: antennae(p, .6, .1)[b])(b)
         return ch
@@ -330,7 +346,8 @@ def heart(a):
 
 def build_spider():
     """Garden spider, cute not scary: a round warm-brown body with a little orange heart on its back,
-    two big friendly eyes with dark pupils, eight short banded legs."""
+    two body parts (legs on the front one), eight eyes (two big friendly ones with dark pupils plus six
+    small beads), eight short banded legs and no antennae."""
     reset()
     body_m = mat('Spider body', '#94532c', rough=.6)
     mark_m = mat('Spider marking', '#ff8a24', rough=.45)
@@ -364,6 +381,10 @@ def build_spider():
         P.add(sphere(f'Spider eye {sd}', .0034, ec, eye_m, seg=6, rings=4, rot=(math.radians(90), 0, 0)), 'body')
         P.add(surface_disc(f'Spider pupil {sd}', ec, (.0034,) * 3, sx(V(.12, -1, -.08), s), .0019, eye_m, count=6,
                            off=.00012), 'body', .06)
+        # spiders have eight eyes: the two big front ones plus six small dark beads (a pair below, two pairs
+        # up the sides of the head). Three triangles each, painted on the eye material.
+        for k, (d, r) in enumerate(((V(.17, -1, .06), .00105), (V(.80, -.62, .50), .00095), (V(.78, -.20, .78), .00085))):
+            P.add(surface_disc(f'Spider small eye {sd}{k}', H, Hr, sx(d, s), r, eye_m, count=3, off=.00016), 'body', .05)
     for nm, s, h, J0, knee, foot in legs:
         P.add(stick(f'Spider {nm}', [J0, knee, foot], .00145, body_m, taper=.6), nm,
               lambda co: .55 if co.z < .0035 else (.8 if co.z > .0145 else 1.0))
@@ -470,7 +491,8 @@ def build_web():
 
 
 def build_ladybug():
-    """Ladybird, 1 cm: glossy red wing cases with six black spots, black head with white cheek-eyes.
+    """Seven-spot ladybird (nanahoshi-tento), 1 cm: glossy red wing cases with seven black spots (three on
+    each case plus one shared across the seam just behind the shield), black head with white cheek-eyes.
     Fly opens the wing cases and unfolds the clear hind wings, which then buzz."""
     reset()
     shell = mat('Ladybug shell', '#e8291c', rough=.22, double=True)
@@ -496,6 +518,9 @@ def build_ladybug():
         for k, (a, t, r) in enumerate(spots):
             d = ell_pt(Ec, Er, math.radians(a * s), t * math.pi) - Ec
             P.add(surface_disc(f'Ladybug spot {sd}{k}', Ec, Er, d, r, black, count=6, off=.00008), f'elytron_{sd}')
+        # the seventh spot straddles the seam: half of it rides on each wing case, so it splits when they open
+        d = ell_pt(Ec, Er, math.radians(8.5 * s), .335 * math.pi) - Ec
+        P.add(surface_disc(f'Ladybug seam spot {sd}', Ec, Er, d, .00072, black, count=5, off=.00008), f'elytron_{sd}')
         # cheek-eyes: white ovals with a dark pupil
         P.add(surface_disc(f'Ladybug eye {sd}', Hc, Hr, sx(V(.62, -.72, .3), s), .00085, pale, count=6, off=.00005),
               'body')
@@ -543,7 +568,8 @@ def build_ladybug():
 
 def build_dragonfly():
     """Dragonfly, 7 cm span: teal body with dark abdomen bands, big wrap-around blue eyes, four clear
-    light wings with an amber root and a dark wing-tip spot. Fly buzzes fore and hind wings out of phase."""
+    light wings held out flat with an amber root and a dark wing-tip spot, and six thin legs bunched
+    forward under the thorax (the "basket" it catches midges with). Fly buzzes fore and hind wings out of phase."""
     reset()
     body_m = mat('Dragonfly body', '#1bb4a6', rough=.3)
     eye_m = mat('Dragonfly eye', '#2f62d8', rough=.12)
@@ -566,7 +592,11 @@ def build_dragonfly():
     for s, sd in ((1, 'L'), (-1, 'R')):
         P.add(sphere(f'Dragonfly eye {sd}', .0041, sx(V(.0030, -.0142, .0094), s), eye_m, seg=6, rings=4), 'body',
               lambda co: .75 if co.z < .008 else 1.0)
-    ab_pts = [V(0, .0005 + .0058 * k, .0084 + .00008 * k) for k in range(8)]
+        # six legs, all on the thorax, angled forward and down
+        for k, (y, reach) in enumerate(((-.0096, 1.0), (-.0072, 1.1), (-.0046, 1.2))):
+            P.add(stick(f'Dragonfly leg {sd}{k}', [sx(V(.0016, y, .0042), s), sx(V(.0016 + .0030 * reach, y - .0030, .0003), s)],
+                        .00042, body_m, taper=.6), 'body', .3)
+    ab_pts =[V(0, .0005 + .0058 * k, .0084 + .00008 * k) for k in range(8)]
     ab = stick('Dragonfly abdomen', ab_pts, .0019, body_m, verts=4, caps=True)
     # bands: darken the rings at segment joints (every other ring) and the tip
     P.add(bind_blend(ab, 'body', 'tail', ramp(1, .006, .02)), None,
@@ -595,7 +625,8 @@ def build_dragonfly():
 
 
 def build_butterfly():
-    """Butterfly, 6 cm span: dark fuzzy body with clubbed antennae; four wings on one tintable
+    """Butterfly, 6 cm span: dark fuzzy body with clubbed antennae and six thin legs under the thorax
+    (it perches on them, so the body no longer floats); four wings (fore + hind each side) on one tintable
     'Butterfly wing' material whose pattern (dark border, bright panel, darker root) is vertex paint,
     so the runtime picks a colour per butterfly (variants in the material extras)."""
     reset()
@@ -611,12 +642,15 @@ def build_butterfly():
     P = Parts()
     P.add(stick('Butterfly body', [V(0, -.0062, .0063), V(0, -.0020, .0062), V(0, .0050, .0058), V(0, .0125, .0054)],
                 .0021, body_m, verts=5, taper=.5, caps=True), 'body', lambda co: .75 if co.z < .0055 else 1.0)
-    P.add(sphere('Butterfly head', .0026, V(0, -.0086, .0068), body_m, seg=6, rings=4), 'body',
+    P.add(sphere('Butterfly head', .0026, V(0, -.0086, .0068), body_m, seg=5, rings=3), 'body',
           lambda co: .4 if co.y < -.0095 and abs(co.x) > .0012 else 1.0)
     for s, sd in ((1, 'L'), (-1, 'R')):
         a = [sx(V(.0009, -.0102, .0086), s), sx(V(.0028, -.0165, .0125), s), sx(V(.0046, -.0218, .0146), s)]
         P.add(stick(f'Butterfly antenna {sd}', a, .00035, body_m), 'body')
         P.add(sphere(f'Butterfly club {sd}', (.0008, .0011, .0008), a[-1], body_m, seg=4, rings=3), 'body')
+        for k, (y, y1) in enumerate(((-.0056, -.0092), (-.0030, -.0034), (-.0004, .0030))):
+            P.add(stick(f'Butterfly leg {sd}{k}', [sx(V(.0010, y, .0050), s), sx(V(.0046, y1, .0002), s)], .00034, body_m,
+                        taper=.6), 'body', .8)
         fore = [(.0005, -.0030), (.0100, -.0100), (.0225, -.0140), (.0290, -.0110), (.0278, -.0030),
                 (.0195, .0020), (.0095, .0035), (.0012, .0015)]
         hindw = [(.0010, .0030), (.0120, .0035), (.0205, .0075), (.0215, .0150), (.0150, .0205),
@@ -683,6 +717,30 @@ def foot_fan(name, base, direction, length, spread, n, material, z=None):
     return fan(name, base + d * length * .15, [base] + ring, material, up=Zv)
 
 
+def toes(name, base, direction, length, spread, n, material, z=None, pad=True):
+    """Separate (unwebbed) toes, one triangle each, flat on the ground: pad=True widens every toe to a blunt
+    round-looking tip (a tree frog's sticky toe pads), pad=False tapers it to a point (a pond frog's fingers)."""
+    base = Vector(base)
+    d = Vector((direction[0], direction[1], 0)).normalized()
+    bm = bmesh.new()
+    zt = base.z if z is None else z
+    for i in range(n):
+        a = math.radians(lerp(-spread, spread, i / (n - 1)))
+        u = Quaternion(Zv, a) @ d
+        w = Zv.cross(u) * length
+        tip = base + u * length * (1.0 if 0 < i < n - 1 else .86)
+        tip.z = zt
+        if pad:
+            tri = (base, tip - w * .2, tip + w * .2)
+        else:
+            tri = (base - w * .1, tip, base + w * .1)
+        f = bm.faces.new([bm.verts.new(q) for q in tri])
+        f.normal_update()
+        if f.normal.z < 0:
+            f.normal_flip()
+    return from_bmesh(name, bm, material, smooth_angle=80)
+
+
 def build_frog(name, k, skin_hex, belly_hex, eye_hex, hop_h, look):
     """Frog at real size (k = 1 is a 4 cm tree frog). Faces -Y, origin on the ground under the body.
     One skin material (spots and stripes painted), a cream belly + throat sac material, glossy eyes
@@ -727,12 +785,19 @@ def build_frog(name, k, skin_hex, belly_hex, eye_hex, hop_h, look):
         elbow = sx(K(.0102, -.0098, .0042), s)
         P.add(stick(f"{name} arm {sd}", [sh, hand + K(0, 0, .0006)], .0021 * k, skin_m, taper=.7), f'arm_{sd}',
               look['limb'])
-        P.add(foot_fan(f'{name} hand {sd}', hand, sx(V(.25, -1, 0), s), .0040 * k, 50, 4, skin_m, z=hand.z),
+        # four unwebbed fingers on every frog; the tree frog's end in toe pads
+        P.add(toes(f'{name} hand {sd}', hand, sx(V(.25, -1, 0), s), .0046 * k, 56, 4, skin_m, z=hand.z, pad=look['pads']),
               f'arm_{sd}', look['limb'])
         P.add(stick(f'{name} thigh {sd}', [hip, knee], .0042 * k, skin_m, verts=5, taper=.55), f'thigh_{sd}', look['leg'])
         P.add(stick(f'{name} shin {sd}', [knee, ankle], .0025 * k, skin_m, taper=.65), f'shin_{sd}', look['leg'])
-        P.add(foot_fan(f'{name} foot {sd}', ankle + K(0, 0, -.0016), sx(V(.45, -1, 0), s), .0105 * k, 24, 4, skin_m,
-                       z=.0004 * k), f'foot_{sd}', look['limb'])
+        if look['pads']:        # tree frog: long separate hind toes with pads (it climbs); pond frog: a webbed paddle
+            P.add(toes(f'{name} foot {sd}', ankle + K(0, 0, -.0016), sx(V(.45, -1, 0), s), .0108 * k, 30, 4, skin_m,
+                       z=.0004 * k, pad=True), f'foot_{sd}', look['limb'])
+        else:
+            P.add(foot_fan(f'{name} foot {sd}', ankle + K(0, 0, -.0016), sx(V(.45, -1, 0), s), .0105 * k, 24, 4, skin_m,
+                           z=.0004 * k), f'foot_{sd}', look['limb'])
+        if look.get('extra'):
+            look['extra'](P, s, sd, skin_m, B, Br, Hc, Hr)
     finish(name, arm, P, dict(rays=32, distance=.012 * k, strength=.5, ground=0.0))
 
     acts = {}
@@ -790,20 +855,23 @@ def build_frog(name, k, skin_hex, belly_hex, eye_hex, hop_h, look):
 
 
 def build_frog_tree():
-    """Japanese tree frog, 4 cm: bright leaf green with a darker stripe from the nose through the eye,
-    cream belly and throat sac, big golden eyes."""
-    def head(co):
-        side = abs(co.x) > .0068 and abs(co.z - .0128) < .0017 and co.y > -.0170
-        return .14 if side else (.8 if co.z < .0095 else 1.0)
+    """Japanese tree frog, 4 cm: bright leaf green with a dark stripe from the nostril through the eye to the
+    shoulder (the mark that tells it from other green frogs), cream belly and a single throat sac, big golden
+    eyes, and separate toes ending in round sticky pads on all four feet."""
+    def extra(P, s, sd, skin_m, B, Br, Hc, Hr):
+        # the eye stripe is its own little patch on the head (vertex paint alone is too coarse to hold a line)
+        a0, a1 = (58, 80) if s > 0 else (-80, -58)
+        P.add(ell_patch(f'frog-tree stripe {sd}', Hc, tuple(r * 1.006 for r in Hr), a0, a1, math.radians(34),
+                        math.radians(140), 1, 2, skin_m), 'head', (.42, .13, .3))
     build_frog('frog-tree', 1.0, '#5fd42a', '#fff2c4', '#f7b52a', .05,
-               dict(back=lambda co: (.14 if abs(co.x) > .0092 and co.z > .0095 and co.y < .0060 else 1.0) *
-                    (.84 if co.z < .0070 else 1.0),
-                    head=head, limb=.9, leg=lambda co: .85 if co.z < .0035 else 1.0))
+               dict(back=lambda co: .84 if co.z < .0070 else 1.0, head=lambda co: .8 if co.z < .0095 else 1.0,
+                    limb=.9, leg=lambda co: .85 if co.z < .0035 else 1.0, pads=True, extra=extra))
 
 
 def build_frog_pond():
     """Pond frog, 7 cm: warm olive brown-green with dark brown blotches, a pale stripe down the back,
-    cream belly, coppery eyes."""
+    cream belly, coppery eyes, pointed unwebbed fingers and big webbed hind feet for swimming (no toe pads:
+    it lives on the ground and in the water)."""
     k = 1.75
     SPOTS = [(.006, .010, .016), (-.007, .006, .016), (.009, -.001, .013), (-.010, .013, .011), (.002, .015, .015),
              (-.004, -.004, .018), (.007, -.012, .017), (-.006, -.013, .016), (.013, .010, .008), (-.013, .002, .008),
@@ -813,13 +881,20 @@ def build_frog_pond():
         return Vector((x * k, y * k, z * k))
 
     def blotch(co, base=1.0):
-        n = max((1.0 - (co - K_(*c)).length / (.0048 * k)) for c in SPOTS)
-        mid = abs(co.x) < .0011 * k and co.z > .0130 * k        # pale dorsal stripe
-        return (1.35, 1.3, .95) if mid else ((.16, .12, .06) if n > 0 else (base, base, base))
+        n = max((1.0 - (co - K_(*c)).length / (.0062 * k)) for c in SPOTS)
+        return (.2, .15, .07) if n > 0 else (base, base, base)
+
+    def extra(P, s, sd, skin_m, B, Br, Hc, Hr):
+        if s < 0:
+            return
+        # the pale stripe down the middle of the back, as its own strip (paint alone cannot hold a line)
+        P.add(ell_patch('frog-pond dorsal stripe', B, tuple(r * 1.045 for r in Br), -8, 8, math.radians(38),
+                        math.radians(166), 1, 4, skin_m), 'body', (1.75, 1.5, .95))
     build_frog('frog-pond', k, '#7f9a2e', '#fbe7b4', '#e0832e', .085,
                dict(back=lambda co: blotch(co, .85 if co.z < .0070 * k else 1.0),
                     head=lambda co: blotch(co, .86 if co.z < .0095 * k else 1.0),
-                    limb=lambda co: blotch(co, .9), leg=lambda co: blotch(co, .85 if co.z < .0035 * k else 1.0)))
+                    limb=lambda co: blotch(co, .9), leg=lambda co: blotch(co, .85 if co.z < .0035 * k else 1.0),
+                    pads=False, extra=extra))
 
 # ====================================================================== FIREFLY
 

@@ -129,15 +129,16 @@ def leg_parts(b, M, trouser_m, prof, top=0.03, cuff=None, cuff_m=None, n=10, bar
     return parts
 
 
-def pelvis(b, m, keys, n=20, z0=None, name='pelvis', skirt=0.5):
-    """Lower-body shell (shorts/overall seat) that the leg tubes emerge from."""
+def pelvis(b, m, keys, n=20, z0=None, name='pelvis', skirt=0.5, weights=None):
+    """Lower-body shell (shorts/overall seat) that the leg tubes emerge from. `weights`: the weight function of a
+    shirt tail worn over it, so the two layers bend together."""
     zs = dense(keys[0][0], keys[-1][0], 6)
     rings, cs = torso_rings(keys, n, zs, e=2.3)
     mb = MB(name)
     bot = V((0, cs[0].y, keys[0][0] - 0.03))
     mb.loft(rings, m, cs, cap0=bot)
     ob = mb.build(name, angle=60)
-    return weigh(ob, torso_weights(b, skirt=skirt, skirt_top=b.hip_z + 0.02))
+    return weigh(ob, weights or torso_weights(b, skirt=skirt, skirt_top=b.hip_z + 0.02))
 
 
 def std_head(b, M, sdf_kw=None, seg=28, rings=21):
@@ -986,8 +987,11 @@ def build_hana():
 # ================================================================ Grandma Sora
 
 SORA_WALK = 1.0     # m/s: Sora's Walk is authored for this ground speed (runtime timeScale = speed / 1.0)
+SORA_STEP = 0.68    # step length / leg length: 0.4 m steps, a 24-frame cycle (0.85 gave 0.5 m steps: a deep lunge)
 HUG_D = 0.45        # Hug: the hugged person's root stands this far in front of Sora's root, facing her
 HUG_Z = 0.94        # Hug: wrist height on their upper back (Mika: shoulders 0.99 m, chest joint 0.88 m)
+HUG_SIDE = 0.13     # Hug: her hips shift 4 cm and her head ~15 cm to her LEFT of the centre line (cheek to cheek)
+HUG_ROLL = 7.5      # Hug: spine and chest roll (deg each) that carries the head sideways
 
 
 def build_sora():
@@ -1094,10 +1098,11 @@ def build_sora():
     def skirt_w(co):
         w = torso_weights(b)(co)
         if co.z < b.hip_z + 0.02:
-            front = sstep(0.0, -0.1, co.y)
-            f_ = sstep(b.hip_z + 0.02, b.hip_z - 0.3, co.z) * (0.62 + 0.3 * front)
+            # front AND sides lie on the thighs (the sides used to lag behind: a stiff tray over the lap in Sit)
+            front = sstep(0.07, -0.03, co.y)
+            f_ = sstep(b.hip_z + 0.02, b.hip_z - 0.3, co.z) * (0.62 + 0.34 * front)
             # below the knee the front of the long skirt hangs from the shins (drapes over the knees in Sit)
-            g = sstep(kz + 0.08, kz - 0.14, co.z) * (0.3 + 0.6 * front)
+            g = sstep(kz + 0.06, kz - 0.1, co.z) * (0.3 + 0.68 * front)
             s_ = sstep(-0.05, 0.05, co.x)
             w = mix_w((w, 1 - f_), ({'thigh_L': s_ * (1 - g), 'thigh_R': (1 - s_) * (1 - g), 'shin_L': s_ * g,
                                      'shin_R': (1 - s_) * g}, f_))
@@ -1216,7 +1221,7 @@ def build_sora():
     smooth_colors(body, 3, {'Skin'})
     face_tints(body, hd, k, blush=0.8, blush_col=(1.0, 0.6, 0.58), radius=0.036, az=42)
     A = anims.Anim(arm, b, 'sora', energy=0.85, bounce=0.5, arm_swing=0.45, sway=1.1, stout=0.2, hunch=12.0, lean=4.0,
-                   head_up=4.0, step=0.85, walk_lift=0.6, wave_side='L', walk_speed=SORA_WALK, arm_out=3.0,
+                   head_up=4.0, step=SORA_STEP, walk_lift=0.6, wave_side='L', walk_speed=SORA_WALK, arm_out=3.0, lap=0.04,
                    talk_extra=_sora_talk)
     A.st['post'] = _sora_post
     ex = {'Cheer': lambda: _sora_cheer(A), 'Bow': lambda: A.bow(frames=54, depth=26),
@@ -1330,12 +1335,13 @@ def _sora_hug(A, frames=60):
         sway = sn(clamp((p - 0.42) / 0.4), 1) * hold
         pat = bump(p, 0.5, 0.61) + bump(p, 0.61, 0.72)
         hl = s['hips@loc']
-        s['hips@loc'] = (hl[0] + 0.012 * k * sway, hl[1] - 0.04 * h, hl[2] - 0.01 * h)
+        # she leans to her left so her head goes past the other head, cheek to cheek (it used to go through the face)
+        s['hips@loc'] = (hl[0] + 0.012 * k * sway + HUG_SIDE * 0.3 * h, hl[1] - 0.04 * h, hl[2] - 0.01 * h)
         s['hips'] = add(s['hips'], (4 * h - 2 * o, 0, 3 * sway))
-        s['spine'] = add(s['spine'], (3 * h - 4 * o, 2.5 * sway, 0))
-        s['chest'] = add(s['chest'], (3 * h - 3 * o, 2.5 * sway, 0))
-        s['neck'] = add(s['neck'], (-3 * h, 0, 8 * h))
-        s['head'] = add(s['head'], (-6 * o - 5 * h, 6 * h, 18 * h))
+        s['spine'] = add(s['spine'], (3 * h - 4 * o, 2.5 * sway + HUG_ROLL * h, 0))
+        s['chest'] = add(s['chest'], (3 * h - 3 * o, 2.5 * sway + HUG_ROLL * h, 0))
+        s['neck'] = add(s['neck'], (-3 * h, -HUG_ROLL * 0.6 * h, 4 * h))
+        s['head'] = add(s['head'], (-6 * o - 5 * h, -HUG_ROLL * 0.6 * h, 8 * h))
         for S in 'LR':
             sx = A.sx(S)
             rest = A.wr[S]
@@ -1350,10 +1356,10 @@ def _sora_hug(A, frames=60):
             s.setdefault('ik', {})['arm_' + S] = dict(target=tgt, pole=(sx * 1.0, 0.2, -0.6),
                                                       end_rel=(-10 * h, 0, sx * -25 * h))
 
-        def stick(P, D, h=h):
+        def stick(P, D, h=h, o=o):
             d0 = (P.t['stick'] - P.h['stick']).normalized()
             q = D['hand_R'][0].inverted() @ d0.rotation_difference(d_stick)
-            return Quaternion().slerp(q, h)
+            return Quaternion().slerp(q, max(h, o))      # down and out from the moment the arms open
         s['stick'] = stick
         A.secondary(s, p, drag=0, k=1, amp=0.3)
         return s
@@ -1484,9 +1490,9 @@ def build_villager(kind):
         def tw(co):
             w = torso_weights(b)(co)
             if co.z < b.hip_z + 0.02:
-                front = sstep(0.0, -0.1, co.y)
-                f_ = sstep(b.hip_z + 0.02, b.hip_z - 0.3, co.z) * (0.62 + 0.25 * front)
-                g = sstep(kz + 0.05, kz - 0.1, co.z) * (0.2 + 0.25 * front)
+                front = sstep(0.07, -0.03, co.y)     # front and sides lie on the thighs (Sit), the back hangs
+                f_ = sstep(b.hip_z + 0.02, b.hip_z - 0.3, co.z) * (0.62 + 0.34 * front)
+                g = sstep(kz + 0.05, kz - 0.08, co.z) * (0.25 + 0.7 * front)   # below the knee: hangs from the shins
                 s_ = sstep(-0.05, 0.05, co.x)
                 w = mix_w((w, 1 - f_), ({'thigh_L': s_ * (1 - g), 'thigh_R': (1 - s_) * (1 - g), 'shin_L': s_ * g,
                                          'shin_R': (1 - s_) * g}, f_))
@@ -1512,7 +1518,20 @@ def build_villager(kind):
                   up_fn=lambda q, T: V((0, 1, 0)), e=3, cap0='round', cap1='flat')
         parts.append(weigh(bow.build('bow'), torso_weights(b)))
     else:
-        tw = torso_weights(b, skirt=0.5, skirt_top=b.hip_z + 0.02)
+        # The shirt tail rides on the thighs (it used to follow them by a third only, so in Walk, Run, Sit and
+        # Sweep the trouser legs came out through the hem in jagged teeth): full thigh weight at the hem.
+        tw_top = b.hip_z + 0.02
+        tw_h = max(0.04, tw_top - tk[0][0])
+        tw_base = torso_weights(b)
+
+        def tw(co):
+            w = tw_base(co)
+            if co.z < tw_top:
+                front = sstep(0.07, -0.03, co.y)
+                f_ = sstep(tw_top, tw_top - tw_h, co.z) * (0.74 + 0.2 * front)
+                s_ = sstep(-0.05, 0.05, co.x)
+                w = mix_w((w, 1 - f_), ({'thigh_L': s_, 'thigh_R': 1 - s_}, f_))
+            return w
         parts.append(weigh(sh_ob, tw))
         # collar and placket buttons
         parts.append(weigh(ring_band((0, 0.004, top - 0.005), tk[-1][1] + 0.01, tk[-1][2] + 0.008, 0.012, M['shirt'], 16,
@@ -1543,9 +1562,10 @@ def build_villager(kind):
         hz = b.hip_z
         parts.append(pelvis(b, M['trousers'], [(hz - 0.1, tk[0][1] * 0.84, tk[0][2] * 0.83, tk[0][3] * 0.86),
                                                (hz - 0.03, tk[0][1] * 0.9, tk[0][2] * 0.87, tk[0][3] * 0.9),
-                                               (tk[0][0] + 0.06, tk[0][1] * 0.9, tk[0][2] * 0.87, tk[0][3] * 0.9)], n=18))
+                                               (tk[0][0] + 0.06, tk[0][1] * 0.9, tk[0][2] * 0.87, tk[0][3] * 0.9)], n=18, weights=tw))
     if kind == 'man':
-        parts += leg_parts(b, M, M['trousers'], [(0, 0.085), (0.5, 0.072), (1.0, 0.066)], n=10, cuff=0.025,
+        # slimmer at the very top (hidden in the seat): the full-width tube top came out through the shirt at the hip
+        parts += leg_parts(b, M, M['trousers'], [(0, 0.068), (0.14, 0.08), (0.5, 0.072), (1.0, 0.066)], n=10, cuff=0.025,
                            trouser_end=0.94)
     elif kind == 'woman':
         parts += leg_parts(b, M, M['skin'], [(0, 0.07), (0.5, 0.055), (1.0, 0.044)], n=8, shape=0)   # under the skirt (the taper would poke through it mid-stride)

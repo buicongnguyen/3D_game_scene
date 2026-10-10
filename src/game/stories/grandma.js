@@ -21,7 +21,7 @@ export const STORY = {
   DIALOGUE: {
     // Grandma's countryside tricks (content/tricks.js): she teaches each one once, the first time Mika talks to her in season
     trick_firefly_intro: [
-      ['sora', "Summer night, Mi-chan. Fireflies by the paddies. Bring a jar.", 'Talk'],
+      ['sora', "Summer night, Mi-chan. Fireflies down by the paddies. Take my soft net and a jar.", 'Talk'],
       ['mika', "Grandma, I'm from the city. Bugs come in one setting: no."],
       ['sora', "These ones carry their own little lamps. Sweep the net just as one glows. Ten will light your way home."],
       ['sora', "And before bed, every one goes back. Even the nicest lamp belongs outside."],
@@ -33,7 +33,7 @@ export const STORY = {
       ['sora', "They do! Another night. Ankle-deep only, Mi-chan, and I'll be watching from the bank."],
     ],
     trick_stars_intro: [
-      ['sora', "Clear tonight. Lie on the hill behind the cottage and look up. You lie down. My back stays in its chair.", 'Talk'],
+      ['sora', "Clear tonight. Up the hill behind the cottage, flat on your back, eyes up. I'll supervise from my chair.", 'Talk'],
       ['mika', "At home I counted the stars once. It took about four seconds."],
       ['sora', "Here you'd need all summer. Find the Big Dipper first. Its two end stars point to the North Star."],
       ['sora', "The North Star hardly moves. Your great-grandpa walked home by it more than once."],
@@ -54,7 +54,7 @@ export const STORY = {
     ['hana', "My sheep are loose, the crows are at my peaches, and I need five ripe ones: three for my basket, two for Sora's jam."],
     ['hana', "Help me save my festival and the key is yours. Sheep first—walk up to each one and it'll trot home to the pen."],
   ],
-  c2_crows_done: [['hana', "Listen to that! Not a crow left. Now five ripe peaches: three for Hana, two for Sora's jam.", 'Cheer']],
+  c2_crows_done: [['tamo', "Listen to that! Not a crow left. Now five ripe peaches: three for Hana's basket, two for Sora's jam.", 'Happy']],
     // ---- prologue: Grandma and Genzo meet the last train of winter
     p_arrive: [
       ['narrator', 'Hoshi Valley, on the last train of winter. Kobo, the little red valley engine, wheezes to a stop.'],
@@ -64,8 +64,8 @@ export const STORY = {
       ['genzo', 'Hoshi Station. End of the line, and the end of my back. Whose idea were three suitcases?', 'Talk'],
       ['mika', "You're Genzo? Grandma's letters said you'd be grumpy."],
       ['genzo', "Hah! She wasn't wrong. She also says I cheat at shogi. That part is slander."],
-      ['sora', "He cheats. I cheat better. Up the bluff, Mi-chan. I'll go ahead and put the soup on.", 'Talk'],
-      ['genzo', "I'll bring the bags. Slowly. Mind the fallen fence, girl. And don't go poking at that bridge."],
+      ['sora', "He cheats. I cheat better. Up the bluff, Mi-chan. I'll go ahead and put the kettle on.", 'Talk'],
+      ['genzo', "I'll bring the bags. Slowly. Mind the fallen fence, girl. And keep off the old viaduct. It's crankier than I am."],
     ],
     p_cottage: [
       ['sora', 'There you are! I took the shortcut. There is no shortcut. I just walk with purpose.', 'Wave'],
@@ -83,27 +83,28 @@ export const STORY = {
       ['mika', "Whoa—you're a… star? A talking star?"],
       ['tamo', "I'm a hoshibi! A star-fire! I'm Tamo! And who are YOU? You've got Sora's chin.", 'Talk'],
       ['sora', "This is Mika, my granddaughter. She's staying the whole year."],
-      ['tamo', "A whole year? Then she's my partner. Sora's knees can't climb lamp towers any more. No offence!", 'Happy'],
-      ['sora', 'Plenty taken. But he is right.'],
+      ['tamo', "A whole year? Then she's my new partner! You climbed all the lamp towers last time, Sora. Her turn!", 'Happy'],
+      ['sora', 'My knees agree with him. For once.'],
     ],
     // classic: Sora's letter. Here Grandma explains it herself, on the porch.
     p_letter: [
       ['sora', 'Now listen, both of you. The valley has four Star Lamps: Forest, Mill, Orchard and Viaduct.', 'Talk'],
-      ['sora', 'Ten years ago the old viaduct got too tired for the Star Train. No train, so we let the lamps sleep. Tamo too.'],
-      ['sora', 'On star-fall night that train carried the whole valley over the viaduct. Everyone together. Best night of the year.'],
-      ['sora', 'This winter I want it back. Light the four lamps, Mi-chan, one a season. Start with the Mill Lamp, down in Kawabe.'],
+      ['sora', 'They light the way for the Star Train. On star-fall night it carried the whole valley over the viaduct. Best night of the year.'],
+      ['sora', 'Ten years ago the old viaduct got too tired for trains. No train, so we let the lamps sleep. Tamo too.'],
+      ['sora', 'This winter I want that night back. The train needs all four lamps lit. One a season, Mi-chan. Mill Lamp first, in Kawabe.'],
       ['mika', "Me? Grandma, I've been here twenty minutes."],
       ['sora', "Twenty-one. Plenty. You'll meet everyone on the way. That's half the job anyway.", 'Cheer'],
-      ['tamo', "I'll help! I'm very good with lamps. I think. Watch this!", 'Happy'],
+      ['tamo', "I'll help! I'm very good with lamps. I think. It's been a while.", 'Happy'],
     ],
     p_spark_tutorial: [
-      ['sora', 'First job: light the porch lamp for me, dear. My hands are cold, and Tamo listens to you now.', 'Talk'],
+      ['sora', 'Then practise. First job: light the porch lamp for me, dear. Tamo listens to you now.', 'Talk'],
       ['tamo', "Walk up to the porch lamp and press {act}. I'll do the rest. Pfft—like a sneeze, but useful!", 'Talk'],
     ],
     p_spark_done: [
       ['tamo', 'I did it! Did you see? Pfft! Spark! I am SO good at this.', 'Happy'],
-      ['sora', 'Look at that. Soup, then bed. Kawabe in the morning. I have written you a list.', 'Cheer'],
-      ['mika', 'Kawabe. The Mill Lamp. A list. Got it.'],
+      ['sora', 'Look at that. Supper, then bed. Tomorrow, Kawabe. I have written you a list.', 'Cheer'],
+      ['mika', 'Of course you have. What comes first?'],
+      ['sora', "Rin, at the Kawabe dock. She's about your age, and she knows everyone. Tell her I sent you.", 'Talk'],
       ['tamo', 'Kawabe! The river village! …Which way is Kawabe?'],
       ['sora', "Downhill, Tamo. Everything is downhill from here. That's why I need her.", 'Talk'],
     ],
@@ -117,8 +118,8 @@ export const STORY = {
       ['mika', "Sorry. I'm Mika. My grandma said to find you. She said, 'Tell her I sent you.'"],
       ['rin', "…Oh. YOU'RE Sora's Mika. She's told me about you. Fourteen times. Not that I was counting.", 'Talk'],
       ['rin', "She says we're going to be friends. I said I'd decide that myself. So. Still deciding."],
-      ['mika', "Fair. I'm looking for the Mill Lamp keeper."],
-      ['rin', "That's my grandpa, Ōta. He's at the mill, upriver. He'll say no. He says no to everything before lunch."],
+      ['mika', "Fair. Meanwhile, I'm supposed to light the Mill Lamp. Who do I ask?"],
+      ['rin', "My grandpa, Ōta. He's at the mill, upriver. He'll say no. He says no to everything before lunch."],
       ['tamo', "(whispering) She likes you. I can tell. She's still talking."],
     ],
     c1_ota_refuse: [
@@ -136,6 +137,13 @@ export const STORY = {
       ['rin', "So. Catch me three fish—any fish, we'll call them trout—and I'll grill them. The rod's on the dock."],
       ['rin', "Cast, wait for the float to dip, then press {act}. I'll teach you the rest. That's what friends do. Probably."],
     ],
+    c1_ota_trout: [
+      ['ota', '…Is that grilled trout?', 'Idle'],
+      ['ota', "…With the salt crust Rin does. Hmph. Sit, sit. No, don't sit. Just… thank you.", 'Bow'],
+      ['ota', "This is Sora's doing. She's known about me and trout for sixty years. Fine. Find my three cogs and you may fix my wheel."],
+      ['ota', "One fell in the reeds by the boathouse. Rin's cousins hid one on top of the crate stack, the rascals. And one…"],
+      ['ota', '…one was stolen by a crab. Do not laugh. That crab is a menace.', 'Talk'],
+    ],
     c1_wheel: [
       ['narrator', 'The cogs slide into place. The old axle groans, shudders… and the great wheel turns.', 'Hammer'],
       ['ota', '…It turns. Hah! Listen to her sing.', 'Wave'],
@@ -143,16 +151,16 @@ export const STORY = {
       ['ota', 'And tell your grandmother I fixed it myself. Mostly.', 'Talk'],
     ],
     c1_lamp: [
-      ['tamo', "The lamp! It's so warm. I remember this. I remember lamps!", 'Happy'],
-      ['tamo', 'I remember a girl with two plaits lighting this one. She set her sleeve on fire, just a bit, and laughed so hard she fell over.'],
+      ['tamo', "The lamp! It's so warm. Oh! Lamps keep memories, Mika. This one is showing me one!", 'Happy'],
+      ['tamo', 'A girl with two plaits, lighting this very lamp. She set her sleeve on fire, just a bit, and laughed till she fell over.'],
       ['mika', 'Grandma?'],
       ['tamo', 'Grandma! She was thirteen, same as you. She was terrible at it. Then she was wonderful.', 'Happy'],
     ],
     c1_ota_page: [
       ['ota', 'Look at it. The Mill Lamp, burning again. Your grandmother is going to be unbearable about this.', 'Talk'],
       ['ota', "Here. She lent me this page of her diary in 1971, to prove it was her sleeve that caught fire, not her plaits.", 'Talk'],
-      ['ota', 'She won. Give it back to her. Tell her I said so. Once.'],
-      ['narrator', "A page from Grandma's star diary, in a girl's careful handwriting. That night Grandma reads it aloud, doing all the voices."],
+      ['ota', "She won. Give it back to her. She'll read it to you tonight, with voices. Mine is NOT that squeaky."],
+      ['narrator', "A page from Grandma's star diary, in a girl's careful handwriting. Mika tucks it into her journal."],
       ['ota', 'The next lamp downriver is Takamori\'s. Rin will ferry you over. Say hello to the bun woman. Not from me.'],
     ],
 
@@ -166,13 +174,13 @@ export const STORY = {
       ['hana', 'Oh! A new face! Here, have a peach bun, you look half-starved. Who are you, sweetheart?', 'Wave'],
       ['mika', "Mika. Sora's granddaughter. I came about the Orchard Lamp."],
       ['hana', "Sora's Mika! Oh, love, she's talked about nothing else since autumn. Come here, let me look at you.", 'Cheer'],
-      ['hana', "You've got her chin. And her eyebrows. That's the bossy part, you know. It lives in the eyebrows.", 'Talk'],
+      ['hana', "You've got her eyebrows. That's the bossy part, you know. It lives in the eyebrows.", 'Talk'],
       ['mika', 'Grandpa Ōta says hello. He said not to say it was from him.'],
       ['hana', 'Did he now. The old radish. Tell him hello back, and that his jam is still runny.', 'Cheer'],
     ],
     c2_peaches_done: [
-      ['narrator', "Three peaches go into Hana's fair basket and two into a bag for Grandma's jam. Under the cloth: a warm bun and a note."],
-      ['hana', "For Genzo at the station, if you'd be a dear. He sent my basket back last week without a note. The cheek.", 'Talk'],
+      ['narrator', "Three peaches go into Hana's festival basket and two into a bag for Grandma's jam. Under the cloth: a warm bun and a note."],
+      ['hana', "One last favour, then the key is yours. That bun is for Genzo, at the station. He sent my basket back with no note. The cheek.", 'Talk'],
     ],
     c2_genzo_bun: [
       ['genzo', 'A peach bun. From Hana.', 'Talk'],
@@ -186,7 +194,7 @@ export const STORY = {
       ['hana', "Here's the key, love. Climb up and ring the bell for me—it's been too quiet—then light that lamp.", 'Talk'],
     ],
     c2_lamp: [
-      ['tamo', 'The Orchard Lamp! Oh… another memory.', 'Happy'],
+      ['tamo', "The Orchard Lamp! It's kept a memory too. Look!", 'Happy'],
       ['tamo', 'The Star Train, all lit up, coming over the viaduct. And Sora on the platform, waving with both arms.'],
       ['tamo', 'A little boy in a cap hung out of the cab window, waving back. He waved so hard his cap fell in the river.'],
       ['mika', 'A boy in a cap… Genzo?'],
@@ -199,6 +207,16 @@ export const STORY = {
     ],
 
     // ---- chapter 3: autumn, the forest, Grandma's soup
+    // new id: the chapter opens with Grandma's autumn list (c3.fox enter), so the soup list and Kon are set up
+    c3_start: [
+      ['narrator', "Autumn. Grandma's new list comes wrapped round a rice ball."],
+      ['mika', "'Chestnuts, mushrooms, honey, for my soup. Light the Forest Lamp. The rice ball is for Kon.' …Who's Kon?"],
+      ['tamo', "No idea! But the Forest Lamp is up at the shrine, past Hana's orchard gate. Let's go and find out!", 'Happy'],
+    ],
+    c3_fox: [
+      ['tamo', 'Mika! A fox! A fox in a little red bib! It wants us to follow it!', 'Happy'],
+      ['mika', "A shrine bib, stitched 'Kon'. So YOU'RE Kon. Grandma sent you a rice ball."],
+    ],
     c3_bear: [
       ['tamo', "Oh no. Oh no no no. That is the biggest bear in the whole world and it's asleep ON the stairs.", 'Sad'],
       ['mika', "There's a note on the shrine board. From Old Kiku."],
@@ -217,7 +235,7 @@ export const STORY = {
       ['tamo', 'Sora says the river likes to move the furniture about. So everybody just builds a new path. That\'s the valley.'],
     ],
     c3_lamp: [
-      ['tamo', 'The Forest Lamp! Oh, I remember the whole story now. Almost.', 'Happy'],
+      ['tamo', 'The Forest Lamp! Oh, this one kept the best memory of all. Mine!', 'Happy'],
       ['tamo', "I didn't live in Sora's lantern. I lived in the Viaduct Lamp. She came up every night with tea. I don't drink tea."],
       ['tamo', 'When the Star Train stopped and the lamps went to sleep, she carried me home so I wouldn\'t be cold and lonely.'],
       ['mika', 'And you slept in her chest for ten years.'],
@@ -241,15 +259,15 @@ export const STORY = {
       ['mika', 'But?'],
       ['genzo', "But the viaduct. Three beams, where the old span was taken down. That's a job for two villages, not one old man.", 'Talk'],
       ['tamo', 'So ask them!'],
-      ['genzo', "Ask. Hah. I haven't asked anyone for anything in seventy years. Except Sora, for her soup recipe. She said no.", 'ArmsCrossed'],
+      ['genzo', "Ask. Hah. I haven't asked anyone for anything in seventy years. Except Sora, for a shogi rematch. She said no.", 'ArmsCrossed'],
       ['mika', "Grandma's list says 'help Genzo'. It doesn't say 'let Genzo be stubborn'."],
       ['genzo', "…It's underlined, isn't it.", 'Sad'],
-      ['genzo', "Fine. FINE. Bring Ōta and Hana to the platform tonight. I'll… ask. And take this. Sora lost it to me at shogi.", 'Talk'],
+      ['genzo', "Fine. FINE. Bring Ōta and Hana to the platform tonight. I'll… ask. And take this diary page. Sora lost it to me at shogi.", 'Talk'],
     ],
     c4_confront: [
       ['genzo', "Sora's girl. And that little light. Come in, shut the door, Kobo hates a draught.", 'Talk'],
       ['genzo', "Kobo's ready, but the viaduct needs three new beams. That's a job for two villages, not one old man.", 'Talk'],
-      ['genzo', "Fine. Bring Ōta and Hana to the platform tonight. I'll… ask. And take this. Sora lost it to me at shogi.", 'Talk'],
+      ['genzo', "Fine. Bring Ōta and Hana to the platform tonight. I'll… ask. And take this diary page. Sora lost it to me at shogi.", 'Talk'],
     ],
     // unreachable in this story (no choice), kept harmless in case anything still asks for them
     c4_choice_alone: [['genzo', 'Tonight, on the platform. Bring Ōta and Hana. And a bun. For courage.', 'Talk']],
@@ -292,18 +310,26 @@ export const STORY = {
       ['sora', "Mi-chan swings the hammer. I'll bring soup. Nobody argues with the soup.", 'Talk'],
       ['genzo', 'Timber from Kawabe, iron from Takamori, and a girl with a hammer. The viaduct, first thing, Mika.', 'Talk'],
     ],
+    c4_repaired: [
+      ['genzo', 'Solid as the day she was built. Better, maybe.', 'Cheer'],
+      ['genzo', "Tonight the stars fall. Go and light that last lamp. Kobo doesn't cross until all four are burning."],
+    ],
+    c4_lamp: [
+      ['tamo', 'Mika. All four. Forest, Mill, Orchard… Viaduct. Look at them.', 'Happy'],
+      ['tamo', "And that's Kobo's whistle! Everybody is at the station. Run, Mika, or Sora will take the good seat!"],
+    ],
     c4_board: [
       ['genzo', 'All aboard the Star Train! Kawabe AND Takamori! No pushing! Ōta, that means you!', 'Wave'],
-      ['sora', "I'm riding up front with my granddaughter. Seventy-two years, and I've never once been in the cab.", 'Cheer'],
+      ['sora', "I'm riding up front with my granddaughter. All my life I've waved at this train. Never once from the cab.", 'Cheer'],
       ['genzo', "Because you touch everything. Fine. Mika—press {act} as each trackside lantern comes near. Light the way.", 'Talk'],
     ],
     sora_hint_board: [['sora', "Talk to Genzo, dear. He's been polishing that cap since Tuesday.", 'Talk']],
     c4_finale: [
       ['narrator', 'The Star Train rolls in under a falling sky—one star, then ten, then a thousand.'],
-      ['tamo', 'Mika. Sora. The Viaduct Lamp is my lamp. Now the train runs again, it needs its hoshibi. It needs me.', 'Sad'],
+      ['tamo', 'Mika. Sora. The Viaduct Lamp is my lamp. Now the train runs again, it needs its hoshibi. It needs me.', 'Talk'],
       ['mika', "You're going back into the lamp."],
       ['sora', "He was always going to, dear. Lamps need their stars.", 'Talk'],
-      ['tamo', "I'll keep watch. Every night. You keep watch too, okay? That's how lights work. Somebody has to be looking.", 'Happy'],
+      ['tamo', "It's not goodbye. It's goodnight! I'll be right up there. You keep watch too, okay? Somebody has to be looking.", 'Happy'],
       ['sora', "And I'll bring you tea on Sundays. You won't drink it. I'll bring it anyway.", 'Bow'],
       ['mika', "…Okay. I'll keep watch. Goodnight, Tamo."],
     ],
@@ -314,7 +340,7 @@ export const STORY = {
       ['mom', "Surprise! Hello, sweetheart. Oh, look at you. You've grown. You've got snow in your hair.", 'Wave'],
       ['dad', 'We were in the last coach the whole way. Your grandmother made us hide under a blanket. With the bun baskets.', 'Talk'],
       ['mika', 'You were supposed to be away until spring!'],
-      ['sora', 'I wrote to them in autumn. Four pages. Three were about soup. The fourth said: come for star-fall.', 'Cheer'],
+      ['sora', 'I wrote to them in autumn. Four pages. Three were recipes. The fourth said: come for star-fall.', 'Cheer'],
       ['mom', 'Your letters made it sound like the best place in the world. We had to see it for ourselves.', 'Talk'],
       ['dad', 'And meet this Tamo. Where is he?'],
       ['mika', "Up there. In the Viaduct Lamp. He's keeping watch."],
@@ -403,18 +429,30 @@ export const STORY = {
     // after Starfall Night (Mika may be anywhere): no letter, just the wish to go home and tell Grandma
     sora_last_letter: [
       ['mika', "Twelve stars. Every corner of the valley. Grandma's going to say she knew I could."],
-      ['tamo', 'She did know! She told me. On a Sunday. With tea I didn\'t drink.', 'Happy'],
+      ['tamo', 'She did know! She told me so. She tells my lamp everything.', 'Happy'],
       ['mika', "Let's go home and tell her anyway. She'll want every detail. Twice."],
     ],
     sora_last_letter_solo: [
       ['mika', "Twelve stars. Every corner of the valley. Grandma's going to say she knew I could."],
       ['mika', "I'll go home and tell her anyway. She'll want every detail. Twice."],
     ],
+    starfall: [
+      ['narrator', "The last Fallen Star wakes in Mika's hands, and the whole sky answers."],
+      ['narrator', 'Every star Grandma ever wished on comes out at once, and the constellations remember everyone Mika met.'],
+    ],
+    friends_all: [
+      ['tamo', "That's everyone! Every creature in the valley knows your name now."],
+      ['mika', "Grandma will say we've been properly introduced."],
+    ],
+    friends_all_solo: [
+      ['narrator', 'Every creature in the valley has had a proper hello now. The ducks are still talking about it.'],
+      ['mika', "Grandma will say we've been properly introduced."],
+    ],
     gap_blocked: [['tamo', "That's where the old span was taken down. Don't even THINK about jumping."]],
 
     // ---- the treasure hunt (epilogue): things Grandma lost around the valley over sixty years
     hunt_offer: [
-      ['tamo', "Psst. Sora's been leaving bits of her story all over this valley for sixty years. Notes on rooftops, a music box, keepsakes in every home…", 'Talk'],
+      ['tamo', "Psst. Sora's been leaving bits of her story all over this valley for sixty years. Rooftop notes, a music box, keepsakes in every home…", 'Talk'],
       ['tamo', 'She calls them treasures. Want to go treasure hunting too? I can make them twinkle for you!', 'Happy'],
       { id: 'hunt', choice: [
         { text: '"Yes! Let\'s find every treasure!"', value: 'yes' },
@@ -634,7 +672,10 @@ export const STORY = {
   // ---------------------------------------------------------------------------------------------- step overrides
   // Same ids, places, items and mechanics as classic; only words, c4.shed's done rule, and the choice-free scenes change.
   STEPS: {
-    'c3.fox': { objective: "Grandma's list: soup from the forest. Go through the upper orchard gate" },
+    'c3.fox': { objective: "Grandma's list: soup from the forest. Go through the upper orchard gate",
+      enter: [{ chapter: 3 }, { time: 10 }, { season: 'autumn' }, { title: 3 }, { say: 'c3_start' }] },
+    'c3.landslide': { objective: 'Cross the stepping stones and read the bear sign on the old slope' },
+    'c1.rinPlan': { objective: 'Tell Rin what her grandpa said' },
     'p.cottage': { objective: "Walk up the bluff to Grandma's cottage" },
     'p.chest': { objective: "Open Grandma's old chest on the porch", talk: { sora: 'sora_hint_chest' } },
     'p.porch': { objective: "Grandma's first job: walk up to the porch lamp and press {act}", talk: { sora: 'sora_hint_porch' } },

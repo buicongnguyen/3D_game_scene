@@ -2505,7 +2505,7 @@ def build_deer():
 
 
 def farm_eyes(parts, prefix, eyeC, eyeN, r, ew, dark, iris, lid_ms, look=(-.1, .02), iris_k=.8, pupil=.5, tall=1.1,
-              lid_open=22, seg=10, rings=6, lid_res=(5, 8), lash=None, shine=.2, glint2=True):
+              lid_open=22, seg=10, rings=6, lid_res=(5, 8), lash=None, shine=.2, glint2=True, shine_max=None):
     eyes = {}
     for s, sd in ((1, 'L'), (-1, 'R')):
         e = Eye(f'{prefix} eye {sd}', sym(eyeC, s), sym(eyeN, s), r, ew, dark, iris, iris=iris_k, pupil=pupil, tall=tall,
@@ -2515,6 +2515,13 @@ def farm_eyes(parts, prefix, eyeC, eyeN, r, ew, dark, iris, lid_ms, look=(-.1, .
             if not glint2 and p_.name.endswith(' shine 1'):
                 bpy.data.objects.remove(p_, do_unlink=True)
                 continue
+            if shine_max and ' shine ' in p_.name:      # keep the highlight under the lid (r * 1.07) so a closed
+                bpy.context.view_layer.update()         # eye shows no white specks poking through
+                mw, lim = p_.matrix_world, r * shine_max
+                for v_ in p_.data.vertices:
+                    w_ = mw @ v_.co - e.c
+                    if w_.length > lim:
+                        v_.co = mw.inverted() @ (e.c + w_.normalized() * lim)
             parts.append(bind(p_, 'head'))
         for p_ in e.lid_parts:
             parts.append(bind(p_, f'lid_{sd}'))
@@ -3272,9 +3279,9 @@ def build_goat():
 
 
 def build_dog():
-    """Village shiba: a cream-and-orange pup with urajiro white cheeks, muzzle, chest and socks, cream brow dots,
-    pricked triangle ears, big shiny eyes, a fat curled tail, a darker sesame saddle and a red collar with a
-    small brass bell. About 0.85 m nose to rump, 0.5 m at the back. Clips: Idle, Walk (1.1 m/s), Run (4.5 m/s
+    """Village shiba: a cream-and-orange pup with urajiro cream lower cheeks, muzzle, chest and socks,
+    pricked triangle ears (warm cream inside), big shiny eyes, a fat curled tail and a snug red collar ring round
+    the neck with a small round gold tag. About 0.85 m nose to rump, 0.5 m at the back. Clips: Idle, Walk (1.1 m/s), Run (4.5 m/s
     gallop), Sit, Wag (sitting, big tail wag, 2 s, once), Bark (once, hop), Sleep (curled up)."""
     reset()
     fur = mat('Dog fur', '#ea8d3b', rough=.7)
@@ -3290,7 +3297,10 @@ def build_dog():
     parts = []
 
     hk = [(0, -.3, .47, .088, .095), (0, -.35, .488, .122, .113), (0, -.405, .47, .116, .102), (0, -.44, .45, .09, .08)]
-    head = loft('Dog head', hk, fur, n=14, sub=2, dome=(.8, .5))
+    # urajiro: the cream of the muzzle carries on over the lower cheeks as part of the head itself (a clean painted
+    # edge instead of separate fluff balls, which read as teeth or a beard)
+    head = loft('Dog head', hk, [fur, cream], n=14, sub=2, dome=(.8, .5),
+                mat_fn=lambda u, a: 1 if (u > 1.4 and math.sin(a) < -.3) else 0)
     hs = Surface([head])
     muzzle = loft('Dog muzzle', [(0, -.4, .432, .078, .062), (0, -.48, .415, .064, .052), (0, -.53, .405, .054, .046)],
                   [cream, fur], n=12, sub=2, dome=(.3, .45), mat_fn=lambda u, a: 1 if math.sin(a) > .55 else 0)
@@ -3306,11 +3316,11 @@ def build_dog():
              ('neck', (0, -.25, .38), (0, -.31, .45), 'chest'),
              ('head', (0, -.31, .47), (0, -.54, .4), 'neck'),
              ('jaw', (0, -.41, .4), (0, -.52, .38), 'head'),
-             ('bell', (0, -.275, .325), (0, -.275, .285), 'neck')]
+             ('bell', (0, -.33, .345), (0, -.33, .305), 'neck')]      # the collar tag swings from here
     tail = [V(0, .3, .38), V(0, .37, .43), V(0, .385, .52), V(0, .335, .575), V(0, .27, .56)]
     chain_bones(bones, 'tail', tail, 'hips')
     lid_bones(bones, eyeC, eyeN)
-    EARB, EART = V(.058, -.355, .56), V(.085, -.335, .665)
+    EARB, EART = V(.058, -.352, .56), V(.086, -.366, .668)    # pricked and tipped a little forward, like a shiba's
     for s, sd in ((1, 'L'), (-1, 'R')):
         bones.append((f'ear_{sd}', sym(EARB, s), sym(EART, s), 'head'))
     leg_bones(bones, (SH, EL, WR, FT), (HP, KN, HK, HT))
@@ -3322,17 +3332,14 @@ def build_dog():
     parts.append(bind(muzzle, 'head'))
 
     tk = [(0, .29, .36, .075, .095), (0, .22, .35, .128, .148), (0, .07, .32, .152, .162), (0, -.09, .33, .157, .166),
-          (0, -.2, .36, .134, .152), (0, -.265, .41, .1, .11), (0, -.3, .46, .09, .1)]
+          (0, -.2, .36, .134, .152), (0, -.262, .432, .092, .086), (0, -.3, .47, .086, .084)]   # a real neck: the throat
+    # lifts clear of the chest, so the collar has something to sit round
     body = loft('Dog body', tk, [fur, cream], n=14, sub=2, dome=(.8, 0),
                 mat_fn=lambda u, a: 1 if (math.sin(a) < -.55 or (u > 3.9 and math.sin(a) < .2)) else 0)
     parts.append(bind_chain(body, segs, .05))
     surf = Surface([body])
     axz = .33
-    for p_ in conform_patch('Dog saddle', surf, V(0, 0, .62), X, Y, -.2, .24,
-                            lambda t: .2 * math.sin(math.pi * (.06 + .88 * t)) ** .45 + .012, 7, 6, .0015, .003, saddle_m,
-                            center_fn=lambda t: .012 * math.sin(4 * t), ray_axis=lambda q: V(0, q.y, axz)):
-        parts.append(bind_chain(p_, segs, .05))
-    # face: nose, mouth, chin, tongue, cheek fluff, brow dots
+    # face: nose, mouth, chin, tongue (no cheek fluff balls, no brow dots: a red shiba has neither)
     parts.append(bind(sphere('Dog nose', (.03, .022, .022), (0, -.548, .412), nose_m, seg=10, rings=6), 'head'))
     parts.append(bind(tube('Dog mouth', [V(-.052, -.455, .385), V(-.03, -.505, .379), V(-.012, -.528, .39), V(0, -.534, .396), V(.012, -.528, .39), V(.03, -.505, .379),
                                          V(.052, -.455, .385)], .0028, dark, verts=4), 'head'))
@@ -3340,50 +3347,86 @@ def build_dog():
     parts.append(bind(loft('Dog chin', [(0, -.41, .405, .06, .026), (0, -.47, .385, .052, .022), (0, -.515, .38, .036, .018)],
                            cream, n=8, sub=1, dome=(.5, .8)), 'jaw'))
     parts.append(bind(sphere('Dog tongue', (.022, .045, .009), (0, -.47, .39), pink, seg=8, rings=4), 'jaw'))
-    for s in (1, -1):
-        parts.append(bind(puff(f'Dog cheek {s}', V(s * .075, -.4, .43), .042, cream, seg=8, rings=5, lump=.16, seed=7 + s),
-                          'head'))
-        for k, (dx, dy, dz) in enumerate(((.05, .0, -.035), (.07, .03, -.005))):
-            parts.append(bind(hs.tuft(f'Dog cheek tuft {s}{k}', V(s * (.1 + dx * .4), -.4 + dy, .42 + dz), V(s * .5, .9, -.25),
-                                      .065, .026, cream, lift=.3, flat=.55, tip=.2), 'head'))
-        parts.append(bind(hs.spot(f'Dog brow dot {s}', V(s * .1, -.45, .56), (.014, .011), cream, thick=.3,
-                                  dirn=V(-s * .3, 0, -1)), 'head'))
     eyes = farm_eyes(parts, 'Dog', eyeC, eyeN, eyeR, ew, dark, iris, {'L': fur, 'R': fur}, look=(-.08, .02), lid_open=36,
-                     iris_k=1.1, pupil=.78, tall=1.0, shine=.26, glint2=False)
+                     iris_k=1.1, pupil=.78, tall=1.0, shine=.26, glint2=False, shine_max=1.04,
+                     lid_res=(9, 8))       # finer lids: the coarse ones let the pupil and highlight poke through a blink
     # ears: pricked triangles, orange outside, cream inside
     for s, sd in ((1, 'L'), (-1, 'R')):
-        ear = leaf_ear(f'Dog ear {s}', sym(EARB, s), sym(EART, s), .048, .026, [fur, cream], X,
-                       mat_fn=lambda u, a: 1 if (math.sin(a) < -.2 and .25 < u < 1.8) else 0,
-                       shape=((0, 1.0), (.5, .78), (1.0, .08)))
+        # the cream inner side faces FORWARD: with the ear leaning forward the loft's 'up' is +Y (back), so the
+        # front is sin(a) < 0 (when the ear leaned back the frame flipped and the cream ended up behind the head)
+        ear = leaf_ear(f'Dog ear {s}', sym(EARB, s), sym(EART, s), .048, .028, [fur, cream], X,
+                       mat_fn=lambda u, a: 1 if (math.sin(a) < -.45 and .3 < u < 1.6) else 0,
+                       shape=((0, 1.0), (.5, .78), (1.0, .08)), thin=.85)
         parts.append(bind_chain(ear, [('head', sym(EARB, s) - V(0, 0, .03), sym(EARB, s)), (f'ear_{sd}', sym(EARB, s), sym(EART, s))],
                                 .02))
-    parts.append(bind(puff('Dog chest fluff', V(0, -.27, .335), .062, cream, seg=8, rings=5, lump=.18, seed=11), 'chest'))
     # curled tail
     tk2 = [(0, .3, .38, .03, .034), (0, .37, .43, .036, .04), (0, .385, .52, .042, .046), (0, .335, .575, .04, .044),
            (0, .27, .56, .03, .033)]
     tl = loft('Dog tail', tk2, [fur, cream], n=9, sub=2, dome=(0, 1.0), mat_fn=lambda u, a: 1 if u > 3.1 else 0)
     parts.append(bind_chain(tl, chain_segs('tail', tail, ('hips', V(0, .26, .36), tail[0])), .03))
-    # collar and bell
-    for p_ in (band('Dog collar', Surface([body]), V(0, -.275, .41), V(0, -.06, .07), collar, width=.026, grow=.005),):
-        parts.append(bind_chain(p_, segs, .02))
-    parts.append(bind(tube('Dog bell strap', [V(0, -.28, .328), V(0, -.28, .312), V(0, -.28, .3)], .005, collar, verts=5), 'neck'))
-    bell = lathe('Dog bell', [(0, .02), (.016, .018), (.022, .0), (.026, -.02), (.028, -.028), (0, -.028)], brass, seg=12,
-                 loc=V(0, -.28, .278))
+    # collar: a snug, even red band (2 cm) round the neck just behind the head, in a plane square to the neck, with a
+    # small round gold tag under the throat. The ring is a clean ellipse fitted to the neck (three probes: sides,
+    # nape, throat), so its outline is smooth and it cannot sag onto the chest.
+    cs = Surface([body])
+    CC, CN = V(0, -.262, .44), V(0, -.82, .57).normalized()
+    ce2 = CN.cross(X).normalized()
+    nape = cs.ray(CC + ce2 * .4, -ce2, .6)[0]
+    front = cs.ray(CC - ce2 * .4, ce2, .6)[0]
+    cmid = (nape + front) / 2
+    crx = abs(cs.ray(cmid + X * .4, -X, .6)[0].x) + .004
+    crz = (nape - front).length / 2 + .004
+    bm = bmesh.new()
+    ring, CNT = [], 20
+    for j in range(CNT):
+        ang = TAU * j / CNT
+        d = X * math.cos(ang) + ce2 * math.sin(ang)
+        p_ = cmid + X * (math.cos(ang) * crx) + ce2 * (math.sin(ang) * crz)
+        ring.append([bm.verts.new(p_ + d * o + CN * w) for o, w in ((-.008, .01), (.004, .01), (.004, -.01), (-.008, -.01))])
+    for j in range(CNT):
+        r0, r1 = ring[j], ring[(j + 1) % CNT]
+        for k in range(3):
+            bm.faces.new((r0[k], r0[k + 1], r1[k + 1], r1[k]))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+    parts.append(bind_chain(from_bmesh('Dog collar', bm, collar, smooth_angle=50), segs, .02))
+    front = cmid - ce2 * crz
+    print('DOG COLLAR NAPE', tuple(round(v, 4) for v in nape), 'RX', round(crx, 4), 'RZ', round(crz, 4))
+    print('DOG COLLAR FRONT', tuple(round(v, 4) for v in front))
+    bell = cyl('Dog bell', .016, .006, front + V(0, -.009, -.022), brass, verts=12, bevel=.0015, rot=(math.pi / 2 - .3, 0, 0))
     parts.append(bind(bell, 'bell'))
+    parts.append(bind(sphere('Dog tag ring', .004, front + V(0, -.006, -.004), brass, seg=6, rings=4), 'bell'))
 
     # legs: orange with cream socks, cream paws
     def dog_paw(s, sd, kind, bone):
         y, x = (-.19, .095) if kind == 'f' else (.2, .105)
         return paw(f'Dog {kind}paw {s}', V(x * s, y - .006, .026), (.034, .05, .026), cream, toes=3, seg=8, rings=5)
-    fp = [SH + V(0, 0, .07), SH, EL, WR + V(0, .003, .05), WR, WR.lerp(FT, .45)]
-    fr = [(.05, .058), (.05, .057), (.037, .041), (.031, .033), (.031, .032), (.033, .033)]
-    hp = [HP + V(0, 0, .07), HP, KN, HK + V(0, .003, .05), HK, HK.lerp(HT, .45)]
-    hr = [(.06, .078), (.062, .074), (.043, .048), (.033, .036), (.032, .033), (.033, .033)]
+    fp = [SH + V(0, 0, .04), SH, EL, WR + V(0, .003, .05), WR, WR.lerp(FT, .45)]
+    fr = [(.028, .042), (.038, .05), (.036, .041), (.031, .033), (.031, .032), (.033, .033)]   # upper legs sit inside the coat
+    hp = [HP + V(0, 0, .04), HP, KN, HK + V(0, .003, .05), HK, HK.lerp(HT, .45)]
+    hr = [(.028, .048), (.042, .062), (.04, .048), (.033, .036), (.032, .033), (.033, .033)]
     mf = lambda u, a, s: 1 if u > 2.5 else 0
     build_legs(parts, 'Dog', (SH, EL, WR, FT), (HP, KN, HK, HT), fp, fr, hp, hr, [fur, cream], mat_fn=mf, hoof=dog_paw, blend=.03,
                n=7, top=.06)
 
     mesh = make_skin('dog', arm, parts, dict(rays=36, distance=.15, strength=.6, ground=0.0))
+    # warm the inner ear: tint the cream faces of the ears in COLOR_0 (no extra material)
+    ear_g = {mesh.vertex_groups[g].index for g in ('ear_L', 'ear_R')}
+    cream_i = [i for i, m_ in enumerate(mesh.data.materials) if m_ and m_.name == 'Dog cream']
+    col = mesh.data.color_attributes['Color']
+    for poly in mesh.data.polygons:
+        if poly.material_index in cream_i and all(any(g.group in ear_g and g.weight > .3 for g in mesh.data.vertices[v].groups)
+                                                  for v in poly.vertices):
+            for li in poly.loop_indices:
+                c = col.data[li].color
+                col.data[li].color = (c[0], c[1] * .8, c[2] * .62, 1.0)
+    # eyelids are baked while tucked inside the head, so their AO came out nearly black and a closed eye looked like a
+    # brown blemish: give them the open coat's brightness
+    lid_g = {mesh.vertex_groups[g].index for g in ('lid_L', 'lid_R')}
+    fur_i = [i for i, m_ in enumerate(mesh.data.materials) if m_ and m_.name == 'Dog fur']
+    for poly in mesh.data.polygons:
+        if poly.material_index in fur_i and all(any(g.group in lid_g and g.weight > .3 for g in mesh.data.vertices[v].groups)
+                                                for v in poly.vertices):
+            for li in poly.loop_indices:
+                col.data[li].color = (.9, .9, .9, 1.0)
 
     # ---------------------------------------------------------------- animation
     P, T = quad_player(arm)

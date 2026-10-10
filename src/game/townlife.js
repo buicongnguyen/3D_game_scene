@@ -27,7 +27,7 @@ const GRIP = {
   broom: { Sweep: { r: [0.603, -0.457, 3.086] }, any: HANG },
   bucket: { Carry: { r: [-0.19, -0.39, 2.21] }, any: HANG },
   basket: { Carry: { r: [-0.19, -0.39, 2.21] }, any: HANG },
-  hoe: { Hammer: { r: [0, -1.118, -0.548] }, any: HANG },
+  hoe: { Hammer: { r: [0.369, -2.647, 0.143] }, any: HANG },   // blade at a right angle to the handle (art audit)
   letters: { any: { r: [0, 0, 0] } },
   ball: { any: { p: [0.1, 0.03, 0] } },
   'hand-lantern': { any: HANG },
@@ -254,7 +254,8 @@ export class TownLife {
     const kid = it.n.barkKind === 'kid';
     m.position.set(...(o.p || [0, 0, 0]).map(v => v * (kid ? 0.7 : 1)));
     m.rotation.set(...(o.r || [0, 0, 0]));
-    if (kid && name === 'broom') m.scale.setScalar(0.75);   // an adult's broom would go through the floor
+    if (kid && name === 'broom') m.scale.setScalar(0.75);
+    if (kid && name === 'hoe') m.scale.setScalar(0.7);       // or it digs 0.4 m into the ground   // an adult's broom would go through the floor
     m.traverse(x => { if (x.isMesh) x.castShadow = it.n.shadow; });
     grip.add(m);
     it.prop = m;

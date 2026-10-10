@@ -22,7 +22,7 @@ SETUP = {
     'rin': dict(pose='Idle@0.3', az=26, el=2, height=0.62, lift=0.0, bg=('#7fe3d6', '#138a86'), under=1.0),
     'ota': dict(pose='Idle@0.32', az=30, el=4, height=0.54, lift=0.02, bg=('#f2b37a', '#8c4b2a')),
     'hana': dict(pose='Idle@0.32', az=28, el=4, height=0.54, lift=0.02, bg=('#ffb0c6', '#c83e66')),
-    'sora': dict(pose='Idle@0.32', az=28, el=4, height=0.54, lift=0.02, bg=('#d4ec9c', '#4c8a3c')),
+    'sora': dict(pose='Talk@0.0', az=28, el=4, height=0.54, lift=0.02, bg=('#d4ec9c', '#4c8a3c')),
     'tamo': dict(pose='Float@0.25', az=14, el=2, height=0.56, lift=0.0, bg=('#ffe9a0', '#26356e'), light=0.45),
 }
 

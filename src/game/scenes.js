@@ -525,6 +525,7 @@ export class Scenes {
     C?.koiArc?.(V(-1, 0, -40), V(9, 0, -37), 7);
     C?.rainbow?.(V(6, 0, 5), 90, 70);
     await d.sayNow(null, DIALOGUE.c1_party.slice(0, 3));
+    if (storyId() === 'grandma') d.npcs.sora?.anim?.once?.('Cheer', { then: 'Talk' });   // "I'm going to dance": and she does
     stop();
     await this.groupPhoto('c1', party, this.above(-19.4, -36.4, 2.2), this.above(-12.6, -36.4, 1.3));
     const stop2 = this.partyLoop(party);
