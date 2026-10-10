@@ -219,6 +219,37 @@ export class FishingSim {
   }
 }
 
+// ------------------------------------------------------------------------------------------------ the catch on the dock
+// Landed fish lie in two short ranks on the dock planks just west of Mika (close, so a phone's narrow view keeps them),
+// heads to the water, clear of her feet, of Rin's place on the south side and of both edges; at most PILE.cap show,
+// older ones go into the creel that stands by her.
+export const PILE = {
+  cap: 8, x0: 2.84, dx: 0.33, z: [29.44, 30.4], scale: 0.55,  // scale: a fish out of the water against one in it
+  dock: { x0: 0.2, x1: 4.3, z0: 28.75, z1: 31.25, y: 0.72 },  // the planks
+  creel: { x: 3.3, z: 29.08, r: 0.24 },
+  keepOut: [{ x: 3.8, z: 30.1, r: 0.5 }, { x: 3.6, z: 31.2, r: 0.55 }],   // Mika's feet; Rin's place in chapter one
+};
+
+/** Where the i-th fish of the row lies: { x, z, yaw } (yaw: heading of its head; a slight fan, a slight stagger). */
+export function pileSlot(i) {
+  const k = Math.max(0, Math.min(PILE.cap - 1, i));
+  const col = k >> 1, rank = k & 1;        // the two places nearest her fill first
+  return { x: PILE.x0 - col * PILE.dx, z: PILE.z[rank], yaw: Math.PI + (col - 1.5) * 0.06 };
+}
+
+/** Length on the dock (m) of a fish that is `len` m long in the water at school size `size`. */
+export function pileLength(len, size) { return len * size * PILE.scale; }
+
+/**
+ * The row after one more fish is landed (pure). pile: [{ id }] oldest first. Returns { pile, creel: [ids that went
+ * into the creel] }: the newcomer takes the last place, and the oldest move on when the row is full.
+ */
+export function pileAdd(pile, item) {
+  const next = [...pile, item], creel = [];
+  while (next.length > PILE.cap) creel.push(next.shift().id);
+  return { pile: next, creel };
+}
+
 // ------------------------------------------------------------------------------------------------ the school
 // The fish in the fishing water (pure too: the view only draws these records).
 // state: swim (wandering) | suitor (the sim's fish: coming, nibbling, biting, fighting) | flee | gone (waiting to come

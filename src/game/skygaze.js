@@ -238,6 +238,7 @@ export class SkyGaze {
     this.yaw = fd > 0.5 ? Math.atan2(fx, fz) - (this.beside ? (aspect < 1 ? 0.26 : 0.3) : 0) : p.facing;
     const anim = p.anim, clip = anim && ['LookUp', 'Look_Up', 'Gaze'].find(n => anim.has(n));
     this.poseWas = p.pose;
+    p.carry?.want('worn', 'skygaze');        // looking up at the sky, hands free
     if (clip) p.pose = clip;
     else {
       this.head = null;
@@ -512,6 +513,7 @@ export class SkyGaze {
     if (this.head && this.headBase) { if (this.headWrote && this.head.quaternion.equals(this.headWrote)) this.head.quaternion.copy(this.headBase); }
     this.head = this.headBase = this.headWrote = null;
     p.pose = this.poseWas;
+    p.carry?.release('skygaze');
     this.d.actCooldown = 0.45;
     if (this.saveDue) { this.saveDue = false; this.d.save(); }
     if (f.shot !== this.shot) { this.shot = null; return; }  // the camera already belongs to something else

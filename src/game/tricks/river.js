@@ -162,8 +162,7 @@ class RiverRound {
     this.ring = this.add(new THREE.Mesh(new THREE.RingGeometry(0.3, 0.36, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#fff3c4', transparent: true, opacity: 0, depthWrite: false, fog: false })));
     this.ring.renderOrder = 8;
     this.ring.name = 'trick:name-ring';               // (the name marks what dispose() frees)
-    this.wasLantern = this.player.lantern?.visible;
-    if (this.player.lantern) this.player.lantern.visible = true;
+    this.player.carry?.want('held', 'river');          // this is the one trick played with the lantern in her hand
   }
 
   addFish(kind, s, i) {
@@ -316,7 +315,7 @@ class RiverRound {
     for (const f of this.fish) for (const c of f.mats) c.dispose();
     this.eyes?.dispose?.();
     this.tex?.dispose();
-    if (this.player.lantern && this.wasLantern !== undefined) this.player.lantern.visible = this.wasLantern;
+    this.player.carry?.release('river');
   }
 }
 

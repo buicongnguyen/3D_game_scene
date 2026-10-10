@@ -47,6 +47,8 @@ export const HOTSPOTS = {
       lines: {
         2: ['A small photo, fresh flowers, a candle. They still set out a sweet for someone every day.',
           'The bell rings longer than you expect. Grandma said that is the polite part.'],
+        grandma: { 2: ['A photo of a man waving from a half-built boat, fresh flowers, a sweet. "For when you are home," says the note.',
+          'The bell rings longer than you expect. Grandma says that is the polite part.'] },
       },
     },
     {

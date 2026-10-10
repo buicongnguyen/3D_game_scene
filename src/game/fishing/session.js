@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { WATER_Y } from '../../world/layout.js';
 import { FISH } from '../story.js';
 import { tx, N_ } from '../../i18n/i18n.js';
-import { FishingSim, CAST, BIG, makeFish, planCast, sizeFraction } from './sim.js';
+import { FishingSim, CAST, BIG, PILE, makeFish, planCast, sizeFraction, pileSlot, pileAdd } from './sim.js';
 import { FishPond, SPOT, STAND, WATERS, fishingShot } from './pond.js';
 
 const HINTS = {
@@ -47,6 +47,7 @@ body.fishing #touch, body.fishing #prompt, body.fishing #marker, body.fishing #c
   padding: 3px 12px; border-radius: 999px; background: rgba(24, 32, 58, .5); white-space: nowrap; }
 body.touch #fishKeys { display: none; }
 body.touch #fishReel { bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
+body.touch #fishLeave { bottom: calc(40px + env(safe-area-inset-bottom, 0px)); }
 #fishReel { position: absolute; right: calc(26px + env(safe-area-inset-right, 0px)); bottom: calc(74px + env(safe-area-inset-bottom, 0px)); width: 104px; height: 104px; border-radius: 50%;
   pointer-events: auto; touch-action: none; border: 0; padding: 0; cursor: pointer; --t: 0; --c: #58c46c;
   background: conic-gradient(var(--c) calc(var(--t) * 1turn), rgba(255, 255, 255, .45) 0); box-shadow: 0 6px 18px rgba(20, 30, 60, .35); }
@@ -57,7 +58,7 @@ body.touch #fishReel { bottom: calc(28px + env(safe-area-inset-bottom, 0px)); }
 #fishReel.bite b { background: linear-gradient(180deg, #ffb36b, #ff7a3a); color: #fff; animation: fishPulse .45s ease-in-out infinite; }
 #fishReel.strained b { animation: fishShake .12s linear infinite; }
 #fishReel.down b { transform: scale(.94); filter: brightness(1.08); }
-#fishLeave { position: absolute; left: calc(18px + env(safe-area-inset-left, 0px)); bottom: calc(30px + env(safe-area-inset-bottom, 0px)); pointer-events: auto; border: 0; border-radius: 999px;
+#fishLeave { position: absolute; right: calc(150px + env(safe-area-inset-right, 0px)); bottom: calc(86px + env(safe-area-inset-bottom, 0px)); pointer-events: auto; border: 0; border-radius: 999px;
   padding: 11px 18px; min-height: 44px; background: rgba(255, 247, 232, .9); color: #4a3320; font: 800 15px Nunito, sans-serif; cursor: pointer; box-shadow: 0 4px 12px rgba(20, 30, 60, .3); }
 .fishCatch { position: fixed; left: 50%; top: 24%; transform: translateX(-50%); z-index: 14; pointer-events: none; padding: 12px 24px; border-radius: 18px; text-align: center;
   background: rgba(255, 247, 232, .96); color: #4a3320; font: 800 22px Nunito, sans-serif; box-shadow: 0 8px 22px rgba(20, 30, 60, .35); animation: fishCatch 2.6s ease forwards;
@@ -122,6 +123,9 @@ export class FishingSession {
       : (x, z) => z < 28.3 && x > 6.3 && g.world.heightAt(x, z) < WATER_Y - 0.7 && this.pond.school.inside(x, z, 1.18);
     this.aim = this.plan(d.fishAim || { x: a.cx - a.rx * 0.2, z: a.cz + a.rz * 0.3 });
     this.float = { x: this.aim.x, z: this.aim.z, cx: this.aim.x, cz: this.aim.z };
+    // the catch: landed fish lie in a row on the dock; older ones go into the creel (drawn with the school's own batches)
+    this.pile = []; this.outgoing = []; this.creelCount = 0; this.pileId = 0;
+    this.pond.extra = pond => this.drawPile(pond);
     this.build();
     this.bind();
     this.poseBefore = this.player.pose;
@@ -139,7 +143,7 @@ export class FishingSession {
     const g = this.g, scene = g.scene, p = this.player;
     this.own = [];
     const keep = o => { scene.add(o); this.own.push(o); return o; };
-    // the rod, in Mika's right hand (her lantern waits on the dock meanwhile)
+    // the rod, in Mika's right hand (her lantern on her belt meanwhile)
     // It rides on her hand but is aimed in the world (toward the float, lifted by the fight), so it reads from above.
     const rod = g.assets?.clone?.('fishing-rod');
     if (rod && p.grip) {
@@ -151,8 +155,7 @@ export class FishingSession {
       this.tipLocal = tip ? tip.position.clone() : V(0, 0.92, 1.78);
       this.rodRest = Math.atan2(this.tipLocal.y, this.tipLocal.z);     // the model already rises this much
       this.rodLift = 0.9;
-      this.lanternWas = p.lantern?.visible;
-      if (p.lantern) p.lantern.visible = false;
+      p.carry?.want('worn', 'fishing');      // the lantern hangs on her belt while she fishes
     }
     // the float: red over white, with a little mast
     const fl = this.floatObj = keep(new THREE.Group());
@@ -181,6 +184,24 @@ export class FishingSession {
     ring.add(r1, r2);
     ring.traverse(o => { o.name = 'fishing:aim'; });
     ring.visible = false;
+    // the creel by her feet: a small wicker basket, with a count once fish are in it
+    const creel = this.creel = keep(new THREE.Group());
+    const wick = new THREE.MeshBasicMaterial({ color: '#b78748', side: THREE.DoubleSide }), dark = new THREE.MeshBasicMaterial({ color: '#6a4720' }), rim = new THREE.MeshBasicMaterial({ color: '#ddb06a' });
+    this.creelMats = [[wick, '#b78748'], [dark, '#6a4720'], [rim, '#ddb06a']];
+    const cr = PILE.creel.r;
+    creel.add(new THREE.Mesh(new THREE.CylinderGeometry(cr, cr * 0.8, 0.3, 12, 1, true).translate(0, 0.15, 0), wick));
+    creel.add(new THREE.Mesh(new THREE.CircleGeometry(cr * 0.95, 12).rotateX(-Math.PI / 2).translate(0, 0.2, 0), dark));
+    creel.add(new THREE.Mesh(new THREE.TorusGeometry(cr, 0.026, 6, 14).rotateX(Math.PI / 2).translate(0, 0.3, 0), rim));
+    creel.add(new THREE.Mesh(new THREE.TorusGeometry(cr * 0.9, 0.018, 5, 14).rotateX(Math.PI / 2).translate(0, 0.14, 0), dark));
+    creel.position.set(PILE.creel.x, PILE.dock.y, PILE.creel.z);
+    const cc = this.countCanvas = document.createElement('canvas');
+    cc.width = 96; cc.height = 48;
+    this.countTex = new THREE.CanvasTexture(cc);
+    this.countTex.colorSpace = THREE.SRGBColorSpace;
+    const tag = this.countTag = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.countTex, depthWrite: false, fog: false }));
+    tag.position.set(0, 0.62, 0); tag.scale.set(0.62, 0.31, 1); tag.visible = false; tag.renderOrder = 6;
+    creel.add(tag);
+    creel.traverse(o => { o.name = 'fishing:creel'; o.castShadow = false; });
     for (const o of this.own) o.traverse(m => { m.raycast = () => {}; });
 
     addCss();
@@ -225,7 +246,7 @@ export class FishingSession {
     on(this.el.reel, 'pointerup', up);
     on(this.el.reel, 'pointercancel', up);
     on(this.el.reel, 'contextmenu', e => e.preventDefault());
-    on(this.el.leave, 'click', () => { this.leave = true; });
+    on(this.el.leave, 'click', () => { this.quit(); });
     on(window, 'blur', up);
     on(document, 'visibilitychange', up);
   }
@@ -253,7 +274,7 @@ export class FishingSession {
     if (this.done) return;
     const d = this.d, g = this.g, inp = g.input, p = this.player;
     // the story takes the screen (a dialogue, a scene), or Mika is no longer at the spot: reel in and step back
-    if (this.leave || d.busy > 0 || d.ui.dialogueOpen || d.scenes?.active || Math.hypot(p.pos.x - SPOT.x, p.pos.z - SPOT.z) > 4.5) { this.done = true; return; }
+    if (d.busy > 0 || d.ui.dialogueOpen || d.scenes?.active || Math.hypot(p.pos.x - SPOT.x, p.pos.z - SPOT.z) > 4.5) { this.done = true; return; }
     this.t += dt;
     this.msgT = Math.max(0, this.msgT - dt);
     // (the input module reports pad buttons as presses only, so a held pad button is read here: A or X reels)
@@ -263,6 +284,14 @@ export class FishingSession {
     const keyPress = inp.pressed('act') || inp.pressed('jump');
     const held = key || keyPress || this.padHeld || this.btnHeld || this.tapped;     // a tap shorter than a frame still counts
     this.tapped = false;
+    this.updatePile(dt);
+    if (this.phase === 'leaving') {
+      // the catch hops into the creel while the camera comes back down behind her
+      this.pond.update(dt, null, null, null);
+      this.draw(dt);
+      if (this.t > this.leaveFor) this.done = true;
+      return;
+    }
 
     if (this.phase === 'intro') {
       // she steps to the end of the dock while the camera lifts
@@ -386,7 +415,7 @@ export class FishingSession {
       d.fx.splash(_a.set(f.x, 0.05, f.z));
       this.pond.ripple(f.x, f.z, 1.3, 1);
       f.state = 'held';
-      this.leap = { f, t: 0, x0: f.x, z0: f.z, x: f.x, y: -0.2, z: f.z, yaw: f.heading, pitch: 0, roll: 0 };
+      this.leap = { f, t: 0, x0: f.x, z0: f.z, x: f.x, y: -0.2, z: f.z, yaw: f.heading, pitch: 0, roll: 0, slot: pileSlot(this.pile.length), species: fish.species };
     } else this.tell();
     p.pose = null;
   }
@@ -395,15 +424,118 @@ export class FishingSession {
     const L = this.leap, p = this.player;
     L.t += dt;
     const k = Math.min(1, L.t / 0.75);
-    const tx_ = p.pos.x + Math.sin(p.facing) * 0.45, tz_ = p.pos.z + Math.cos(p.facing) * 0.45;
-    L.x = L.x0 + (tx_ - L.x0) * k; L.z = L.z0 + (tz_ - L.z0) * k;
-    L.y = -0.2 + (p.pos.y + 1.15) * k + Math.sin(k * Math.PI) * 2.1;
+    // out of the water, over the edge of the dock, and down on the planks in its place in the row
+    const s = L.slot;
+    L.x = L.x0 + (s.x - L.x0) * k; L.z = L.z0 + (s.z - L.z0) * k;
+    L.y = -0.2 + (PILE.dock.y + 0.3) * k + Math.sin(k * Math.PI) * 2.1;
     L.yaw += dt * 9; L.pitch = Math.sin(k * Math.PI) * 0.9; L.roll += dt * 5;
+    L.k = 1 - (1 - PILE.scale) * k;
+    void p;
     if (k >= 1) {
       this.pond.school.take(L.f, 3);
       this.leap = null;
+      this.lay(L.species, L.f.size, s);
       this.tell();
     }
+  }
+
+  /** A landed fish takes its place in the row; when the row is full the oldest hops into the creel. */
+  lay(species, size, at) {
+    const item = { id: ++this.pileId, species, size, x: at.x, z: at.z, yaw: at.yaw, t: 0, n: -1 };
+    const r = pileAdd(this.pile, item);
+    for (const it of this.pile) if (r.creel.includes(it.id)) this.send(it, 0);
+    this.pile = r.pile;
+  }
+
+  /** Into the creel, after `delay` s. */
+  send(it, delay) { it.ot = -delay; it.sx = it.x; it.sz = it.z; this.outgoing.push(it); }
+
+  updatePile(dt) {
+    const d = this.d, drops = !this.pond.light;
+    for (let i = 0; i < this.pile.length; i++) {
+      const it = this.pile[i], s = pileSlot(i), k = Math.min(1, dt * 6);
+      it.x += (s.x - it.x) * k; it.z += (s.z - it.z) * k; it.yaw += (s.yaw - it.yaw) * k;
+      it.t += dt;
+      // each time it comes down on the wood: a slap, a few drops
+      const n = it.t < 1.5 ? Math.floor(it.t / 0.5) : 3;
+      if (n !== it.n && n < 3) {
+        it.n = n;
+        d.audio.plop?.(0.45 - n * 0.12);
+        if (drops) d.fx.burst(_a.set(it.x, PILE.dock.y + 0.08, it.z), { n: 5 - n, color: [0.85, 0.95, 1], speed: 1.3, size: 0.09, life: 0.4, gravity: 6 });
+      } else it.n = n;
+    }
+    if (!this.outgoing.length) return;
+    for (const it of this.outgoing) {
+      const before = it.ot;
+      it.ot += dt;
+      if (before < 0.34 && it.ot >= 0.34) { this.creelCount++; d.audio.blip?.(1.2 + (this.creelCount % 4) * 0.12); this.drawCount(); }
+    }
+    this.outgoing = this.outgoing.filter(it => it.ot < 0.34);
+  }
+
+  /** The catch, drawn with the school's batches (called by the pond just before it sends them to the GPU). */
+  drawPile(pond) {
+    const Y = PILE.dock.y, t = this.t;
+    for (let i = 0; i < this.pile.length; i++) {
+      const it = this.pile[i];
+      if (it.ot !== undefined) continue;
+      let y = Y + 0.05 + 0.055 * it.size, roll = Math.PI / 2, tail = 0;
+      if (it.t < 1.5) {
+        const a = 1 - it.t / 1.5, ph = it.t / 0.5;
+        y += Math.abs(Math.sin(ph * Math.PI)) * 0.2 * a; roll += Math.sin(ph * Math.PI * 2) * 0.5 * a; tail = Math.sin(it.t * 34) * 1.4 * a;
+      } else {
+        const c = (it.t + i * 0.83) % 4.7;       // now and then it still flops
+        if (c < 0.32) { const f = Math.sin(c / 0.32 * Math.PI); y += f * 0.06; roll += f * 0.16; tail = f; }
+      }
+      pond.put(it.species, it.size, it.x, y, it.z, it.yaw, 0, roll, tail, PILE.scale);
+    }
+    for (const it of this.outgoing) {
+      const k = Math.max(0, it.ot / 0.34), c = PILE.creel;
+      if (k <= 0) { pond.put(it.species, it.size, it.x, Y + 0.05 + 0.055 * it.size, it.z, it.yaw, 0, Math.PI / 2, 0, PILE.scale); continue; }
+      pond.put(it.species, it.size, it.sx + (c.x - it.sx) * k, Y + 0.12 + k * 0.2 + Math.sin(k * Math.PI) * 0.55, it.sz + (c.z - it.sz) * k, it.yaw + k * 5, k * 1.2, Math.PI / 2, Math.sin(t * 30), PILE.scale * (1 - 0.55 * k));
+    }
+  }
+
+  drawCount() {
+    const c = this.countCanvas, x = c.getContext('2d');
+    x.clearRect(0, 0, 96, 48);
+    x.fillStyle = 'rgba(255,247,232,0.95)';
+    x.beginPath(); x.roundRect(4, 4, 88, 40, 20); x.fill();
+    x.fillStyle = '#4a3320'; x.font = '800 28px Nunito, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText(`× ${this.creelCount}`, 48, 26);
+    this.countTex.needsUpdate = true;
+    this.countTag.visible = this.creelCount > 0;
+  }
+
+  /**
+   * Mika packs up (Backspace, Esc, Leave): the row hops into the creel one after another and the camera eases back
+   * behind her; the session is done a moment later. Returns true while it is packing up (the director waits).
+   */
+  quit() {
+    if (this.done) return false;
+    if (this.phase === 'leaving') return true;
+    const g = this.g, p = this.player, f = g.follow;
+    if (this.leap) { this.pond.school.take(this.leap.f, 3); this.lay(this.leap.species, this.leap.f.size, this.leap.slot); this.leap = null; }
+    this.tell();
+    this.sim = null; this.suitor = null;
+    this.pile.forEach((it, i) => this.send(it, i * 0.07));
+    this.pile = [];
+    this.leaveFor = Math.max(0.75, this.outgoing.length * 0.07 + 0.45);
+    this.ui.style.display = 'none';
+    this.pond.setClear(0);
+    p.pose = null;
+    p.gesture('Interact', { lock: true });
+    // where the follow camera will stand: behind her, looking the way she looks
+    f.yaw = p.facing; f.pitch = 0.34;
+    const cy = Math.cos(f.pitch), fwd = _a.set(Math.sin(f.yaw) * cy, -Math.sin(f.pitch), Math.cos(f.yaw) * cy);
+    const pivot = _b.copy(p.pos); pivot.y += 1.45;
+    const pos = pivot.clone().addScaledVector(fwd, -f.zoomTarget), look = pivot.clone().addScaledVector(fwd, 10);
+    f.fovBase = this.fovBefore;
+    f.cutscene({ pos, look }, this.leaveFor);
+    this.shot = f.shot;
+    this.eased = true;
+    this.go('leaving');
+    return true;
   }
 
   /** director.event({ type: 'catch' }) + the name and size on screen. Called once per catch, even when leaving mid-leap. */
@@ -461,6 +593,7 @@ export class FishingSession {
       tip.copy(this.tipLocal).applyMatrix4(this.rod.matrixWorld);
     } else tip.copy(p.pos).add(_c.set(Math.sin(p.facing) * 0.9, 2, Math.cos(p.facing) * 0.9));
     // float
+    if (this.creelMats) for (const [m, c] of this.creelMats) m.color.set(c).multiplyScalar(1 - night * 0.45);
     const out = !!sim && (!sim.over || !!this.leap || (this.phase === 'escaped' && this.t < 0.25));
     obj.visible = out;
     this.line.visible = out;
@@ -558,6 +691,7 @@ export class FishingSession {
       phase: this.phase, title: this.title, bite: sim ? r(sim.biteLeft) : 0,
       tension: sim ? r(sim.tension) : 0, progress: sim ? r(sim.progress) : 0, surging: !!sim?.surging, species: sim?.fish?.species || null, cm: sim?.fish?.cm || null,
       casts: this.casts, caught: this.caught, lost: this.lost, last: this.lastCatch || null,
+      pile: this.pile.map(it => [it.species, r(it.x), r(it.z), r(it.size)]), creel: this.creelCount, creelScreen: this.screenOf(PILE.creel.x, PILE.creel.z),
       aim: [r(this.aim.x), r(this.aim.z)], aimScreen: this.screenOf(this.aim.x, this.aim.z), float: [r(this.float.x), r(this.float.z)],
       fish: this.pond.school.fish.filter(f => f.state !== 'gone').map(f => [f.species, r(f.x), r(f.z), f.state, f.deep ? 1 : 0]),
       frozen: this.frozen, dusk: this.dusk,
@@ -578,13 +712,14 @@ export class FishingSession {
     document.body.classList.remove('fishing');
     for (const o of this.own) {
       g.scene.remove(o);
-      o.traverse(m => { m.geometry?.dispose(); [m.material].flat().forEach(x => x?.dispose?.()); });
+      o.traverse(m => { m.geometry?.dispose(); [m.material].flat().forEach(x => { x?.map?.dispose?.(); x?.dispose?.(); }); });
     }
     this.own = [];
-    if (this.rod) { g.scene.remove(this.rod); this.rod = null; if (p.lantern && this.lanternWas !== undefined) p.lantern.visible = this.lanternWas; }
+    if (this.rod) { g.scene.remove(this.rod); this.rod = null; p.carry?.release('fishing'); }
     this.pond.dispose();
     p.pose = this.poseBefore ?? null;
     g.follow.fovBase = this.fovBefore;
-    if (g.follow.shot === this.shot) { g.follow.clearCutscene(true); g.follow.first = true; }
+    this.pond.extra = null;
+    if (g.follow.shot === this.shot) { g.follow.clearCutscene(!this.eased); g.follow.first = true; }
   }
 }

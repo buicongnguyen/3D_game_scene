@@ -19,6 +19,8 @@ import { stateAt, exploreState } from './fastforward.js';
 import { storyId, useStory } from './stories/index.js';
 import { STOPS } from '../world/railway.js';
 import { buildStars } from './skygaze.js';
+import { VideoLayer, loadManifest, clipFor, canPlay, lowTier } from './video.js';
+import { clipKey } from '../content/video.js';
 
 const ICON = { spring: '🌸', summer: '☀️', autumn: '🍁', winter: '❄️', night: '🌙', year: '✨' };
 const $ = id => document.getElementById(id);
@@ -36,6 +38,9 @@ const CSS = `
 #tourPick .tour-card em{grid-column:2;font:800 12px var(--ui,Nunito,sans-serif);font-style:normal;opacity:.6}
 #tourPick .tour-card.year{background:linear-gradient(180deg,#ffd66b,#f2a33a);border-color:#e08f1e;color:#3b1c05}
 #tourPick .tour-safe{margin:12px 0 0;text-align:center}
+#tourPick .tour-live{display:flex;gap:8px;align-items:center;justify-content:center;margin:10px 0 0;font:700 14px var(--ui,Nunito,sans-serif);color:var(--ink,#3b2a1c);min-height:32px;cursor:pointer}
+#tourPick .tour-live input{width:20px;height:20px;accent-color:#f2a33a}
+#tourPick .tour-live.hidden{display:none}
 #tourPick .tour-busy{margin:8px 0 0;text-align:center;font:700 14px var(--ui,Nunito,sans-serif);color:#b3401c}
 #tourPick .tour-busy:empty{display:none}
 #tourView{position:fixed;inset:0;z-index:16;pointer-events:none;color:#fff;font-family:var(--ui,Nunito,sans-serif)}
@@ -183,7 +188,8 @@ export class SceneTour {
     this.data = { TOURS, TOUR_PLACES };     // the live tables (the browser tests and look-dev may adjust a shot)
     this.buildDom();
     this.onKey = this.onKey.bind(this);
-    this.onHide = () => { if (document.hidden && this.active && !this.done) { this.paused = true; this.syncUi(); } };
+    this.onHide = () => { if (document.hidden && this.active && !this.done) { this.paused = true; if (this.mode === 'video') this.layer.el.pause(); this.syncUi(); } };
+    this.onSize = () => { if (this.active && this.mode === 'video' && this.clip && this.clip.key !== clipKey(`tour-${this.tour.id}`, innerWidth, innerHeight)) this.vLoad(this.k, this.t); };
     this.frame = dt => this.update(dt);
     this.offLang = onLangChange(() => this.text());
   }
@@ -199,9 +205,11 @@ export class SceneTour {
     pick.className = 'overlay hidden';
     pick.innerHTML = `<div class="book small"><header><h2></h2><button class="close" type="button" aria-label="Close">✕</button></header>
       <p class="tour-intro"></p><div class="tour-cards">${[...TOURS, YEAR].map(t => `<button type="button" class="tour-card${t.id === 'year' ? ' year' : ''}" data-tour="${t.id}"><span class="ic" aria-hidden="true">${ICON[t.id]}</span><b></b><small></small><em></em></button>`).join('')}</div>
+      <label class="tour-live hidden"><input type="checkbox" id="tourLive"> <span></span></label>
       <p class="note tour-safe"></p><p class="tour-busy" role="status"></p></div>`;
     document.body.appendChild(pick);
     pick.querySelector('.close').addEventListener('click', () => this.ui.closeOverlay());
+    pick.querySelector('#tourLive').addEventListener('change', e => { try { localStorage.setItem('starline-opt-tourLive', JSON.stringify(e.target.checked)); } catch { /* private mode */ } });
     pick.addEventListener('click', e => { if (e.target === pick) this.ui.closeOverlay(); });
     pick.querySelectorAll('.tour-card').forEach(b => b.addEventListener('click', () => this.start(b.dataset.tour)));
     const view = document.createElement('section');
@@ -235,6 +243,7 @@ export class SceneTour {
     pick.querySelector('h2').textContent = tx(TEXT.title);
     pick.querySelector('.tour-intro').textContent = tx(TEXT.intro);
     pick.querySelector('.tour-safe').textContent = tx(TEXT.safe);
+    pick.querySelector('.tour-live span').textContent = tx(TEXT.live);
     pick.querySelectorAll('.tour-card').forEach(b => {
       const t = b.dataset.tour === 'year' ? YEAR : TOUR[b.dataset.tour];
       const secs = t === YEAR ? TOURS.reduce((a, x) => a + timeline(x).length, 0) : timeline(t).length;
@@ -267,22 +276,169 @@ export class SceneTour {
     const no = this.blocked();
     this.el.pick.querySelector('.tour-busy').textContent = no ? tx(TEXT.busy) : '';
     this.el.pick.querySelectorAll('.tour-card').forEach(b => { b.disabled = !!no; });
+    // recorded video or live 3D: phones default to video, everything else to live; the box remembers the choice.
+    // It shows only when there are clips this browser can play.
+    const box = this.el.pick.querySelector('#tourLive');
+    let live = !lowTier(this.g);
+    try { const v = JSON.parse(localStorage.getItem('starline-opt-tourLive')); if (typeof v === 'boolean') live = v; } catch { /* ignore */ }
+    box.checked = live;
+    if (this.g.params.has('live') || !canPlay()) this.videos = false;
+    else if (this.videos === undefined) loadManifest().then(m => { this.videos = !!m && Object.values(m.clips).some(c => c.tour); box.parentNode.classList.toggle('hidden', !this.videos); });
     this.ui.open('tourPick');
     if (!no) this.el.pick.querySelector('.tour-card').focus({ preventScroll: true });
   }
 
   // ---------------------------------------------------------------- start / stop
   /** Start a tour: one of TOURS' ids, or 'year' for all five in order. Returns false when it cannot start. */
-  start(id = 'year') {
+  start(id = 'year', { live } = {}) {
     if (this.active) return false;
     if (this.blocked()) { this.openPicker(); return false; }
     if (id !== 'year' && !TOUR[id]) return false;
     this.year = id === 'year';
     this.order = this.year ? TOURS.slice() : [TOUR[id]];
+    if (live === undefined) live = !this.videos || this.el.pick.querySelector('#tourLive').checked;
+    if (!live) { this.startVideo(); return true; }
+    this.mode = 'live';
     this.enter();
     this.setTour(0);
-    this.cover(false, 600);
+    this.uncover(600);
     return true;
+  }
+
+  // ---------------------------------------------------------------- the tour as recorded video (phones)
+  // The same picker, captions and toolbar, driven by a clip's clock instead of the flight. Nothing of the valley is
+  // touched: no season change, no throwaway story, the game stays paused where it was, and the renderer is held.
+  /** Borrow only the screen, then play the first clip; a clip that cannot play hands over to the live tour. */
+  async startVideo() {
+    const g = this.g, d = this.d, ui = this.ui;
+    const hidden = id => $(id).classList.contains('hidden');
+    this.mode = 'video';
+    this.fromGame = !!d.quest;
+    this.vsaved = { hud: hidden('hud'), touch: hidden('touch'), title: hidden('title'), tourLock: d.tourLock };
+    this.layer = VideoLayer.of(g);
+    g.titleLoop?.suspend();
+    ui.closeAll();
+    this.el.pick.classList.add('hidden');
+    $('title').classList.add('hidden');
+    ui.showHud(false);
+    g.input.releaseAll();
+    this.cover(true, 0);
+    this.el.view.classList.remove('hidden');
+    this.el.view.querySelector('.tour-bar').style.display = '';
+    document.body.classList.add('tour-on');
+    d.tourLock = true;                                  // no save while the tour has the screen (the game is paused anyway)
+    g.togglePause = () => {};
+    ui.openJournal = () => {};
+    addEventListener('keydown', this.onKey, true);
+    addEventListener('resize', this.onSize);
+    document.addEventListener('visibilitychange', this.onHide);
+    this.onVideoError = () => { if (this.active && this.mode === 'video') this.vFallback(); };
+    this.layer.el.addEventListener('error', this.onVideoError);
+    this.active = true; this.paused = false; this.done = false; this.pose = null; this.t = 0;
+    await this.vLoad(0);
+  }
+
+  /** Load tour k's clip for this screen and play it from `at` seconds. */
+  async vLoad(k, at = 0) {
+    const token = (this.vtoken = (this.vtoken || 0) + 1);
+    this.k = k;
+    this.tour = this.order[k];
+    this.done = false; this.fading = false; this.stopI = -1; this.capKey = null; this.stuck = 0;
+    this.el.cap.classList.add('off');
+    this.t = at;
+    this.syncUi();
+    const clip = await clipFor(`tour-${this.tour.id}`);
+    if (!this.active || this.mode !== 'video' || token !== this.vtoken) return;
+    if (!clip?.stops) return this.vFallback();
+    this.clip = clip;
+    this.tl = { length: clip.duration };
+    const ok = await this.layer.show(clip, { owner: this, at, autoplay: !this.paused });
+    if (!this.active || this.mode !== 'video' || token !== this.vtoken) return;
+    if (!ok) return this.vFallback();
+    this.uncover(450);
+    cancelAnimationFrame(this.vraf);
+    this.vTick();
+  }
+
+  /** Every frame while a clip shows: where the video is decides the stop, the caption and the bar. */
+  vTick() {
+    if (!this.active || this.mode !== 'video') return;
+    this.vraf = requestAnimationFrame(() => this.vTick());
+    const v = this.layer.el, c = this.clip;
+    if (!c || this.layer.owner !== this) return;
+    const t = Math.min(v.currentTime, c.duration);
+    // a clip that stops coming (the network went away) hands over to the live tour
+    this.stuck = !this.paused && !this.done && !v.seeking && t === this.t ? (this.stuck || 0) + 1 : 0;
+    if (this.stuck > 60 * 10) return this.vFallback();
+    this.t = t;
+    let i = 0;
+    for (let j = 1; j < c.stops.length; j++) if (t >= c.stops[j].from - 1e-3) i = j;
+    const s = c.stops[i], dwell = t >= s.t - 1e-3;
+    this.pose = { i, kind: dwell ? 'dwell' : 'travel', f: dwell ? 1 : (t - s.from) / Math.max(0.01, s.t - s.from), hour: this.tour.stops[i].hour, pos: null, look: null };
+    if (i !== this.stopI) { this.stopI = i; this.syncUi(); }
+    this.caption(dwell || this.pose.f > 0.55);
+    const k = t / c.duration;
+    if (Math.abs(k - (this.barK ?? -1)) > 0.002) { this.barK = k; this.el.bar.style.width = `${(k * 100).toFixed(1)}%`; }
+    const next = this.year && this.k < this.order.length - 1;
+    if (v.ended || t >= c.duration - 0.04) {
+      if (next) { this.cover(true, 0); this.vLoad(this.k + 1); }
+      else if (!this.done) { this.done = true; this.paused = true; this.syncUi(); }
+    } else if (next && !this.fading && !this.paused && t > c.duration - 0.42) { this.fading = true; this.cover(true, 400); }
+  }
+
+  /** The clip cannot play: the same tour, live. */
+  vFallback() {
+    if (!this.active || this.mode !== 'video') return;
+    const id = this.year ? 'year' : this.tour.id, k = this.k;
+    console.warn('[tour] video is not available here: flying live instead');
+    this.closeVideo(true);
+    this.videos = false;
+    this.el.pick.querySelector('.tour-live').classList.add('hidden');
+    if (this.start(id, { live: true }) && this.year && k > 0) this.setTour(k);
+  }
+
+  /** Give the screen back. quiet: the live tour takes over at once, so no menu is reopened. */
+  closeVideo(quiet = false) {
+    if (!this.active || this.mode !== 'video') return;
+    const g = this.g, d = this.d, ui = this.ui, s = this.vsaved;
+    this.active = false;
+    this.vtoken = (this.vtoken || 0) + 1;
+    cancelAnimationFrame(this.vraf);
+    removeEventListener('keydown', this.onKey, true);
+    removeEventListener('resize', this.onSize);
+    document.removeEventListener('visibilitychange', this.onHide);
+    this.layer.el.removeEventListener('error', this.onVideoError);
+    this.cover(true, 0);
+    this.layer.hide(this);
+    this.clip = null; this.pose = null;
+    delete g.togglePause; delete ui.openJournal;
+    d.tourLock = s.tourLock;
+    document.body.classList.remove('tour-on');
+    $('hud').classList.toggle('hidden', s.hud);
+    $('touch').classList.toggle('hidden', s.touch);
+    $('title').classList.toggle('hidden', s.title);
+    g.input.releaseAll();
+    this.vsaved = null;
+    this.mode = null;
+    this.el.cap.classList.add('off');
+    g.titleLoop?.resume();
+    if (quiet) return;
+    if (this.fromGame) { ui.open('pause'); $('btnResume')?.focus({ preventScroll: true }); } else $('btnTitleTour')?.focus({ preventScroll: true });
+    this.el.view.querySelector('.tour-bar').style.display = 'none';
+    this.cover(false, 450);
+    clearTimeout(this.hideT);
+    this.hideT = setTimeout(() => { if (!this.active) this.el.view.classList.add('hidden'); this.el.view.querySelector('.tour-bar').style.display = ''; }, 480);
+  }
+
+  /** When a stop's rest begins, on whichever clock is running (the flight's or the clip's). */
+  stopT(i) { return this.mode === 'video' ? this.clip?.stops[i]?.t ?? 0 : stopTime(this.tl, i); }
+
+  /** Lift the dark cover once a few frames of the new view have been drawn (their hitches stay out of sight). */
+  uncover(ms = 450) {
+    let n = 3;
+    const token = (this.coverToken = (this.coverToken || 0) + 1);
+    const f = () => { if (token !== this.coverToken) return; if (n-- > 0) requestAnimationFrame(f); else this.cover(false, ms); };
+    f();
   }
 
   enter() {
@@ -312,11 +468,13 @@ export class SceneTour {
       tamo: { hidden: d.tamo.hidden, visible: d.tamo.root.visible, pos: d.tamo.pos.clone(), light: d.tamo.light.intensity },
       lamps: [...S.lamps.entries()].map(([id, L]) => [id, L.target, L.lit]),
       rail: { repaired: !!R.repaired, repair: R.repair?.visible, scaffold: R.scaffold?.visible, beams: (R.beams || []).map(b => b.visible), s: T.s, v: T.v, target: T.target, cruise: T.cruise, dir: T.dir },
-      decor: g.celebrate?.decor?.level ?? 0, meteors: g.fx.meteorOn,
+      decor: g.celebrate?.decor?.level ?? 0, meteors: g.fx.meteorOn, lampStyle: S.lampStyle,
       pickups: [...d.pickups.values()].map(pk => [pk, pk.obj.visible]), kiteStand: d.kiteStand?.obj.visible,
       people: [...(d.returning || []).map(r => r[0]), 'sora'].filter(id => d.npcs[id]).map(id => [id, d.npcs[id].storyVisible]),
     };
     // 3) borrow the game
+    g.titleLoop?.suspend();
+    g.renderer.setFloor?.(2);                         // the Low tier flies a wide view two steps down its ladder from the start
     ui.closeAll();
     this.el.pick.classList.add('hidden');
     $('title').classList.add('hidden');
@@ -325,6 +483,7 @@ export class SceneTour {
     g.input.releaseAll();
     this.cover(true, 0);
     this.el.view.classList.remove('hidden');
+    this.el.view.querySelector('.tour-bar').style.display = '';
     document.body.classList.add('tour-on');
     // the throwaway story, and nothing that could reach the real one or the save files
     d.tourLock = true;
@@ -341,6 +500,7 @@ export class SceneTour {
     p.root.visible = false;
     p.update = () => {};
     // the valley as it is after the story: lamps lit, the viaduct whole, everybody home
+    S.setLampStyle?.(story === 'grandma' ? 'electric' : 'flame');   // the lamp towers of the player's story (electric bulbs in Grandma's)
     for (const L of S.lamps.values()) { L.target = 1; L.lit = 1; }
     R.setRepaired(true);
     for (const [id] of this.saved.people) if (id !== 'sora' || story === 'grandma') d.npcs[id].setVisible(true);
@@ -356,6 +516,7 @@ export class SceneTour {
   /** Leave the tour and give everything back. Synchronous: the game is whole again when this returns. */
   close() {
     if (!this.active) return;
+    if (this.mode === 'video') return this.closeVideo();
     const g = this.g, d = this.d, ui = this.ui, p = g.player, S = g.structures, R = g.railway, T = R.train, s = this.saved;
     this.active = false;
     removeEventListener('keydown', this.onKey, true);
@@ -392,6 +553,7 @@ export class SceneTour {
     p.root.visible = s.player.visible;
     d.tamo.hidden = s.tamo.hidden; d.tamo.root.visible = s.tamo.visible; d.tamo.pos.copy(s.tamo.pos); d.tamo.light.intensity = s.tamo.light;
     // the valley
+    if (S.lampStyle !== (s.lampStyle || 'flame')) S.setLampStyle?.(s.lampStyle || 'flame');
     for (const [id, target, lit] of s.lamps) { const L = S.lamps.get(id); L.target = target; L.lit = lit; }
     R.setRepaired(s.rail.repaired, s.rail.beams.filter(Boolean).length);
     if (R.repair) R.repair.visible = s.rail.repair;
@@ -409,6 +571,9 @@ export class SceneTour {
     g.camera.position.copy(s.cam.pos); g.camera.quaternion.copy(s.cam.quat); g.camera.fov = s.cam.fov; g.camera.near = s.cam.near;
     g.camera.updateProjectionMatrix();
     // the screen
+    g.renderer.setFloor?.(0);
+    g.titleLoop?.resume();
+    this.mode = null;
     document.body.classList.remove('tour-on');
     $('hud').classList.toggle('hidden', s.hud);
     $('touch').classList.toggle('hidden', s.touch);
@@ -451,6 +616,7 @@ export class SceneTour {
 
   // ---------------------------------------------------------------- flight
   cover(on, ms = 400) {
+    this.coverToken = (this.coverToken || 0) + 1;      // a pending uncover() is overtaken
     const f = this.el.fade;
     f.style.transitionDuration = `${ms}ms`;
     if (!ms) void f.offsetWidth;
@@ -459,6 +625,7 @@ export class SceneTour {
 
   /** Switch to tour k of the order (its season, weather and dressing), at its first stop or at time `t`. */
   setTour(k, t = 0) {
+    if (this.mode === 'video') return void this.vLoad(k, t);
     const g = this.g;
     this.k = k;
     this.tour = this.order[k];
@@ -478,13 +645,13 @@ export class SceneTour {
 
   /** Advance the flight by dt seconds (the game's frame calls this; tests may step it, `force` also while paused). */
   update(dt, force = false) {
-    if (!this.active) return;
+    if (!this.active || this.mode === 'video') return;
     const g = this.g;
     if ((this.paused && !force) || this.done) dt = 0;
     this.t += dt;
     const next = this.year && this.k < this.order.length - 1;
     if (this.t >= this.tl.length) {
-      if (next) { this.setTour(this.k + 1); this.cover(false, 500); return; }
+      if (next) { this.setTour(this.k + 1); this.uncover(500); return; }
       this.t = this.tl.length;
       if (!this.done) { this.done = true; this.paused = true; this.syncUi(); }
     } else if (next && !this.fading && this.t > this.tl.length - 0.42) { this.fading = true; this.cover(true, 400); }
@@ -583,6 +750,7 @@ export class SceneTour {
     if (!this.active) return;
     if (this.done) return this.replay();
     this.paused = !this.paused;
+    if (this.mode === 'video') { const v = this.layer.el; if (this.paused) v.pause(); else v.play().catch(() => this.vFallback()); }
     this.syncUi();
   }
 
@@ -590,16 +758,18 @@ export class SceneTour {
   cut(fn) {
     this.cover(true, 0);
     fn();
-    this.cover(false, 450);
+    this.uncover(450);
   }
 
   goStop(i) {
     if (!this.active) return;
     this.cut(() => {
-      this.t = stopTime(this.tl, Math.max(0, Math.min(this.tour.stops.length - 1, i)));
+      this.t = this.stopT(Math.max(0, Math.min(this.tour.stops.length - 1, i)));
+      const again = this.done;
       if (this.done) { this.done = false; this.paused = false; }
       this.fading = false;
       this.stopI = -1; this.capKey = null;
+      if (this.mode === 'video') { const v = this.layer.el; v.currentTime = this.t + 0.02; if (again) v.play().catch(() => this.vFallback()); }
       this.update(0, true);
       this.syncUi();
     });
@@ -616,7 +786,7 @@ export class SceneTour {
     if (!this.active) return;
     const P = this.pose, i = P?.i ?? 0;
     // early in a stop "previous" means the stop before; later it means this stop again
-    const here = P?.kind === 'dwell' && this.t - stopTime(this.tl, i) > 1.5 && !this.done;
+    const here = P?.kind === 'dwell' && this.t - this.stopT(i) > 1.5 && !this.done;
     if (here || P?.kind === 'travel') return this.goStop(P.kind === 'travel' ? i - 1 : i);
     if (i > 0) return this.goStop(i - 1);
     if (this.year && this.k > 0) this.cut(() => { this.paused = false; this.setTour(this.k - 1); });
@@ -657,7 +827,7 @@ export class SceneTour {
   /** For tests and look-dev. */
   debug() {
     const P = this.pose;
-    return { active: this.active, paused: this.paused, done: this.done, tour: this.tour?.id || null, year: !!this.year, t: this.t, length: this.tl?.length || 0, stop: P?.i ?? -1, kind: P?.kind || null,
+    return { mode: this.mode || null, held: !!this.g.renderer.hold, active: this.active, paused: this.paused, done: this.done, tour: this.tour?.id || null, year: !!this.year, t: this.t, length: this.tl?.length || 0, stop: P?.i ?? -1, kind: P?.kind || null,
       place: this.tour ? this.tour.stops[P?.i ?? 0]?.place : null, hour: P?.hour ?? null, pos: P?.pos || null, look: P?.look || null, fish: !!this.fish?.mesh.visible, fromGame: !!this.fromGame };
   }
 }

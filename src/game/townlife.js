@@ -17,7 +17,7 @@ import { tx, N_ } from '../i18n/i18n.js';
 import { inStory, forStory, storyId } from './stories/index.js';
 
 /** A neighbour as the chosen story tells them: Grandma-story stage lines and chatter where they differ. */
-const storyPerson = p => (storyId() !== 'grandma' ? p : { ...p, story: (p.story || []).map(forStory), chatter: p.chatterGrandma || p.chatter });
+const storyPerson = p => (storyId() !== 'grandma' ? p : { ...p, story: (p.story || []).map(forStory), chatter: p.chatterGrandma || p.chatter, role: p.roleGrandma || p.role });
 
 const PERSON = new Map(PEOPLE.map(p => [p.id, p]));
 // how a prop sits in the right hand (grip_R: +Y along the fingers, +X the palm normal), per clip, from the review

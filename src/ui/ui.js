@@ -96,8 +96,10 @@ export class UI {
     const any = slots.some(s => s.data);
     $('btnContinue').classList.toggle('hidden', !any);
     this.setTitleHint();
+    // phones show the valley behind the menu as a short looping clip instead of drawing it (game/video.js)
+    if (this.game.renderer.qualityName === 'low' && !this.game.params.has('live')) import('../game/video.js').then(m => m.TitleLoop.of(this.game).start()).catch(e => console.warn('[video] title', e));
     return new Promise(resolve => {
-      const done = v => { $('title').classList.add('hidden'); cleanup(); this.audio?.click(); resolve(v); };
+      const done = v => { $('title').classList.add('hidden'); this.game.titleLoop?.stop(); cleanup(); this.audio?.click(); resolve(v); };
       const onNew = async () => {
         const slot = await this.pickSlot('new', slots, last);
         if (!slot) return;
@@ -351,7 +353,9 @@ export class UI {
 
   /** Narration across the top of the screen; captions queue, never overlap. Resolves when shown and gone. */
   caption(text, ms = 4600) {
+    const gen = this.captionGen | 0;
     const show = async () => {
+      if (gen !== (this.captionGen | 0)) return;      // dropped by clearCaptions()
       const el = $('captionText');
       el.textContent = tx(text);
       el.classList.add('show');
@@ -362,6 +366,9 @@ export class UI {
     this.captionChain = (this.captionChain || Promise.resolve()).then(show);
     return this.captionChain;
   }
+
+  /** Drop the captions still waiting their turn and take the one showing away (a skipped cinematic). */
+  clearCaptions() { this.captionGen = (this.captionGen | 0) + 1; $('captionText').classList.remove('show'); }
 
   card(chapter) {
     const c = CHAPTERS[chapter];
@@ -770,12 +777,17 @@ export class UI {
   controlsHTML() {
     const row = (keys, text) => `<div class="step">${keys.map(k => `<kbd>${esc(k)}</kbd>`).join(' ')} ${esc(tx(text))}</div>`;
     const head = text => `<h3 class="controls-h">${esc(tx(text))}</h3>`;
+    // the Kite workshop (game/workshop): where it is, and what its motors add once they are fitted
+    const motors = !!this.game.director?.q?.state?.workshop?.built;
+    const hover = N_('Let go to hover. The battery recharges on the ground, fastest by a lit Star Lamp or the mill');
+    const bench = N_('Kite workshop: fit motors to the kite at its cradle in the cottage');
     if (this.touch) {
       return [head(N_('Walking')), row([], N_('Left thumb: move. Drag the right side: look.')), row([tx('Jump')], N_('Jump, or swim up in the water')),
         row([tx('Dive')], N_('Dive while swimming')), row([tx('Jump'), tx('Jump')], N_('Run and tap Jump twice for a ×4 speed leap (four taps: ×16)')),
         head(N_('Doing things')), row([tx('Do it')], N_('Talk, pick up, light lamps — anything nearby')), row(['✎'], N_('Journal')), row(['☰'], N_('Pause')),
         head(N_('Flying the Star Kite')), row([tx('Kite')], N_('Take off, or land the kite')), row([], N_('Left thumb: steer')),
         row([tx('Jump')], N_('Climb (hold)')), row([tx('Dive')], N_('Descend (hold)')),
+        ...(motors ? [row([tx('Boost')], N_('With motors: boost while the battery lasts (hold)')), row([], hover)] : [row([], bench)]),
         head(N_('Countryside tricks')), row([tx('Do it')], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips'))].join('');
     }
     return [head(N_('Walking')), row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')),
@@ -785,6 +797,7 @@ export class UI {
       row(['J'], N_('Journal')), row(['Esc'], N_('Pause')),
       head(N_('Flying the Star Kite')), row(['G'], N_('Take off, or land the kite')), row(['W', 'A', 'S', 'D'], N_('Steer')),
       row(['Space'], N_('Climb (hold)')), row(['C', 'N'], N_('Descend (hold)')), row(['Shift'], N_('Fly faster')),
+      ...(motors ? [row(['Shift'], N_('With motors: a stronger boost while the battery lasts')), row([], hover)] : [row([], bench)]),
       head(N_('Countryside tricks')), row(['E'], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips')),
       row(['Backspace'], N_('Stop a trick early')),
       row(['🎮'], N_('Gamepad supported'))].join('');

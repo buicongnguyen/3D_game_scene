@@ -72,6 +72,7 @@ export class StarKite {
     this.swing = { p: 0, pv: 0, r: 0, rv: 0 };
     this.camIdle = 0;
     this.noFly = null;                     // optional (x, z) => true where the kite must not go
+    this.assist = null;                    // the workshop's motors (game/workshop): { numbers(), use(dt, boost, climb, hover) }, or null
     this.offset = new THREE.Vector3(0, -KITE.hang, 0);
     this.expect = new THREE.Vector3();
     this.palm = new THREE.Vector3(0, KITE.hang, KITE.fwd);
@@ -278,14 +279,14 @@ export class StarKite {
     this.heading = p.facing;
     this.liftFrom = this.pos.y;
     this.saved = {
-      pivotY: p.pivot.position.y, model: p.model.position.clone(), lantern: p.lantern ? p.lantern.visible : null,
+      pivotY: p.pivot.position.y, model: p.model.position.clone(),
     };
     this.pinW = 0;
     this.offset.set(0, -KITE.hang, -KITE.fwd);
     this.swing.p = 0; this.swing.pv = 0; this.swing.r = 0; this.swing.rv = 0;
     this.placeAnchor();
     p.mount(this.anchor, this.offset, 0);
-    if (p.lantern) p.lantern.visible = false;
+    p.carry?.want('worn', 'kite');           // both hands on the handle: the lantern rides on her belt
     this.holdClip(0.3);
     this.state = 'lift';
     this.stateT = 0;
@@ -295,7 +296,7 @@ export class StarKite {
   }
 
   lift(dt) {
-    const u = Math.min(1, this.stateT / 1.3);
+    const u = Math.min(1, this.stateT / (this.assist ? this.assist.numbers().lift : 1.3));
     const y = this.liftFrom + KITE.lift * ease(u);
     this.vel.set(0, (y - this.pos.y) / Math.max(dt, 1e-4), 0);
     this.pos.y = y;
@@ -314,12 +315,16 @@ export class StarKite {
     const dl = Math.hypot(dx, dz);
     if (dl > 1e-4) { dx /= dl; dz /= dl; }
     const boosting = inp.held('sprint') && mag > 0.2;
+    // with the workshop's motors: a stronger boost and climb and a brisk stop into a hover while the battery lasts.
+    // Without them (or with the battery flat) N is the kite's own numbers, and it flies exactly as it always has.
+    const A = this.assist, N = A ? A.numbers() : KITE, climbing = inp.held('jump');
     this.boostK += ((boosting ? 1 : 0) - this.boostK) * damp(boosting ? 2.2 : 1.3, dt);
-    const top = mag * lerp(KITE.cruise, KITE.boost, this.boostK);
-    const k = damp(mag > 0.05 ? KITE.accel * (1 + this.boostK * 0.4) : KITE.brake, dt);
+    const top = mag * lerp(KITE.cruise, N.boost, this.boostK);
+    const k = damp(mag > 0.05 ? N.accel * (1 + this.boostK * 0.4) : N.brake, dt);
     this.vel.x += (dx * top - this.vel.x) * k;
     this.vel.z += (dz * top - this.vel.z) * k;
-    const vy = inp.held('jump') ? KITE.climb : inp.held('dive') ? -KITE.dive : 0;
+    const vy = climbing ? N.climb : inp.held('dive') ? -KITE.dive : 0;
+    if (A) A.use(dt, boosting ? 1 : 0, climbing, mag <= 0.05 && !climbing && !inp.held('dive'));
     this.vel.y += (vy - this.vel.y) * damp(2.6, dt);
     this.move(dt, false);
     const hs = this.speed;
@@ -390,8 +395,8 @@ export class StarKite {
     if (s) {
       p.pivot.position.y = s.pivotY;
       p.model.position.copy(s.model);
-      if (p.lantern && s.lantern !== null) p.lantern.visible = !p.swimming; // not the saved value: a kite summoned from the water saved "hidden"
     }
+    p.carry?.release('kite');
     p.pivot.rotation.set(0, 0, 0);
     this.saved = null;
     if (p.anim?.oneShot?.kite) p.anim.cancelOneShot();

@@ -68,7 +68,7 @@ export function collect() {
   for (const b of BARKS) add(b.text, `bark by ${b.who === 'any' ? 'any villager' : b.who === 'kid' ? 'a child' : CAST[b.who]?.name || b.who}`);
   // Town Life: the named neighbours, their stories, the shops and the conversations Mika overhears
   for (const p of PEOPLE) {
-    add(p.name, "a neighbour's name"); add(p.role, `what ${p.name} does (journal)`);
+    add(p.name, "a neighbour's name"); add(p.role, `what ${p.name} does (journal)`); add(p.roleGrandma, `what ${p.name} does (journal, Grandma story)`);
     for (const s0 of p.story || []) for (const s of [s0, s0.grandma].filter(Boolean)) {
       for (const l of s.lines || []) add(l[1], `${p.name}'s story, said by ${CAST[l[0]]?.name || l[0]}`);
       for (const l of s.askLines || []) add(l[1], `${p.name} asks Mika for something`);

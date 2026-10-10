@@ -138,6 +138,10 @@ async function fromTitle(browser, name, dev) {
   await page.waitForFunction(() => window.__STARLINE__.tour?.active);
   let s = await page.evaluate(SNAP);
   check(s.screen.title && s.screen.hud && !s.screen.view && s.tourLock && s.quest !== null && !s.player[4], 'the tour owns the screen: title and HUD hidden, Mika hidden, a throwaway story running');
+  // Playwright's own Chromium cannot decode H.264, so here the phone's video tour is not on offer: the picker hides
+  // the choice and the tour flies live (tests/video-browser.mjs covers the video tour in Edge or Chrome)
+  const how = await page.evaluate(() => ({ mode: window.__STARLINE__.tour.debug().mode, hold: !!window.__STARLINE__.renderer.hold, can: !!document.createElement('video').canPlayType('video/mp4; codecs="avc1.640020"'), offer: !document.querySelector('#tourPick .tour-live').classList.contains('hidden') }));
+  check(how.mode === 'live' && !how.hold && (how.can || !how.offer), `${name}: the tour is live here (${JSON.stringify(how)})`);
   // saving cannot happen
   const saved = await page.evaluate(() => { const d = window.__STARLINE__.director; const a = d.save(); delete d.save; const b = d.save(); delete d.canSave; const c = d.save(); d.save = d.canSave = () => false; return [a, b, c]; });
   check(saved.every(v => v === false), `no save can be written during the tour (${saved})`);

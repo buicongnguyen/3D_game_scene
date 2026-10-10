@@ -98,7 +98,7 @@ export class Renderer {
     if (!QUALITY[name]) return;
     this.qualityName = name;
     this.q = QUALITY[name];
-    this.governor = this.q.governor ? new Governor() : null;
+    this.governor = this.q.governor ? new Governor() : null; this.appliedLevel = 0;
     if (!this.fixedScale) this.scale = 1;
     try { localStorage.setItem('starline-quality', name); } catch { /* ignore */ }
     this.buildComposer();
@@ -143,11 +143,8 @@ export class Renderer {
     if (this.governor) {
       // Low tier: a ladder of small steps (people and prop distances, shadow rate, then resolution) instead of
       // resolution alone, because a phone is usually short of CPU, which a smaller picture does not help
-      const level = this.governor.frame(dt);
-      if (level === null) return;
-      const { q, scale } = settingsAt(QUALITY[this.qualityName], level);
-      this.q = q;
-      if (scale !== this.scale) { this.scale = scale; this.resize(); }
+      if (this.hold) return;                     // a video is showing: nothing is drawn, so there is nothing to judge
+      if (this.governor.frame(dt) !== null) this.applyLevel();
       return;
     }
     this.frameTimes.push(dt);
@@ -160,7 +157,25 @@ export class Renderer {
     else if (p50 < target * 0.7 && this.scale < 1) { this.scale = Math.min(1, this.scale + 0.05); this.resize(); }
   }
 
+  /**
+   * Cinematics on the Low tier (the arrival, the live scene tour) start `n` steps down the governor's ladder: their
+   * wide views cost more than play, and waiting for the governor to find that out is seconds of stutter. 0 lifts it.
+   */
+  setFloor(n) { this.floor = n; this.applyLevel(); }
+
+  applyLevel() {
+    if (!this.governor || this.fixedScale) return;
+    const level = Math.max(this.governor.level, this.floor || 0);
+    if (level === (this.appliedLevel || 0)) return;
+    this.appliedLevel = level;
+    const { q, scale } = settingsAt(QUALITY[this.qualityName], level);
+    this.q = q;
+    if (scale !== this.scale) { this.scale = scale; this.resize(); }
+  }
+
   render(scene, camera) {
+    // a recorded clip covers the view (game/video.js): the picture is the video's, nothing is drawn
+    if (this.hold) { this.held = (this.held || 0) + 1; return; }
     this.renderPass.scene = scene;
     this.renderPass.camera = camera;
     // our own matrix pass: hidden and unmoved objects cost nothing (see matrices.js)

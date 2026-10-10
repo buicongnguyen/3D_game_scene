@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Animator } from './animator.js';
 import { WORLD, WATER_Y } from '../world/layout.js';
 import { riverFlow } from '../world/heightfield.js';
+import { LanternCarry } from './lantern-rig.js';
 
 export const MOVE = {
   radius: 0.32, height: 1.45, step: 0.46, gravity: 26, jumpV: 8.4,
@@ -78,17 +79,18 @@ export class Player {
     this.pivot.add(this.model);
     this.root.add(this.pivot);
     scene.add(this.root);
-    // Sora's lantern in the right hand
+    // Sora's lantern: on her belt by day and whenever her hands are busy, in her right hand after dark.
+    // Other systems ask through this.carry.want('worn' | 'held', key) / release(key); nobody moves the mesh.
     this.grip = this.model.getObjectByName('grip_R') || this.model;
     const lantern = assets.clone('hand-lantern');
     if (lantern) {
       this.lantern = lantern;
-      this.grip.add(lantern);
-      // grip_R's +Y runs elbow -> hand; the lantern is authored upright, so flip it to hang from the hand
-      if (this.grip !== this.model) lantern.rotation.x = Math.PI;
-      else lantern.position.set(-0.28, 0.75, 0.1);
+      this.carry = new LanternCarry(this, lantern);
     }
   }
+
+  /** After everything that moves or poses her this frame (the kite, a yard kick): place what she carries. */
+  lateUpdate(dt, game) { this.carry?.update(dt, game); }
 
   teleport(x, z, y, facing) {
     this.climb = null; // a climb-out still in progress would pull her back to the old shore
@@ -111,7 +113,6 @@ export class Player {
     if (this.swimming === on) return;
     this.swimming = on;
     if (on) this.leapMul = 1;
-    if (this.lantern) this.lantern.visible = !on;
     if (!on) { this.pitch = 0; this.pivot.rotation.x = 0; }
   }
 
@@ -413,6 +414,7 @@ export class Player {
 
   /** World position of the lantern (spark origin). */
   lanternWorld(out = new THREE.Vector3()) {
+    if (this.carry?.ok) return out.copy(this.carry.world);
     if (this.lantern) return this.lantern.getWorldPosition(out);
     return out.copy(this.pos).add(new THREE.Vector3(0, 1.1, 0));
   }

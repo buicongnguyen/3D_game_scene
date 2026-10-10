@@ -196,7 +196,7 @@ export default {
     const r = new V3(-d.z, 0, d.x);
     const sx = ctx.place.x + d.x * STAND, sz = ctx.place.z + d.z * STAND;
     const ground = world.heightAt(sx, sz);
-    const was = { wind: FX.uWind.value, lantern: p.lantern?.visible };
+    const was = { wind: FX.uWind.value };          // (her lantern is on her belt for the round: tricks.js asks)
     const added = [];              // everything put in the scene, removed in cleanup
     const disposables = [];
     let ui = null, onPress = null, tap = false, cleaned = false, sign = null;
@@ -209,7 +209,6 @@ export default {
       if (ui) { ui.removeEventListener('pointerdown', onPress); ui.remove(); }
       FX.uWind.value = was.wind;
       if (sign) sign.hidden = false;            // the framework shows it again
-      if (p.lantern && was.lantern !== undefined) p.lantern.visible = was.lantern;
       g.follow.clearCutscene(true);
       ctx.lock(false);
     };
@@ -219,7 +218,6 @@ export default {
       await ctx.fade(true, 350);
       if (ctx.quit) return { score: 0, quit: true };
       p.teleport(sx, sz, ground, WIND_HEADING);
-      if (p.lantern) p.lantern.visible = false;
       const origin = new V3(sx, ground, sz);
 
       const kite = makeKite(g.assets);

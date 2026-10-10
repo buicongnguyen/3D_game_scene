@@ -17,7 +17,9 @@ import { TownLife } from './townlife.js';
 import { Indoors } from './indoor.js';
 import { Tricks } from './tricks.js';
 import { SkyGaze } from './skygaze.js';
+import { makeBulb, disposeBulb } from '../world/bulb.js';
 import { Yard } from './yard/round.js';
+import { Workshop } from './workshop/index.js';
 import { SHOPS } from '../content/shops.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
@@ -295,7 +297,7 @@ export class Director {
     this.interact('chest', chestPos, N_('Open Sora\'s chest'), () => this.step('p.chest'), () => this.event({ type: 'interact', target: 'chest' }), 2.4);
     this.interact('fishingSpot', V(4.2, 0.9, 30), N_('Fish'), () => this.q.unlocked('ferry') || this.q.has('canFish'), () => this.startFishing(), 2.6);
     const mill = S.byId.get('mill');
-    this.interact('millAxle', V(mill.x + 4.2, mill.y + 1, mill.z + 2.2), N_('Fit the cogs and repair the wheel'), () => this.step('c1.wheel'), () => this.event({ type: 'interact', target: 'millAxle' }), 3.2);
+    this.interact('millAxle', V(mill.x + 4.2, mill.y + 1, mill.z + 2.2), () => (storyId() === 'grandma' ? tx('Fit the cogs and the dynamo') : tx('Fit the cogs and repair the wheel')), () => this.step('c1.wheel'), () => this.event({ type: 'interact', target: 'millAxle' }), 3.2);
     this.interact('drawbridgeUp', V(-9.8, 1.2, -45), N_('Look at the drawbridge'), () => !this.q.unlocked('drawbridge'), () => this.say('drawbridge_up'), 2.4);
     this.interact('ferryWest', V(-0.6, 0.9, 30), N_('Take the ferry across'), () => !this.world.frozen && this.npcs.rin.visible && this.game.player.pos.x < 12, () => this.ferry('east'), 2.4);
     this.interact('ferryEast', V(24.2, 0.9, 30), () => (this.step('c2.ferry') ? tx("Call Rin's ferry") : tx('Take the ferry back')), () => !this.world.frozen && this.game.player.pos.x > 12,
@@ -333,17 +335,23 @@ export class Director {
     this.indoor.spawn();
     // Grandma's countryside tricks: signs, teaching, rounds and the journal Tricks tab (game/tricks.js)
     this.tricks = new Tricks(this);
+    // her lantern (belt or hand) follows the pose every frame, with or without a quest (actors/lantern-carry.js)
+    if (!this.game.lanternSystem) this.game.systems.push(this.game.lanternSystem = { update: (dt, g) => g.player.lateUpdate?.(dt, g) });
     // "Look up at the sky" at the lamp towers and a few open places (game/skygaze.js)
     this.sky = new SkyGaze(this);
     // the Kawabe playground yard: the kids' foot-tennis and keep-it-up, and Mika joining in (game/yard/round.js)
     this.yard = new Yard(this);
-    // spark targets
+    // the Kite workshop at the cradle in the cottage, and flying with its motors afterwards (game/workshop/index.js)
+    this.workshop = new Workshop(this);
+    // spark targets. In the Grandma story the four Star Lamps are electric: the same aim and press, but Tamo carries a new
+    // bulb up and screws it in, and the lamp is switched on (structures.setLampStyle, sparkAt)
+    const lampLabel = (name, light) => () => (this.electric() ? tx('Fit the new bulb: {lamp}', { lamp: tx(name) }) : tx(light));
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
-    this.target('millLamp', L.get('mill')?.flame, N_('Light the Mill Lamp'), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10 });
+    this.target('millLamp', L.get('mill')?.flame, lampLabel('Mill Lamp', N_('Light the Mill Lamp')), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10, bulb: true });
     // the Orchard Lamp works from the gallery or from the foot of the tower
-    this.target('orchardLamp', L.get('orchard')?.flame, N_('Light the Orchard Lamp'), () => this.step('c2.lamp'), () => this.event({ type: 'spark', target: 'orchardLamp' }), { r: 10, vy: 24 });
-    this.target('forestLamp', L.get('forest')?.flame, N_('Light the Forest Lamp'), () => this.step('c3.lamp'), () => this.event({ type: 'spark', target: 'forestLamp' }), { r: 9, vy: 14 });   // the grand tower: its flame is 15 m up
-    this.target('viaductLamp', L.get('viaduct')?.flame, N_('Light the Viaduct Lamp'), () => this.step('c4.lamp'), () => this.event({ type: 'spark', target: 'viaductLamp' }), { r: 7.5, vy: 10 });
+    this.target('orchardLamp', L.get('orchard')?.flame, lampLabel('Orchard Lamp', N_('Light the Orchard Lamp')), () => this.step('c2.lamp'), () => this.event({ type: 'spark', target: 'orchardLamp' }), { r: 10, vy: 24, bulb: true });
+    this.target('forestLamp', L.get('forest')?.flame, lampLabel('Forest Lamp', N_('Light the Forest Lamp')), () => this.step('c3.lamp'), () => this.event({ type: 'spark', target: 'forestLamp' }), { r: 9, vy: 14, bulb: true });   // the grand tower: its flame is 15 m up
+    this.target('viaductLamp', L.get('viaduct')?.flame, lampLabel('Viaduct Lamp', N_('Light the Viaduct Lamp')), () => this.step('c4.lamp'), () => this.event({ type: 'spark', target: 'viaductLamp' }), { r: 7.5, vy: 10, bulb: true });
     S.nodes.scarecrows.forEach((s, i) => {
       const bell = at(s.bell, V(s.x, s.y + 1.7, s.z));
       this.target(`bell${i}`, bell, N_('Ring the scarecrow bell'), () => this.step('c2.crows') && !this.q.has(`bell${i}`), () => {
@@ -388,7 +396,7 @@ export class Director {
         obj.visible = false;
         this.game.scene.add(obj);
         // Sora's kite rests on her workbench whenever it isn't out flying (after it's Mika's, too)
-        this.kiteStand = { obj, pos: it.pos.clone(), interior: it.interior, when: () => I.active === it.interior && this.q.has('hasTamo') && !(this.game.kite?.active) };
+        this.kiteStand = { obj, pos: it.pos.clone(), interior: it.interior, when: () => I.active === it.interior && this.q.has('hasTamo') && !(this.game.kite?.active) && !this.workshop?.onBench };
         this.interact('takeKite', it.pos.clone().add(V(0, -0.8, 0)), N_('Take the Star Kite'), () => this.kiteStand.when() && !(this.q.count('kite') > 0), () => this.takeKite(), 2.4, null, 1);
         this.interact('kiteRest', it.pos.clone().add(V(0, -0.8, 0)), () => tx('Look at: {item}', { item: tx(ITEMS.kite.name) }), () => this.kiteStand.when() && this.q.count('kite') > 0,
           () => this.say('kite_rest'), 2.4, null, 1);
@@ -532,10 +540,13 @@ export class Director {
     this.interactables.set(id, { id, pos, label, when, action, radius, posFn, prio, vy });
   }
 
+  /** The Grandma story's Star Lamps are electric (bulbs and a switch); Classic keeps flames and sparks. */
+  electric() { return this.game.structures.lampStyle === 'electric'; }
+
   /** A spark target: stand near it and press E, and Tamo flies over and sparks it. */
   target(id, pos, label, when, onHit, reach = {}) {
     if (!pos) return;
-    const t = { id, pos: pos.clone(), label, when, onHit, posFn: reach.at || null };
+    const t = { id, pos: pos.clone(), label, when, onHit, posFn: reach.at || null, bulb: !!reach.bulb };
     this.targets.set(id, t);
     const tamoHere = () => this.tamoAround();
     this.interact(`spark:${id}`, null, label, () => tamoHere() && !t.pending && t.when(), () => this.sparkAt(t),
@@ -552,15 +563,18 @@ export class Director {
     p.gesture('Point', { lock: false });
     this.audio.spark();
     this.tamo.react?.('Happy');
+    // the Grandma story's lamps: the spark carries a new bulb up and twists it in (two clicks), no burst of fire
+    const carry = t.bulb && this.electric() ? makeBulb(0.9) : null;
     const hit = pos => {
       if (!t.pending) return;
       t.pending = false;
+      if (carry) disposeBulb(carry);
       if (!t.when()) return;
-      this.audio.sparkHit();
-      this.fx.burst(pos, { n: 50, speed: 5 });
+      if (carry) { this.audio.click(); setTimeout(() => this.audio.click(), 160); this.fx.burst(pos, { n: 14, speed: 2, color: [1, 0.95, 0.75], size: 0.22 }); }
+      else { this.audio.sparkHit(); this.fx.burst(pos, { n: 50, speed: 5 }); }
       t.onHit(pos);
     };
-    this.tamo.fire(to, hit);
+    this.tamo.fire(to, hit, carry);
     // the spark flies at most ~1.1 s; if it never lands (Tamo hidden mid-flight), light it anyway
     setTimeout(() => hit(to), 2500);
   }
@@ -605,6 +619,7 @@ export class Director {
   async begin(saved) {
     this.quest = new Quest(saved?.quest, { story: this.newStory });
     this.ui.applyStory?.();              // the diary tab and credits line of this save's story
+    this.game.structures.setLampStyle(storyId() === 'grandma' ? 'electric' : 'flame');
     this.game.quest = this.quest;
     const effects = this.quest.start();
     const resumed = this.quest.resumed;
@@ -1282,7 +1297,7 @@ export class Director {
     const mg = this.minigame;
     if (!mg) return;
     const inp = this.game.input;
-    if (inp.pressed('back') || inp.pressed('pause')) { this.endMinigame(); return; }
+    if (inp.pressed('back') || inp.pressed('pause')) { if (!mg.m?.quit?.()) this.endMinigame(); return; }   // fishing packs up first
     if (mg.kind === 'fish') {
       mg.m.update(dt);                 // every catch arrives as this.event({ type: 'catch', species })
       if (mg.m.done) this.endMinigame();
@@ -1332,6 +1347,7 @@ export class Director {
     this.tricks?.update(dt);
     this.sky?.update(dt);
     this.yard?.update(dt);
+    this.workshop?.update(dt);
     this.updateBarks(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);

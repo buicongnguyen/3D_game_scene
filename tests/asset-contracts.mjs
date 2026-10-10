@@ -257,3 +257,9 @@ export const TOTAL_RAW_BYTES = 39_348_000;
 // +0.331 MB: the great shrine hall (163 -> 338 KB packed) and the grand Forest Lamp (156 KB packed).
 // +0.046 MB: tricks phase 2 art audit (the beetles' knee bones: 36 -> 57 KB and 41 -> 63 KB packed).
 export const TOTAL_PACKED_BYTES = 14_897_000;
+
+// The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
+// the model library above and are only downloaded by a phone that plays them (one clip at a time).
+// 60 MB: ten tour clips (five tours, a landscape and a portrait cut each, 540p at ~500 kbps), four arrival clips and two
+// title loops, with a poster each. A 45 MB set would need ~390 kbps; grass and falling petals already soften at 500.
+export const TOTAL_VIDEO_BYTES = 60_000_000;

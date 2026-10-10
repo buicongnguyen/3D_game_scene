@@ -10,7 +10,7 @@ export function attachQA(game, director, ui) {
       return {
         step: q?.step, chapter: q?.chapter, busy: d.busy, dlg: ui.dialogueOpen, choice: ui.choiceActive, overlay: ui.overlay,
         pos: v(game.player.pos), inv: q?.inv, lamps: q?.lamps, minigame: d.minigame?.kind || null, focus: d.focus?.id || null,
-        swim: game.player.swimming ? (game.player.submerged ? 'under' : 'surface') : null, camUnder: !!game.underwater?.under, running: d.running ? JSON.stringify(d.running) : null, season: game.time.season, hour: +game.time.hour.toFixed(2), fps: game.fps, mounted: !!game.player.mounted,
+        swim: game.player.swimming ? (game.player.submerged ? 'under' : 'surface') : null, camUnder: !!game.underwater?.under, running: d.running ? JSON.stringify(d.running) : null, season: game.time.season, hour: +game.time.hour.toFixed(2), fps: game.fps, mounted: !!game.player.mounted, lantern: game.player.carry?.state || null,
       };
     },
     teleport(x, z, y) { game.player.teleport(x, z, y, game.player.facing); game.follow.first = true; return v(game.player.pos); },

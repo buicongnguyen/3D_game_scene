@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { FishingSim, School, CAST, REEL, SIZE, pickSpecies, fishSize, fishPower, makeFish, planCast, sizeFraction } from '../src/game/fishing/sim.js';
+import { FishingSim, School, CAST, REEL, SIZE, PILE, pickSpecies, fishSize, fishPower, makeFish, planCast, sizeFraction, pileSlot, pileAdd, pileLength } from '../src/game/fishing/sim.js';
 import { FISH } from '../src/game/story.js';
 import { rng } from '../src/engine/spline.js';
 
@@ -216,4 +216,46 @@ test('the school: fish keep to their water and clear of the float; the suitor co
   assert.equal(star.state, 'flee');
   for (let t = 0; t < 2; t += DT) sc.update(DT, float, null);
   assert.equal(star.state, 'swim');
+});
+
+test('the catch on the dock: a tidy row on the planks, clear of Mika, Rin, the creel and the edges; never overlapping', () => {
+  const LEN = { trout: 0.92, char: 0.8, koi: 1.12, starfin: 1.0 };       // FISH_LOOK lengths in the water (pond.js)
+  const longest = pileLength(LEN.koi, 0.8 + 0.75), widest = longest * 0.3;   // the biggest koi the school can show
+  assert.ok(longest < 0.96 && longest > 0.8, `a big koi is ${longest.toFixed(2)} m on the dock`);
+  assert.ok(pileLength(LEN.char, 0.8) < longest * 0.4, 'a small char looks small beside it');
+  const slots = Array.from({ length: PILE.cap }, (_, i) => pileSlot(i));
+  const d = PILE.dock;
+  slots.forEach((s, i) => {
+    // head and tail stay on the planks (the fish lies along its yaw)
+    for (const k of [-0.5, 0.5]) {
+      const x = s.x + Math.sin(s.yaw) * longest * k, z = s.z + Math.cos(s.yaw) * longest * k;
+      assert.ok(x > d.x0 + 0.05 && x < d.x1 && z > d.z0 + 0.1 && z < d.z1 - 0.1, `slot ${i} end at ${x.toFixed(2)}, ${z.toFixed(2)} is off the dock`);
+      for (const o of PILE.keepOut) assert.ok(Math.hypot(x - o.x, z - o.z) > o.r, `slot ${i} lies on someone's feet`);
+      assert.ok(Math.hypot(x - PILE.creel.x, z - PILE.creel.z) > PILE.creel.r + 0.05, `slot ${i} lies under the creel`);
+    }
+    for (const o of PILE.keepOut) assert.ok(Math.hypot(s.x - o.x, s.z - o.z) > o.r + widest / 2);
+    // no two places overlap, even with the longest, widest fish in both: side by side, or nose to tail
+    for (let j = 0; j < i; j++) {
+      const p = slots[j], across = Math.abs(s.x - p.x) * Math.abs(Math.cos(s.yaw)), along = Math.abs(s.z - p.z);
+      assert.ok(across >= widest * 0.95 || along >= longest, `slots ${j} and ${i} overlap (${across.toFixed(2)} across, ${along.toFixed(2)} along)`);
+    }
+  });
+  // the fan is gentle and the heads point at the water (north, -z)
+  assert.ok(slots.every(s => Math.cos(s.yaw) < -0.95));
+  // the creel stands on the planks beside her, not under her feet
+  assert.ok(PILE.creel.z - PILE.creel.r > d.z0 && Math.hypot(PILE.creel.x - 3.8, PILE.creel.z - 30.1) > 0.5 + PILE.creel.r);
+  // beyond the row every index still gets the last place
+  assert.deepEqual(pileSlot(40), pileSlot(PILE.cap - 1));
+});
+
+test('the catch grows to eight on the dock; after that the oldest go into the creel', () => {
+  let pile = [], inCreel = [];
+  for (let id = 1; id <= 11; id++) {
+    const r = pileAdd(pile, { id });
+    pile = r.pile; inCreel.push(...r.creel);
+    assert.equal(pile.length, Math.min(id, PILE.cap));
+    assert.equal(pile.at(-1).id, id, 'the newcomer takes the last place');
+  }
+  assert.deepEqual(inCreel, [1, 2, 3]);
+  assert.deepEqual(pile.map(p => p.id), [4, 5, 6, 7, 8, 9, 10, 11]);
 });

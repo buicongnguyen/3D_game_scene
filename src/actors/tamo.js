@@ -109,8 +109,9 @@ export class Tamo {
     });
   }
 
-  /** Launch a spark from Tamo toward a world point; onHit(target) when it arrives. */
-  fire(to, onArrive) {
+  /** Launch a spark from Tamo toward a world point; onHit(target) when it arrives. carry: something small it lifts along
+   *  (the Grandma story's light bulbs); the caller owns it and takes it back when the spark arrives. */
+  fire(to, onArrive, carry = null) {
     const from = this.pos.clone();
     const dist = from.distanceTo(to);
     const dur = Math.min(1.1, 0.25 + dist / 38);
@@ -126,7 +127,8 @@ export class Tamo {
       trail.push(t);
     }
     const light = this.pool?.add({ pos: sprite.position, intensity: 7, range: 10, color: '#ffc45a' });
-    this.sparks.push({ from, mid, to, t: 0, dur, sprite, trail, hist: [], onArrive, light });
+    if (carry) { carry.position.copy(from); this.scene.add(carry); }
+    this.sparks.push({ from, mid, to, t: 0, dur: carry ? dur * 1.5 : dur, sprite, trail, hist: [], onArrive, light, carry });
     this.anim?.once('Fire', { then: 'Float' });
   }
 
@@ -139,6 +141,7 @@ export class Tamo {
       const p = a.lerp(b, u);
       s.sprite.position.copy(p);
       s.sprite.scale.setScalar(0.8 + Math.sin(s.t * 40) * 0.15);
+      if (s.carry) { s.carry.position.copy(p); s.carry.rotation.y = s.t * 9; }
       s.hist.unshift(p.clone());
       if (s.hist.length > 10) s.hist.pop();
       s.trail.forEach((t, k) => { const h = s.hist[k]; if (h) { t.position.copy(h); t.material.opacity = 0.7 * (1 - k / 10); } });
@@ -146,6 +149,7 @@ export class Tamo {
         if (s.light) this.pool?.remove(s.light);
         s.onArrive?.(s.to.clone());
         this.scene.remove(s.sprite, ...s.trail);
+        if (s.carry) this.scene.remove(s.carry);
         s.sprite.material.dispose();
         s.trail.forEach(t => t.material.dispose());
         this.sparks.splice(i, 1);

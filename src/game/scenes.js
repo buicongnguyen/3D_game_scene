@@ -57,19 +57,31 @@ export class Scenes {
   // ---------------------------------------------------------------- prologue
   async arrival() {
     const g = this.g, r = g.railway, ui = this.d.ui;
+    // phones (the Low tier) watch the arrival as a recorded clip and come back to the same platform (game/video.js);
+    // ?live=1 or a clip that cannot play keeps the live cutscene below
+    if (g.renderer.qualityName === 'low' && !g.params.has('live')) {
+      const played = await import('./video.js').then(m => m.playArrival(this)).catch(e => { console.warn('[video] arrival', e); return false; });
+      if (played) { this.d.event({ type: 'cutscene', id: 'arrival' }); return; }
+    }
+    g.renderer.setFloor?.(2);                // a wide flight costs more than play: the Low tier starts it two steps down
     await ui.fade(true, 10);
     // Kobo comes out of the west tunnel and runs the whole way in while the story is told across the top
     r.placeAt(STOPS.westPortal + 4);
     g.player.root.visible = false;
     this.d.npcs.genzo.setVisible(false);
     g.follow.cutscene({ pos: V(-30, 44, 168), look: V(-60, 16, 110) }, 0.01);
-    await wait(100);
+    await wait(450);                         // the first frames of the new view compile their shaders behind the dark
+    // the picture starts here: the recorder films from this moment and notes when the whistles blow (scripts/record-videos.mjs)
+    this.arrivalT = performance.now();
+    this.arrivalMarks = {};
+    const mark = k => { this.arrivalMarks[k] = (performance.now() - this.arrivalT) / 1000; };
     ui.cinema(true);
     const told = Promise.all(CAPTIONS.arrival.map(c => ui.caption(c, 4300)));
     await ui.fade(false, 1600);
     await this.shot(V(-54, 30, 150), V(-120, 18, 108), 3.6, 600);
     r.goTo(STOPS.station, 7);
     this.d.audio.whistle();
+    mark('whistle');
     // hold the wide view while Kobo runs out of the tunnel and through the woods, easing a little closer…
     const t1 = performance.now();
     g.follow.cutscene({ pos: V(-62, 26, 144), look: V(-118, 17, 108) }, 9);
@@ -82,12 +94,14 @@ export class Scenes {
     await told;
     ui.cinema(false);
     this.d.audio.whistle();
+    mark('platform');
     g.player.root.visible = true;
     g.player.teleport(-94.5, 115.2, undefined, Math.PI / 2);
     g.follow.yaw = Math.PI / 2;
     this.d.npcs.genzo.setVisible(true);
     this.d.npcs.genzo.place(-91.8, 115.4, -Math.PI / 2, RAIL_Y + 0.95);
     await this.shot(V(-90, 19.2, 110.5), V(-93, 17.3, 115.4), 1.4, 200);
+    g.renderer.setFloor?.(0);
     // queued after this cutscene finishes (awaiting here would deadlock the effect queue)
     this.d.event({ type: 'cutscene', id: 'arrival' });
   }
@@ -134,6 +148,12 @@ export class Scenes {
     if (g.world.heightAt(cam.x, cam.z) > cam.y - 1) cam.y = g.world.heightAt(cam.x, cam.z) + 2;
     await this.shot(cam, f, 1.2);
     g.structures.setLamp(id, true);
+    if (this.d.electric()) {
+      // the Grandma story: a switch clicks, the dynamo's hum comes up the wire, and the bulb is simply on
+      this.d.audio.click();
+      this.d.audio.tone?.(98, { type: 'triangle', dur: 1.6, vol: 0.05, attack: 0.25, rev: 0.3 });
+      this.d.audio.tone?.(196, { type: 'sine', dur: 1.6, vol: 0.025, attack: 0.25, rev: 0.3 });
+    }
     this.d.fx.lampBloom(f);
     this.d.audio.lamp();
     this.d.tamo.react('Happy');

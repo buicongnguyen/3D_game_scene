@@ -130,7 +130,7 @@ const WATER_FS = /* glsl */`
     alpha = max(alpha, foam * 0.9);
     alpha = max(alpha, fres * 0.9) * smoothstep(-0.05, 0.08, depth);
     alpha = mix(alpha, smoothstep(-0.05, 0.05, depth), iceK);
-    if (clearK > 0.0) alpha = mix(alpha, min(alpha, max(0.34, foam * 0.9)), clearK * (1.0 - iceK));
+    if (clearK > 0.0) alpha = mix(alpha, min(alpha, max(0.25, foam * 0.9)), clearK * (1.0 - iceK));
     gl_FragColor = vec4(col, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>

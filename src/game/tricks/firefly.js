@@ -209,10 +209,8 @@ export default {
     const dark = inHours(g.shownHour(), trick.hours) && (g.night || 0) > 0.6;
     if (!dark) { await ctx.fade(true, 350); ctx.setNight(true, 22.5); await ctx.wait(0.1); await ctx.fade(false, 500); }
 
-    // the net in Mika's right hand (her lantern waits), the jar on the ground beside the sign
+    // the net in Mika's right hand (her lantern hangs on her belt: the round asked for free hands), the jar on the ground beside the sign
     const grip = p.grip || p.model;
-    const lanternWas = p.lantern?.visible;
-    if (p.lantern) p.lantern.visible = false;
     const net = makeNet(g.assets);
     // grip_R carry poses from the artist: upright, and a raised catch for fireflies in the air (blended for the swing)
     if (grip !== p.model) net.rotation.set(Math.PI, 0, 0); else net.position.set(-0.28, 0.75, 0.1);
@@ -237,7 +235,6 @@ export default {
       jar.removeFromParent();
       net.removeFromParent();
       for (const x of [...(net.userData.own || []), ...(jar.userData.own || [])]) x.dispose();
-      if (p.lantern) p.lantern.visible = lanternWas ?? true;
       g.follow.clearCutscene(true);
       ctx.lock(false);
     };

@@ -95,7 +95,7 @@ export const TOURS = [
       stop('fields', 21.1, N_('Field lanterns glow between the paddies, and the fireflies dance.')),
       stop('dock', 21.5, N_('Koi glide through the lantern light under the dock.')),
       stop('mill', 21.9, N_('The Mill Lamp shines on the dark water.')),
-      stop('shrine', 22.3, N_('The Forest Lamp burns high above the trees.')),
+      stop('shrine', 22.3, N_('The Forest Lamp shines high above the trees.')),
       stop('takamori', 22.7, N_('The Orchard Lamp watches over the sleeping square.')),
       stop('viaduct', 23.1, N_('The night train crosses with its lamps lit.')),
       stop('hill', 23.6, N_('Look up: a sky full of stars, and now and then one falls.')),
@@ -117,6 +117,7 @@ export const TEXT = {
   keys: N_('Space · Pause   ← → · Stops   Esc · Back'),
   of: N_('{season} · stop {i} of {n}'),
   done: N_('That was the tour. Replay it, pick another season, or go back.'),
+  live: N_('Live 3D instead of video'),
 };
 
 // ------------------------------------------------------------------ pure math

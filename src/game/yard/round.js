@@ -503,6 +503,7 @@ export class Yard {
     try {
       this.locks = true;
       g.player.vel.set(0, 0, 0);
+      g.player.carry?.want('worn', 'yard');      // arms out for balance: the lantern stays on her belt
       await d.ui.fade(true, 280);
       let again = true, first = true;
       while (again) {
@@ -527,6 +528,7 @@ export class Yard {
       this.endRound(keep);
       this.round = null;
       this.locks = false;
+      g.player.carry?.release('yard');
       if (!d.busy) g.player.locked = false;
       d.actCooldown = 0.5;
       d.ui.fade(false, 200);

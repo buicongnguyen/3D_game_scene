@@ -32,8 +32,10 @@ export const CONVOS = [
     ['b', 'Sora\'s girl walked past. Waved at me.'], ['a', 'She waves like Sora. Whole arm.'], ['b', 'Whole heart, Sora always says.'] ] },
   { id: 'nakano-tsuru-3', a: 'v2', b: 'v18', after: 'nakano-tsuru-1', when: { chapter: [1, 5], lamps: 1 }, lines: [
     ['a', 'Goro snores again. I missed it, Tsuru.'], ['b', 'Give it a month. You\'ll miss the quiet.'], ['a', 'Ha! Probably.'] ] },
-  { id: 'nakano-tsuru-4', a: 'v2', b: 'v18', after: 'nakano-tsuru-3', when: { chapter: [3, 3] }, lines: [
+  { id: 'nakano-tsuru-4', a: 'v2', b: 'v18', after: 'nakano-tsuru-3', story: 'classic', when: { chapter: [3, 3] }, lines: [
     ['b', 'Leaves in the washing water already.'], ['a', 'Autumn rinse. Free with every sheet.'], ['b', 'Isamu loved autumn. Said the river wore red.'] ] },
+  { id: 'nakano-tsuru-4-g', a: 'v2', b: 'v18', after: 'nakano-tsuru-3', story: 'grandma', when: { chapter: [3, 3] }, lines: [
+    ['b', 'Leaves in the washing water already.'], ['a', 'Autumn rinse. Free with every sheet.'], ['b', 'Isamu writes that the sea has no autumn. Poor man.'] ] },
   { id: 'nakano-tsuru-5', a: 'v2', b: 'v18', when: { chapter: [4, 4] }, lines: [
     ['a', 'Ice at the edges this morning.'], ['b', 'Then wash quick and gossip slow, dear.'] ] },
 
@@ -144,14 +146,18 @@ export const CONVOS = [
     ['a', 'Sora\'s granddaughter came on the last train.'], ['b', 'Clearing out the cottage, I heard.'], ['a', 'Doesn\'t look like a girl who clears off.'] ] },
   { id: 'g-mika-1-g', a: 'woman', b: 'man', story: 'grandma', when: { chapter: [0, 1] }, lines: [
     ['a', 'Sora\'s granddaughter came on the last train.'], ['b', 'Staying the year, I heard. Sora\'s thrilled.'], ['a', 'Sora has her up ladders already.'] ] },
-  { id: 'g-mika-2', a: 'any', b: 'any', when: { chapter: [1, 5], lamps: 1 }, lines: [
+  { id: 'g-mika-2', a: 'any', b: 'any', story: 'classic', when: { chapter: [1, 5], lamps: 1 }, lines: [
     ['a', 'They say Sora\'s girl lit the Mill Lamp.'], ['b', 'With a star, I heard. A talking one.'], ['a', 'Well. She is Sora\'s.'] ] },
+  { id: 'g-mika-2-g', a: 'any', b: 'any', story: 'grandma', when: { chapter: [1, 5], lamps: 1 }, lines: [
+    ['a', 'They say Sora\'s girl lit the Mill Lamp.'], ['b', 'With a wire, I heard. No match, no oil.'], ['a', 'I blew on it. Nothing. It\'s magic.'] ] },
+  { id: 'g-bulb-g', a: 'any', b: 'any', story: 'grandma', when: { chapter: [2, 5], lamps: 2 }, lines: [
+    ['a', 'Where does the oil go in, on these new lamps?'], ['b', 'It doesn\'t. The mill wheel sends the light.'], ['a', 'Down a string? Pull the other one.'] ] },
   { id: 'g-lamps-2', a: 'any', b: 'any', when: { chapter: [2, 5], lamps: 2 }, lines: [
     ['a', 'Two lamps lit. Can you believe it?'], ['b', 'I keep looking out the window to check.'] ] },
   { id: 'g-lamps-3', a: 'any', b: 'any', story: 'classic', when: { chapter: [3, 5], lamps: 3 }, lines: [
     ['a', 'Even the Forest Lamp\'s burning now.'], ['b', 'Kiku would be glad. Wherever she is.'] ] },
   { id: 'g-lamps-3-g', a: 'any', b: 'any', story: 'grandma', when: { chapter: [3, 5], lamps: 3 }, lines: [
-    ['a', 'Even the Forest Lamp\'s burning now.'], ['b', 'Kiku would be glad. I\'ll write and tell her.'] ] },
+    ['a', 'Even the Forest Lamp\'s shining now.'], ['b', 'Kiku will be tickled. I\'ll write and tell her.'] ] },
   { id: 'g-train-1', a: 'man', b: 'any', story: 'classic', when: { chapter: [0, 3] }, lines: [
     ['a', 'Ten years since the Star Train ran.'], ['b', 'Genzo still oils Kobo every morning.'], ['a', 'Hope\'s a kind of grease, I suppose.'] ] },
   { id: 'g-train-1-g', a: 'man', b: 'any', story: 'grandma', when: { chapter: [0, 3] }, lines: [

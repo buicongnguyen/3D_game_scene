@@ -7,6 +7,7 @@ import { useStory, DEFAULT_STORY, STORIES } from './stories/index.js';
 import { cleanTricks } from '../content/tricks.js';
 import { cleanWishes } from '../content/skyspots.js';
 import { cleanYard } from '../content/yard.js';
+import { cleanWorkshop, freshWorkshop } from './workshop/rules.js';
 
 export const SAVE_VERSION = 1;
 
@@ -21,6 +22,7 @@ export function freshState(story = DEFAULT_STORY) {
         // Grandma's countryside tricks: { id: { learned, best, stars, plays, intro?, note? } } (content/tricks.js)
     wishes: 0,                  // shooting stars wished on while looking up at the sky (game/skygaze.js)
     yard: { game: 'footnet' },  // the Kawabe playground: the game on the scoreboard and each game's record (content/yard.js)
+    workshop: freshWorkshop(),  // the Kite workshop: { built, stars, best, plays, prog } (game/workshop/rules.js)
   };
 }
 
@@ -56,6 +58,7 @@ export function migrate(saved) {
   s.tricks = cleanTricks(s.tricks);
   s.wishes = cleanWishes(s.wishes);
   s.yard = cleanYard(s.yard);
+  s.workshop = cleanWorkshop(s.workshop);
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.
   if (s.step === 'c4.ride') { s.step = 'c4.board'; s.inv = { ...s.inv, lanterns: 0 }; }
   s.v = SAVE_VERSION;

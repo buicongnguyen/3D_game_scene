@@ -14,7 +14,7 @@ export const SPOT = { x: 4.2, z: 30 };
 export const STAND = { x: 3.8, z: 30.1 };     // where she plants her feet to cast (the end of the dock, in frame)
 export const WATERS = {
   wide: { cx: 9.4, cz: 23.6, rx: 4.6, rz: 4.9, clear: 9.5 },
-  tall: { cx: 8.9, cz: 23.4, rx: 2.9, rz: 5.0, clear: 8.6 },
+  tall: { cx: 8.7, cz: 23.4, rx: 2.7, rz: 5.0, clear: 8.6 },
   ice: { cx: 8.3, cz: 25.6, rx: 1.75, rz: 1.75, clear: 3.3, hole: 2.1 },
 };
 
@@ -22,11 +22,11 @@ export const WATERS = {
 export function fishingShot(aspect = 16 / 9, frozen = false) {
   const tall = THREE.MathUtils.clamp((1.25 - aspect) / (1.25 - 0.5), 0, 1);
   const V = (x, y, z) => new THREE.Vector3(x, y, z);
-  if (frozen) return { pos: V(3.6, 6.2 + tall * 3.4, 33.6 + tall * 1.6), look: V(7.6, 0, 26.4), fov: 55 + tall * 13, tall };
+  if (frozen) return { pos: V(2.9 - tall * 1.2, 7.0 + tall * 2.8, 34.7 + tall * 0.6), look: V(7.1, 0, 26.6), fov: 55 + tall * 13, tall };
   return {
-    pos: V(4.2, 7.6, 35.2).lerp(V(2.6, 9.6, 34.6), tall),
-    look: V(8.4, -0.2, 25.2).lerp(V(8.6, -0.2, 24.6), tall),
-    fov: 55 + tall * 5, tall,
+    pos: V(3.2, 8.0, 35.9).lerp(V(1.5, 10.0, 35.0), tall),
+    look: V(7.8, -0.2, 25.5).lerp(V(7.7, -0.2, 24.7), tall),
+    fov: 55 + tall * 8, tall,
   };
 }
 
@@ -172,7 +172,7 @@ export class FishPond {
       const gltf = g.assets?.gltf?.(model);
       let baked = null;
       if (gltf) { try { baked = bakeFish(gltf.scene); } catch (e) { console.warn(`fish bake skipped for ${model}`, e); } }
-      this.batches[model] = new Batch(this.scene, baked || plainFish(), n + deep + 4);
+      this.batches[model] = new Batch(this.scene, baked || plainFish(), n + deep + 4 + 10);   // + the catch on the dock
     }
     // rings on the water (one instanced draw, additive: the colour is the fade)
     this.rings = [];
@@ -223,6 +223,14 @@ export class FishPond {
     this.clear = k;
   }
 
+  /** Draw one more fish this frame (called from `extra`): species, school size, pose, tail angle, scale factor. */
+  put(species, size, x, y, z, yaw, pitch, roll, tail, k = 1) {
+    const look = FISH_LOOK[species] || FISH_LOOK.trout, batch = this.batches[look.model];
+    if (!batch) return;
+    _c.set(look.tint).multiplyScalar(1 - (this.game.night || 0) * 0.35);
+    batch.put(x, y, z, yaw, pitch, roll, look.len / batch.baked.length * size * k, 1, tail * look.wag, _c);
+  }
+
   /** A ring spreading on the water at (x, z). */
   ripple(x, z, size = 0.6, life = 0.9) {
     if (!this.ringMesh) return;
@@ -244,9 +252,9 @@ export class FishPond {
       const scale = look.len / batch.baked.length * f.size;
       _c.set(look.tint);
       if (f.species === 'starfin') _c.multiplyScalar(1.25 + (this.dusk ? 0.9 : 0) + night * 0.5);   // it glows as the light goes
-      else _c.multiplyScalar(dim);
+      else _c.multiplyScalar(dim * 1.22);     // a little over-bright: the water above takes it back
       if (held && held.f === f) {
-        batch.put(held.x, held.y, held.z, held.yaw, held.pitch || 0, held.roll || 0, scale, 1, Math.sin(this.t * 24) * look.wag, _c);
+        batch.put(held.x, held.y, held.z, held.yaw, held.pitch || 0, held.roll || 0, scale * (held.k ?? 1), 1, Math.sin(this.t * 24) * look.wag, _c);
         continue;
       }
       let y = (f.deep ? DEEP_Y : SWIM_Y) + Math.sin(this.t * 1.3 + f.wig) * 0.02 + f.lift, flat = 1;
@@ -259,6 +267,7 @@ export class FishPond {
       f.phase = (f.phase || f.wig) + dt * beat;
       batch.put(f.x, y, f.z, f.heading + Math.sin(f.phase) * 0.06, 0, 0, scale, flat, Math.sin(f.phase) * look.wag * (f.fast ? 1.3 : 1), _c);
     }
+    this.extra?.(this);          // the owner's own fish (the catch lying on the dock) ride in the same draws
     for (const b of Object.values(this.batches)) b.flush();
     // a wandering fish dimples the surface now and then
     if (this.ringMesh) {

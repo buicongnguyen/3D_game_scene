@@ -8,6 +8,7 @@ import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
 import { Signs } from './signs.js';
 import { YardBuild } from './yard.js';
+import { makeBulb, bulbGlow } from './bulb.js';
 
 // Wall footprints (w, d, h) from art/CONTRACTS.md; colliders use these, not roof overhangs.
 export const FOOTPRINT = {
@@ -320,7 +321,7 @@ export class Structures {
           mats.add(m);
         }
       });
-      const rec2 = { ...L, flame, obj, mats: [...mats], lit: 0, target: 0, intensity: 0 };
+      const rec2 = { ...L, flame, flameNode, obj, mats: [...mats], lit: 0, target: 0, intensity: 0, bulb: null };
       rec2.light = this.lightPool?.add({ pos: flame, intensity: () => rec2.intensity, range: L.range ?? 34 });
       this.lamps.set(L.id, rec2);
     }
@@ -507,6 +508,32 @@ export class Structures {
   }
 
   /** Lamp brightness 0..1 per lamp id (animated toward target in update). */
+  /**
+   * How the Star Lamps shine. 'flame' (Starline Classic): oil and a flickering flame. 'electric' (A Year with Grandma): a
+   * bulb in each lantern head, steady and warm white, on at a click. The models keep their `Flame` node (the light and
+   * every cutscene still use its place); it is only hidden while the bulbs are in.
+   */
+  setLampStyle(style) {
+    const el = style === 'electric';
+    this.lampStyle = el ? 'electric' : 'flame';
+    for (const L of this.lamps.values()) {
+      if (el && !L.bulb) {
+        L.bulb = makeBulb(L.model === 'star-lamp-grand' ? 2 : 1);
+        L.bulb.position.copy(L.flame);
+        L.bulb.visible = false;
+        this.group.add(L.bulb);
+      }
+      if (L.bulb && !el) L.bulb.visible = false;
+      if (L.flameNode) L.flameNode.visible = !el;
+      for (const m of L.mats) {
+        m.emissive.set(m.name === 'Lamp star' ? (el ? '#ffe9a6' : '#ffd35a') : (el ? '#ffedc4' : '#ffb13d'));
+        // the lantern panes turn to clear glass, so the bulb inside is what shines
+        if (m.name === 'Lamp glass') { m.transparent = el; m.opacity = el ? 0.3 : 1; m.depthWrite = !el; m.needsUpdate = true; }
+      }
+      if (L.light) L.light.color = el ? '#ffe2ae' : '#ffb84d';
+    }
+  }
+
   setLamp(id, on, instant = false) {
     const L = this.lamps.get(id);
     if (!L) return;
@@ -517,10 +544,13 @@ export class Structures {
   update(dt, night) {
     this.signs?.setNight(night);
     for (const L of this.lamps.values()) {
-      L.lit += (L.target - L.lit) * (1 - Math.exp(-dt * 2.2));
-      const flicker = 0.92 + 0.08 * Math.sin(performance.now() * 0.011 + L.flame.x);
+      // a flame catches slowly and flickers; a bulb is simply on
+      const el = this.lampStyle === 'electric';
+      L.lit += (L.target - L.lit) * (1 - Math.exp(-dt * (el ? 9 : 2.2)));
+      const flicker = el ? 1 : 0.92 + 0.08 * Math.sin(performance.now() * 0.011 + L.flame.x);
+      if (L.bulb) { L.bulb.visible = el && L.target > 0; if (L.bulb.visible) bulbGlow(L.bulb, L.lit); }
       const k = L.lit * flicker;
-      for (const m of L.mats) m.emissiveIntensity = k * (m.name === 'Lamp star' ? 3.2 : 4.5);
+      for (const m of L.mats) m.emissiveIntensity = k * (m.name === 'Lamp star' ? 3.2 : el ? 1.1 : 4.5);
       L.intensity = k * (8 + 55 * night) * (L.gain ?? 1);   // gain: a taller tower throws its light further down
     }
   }

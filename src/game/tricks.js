@@ -189,6 +189,7 @@ export class Tricks {
         g.input.releaseAll?.();
         this.hud(t, ctx);
         let res = null;
+        g.player.carry?.want('worn', 'trick');     // hands free for the net, the frog, the kite line… (the night river asks for it in hand itself)
         try { res = await mod.play(ctx); } catch (e) { console.error(`[tricks] ${id} failed`, e); res = { score: 0, quit: true }; }
         result = res || { score: 0 };
         this.endRound(ctx);
@@ -209,6 +210,7 @@ export class Tricks {
       this.el?.card.classList.add('hidden');
       this.round = null;
       this.locks = false;
+      g.player.carry?.release('trick');
       if (!d.busy) g.player.locked = false;
       d.actCooldown = 0.5;
     }

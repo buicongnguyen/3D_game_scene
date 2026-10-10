@@ -1,0 +1,623 @@
+{
+ "fps": 30,
+ "clips": {
+  "title-wide": {
+   "frames": 420,
+   "duration": 14,
+   "loop": true,
+   "poster": 1,
+   "file": "title-wide.mp4",
+   "posterFile": "title-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 684532,
+   "posterBytes": 74914
+  },
+  "tour-spring-wide": {
+   "frames": 2349,
+   "duration": 78.3,
+   "tour": "spring",
+   "stops": [
+    {
+     "place": "kawabe",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "fields",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "dock",
+     "t": 17.557,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 26.257,
+     "from": 23.057
+    },
+    {
+     "place": "shrine",
+     "t": 37.166,
+     "from": 31.757
+    },
+    {
+     "place": "orchard",
+     "t": 48.09,
+     "from": 42.666
+    },
+    {
+     "place": "takamori",
+     "t": 56.79,
+     "from": 53.59
+    },
+    {
+     "place": "viaduct",
+     "t": 70.79,
+     "from": 62.29
+    }
+   ],
+   "poster": 75,
+   "file": "tour-spring-wide.mp4",
+   "posterFile": "tour-spring-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 4832536,
+   "posterBytes": 79667
+  },
+  "tour-spring-tall": {
+   "frames": 2349,
+   "duration": 78.3,
+   "tour": "spring",
+   "stops": [
+    {
+     "place": "kawabe",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "fields",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "dock",
+     "t": 17.557,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 26.257,
+     "from": 23.057
+    },
+    {
+     "place": "shrine",
+     "t": 37.166,
+     "from": 31.757
+    },
+    {
+     "place": "orchard",
+     "t": 48.09,
+     "from": 42.666
+    },
+    {
+     "place": "takamori",
+     "t": 56.79,
+     "from": 53.59
+    },
+    {
+     "place": "viaduct",
+     "t": 70.79,
+     "from": 62.29
+    }
+   ],
+   "poster": 75,
+   "file": "tour-spring-tall.mp4",
+   "posterFile": "tour-spring-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 4903992,
+   "posterBytes": 69992
+  },
+  "intro-grandma-wide": {
+   "frames": 789,
+   "duration": 26.3,
+   "story": "grandma",
+   "marks": {
+    "whistle": 5.8,
+    "platform": 25.25
+   },
+   "poster": 120,
+   "file": "intro-grandma-wide.mp4",
+   "posterFile": "intro-grandma-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 1915070,
+   "posterBytes": 73329
+  },
+  "tour-summer-wide": {
+   "frames": 2285,
+   "duration": 76.16666666666667,
+   "tour": "summer",
+   "stops": [
+    {
+     "place": "takamori",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "orchard",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "shrine",
+     "t": 19.624,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 30.534,
+     "from": 25.124
+    },
+    {
+     "place": "dock",
+     "t": 39.234,
+     "from": 36.034
+    },
+    {
+     "place": "kawabe",
+     "t": 47.934,
+     "from": 44.734
+    },
+    {
+     "place": "fields",
+     "t": 56.634,
+     "from": 53.434
+    },
+    {
+     "place": "hill",
+     "t": 68.154,
+     "from": 62.134
+    }
+   ],
+   "poster": 75,
+   "file": "tour-summer-wide.mp4",
+   "posterFile": "tour-summer-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 4119667,
+   "posterBytes": 102018
+  },
+  "tour-summer-tall": {
+   "frames": 2285,
+   "duration": 76.16666666666667,
+   "tour": "summer",
+   "stops": [
+    {
+     "place": "takamori",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "orchard",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "shrine",
+     "t": 19.624,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 30.534,
+     "from": 25.124
+    },
+    {
+     "place": "dock",
+     "t": 39.234,
+     "from": 36.034
+    },
+    {
+     "place": "kawabe",
+     "t": 47.934,
+     "from": 44.734
+    },
+    {
+     "place": "fields",
+     "t": 56.634,
+     "from": 53.434
+    },
+    {
+     "place": "hill",
+     "t": 68.154,
+     "from": 62.134
+    }
+   ],
+   "poster": 75,
+   "file": "tour-summer-tall.mp4",
+   "posterFile": "tour-summer-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 4216094,
+   "posterBytes": 95599
+  },
+  "tour-autumn-wide": {
+   "frames": 2344,
+   "duration": 78.13333333333334,
+   "tour": "autumn",
+   "stops": [
+    {
+     "place": "fields",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "kawabe",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "dock",
+     "t": 17.4,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 26.1,
+     "from": 22.9
+    },
+    {
+     "place": "shrine",
+     "t": 37.01,
+     "from": 31.6
+    },
+    {
+     "place": "orchard",
+     "t": 47.934,
+     "from": 42.51
+    },
+    {
+     "place": "takamori",
+     "t": 56.634,
+     "from": 53.434
+    },
+    {
+     "place": "viaduct",
+     "t": 70.634,
+     "from": 62.134
+    }
+   ],
+   "poster": 75,
+   "file": "tour-autumn-wide.mp4",
+   "posterFile": "tour-autumn-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 4761742,
+   "posterBytes": 90467
+  },
+  "tour-autumn-tall": {
+   "frames": 2344,
+   "duration": 78.13333333333334,
+   "tour": "autumn",
+   "stops": [
+    {
+     "place": "fields",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "kawabe",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "dock",
+     "t": 17.4,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 26.1,
+     "from": 22.9
+    },
+    {
+     "place": "shrine",
+     "t": 37.01,
+     "from": 31.6
+    },
+    {
+     "place": "orchard",
+     "t": 47.934,
+     "from": 42.51
+    },
+    {
+     "place": "takamori",
+     "t": 56.634,
+     "from": 53.434
+    },
+    {
+     "place": "viaduct",
+     "t": 70.634,
+     "from": 62.134
+    }
+   ],
+   "poster": 75,
+   "file": "tour-autumn-tall.mp4",
+   "posterFile": "tour-autumn-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 4883648,
+   "posterBytes": 81094
+  },
+  "tour-winter-wide": {
+   "frames": 2076,
+   "duration": 69.2,
+   "tour": "winter",
+   "stops": [
+    {
+     "place": "viaduct",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "kawabe",
+     "t": 12.975,
+     "from": 7.5
+    },
+    {
+     "place": "fields",
+     "t": 21.675,
+     "from": 18.475
+    },
+    {
+     "place": "dock",
+     "t": 30.532,
+     "from": 27.175
+    },
+    {
+     "place": "mill",
+     "t": 39.232,
+     "from": 36.032
+    },
+    {
+     "place": "shrine",
+     "t": 50.142,
+     "from": 44.732
+    },
+    {
+     "place": "takamori",
+     "t": 63.712,
+     "from": 55.642
+    }
+   ],
+   "poster": 75,
+   "file": "tour-winter-wide.mp4",
+   "posterFile": "tour-winter-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 4389799,
+   "posterBytes": 62082
+  },
+  "tour-winter-tall": {
+   "frames": 2076,
+   "duration": 69.2,
+   "tour": "winter",
+   "stops": [
+    {
+     "place": "viaduct",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "kawabe",
+     "t": 12.975,
+     "from": 7.5
+    },
+    {
+     "place": "fields",
+     "t": 21.675,
+     "from": 18.475
+    },
+    {
+     "place": "dock",
+     "t": 30.532,
+     "from": 27.175
+    },
+    {
+     "place": "mill",
+     "t": 39.232,
+     "from": 36.032
+    },
+    {
+     "place": "shrine",
+     "t": 50.142,
+     "from": 44.732
+    },
+    {
+     "place": "takamori",
+     "t": 63.712,
+     "from": 55.642
+    }
+   ],
+   "poster": 75,
+   "file": "tour-winter-tall.mp4",
+   "posterFile": "tour-winter-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 4377631,
+   "posterBytes": 52025
+  },
+  "tour-night-wide": {
+   "frames": 2503,
+   "duration": 83.43333333333334,
+   "tour": "night",
+   "stops": [
+    {
+     "place": "kawabe",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "fields",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "dock",
+     "t": 17.557,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 26.257,
+     "from": 23.057
+    },
+    {
+     "place": "shrine",
+     "t": 37.166,
+     "from": 31.757
+    },
+    {
+     "place": "takamori",
+     "t": 50.737,
+     "from": 42.666
+    },
+    {
+     "place": "viaduct",
+     "t": 64.737,
+     "from": 56.237
+    },
+    {
+     "place": "hill",
+     "t": 75.437,
+     "from": 72.237
+    }
+   ],
+   "poster": 75,
+   "file": "tour-night-wide.mp4",
+   "posterFile": "tour-night-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 4889647,
+   "posterBytes": 47417
+  },
+  "tour-night-tall": {
+   "frames": 2503,
+   "duration": 83.43333333333334,
+   "tour": "night",
+   "stops": [
+    {
+     "place": "kawabe",
+     "t": 0,
+     "from": 0
+    },
+    {
+     "place": "fields",
+     "t": 8.7,
+     "from": 5.5
+    },
+    {
+     "place": "dock",
+     "t": 17.557,
+     "from": 14.2
+    },
+    {
+     "place": "mill",
+     "t": 26.257,
+     "from": 23.057
+    },
+    {
+     "place": "shrine",
+     "t": 37.166,
+     "from": 31.757
+    },
+    {
+     "place": "takamori",
+     "t": 50.737,
+     "from": 42.666
+    },
+    {
+     "place": "viaduct",
+     "t": 64.737,
+     "from": 56.237
+    },
+    {
+     "place": "hill",
+     "t": 75.437,
+     "from": 72.237
+    }
+   ],
+   "poster": 75,
+   "file": "tour-night-tall.mp4",
+   "posterFile": "tour-night-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 5012492,
+   "posterBytes": 43340
+  },
+  "intro-grandma-tall": {
+   "frames": 789,
+   "duration": 26.3,
+   "story": "grandma",
+   "marks": {
+    "whistle": 5.8,
+    "platform": 25.25
+   },
+   "poster": 120,
+   "file": "intro-grandma-tall.mp4",
+   "posterFile": "intro-grandma-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 1894452,
+   "posterBytes": 62402
+  },
+  "intro-classic-wide": {
+   "frames": 789,
+   "duration": 26.3,
+   "story": "classic",
+   "marks": {
+    "whistle": 5.8,
+    "platform": 25.25
+   },
+   "poster": 120,
+   "file": "intro-classic-wide.mp4",
+   "posterFile": "intro-classic-wide.jpg",
+   "width": 960,
+   "height": 540,
+   "bytes": 1920615,
+   "posterBytes": 74126
+  },
+  "intro-classic-tall": {
+   "frames": 789,
+   "duration": 26.3,
+   "story": "classic",
+   "marks": {
+    "whistle": 5.8,
+    "platform": 25.25
+   },
+   "poster": 120,
+   "file": "intro-classic-tall.mp4",
+   "posterFile": "intro-classic-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 1895765,
+   "posterBytes": 63129
+  },
+  "title-tall": {
+   "frames": 420,
+   "duration": 14,
+   "loop": true,
+   "poster": 1,
+   "file": "title-tall.mp4",
+   "posterFile": "title-tall.jpg",
+   "width": 540,
+   "height": 960,
+   "bytes": 659468,
+   "posterBytes": 66633
+  }
+ }
+}
