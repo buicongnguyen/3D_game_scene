@@ -89,7 +89,7 @@ export const SHAPES = [
   { kind: 'disc', x: 115, z: 8, r: 38, f: 26, t: 21 },            // Takamori plateau
   { kind: 'disc', x: 150, z: -38, r: 20, f: 14, t: 22 },          // pasture
   { kind: 'disc', x: 143, z: 72, r: 12, f: 14, t: 16 },           // Takamori Halt
-  { kind: 'disc', x: 62, z: -156, r: 13, f: 14, t: 24 },          // shrine hilltop
+  { kind: 'disc', x: 62, z: -157, r: 16, f: 14, t: 24 },          // shrine hilltop (the great hall's terrace and the Forest Lamp)
   { kind: 'ramp', ax: 62, az: -122, bx: 62, bz: -140, ha: 12, hb: 24, w: 3.2, f: 5 }, // shrine stairs: 4 flights of 4.5 m x 3 m
   { kind: 'disc', x: 62, z: -116, r: 8, f: 10, t: 12 },           // stair foot clearing
   { kind: 'ramp', ax: -86, az: 100, bx: -60, bz: 64, ha: 15.6, hb: 3.6, w: 3, f: 9 },  // station road down to Kawabe
@@ -109,6 +109,7 @@ export const POST_SHAPES = [
   { kind: 'disc', x: -12.2, z: -45, r: 1.6, f: 1.8, t: -1.6 },    // mill race under the wheel
   { kind: 'rect', x: -9.6, z: -45, hw: 1.1, hd: 1.9, f: 1.2, t: 1.1 }, // stone landing for the drawbridge
   { kind: 'ramp', ax: -16, az: -112, bx: 8, bz: -112, ha: -0.9, hb: -0.9, w: 3, f: 3, onlyBelow: true }, // shallow ford
+  { kind: 'rect', x: -21.1, z: 16.6, hw: 7.15, hd: 10.45, f: 2.2, t: 3.0 },  // Kawabe playground yard: level to its east fence (content/yard.js)
 ];
 
 // ------------------------------------------------------------------ buildings & big props
@@ -142,14 +143,16 @@ export const BUILDINGS = [
   { id: 'tk6', model: 'takamori-house-b', x: 138, z: 34, rot: 215 },
   { id: 'haltPlatform', model: 'platform', x: 141.2, z: 73.4, rot: -122, y: RAIL_Y },
   // Shrine
-  { id: 'shrine', model: 'shrine', x: 62, z: -158, rot: 0 },
+  { id: 'shrine', model: 'shrine', x: 62, z: -160, rot: 0 },     // origin = centre of its 11.4 x 13.2 m stone terrace
   { id: 'torii', model: 'torii', x: 62, z: -113.5, rot: 0 },
   { id: 'toriiTop', model: 'torii', x: 62, z: -144.5, rot: 0 },
 ];
 
 // Star Lamps (story beacons). tower: model; flame offset is read from the model's `Flame` node.
 export const LAMPS = [
-  { id: 'forest', name: 'Forest Lamp', model: 'star-lamp', x: 71, z: -152, rot: 0, chapter: 3 },
+  // the Forest Lamp is the grand tower (twice the Star Lamp). range, gain: reach and strength of its light (the flame is
+  // 15 m up); shot: how much further back the lighting cutscene stands
+  { id: 'forest', name: 'Forest Lamp', model: 'star-lamp-grand', x: 73, z: -152, rot: 0, chapter: 3, range: 60, gain: 2.4, shot: 1.8 },
   { id: 'mill', name: 'Mill Lamp', model: 'star-lamp', x: 1.2, z: -45.6, rot: -90, chapter: 1, y: 1.25 },
   { id: 'orchard', name: 'Orchard Lamp', model: null, building: 'belltower', chapter: 2 },
   { id: 'viaduct', name: 'Viaduct Lamp', model: 'lamp-viaduct', x: 0, z: 123.0, rot: 0, y: DECK_Y, chapter: 4 }, // in the pier refuge
@@ -207,7 +210,7 @@ export const FALLEN_STARS = [
 // Keep-out zones for scattering (trees, rocks, flowers): circles [x, z, r].
 export const CLEARINGS = [
   [-98, 114, 22], [-60, 140, 12], [-45, 20, 50], [-18, -44, 14], [0, -45, 6], [-12, -6, 9],
-  [115, 8, 40], [150, -38, 22], [143, 72, 14], [62, -156, 16], [62, -128, 10], [-164, 84, 18],
+  [115, 8, 40], [150, -38, 22], [143, 72, 14], [62, -157, 19], [73, -152, 8], [62, -128, 10], [-164, 84, 18],
   [53, -121, 6], [-50, -161, 7], [24.5, 30, 8], [1, 30, 8], // (the landslide scar clears its own ground: structures.js)
   [-85, 14.5, 25],
 ];

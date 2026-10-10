@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { tx, N_ } from '../../i18n/i18n.js';
 import { rng } from '../../engine/spline.js';
 import { Animator } from '../../actors/animator.js';
+import { fit, disposeRigs } from './util.js';
 
 // ---------------------------------------------------------------------------------------------------- pure rules
 export const POINTS = { perfect: 20, okay: 10, raw: 3, burnt: 0 };
@@ -47,14 +48,13 @@ const smooth = (a, b, v) => { const u = clamp01((v - a) / (b - a)); return u * u
  * when it turns perfect),
  * steam (white sweet-smelling puffs while it is perfect), char (darkening after the window; 1 = burnt, black smoke).
  */
-export function cue(heat, p) {
+export function cue(heat, p, out = {}) {
   const end = p.cook + p.win;
   const char = clamp01((heat - end) / OKAY);
-  return {
-    glow: smooth(0.55, 1, heat / p.cook) * (1 - char),
-    steam: heat >= p.cook - 0.4 && heat < end ? 1 : 0,
-    char,
-  };
+  out.glow = smooth(0.55, 1, heat / p.cook) * (1 - char);
+  out.steam = heat >= p.cook - 0.4 && heat < end ? 1 : 0;
+  out.char = char;
+  return out;                     // `out`: a record to fill instead of a new one (the round asks every frame)
 }
 
 /** One round of roasting (pure). Spots are 'empty' → 'buried' (heat rises with time) → 'dug' (with a result). */
@@ -94,7 +94,7 @@ export class Roast {
   get buried() { return this.spots.filter(s => s.st === 'buried').length; }
   get left() { return this.spots.filter(s => s.st === 'empty').length; }
   get done() { return this.spots.every(s => s.st === 'dug'); }
-  get score() { return roastScore(this.spots.map(s => s.result)); }
+  get score() { let n = 0; for (const s of this.spots) n += POINTS[s.result] || 0; return n; }   // = roastScore of the results
   tally() {
     const t = { perfect: 0, okay: 0, raw: 0, burnt: 0 };
     for (const s of this.spots) if (s.result) t[s.result]++;
@@ -147,7 +147,8 @@ export function layout(heightAt, place, rand, { piles = STRAW + 1, dry = 0.45 } 
 
 // ---------------------------------------------------------------------------------------------------- the round
 const V = () => new THREE.Vector3();
-const _v = V(), _w = V(), _c = new THREE.Color();
+const _v = V(), _w = V(), _c = new THREE.Color(), _cue = { glow: 0, steam: 0, char: 0 };
+const EMBER_GLOW = 20;            // the model's coals are dark in the file (emissive 0.03): this is their glow once the straw has burnt
 const RING_R = 1.0;               // the potatoes lie in a ring this far from the middle of the ash
 const BED_R = 1.5;
 const ASH = new THREE.Color('#4d4744'), AMBER = new THREE.Color('#ff9a1c'), CHAR = new THREE.Color('#1c1512');
@@ -173,13 +174,6 @@ function bedTexture() {
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
-}
-
-/** Scale a model so its longest side is `size` metres (the artist's units may differ); returns the model. */
-function fit(model, size) {
-  const b = new THREE.Box3().setFromObject(model), d = b.getSize(_v), m = Math.max(d.x, d.y, d.z) || 1;
-  model.scale.multiplyScalar(size / m);
-  return model;
 }
 
 class RoastRound {
@@ -231,25 +225,19 @@ class RoastRound {
     this.grassWas = null;
   }
 
-  strawModel(size, layers = 1) {
+  strawModel(size) {
     const a = this.g.assets;
     if (a?.has?.('straw-pile')) {
-      // the artist's pile is a low mound (with its own ember bed, shown once it has burnt down): heap up `layers` of it
-      const root = new THREE.Group();
-      root.userData.embers = [];
-      for (let k = 0, y = 0; k < layers; k++) {
-        const m = a.clone('straw-pile');
-        const em = m.getObjectByName('embers');
-        if (em) { em.visible = false; if (k === 0) root.userData.embers.push(em); else em.removeFromParent(); }
-        const st = m.getObjectByName('straw_pile');
-        if (st) root.userData.straw = (root.userData.straw || []).concat(st);
-        fit(m, size * (1 - k * 0.27));
-        m.traverse(o => { if (o.isMesh) { o.castShadow = size > 0.8 && k === 0; o.receiveShadow = true; } });
-        m.position.y = y;
-        m.rotation.y = k * 2.1;
-        y += size * (1 - k * 0.27) * 0.17;
-        root.add(m);
-      }
+      // the artist's pile is a real heap: `straw_pile`, and beside it (a sibling, so it stays when the straw is
+      // scaled away) its own bed of `embers`, shown once the straw has burnt down
+      const root = new THREE.Group(), m = a.clone('straw-pile');
+      const em = m.getObjectByName('embers'), st = m.getObjectByName('straw_pile');
+      root.userData.embers = em ? [em] : [];
+      root.userData.straw = st ? [st] : [];
+      if (em) em.visible = false;
+      fit(m, size);
+      m.traverse(o => { if (o.isMesh) { o.castShadow = size > 0.8; o.receiveShadow = true; } });
+      root.add(m);
       return root;
     }
     // no art yet: a little stook of straw (a cone with a tied waist)
@@ -327,7 +315,7 @@ class RoastRound {
     this.bed = this.add(new THREE.Mesh(this.geo.bed, this.mat(new THREE.MeshBasicMaterial({ map: this.bedTex, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }))), h);
     this.bed.renderOrder = 2;
     // the fire's own pile of straw (grows with every armful), and the flames
-    this.pile = this.add(this.strawModel(1.5, 3), h);
+    this.pile = this.add(this.strawModel(1.5), h);
     this.pile.scale.setScalar(0.001);
     this.flames = [];
     for (const [col, s, ox, oz] of [['#ff5a10', 1, 0, 0], ['#ff9a1e', 0.72, 0.2, 0.1], ['#ffe066', 0.5, -0.12, -0.14]]) {
@@ -355,7 +343,7 @@ class RoastRound {
     this.selRing.renderOrder = 7;
     // straw piles round the field, each with a bobbing arrow while Mika still needs straw
     this.piles = L.piles.map(q => {
-      const m = this.add(this.strawModel(1.6, 3));
+      const m = this.add(this.strawModel(1.6));
       m.position.set(q.x, q.y, q.z);
       this.g.world?.splat?.paintDisc?.(q.x, q.z, 0.9, 3, 0, 0.8);
       m.rotation.y = this.rand() * 6.28;
@@ -364,7 +352,7 @@ class RoastRound {
       return { ...q, m, arrow, taken: false };
     });
     // an armful is carried on the head, the way it is done in the fields
-    this.bundle = this.strawModel(0.95, 2);
+    this.bundle = this.strawModel(0.95);
     this.bundle.visible = false;
     (this.player.root || this.player.model).add(this.bundle);
     this.bundle.position.set(0, 1.32, 0.02);
@@ -527,7 +515,7 @@ class RoastRound {
         // the coals glow: an own copy of the model's ember material, turned up
         if (o.visible && !o.userData.hot) {
           o.userData.hot = true;
-          o.traverse(c => { if (c.isMesh && c.material?.emissive) { c.material = this.mat(c.material.clone()); c.material.emissiveIntensity = 2.6; this.coals = c.material; } });
+          o.traverse(c => { if (c.isMesh && c.material?.emissive) { c.material = this.mat(c.material.clone()); c.material.emissiveIntensity = EMBER_GLOW; this.coals = c.material; } });
         }
       }
     } else this.pile.scale.setScalar(s);
@@ -615,7 +603,7 @@ class RoastRound {
     for (const s of this.spots) {
       const gs = game.spots[s.i];
       if (gs.st !== 'buried') continue;
-      const q = cue(gs.heat, gs);
+      const q = cue(gs.heat, gs, _cue);
       s.mm.color.copy(ASH).lerp(AMBER, q.glow * 0.7).lerp(CHAR, q.char);
       s.mm.emissive.copy(AMBER).multiplyScalar(q.glow * q.glow * (1.7 + Math.sin(this.t * 7 + s.i) * 0.3));
       s.mound.scale.setScalar(q.steam && !q.char ? 1.06 + Math.sin(this.t * 9) * 0.06 : 1);
@@ -666,7 +654,7 @@ class RoastRound {
     }
     this.bed.material.opacity = this.embers;
     this.bed.material.color.setScalar(0.82 + this.flick * 0.18);
-    if (this.coals) this.coals.emissiveIntensity = 1.8 + this.flick * 1.2;
+    if (this.coals) this.coals.emissiveIntensity = EMBER_GLOW * (0.7 + this.flick * 0.45);
     this.I = Math.max(f * 14, this.embers * 2.2);
     if (this.embers > 0.5 && Math.random() < dt * 5) this.spark();
     if (this.embers > 0.5 && Math.random() < dt * 1.6) this.smoke(_v.copy(this.centre).setY(this.centre.y + 0.2), false, 0.5, 1.5);
@@ -721,7 +709,7 @@ class RoastRound {
     this.bundle.removeFromParent();
     this.restoreGrass();
     // rigged clones own a bone texture each (the geometry and materials belong to the model library)
-    for (const o of this.added) { this.scene.remove(o); o.traverse(c => { if (c.isSkinnedMesh) c.skeleton?.dispose?.(); }); }
+    for (const o of this.added) { this.scene.remove(o); disposeRigs(o); }
     for (const x of this.own) x.dispose?.();
     this.own.length = 0;
     const d = this.ctx.director;

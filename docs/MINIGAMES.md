@@ -288,8 +288,14 @@ Each entry: **hook**, **where/when**, **how it plays**, **controls**, **rules an
 - **Hook:** the existing fishing game becomes replayable, with **bait from the farm**.
 - **Where/when:** the Kawabe dock sign, and any fishing spot in Explore. All seasons (a frozen river in winter means ice
   fishing through a hole).
-- **How it plays:** the current fishing game (`src/game/minigames.js`): cast, wait for the bite, reel while keeping the
-  line tension in the safe band.
+- **How it plays (built):** fishing in the world, `src/game/fishing/` (`sim.js` rules, `pond.js` clear water and the
+  instanced school, `session.js` camera, cast, line and HUD). The camera lifts over Mika's shoulder and looks down into a
+  patch of clear water north of the dock; a click or tap on the water casts the float there (arrows or the stick steer
+  the ring, E casts). A fish swims up and nibbles (pressing now scares it), then the float sinks: strike, and hold to
+  reel. Let go when the fish surges or the line strains: the line can snap, and a slack line lets it slip the hook.
+  Difficulty comes from the fish (`FISH[...].difficulty` and its size). Easy is gentler, and during `c1.fish` on Easy
+  the line never snaps; the three story fish are always trout. Winter: through a hole in the ice. Dusk: the starfin.
+  The journal's Fish tab keeps the longest of each kind (`fishBest`).
 - **New in this version:**
   - **Bait:**
     - a rice ball for trout;

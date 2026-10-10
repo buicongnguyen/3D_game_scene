@@ -114,9 +114,10 @@ export const STORY = {
     // classic: Sora's letter. Here Grandma explains it herself, on the porch.
     p_letter: [
       ['sora', 'Now listen, both of you. The valley has four Star Lamps: Forest, Mill, Orchard and Viaduct.', 'Talk'],
-      ['sora', 'They light the way for the Star Train. On star-fall night it carried the whole valley over the viaduct. Best night of the year.'],
+      ['sora', 'They light the way home after dark, and the way for the Star Train. On star-fall night it carried the whole valley.'],
       ['sora', 'Ten years ago the old viaduct got too tired for trains. No train, so we let the lamps sleep. Tamo too.'],
       ['sora', 'This winter I want that night back. The train needs all four lamps lit. One a season, Mi-chan. Mill Lamp first, in Kawabe.'],
+      ['sora', "Mind, Ōta's water wheel makes the power that keeps the lamp towers burning. So it's the wheel first, then the lamps."],
       ['mika', "Me? Grandma, I've been here twenty minutes."],
       ['sora', "Twenty-one. Plenty. You'll meet everyone on the way. That's half the job anyway.", 'Cheer'],
       ['tamo', "I'll help! I'm very good with lamps. I think. It's been a while.", 'Happy'],
@@ -130,6 +131,7 @@ export const STORY = {
       ['sora', 'Look at that. Supper, then bed. Tomorrow, Kawabe. I have written you a list.', 'Cheer'],
       ['mika', 'Of course you have. What comes first?'],
       ['sora', "Rin, at the Kawabe dock. She's about your age, and she knows everyone. Tell her I sent you.", 'Talk'],
+      ['sora', "No rush, mind. Have a wander round the village first. Say hello, peek in the shops. A list is not a race."],
       ['tamo', 'Kawabe! The river village! …Which way is Kawabe?'],
       ['sora', "Downhill, Tamo. Everything is downhill from here. That's why I need her.", 'Talk'],
     ],
@@ -160,7 +162,7 @@ export const STORY = {
       ['rin', 'He said no, right? Classic Grandpa.', 'Talk'],
       ['rin', 'Your grandma told me the trick years ago: Grandpa has never once said no to a grilled trout.'],
       ['rin', "So. Catch me three fish—any fish, we'll call them trout—and I'll grill them. The rod's on the dock."],
-      ['rin', "Cast, wait for the float to dip, then press {act}. I'll teach you the rest. That's what friends do. Probably."],
+      ['rin', "Cast where the fish are, wait for the float to sink, then hold to reel. Ease off if the line strains. That's what friends teach you. Probably."],
     ],
     c1_ota_trout: [
       ['ota', '…Is that grilled trout?', 'Idle'],
@@ -172,6 +174,7 @@ export const STORY = {
     c1_wheel: [
       ['narrator', 'The cogs slide into place. The old axle groans, shudders… and the great wheel turns.', 'Hammer'],
       ['ota', '…It turns. Hah! Listen to her sing.', 'Wave'],
+      ['ota', "Hear that hum? She's turning my dynamo. There's power on the lamp line again, all the way down the valley."],
       ['ota', "There goes the drawbridge. The island's yours, Sora's girl. Light it at sundown—that's when a lamp earns its keep."],
       ['ota', 'And tell your grandmother I fixed it myself. Mostly.', 'Talk'],
     ],
@@ -635,7 +638,7 @@ export const STORY = {
   // ---------------------------------------------------------------------------------------------- Grandma's star diary
   // Same four pages, written by young Sora; given by Ōta (c1.page), Hana (c2.page), the forest lamp (c3.lamp), Genzo (c4.shed).
   JOURNAL: [
-    { title: 'Page 1 · The Mill Lamp', text: "Spring. Ōta's father let me light the Mill Lamp. Ōta said I'd set my plaits on fire. It was only my sleeve. Then a little star came out and sat on my thumb. His name is Tamo. — Sora, 13" },
+    { title: 'Page 1 · The Mill Lamp', text: "Spring. The wheel hums, the lamps have power, and Ōta's father let me light the Mill Lamp. Ōta said I'd set my plaits on fire. It was only my sleeve. Then a little star came out and sat on my thumb. His name is Tamo. — Sora, 13" },
     { title: 'Page 2 · Firefly Night', text: "Summer. Fireflies over the orchard and the Star Train all lit up. Genzo hung out of his father's cab and lost his cap in the river. Tamo and I laughed until we got hiccups. Stars get hiccups. — S." },
     { title: 'Page 3 · The Forest', text: "Autumn. Kiku (not old yet, she'd want me to say) let me sleep at the shrine. A bear snored on the steps all night, so we made honey chestnuts and waited. The forest lamp is for the animals too. — S." },
     { title: 'Page 4 · Star-fall', text: "Winter. Tamo has moved into the Viaduct Lamp. He says the train needs him more than I do. I cried a bit. Genzo says one day he'll drive the Star Train and I'll wave. Deal. — S." },
@@ -704,25 +707,25 @@ export const STORY = {
     'p.cottage': { objective: "Walk up the bluff to Grandma's cottage" },
     'p.chest': { objective: "Open Grandma's old chest on the porch", talk: { sora: 'sora_hint_chest' } },
     'p.porch': { objective: "Grandma's first job: walk up to the porch lamp and press {act}", talk: { sora: 'sora_hint_porch' } },
-    'c1.rin': { objective: "Grandma's list: find Rin at the Kawabe dock" },
+    'c1.rin': { objective: "Grandma's list: look round Kawabe, then find Rin at the dock" },
     'c1.ota': { objective: "Grandma's list: ask Grandpa Ōta about the Mill Lamp" },
     'c1.fish': { objective: "Grandma's list: trout for Ōta. Catch three fish from the dock ({fish}/3)" },
     'c1.cogs': { objective: "Grandma's list: find the three lost mill cogs ({cog}/3)" },
-    'c1.wheel': { objective: "Grandma's list: fix the mill wheel" },
-    'c1.lamp': { objective: "Grandma's list: cross to the island and light the Mill Lamp" },
+    'c1.wheel': { objective: "Grandma's list: fix the mill wheel. It makes the valley's electricity" },
+    'c1.lamp': { objective: "Grandma's list: the mill has power again. Cross to the island and light the Mill Lamp" },
     'c2.ferry': { objective: "Grandma's list: cross the river on Rin's ferry" },
     'c2.hana': { objective: "Grandma's list: help Hana at the Takamori bakery" },
     'c2.peaches': { objective: "Grandma's list: ripe peaches for Hana and the jam ({peach}/5)" },
-    'c2.lamp': { objective: "Grandma's list: light the Orchard Lamp on the bell tower" },
+    'c2.lamp': { objective: "Grandma's list: light the Orchard Lamp on the bell tower, so Takamori gets home safe" },
     'c3.gather': { objective: "Grandma's list: 3 chestnuts ({chestnut}/3), 2 mushrooms ({mushroom}/2) and a honeycomb ({honeycomb}/1)" },
-    'c3.lamp': { objective: "Grandma's list: climb the shrine steps and light the Forest Lamp" },
+    'c3.lamp': { objective: "Grandma's list: climb the shrine steps and light the Forest Lamp, for the forest path" },
     'c4.shed': { objective: "Grandma's list: help Genzo. He's at the engine shed", done: { event: 'talk', who: 'genzo' }, talk: { genzo: 'c4_shed' } },
     'c4.gather': { objective: "Grandma's list: invite Grandpa Ōta and Hana to the station" },
     'c4.meeting': {
       exit: [{ cutscene: 'meeting' }, { say: 'c4_meeting' }, { say: 'c4_meeting_after' }, { timelapse: 10 }, { spawn: 'repair' }],
     },
     'c4.repair': { objective: "Grandma's list: mend the viaduct. Set the three new beams ({beams}/3)" },
-    'c4.lamp': { objective: "Grandma's list: walk to the Viaduct Lamp and light the last lamp" },
+    'c4.lamp': { objective: "Grandma's list: walk to the Viaduct Lamp and light the last lamp, for the Star Train" },
     'c4.board': { objective: "Grandma's list: ride the Star Train! Board at Hoshi Station", talk: { genzo: 'c4_board', sora: 'sora_hint_board' } },
     'c4.ride': {
       exit: [{ cutscene: 'finale' }, { say: 'c4_finale' }, { cutscene: 'farewell' }, { flag: 'tamoHome' }, { say: 'ending_parents' }, { cutscene: 'celebrate:4' }],

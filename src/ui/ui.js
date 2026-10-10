@@ -582,6 +582,7 @@ export class UI {
     $('btnPauseSettings').addEventListener('click', () => this.open('settings'));
     $('btnPauseControls').addEventListener('click', () => this.openControls());
     $('btnControls').addEventListener('click', () => this.openControls());
+    this.bindTour();
     $('btnSaveQuit').addEventListener('click', () => this.game.saveAndQuit?.());
     // Esc and J work on the menus themselves: game input is switched off while paused
     addEventListener('keydown', e => {
@@ -646,6 +647,21 @@ export class UI {
     });
     this.applySettings = apply;
     apply();
+  }
+
+  /** The scene tour's two doors: a button in Settings and one on the title menu. The tour itself (game/tour.js) loads on first use. */
+  bindTour() {
+    const open = () => import('../game/tour.js').then(m => m.openTour(this.game)).catch(e => console.error('scene tour failed to load', e));
+    const make = (id, cls) => {
+      const b = document.createElement('button');
+      b.id = id; b.type = 'button'; b.className = cls;
+      b.dataset.i18n = ''; b.dataset.i18nSrc = 'Scene tour';   // re-told by applyDom() on a language change
+      b.textContent = tx('Scene tour');
+      b.addEventListener('click', open);
+      return b;
+    };
+    $('btnControls').after(make('btnTour', 'controls-btn'));
+    $('btnExplore').after(make('btnTitleTour', ''));
   }
 
   /** Show a panel on top of the stack. The one underneath (the pause menu too) hides until this one closes. */
@@ -713,8 +729,8 @@ export class UI {
     } else if (tab === 'fish') {
       const kinds = Object.entries(FISH), caught = kinds.filter(([k]) => q.fishLog[k]).length;
       body.innerHTML = `<p>${esc(tx('{n} of {total} kinds caught', { n: caught, total: kinds.length }))}</p><div class="cards">` + kinds.map(([k, f]) => {
-        const n = q.fishLog[k] || 0;
-        return this.cardHTML(n > 0, f.icon, tx(f.name), n ? tx(f.desc) : tx(f.hint), n ? `× ${n}` : tx('Not caught yet'), n ? tx(f.hint) : '', f.hue);
+        const n = q.fishLog[k] || 0, best = q.fishBest?.[k];       // best: the longest one landed (cm)
+        return this.cardHTML(n > 0, f.icon, tx(f.name), n ? tx(f.desc) : tx(f.hint), n ? `× ${n}${best ? ` · ${tx('best {cm} cm', { cm: best })}` : ''}` : tx('Not caught yet'), n ? tx(f.hint) : '', f.hue);
       }).join('') + '</div>';
     } else if (tab === 'treasures') {
       const tr = q.treasures || {}, letters = q.letters || [], gifts = this.game.director?.giftsEarned().map(x => x.g.id) || [];

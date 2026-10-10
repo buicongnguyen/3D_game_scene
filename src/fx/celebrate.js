@@ -514,7 +514,9 @@ export class Celebrate {
     }
     const mesh = new THREE.InstancedMesh(this.decor.lanternGeometry(), this.decor.mat, Math.max(1, items.length));
     mesh.count = items.length;
-    mesh.frustumCulled = false;
+    // cull by where the lanterns hang: they pop in from scale 0, so the mesh cannot measure itself
+    mesh.boundingSphere = new THREE.Sphere(C.clone(), 1);
+    if (items.length) { mesh.boundingSphere.setFromPoints(items.map(o => o.p)); mesh.boundingSphere.radius += 2; } else mesh.frustumCulled = false;
     items.forEach((o, i) => { mesh.setMatrixAt(i, _m.makeScale(0, 0, 0)); mesh.setColorAt(i, o.c); });
     if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     const hp = new GlowPoints(halos, { kind: KIND.GLOW, flicker: 0.18 });

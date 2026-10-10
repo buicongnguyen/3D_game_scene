@@ -70,6 +70,7 @@ export const CONTRACTS = {
   mill: { family: 'architecture', tris: 16000, nodes: ['Wheel', 'Chimney'] },
   drawbridge: { family: 'architecture', tris: 3000, nodes: ['Deck'] },
   'star-lamp': { family: 'architecture', tris: 8000, nodes: ['Flame'], mats: ['Lamp glass', 'Lamp star'] },
+  'star-lamp-grand': { family: 'architecture', tris: 12000, nodes: ['Flame'], mats: ['Lamp glass', 'Lamp star'] },
   'takamori-house-a': { family: 'architecture', tris: 14000, mats: ['Window glow'] },
   'takamori-house-b': { family: 'architecture', tris: 10000, mats: ['Window glow'] },
   bakery: { family: 'architecture', tris: 16000, nodes: ['Chimney'], mats: ['Window glow'] },
@@ -78,7 +79,7 @@ export const CONTRACTS = {
   platform: { family: 'architecture', tris: 3000 },
   'signal-cottage': { family: 'architecture', tris: 14000, nodes: ['PorchFlame', 'Chest', 'ChestLid'], mats: ['Porch glass'] },
   'engine-shed': { family: 'architecture', tris: 14000 },
-  shrine: { family: 'architecture', tris: 12000, nodes: ['Noticeboard'] },
+  shrine: { family: 'architecture', tris: 26000, nodes: ['Noticeboard'], mats: ['Lantern glow'] },
   torii: { family: 'architecture', tris: 2000 },
   'stone-lantern': { family: 'architecture', tris: 1500, mats: ['Lantern glow'] },
   'shrine-stairs': { family: 'architecture', tris: 2000 },
@@ -149,15 +150,18 @@ export const CONTRACTS = {
   'glass-jar': { family: 'tricks', tris: 300, nodes: ['Inside'], mats: ['Jar glass', 'Jar cloth'] },
   'bug-net': { family: 'tricks', tris: 300, nodes: ['Hoop'], mats: ['Net mesh'] },
   // Rural tricks phase 2 (build_tricks2.py): kite, sweet potato roast, beetle sap trap (the dew web is 'spider-web').
+  // Beetle legs are two bones each (leg = hip, shin = knee) so Walk keeps the claws planted; node art/blender/validate_glb.mjs checks it.
   'beetle-rhino': { family: 'tricks', tris: 350, icon: true, clips: ['Idle', 'Walk'],
-    nodes: ['body', 'head', 'antenna_L', 'antenna_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R'] },
+    nodes: ['body', 'head', 'antenna_L', 'antenna_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R', 'shin1_L', 'shin2_L', 'shin3_L', 'shin1_R', 'shin2_R', 'shin3_R'] },
   'beetle-stag': { family: 'tricks', tris: 350, icon: true, clips: ['Idle', 'Walk'],
-    nodes: ['body', 'head', 'jaw_L', 'jaw_R', 'antenna_L', 'antenna_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R'] },
+    nodes: ['body', 'head', 'jaw_L', 'jaw_R', 'antenna_L', 'antenna_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R', 'shin1_L', 'shin2_L', 'shin3_L', 'shin1_R', 'shin2_R', 'shin3_R'] },
   moth: { family: 'tricks', tris: 150, clips: ['Idle', 'Fly'], nodes: ['body', 'wing_L', 'wing_R', 'hind_L', 'hind_R'] },
-  'kite-paper': { family: 'tricks', tris: 200, mats: ['Kite paper', 'Kite bamboo'] },
+  // Three sibling parts under the empty 'kite', so the kite trick can show the frame, the sail and the tail one by one.
+  'kite-paper': { family: 'tricks', tris: 200, nodes: ['kite', 'frame', 'kite_paper', 'tail'], mats: ['Kite paper', 'Kite bamboo'] },
   // Two variants in one file: show 'raw' or 'roasted', never both. The icon is the roasted one.
   'sweet-potato': { family: 'tricks', tris: 200, icon: true, nodes: ['raw', 'roasted'], mats: ['Potato skin', 'Potato flesh'] },
-  'straw-pile': { family: 'tricks', tris: 300, nodes: ['embers'], mats: ['Straw', 'Straw embers'] },
+  // 'straw_pile' and 'embers' are siblings under the empty 'straw': the roast shrinks the straw and the coals stay.
+  'straw-pile': { family: 'tricks', tris: 300, nodes: ['straw', 'straw_pile', 'embers'], mats: ['Straw', 'Straw embers'] },
   hearth: { family: 'props', tris: 3000, nodes: ['Fire'] },
   crate: { family: 'props', tris: 1200 },
   barrel: { family: 'props', tris: 1200 },
@@ -240,10 +244,16 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // 1 KB under the old cap, so this is the smallest round step that also leaves a little room for the people audit.
 // 37.95 -> 38.135 MB: rural tricks phase 2 (beetle-rhino 59 KB, beetle-stag 64 KB, moth 28 KB, kite-paper 9 KB,
 // sweet-potato 8 KB, straw-pile 13 KB: 181.7 KB raw together, two thirds of it the beetles' clips; spider-web +0.1 KB).
-export const TOTAL_RAW_BYTES = 38_135_000;
+// +1.156 MB: the Forest Shrine rebuilt at twice the size (shrine.glb 516 -> 1159 KB raw: 11.9k -> 24.9k triangles) and its
+// own grand lamp tower (star-lamp-grand.glb, 512 KB raw, 10.7k triangles).
+// +0.057 MB: tricks phase 2 art audit. The beetles' legs gained a knee bone each for a Walk with planted feet
+// (beetle-rhino 59 -> 86 KB, beetle-stag 64 -> 91 KB: twelve more animated bones); the other five changed by < 1.1 KB each.
+export const TOTAL_RAW_BYTES = 39_348_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
 // 14.3 -> 14.4 MB: rural tricks (frogs, firefly, jar, net: ~0.09 MB packed together).
 // 14.4 -> 14.52 MB: rural tricks phase 2 (two beetles, moth, kite, sweet potato, straw pile: 0.117 MB packed together).
-export const TOTAL_PACKED_BYTES = 14_520_000;
+// +0.331 MB: the great shrine hall (163 -> 338 KB packed) and the grand Forest Lamp (156 KB packed).
+// +0.046 MB: tricks phase 2 art audit (the beetles' knee bones: 36 -> 57 KB and 41 -> 63 KB packed).
+export const TOTAL_PACKED_BYTES = 14_897_000;

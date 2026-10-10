@@ -156,6 +156,7 @@ function makeNet(assets) {
   const bag = new THREE.Mesh(new THREE.ConeGeometry(0.155, 0.32, 10, 1, true), new THREE.MeshStandardMaterial({ color: '#f4f1e6', transparent: true, opacity: 0.55, side: THREE.DoubleSide, roughness: 1 }));
   bag.position.set(0, 1.04, -0.14); bag.rotation.x = -Math.PI / 2;
   g.add(stick, hoop, bag);
+  g.userData.own = [wood, stick.geometry, hoop.geometry, bag.geometry, bag.material];   // made here: freed with the round
   return g;
 }
 
@@ -168,6 +169,7 @@ function makeJar(assets) {
   const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.03, 12), new THREE.MeshStandardMaterial({ color: '#c79a52', roughness: 0.7 }));
   lid.position.y = 0.255;
   g.add(glass, lid);
+  g.userData.own = [glass.geometry, glass.material, lid.geometry, lid.material];
   return g;
 }
 
@@ -225,6 +227,21 @@ export default {
     const jarLight = g.lights.add({ pos: jarAt, color: '#d8ff6a', intensity: 0, range: 7 });
 
     const sw = new Swarm(scene, MAX);
+    // everything the round put in the valley goes back, however it ends (a quit, or an error half-way)
+    let cleaned = false;
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      g.lights.remove(jarLight);
+      sw.dispose();
+      jar.removeFromParent();
+      net.removeFromParent();
+      for (const x of [...(net.userData.own || []), ...(jar.userData.own || [])]) x.dispose();
+      if (p.lantern) p.lantern.visible = lanternWas ?? true;
+      g.follow.clearCutscene(true);
+      ctx.lock(false);
+    };
+    try {
     const centre = ctx.place;
     for (let i = 0; i < START; i++) scatterHome(sw, i, centre, world);
     ctx.debug.swarm = sw;
@@ -300,15 +317,12 @@ export default {
     if (!res.quit && caught >= LANTERN) note = await this.finale(ctx, { sw, jar, jarAt, jarLight, net, grip, caught });
     if (!ctx.quit) await this.release(ctx, { sw, jar, jarAt, jarLight });
 
-    // clean up everything this round added
-    g.lights.remove(jarLight);
-    sw.dispose();
-    jar.removeFromParent();
-    net.removeFromParent();
-    if (p.lantern) p.lantern.visible = lanternWas ?? true;
-    g.follow.clearCutscene(true);
+    cleanup();
     if (!dark) { await ctx.fade(true, 300); ctx.setNight(false); await ctx.fade(false, 450); }
     return { score: caught, caught, extra: note ? N_('the jar lit the path') : undefined, quit: res.quit && !caught };
+    } finally {
+      cleanup();
+    }
   },
 
   /** Ten fireflies: Mika carries the jar along the dark path; its light circle reveals a note from Grandma. */
@@ -333,8 +347,9 @@ export default {
     g.scene.add(note);
     ctx.debug.note = note.position;
     ctx.hint(N_('Now walk the dark path by its light. Look on the ground, toward the village.'), 5);
-    let found = false, t0 = 0, nudged = false;
-    const r = await ctx.loop(dt => {
+    let found = false, t0 = 0, nudged = false, r = null;
+    try {
+    r = await ctx.loop(dt => {
       t0 += dt;
       jarPoint(jar, jarAt);
       jarLight.intensity = 7 + Math.sin(ctx.t * 5) * 0.6;
@@ -362,9 +377,12 @@ export default {
       const st = d.q.state;
       if (st.tricks.firefly) st.tricks.firefly.note = true;
     }
-    note.removeFromParent();
-    disc.removeFromParent();
-    disc.geometry.dispose(); disc.material.dispose();
+    } finally {
+      note.removeFromParent();
+      disc.removeFromParent();
+      disc.geometry.dispose(); disc.material.dispose();
+      if (!note.userData.model) { note.geometry?.dispose(); note.material?.dispose?.(); }   // the stand-in page
+    }
     return found;
   },
 

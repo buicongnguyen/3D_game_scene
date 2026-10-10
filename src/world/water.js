@@ -35,6 +35,7 @@ const WATER_FS = /* glsl */`
   uniform vec4 uHX;
   uniform vec4 uLamps[4];
   uniform vec3 uLampColor;
+  uniform vec4 uClear;   // xz centre, radius, strength: a patch of clear water (fishing); strength 0 = untouched
   varying vec3 vWPos;
   varying vec2 vFlow;
   #include <fog_pars_fragment>
@@ -58,6 +59,13 @@ const WATER_FS = /* glsl */`
       #include <fog_fragment>
       return;
     }
+    // clear patch: inside it the surface gives up its reflection and most of its body, so what swims below shows;
+    // in winter the same patch is a hole in the ice. With uClear.w = 0 every value below is the plain river.
+    float clearK = 0.0, iceK = uIce;
+    if (uClear.w > 0.0) {
+      clearK = uClear.w * (1.0 - smoothstep(uClear.z * 0.55, uClear.z, distance(vWPos.xz, uClear.xy)));
+      iceK *= 1.0 - smoothstep(0.12, 0.42, clearK);
+    }
     vec2 flow = vFlow;
     float speed = 0.55;
     float ph0 = fract(uTime * 0.18), ph1 = fract(uTime * 0.18 + 0.5);
@@ -78,6 +86,7 @@ const WATER_FS = /* glsl */`
     float dk = smoothstep(0.0, 2.3, depth);
     vec3 body = mix(uShallow, uDeep, dk);
     vec3 col = mix(body, sky, fres * 0.8) + uSunColor * spec * uSunVis;
+    if (clearK > 0.0) col = mix(col, mix(body, uShallow, 0.7) * 1.08 + sky * fres * 0.12, clearK * 0.85);
     // warm lamp reflections: vertical streaks under each lit lamp
     vec3 lampAdd = vec3(0.0);
     for (int i = 0; i < 4; i++) {
@@ -97,7 +106,7 @@ const WATER_FS = /* glsl */`
     float fn2 = texture2D(uNoise, vWPos.xz * 1.3 - flow * uTime * 0.8).g;
     float foam = smoothstep(0.42, 0.05, depth - fn * 0.28) * smoothstep(0.25, 0.6, fn2 + 0.25);
     col = mix(col, uFoam, foam * 0.85);
-    if (uIce > 0.001) {
+    if (iceK > 0.001) {
       // winter: a sheet of milky blue ice with snow drifting in from the banks, fine cracks and a cold sheen
       float n1 = texture2D(uNoise, vWPos.xz * 0.045).r;
       float n2 = texture2D(uNoise, vWPos.xz * 0.21 + 0.31).g;
@@ -115,12 +124,13 @@ const WATER_FS = /* glsl */`
       ice = mix(ice, skyI, fresI * 0.4 * (1.0 - snow)) + uSunColor * glint * 1.6 * uSunVis * (1.0 - snow);
       ice *= mix(1.0, 0.2, uNight);
       ice += lampAdd * 0.55;
-      col = mix(col, ice, uIce);
+      col = mix(col, ice, iceK);
     }
     float alpha = mix(0.5, 0.94, smoothstep(0.0, 1.4, depth));
     alpha = max(alpha, foam * 0.9);
     alpha = max(alpha, fres * 0.9) * smoothstep(-0.05, 0.08, depth);
-    alpha = mix(alpha, smoothstep(-0.05, 0.05, depth), uIce);
+    alpha = mix(alpha, smoothstep(-0.05, 0.05, depth), iceK);
+    if (clearK > 0.0) alpha = mix(alpha, min(alpha, max(0.34, foam * 0.9)), clearK * (1.0 - iceK));
     gl_FragColor = vec4(col, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -138,6 +148,7 @@ export class Water {
       uHeight: { value: heightTex }, uNoise: { value: noiseTex }, uHX: { value: heightTex.userData.xform },
       uLamps: { value: [new THREE.Vector4(), new THREE.Vector4(), new THREE.Vector4(), new THREE.Vector4()] },
       uLampColor: { value: new THREE.Color('#ffb44a') },
+      uClear: { value: new THREE.Vector4(0, 0, 1, 0) },
     }]);
     this.uniforms.uHeight.value = heightTex;
     this.uniforms.uNoise.value = noiseTex;
@@ -189,9 +200,23 @@ export class Water {
   /** Winter: the river freezes over (eased in, so a season change doesn't pop). */
   setIce(on) { this.iceTarget = on ? 1 : 0; if (this.iceSnap !== false) { this.uniforms.uIce.value = this.iceTarget; this.iceSnap = false; } }
 
+  /**
+   * A patch of clear water at (x, z), radius r (fishing, the scene tour): eased in, and eased out by setClear(null).
+   * In winter the patch is a hole in the ice. Costs nothing while the strength is 0.
+   */
+  setClear(at, strength = 1) {
+    if (at) { this.uniforms.uClear.value.set(at.x, at.z, at.r, this.uniforms.uClear.value.w); this.clearTarget = strength; }
+    else this.clearTarget = 0;
+  }
+
   update(dt, sky, lamps = []) {
     const u = this.uniforms;
     u.uTime.value += dt;
+    if (this.clearTarget || u.uClear.value.w) {
+      const c = u.uClear.value, to = this.clearTarget || 0;
+      c.w += (to - c.w) * (1 - Math.exp(-dt * 3.5));
+      if (Math.abs(to - c.w) < 0.004) c.w = to;
+    }
     u.uIce.value += ((this.iceTarget || 0) - u.uIce.value) * (1 - Math.exp(-dt * 1.5));
     const L = sky.state;
     u.uZenith.value.copy(sky.uniforms.uZenith.value);

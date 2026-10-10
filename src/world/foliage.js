@@ -17,6 +17,10 @@ const band = d => Math.max(d * 0.07, 12);
  * One model placed many times: instanced meshes per primitive, with an optional low-poly LOD,
  * CPU frustum culling per instance and a distance cut-off.
  */
+// A part is drawn when its season shows it (setSeason) and it has instances this frame: an empty instanced mesh
+// still costs the renderer a program and buffer set-up, in the main pass and in the shadow pass.
+const show = m => { m.visible = m.userData.inSeason !== false && m.count > 0; };
+
 class InstanceSet {
   constructor(parent, assets, model, records, opts) {
     this.model = model;
@@ -105,7 +109,7 @@ class InstanceSet {
         counts[k]++;
       }
     }
-    this.shadow.forEach((m, k) => { m.count = counts[k]; m.instanceMatrix.needsUpdate = true; });
+    this.shadow.forEach((m, k) => { m.count = counts[k]; m.instanceMatrix.needsUpdate = true; show(m); });
   }
 
   update(camPos, frustum, nearDist, maxDist, cam = camPos) {
@@ -138,8 +142,8 @@ class InstanceSet {
         counts[k]++;
       }
     }
-    this.near.forEach((m, k) => { m.count = nearCount[k]; m.instanceMatrix.needsUpdate = true; });
-    this.far?.forEach((m, k) => { m.count = farCount[k]; m.instanceMatrix.needsUpdate = true; });
+    this.near.forEach((m, k) => { m.count = nearCount[k]; m.instanceMatrix.needsUpdate = true; show(m); });
+    this.far?.forEach((m, k) => { m.count = farCount[k]; m.instanceMatrix.needsUpdate = true; show(m); });
   }
 
   meshes() { return [...this.near, ...(this.far ?? [])]; }
@@ -152,7 +156,8 @@ export class Foliage {
     this.group.name = 'foliage';
     scene.add(this.group);
     this.sets = [];
-    this.nearDist = quality.trees >= 1 ? 120 : quality.trees >= 0.85 ? 95 : 70;
+    this.nearDist = quality.trees >= 1 ? 120 : quality.trees >= 0.85 ? 95 : 55;
+    const k = quality.trees >= 0.85 ? 1 : 0.7;   // Low: small scatter is drawn out to 70 % of the usual distance
     this.maxDist = 1400;
     const byModel = (list, opts) => {
       const groups = new Map();
@@ -164,11 +169,11 @@ export class Foliage {
       for (const [model, records] of groups) this.sets.push(new InstanceSet(this.group, assets, model, records, typeof opts === 'function' ? opts(model) : opts));
     };
     byModel(placed.trees, model => ({ lod: `${model}-lod`, castShadow: true, wind: 1 }));
-    byModel(placed.bushes, { castShadow: true, wind: 1, maxDist: 160 });
-    byModel(placed.rocks, { castShadow: true, wind: 0, maxDist: 320 });
-    byModel(placed.flowers, { castShadow: false, wind: 2, maxDist: 90 });
-    byModel(placed.reeds, { castShadow: false, wind: 2, maxDist: 110 });
-    byModel(placed.lilies, { castShadow: false, wind: 0, maxDist: 120 });
+    byModel(placed.bushes, { castShadow: true, wind: 1, maxDist: 160 * k });
+    byModel(placed.rocks, { castShadow: true, wind: 0, maxDist: 320 * k });
+    byModel(placed.flowers, { castShadow: false, wind: 2, maxDist: 90 * k });
+    byModel(placed.reeds, { castShadow: false, wind: 2, maxDist: 110 * k });
+    byModel(placed.lilies, { castShadow: false, wind: 0, maxDist: 120 * k });
     this.frustum = new THREE.Frustum();
     this.shadowFocus = new THREE.Vector3(1e9, 0, 0);
     this.shadowDir = new THREE.Vector3(0, 1, 0);
@@ -219,14 +224,17 @@ export class Foliage {
           seen.add(mesh.material);
           mesh.material.color.set(s.model === 'tree-peach' && name === 'Leaves' ? p.peachLeaves : p[key]);
         }
-        mesh.visible = !(p.bareTrees && deciduous && BARE_IN_WINTER.has(name));
-        if (name === 'Peach') mesh.visible = season === 'summer';
-        if (s.model.startsWith('flowers') || s.model === 'lilypads') mesh.visible = season !== 'winter';
+        let on = !(p.bareTrees && deciduous && BARE_IN_WINTER.has(name));
+        if (name === 'Peach') on = season === 'summer';
+        if (s.model.startsWith('flowers') || s.model === 'lilypads') on = season !== 'winter';
+        mesh.userData.inSeason = on;
+        show(mesh);
       }
       // shadow proxies follow the season too (bare winter trees cast no leaf shadows)
       for (const mesh of s.shadowMeshes()) {
         const name = mesh.userData.materialName;
-        mesh.visible = !(p.bareTrees && deciduous && BARE_IN_WINTER.has(name)) && (name !== 'Peach' || season === 'summer');
+        mesh.userData.inSeason = !(p.bareTrees && deciduous && BARE_IN_WINTER.has(name)) && (name !== 'Peach' || season === 'summer');
+        show(mesh);
       }
     }
   }

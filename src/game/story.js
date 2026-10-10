@@ -114,7 +114,7 @@ export const DIALOGUE = {
   c1_rin_fish: [
     ['rin', "He said no, right? Classic Grandpa.", 'Talk'],
     ['rin', "Okay. Plan. Grandpa melts for grilled trout. Catch me three fish—any fish, we'll call them trout—and I'll grill them."],
-    ['rin', "Rod's on the dock. Cast, wait for the float to dip, then press {act}. That's all there is to it."],
+    ['rin', "Rod's on the dock. Cast where the fish are, wait for the float to sink, then hold to reel. Ease off if the line strains."],
   ],
   c1_fish_done: [
     ['rin', "Three! Not bad for a city girl. Okay, maybe good. Don't let it go to your head.", 'Cheer'],

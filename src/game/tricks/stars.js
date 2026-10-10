@@ -21,6 +21,8 @@ export const NAMED = {
 };
 export const DIPPER = ['alkaid', 'mizar', 'alioth', 'megrez', 'phecda', 'merak', 'dubhe'];
 const NAMES = Object.keys(NAMED);
+const REVERSED = [...DIPPER].reverse(), ENDS = [DIPPER[0], DIPPER[DIPPER.length - 1]], NONE = [], ONLY_POLARIS = ['polaris'];
+const NEXT = { fwd: DIPPER.map(k => [k]), back: REVERSED.map(k => [k]) };   // the answers of nextStars, made once
 const LABEL = {
   alkaid: N_('Alkaid, the tip of the handle'), mizar: 'Mizar', alioth: 'Alioth', megrez: N_('Megrez, where the handle meets the bowl'),
   phecda: 'Phecda', merak: N_('Merak, a pointer star'), dubhe: N_('Dubhe, a pointer star'), polaris: N_('Polaris, the North Star'),
@@ -31,9 +33,9 @@ const LABEL = {
  * Pure: tested in tests/tricks.test.mjs.
  */
 export function nextStars(picked) {
-  if (!picked.length) return [DIPPER[0], DIPPER[DIPPER.length - 1]];
-  const order = picked[0] === DIPPER[0] ? DIPPER : [...DIPPER].reverse();
-  return picked.length < order.length ? [order[picked.length]] : [];
+  if (!picked.length) return ENDS;
+  const order = picked[0] === DIPPER[0] ? NEXT.fwd : NEXT.back;
+  return picked.length < order.length ? order[picked.length] : NONE;      // (shared lists: read, never changed)
 }
 
 /** Round score: 10 per Dipper star, 20 for the North Star, 15 for the wish, a speed bonus, 4 off per wrong pick. */
@@ -150,30 +152,46 @@ export default {
     let left = ctx.roundTime;
 
     // lie back on the hill: a fade, the night, and the view from Mika's eyes up into the sky
+    const rootWas = p.root.visible, tamo = ctx.director.tamo?.root || null, tamoWas = tamo?.visible;
+    const canvas = g.canvas || g.renderer.renderer.domElement;
+    let ring = null, onMove = null, onDown = null, cleaned = false;
+    // back to the valley, however the round ends (a quit, or an error half-way)
+    const cleanup = () => {
+      if (cleaned) return;
+      cleaned = true;
+      if (onMove) canvas.removeEventListener('pointermove', onMove);
+      if (onDown) removeEventListener('pointerdown', onDown);
+      ring?.remove();
+      sky.shoot.visible = false;
+      sky.group.removeFromParent();
+      p.root.visible = rootWas;
+      if (tamo && tamoWas !== undefined) tamo.visible = tamoWas;
+      ctx.setNight(false);
+      g.follow.clearCutscene(true);
+      ctx.lock(false);
+    };
+    try {
     ctx.lock(true);
     await ctx.fade(true, 400);
     ctx.setNight(true, 23);
     const eye = p.pos.clone().add(new V3(0, 0.55, 0));
     const look = eye.clone().addScaledVector(sky.B.f, 10);
     g.follow.cutscene({ pos: eye, look }, 0.001, { pos: eye.clone(), look: look.clone() });
-    const rootWas = p.root.visible;
     p.root.visible = false;
-    const tamoWas = ctx.director.tamo?.root?.visible;
-    if (ctx.director.tamo?.root) ctx.director.tamo.root.visible = false;
+    if (tamo) tamo.visible = false;
     g.scene.add(sky.group);
     sky.lines.geometry.setDrawRange(0, 0);
     await ctx.wait(0.2);
     await ctx.fade(false, 700);
 
     // the ring Mika points with: stick / WASD moves it, the mouse hovers it, a tap or click puts it there and picks
-    const ring = document.createElement('div');
+    ring = document.createElement('div');
     ring.style.cssText = 'position:fixed;left:0;top:0;width:46px;height:46px;margin:-23px 0 0 -23px;border:3px solid rgba(255,226,140,.95);border-radius:50%;box-shadow:0 0 12px rgba(255,220,120,.6),inset 0 0 8px rgba(255,220,120,.4);pointer-events:none;z-index:14;transition:border-color .2s';
     document.body.appendChild(ring);
     let rx = innerWidth / 2, ry = innerHeight / 2, pick = false, shake = 0;
-    const canvas = g.canvas || g.renderer.renderer.domElement;
-    const onMove = e => { if (e.pointerType === 'mouse') { rx = e.clientX; ry = e.clientY; } };
+    onMove = e => { if (e.pointerType === 'mouse') { rx = e.clientX; ry = e.clientY; } };
     // anywhere on screen except the buttons (pause, journal): the hint and HUD let clicks through
-    const onDown = e => { if (e.target.closest?.('button, a, input, select, .overlay')) return; rx = e.clientX; ry = e.clientY; pick = true; };
+    onDown = e => { if (e.target.closest?.('button, a, input, select, .overlay')) return; rx = e.clientX; ry = e.clientY; pick = true; };
     ctx.hintTop(true);
     canvas.addEventListener('pointermove', onMove);
     addEventListener('pointerdown', onDown);
@@ -184,7 +202,7 @@ export default {
     const thr = ctx.ui.touch ? 58 : 44;
     const nearest = () => {
       let best = null, bd = thr;
-      NAMES.forEach((k, i) => { const s = scr[i]; if (s.z > 1) return; const d = Math.hypot(s.x - rx, s.y - ry); if (d < bd) { bd = d; best = k; } });
+      for (let i = 0; i < NAMES.length; i++) { const s = scr[i]; if (s.z > 1) continue; const d = Math.hypot(s.x - rx, s.y - ry); if (d < bd) { bd = d; best = NAMES[i]; } }
       return best;
     };
     const linePos = sky.lines.geometry.attributes.position;
@@ -215,6 +233,10 @@ export default {
     const sizes = sky.named.geometry.attributes.aSize, cols = sky.named.geometry.attributes.aColor;
     let shootT = -1, shootWait = 1.2, wishTries = 0, wrongHint = 0, elapsed = 0;
     const sA = new V3(), sB = new V3(), head = new V3(), tail = new V3();
+    // one record for the score and two remembered ring looks: the loop below builds nothing new each frame
+    const tally = { joined: 0, polaris: false, wish: false, mistakes: 0, seconds: 0 };
+    const scoreNow = () => { tally.joined = st.picked.length; tally.polaris = st.polaris; tally.wish = st.wish; tally.mistakes = st.mistakes; tally.seconds = st.tPolaris; return starScore(tally); };
+    let ringX = NaN, ringY = NaN, ringLit = null;
     const res = await ctx.loop(dt => {
       elapsed += dt;
       if (st.phase !== 'wish') left -= dt;
@@ -230,20 +252,22 @@ export default {
       ry = THREE.MathUtils.clamp(ry - mv.y * sp * dt, 10, innerHeight - 10);
       shake = Math.max(0, shake - dt);
       const sx = shake > 0 ? Math.sin(shake * 60) * 8 : 0;
-      ring.style.transform = `translate(${Math.round(rx + sx)}px, ${Math.round(ry)}px)`;
-      NAMES.forEach((k, i) => screenOf(sky.dirs[i], scr[i]));
+      const px = Math.round(rx + sx), py = Math.round(ry);
+      if (px !== ringX || py !== ringY) { ringX = px; ringY = py; ring.style.transform = `translate(${px}px, ${py}px)`; }
+      for (let i = 0; i < NAMES.length; i++) screenOf(sky.dirs[i], scr[i]);
       // the named stars: bright, the picked ones golden, the next one pulsing in the guided try
-      const next = st.phase === 'dipper' ? nextStars(st.picked) : st.phase === 'polaris' ? ['polaris'] : [];
-      NAMES.forEach((k, i) => {
+      const next = st.phase === 'dipper' ? nextStars(st.picked) : st.phase === 'polaris' ? ONLY_POLARIS : NONE;
+      for (let i = 0; i < NAMES.length; i++) {
+        const k = NAMES[i];
         const on = st.picked.includes(k) || (k === 'polaris' && st.polaris);
         const hintMe = (ctx.first || wrongHint > 2) && next.includes(k) && !(k === 'polaris' && !ctx.first && elapsed - st.tPolaris < 10);
         const pulse = hintMe ? 0.5 + 0.5 * Math.sin(ctx.t * 6) : 0;
         sizes.setX(i, (k === 'polaris' ? 0.026 : 0.024) * (on ? 1.3 : 1) * (1 + pulse * 0.6));
-        const c = on ? [1.4, 1.15, 0.55] : [1.05 + pulse * 0.4, 1.05 + pulse * 0.3, 1.1];
-        cols.setXYZ(i, ...c);
-      });
+        if (on) cols.setXYZ(i, 1.4, 1.15, 0.55); else cols.setXYZ(i, 1.05 + pulse * 0.4, 1.05 + pulse * 0.3, 1.1);
+      }
       sizes.needsUpdate = true; cols.needsUpdate = true;
-      ring.style.borderColor = nearest() ? 'rgba(255,240,170,1)' : 'rgba(255,226,140,.6)';
+      const lit = !!nearest();
+      if (lit !== ringLit) { ringLit = lit; ring.style.borderColor = lit ? 'rgba(255,240,170,1)' : 'rgba(255,226,140,.6)'; }
 
       const press = pick || ctx.pressed() || g.input.pressed('jump');
       pick = false;
@@ -310,27 +334,21 @@ export default {
           }
         }
       }
-      const score = starScore({ joined: st.picked.length, polaris: st.polaris, wish: st.wish, mistakes: st.mistakes, seconds: st.tPolaris });
-      ctx.hud(score, st.phase === 'wish' ? null : left);
+      ctx.hud(scoreNow(), st.phase === 'wish' ? null : left);
       if (left <= 0) { ctx.hint(N_('Time to head in. The stars will still be here tomorrow.'), 3.5); return { done: true }; }
       return undefined;
     });
 
-    const score = starScore({ joined: st.picked.length, polaris: st.polaris, wish: st.wish, mistakes: st.mistakes, seconds: st.tPolaris });
+    const score = scoreNow();
     if (!res.quit) await ctx.wait(1.6);
     // sit up: back to the valley
     await ctx.fade(true, 400);
-    canvas.removeEventListener('pointermove', onMove);
-    removeEventListener('pointerdown', onDown);
-    ring.remove();
-    sky.shoot.visible = false;
-    sky.group.removeFromParent();
-    p.root.visible = rootWas;
-    if (ctx.director.tamo?.root && tamoWas !== undefined) ctx.director.tamo.root.visible = tamoWas;
-    ctx.setNight(false);
-    g.follow.clearCutscene(true);
-    ctx.lock(false);
+    cleanup();
     await ctx.fade(false, 500);
     return { score, quit: !!res.quit && !st.picked.length, extra: st.wish ? N_('a wish made') : undefined };
+    } finally {
+      // an error above left the screen as it was (perhaps black): put the valley back and show it
+      if (!cleaned) { cleanup(); ctx.fade(false, 300); }
+    }
   },
 };

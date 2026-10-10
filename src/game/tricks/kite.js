@@ -8,6 +8,7 @@
 import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { FX } from '../../engine/effects.js';
+import { addCss } from './util.js';
 import { KITE, sweepAt, buildQuality, buildGrade, buildResult, makeWind, windPush, newFlight, stepFlight, kiteScore } from './rules-kite.js';
 
 const V3 = THREE.Vector3;
@@ -71,6 +72,7 @@ function proceduralKite() {
   tail.name = 'Tail';
   tail.position.set(0, -0.74, 0);
   g.add(frame, paper, tail);
+  g.userData.own = [bamboo, spine.geometry, spar.geometry, geo, paper.material, tail.geometry, tail.material];   // made here: freed with the round
   return g;
 }
 
@@ -107,7 +109,18 @@ function makeKite(assets) {
   holder.add(fit);
   holder.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; o.frustumCulled = false; } });
   const named = parts.frame.length && parts.paper.length;
-  return { holder, parts, named, fromModel: !!model };
+  // where the flying ribbon is tied on: the lower end of the model's own tail (it stays on the kite in the air), or
+  // the kite's bottom tip. Metres below the holder's middle, at scale 1.
+  let tailEnd = KITE_SIZE * 0.478;
+  if (model && parts.tail.length) {
+    const tb = new THREE.Box3();
+    for (const o of parts.tail) o.traverse(c => { if (c.isMesh) { c.geometry.computeBoundingBox(); tb.union(c.geometry.boundingBox.clone().applyMatrix4(c.matrixWorld)); } });
+    // the spine is the longest side of the sail: the tail hangs along it
+    const ax = size.y >= size.x && size.y >= size.z ? 'y' : size.x >= size.z ? 'x' : 'z';
+    const far = Math.max(Math.abs(tb.min[ax] - centre[ax]), Math.abs(tb.max[ax] - centre[ax]));
+    if (Number.isFinite(far) && far > 0) tailEnd = far * KITE_SIZE / tall;
+  }
+  return { holder, parts, named, fromModel: !!model, tailEnd, own: inner.userData.own || [] };
 }
 
 function cloudTexture() {
@@ -123,6 +136,50 @@ function cloudTexture() {
   return t;
 }
 
+// The three line drawings of the flight, as small functions over plain number arrays: the optimiser compiles these
+// quickly, where the same loops inside the round's long frame function ran interpreted and made a new number object
+// for every intermediate result (about 1 MB a second).
+/** The string: a sagging curve from the hand (h) to the kite (k), STRING_N points into `out`. */
+function drawString(out, hx, hy, hz, kx, ky, kz, sag) {
+  for (let i = 0; i < STRING_N; i++) {
+    const k = i / (STRING_N - 1), j = i * 3;
+    out[j] = hx + (kx - hx) * k; out[j + 1] = hy + (ky - hy) * k - sag * 4 * k * (1 - k); out[j + 2] = hz + (kz - hz) * k;
+  }
+}
+
+/** The tail: each knot follows the one before (nodes[0..2] is tied to the kite), blown by (bx, by, bz) and kept off the grass; then the ribbon's two edges into `out`. */
+function stepTail(nodes, out, world, bx, by, bz, t, sc, rx, rz) {
+  for (let i = 1; i < TAIL_N; i++) {
+    const j = i * 3;
+    nodes[j] += bx + Math.sin(t * 6 + i) * 0.012; nodes[j + 1] += by; nodes[j + 2] += bz;
+    const dx = nodes[j] - nodes[j - 3], dy = nodes[j + 1] - nodes[j - 2], dz = nodes[j + 2] - nodes[j - 1];
+    const len = Math.hypot(dx, dy, dz) || 1, s = TAIL_SEG * sc * 0.5 / len;
+    nodes[j] = nodes[j - 3] + dx * s; nodes[j + 1] = nodes[j - 2] + dy * s; nodes[j + 2] = nodes[j - 1] + dz * s;
+    const gy = world.heightAt(nodes[j], nodes[j + 2]) + 0.08;
+    if (nodes[j + 1] < gy) nodes[j + 1] = gy;
+  }
+  const wdt = 0.08 * sc;
+  for (let i = 0; i < TAIL_N; i++) {
+    const j = i * 3, k = i * 6, tw = wdt * (1 - i / TAIL_N * 0.5);
+    out[k] = nodes[j] - rx * tw; out[k + 1] = nodes[j + 1]; out[k + 2] = nodes[j + 2] - rz * tw;
+    out[k + 3] = nodes[j] + rx * tw; out[k + 4] = nodes[j + 1]; out[k + 5] = nodes[j + 2] + rz * tw;
+  }
+}
+
+/** The wind streaks (sk: along, across, height, speed factor each) drift downwind, slanting with the wind to come. */
+function stepStreaks(sk, out, ox, ground, oz, dx, dz, rx, rz, slant, dt) {
+  for (let i = 0; i < STREAKS; i++) {
+    const j = i * 4, k = i * 6, sp = 10 * sk[j + 3];
+    sk[j] += sp * dt; sk[j + 1] += slant * sp * dt;
+    if (sk[j] > 34) { sk[j] = -10; sk[j + 1] = (Math.random() - 0.5) * 34; }
+    if (sk[j + 1] > 18) sk[j + 1] -= 36; else if (sk[j + 1] < -18) sk[j + 1] += 36;
+    const x0 = ox + dx * sk[j] + rx * sk[j + 1], z0 = oz + dz * sk[j] + rz * sk[j + 1];
+    const y0 = ground + sk[j + 2], ln = 1.2 + sk[j + 3];
+    out[k] = x0; out[k + 1] = y0; out[k + 2] = z0;
+    out[k + 3] = x0 - (dx + rx * slant) * ln; out[k + 4] = y0 + 0.05; out[k + 5] = z0 - (dz + rz * slant) * ln;
+  }
+}
+
 export default {
   id: 'kite',
 
@@ -132,18 +189,17 @@ export default {
     await ctx.ensureModels(['kite-paper']);
     if (ctx.quit) return { score: 0, quit: true };
 
-    if (!document.getElementById('kiteCss')) { const s = document.createElement('style'); s.id = 'kiteCss'; s.textContent = CSS; document.head.appendChild(s); }
+    addCss('kiteCss', CSS);
 
     // ---- the frame of the scene: downwind d, right r (as the camera sees it), Mika's spot
     const d = new V3(Math.sin(WIND_HEADING), 0, Math.cos(WIND_HEADING));
     const r = new V3(-d.z, 0, d.x);
-    const UP = new V3(0, 1, 0);
     const sx = ctx.place.x + d.x * STAND, sz = ctx.place.z + d.z * STAND;
     const ground = world.heightAt(sx, sz);
-    const was = { x: p.pos.x, z: p.pos.z, y: p.pos.y, facing: p.facing, wind: FX.uWind.value, lantern: p.lantern?.visible };
+    const was = { wind: FX.uWind.value, lantern: p.lantern?.visible };
     const added = [];              // everything put in the scene, removed in cleanup
     const disposables = [];
-    let ui = null, onPress = null, tap = false, cleaned = false, sign = null, signWas = true;
+    let ui = null, onPress = null, tap = false, cleaned = false, sign = null;
 
     const cleanup = () => {
       if (cleaned) return;
@@ -152,7 +208,7 @@ export default {
       for (const x of disposables) x.dispose();
       if (ui) { ui.removeEventListener('pointerdown', onPress); ui.remove(); }
       FX.uWind.value = was.wind;
-      if (sign) sign.visible = signWas;
+      if (sign) sign.hidden = false;            // the framework shows it again
       if (p.lantern && was.lantern !== undefined) p.lantern.visible = was.lantern;
       g.follow.clearCutscene(true);
       ctx.lock(false);
@@ -169,6 +225,7 @@ export default {
       const kite = makeKite(g.assets);
       const K = kite.holder;
       scene.add(K); added.push(K);
+      disposables.push(...kite.own);
       const showPart = (name, on) => {
         if (kite.named) { for (const o of kite.parts[name]) o.visible = on; return; }
         // a model without named parts: it simply grows in three steps
@@ -194,8 +251,9 @@ export default {
       K.rotateZ(0.12);
       K.scale.setScalar(BUILD_SCALE);
       g.follow.cutscene({ pos: buildCam, look: origin.clone().addScaledVector(r, 0.45).add(new V3(0, 0.75, 0)) }, 0.001);
-      const signObj = ctx.director.tricks.signs.find(s => s.t.id === 'kite')?.obj;
-      if (signObj) { signWas = signObj.visible; signObj.visible = false; sign = signObj; }
+      // the signpost steps out of the picture for the round (the framework keeps it hidden while `hidden` is set)
+      sign = ctx.director.tricks.signs.find(s => s.t.id === 'kite') || null;
+      if (sign) { sign.hidden = true; if (sign.obj) sign.obj.visible = false; }
 
       ui = document.createElement('div');
       ui.id = 'kiteUi';
@@ -206,7 +264,9 @@ export default {
       ui.addEventListener('pointerdown', onPress);
       el.alt.style.display = 'none';
       el.zone.style.left = '43%'; el.zone.style.width = '14%';
-      const setMark = v => { el.mark.style.left = `${(50 + v * 46).toFixed(1)}%`; };
+      // the gauge is written only when a value changes by what can be seen (a tenth of a percent, a degree)
+      let markAt = NaN, markRot = NaN, altAt = NaN;
+      const setMark = v => { const k = Math.round((50 + v * 46) * 10); if (k !== markAt) { markAt = k; el.mark.style.left = `${k / 10}%`; } };
       const pressNow = () => { const on = tap || ctx.pressed() || input.pressed('jump') || input.pressed('tap'); tap = false; return on; };
 
       await ctx.wait(0.15);
@@ -266,7 +326,9 @@ export default {
       const wind = makeWind(Math.floor(Math.random() * 1e6) + 1, ctx.roundTime);
       const fl = st.flight = newFlight({ quality: built.quality, tail: built.tail, window: wide ? KITE.windowFirst : KITE.window });
       ctx.debug.wind = wind;
-      for (const o of kite.parts.tail) o.visible = false;      // the flying tail is the ribbon below
+      // the model's own tail stays on the kite in the air and the long ribbon is tied to its end; a kite without one
+      // (or the stand-in ribbon of the build) gets the ribbon at its bottom tip
+      if (!kite.fromModel) for (const o of kite.parts.tail) o.visible = false;
       buildTail.visible = false;
       K.scale.setScalar(FLY_SCALE);
       ctx.hintTop(true, 150);                                  // under the gauge: the bottom of the picture is Mika's
@@ -395,44 +457,16 @@ export default {
         }
         lastX = fl.x;
         // string: a sagging curve from her hand to the kite's middle
-        const sag = 0.5 + 1.8 * (1 - hV);
-        for (let i = 0; i < STRING_N; i++) {
-          const k = i / (STRING_N - 1);
-          sPos.setXYZ(i, hand.x + (kp.x - hand.x) * k, hand.y + (kp.y - hand.y) * k - sag * 4 * k * (1 - k), hand.z + (kp.z - hand.z) * k);
-        }
+        drawString(sPos.array, hand.x, hand.y, hand.z, kp.x, kp.y, kp.z, 0.5 + 1.8 * (1 - hV));
         sPos.needsUpdate = true;
         // tail: each knot follows the one before, blown downwind and sagging
         up2.set(0, 1, 0).applyQuaternion(K.quaternion);
-        nodes[0] = kp.x - up2.x * 0.55 * sc; nodes[1] = kp.y - up2.y * 0.55 * sc; nodes[2] = kp.z - up2.z * 0.55 * sc;
-        const bx = (d.x * 2.2 + r.x * st.push * 2.5) * dt, bz = (d.z * 2.2 + r.z * st.push * 2.5) * dt, by = -2.6 * dt;
-        for (let i = 1; i < TAIL_N; i++) {
-          const j = i * 3;
-          nodes[j] += bx + Math.sin(ctx.t * 6 + i) * 0.012; nodes[j + 1] += by; nodes[j + 2] += bz;
-          let dx = nodes[j] - nodes[j - 3], dy = nodes[j + 1] - nodes[j - 2], dz = nodes[j + 2] - nodes[j - 1];
-          const len = Math.hypot(dx, dy, dz) || 1, s = TAIL_SEG * sc * 0.5 / len;
-          nodes[j] = nodes[j - 3] + dx * s; nodes[j + 1] = nodes[j - 2] + dy * s; nodes[j + 2] = nodes[j - 1] + dz * s;
-          const gy = world.heightAt(nodes[j], nodes[j + 2]) + 0.08;
-          if (nodes[j + 1] < gy) nodes[j + 1] = gy;
-        }
-        const wdt = 0.08 * sc;
-        for (let i = 0; i < TAIL_N; i++) {
-          const j = i * 3, tw = wdt * (1 - i / TAIL_N * 0.5);
-          tPos.setXYZ(i * 2, nodes[j] - r.x * tw, nodes[j + 1], nodes[j + 2] - r.z * tw);
-          tPos.setXYZ(i * 2 + 1, nodes[j] + r.x * tw, nodes[j + 1], nodes[j + 2] + r.z * tw);
-        }
+        const te = kite.tailEnd * sc;
+        nodes[0] = kp.x - up2.x * te; nodes[1] = kp.y - up2.y * te; nodes[2] = kp.z - up2.z * te;
+        stepTail(nodes, tPos.array, world, (d.x * 2.2 + r.x * st.push * 2.5) * dt, -2.6 * dt, (d.z * 2.2 + r.z * st.push * 2.5) * dt, ctx.t, sc, r.x, r.z);
         tPos.needsUpdate = true;
         // streaks and clouds drift with the wind that is coming (they lead the kite)
-        const slant = st.lead * 0.9;
-        for (let i = 0; i < STREAKS; i++) {
-          const j = i * 4, sp = 10 * sk[j + 3];
-          sk[j] += sp * dt; sk[j + 1] += slant * sp * dt;
-          if (sk[j] > 34) { sk[j] = -10; sk[j + 1] = (Math.random() - 0.5) * 34; }
-          if (sk[j + 1] > 18) sk[j + 1] -= 36; else if (sk[j + 1] < -18) sk[j + 1] += 36;
-          const x0 = origin.x + d.x * sk[j] + r.x * sk[j + 1], z0 = origin.z + d.z * sk[j] + r.z * sk[j + 1];
-          const y0 = ground + sk[j + 2], ln = 1.2 + sk[j + 3];
-          wPos.setXYZ(i * 2, x0, y0, z0);
-          wPos.setXYZ(i * 2 + 1, x0 - (d.x + r.x * slant) * ln, y0 + 0.05, z0 - (d.z + r.z * slant) * ln);
-        }
+        stepStreaks(sk, wPos.array, origin.x, ground, origin.z, d.x, d.z, r.x, r.z, st.lead * 0.9, dt);
         wPos.needsUpdate = true;
         for (const c of clouds) {
           c.userData.a += st.lead * 9 * dt + 1.2 * dt;
@@ -441,13 +475,15 @@ export default {
         }
 
         // ---- gauge and HUD
-        el.mark.style.left = `${(50 + xV / KITE.edge * 46).toFixed(1)}%`;
-        el.mark.style.transform = `rotate(${(45 + roll * 40).toFixed(0)}deg)`;
+        setMark(xV / KITE.edge);
+        const rot = Math.round(45 + roll * 40);
+        if (rot !== markRot) { markRot = rot; el.mark.style.transform = `rotate(${rot}deg)`; }
         const out = fl.aloft && !fl.inWindow;
         if (out !== zoneOut) { zoneOut = out; el.zone.classList.toggle('out', out); }
         const gs = st.lead > 0.5 ? 1 : st.lead < -0.5 ? -1 : 0;      // a push to the right comes from the left
         if (gs !== gustShown) { gustShown = gs; el.gl.classList.toggle('on', gs > 0); el.gr.classList.toggle('on', gs < 0); }
-        el.altFill.style.width = `${(hV * 100).toFixed(0)}%`;
+        const alt = Math.round(hV * 100);
+        if (alt !== altAt) { altAt = alt; el.altFill.style.width = `${alt}%`; }
         ctx.hud(kiteScore(st.build, fl), left);
 
         // ---- the teacher

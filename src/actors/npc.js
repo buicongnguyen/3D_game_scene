@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Animator } from './animator.js';
 import { placeholder } from '../engine/assets.js';
+import { mergeSkinnedParts } from '../engine/skin-merge.js';
 
 const SHIRTS = ['#e0567a', '#3a8fd8', '#f2b53a', '#5fae3e', '#8a5ad8', '#e2702a', '#1fa5a0'];
 const TROUSERS = ['#2d3a5a', '#5a3a2a', '#3a4a3a', '#6a6a7a', '#2a2a3a'];
@@ -31,6 +32,8 @@ export class NPC {
         o.material = Array.isArray(o.material) ? mats : mats[0];
       }
     });
+    // lighter tiers draw a character as one mesh instead of eight (after the tint: the colours go into its palette)
+    if (m && world?.quality?.mergeChars) { try { mergeSkinnedParts(this.model, model); } catch (e) { console.warn(`character merge skipped for ${model}`, e); } }
     this.root = new THREE.Group();
     this.root.name = `npc:${id}`;
     this.root.add(this.model);

@@ -433,7 +433,7 @@ def web_parts(width=1.0, bead=1.0):
     """The orb web's two meshes (no reset): silk ribbons and the joined dew drops. width / bead scale the
     ribbon width and the drop radius (the trick-dew icon scene uses fatter ones so they read at 48 px)."""
     silk = mat('Web silk', '#f3f1ff', rough=.35, emit=.35, emit_color='#fff6e8', double=True)
-    dew = mat('Web dew', '#d8f1ff', rough=.04, emit=.25, emit_color='#eaf8ff')
+    dew = mat('Web dew', '#c8ecff', rough=.04, emit=.6, emit_color='#eaf8ff')
     rng = random.Random(11)
     spokes = 9
     ang = [math.radians(90 + 360 * k / spokes + rng.uniform(-9, 9)) for k in range(spokes)]
@@ -471,13 +471,16 @@ def web_parts(width=1.0, bead=1.0):
         for k in range(spokes):
             ribbon(pts[k], pts[(k + 1) % spokes], .0028)
     web = from_bmesh('Web silk', bm, silk, smooth_angle=10)
-    drops = []
-    for i in range(12):
+    drops, placed = [], []
+    while len(drops) < 12:                                    # twelve drops, none touching another
         j, k = rng.randrange(1, len(rings)), rng.randrange(spokes)
         a, b = ring_pts[j][k], ring_pts[j][(k + 1) % spokes]
         p = a.lerp(b, rng.uniform(.25, .75)) + Vector((0, 0, -.003))
-        r = rng.uniform(.0060, .0090) * bead
-        drops.append(sphere(f'Web dew {i}', (r, r, r * 1.1), p, dew, seg=4, rings=3))
+        if any((p - q).length < .045 for q in placed):
+            continue
+        placed.append(p)
+        r = rng.uniform(.0075, .0110) * bead
+        drops.append(sphere(f'Web dew {len(drops)}', (r, r, r * 1.1), p, dew, seg=5, rings=3))
     d = join(drops, 'dew')
     d.data.transform(Matrix.Translation(d.location))        # the node's origin is the web's hub, not the first drop
     d.location = (0, 0, 0)

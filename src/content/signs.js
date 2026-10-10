@@ -46,10 +46,11 @@ export const SIGNS = [
   { id: 'halt', building: 'haltPlatform', kind: 'civic', mount: 'stand', lx: 8, lz: -1.8, top: 0.95, text: N_('Takamori Halt'), icon: '🚉' },
   { id: 'stall', at: { x: 110, z: 8, rot: 0 }, kind: 'shop', mount: 'stand', text: N_('Takamori Market Stall'), icon: '💐' },
   // ---- out of the villages
-  { id: 'shrine', building: 'shrine', kind: 'civic', mount: 'stand', side: -3.7, out: 1.3, text: N_('Forest Shrine'), icon: '⛩' },
+  { id: 'shrine', building: 'shrine', kind: 'civic', mount: 'stand', side: -6.4, out: 1.2, text: N_('Forest Shrine'), icon: '⛩' },
   { id: 'pasture', at: { x: 145.2, z: -33.4, rot: -20 }, kind: 'place', mount: 'stand', text: N_('Sheep pasture'), icon: '🐑' },
   { id: 'orchard', at: { x: 90.6, z: -28, rot: 25 }, kind: 'place', mount: 'stand', text: N_('Peach orchard'), icon: '🍑' },
   { id: 'paddies', at: { x: -66.6, z: 25.5, rot: 90 }, kind: 'place', mount: 'stand', text: N_('Rice paddies'), icon: '🌾' },
+  { id: 'yard', at: { x: -23.5, z: 26.2, rot: 0 }, kind: 'place', mount: 'stand', text: N_('Kawabe Playground'), icon: '🏸' },
 ];
 
 // board face sizes in metres (3 : 1, like the texture cell)
@@ -78,4 +79,24 @@ export function signPlace(sign, b, fp = [2, 2, 2], door = null) {
 /** The sign's fields in the chosen story ('grandma' takes the `grandma` block). */
 export function signFor(sign, story) {
   return story === 'grandma' && sign.grandma ? { ...sign, ...sign.grandma } : sign;
+}
+
+/**
+ * What the boards cost on a quality tier (engine/renderer.js QUALITY, or any object with the same keys). Every key is
+ * optional; without them every tier gets what it always got.
+ *   boardTexScale  size of the boards' one shared texture: 1 = 2048 x 1024 (about 11 MB on the GPU), 0.5 = 1024 x 512
+ *   boardCluster   boards within this many metres share a mesh and a draw call (60)
+ *   boardDist      boards are hidden beyond this many metres (default: 1.5 x propDist, at least 150)
+ *   boardShadows   whether boards cast shadows (default: the tier's propShadows)
+ *   detail         0 .. 1: one dial for a tier that sets none of the above (under 0.5: the half-size texture)
+ * Returns { texScale, cluster, dist (or null for the default), shadows (or null for the default) }.
+ */
+export function boardOptions(quality = {}) {
+  const q = quality || {}, num = v => Number.isFinite(v);
+  return {
+    texScale: num(q.boardTexScale) ? Math.min(1, Math.max(0.25, q.boardTexScale)) : num(q.detail) && q.detail < 0.5 ? 0.5 : 1,
+    cluster: num(q.boardCluster) ? Math.max(1, q.boardCluster) : 60,
+    dist: num(q.boardDist) ? q.boardDist : null,
+    shadows: typeof q.boardShadows === 'boolean' ? q.boardShadows : null,
+  };
 }

@@ -9,6 +9,7 @@ import { rng } from '../engine/spline.js';
  */
 export class Riverbed {
   constructor(scene, assets, world) {
+    this.world = world;
     this.group = new THREE.Group();
     this.group.name = 'riverbed';
     scene.add(this.group);
@@ -77,8 +78,14 @@ export class Riverbed {
     const parts = assets.parts(model);
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
     const meshes = [];
-    for (const part of parts) {
-      const mesh = new THREE.InstancedMesh(part.geometry, tint(part.material), list.length);
+    const mats = parts.map(part => tint(part.material));
+    // in stretches of ~110 m of river, so the bed out of view is culled (as one mesh the whole river was drawn,
+    // 180 k triangles, wherever the camera looked)
+    const all = list;
+    for (let z0 = -230; z0 < 200; z0 += 110) for (const [pi, part] of parts.entries()) {
+      list = all.filter(r => r.z >= z0 && r.z < z0 + 110);
+      if (!list.length) continue;
+      const mesh = new THREE.InstancedMesh(part.geometry, mats[pi], list.length);
       list.forEach((r, i) => {
         e.set(0, r.rot, 0);
         q.setFromEuler(e);
@@ -94,5 +101,13 @@ export class Riverbed {
     return meshes;
   }
 
-  update(dt) { this.time.value += dt; }
+  update(dt) {
+    this.time.value += dt;
+    // lighter tiers: the bed is only drawn near the river (the water hides it from further away)
+    const far = this.world.quality?.riverbedDist, f = this.world.focus;
+    if (!far || !f || (this.checkT = (this.checkT ?? 0) - dt) > 0) return;
+    this.checkT = 0.4;
+    const d = river.nearest(f.x, f.z, far + 12)?.d ?? Infinity;
+    this.group.visible = this.group.visible ? d < far + 8 : d < far;
+  }
 }

@@ -412,3 +412,14 @@ button.retry { margin: 14px auto 0; display: block; border: 0; border-radius: 14
 .bark b[hidden] { display: none; }
 .bark.named { padding-top: 6px; }
 body.talking .bark, #hud.hidden ~ #barks .bark { display: none; }
+
+/* The title on a phone held sideways: six buttons do not fit one under another, so the menu goes two abreast. */
+@media (max-height: 480px) and (orientation: landscape) {
+  #title { gap: 8px; padding-top: calc(10px + var(--safe-t)); padding-bottom: calc(8px + var(--safe-b)); }
+  #title .logo h1 { font-size: 46px; margin: 0; }
+  #title .logo p { margin: 2px 0 0; font-size: 14px; }
+  #title .menu { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: min(560px, 92vw); }
+  #title .menu button { padding: 9px 14px; font-size: 17px; }
+  #title .menu .langs { grid-column: 1 / -1; }
+  #title .hint { display: none; }
+}

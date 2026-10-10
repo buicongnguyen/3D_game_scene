@@ -20,7 +20,7 @@ from arch_lib import *
 from arch_lib import _append_colored
 from mathutils import Vector, Matrix
 
-ORDER = ['signal-cottage', 'mill', 'drawbridge', 'star-lamp', 'kawabe-house-a', 'kawabe-house-b', 'boathouse',
+ORDER = ['signal-cottage', 'mill', 'drawbridge', 'star-lamp', 'star-lamp-grand', 'kawabe-house-a', 'kawabe-house-b', 'boathouse',
          'kawabe-shop', 'belltower', 'bakery', 'takamori-house-a', 'takamori-house-b', 'station', 'platform',
          'engine-shed', 'shrine', 'torii', 'stone-lantern', 'shrine-stairs']
 BUILD = {}
@@ -1142,6 +1142,213 @@ def build_star_lamp():
         wm.beam((LX, 0, z), ((half(z) + .06) if z > Z0 else .52, 0, z), .05, .05, tint=dark(), tag='ladder')
 
     return A.finish(ao_distance=1.0, ao_strength=.6, ground=0.0)
+
+
+@builder('star-lamp-grand')
+def build_star_lamp_grand():
+    """The Forest Lamp beside the shrine: the Star Lamp at twice the size (5.2 m base, about 19.5 m to the star tip).
+    Same parts, materials and `Flame` node as `star-lamp`. The structure is doubled; the things a keeper touches stay
+    human-sized (base steps, ladder rungs, balcony rail), so there are more of them instead of giant ones."""
+    A = Asset('star-lamp-grand', 'Star lamp grand')
+    rng = random.Random(56)
+    P, W, VM, CU, BR = M_plaster(), M_wood(), M_vermilion(), M_copper(), M_brass()
+    LGL, LST = lamp_glass(), lamp_star()
+    pm, wm, vm, bm_ = A.mb(P), A.mb(W), A.mb(VM), A.mb(BR)
+    lst = A.mb(LST)
+
+    def st_t(k=1.0):
+        t = stone_tint(rng, k)
+        return (t[0] * 1.1, t[1] * 1.1, t[2] * 1.12)
+
+    def prof(pts, z0, kr, kz, zref):
+        return [(r * kr, z0 + (z - zref) * kz) for r, z in pts]
+
+    # ---- stepped stone base: two 0.3 m steps (0.35 m treads; the lower one is walkable in the game) under a
+    # carved block with the constellation on each face
+    pm.box((0, 0, -.35), (5.2, 5.2, 1.3), ch=.06, seg=2, tint=st_t(.95), tag='base')
+    pm.box((0, 0, .4), (4.5, 4.5, .4), ch=.05, tint=st_t(1.04), tag='base')
+    pm.box((0, 0, .9), (3.9, 3.9, .74), ch=.05, tint=st_t(.95), tag='base')
+    pm.box((0, 0, 1.3), (4.1, 4.1, .12), ch=.04, tint=st_t(1.08), tag='base')
+    constellation = [(-.42, .08), (-.22, -.06), (0, .04), (.2, -.08), (.4, .06), (.1, .14)]
+    for side in ('-y', '+x', '+y', '-x'):
+        f, L = rect_face(-1.95, 1.95, -1.95, 1.95, side)
+        f.box(pm, L / 2, .9, .0, 2.9, .52, .05, ch=.02, tint=st_t(.78), tag='base panel')
+        pts = [f.p(L / 2 + x * 2.6, .88 + y * 1.3, .04) for x, y in constellation]
+        for p in pts:
+            lst.cyl(p, .055, .035, n=6, rot=(math.pi / 2, 0, f.rot), tag='star inlay')
+        for a_, b_ in zip(pts, pts[1:5]):
+            bm_.beam(a_, b_, .016, .016, up=f.n, tag='star inlay lines')
+        lst.extrude(star_outline(.17), .035, f.p(L / 2 + .26, .88 + .182, .04), rot=(0, 0, f.rot), tag='star inlay')
+    # lotus tier: an octagonal drum wrapped in upturned petals (more petals, not bigger ones)
+    pm.lathe(prof([(0, .4), (1.02, .4), (1.02, .5), (.92, .56), (.82, .6), (.8, .84), (0, .84)], 1.35, 1.85, 1.82, .4),
+             (0, 0, 0), n=8, tint=st_t(1.0), tag='lotus', smooth=30)
+    for i in range(18):
+        a = TAU * i / 18
+        o = V((math.cos(a), math.sin(a), 0))
+        petal = [(-.26, 0), (.26, 0), (.31, .19), (.16, .38), (0, .46), (-.16, .38), (-.31, .19)]
+        pm.extrude(petal, .1, o * 1.66 + V((0, 0, 1.52)), rot=(-.5, 0, a + math.pi / 2), bevel=0,
+                   tint=st_t(1.12), tag='lotus')
+    # column (sao) with carved bands
+    pm.lathe(prof([(0, .84), (.62, .84), (.62, .94), (.54, 1.0), (.5, 1.1), (.48, 2.2), (.56, 2.26), (.56, 2.36),
+                   (.5, 2.42), (.5, 2.58), (0, 2.58)], 2.15, 2.0, 1.753, .84), (0, 0, 0), n=16, tint=st_t(1.12),
+             tag='column', smooth=40)
+    for zb in (2.75, 4.55):
+        pm.lathe([(0, zb), (1.04, zb), (1.07, zb + .05), (1.07, zb + .13), (1.04, zb + .18), (0, zb + .18)], (0, 0, 0),
+                 n=16, tint=st_t(1.0), tag='column', smooth=40)
+    # shimenawa (twisted straw rope) with shide paper zigzags
+    RZ = 3.75
+    rope = []
+    for i in range(33):
+        a = TAU * i / 32
+        rope.append(V((math.cos(a) * 1.1, math.sin(a) * 1.1, RZ + .03 * math.sin(a * 4))))
+    pm.append(bm_loft(rope, [(math.cos(TAU * k / 6) * .12, math.sin(TAU * k / 6) * .135) for k in range(6)],
+                      closed=True, caps=False), None, (1.0, .86, .55), smooth=60, tag='shimenawa')
+    for i in range(10):
+        a = TAU * i / 10 + .3
+        c = V((math.cos(a) * 1.12, math.sin(a) * 1.12, RZ))
+        pm.sphere(c, (.15, .15, .135), seg=6, rings=4, rot=(0, 0, a), tint=(.95, .82, .5), tag='shimenawa')
+    for i in range(8):
+        a = TAU * i / 8 + math.pi / 8
+        o = V((math.cos(a), math.sin(a), 0))
+        side = V((-o.y, o.x, 0))
+        base = V((0, 0, RZ - .12)) + o * 1.24
+        zig = [(0, 0), (.11, -.1), (0, -.2), (.11, -.3), (0, -.4)]
+        for k in range(len(zig) - 1):
+            p0 = base + side * (zig[k][0] - .055) + V((0, 0, zig[k][1]))
+            p1 = base + side * (zig[k + 1][0] - .055) + V((0, 0, zig[k + 1][1]))
+            pm.poly([p0, p0 + side * .12, p1 + side * .12, p1], tint=1.05, normal=o, tag='shide')
+    # middle platform stone (chudai)
+    pm.lathe(prof([(0, 2.58), (.7, 2.58), (1.02, 2.8), (1.06, 2.9), (1.06, 3.0), (0, 3.0)], 5.2, 2.0, 1.905, 2.58),
+             (0, 0, 0), n=8, tint=st_t(1.08), tag='chudai', smooth=30)
+
+    # ---- vermilion timber tower: posts, six rings of through-tenon nuki, braced and panelled bays
+    Z0, Z1 = 6.0, 13.56
+    h0, h1 = 1.48, 1.16
+
+    def half(z):
+        return lerp(h0, h1, (z - Z0) / (Z1 - Z0))
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            vm.beam((sx * h0, sy * h0, Z0 - .02), (sx * h1, sy * h1, Z1), .3, .3, up=V((0, 1, 0)), ch=.035, tag='posts')
+            pm.box((sx * h0, sy * h0, Z0 + .06), (.48, .48, .12), ch=.03, tint=st_t(1.1), tag='post feet')
+            bm_.box((sx * h0, sy * h0, Z0 + .3), (.34, .34, .09), tag='post bands')
+            bm_.box((sx * h1, sy * h1, Z1 - .32), (.33, .33, .08), tag='post bands')
+    rings_z = [6.3, 7.75, 9.2, 10.65, 12.1, 13.36]
+    for k, z in enumerate(rings_z):
+        hz = half(z)
+        ext = .3 if 0 < k < 5 else .18
+        for side in range(4):
+            a = side * math.pi / 2
+            o = V((math.cos(a), math.sin(a), 0))
+            t = V((-o.y, o.x, 0))
+            p0, p1 = o * hz + t * (hz + ext), o * hz - t * (hz + ext)
+            vm.beam(V((p0.x, p0.y, z)), V((p1.x, p1.y, z)), .16, .22 if 0 < k < 5 else .18, ch=.02, tag='nuki')
+    for b in range(5):
+        za, zb = rings_z[b] + .12, rings_z[b + 1] - .12
+        zm = (za + zb) / 2
+        for side in range(4):
+            a = side * math.pi / 2
+            o = V((math.cos(a), math.sin(a), 0))
+            t = V((-o.y, o.x, 0))
+            if b in (0, 2):      # X braces
+                for s in (-1, 1):
+                    pa = o * (half(za) - .03) + t * s * (half(za) - .1)
+                    pb = o * (half(zb) - .03) - t * s * (half(zb) - .1)
+                    wm.beam(V((pa.x, pa.y, za)), V((pb.x, pb.y, zb)), .1, .11, tint=dark(), tag='braces')
+            elif b in (1, 3):    # a lacquered panel with a gold star
+                hz = half(zm)
+                c = o * (hz - .02)
+                wm.box(V((c.x, c.y, zm)), (.07, 2 * hz - .34, zb - za - .1), rot=(0, 0, a), tint=.2, tag='panels')
+                lst.extrude(star_outline(.36), .04, V((c.x, c.y, zm)) + o * .05, rot=(0, 0, a - math.pi / 2),
+                            tag='panel stars')
+            else:                # knee brackets under the balcony
+                for s in (-1, 1):
+                    pa = o * (half(za) - .03) + t * s * (half(za) - .16)
+                    pb = o * (half(zb) - .03) + t * s * (half(zb) - .85)
+                    wm.beam(V((pa.x, pa.y, za)), V((pb.x, pb.y, zb)), .1, .11, tint=dark(), tag='braces')
+    # ---- keeper's balcony with a waist-high railing (open on +X for the ladder)
+    B0 = 13.64
+    BH = 1.96
+    wm.box((0, 0, B0), (2 * BH, 2 * BH, .14), ch=.02, tint=.85, tag='balcony')
+    for i in range(14):
+        wm.box((-BH + .14 + i * .28, 0, B0 + .075), (.26, 2 * BH - .08, .02), tint=.9 + .1 * rng.random(), tag='balcony')
+    rail_h = .8
+    e = BH - .07
+    rail_posts = {(sx * e, sy * e) for sx in (-1, 1) for sy in (-1, 1)}
+    for q in (-e / 2, 0, e / 2):
+        rail_posts |= {(q, -e), (q, e), (-e, q)}
+    rail_posts |= {(e, -.5), (e, .5), (e, -e / 2 - .2), (e, e / 2 + .2)}
+    for (px, py) in sorted(rail_posts):
+        vm.box((px, py, B0 + .07 + rail_h / 2), (.09, .09, rail_h), tag='railing')
+        bm_.sphere((px, py, B0 + .1 + rail_h), .06, seg=6, rings=4, tag='railing')
+    for (a, b) in [((-e, -e), (e, -e)), ((-e, e), (e, e)), ((-e, -e), (-e, e)), ((e, -e), (e, -.5)), ((e, .5), (e, e))]:
+        for dz in (.28, .54, rail_h):
+            vm.beam((a[0], a[1], B0 + .07 + dz), (b[0], b[1], B0 + .07 + dz), .06 if dz == rail_h else .045,
+                    .06 if dz == rail_h else .045, tag='railing')
+
+    # ---- lamp chamber: crystal glass behind a brass star lattice, black-lacquer frame
+    C0, C1 = 13.84, 16.56
+    CH = 1.08
+    zc = (C0 + C1) / 2
+    A.mb(LGL).box((0, 0, zc), (2 * CH - .06, 2 * CH - .06, C1 - C0 - .16), ch=.03, tag='chamber glass')
+    wm.box((0, 0, C0 + .05), (2 * CH + .3, 2 * CH + .3, .16), ch=.03, tint=.2, tag='chamber frame')
+    wm.box((0, 0, C1 - .05), (2 * CH + .3, 2 * CH + .3, .16), ch=.03, tint=.2, tag='chamber frame')
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            vm.box((sx * CH, sy * CH, zc), (.17, .17, C1 - C0), ch=.02, tag='chamber posts')
+    for side in ('-y', '+x', '+y', '-x'):
+        f, L = rect_face(-CH + .03, CH - .03, -CH + .03, CH - .03, side)
+        ring_pts = star_outline(.74, .32)
+        for k in range(10):
+            p0 = V(ring_pts[k])
+            p1 = V(ring_pts[(k + 1) % 10])
+            bm_.beam(f.p(L / 2 + p0.x, zc + p0.y, .03), f.p(L / 2 + p1.x, zc + p1.y, .03), .05, .035, up=f.n,
+                     tag='star lattice')
+        for dz in (-1.02, 1.02):
+            f.box(bm_, L / 2, zc + dz, .03, L - .06, .045, .03, tag='star lattice')
+        for du in (-.8, .8):     # short glazing bars above and below the star's arms
+            for dz in (-1.12, 1.12):
+                f.box(bm_, L / 2 + du, zc + dz, .03, .035, .2, .03, tag='star lattice')
+    A.marker('Flame', (0, 0, zc))
+
+    # ---- copper pyramid roof with upswept corners, bells, jewel and the star finial
+    RH = 2.24
+    EZ = 16.72
+    slopes, roof = hip_roof(A, CU, RH, EZ, .52, sag=.3, lift_k=.5,
+                            style=dict(ROOF_STYLES['seam'], pitch=.4, course=.62, thick=.14),
+                            under_mat=W, fascia_mat=W, cap_mat=CU, seed=7)
+    wm.box((0, 0, EZ - .08), (2.3, 2.3, .2), tint=.2, tag='roof base')
+    apex_z = roof.z(V((0, 0)), RH)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            c = V((sx * RH * .97, sy * RH * .97, 0))
+            cz = slopes[0].roof.z(c, 0) - .14
+            bm_.rod((c.x, c.y, cz), (c.x, c.y, cz - .24), .014, n=4, tag='bells')
+            bm_.lathe([(0, 0), (.13, 0), (.136, .03), (.11, .18), (.055, .27), (0, .29)], (c.x, c.y, cz - .53), n=8,
+                      tag='bells')
+            bm_.box((c.x, c.y, cz - .68), (.016, .12, .2), tag='bells')
+    bm_.lathe([(0, apex_z - .1), (.32, apex_z - .1), (.36, apex_z + .04), (.2, apex_z + .12), (.24, apex_z + .2),
+               (.3, apex_z + .32), (.2, apex_z + .5), (0, apex_z + .6)], (0, 0, 0), n=12, tag='finial')
+    sc = V((0, 0, apex_z + 1.0))
+    gem_star(lst, sc, .64, depth=.2, facing=(0, -1, 0), tag='finial star')
+    gem_star(lst, sc, .5, depth=.17, facing=(1, 0, 0), tag='finial star')
+    bm_.rod((0, 0, apex_z + .5), (0, 0, apex_z + .66), .035, n=6, tag='finial')
+
+    # ---- ladder on +X from the first base step to above the balcony: rungs a keeper can climb, stand-off brackets
+    LX = 2.28
+    zl0, zl1 = .3, B0 + 1.0
+    for sy in (-1, 1):
+        wm.box((LX, sy * .22, (zl0 + zl1) / 2), (.07, .07, zl1 - zl0), tint=dark(1.1), tag='ladder')
+    for k in range(int((zl1 - zl0 - .35) / .3) + 1):
+        wm.box((LX, 0, zl0 + .25 + k * .3), (.045, .44, .04), tint=dark(1.35), tag='ladder')
+    for z in (2.5, 4.3, 6.9, 8.5, 10.0, 11.5, 12.9):
+        inner = (half(z) + .1) if z > Z0 else 1.0
+        for sy in (-1, 1):
+            wm.beam((LX, sy * .22, z), (inner, sy * .22, z), .05, .05, tint=dark(), tag='ladder')
+    for sy in (-1, 1):
+        wm.beam((LX, sy * .22, B0 - .02), (BH - .05, sy * .22, B0 - .02), .05, .05, tint=dark(), tag='ladder')
+
+    return A.finish(ao_distance=1.5, ao_strength=.6, ground=0.0)
 
 
 # ---------------------------------------------------------------- Kawabe houses
@@ -3401,147 +3608,233 @@ def fox_statue(A, stone_mat, bib_mat, c, rot=0., rng=None, tag='fox statue'):
 
 @builder('shrine')
 def build_shrine():
+    """The Forest Shrine's great hall: a nagare-zukuri hall on stilts over a dressed-stone terrace, twice the old
+    hall in plan and height (roof 10.8 x 12.4 m, ridge at 11.5 m). The origin is the terrace centre at ground level
+    and the front faces -Y. Details stay human-sized: 0.16-0.18 m risers, a 2.5 m door head, a waist-high rail.
+
+    Levels the runtime colliders follow (src/world/structures.js, shrineColliders):
+      terrace top z=0.9 over x +-5.7, y +-6.6; four stone treads down the front (y -6.6 .. -7.96, x +-2.0);
+      veranda floor z=2.2 over x +-4.9, y -2.8 .. 5.5; timber stairs of 8 risers from y=-5.28 up to y=-2.88 (x +-1.4);
+      hall walls x +-3.7, y -0.9 .. 5.5; offering box 1.7 x 0.8 at (0, -1.5) on the veranda."""
     A = Asset('shrine', 'Shrine')
     rng = random.Random(171)
     P, W, VM, CU, BR, G = M_plaster(), M_wood(), M_vermilion(), M_copper(), M_brass(), M_leaf()
     LG = lantern_glow()
     pm, wm, vm, bm_ = A.mb(P), A.mb(W), A.mb(VM), A.mb(BR)
 
-    X0, X1, Y0, Y1 = -1.85, 1.85, -1.1, 2.1
-    ZF, ZT = 1.1, 3.35
-    VX, VY0 = 2.45, -1.75          # veranda half width and front edge
+    TX, TY, TZ = 5.7, 6.6, .9          # stone terrace half sizes and top
+    X0, X1, Y0, Y1 = -3.7, 3.7, -.9, 5.5
+    ZF, ZT = 2.2, 6.7                  # hall floor, top plate
+    VX, VY0 = 4.9, -2.8                # veranda half width and front edge
     L = X1 - X0
 
+    # ---- stone terrace (kidan): two courses of big dressed stones under a paved top; the core runs to z=-1.5
+    plinth(A, P, -TX, TX, -TY, TY, z_top=TZ - .15, z_bot=-1.5, rows=2, stone_top=-.14, rng=rng, wmin=.9, wmax=1.5,
+           depth=.3, tag='terrace')
+    nx, ny = 6, 7
+    sx_, sy_ = (2 * TX + .16) / nx, (2 * TY + .16) / ny
+    for i in range(nx):
+        for j in range(ny):
+            pm.box((-TX - .08 + (i + .5) * sx_, -TY - .08 + (j + .5) * sy_, TZ - .08), (sx_ - .03, sy_ - .03, .16),
+                   tint=stone_tint(rng, 1.12), tag='terrace paving')
+    # front steps: four stone treads (0.18 m risers) between stepped cheek stones
+    SW, RUN, RISE = 2.0, .34, .18
+    for k in range(1, 5):
+        yf = -TY - RUN * (5 - k)
+        pm.box((rng.uniform(-.01, .01), (yf - TY + .1) / 2, RISE * k / 2 - .25), (2 * SW, -TY + .1 - yf, RISE * k + .5),
+               ch=.03, tint=stone_tint(rng, 1.14), tag='stone steps')
+    for sx in (-1, 1):
+        stone(pm, (sx * (SW + .32), -TY - .48, .3), (.64, 1.0, 1.5), 0, rng, tint=stone_tint(rng, 1.0), tag='step cheeks')
+        stone(pm, (sx * (SW + .32), -TY - 1.22, .06), (.64, .6, 1.0), 0, rng, tint=stone_tint(rng, 1.06), tag='step cheeks')
+
     # ---- stilts on foundation stones, tie beams, veranda deck
-    posts = [(x, y) for x in (-VX + .08, X0, 0, X1, VX - .08) for y in (VY0 + .08, Y0, (Y0 + Y1) / 2, Y1)]
-    for x, y in posts:
-        footing(pm, x, y, .13, .34, rng)
-        vm.box((x, y, (ZF - .1 + .12) / 2), (.16, .16, ZF - .22), ch=.015, tag='stilts')
-    for y in (VY0 + .08, Y0, Y1):
-        vm.box((0, y, .55), (2 * VX, .1, .12), tag='tie beams')
-    for x in (-VX + .08, VX - .08, X0, X1):
-        vm.box((x, (VY0 + Y1) / 2, .55), (.1, Y1 - VY0, .12), tag='tie beams')
-    wm.box((0, (VY0 + Y1) / 2, ZF - .06), (2 * VX + .1, Y1 - VY0 + .1, .12), ch=.02, tint=.6, tag='veranda')
-    for i in range(12):
-        x = -VX + .2 + i * (2 * VX - .4) / 11
-        wm.box((x, (VY0 + Y1) / 2, ZF + .005), ((2 * VX - .4) / 11 - .02, Y1 - VY0, .02), tint=.8 + .15 * rng.random(), tag='veranda')
+    xs = (-VX + .1, X0, X0 / 2, 0, X1 / 2, X1, VX - .1)
+    ys = (VY0 + .1, Y0, Y0 + 1.6, Y0 + 3.2, Y0 + 4.8, Y1)
+    for x in xs:
+        for y in ys:
+            edge = abs(x) > VX - .2 or y < VY0 + .2 or y > Y1 - .01
+            if edge:
+                stone(pm, (x, y, TZ + .06), (.42, .42, .22), 0, rng, tint=stone_tint(rng, 1.05), tag='footings')
+            vm.box((x, y, (TZ + ZF - .12) / 2), (.2, .2, ZF - .12 - TZ), ch=.02 if edge else 0, tag='stilts')
+    for y in (VY0 + .1, Y0, Y1):
+        vm.box((0, y, TZ + .62), (2 * VX, .12, .16), tag='tie beams')
+    for x in (-VX + .1, VX - .1, X0, X1):
+        vm.box((x, (VY0 + Y1) / 2, TZ + .62), (.12, Y1 - VY0, .16), tag='tie beams')
+    wm.box((0, (VY0 + Y1) / 2, ZF - .07), (2 * VX + .12, Y1 - VY0 + .12, .14), ch=.02, tint=.6, tag='veranda')
+    nb = 24
+    for i in range(nb):
+        x = -VX + .1 + (i + .5) * (2 * VX - .2) / nb
+        wm.box((x, (VY0 + Y1) / 2, ZF + .005), ((2 * VX - .2) / nb - .02, Y1 - VY0, .02), tint=.8 + .15 * rng.random(),
+               tag='veranda')
     # railing (koran) with brass caps, open at the stairs
-    rh = .62
-    rails = [((-VX, VY0), (-.75, VY0)), ((.75, VY0), (VX, VY0)), ((-VX, VY0), (-VX, Y1)), ((VX, VY0), (VX, Y1))]
+    rh = .8
+    SH = 1.5
+    rails = [((-VX, VY0), (-SH, VY0)), ((SH, VY0), (VX, VY0)), ((-VX, VY0), (-VX, Y1)), ((VX, VY0), (VX, Y1)),
+             ((-VX, Y1), (X0, Y1)), ((X1, Y1), (VX, Y1))]
     for a, b in rails:
         a3, b3 = V((a[0], a[1], ZF + rh)), V((b[0], b[1], ZF + rh))
-        vm.beam(a3, b3, .08, .07, ch=.01, tag='railing', ext=.08)
-        vm.beam(a3 - V((0, 0, .3)), b3 - V((0, 0, .3)), .05, .05, tag='railing')
-        n = max(1, int((V(b) - V(a)).length / .9))
+        vm.beam(a3, b3, .09, .08, ch=.01, tag='railing', ext=.1)
+        for dz in (.28, .56):
+            vm.beam(a3 - V((0, 0, dz)), b3 - V((0, 0, dz)), .05, .05, tag='railing')
+        n = max(1, round((V(b) - V(a)).length / 1.05))
         for k in range(n + 1):
             p = V(a).lerp(V(b), k / n)
-            vm.box((p.x, p.y, ZF + rh / 2), (.08, .08, rh), tag='railing')
-            bm_.sphere((p.x, p.y, ZF + rh + .06), .05, seg=6, rings=4, tag='railing')
+            vm.box((p.x, p.y, ZF + rh / 2), (.09, .09, rh), tag='railing')
+            bm_.sphere((p.x, p.y, ZF + rh + .07), .06, seg=6, rings=4, tag='railing')
 
-    # ---- hall: vermilion frame, white panels, lattice doors at the front
-    holes = {'-y': [(.25, L - .25, ZF + .05, 2.95)], '+x': [], '+y': [], '-x': []}
+    # ---- nagare-zukuri roof: long sweeping front slope, short back slope
+    yr, zr = 1.7, 11.5
+    xv = VX + .5
+    fyl, byl = -5.9, 6.5
+    Df, Db = yr - fyl, byl - yr
+    TH = .26
+    back_roof = Roof(0, 1.0, Db, sag=.12)
+    back_roof.eave_z = zr - back_roof.g(Db)
+    front_roof = Roof(0, 1.0, Df, sag=.42)
+    front_roof.pitch = (zr - 5.24) / Df / (1 - .42 + .42)
+    front_roof.eave_z = zr - front_roof.g(Df)
+    front = Slope(front_roof, [(-xv, fyl), (xv, fyl), (xv, yr), (-xv, yr)], (-xv, fyl), (xv, fyl),
+                  ['eave', 'verge', 'ridge', 'verge'])
+    back = Slope(back_roof, [(xv, byl), (-xv, byl), (-xv, yr), (xv, yr)], (xv, byl), (-xv, byl),
+                 ['eave', 'verge', 'ridge', 'verge'])
+    st = dict(ROOF_STYLES['seam'], pitch=.42, course=.76, thick=TH, lip=.035, line_r=.034)
+    for i, s in enumerate((front, back)):
+        tile_slope(A, s, CU, st, under_mat=W, fascia_mat=W, seed=180 + i)
+        # rafters from the eave to the wall line, in short lengths that follow the sweep of the roof
+        d_wall = (Y0 - fyl) if s is front else (byl - Y1)
+        nseg = 3 if s is front else 1
+        for j in range(nseg):
+            da, db = .06 + (d_wall - .01) * j / nseg, .06 + (d_wall - .01) * (j + 1) / nseg
+            for i in range(int((2 * xv - .6) / .42) + 1):
+                u = s.umin + .3 + (2 * xv - .6 - int((2 * xv - .6) / .42) * .42) / 2 + i * .42
+                wm.beam(s.P(s.pt(u, da), -TH - .06), s.P(s.pt(u, db), -TH - .06), .1, .12, up=Z, tint=dark(), tag='rafters')
+    for ye, s, sy in ((fyl, front, -1), (byl, back, 1)):
+        for sx in (-1, 1):
+            bargeboard(A, W, s, (sx * xv, ye), (sx * xv, yr), h=.5, t=.12, tint=dark(1.1), out=V((sx, 0)), n=14)
+    rpath = [V((lerp(-xv - .08, xv + .08, t / 12), yr, zr + .05)) for t in range(13)]
+    ridge(A, CU, rpath, w=.7, layers=3, lh=.1, cap_r=.2, tint=.8, n_cap=5)
+    # katsuogi billets across the ridge and forked chigi at both gables
+    for k in range(7):
+        x = -4.2 + k * 1.4
+        bm_.append(bm_cyl(.17, 1.5, 8, cap=True, ch=.04), xform((x, yr, zr + .66), (math.pi / 2, 0, 0)), 1.0, smooth=50,
+                   tag='katsuogi')
+        for sy in (-1, 1):
+            wm.cyl((x, yr + sy * .76, zr + .66), .176, .04, n=8, rot=(math.pi / 2, 0, 0), tint=.2, tag='katsuogi')
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            a = V((sx * (xv + .03), yr + sy * .3, zr - .3))
+            b = a + V((0, -sy * 1.1, 2.0))
+            wm.beam(a, b, .16, .1, up=V((1, 0, 0)), tint=dark(1.2), tag='chigi')
+            bm_.box(b + V((0, 0, -.08)), (.18, .13, .1), tag='chigi')
+
+    # ---- hall: vermilion frame, white panels up to the roof, five pairs of lattice doors under a transom
+    DH = ZF + 2.5                      # door head
+    BW = (L - .24) / 5                 # one door bay
+    holes = {'-y': [(.12, L - .12, ZF + .05, DH)], '+x': [], '+y': [], '-x': []}
     for side in ('-y', '+x', '+y', '-x'):
         f, Lf = rect_face(X0, X1, Y0, Y1, side)
-        panel(pm, f, 0, Lf, ZF, ZT, holes[side], tint=1.02, tag='walls')
-        for u in (0, Lf / 2, Lf) if side in ('-y', '+y') else (0, Lf / 2, Lf):
-            f.box(vm, u, (ZF + ZT) / 2, .04, .18, ZT - ZF, .12, ch=.02, tag='hall posts')
-        for z in (ZF + .08, 2.25, ZT - .1):
-            if side == '-y' and z < 3:
+        top = under_fn([front, back], f, TH, u0=0, u1=Lf)
+        panel(pm, f, 0, Lf, ZF, ZT, holes[side], du=1.7, dz=.95, tint=1.02, tag='walls', top=top)
+        us = [0] + [.12 + k * BW for k in range(1, 5)] + [Lf] if side == '-y' else [Lf * k / 4 for k in range(5)]
+        for u in us:
+            tz = top(min(max(u, .02), Lf - .02))
+            f.box(vm, u, (ZF + tz) / 2, .04, .2, tz - ZF, .13, ch=.02, tag='hall posts')
+            # bearing block and bracket arm under the top plate
+            f.box(wm, u, ZT - .36, .07, .34, .18, .2, ch=.025, tint=dark(1.15), tag='brackets')
+            f.box(wm, u, ZT - .21, .07, .78, .12, .14, tint=dark(1.3), tag='brackets')
+        for z in (ZF + .09, ZF + 1.55, DH + .13, ZT - .1):
+            if side == '-y' and z < DH:
                 continue
-            f.box(vm, Lf / 2, z, .03, Lf, .14, .1, ch=.015, tag='nuki')
+            f.box(vm, Lf / 2, z, .03, Lf, .16, .1, ch=.015, tag='nuki')
+        if side in ('+x', '-x'):
+            collar(f, vm, top, Lf, ZT + 1.75, h=.16, tint=1.0, tag='nuki')
+            # slatted windows (renji-mado) in the two middle bays
+            for k in (1, 2):
+                uc = Lf * (k + .5) / 4
+                f.box(wm, uc, ZF + 2.1, .012, 1.2, .82, .02, tint=.14, tag='windows')
+                for j in range(9):
+                    f.box(A.mb(G), uc - .52 + j * .13, ZF + 2.1, .03, .05, .82, .03, tint=.72, tag='windows')
     ff, Lf = rect_face(X0, X1, Y0, Y1, '-y')
     h = holes['-y'][0]
     reveal(pm, ff, h, .1, tint=.3, sides='t')
     ff.quad(wm, h[0], h[2], h[1], h[3], d=-.12, tint=.12)
-    # three pairs of black-lacquer lattice doors with gold hardware, the middle pair slightly open
-    for k in range(3):
-        ua = h[0] + k * (h[1] - h[0]) / 3
-        ub = ua + (h[1] - h[0]) / 3
+    for k in range(5):
+        ua = h[0] + k * BW
+        ub = ua + BW
         uc = (ua + ub) / 2
-        off = .12 if k == 1 else 0
+        off = .16 if k == 2 else 0
         for s in (-1, 1):
             u0, u1 = (ua, uc) if s < 0 else (uc, ub)
             u0 += s * off
             u1 += s * off
             wm.box(ff.p((u0 + u1) / 2, (h[2] + h[3]) / 2, -.06), ((u1 - u0) - .02, .05, h[3] - h[2]), rot=(0, 0, ff.rot),
                    tint=.18, tag='lattice doors')
-            for j in range(1, 4):
-                ff.box(wm, u0 + (u1 - u0) * j / 4, (h[2] + h[3]) / 2, -.025, .02, h[3] - h[2] - .1, .02, tint=.4, tag='lattice doors')
-            for j in range(1, 8):
-                ff.box(wm, (u0 + u1) / 2, h[2] + (h[3] - h[2]) * j / 8, -.025, (u1 - u0) - .06, .02, .02, tint=.4, tag='lattice doors')
-            ff.box(bm_, (u0 + u1) / 2, h[2] + .25, -.02, (u1 - u0) - .1, .04, .02, tag='door fittings')
-    ff.box(vm, Lf / 2, 3.08, .05, Lf + .2, .22, .14, ch=.02, tag='nuki')
+            for j in range(1, 3):
+                ff.box(wm, u0 + (u1 - u0) * j / 3, (h[2] + h[3]) / 2, -.025, .025, h[3] - h[2] - .1, .02, tint=.4,
+                       tag='lattice doors')
+            for j in range(1, 9):
+                ff.box(wm, (u0 + u1) / 2, h[2] + (h[3] - h[2]) * j / 9, -.025, (u1 - u0) - .06, .025, .02, tint=.4,
+                       tag='lattice doors')
+            ff.box(bm_, (u0 + u1) / 2, h[2] + .3, -.02, (u1 - u0) - .1, .05, .02, tag='door fittings')
+        # transom (ranma) over each bay: vermilion bars on a dark ground
+        zt0, zt1 = DH + .3, ZT - .52
+        ff.box(wm, uc, (zt0 + zt1) / 2, .012, BW - .3, zt1 - zt0, .02, tint=.14, tag='transom')
+        for j in range(6):
+            ff.box(vm, uc - (BW - .3) / 2 + (j + .5) * (BW - .3) / 6, (zt0 + zt1) / 2, .03, .05, zt1 - zt0, .03,
+                   tag='transom')
 
-    # ---- nagare-zukuri roof: long sweeping front slope, short back slope, chigi and katsuogi
-    yr = .45
-    zr = 5.75
-    xv = VX + .25
-    fyl, byl = -3.35, 2.85
-    Df, Db = yr - fyl, byl - yr
-    back_roof = Roof(0, 1.0, Db, sag=.12)
-    back_roof.eave_z = zr - back_roof.g(Db)
-    front_roof = Roof(0, 1.0, Df, sag=.42)
-    front_roof.pitch = (zr - 2.62) / Df / (1 - .42 + .42)
-    front_roof.eave_z = zr - front_roof.g(Df)
-    front = Slope(front_roof, [(-xv, fyl), (xv, fyl), (xv, yr), (-xv, yr)], (-xv, fyl), (xv, fyl),
-                  ['eave', 'verge', 'ridge', 'verge'])
-    back = Slope(back_roof, [(xv, byl), (-xv, byl), (-xv, yr), (xv, yr)], (xv, byl), (-xv, byl),
-                 ['eave', 'verge', 'ridge', 'verge'])
-    st = dict(ROOF_STYLES['seam'], pitch=.28, course=.5, thick=.22, lip=.03, line_r=.028)
-    for i, s in enumerate((front, back)):
-        tile_slope(A, s, CU, st, under_mat=W, fascia_mat=W, seed=180 + i)
-        rafters(A, W, s, 1.2 if s is front else .75, spacing=.3, w=.07, h=.08, tint=dark(), thick=.22, margin=.2)
-    for ye, s, sy in ((fyl, front, -1), (byl, back, 1)):
-        for sx in (-1, 1):
-            bargeboard(A, W, s, (sx * xv, ye), (sx * xv, yr), h=.34, t=.1, tint=dark(1.1), out=V((sx, 0)), n=10)
-    rpath = [V((lerp(-xv - .05, xv + .05, t / 8), yr, zr + .05)) for t in range(9)]
-    ridge(A, CU, rpath, w=.42, layers=2, lh=.08, cap_r=.14, tint=.8, n_cap=5)
-    # katsuogi billets across the ridge and forked chigi at both gables
-    for k in range(5):
-        x = -1.6 + k * .8
-        bm_.append(bm_cyl(.1, .9, 10, cap=True, ch=.03), xform((x, yr, zr + .38), (math.pi / 2, 0, 0)), 1.0, smooth=50,
-                   tag='katsuogi')
-        wm.cyl((x, yr - .46, zr + .38), .104, .03, n=10, rot=(math.pi / 2, 0, 0), tint=.2, tag='katsuogi')
-        wm.cyl((x, yr + .46, zr + .38), .104, .03, n=10, rot=(math.pi / 2, 0, 0), tint=.2, tag='katsuogi')
-    for sx in (-1, 1):
-        for sy in (-1, 1):
-            a = V((sx * (xv + .02), yr + sy * .15, zr - .15))
-            b = a + V((0, -sy * .55, 1.0))
-            wm.beam(a, b, .09, .06, up=V((1, 0, 0)), tint=dark(1.2), tag='chigi')
-            bm_.box(b + V((0, 0, -.05)), (.1, .08, .06), tag='chigi')
+    # ---- kohai: four pillars on the terrace carry the long front eave over the stairs
+    PY = -5.3
+    PXI = -X0 - .12 - BW               # inner pillars stand in line with the hall posts beside the middle bays
+    zb_ = front.z(V((0, PY))) - TH - .14
+    for x in (-VX + .2, -PXI, PXI, VX - .2):
+        stone(pm, (x, PY, TZ + .1), (.58, .58, .3), 0, rng, tint=stone_tint(rng, 1.05), tag='kohai')
+        vm.box((x, PY, (TZ + .22 + zb_ - .3) / 2), (.26, .26, zb_ - .3 - TZ - .22), ch=.03, tag='kohai')
+        bm_.box((x, PY, TZ + .5), (.3, .3, .1), tag='kohai')
+        wm.box((x, PY, zb_ - .4), (.42, .42, .16), ch=.03, tint=dark(1.15), tag='kohai')
+    vm.box((0, PY, zb_ - .15), (2 * VX + .5, .24, .3), ch=.02, tag='kohai')
+    for x in (-PXI, PXI):
+        vm.beam((x, PY, zb_ - .78), (x, Y0, zb_ - .78), .16, .22, ch=.015, tag='kohai')
 
-    # ---- front stairs with vermilion rails
-    ns = 6
-    rise = ZF / ns
+    # ---- timber stairs from the terrace to the veranda, with vermilion rails
+    ns = 8
+    rise = (ZF - TZ) / ns
+    ytop = VY0 - .08
+    ybot = ytop - ns * .3
     for k in range(ns):
-        y = VY0 - .08 - (ns - k - .5) * .3
-        wm.box((0, y, rise * (k + 1) - .03), (1.4, .3, .06), ch=.01, tint=.85, tag='stairs')
+        y = ytop - (ns - k - .5) * .3
+        wm.box((0, y, TZ + rise * (k + 1) - .03), (2.8, .3, .06), ch=.01, tint=.85, tag='stairs')
     for sx in (-1, 1):
-        wm.beam((sx * .72, VY0 - .08 - ns * .3, .05), (sx * .72, VY0, ZF), .07, .22, tint=dark(1.2), tag='stairs')
-        vm.beam((sx * .75, VY0 - .08 - ns * .3 + .1, .7), (sx * .75, VY0 - .02, ZF + rh), .07, .06, ch=.01, tag='stair rails')
-        vm.box((sx * .75, VY0 - .08 - ns * .3 + .1, .35), (.08, .08, .7), tag='stair rails')
-        bm_.sphere((sx * .75, VY0 - .08 - ns * .3 + .1, .74), .05, seg=6, rings=4, tag='stair rails')
+        wm.beam((sx * 1.44, ybot, TZ + .05), (sx * 1.44, VY0, ZF), .08, .26, tint=dark(1.2), tag='stairs')
+        vm.beam((sx * SH, ybot + .1, TZ + rh + .05), (sx * SH, VY0 - .02, ZF + rh), .09, .08, ch=.01, tag='stair rails')
+        for t in (0, .5):
+            y, z = lerp(ybot + .1, VY0 - .02, t), lerp(TZ, ZF, t)
+            vm.box((sx * SH, y, z + (rh + .05) / 2), (.09, .09, rh + .05), tag='stair rails')
+            bm_.sphere((sx * SH, y, z + rh + .12), .06, seg=6, rings=4, tag='stair rails')
+
     # ---- offering box, bell and rope, shimenawa, lanterns
-    ob = V((0, Y0 - .45, ZF))
-    wm.box(ob + V((0, 0, .28)), (1.0, .5, .56), ch=.02, tint=.5, tag='offering box')
-    for k in range(7):
-        wm.box(ob + V((-.36 + k * .12, 0, .565)), (.06, .46, .03), rot=(.5, 0, 0), tint=.35, tag='offering box')
-    bm_.box(ob + V((0, -.26, .38)), (.7, .02, .06), tag='offering box')
-    bz = 2.95
-    wm.box((0, Y0 - .35, 3.28), (.12, .8, .12), tint=dark(), tag='bell beam')
-    bm_.rod((0, Y0 - .7, 3.22), (0, Y0 - .7, bz + .2), .012, n=4, tag='suzu')
-    bm_.sphere((0, Y0 - .7, bz), (.22, .22, .2), seg=12, rings=7, tag='suzu')
-    bm_.torus((0, Y0 - .7, bz), .22, .025, maj=12, mn=4, tag='suzu')
-    rope = [V((0, Y0 - .72, bz - .15)), V((.03, Y0 - .75, 2.2)), V((-.02, Y0 - .8, 1.6)), V((0, Y0 - .82, ZF + .9))]
-    A.mb(VM).loft(rope, [(math.cos(TAU * k / 6) * .045, math.sin(TAU * k / 6) * .045) for k in range(6)], caps=True,
+    ob = V((0, Y0 - .6, ZF))
+    wm.box(ob + V((0, 0, .36)), (1.7, .8, .72), ch=.03, tint=.5, tag='offering box')
+    for k in range(11):
+        wm.box(ob + V((-.7 + k * .14, 0, .73)), (.07, .74, .035), rot=(.5, 0, 0), tint=.35, tag='offering box')
+    bm_.box(ob + V((0, -.41, .48)), (1.2, .02, .08), tag='offering box')
+    by, bz = Y0 - 1.25, ZF + 2.85
+    wm.box((0, (Y0 + by) / 2 - .05, bz + .52), (.16, Y0 - by + .3, .16), tint=dark(), tag='bell beam')
+    bm_.rod((0, by, bz + .46), (0, by, bz + .26), .016, n=4, tag='suzu')
+    bm_.sphere((0, by, bz), (.32, .32, .29), seg=12, rings=7, tag='suzu')
+    bm_.torus((0, by, bz), .32, .035, maj=12, mn=4, tag='suzu')
+    rope = [V((0, by - .02, bz - .22)), V((.04, by - .05, bz - 1.0)), V((-.03, by - .1, bz - 1.6)), V((0, by - .12, ZF + .95))]
+    A.mb(VM).loft(rope, [(math.cos(TAU * k / 6) * .055, math.sin(TAU * k / 6) * .055) for k in range(6)], caps=True,
                   tag='bell rope')
-    pm.loft([p + V((.05, 0, 0)) for p in rope], [(math.cos(TAU * k / 5) * .03, math.sin(TAU * k / 5) * .03) for k in range(5)],
+    pm.loft([p + V((.065, 0, 0)) for p in rope], [(math.cos(TAU * k / 5) * .036, math.sin(TAU * k / 5) * .036) for k in range(5)],
             caps=True, tint=1.05, tag='bell rope')
-    shimenawa(A, P, (-X1 - .3, Y0 - .18, 3.28), (X1 + .3, Y0 - .18, 3.28), sag=.2, r=.1, n=10, shide=4)
+    shimenawa(A, P, (-PXI + .1, PY - .2, zb_ - .62), (PXI - .1, PY - .2, zb_ - .62), sag=.3, r=.15, n=12, shide=5)
+    shimenawa(A, P, (X0 - .15, Y0 - .2, DH + .62), (X1 + .15, Y0 - .2, DH + .62), sag=.22, r=.1, n=14, shide=8)
     for sx in (-1, 1):
-        chochin(A, LG, W, V((sx * (VX - .15), VY0 - .08, 2.35)), r=.18, h=.4, hang=.3)
-    # ---- noticeboard (node) with Old Kiku's notes, beside the stairs
-    nx, ny = -2.2, -2.75
+        chochin(A, LG, W, V((sx * (PXI + 1.3), PY, zb_ - .3 - .32 - .36)), r=.33, h=.72, hang=.32, n=8)
+        chochin(A, LG, W, V((sx * PXI, Y0 - 1.0, zb_ - .89 - .3 - .25)), r=.23, h=.5, hang=.3, n=8)
+    # ---- noticeboard (node) with Old Kiku's notes, on the ground to the right of the stone steps
+    nx, ny = 4.6, -7.5
     for sx in (-1, 1):
         wm.box((nx + sx * .52, ny, .85), (.09, .09, 1.7), ch=.01, tint=dark(1.05), tag='noticeboard')
         stone(pm, (nx + sx * .52, ny, .03), (.22, .22, .12), 0, rng, tint=stone_tint(rng, 1.05), tag='noticeboard')
@@ -3558,15 +3851,16 @@ def build_shrine():
                    dict(ROOF_STYLES['seam'], pitch=.25, course=1.0, thick=.07), under_mat=W, fascia_mat=W, seed=190 + sgn)
     A.mb(CU).box((nx, ny, 1.62 + .55 * .4 + .03), (1.46, .1, .06), tag='noticeboard')
     A.marker('Noticeboard', (nx, ny - .06, 1.22))
-    # ---- guardian foxes on pedestals, sakaki branches in vases
+    # ---- guardian foxes on stone plinths either side of the steps, sakaki branches in vases by the offering box
     for sx in (-1, 1):
-        fox_statue(A, P, VM, (sx * 1.2, VY0 - 1.7, 0), rot=-sx * .3, rng=rng)
+        pm.box((sx * 3.35, -TY - 1.0, .02), (.98, .86, .6), ch=.04, tint=stone_tint(rng, .98), tag='fox statue')
+        fox_statue(A, P, VM, (sx * 3.35, -TY - 1.0, .32), rot=-sx * .3, rng=rng)
     for sx in (-1, 1):
-        vx_ = sx * 1.9
-        bm_.lathe([(0, 0), (.08, 0), (.1, .1), (.06, .2), (.08, .28), (0, .26)], (vx_, VY0 + .05, ZF), n=8, tag='sakaki')
-        leafy(A.mb(G), (vx_, VY0 + .05, ZF + .45), (.14, .12, .22), rng, seg=6, rings=4, jitter=.3, tag='sakaki')
+        vx_ = sx * 1.4
+        bm_.lathe([(0, 0), (.1, 0), (.13, .13), (.08, .26), (.1, .36), (0, .34)], (vx_, Y0 - .55, ZF), n=8, tag='sakaki')
+        leafy(A.mb(G), (vx_, Y0 - .55, ZF + .6), (.18, .16, .3), rng, seg=6, rings=4, jitter=.3, tag='sakaki')
 
-    return A.finish(ao_distance=1.1, ao_strength=.62, ground=0.0)
+    return A.finish(ao_distance=1.6, ao_strength=.62, ground=0.0)
 
 
 # ---------------------------------------------------------------- torii

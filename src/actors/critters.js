@@ -292,7 +292,9 @@ export class Critters {
       const sz = new THREE.Box3().setFromObject(m).getSize(V());
       m.scale.multiplyScalar(def.size / (Math.max(sz.x, sz.z) || def.size));
     } else m.scale.multiplyScalar(def.scale);
-    try { this.bake(model, m); } catch (e) { console.warn(`critter bake skipped for ${kind}`, e); }
+    // (the bake needs the parts to share a skeleton, which they do since Assets.clone shares them; it changes the
+    // roughness of small parts a little, so it is kept to the tiers that merge characters)
+    if (this.world.quality?.mergeChars) { try { this.bake(model, m); } catch (e) { console.warn(`critter bake skipped for ${kind}`, e); } }
     const wings = [];
     m.traverse(o => {
       if (!o.isMesh) return;

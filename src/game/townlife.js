@@ -173,6 +173,7 @@ export class TownLife {
       const n = it.n;
       this.updateKeeper(it);
       if (frozen) continue;
+      if (it.yardHold) continue;                    // playing a round with Mika at the yard (game/yard/round.js)
       if (this.courtesy(it, dt)) continue;          // stopped to say hello: the day plan waits
       if (it.game && it.game === this.mikaPlays) continue;   // nobody leaves a game Mika is playing in
       // a scene moved them (place() drops the walk): the planner takes it as arrived and carries on from there
@@ -441,6 +442,7 @@ export class TownLife {
       if (!kids.length) continue;
       if (gm.game === 'ball') this.ballStep(gm, kids, dt, p);
       else if (gm.game === 'tag') this.tagStep(gm, kids, dt);
+      else if (gm.game === 'footnet' || gm.game === 'keepup') this.d.yard?.ambient(gm, kids);   // the playground yard runs its own games
       else this.hopStep(gm, kids, dt);
     }
   }

@@ -94,8 +94,8 @@ export const TRICKS = [
 export const TRICK = Object.fromEntries(TRICKS.map(t => [t.id, t]));
 
 /** True when `hour` lies in [from, to), wrapping past midnight when from > to. */
-export function inHours(hour, [from, to]) {
-  const h = ((hour % 24) + 24) % 24;
+export function inHours(hour, range) {
+  const h = ((hour % 24) + 24) % 24, from = range[0], to = range[1];   // (asked every frame: no destructuring)
   return from <= to ? h >= from && h < to : h >= from || h < to;
 }
 

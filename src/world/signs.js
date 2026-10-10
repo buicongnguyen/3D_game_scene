@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { patchMaterial } from '../engine/effects.js';
 import { tx, getLang, onLangChange } from '../i18n/i18n.js';
 import { storyId } from '../game/stories/index.js';
-import { SIGNS, BOARD, signPlace, signFor } from '../content/signs.js';
+import { SIGNS, BOARD, signPlace, signFor, boardOptions } from '../content/signs.js';
 import { DOOR_SPOTS } from './interiors.js';
 
 /*
@@ -19,7 +19,6 @@ const SWATCH_Y = (ROWS - 1) * CELL_H + CELL_H / 2;
 // flat colour swatches in the last row: [x in px, colour]
 const SWATCH = { wood: [200, '#8b5a33'], dark: [600, '#6b4222'], light: [1000, '#b9824a'], lantern: [1400, '#ff9a3c'] };
 const FACE = '#f1dfb6', LINE = '#c79c5c', INK = '#3b1f0b', INK_SUB = '#7a4a20';
-const CLUSTER = 60;                                           // boards within this many metres share a mesh
 
 // rounded, friendly faces per script, the same families the menus use (ui/style.css, i18n.js)
 const FONTS = {
@@ -192,16 +191,19 @@ export class Signs {
   /** structures: the Structures instance (its group, its placed buildings and the world's ground). */
   constructor(structures) {
     this.s = structures;
+    // what this tier affords (content/signs.js boardOptions: boardTexScale, boardCluster, boardDist, boardShadows, detail)
+    this.options = boardOptions(structures.world.quality);
+    this.paints = 0;
     this.group = new THREE.Group();
     this.group.name = 'signs';
     structures.group.add(this.group);
     this.canvas = document.createElement('canvas');
-    this.canvas.width = TEX_W;
-    this.canvas.height = TEX_H;
+    this.canvas.width = Math.round(TEX_W * this.options.texScale);
+    this.canvas.height = Math.round(TEX_H * this.options.texScale);
     this.ctx = this.canvas.getContext('2d');
     this.texture = new THREE.CanvasTexture(this.canvas);
     this.texture.colorSpace = THREE.SRGBColorSpace;
-    this.texture.anisotropy = 8;
+    this.texture.anisotropy = this.options.texScale < 1 ? 4 : 8;
     this.material = new THREE.MeshStandardMaterial({ map: this.texture, emissiveMap: this.texture, emissive: '#ffd9a6', emissiveIntensity: 0, roughness: 0.85, metalness: 0 });
     this.material.name = 'Name boards';
     // each part carries how much of the night glow it takes: faces fully, shop faces and lanterns more, wood hardly
@@ -218,8 +220,9 @@ export class Signs {
     this.paint();
     this.offLang = onLangChange(() => { this.paint(); this.loadFonts(); });
     this.loadFonts();
-    // a face used on a board for the first time arrives a moment later: paint again when it lands
-    this.onFonts = () => { clearTimeout(this.fontT); this.fontT = setTimeout(() => this.paint(), 200); };
+    // a face used on a board for the first time arrives a moment later: paint again when it lands (and only then:
+    // the page reports every font it finishes, the menus' too)
+    this.onFonts = () => { clearTimeout(this.fontT); this.fontT = setTimeout(() => this.refresh(), 200); };
     document.fonts?.addEventListener?.('loadingdone', this.onFonts);
   }
 
@@ -236,8 +239,9 @@ export class Signs {
       placed.push({ sign, x: p.x, y, z: p.z, yaw: p.yaw, g });
     });
     this.placed = placed;
+    const shadows = this.options.shadows ?? (world.quality?.propShadows !== false);
     for (const b of placed) {
-      let c = this.clusters.find(k => Math.hypot(k.x - b.x, k.z - b.z) < CLUSTER);
+      let c = this.clusters.find(k => Math.hypot(k.x - b.x, k.z - b.z) < this.options.cluster);
       if (!c) this.clusters.push(c = { x: b.x, z: b.z, list: [] });
       c.list.push(b);
     }
@@ -248,7 +252,7 @@ export class Signs {
       c.x = geo.boundingSphere.center.x; c.z = geo.boundingSphere.center.z; c.r = geo.boundingSphere.radius;
       c.mesh = new THREE.Mesh(geo, this.material);
       c.mesh.name = 'name-boards';
-      c.mesh.castShadow = world.quality?.propShadows !== false;
+      c.mesh.castShadow = shadows;
       c.mesh.receiveShadow = true;
       this.group.add(c.mesh);
     }
@@ -256,7 +260,8 @@ export class Signs {
 
   /** Repaint every face in the current language and story (cheap: ~30 short strings; never called per frame). */
   paint() {
-    const g = this.ctx, lang = getLang(), story = storyId();
+    const g = this.ctx, lang = getLang(), story = storyId(), k = this.options.texScale;
+    g.setTransform(k, 0, 0, k, 0, 0);          // the cells are laid out for the full-size texture
     g.fillStyle = SWATCH.wood[1];
     g.fillRect(0, 0, TEX_W, TEX_H);
     for (const [x, colour] of Object.values(SWATCH)) { g.fillStyle = colour; g.fillRect(x - 200, (ROWS - 1) * CELL_H, 400, CELL_H); }
@@ -267,7 +272,25 @@ export class Signs {
       paintFace(g, (cell % COLS) * CELL_W, Math.floor(cell / COLS) * CELL_H, text, sign.sub ? tx(sign.sub) : '', sign.icon, lang);
     });
     this.texture.needsUpdate = true;
-    this.painted = `${lang}|${story}`;
+    this.paintedLang = lang; this.paintedStory = story; this.paintedFaces = this.facesLoaded(lang);
+    this.paints++;
+  }
+
+  /** How many of the language's display faces (a web font arrives in several pieces) the page has loaded so far. */
+  facesLoaded(lang) {
+    let n = 0;
+    try {
+      const want = FONTS[lang] || FONTS.en;
+      for (const f of document.fonts) if (f.status === 'loaded' && want.includes(f.family.replace(/["']/g, ''))) n++;
+    } catch { /* no font list: the first painting stands */ }
+    return n;
+  }
+
+  /** Paint again only if what a board shows could have changed: the language, the story, or a face that has landed. */
+  refresh() {
+    if (this.disposed) return;
+    const lang = getLang();
+    if (lang !== this.paintedLang || storyId() !== this.paintedStory || this.facesLoaded(lang) !== this.paintedFaces) this.paint();
   }
 
   /** Ask for the language's display faces with the very letters the boards need (Vietnamese marks, Hangul, kana, kanji). */
@@ -276,7 +299,7 @@ export class Signs {
     const lang = getLang(), story = storyId();
     const sample = [...new Set(SIGNS.map(s => signFor(s, story)).flatMap(s => [tx(s.text), s.sub ? tx(s.sub) : '']).join(''))].join('');
     Promise.all((FONTS[lang] || FONTS.en).slice(0, 1).map(f => document.fonts.load(`700 40px "${f}"`, sample)))
-      .then(() => { if (!this.disposed) this.paint(); }).catch(() => { /* the fallback face stays */ });
+      .then(() => this.refresh()).catch(() => { /* the fallback face stays */ });
   }
 
   /** Night glow 0..1 (called every frame with the sky's night value: one assignment). */
@@ -284,12 +307,12 @@ export class Signs {
 
   /** Called with the structures' distance cull (a few times a second): hide far villages' boards, follow the story. */
   cull(camPos, q) {
-    const far = Math.max(q.propDist * 1.5, 150);
+    const far = this.options.dist ?? Math.max(q.propDist * 1.5, 150);
     for (const c of this.clusters) {
       const d = Math.hypot(c.x - camPos.x, c.z - camPos.z) - c.r;
       c.mesh.visible = c.mesh.visible ? d < far : d < far - 12;
     }
-    if (this.painted !== `${getLang()}|${storyId()}`) { this.paint(); this.loadFonts(); }
+    if (this.paintedLang !== getLang() || this.paintedStory !== storyId()) { this.paint(); this.loadFonts(); }
   }
 
   dispose() {

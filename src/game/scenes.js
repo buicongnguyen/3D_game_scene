@@ -129,7 +129,8 @@ export class Scenes {
     if (!L) return;
     const f = L.flame;
     const dir = f.clone().sub(g.player.pos).setY(0).normalize();
-    const cam = f.clone().addScaledVector(dir, -9).add(V(dir.z * 5, -2.5, -dir.x * 5));
+    const k = L.shot || 1;   // the grand Forest Lamp is framed from further back
+    const cam = f.clone().addScaledVector(dir, -9 * k).add(V(dir.z * 5 * k, -2.5 * k, -dir.x * 5 * k));
     if (g.world.heightAt(cam.x, cam.z) > cam.y - 1) cam.y = g.world.heightAt(cam.x, cam.z) + 2;
     await this.shot(cam, f, 1.2);
     g.structures.setLamp(id, true);

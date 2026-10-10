@@ -317,4 +317,15 @@ export const BARKS = [
   { who: 'hana', text: "First batch is out! Quick, before they're gone!", when: {night:false} },
   { who: 'hana', text: "Hot buns for cold hands, love.", when: {season:'winter'} },
   { who: 'hana', text: "Peach blossom buns today. Pretty and sweet!", when: {season:'spring'} },
+  // A Year with Grandma: thanks for each lamp tower (a lamp is lit near the end of its chapter, so the thanks start in the next)
+  { who: 'ota', text: "Wheel hums, lamp burns. …Thank you. Don't tell Sora.", when: {chapter:[2,5]}, story: 'grandma' },
+  { who: 'rin', text: "I row home by the Mill Lamp now. Thanks, city girl!", when: {chapter:[2,5]}, story: 'grandma' },
+  { who: 'woman', text: "Mr. Hirano posts till dusk by your lamp. Thank you!", when: {chapter:[2,5], place:'kawabe'}, story: 'grandma' },
+  { who: 'man', text: "The mill's humming and the street has light. Thanks!", when: {chapter:[2,5], place:'mill'}, story: 'grandma' },
+  { who: 'hana', text: "I bake before dawn by the Orchard Lamp. Thanks, love!", when: {chapter:[3,5]}, story: 'grandma' },
+  { who: 'any', text: "Mr. Oda finds his sheep by the Orchard Lamp. Thanks!", when: {chapter:[3,5], place:'takamori'}, story: 'grandma' },
+  { who: 'any', text: "Aiko picks flowers by the Forest Lamp now. Thank you!", when: {chapter:[4,5], place:'takamori'}, story: 'grandma' },
+  { who: 'kid', text: "The Forest Lamp's on! The bear path isn't scary now.", when: {chapter:[4,5]}, story: 'grandma' },
+  { who: 'genzo', text: "Viaduct Lamp's lit. Kobo runs on time. Thanks, girl.", when: {chapter:[5,5]}, story: 'grandma' },
+  { who: 'any', text: "Four lamps lit! Nobody walks home in the dark now.", when: {chapter:[5,5]}, story: 'grandma' },
 ];

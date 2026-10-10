@@ -4,10 +4,12 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { updateWorldMatrices } from './matrices.js';
+import { Governor, settingsAt } from './governor.js';
 
 // Quality tiers. `grass` scales instanced grass, `trees` the scatter density, `shadow` the map size.
 export const QUALITY = {
-  low: { name: 'Low', dpr: 1.0, maxPixels: 1.3e6, shadow: 1024, shadowRange: 30, bloom: true, bloomHalf: true, msaa: 0, grass: 0.3, trees: 0.6, terrainStep: 3, clouds: 3, env: true, propDist: 80, buildDist: 300, propShadows: false, npcAnim: 26, npcDraw: 75, npcShadow: 16 },
+  low: { name: 'Low', dpr: 1.0, maxPixels: 1.3e6, shadow: 1024, shadowRange: 30, bloom: true, bloomHalf: true, msaa: 0, grass: 0.3, trees: 0.6, terrainStep: 3, clouds: 3, env: true, propDist: 80, buildDist: 300, propShadows: false, npcAnim: 26, npcDraw: 75, npcShadow: 16, mergeChars: true, riverbedDist: 30, shadowEvery: 2, midDist: 140, governor: true },
   medium: { name: 'Medium', dpr: 1.25, maxPixels: 2.6e6, shadow: 2048, shadowRange: 42, bloom: true, bloomHalf: false, msaa: 4, grass: 0.65, trees: 0.85, terrainStep: 2, clouds: 4, env: true, propDist: 150, buildDist: 520, propShadows: true, npcAnim: 40, npcDraw: 115, npcShadow: 30 },
   high: { name: 'High', dpr: 2.0, maxPixels: 5.0e6, shadow: 4096, shadowRange: 55, bloom: true, bloomHalf: false, msaa: 4, grass: 1, trees: 1, terrainStep: 2, clouds: 5, env: true, propDist: 240, buildDist: 900, propShadows: true, npcAnim: 55, npcDraw: 150, npcShadow: 45 },
 };
@@ -77,6 +79,7 @@ export class Renderer {
     const gl = this.renderer.getContext();
     this.qualityName = qualityName || detectQuality(gl);
     this.q = QUALITY[this.qualityName];
+    this.governor = this.q.governor ? new Governor() : null;
     const r = this.renderer;
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.NeutralToneMapping;
@@ -95,6 +98,8 @@ export class Renderer {
     if (!QUALITY[name]) return;
     this.qualityName = name;
     this.q = QUALITY[name];
+    this.governor = this.q.governor ? new Governor() : null;
+    if (!this.fixedScale) this.scale = 1;
     try { localStorage.setItem('starline-quality', name); } catch { /* ignore */ }
     this.buildComposer();
     this.resize();
@@ -135,6 +140,16 @@ export class Renderer {
   /** Adaptive resolution: drop the render scale when frames are consistently slow. */
   track(dt) {
     if (this.fixedScale) return;
+    if (this.governor) {
+      // Low tier: a ladder of small steps (people and prop distances, shadow rate, then resolution) instead of
+      // resolution alone, because a phone is usually short of CPU, which a smaller picture does not help
+      const level = this.governor.frame(dt);
+      if (level === null) return;
+      const { q, scale } = settingsAt(QUALITY[this.qualityName], level);
+      this.q = q;
+      if (scale !== this.scale) { this.scale = scale; this.resize(); }
+      return;
+    }
     this.frameTimes.push(dt);
     if (this.frameTimes.length < 90) return;
     const sorted = [...this.frameTimes].sort((a, b) => a - b);
@@ -148,6 +163,14 @@ export class Renderer {
   render(scene, camera) {
     this.renderPass.scene = scene;
     this.renderPass.camera = camera;
+    // our own matrix pass: hidden and unmoved objects cost nothing (see matrices.js)
+    // lighter tiers refresh the shadow map every other frame. The map and its matrix stay a matched pair, so nothing
+    // swims; only moving shadows (people, swaying crowns) update at half the frame rate.
+    const sm = this.renderer.shadowMap, every = this.shadowEvery ?? this.q.shadowEvery ?? 1;
+    if (every > 1) { sm.autoUpdate = false; if ((this.shadowTick = (this.shadowTick || 0) + 1) % every === 0 || this.shadowDirty) { sm.needsUpdate = true; this.shadowDirty = false; } }
+    else if (!sm.autoUpdate) { sm.autoUpdate = true; sm.needsUpdate = true; }
+    scene.matrixWorldAutoUpdate = this.fastMatrices === false;
+    if (this.fastMatrices !== false) updateWorldMatrices(scene);
     this.composer.render();
   }
 }

@@ -11,6 +11,7 @@ import { N_, tx } from '../../i18n/i18n.js';
 import { inHours } from '../../content/tricks.js';
 import { sunDirection } from '../../world/seasons.js';
 import { DEW, webSpots, webVisibility, photoCheck, nearestWeb, dewScore } from './rules-dew.js';
+import { addCss } from './util.js';
 
 const V3 = THREE.Vector3;
 const DAWN = 6.0;              // the hour look of the round
@@ -107,7 +108,7 @@ export default {
     const world = g.world, scene = g.scene, cam = g.camera;
     await ctx.ensureModels(['spider-web']);
     if (ctx.quit) return { score: 0, quit: true };
-    if (!document.getElementById('dewCss')) { const s = document.createElement('style'); s.id = 'dewCss'; s.textContent = CSS; document.head.appendChild(s); }
+    addCss('dewCss', CSS);
 
     const added = [], disposables = [], dom = [];
     let cleaned = false, onAim = null, aim = null, dawnSet = false;
@@ -160,7 +161,7 @@ export default {
       const stems = new THREE.InstancedMesh(stemGeo, stemMat, Math.max(1, total * 2));
       stems.castShadow = true;
       stems.frustumCulled = false;
-      disposables.push(stemGeo, stemMat);
+      disposables.push(stemGeo, stemMat, stems);          // (the mesh too: it owns the instance buffer on the GPU)
       const lineGeo = new THREE.BufferGeometry();
       lineGeo.setAttribute('position', new THREE.Float32BufferAttribute(webLines(), 3));
       disposables.push(lineGeo);
@@ -182,7 +183,6 @@ export default {
             o.material = o.material.clone();
             o.material.transparent = true; o.material.depthWrite = false; o.material.opacity = 0;
             o.castShadow = false; o.receiveShadow = false; o.renderOrder = 3;
-            o.userData.dew = /dew/i.test(o.material.name);
             w.mats.push(o.material); disposables.push(o.material);
           });
           holder.add(model);
@@ -245,7 +245,10 @@ export default {
       aim.addEventListener('pointerdown', onAim);
       const aimText = aim.querySelector('span');
       const txPhoto = tx(N_('Photo: {act}')), txSide = tx(N_('Sun behind you!'));
-      let aimMode = '';
+      let aimMode = '', aimX = NaN, aimY = NaN;
+      // the score on the HUD, from one reused record (asked every frame)
+      const tally = { found: 0, total, seconds: 0, length: ctx.roundTime };
+      const scoreNow = () => { tally.found = st.found; tally.seconds = st.seconds; return dewScore(tally); };
 
       const st = { found: 0, seconds: 0, phase: 'look', near: -1, check: 'far' };
       ctx.debug.webs = webs;
@@ -303,7 +306,8 @@ export default {
           sp.copy(webs[n].pos).project(cam);
           if (sp.z < 1 && Math.abs(sp.x) < 1.1 && Math.abs(sp.y) < 1.1) {
             mode = st.check;
-            aim.style.transform = `translate(${Math.round((sp.x * 0.5 + 0.5) * innerWidth)}px, ${Math.round((-sp.y * 0.5 + 0.5) * innerHeight)}px)`;
+            const ax = Math.round((sp.x * 0.5 + 0.5) * innerWidth), ay = Math.round((-sp.y * 0.5 + 0.5) * innerHeight);
+            if (ax !== aimX || ay !== aimY) { aimX = ax; aimY = ay; aim.style.transform = `translate(${ax}px, ${ay}px)`; }
           } else mode = st.check === 'ok' ? 'off' : '';
         }
         if (mode !== aimMode) {
@@ -331,7 +335,7 @@ export default {
             shot.querySelector('.c').textContent = tx('Web {n} of {total}', { n: st.found, total });
             shot.classList.remove('hidden');
             aim.classList.add('hidden'); aimMode = '';
-            ctx.hud(dewScore({ found: st.found, total, seconds: st.seconds, length: ctx.roundTime }), left);
+            ctx.hud(scoreNow(), left);
             if (st.found === 1 && ctx.first) ctx.hint(N_('Got it! Every drop is a tiny lens. Five more to find.'), 3.5);
             else if (st.found === total) ctx.hint(N_('All six! By noon the dew is gone and they vanish again.'), 4);
             return undefined;
@@ -348,12 +352,12 @@ export default {
             if (sinceFind < (ctx.first ? 9 : 20) + 3) ctx.hint(N_('There: something glinted. Go and look, with the sun at your back.'), 3.5);
           }
         }
-        ctx.hud(dewScore({ found: st.found, total, seconds: st.seconds, length: ctx.roundTime }), left);
+        ctx.hud(scoreNow(), left);
         if (left <= 0) { ctx.hint(N_('The sun is up and the dew is drying. The rest will keep for another dawn.'), 3.5); return { done: true }; }
         return undefined;
       });
 
-      const score = dewScore({ found: st.found, total, seconds: st.seconds, length: ctx.roundTime });
+      const score = scoreNow();
       aim.classList.add('hidden');
       shot.classList.add('hidden');
       if (!res?.quit) await ctx.wait(1.4);

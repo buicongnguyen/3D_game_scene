@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { SIGNS, BOARD, signPlace, signFor } from '../src/content/signs.js';
+import { SIGNS, BOARD, signPlace, signFor, boardOptions } from '../src/content/signs.js';
 import { BUILDINGS, PADDIES, PATHS } from '../src/world/layout.js';
 import { FOOTPRINT } from '../src/world/structures.js';
 import { INTERIORS, DOOR_SPOTS } from '../src/world/interiors.js';
@@ -10,7 +10,8 @@ import { placeProblems, doorPoint, inFootprint } from '../src/world/roads.js';
 import { SHOPS } from '../src/content/shops.js';
 import { PEOPLE, SPOTS } from '../src/content/townsfolk.js';
 import { TRICKS } from '../src/content/tricks.js';
-import { VEG_BEDS, CUT_IN_AUTUMN, LIGHT_COLOURS, bedRows, fieldLights, lightGlow } from '../src/world/fields.js';
+import { VEG_BEDS, CUT_IN_AUTUMN, LIGHT_COLOURS, bedRows, fieldLights, lightGlow, fieldOptions, BULBS } from '../src/world/fields.js';
+import { QUALITY } from '../src/engine/renderer.js';
 
 const building = id => BUILDINGS.find(b => b.id === id);
 const place = s => { const b = s.building ? building(s.building) : null; return signPlace(s, b, b && FOOTPRINT[b.model], b && DOOR_SPOTS[b.model]); };
@@ -131,4 +132,33 @@ test('signs: long Japanese names wrap after a particle, short ones and single La
   assert.equal(twoLines('藤田商店'), null);
   assert.equal(twoLines('Bakery'), null);
   assert.deepEqual(twoLines('Fujita Grocery'), ['Fujita', 'Grocery']);
+});
+
+test('quality knobs: today\'s tiers plant, light and letter exactly as before; a phone tier can ask for less', () => {
+  // the shipped tiers set none of the new keys: Low keeps its wider spacing, the others the full field, all the lights
+  for (const [name, q] of Object.entries(QUALITY)) {
+    const f = fieldOptions(q), low = q.name === 'Low';
+    assert.deepEqual([f.riceStepX, f.riceStepZ, f.vegSpacing], low ? [0.8, 0.75, 0.9] : [0.62, 0.58, 0.62], name);
+    assert.deepEqual([f.lights, f.bulbs, f.ears], [true, BULBS, true], name);
+    assert.deepEqual(boardOptions(q), { texScale: 1, cluster: 60, dist: null, shadows: null }, name);
+  }
+  assert.deepEqual(fieldOptions(), fieldOptions(QUALITY.high));
+  assert.deepEqual(fieldLights(), fieldLights(undefined, null, { bulbs: BULBS }), 'the default string of lights is unchanged');
+  // explicit keys
+  const thin = fieldOptions({ cropDensity: 0.25, fieldLights: 0.4, riceEars: false });
+  assert.ok(Math.abs(thin.riceStepX - 1.24) < 1e-9 && Math.abs(thin.riceStepZ - 1.16) < 1e-9, 'a quarter of the plants: twice the spacing');
+  assert.deepEqual([thin.lights, thin.bulbs, thin.ears], [true, 2, false]);
+  assert.deepEqual([fieldOptions({ fieldLights: 0 }).lights, fieldOptions({ fieldLights: 0 }).bulbs], [false, 0]);
+  assert.equal(fieldOptions({ cropDensity: 0 }).riceStepX, fieldOptions({ cropDensity: 0.15 }).riceStepX, 'never an empty field');
+  const few = fieldLights(undefined, null, { bulbs: 2 });
+  assert.equal(few.lanterns.length, PADDIES.length * (4 + 2 * 2 * 2));
+  assert.equal(few.posts.length, PADDIES.length * 6);
+  assert.ok(few.lanterns.every(l => l.c >= 0 && l.c < LIGHT_COLOURS.length));
+  // one dial
+  assert.deepEqual(fieldOptions({ detail: 1 }), fieldOptions(QUALITY.high), 'detail 1 is the full field');
+  const d0 = fieldOptions({ detail: 0 });
+  assert.ok(d0.riceStepX > 0.8 && d0.bulbs === 2 && d0.lights && d0.ears, 'detail 0: sparser than Low, two lights a span');
+  assert.equal(boardOptions({ detail: 0.2 }).texScale, 0.5);
+  assert.equal(boardOptions({ detail: 0.8 }).texScale, 1);
+  assert.deepEqual(boardOptions({ boardTexScale: 0.5, boardCluster: 90, boardDist: 100, boardShadows: false }), { texScale: 0.5, cluster: 90, dist: 100, shadows: false });
 });

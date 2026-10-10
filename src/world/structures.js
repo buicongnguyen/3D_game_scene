@@ -1,3 +1,4 @@
+import { batchCopies } from './static-batch.js';
 import * as THREE from 'three';
 import { placeholder } from '../engine/assets.js';
 import { patchMaterial } from '../engine/effects.js';
@@ -6,20 +7,21 @@ import { SLIDE, SLIDE_SOLIDS, SLIDE_DRESSING, isEarth, fromSlide } from './lands
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
 import { Signs } from './signs.js';
+import { YardBuild } from './yard.js';
 
 // Wall footprints (w, d, h) from art/CONTRACTS.md; colliders use these, not roof overhangs.
 export const FOOTPRINT = {
   'kawabe-house-a': [7, 6, 7.2], 'kawabe-house-b': [9, 7, 6.8], 'kawabe-shop': [6, 6, 5.5], boathouse: [6, 8, 4.5],
-  mill: [8, 7, 7.5], 'star-lamp': [2.2, 2.2, 9.5], 'takamori-house-a': [8, 7, 8.5], 'takamori-house-b': [6, 6, 6],
+  mill: [8, 7, 7.5], 'star-lamp': [2.2, 2.2, 9.5], 'star-lamp-grand': [5.2, 5.2, 19.5], 'takamori-house-a': [8, 7, 8.5], 'takamori-house-b': [6, 6, 6],
   bakery: [9, 7, 7.5], belltower: [5, 5, 17], station: [14, 6, 6.5], platform: [30, 4.5, 0.95], 'signal-cottage': [7, 6, 6],
-  'engine-shed': [10, 18, 7.5], shrine: [6, 7, 6.5], torii: [5, 0.8, 5], 'stone-lantern': [0.9, 0.9, 1.8],
+  'engine-shed': [10, 18, 7.5], shrine: [11.4, 13.2, 13.2], torii: [5, 0.8, 5], 'stone-lantern': [0.9, 0.9, 1.8],
   'lamp-viaduct': [2.2, 2.2, 9], 'tunnel-portal': [9, 4, 9],
 };
 
 // Walkable porches / verandas on the front (+Z) side: depth in metres and floor height.
 export const PORCH = {
   'signal-cottage': { depth: 2.0, floor: 0.42 }, 'kawabe-house-b': { depth: 1.3, floor: 0.45 }, 'takamori-house-b': { depth: 1.5, floor: 0.4 },
-  station: { depth: 2.4, floor: 0.15 }, bakery: { depth: 0.9, floor: 0.2 }, shrine: { depth: 1.2, floor: 0.9 },
+  station: { depth: 2.4, floor: 0.15 }, bakery: { depth: 0.9, floor: 0.2 }, shrine: { depth: 3.8, floor: 0.9 },   // the open front of its stone terrace (colliders: shrineColliders)
 };
 
 const toRad = d => d * Math.PI / 180;
@@ -42,6 +44,8 @@ export class Structures {
     this.lamps = new Map();   // lamp id -> {flame: Vector3, object, materials}
     this.solids = {};         // toggleable colliders: drawbridge, viaductGap, gate, bear ...
     this.worldBuild();
+    // fence panels: a few instanced meshes instead of a hundred objects (the gate and the culled props stay as they are)
+    batchCopies(this.group, assets, ['fence-wood', 'fence-bamboo'], { keep: new Set([...Object.values(this.nodes), ...this.cullList.map(c => c.obj)]), castShadow: world.quality?.propShadows !== false });
   }
 
   model(name, fallbackSize, color) {
@@ -98,9 +102,10 @@ export class Structures {
   worldBuild() {
     for (const b of BUILDINGS) {
       const opts = {};
-      if (b.model === 'platform' || b.model === 'belltower') Object.assign(opts, { collide: false });
+      if (b.model === 'platform' || b.model === 'belltower' || b.model === 'shrine') Object.assign(opts, { collide: false });
       this.place(b.id, b.model, b.x, b.z, b.rot, b.y, opts);
       if (b.model === 'belltower') this.towerColliders(this.byId.get(b.id));
+      if (b.model === 'shrine') this.shrineColliders(this.byId.get(b.id));
       if (b.model === 'platform') {
         const r = this.byId.get(b.id);
         r.solid = this.colliders.box(b.x, b.z, 15, 2.2, b.rot, r.y - 2, r.y + 0.95, { walkable: true, surface: 'stone' });
@@ -112,6 +117,7 @@ export class Structures {
     this.placeStones();
     this.placeDressing();
     this.placeLandslide();
+    this.yard = new YardBuild(this);   // the Kawabe playground (content/yard.js)
     // a name board at every building (content/signs.js); needs a canvas, so not in Node tests
     if (typeof document !== 'undefined') this.signs = new Signs(this);
   }
@@ -160,7 +166,7 @@ export class Structures {
       tree.scale.setScalar(s);
       holder.add(tree);
       this.group.add(holder);
-      this.cullList.push({ obj: holder, x, z, prop: false });
+      this.cullList.push({ obj: holder, x, z, prop: false, mid: true });   // trees on the far scar: lighter tiers drop them sooner
       if (DECIDUOUS.has(name)) tree.traverse(o => { if (o.isMesh && ['Leaves', 'Maple leaves', 'Blossom'].includes(o.material.name)) bare.push(o); });
       if (name.startsWith('tree')) {
         this.colliders.cylinder(x, z, 0.38 * s, y - 1, y + 5, { id: 'tree' });
@@ -215,6 +221,40 @@ export class Structures {
     sp.texture.needsUpdate = true;
   }
 
+  /**
+   * Forest Shrine (art/blender/build_architecture.py, build_shrine): a stone terrace with steps up its front, and on it a
+   * hall on stilts with a veranda round three sides and a timber stair. Every flight is a run of low walkable boxes, so
+   * Mika walks up to the offering box and all the way round the hall. Local space: x right, f toward the front.
+   */
+  shrineColliders(r) {
+    const a = toRad(r.rot), c = Math.cos(a), s = Math.sin(a), g = r.y;
+    const box = (x, f, hw, hd, y0, y1, o) => this.colliders.box(r.x + x * c + f * s, r.z - x * s + f * c, hw, hd, r.rot, g + y0, g + y1, o);
+    const cyl = (x, f, rad, y0, y1, o) => this.colliders.cylinder(r.x + x * c + f * s, r.z - x * s + f * c, rad, g + y0, g + y1, o);
+    const stone = { walkable: true, surface: 'stone' }, wood = { walkable: true, surface: 'wood' };
+    // stone steps (four 0.18 m treads, taken two at a time) between cheek stones, then the terrace
+    box(0, 7.62, 2.0, 0.34, -1, 0.36, stone);
+    box(0, 6.94, 2.0, 0.34, -1, 0.72, stone);
+    for (const sx of [-1, 1]) { box(sx * 2.32, 7.08, 0.32, 0.5, -1, 1.05); box(sx * 2.32, 7.82, 0.32, 0.3, -1, 0.56); }
+    box(0, 0, 5.7, 6.6, -2, 0.9, stone);
+    // timber stair (eight 0.16 m risers, two at a time) with its rails, then the veranda floor
+    for (let k = 0; k < 4; k++) box(0, 4.98 - k * 0.6, 1.4, 0.3, 0.2, 1.225 + k * 0.325, wood);
+    for (const sx of [-1, 1]) box(sx * 1.5, 4.04, 0.06, 1.24, 0.9, 3.0, { id: 'shrineRail' });
+    box(0, -1.35, 4.9, 4.15, -1, 2.2, wood);
+    // veranda railing: both sides, their back ends, and the front either side of the stair
+    for (const sx of [-1, 1]) {
+      box(sx * 4.9, -1.35, 0.06, 4.15, 2.2, 3.0, { id: 'shrineRail' });
+      box(sx * 3.2, 2.8, 1.7, 0.06, 2.2, 3.0, { id: 'shrineRail' });
+      box(sx * 4.3, -5.5, 0.6, 0.06, 2.2, 3.0, { id: 'shrineRail' });
+    }
+    // the hall itself, the offering box in front of its doors, the four pillars under the front eave
+    r.solid = box(0, -2.3, 3.7, 3.2, -1, 13, { blocksView: true, id: r.id });
+    box(0, 1.5, 0.85, 0.4, 2.2, 2.92, { id: 'offeringBox' });
+    for (const x of [-4.7, -2.15, 2.15, 4.7]) cyl(x, 5.3, 0.2, 0.9, 5);
+    // guardian foxes and Old Kiku's noticeboard on the ground in front
+    for (const sx of [-1, 1]) cyl(sx * 3.35, 7.6, 0.55, -1, 1.5);
+    box(4.6, 7.5, 0.62, 0.12, -1, 1.9);
+  }
+
   /** Bell tower: solid base whose top is the walkable gallery, a central shaft above it, invisible railings. */
   towerColliders(r) {
     const g = r.y + 11;
@@ -252,14 +292,18 @@ export class Structures {
       } else {
         rec = this.place(`lamp-${L.id}`, L.model, L.x, L.z, L.rot, L.y, { collide: false, clearGrass: L.id !== 'viaduct', noCull: true });
         obj = rec.obj;
-        this.colliders.cylinder(L.x, L.z, 1.15, rec.y - 1, rec.y + 9, { blocksView: true, id: `lamp-${L.id}` });
+        if (L.model === 'star-lamp-grand') {
+          // the Forest Lamp: Mika can step onto its lowest stone step; the block and the tower above are solid
+          this.colliders.box(L.x, L.z, 2.6, 2.6, L.rot, rec.y - 1, rec.y + 0.3, { walkable: true, surface: 'stone' });
+          this.colliders.box(L.x, L.z, 2.05, 2.05, L.rot, rec.y - 1, rec.y + 19, { blocksView: true, id: `lamp-${L.id}` });
+        } else this.colliders.cylinder(L.x, L.z, 1.15, rec.y - 1, rec.y + 9, { blocksView: true, id: `lamp-${L.id}` });
       }
       if (!obj) continue;
       obj.updateMatrixWorld(true);
       const flameNode = obj.getObjectByName('Flame');
       const flame = new THREE.Vector3();
       if (flameNode) flameNode.getWorldPosition(flame);
-      else flame.copy(obj.position).add(new THREE.Vector3(0, L.building ? 15.5 : 7.6, 0));
+      else flame.copy(obj.position).add(new THREE.Vector3(0, L.building ? 15.5 : L.model === 'star-lamp-grand' ? 15.2 : 7.6, 0));
       const mats = new Set();
       obj.traverse(o => {
         if (!o.isMesh) return;
@@ -277,7 +321,7 @@ export class Structures {
         }
       });
       const rec2 = { ...L, flame, obj, mats: [...mats], lit: 0, target: 0, intensity: 0 };
-      rec2.light = this.lightPool?.add({ pos: flame, intensity: () => rec2.intensity, range: 34 });
+      rec2.light = this.lightPool?.add({ pos: flame, intensity: () => rec2.intensity, range: L.range ?? 34 });
       this.lamps.set(L.id, rec2);
     }
   }
@@ -423,7 +467,7 @@ export class Structures {
       ['flowerpot', 103, 20, 0], ['festival-stall', 108, 20, 180], ['haybale', 140, -48, 20], ['haybale', 142, -46, 50], ['signpost', 26, 25, 90],
       ['signpost', -44, 64, 0], ['laundry-line', -60, 10, 90], ['bench', -92, 118.5, 0], ['bench', -104, 118.5, 0], ['street-lamp', -110, 118, 0],
       ['street-lamp', 140, 69, 0], ['bench', 144, 70, -120], ['stone-lantern', 58.5, -118, 0], ['stone-lantern', 65.5, -118, 0],
-      ['stone-lantern', 58, -150, 0], ['stone-lantern', 66, -150, 0], ['signpost', 84, -76, 0], ['log', -38, -94, 60], ['stump', -52, -70, 0],
+      ['stone-lantern', 57.2, -148.4, 0], ['stone-lantern', 66.8, -148.4, 0], ['signpost', 84, -76, 0], ['log', -38, -94, 60], ['stump', -52, -70, 0],
       ['fence-bamboo', -64, 132, 0], ['fence-bamboo', -64, 134, 0], ['flowerpot', -55, 137, 0], ['barrel', -155, 96, 0], ['crate', -153, 97, 20],
     ];
     for (const [name, x, z, rot] of dress) {
@@ -450,9 +494,10 @@ export class Structures {
     if (f && (f.x - camPos.x) ** 2 + (f.z - camPos.z) ** 2 < 15 * 15) camPos = f;
     const back = d => Math.min(d - 12, d * 0.94) ** 2;
     const p2 = q.propDist * q.propDist, b2 = q.buildDist * q.buildDist, p2in = back(q.propDist), b2in = back(q.buildDist);
+    const mid = q.midDist ?? q.buildDist, m2 = mid * mid, m2in = back(mid);
     for (const c of this.cullList) {
       const d2 = (c.x - camPos.x) ** 2 + (c.z - camPos.z) ** 2;
-      c.obj.visible = c.obj.visible ? d2 < (c.prop ? p2 : b2) : d2 < (c.prop ? p2in : b2in);
+      c.obj.visible = c.obj.visible ? d2 < (c.prop ? p2 : c.mid ? m2 : b2) : d2 < (c.prop ? p2in : c.mid ? m2in : b2in);
     }
     this.signs?.cull(camPos, q);
     if (!q.propShadows && !this.propShadowsOff) {
@@ -476,7 +521,7 @@ export class Structures {
       const flicker = 0.92 + 0.08 * Math.sin(performance.now() * 0.011 + L.flame.x);
       const k = L.lit * flicker;
       for (const m of L.mats) m.emissiveIntensity = k * (m.name === 'Lamp star' ? 3.2 : 4.5);
-      L.intensity = k * (8 + 55 * night);
+      L.intensity = k * (8 + 55 * night) * (L.gain ?? 1);   // gain: a taller tower throws its light further down
     }
   }
 

@@ -141,15 +141,28 @@ async function collect(item, want) {
   }
 }
 
+// One fish per visit, on the keyboard: E casts at the aim ring, E strikes as the float sinks, and E is held to reel while
+// the line is calm (let go on a surge or when it strains). Backspace leaves once the fish is landed.
 async function fishOnce() {
   await interact('fishingSpot', [-0.8, 0]);
   const start = Date.now();
-  while (Date.now() - start < 30000) {
+  let down = false, caught0 = null;
+  const hold = async on => { if (on !== down) { down = on; await (on ? page.keyboard.down('KeyE') : page.keyboard.up('KeyE')); } };
+  while (Date.now() - start < 120000) {
     const f = await qa('Q.fish()');
-    if (!f) break;
-    if (f.phase === 'bite') await press('KeyE');
-    await sleep(60);
+    if (!f) break;                                   // the story took the screen (the third trout, the compass)
+    caught0 ??= f.caught;
+    if (f.phase === 'aim') {
+      await hold(false);
+      if (f.caught > caught0) { await press('Backspace'); break; }
+      await press('KeyE');
+      for (let i = 0; i < 40 && (await qa('Q.fish()'))?.phase === 'aim'; i++) await sleep(50);
+    } else if (f.phase === 'bite') await hold(true);
+    else if (f.phase === 'hooked') await hold(!f.surging && f.tension < 0.6);
+    else await hold(false);
+    await sleep(40);
   }
+  await hold(false);
   await sleep(1200);
   await settle();
 }

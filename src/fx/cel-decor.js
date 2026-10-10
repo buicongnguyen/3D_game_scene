@@ -325,7 +325,7 @@ const LEVELS = {
   // both torii, extra stone lanterns glowing beside the steps.
   3(k, g) {
     for (const i of [9, 10, 11]) k.spiritPath(PATHS[i].pts);
-    k.spiritPath([[62, -116], [62, -146], [62, -158]], { every: 1.6, spread: 3.5, lo: 1.2, hi: 4 });
+    k.spiritPath([[62, -116], [62, -146], [62, -151]], { every: 1.6, spread: 3.5, lo: 1.2, hi: 4 });
     for (let i = 0; i < 40; i++) {
       const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * 9;
       const x = 60 + Math.cos(a) * r, z = -118 + Math.sin(a) * r * 0.7;
@@ -349,7 +349,7 @@ const LEVELS = {
       }
     }
     // stone-lantern glows (the lanterns themselves are the placed props; these are their halos)
-    for (const [x, z] of [[58.5, -118], [65.5, -118], [58, -150], [66, -150]]) k.halos.push({ x, y: k.ground(x, z) + 1.25, z, color: [2, 1.3, 0.55], size: 2.2, alpha: 0.8 });
+    for (const [x, z] of [[58.5, -118], [65.5, -118], [57.2, -148.4], [66.8, -148.4]]) k.halos.push({ x, y: k.ground(x, z) + 1.25, z, color: [2, 1.3, 0.55], size: 2.2, alpha: 0.8 });
   },
 
   // Station, platform and viaduct: star garlands.

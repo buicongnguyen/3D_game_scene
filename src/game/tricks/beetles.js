@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { tx, N_ } from '../../i18n/i18n.js';
 import { rng } from '../../engine/spline.js';
 import { Animator } from '../../actors/animator.js';
+import { fit, disposeRigs, addCss } from './util.js';
 
 // ---------------------------------------------------------------------------------------------------- pure rules
 /** The valley's trees as a beetle sees them: sap 0..1 (how much sweet sap the bark gives). */
@@ -164,8 +165,11 @@ export const NAMES = {
 
 // ---------------------------------------------------------------------------------------------------- the round
 const V = () => new THREE.Vector3();
-const _v = V(), _w = V(), _x = V(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
-const BAIT_H = 1.3;               // the bait patch sits at a child's eye height
+const _v = V(), _w = V(), _x = V(), _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
+const _probe = new THREE.Object3D();
+const BAIT_H = 1.3;
+const CRAWL = 0.035;              // metres a second a beetle walks on the bark
+const WALK_CLIP = 0.0156;         // ...and the speed its Walk clip is drawn for, at the model's own size (art/CONTRACTS.md)               // the bait patch sits at a child's eye height
 const DAWN_TIME = 45;
 const TREE_R = 2.7;               // close enough to a tree to choose it
 
@@ -186,13 +190,6 @@ const CSS = `
 #trick2Meter .prog{position:relative;height:8px;margin-top:6px;border-radius:4px;background:#e9d7b4;overflow:hidden}
 @media (max-width:560px){#trick2Meter{top:calc(118px + env(safe-area-inset-top,0px))}}
 `;
-
-/** Scale a model so its longest side is `size` metres (the artist's units may differ). */
-function fit(model, size) {
-  const b = new THREE.Box3().setFromObject(model), d = b.getSize(_v), m = Math.max(d.x, d.y, d.z) || 1;
-  model.scale.multiplyScalar(size / m);
-  return model;
-}
 
 class BeetleRound {
   constructor(ctx, seed) {
@@ -232,12 +229,7 @@ class BeetleRound {
     if (!trees.length) return false;
     this.trees = trees.map((t, i) => ({ i, t, def: TREES[t.model], x: t.x, z: t.z, y: g.world.heightAt(t.x, t.z), label: null }));
     if (typeof document !== 'undefined') {
-      if (!document.getElementById('trick2Css')) {
-        const s = document.createElement('style');
-        s.id = 'trick2Css';
-        s.textContent = CSS;
-        document.head.appendChild(s);
-      }
+      addCss('trick2Css', CSS);
       this.labels = document.createElement('div');
       this.labels.id = 'trick2Labels';
       document.body.appendChild(this.labels);
@@ -247,7 +239,10 @@ class BeetleRound {
       this.meter.style.display = 'none';
       this.meter.innerHTML = '<div class="lab"></div><div class="bar"><i class="fill"></i><i class="zone"></i><i class="cur"></i></div><div class="prog"><i class="fill"></i></div><div class="dots"></div>';
       document.body.appendChild(this.meter);
-      this.mq = s => this.meter.querySelector(s);
+      // the meter's parts, found once; `shown` remembers what is on the page so a frame writes only what changed
+      const q = s => this.meter.querySelector(s);
+      this.mel = { lab: q('.lab'), zone: q('.zone'), fill: q('.bar .fill'), cur: q('.cur'), prog: q('.prog'), progFill: q('.prog .fill'), dots: q('.dots') };
+      this.shown = { cur: NaN, dots: -1, prog: NaN, hidden: null };
     }
     // a soft ring at the foot of each tree that can be chosen
     this.ringGeo = this.keep(new THREE.RingGeometry(0.75, 0.9, 32).rotateX(-Math.PI / 2));
@@ -326,12 +321,15 @@ class BeetleRound {
   // ------------------------------------------------------------ creatures
   beetleModel(kind) {
     const a = this.g.assets, name = `beetle-${kind}`, root = new THREE.Group(), size = kind === 'rhino' ? 0.24 : 0.21;
-    let anim = null;
+    let anim = null, walkSpeed = 1;
     if (a?.has?.(name)) {
-      const m = fit(a.clone(name), size);
+      const m = a.clone(name), s0 = m.scale.x;
+      fit(m, size);
       m.traverse(o => { if (o.isMesh) o.castShadow = false; });
       root.add(m);
       if (m.userData.clips?.length) anim = new Animator(m);
+      // the Walk clip's feet cover WALK_CLIP metres a second at the model's own size: play it at the pace of the crawl
+      walkSpeed = CRAWL / (WALK_CLIP * (m.scale.x / s0));
     } else {
       // no art yet: a glossy little beetle with its horn (rhinoceros) or antler jaws (stag)
       const shell = this.keep(new THREE.MeshStandardMaterial({ color: kind === 'rhino' ? '#4a2a14' : '#201a18', roughness: 0.25, metalness: 0.2 }));
@@ -374,7 +372,7 @@ class BeetleRound {
       inner.scale.setScalar(size);
       root.add(inner);
     }
-    return { root, anim };
+    return { root, anim, walkSpeed };
   }
 
   mothModel() {
@@ -465,24 +463,33 @@ class BeetleRound {
 
   showMeter(mode) {
     if (!this.meter) return;
+    const el = this.mel, sh = this.shown;
     this.meterMode = mode;
     this.meter.style.display = mode ? '' : 'none';
+    sh.hidden = !mode;
     if (!mode) return;
-    const zone = this.mq('.zone'), fill = this.mq('.bar .fill');
+    sh.cur = sh.prog = NaN; sh.dots = -1;
+    const zone = el.zone;
     if (mode === 'rub') {
-      this.mq('.lab').textContent = tx('Rub the bait in');
+      el.lab.textContent = tx('Rub the bait in');
       zone.className = 'zone';
       zone.style.left = `${(0.5 - ZONE) * 100}%`; zone.style.width = `${ZONE * 200}%`;
-      fill.style.width = '0';
-      this.mq('.prog').style.display = 'none';
-      this.mq('.dots').style.display = '';
+      el.fill.style.width = '0';
+      el.prog.style.display = 'none';
+      el.dots.style.display = '';
     } else {
-      this.mq('.lab').textContent = this.ctx.ui?.touch ? tx('Lift slowly: hold and let go, hold and let go') : tx('Lift slowly: hold {act}, let go, hold again');
+      el.lab.textContent = this.ctx.ui?.touch ? tx('Lift slowly: hold and let go, hold and let go') : tx('Lift slowly: hold {act}, let go, hold again');
       zone.className = 'zone bad';
       zone.style.left = '80%'; zone.style.width = '20%';
-      this.mq('.prog').style.display = '';
-      this.mq('.dots').style.display = 'none';
+      el.prog.style.display = '';
+      el.dots.style.display = 'none';
     }
+  }
+
+  /** The marker of the meter, 0..1 across the bar (written when it has moved a tenth of a percent). */
+  meterCur(v) {
+    const k = Math.round(v * 1000), sh = this.shown;
+    if (k !== sh.cur) { sh.cur = k; this.mel.cur.style.left = `${k / 10}%`; }
   }
 
   rubbing(dt) {
@@ -507,8 +514,8 @@ class BeetleRound {
     const want = 0.25 + 0.75 * Math.sqrt(rub.sum / rub.strokes);
     this.bait.scale.setScalar(rub.n ? this.bait.scale.x + (want - this.bait.scale.x) * Math.min(1, dt * 8) : 0.001);
     if (this.meter) {
-      this.mq('.cur').style.left = `${rub.pos * 100}%`;
-      this.mq('.dots').textContent = '●'.repeat(rub.n) + '○'.repeat(rub.strokes - rub.n);
+      this.meterCur(rub.pos);
+      if (this.shown.dots !== rub.n) { this.shown.dots = rub.n; this.mel.dots.textContent = '●'.repeat(rub.n) + '○'.repeat(rub.strokes - rub.n); }
     }
     if (rub.done || this.left <= 0) {
       this.left = Math.max(0, this.left);
@@ -581,7 +588,13 @@ class BeetleRound {
     }
   }
 
-  liftable() { return this.visitors.filter(v => v.kind !== 'moth' && v.st === 'sit'); }
+  /** The beetles still sitting on the bark (the same list is refilled every frame). */
+  liftable() {
+    const out = this.canLift ??= [];
+    out.length = 0;
+    for (const v of this.visitors) if (v.kind !== 'moth' && v.st === 'sit') out.push(v);
+    return out;
+  }
 
   dawn(dt) {
     const ctx = this.ctx, inp = this.g.input, cam = this.g.camera;
@@ -635,8 +648,9 @@ class BeetleRound {
       if (out === 'lifted') this.lifted(cv);
       else if (out === 'flew') this.flew(cv);
       if (this.meter && this.lift) {
-        this.mq('.cur').style.left = `${Math.min(1, this.lift.v / (V_MAX * 1.25)) * 100}%`;
-        this.mq('.prog .fill').style.width = `${this.lift.h * 100}%`;
+        this.meterCur(Math.min(1, this.lift.v / (V_MAX * 1.25)));
+        const k = Math.round(this.lift.h * 1000);
+        if (k !== this.shown.prog) { this.shown.prog = k; this.mel.progFill.style.width = `${k / 10}%`; }
       }
     } else this.tap = null;
   }
@@ -677,11 +691,11 @@ class BeetleRound {
     // while one beetle is held up to look at, everything else on the bark steps out of the picture
     const focus = this.visitors.find(v => v.st === 'up' || v.st === 'show' || v.st === 'back');
     if (this.bait) this.bait.visible = !focus;
-    if (this.meter && this.meterMode) this.meter.style.display = focus ? 'none' : '';
+    if (this.meter && this.meterMode && this.shown.hidden !== !!focus) { this.shown.hidden = !!focus; this.meter.style.display = focus ? 'none' : ''; }
     for (const v of this.visitors) {
       v.root.visible = v.st !== 'gone' && (!focus || v === focus);
       v.t += dt;
-      v.anim?.update(dt);
+      if (v.root.visible) v.anim?.update(dt);            // the ones out of the picture hold their pose
       if (v.kind === 'moth') {
         // moths rest with wings spread, opening and closing them slowly; now and then one shivers
         const flap = 0.25 + Math.abs(Math.sin(v.t * (v.i % 2 ? 1.3 : 0.9))) * 0.5 + (Math.sin(v.t * 0.7 + v.i) > 0.96 ? Math.sin(v.t * 40) * 0.4 : 0);
@@ -699,12 +713,15 @@ class BeetleRound {
         // wander slowly round the bait
         if (v.pause > 0) {
           v.pause -= dt;
-          if (v.pause <= 0) { v.ta = Math.max(-0.6, Math.min(0.6, v.a + (this.rand() - 0.5) * 0.5)); v.th = Math.max(1, Math.min(1.65, v.h + (this.rand() - 0.5) * 0.3)); v.anim?.play(v.anim.has('Walk') ? 'Walk' : 'Idle'); }
+          if (v.pause <= 0) {
+            v.ta = Math.max(-0.6, Math.min(0.6, v.a + (this.rand() - 0.5) * 0.5)); v.th = Math.max(1, Math.min(1.65, v.h + (this.rand() - 0.5) * 0.3));
+            if (v.anim?.has('Walk')) v.anim.play('Walk', { speed: v.walkSpeed || 1 }); else v.anim?.play('Idle');
+          }
         } else {
           const da = v.ta - v.a, dh = v.th - v.h, r = this.trunk.r0, d = Math.hypot(da * r, dh);
           if (d < 0.01) { v.pause = 1.5 + this.rand() * 3; v.anim?.play('Idle'); }
           else {
-            const step = Math.min(d, dt * 0.035);
+            const step = Math.min(d, dt * CRAWL);
             v.a += da * r / d * step / r; v.h += dh / d * step;
             const want = Math.atan2(-da * r, dh);
             v.head += Math.atan2(Math.sin(want - v.head), Math.cos(want - v.head)) * Math.min(1, dt * 3);
@@ -719,7 +736,7 @@ class BeetleRound {
         if (v.st === 'up') {
           // turn it to face Mika (the camera), a little larger to see
           _m.lookAt(cam.position, v.root.position, UP);
-          _q.setFromRotationMatrix(_m).multiply(new THREE.Quaternion().setFromAxisAngle(_x.set(1, 0, 0), 0.9));
+          _q.setFromRotationMatrix(_m).multiply(_q2.setFromAxisAngle(_x.set(1, 0, 0), 0.9));
           v.root.quaternion.slerpQuaternions(w.q0, _q, e);
           v.root.scale.setScalar(1 + e * (v.showScale - 1));
           if (w.u >= 1) { v.st = 'show'; v.base = v.root.quaternion.clone(); }
@@ -733,9 +750,8 @@ class BeetleRound {
         v.root.quaternion.copy(v.base).multiply(_q.setFromAxisAngle(UP, Math.sin(v.t * 1.4) * 0.7));
         if (v.showT <= 0 || (v.showT < 2 && this.ctx.pressed())) {
           v.st = 'back';
-          const probe = new THREE.Object3D();
-          this.stick(probe, v.a, v.h, 0.004, v.head);
-          v.tw = { from: v.root.position.clone(), to: probe.position.clone(), q1: probe.quaternion.clone(), u: 0, dur: 0.6 };
+          this.stick(_probe, v.a, v.h, 0.004, v.head);
+          v.tw = { from: v.root.position.clone(), to: _probe.position.clone(), q1: _probe.quaternion.clone(), u: 0, dur: 0.6 };
         }
       } else if (v.st === 'fly') {
         const w = v.tw;
@@ -772,11 +788,13 @@ class BeetleRound {
       const d = _v.distanceTo(cam.position);
       _v.project(cam);
       const on = _v.z < 1 && d < 40 && Math.abs(_v.x) < 1.05 && Math.abs(_v.y) < 1.05;
-      c.label.style.display = on ? '' : 'none';
+      // a label is written only when it moved by a pixel or changed its look
+      if (c.on !== on) { c.on = on; c.label.style.display = on ? '' : 'none'; }
       if (!on) continue;
-      c.label.style.left = `${(_v.x + 1) / 2 * w}px`;
-      c.label.style.top = `${Math.max(120, (1 - _v.y) / 2 * h)}px`;
-      c.label.classList.toggle('near', c === this.near);
+      const lx = Math.round((_v.x + 1) / 2 * w), ly = Math.round(Math.max(120, (1 - _v.y) / 2 * h)), near = c === this.near;
+      if (lx !== c.lx) { c.lx = lx; c.label.style.left = `${lx}px`; }
+      if (ly !== c.ly) { c.ly = ly; c.label.style.top = `${ly}px`; }
+      if (near !== c.nearShown) { c.nearShown = near; c.label.classList.toggle('near', near); }
     }
   }
 
@@ -818,7 +836,7 @@ class BeetleRound {
     this.g.follow?.clearCutscene?.(true);
     if (this.light) this.g.lights?.remove(this.light);
     // rigged clones own a bone texture each (the geometry and materials belong to the model library)
-    for (const o of this.added) { this.scene.remove(o); o.traverse(c => { if (c.isSkinnedMesh) c.skeleton?.dispose?.(); }); }
+    for (const o of this.added) { this.scene.remove(o); disposeRigs(o); }
     for (const x of this.own) x.dispose?.();
     this.own.length = 0;
     this.labels?.remove();

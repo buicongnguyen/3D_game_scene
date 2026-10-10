@@ -6,10 +6,11 @@
 import * as THREE from 'three';
 import { TRICKS, TRICK, trickOpen, inHours, recordRound } from '../content/tricks.js';
 import { CAST, DIALOGUE } from './story.js';
-import { tx } from '../i18n/i18n.js';
+import { tx, getLang } from '../i18n/i18n.js';
 import { storyId } from './stories/index.js';
 
 const AMBIENT_R = 60;          // the place's ambient life runs while Mika is this close
+const LOAD_R = 75;             // a trick's game is fetched when Mika comes this close to its sign (or opens it)
 const SIGN_R = 2.6;
 
 // the trick games, loaded on demand (Vite turns the glob into lazy chunks; Node falls back to a plain import)
@@ -73,7 +74,9 @@ export class Tricks {
   constructor(director) {
     this.d = director;
     this.g = director.game;
-    this.mods = {};             // id -> module (or null when missing)
+    this.mods = {};             // id -> module (or null when missing), once loaded
+    this.loading = {};          // id -> the promise of its module (loaded when Mika comes near the sign, or plays)
+    this.openArg = { season: '', hour: 0, frozen: true, raining: false };
     this.round = null;          // the round running now { id, ctx }
     this.locks = false;         // true while a round holds Mika still (read by director.update)
     this.ambientOn = new Set();
@@ -82,7 +85,6 @@ export class Tricks {
     this.t = 0;
     this.buildUi();
     for (const t of TRICKS) this.spawnSign(t);
-    for (const t of TRICKS) loadModule(t.id).then(m => { this.mods[t.id] = m; });
   }
 
   // ------------------------------------------------------------------ state helpers
@@ -93,10 +95,11 @@ export class Tricks {
   season() { return this.g.shownSeason || this.g.time.season; }
   /** Is the trick playable now (season, clear sky; a running clock must also be inside its hours). */
   open(t) {
-    const g = this.g, o = g.timeOverride;
+    const g = this.g, o = g.timeOverride, a = this.openArg;
     // the story clock stands still (a fixed Settings hour too): the round brings its own night. A day cycle must reach the hours.
-    const frozen = !g.time.speed && o !== 'cycle-slow' && o !== 'cycle-fast';
-    return trickOpen(t, { season: this.season(), hour: g.shownHour(), frozen, raining: g.fx?.weather === 'rain' });
+    a.frozen = !g.time.speed && o !== 'cycle-slow' && o !== 'cycle-fast';
+    a.season = this.season(); a.hour = g.shownHour(); a.raining = g.fx?.weather === 'rain';
+    return trickOpen(t, a);
   }
   /** Tricks are part of the valley from chapter one on (not in the prologue). */
   ready() { return !!this.st && this.st.chapter >= 1; }
@@ -111,14 +114,21 @@ export class Tricks {
       m.position.copy(at);
       m.rotation.y = t.place.face ?? 0;
       m.scale.setScalar(0.8);
-      m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      // like every small prop: no shadow on the tier that drops prop shadows (a post is seven meshes)
+      const shadows = w.quality?.propShadows !== false;
+      m.traverse(o => { if (o.isMesh) { o.castShadow = shadows; o.receiveShadow = true; } });
       g.scene.add(m);
     }
-    const sign = { t, at, obj: m };
+    // obj is shown within signFar of Mika (update); `hidden`: a round has taken it out of its picture (the kite)
+    const sign = { t, at, obj: m, hidden: false };
     this.signs.push(sign);
+    // asked every frame while Mika stands by the sign: the two texts are made once per language
+    const text = [null, null];
+    let textLang = null;
     const label = () => {
-      if (!this.open(t)) return tx('{name}: back in {when}', { name: tx(t.name), when: tx(t.when) });
-      return tx('Try: {name}', { name: tx(t.name) });
+      const lang = getLang(), o = this.open(t) ? 1 : 0;
+      if (lang !== textLang) { textLang = lang; text[0] = text[1] = null; }
+      return text[o] ??= o ? tx('Try: {name}', { name: tx(t.name) }) : tx('{name}: back in {when}', { name: tx(t.name), when: tx(t.when) });
     };
     this.d.interact(`trick:${t.id}`, at.clone().setY(y + 1), label, () => this.ready() && !this.round,
       () => (this.open(t) ? this.play(t.id) : this.d.ui.toast(tx('{name}: back in {when}', { name: tx(t.name), when: tx(t.when) }), t.icon)), SIGN_R, null, 0.4);
@@ -145,48 +155,64 @@ export class Tricks {
   inSeason() { return TRICKS.filter(t => this.open(t)); }
 
   // ------------------------------------------------------------------ the round
-  async module(id) {
-    if (!(id in this.mods)) this.mods[id] = await loadModule(id);
-    return this.mods[id];
+  /** The trick's game module, fetched once (the same promise for everyone who asks while it loads). */
+  module(id) {
+    return this.loading[id] ??= loadModule(id).then(m => (this.mods[id] = m));
+  }
+
+  /** Save now, although a round owns the screen (director.save refuses during a round: the card is a safe moment). */
+  saveNow() {
+    const r = this.round;
+    this.round = null;
+    try { this.d.save(); } finally { this.round = r; }
   }
 
   async play(id) {
     if (this.round || this.d.busy || this.d.minigame) return null;
     const t = TRICK[id], d = this.d, g = this.g;
+    if (!t) return null;
     this.round = { id, starting: true };
-    const mod = await this.module(id);
-    if (!mod?.play) { this.round = null; d.ui.toast(tx('{name} is not ready yet', { name: tx(t.name) }), t.icon); return null; }
-    const st = this.st;
-    st.tricks[id] = { learned: true, best: 0, stars: 0, plays: 0, ...(st.tricks[id] || {}) };
-    let again = true, result = null;
+    let result = null;
     const met = new Set();
-    while (again) {
-      const first = !st.tricks[id].plays;
-      const ctx = this.makeCtx(t, first);
-      this.round = { id, ctx };
+    try {
+      const mod = await this.module(id);
+      if (!mod?.play) { d.ui.toast(tx('{name} is not ready yet', { name: tx(t.name) }), t.icon); return null; }
+      const st = this.st;
+      st.tricks[id] = { learned: true, best: 0, stars: 0, plays: 0, ...(st.tricks[id] || {}) };
+      let again = true;
+      while (again) {
+        const first = !st.tricks[id].plays;
+        const ctx = this.makeCtx(t, first);
+        this.round = { id, ctx };
+        this.locks = false;
+        d.ui.prompt(null);
+        g.input.releaseAll?.();
+        this.hud(t, ctx);
+        let res = null;
+        try { res = await mod.play(ctx); } catch (e) { console.error(`[tricks] ${id} failed`, e); res = { score: 0, quit: true }; }
+        result = res || { score: 0 };
+        this.endRound(ctx);
+        if (result.quit) break;
+        const score = Math.max(0, Math.floor(result.score || 0));
+        const { rec, stars, newBest } = recordRound(st.tricks[id], t, score);
+        st.tricks[id] = { ...st.tricks[id], ...rec };
+        d.ui.toast(`${starText(stars)} ${tx(t.name)}${newBest ? ` · ${tx('New best!')}` : ''}`, t.icon);
+        if (stars) d.audio.star(); else d.audio.good();
+        // creatures met in the round (the sap trap's beetles) join the friends journal once the card is closed
+        for (const f of result.detail?.friends || []) met.add(f);
+        this.saveNow();          // the result is kept even if the game is closed on the card
+        again = await this.results(t, score, stars, newBest, first, result);
+      }
+    } finally {
+      // whatever happened above (a failed card included), the round never keeps the screen
+      this.loops.clear();
+      this.el?.card.classList.add('hidden');
+      this.round = null;
       this.locks = false;
-      d.ui.prompt(null);
-      g.input.releaseAll?.();
-      this.hud(t, ctx);
-      let res = null;
-      try { res = await mod.play(ctx); } catch (e) { console.error(`[tricks] ${id} failed`, e); res = { score: 0, quit: true }; }
-      result = res || { score: 0 };
-      this.endRound(ctx);
-      if (result.quit) { again = false; break; }
-      const score = Math.max(0, Math.floor(result.score || 0));
-      const { rec, stars, newBest } = recordRound(st.tricks[id], t, score);
-      st.tricks[id] = { ...st.tricks[id], ...rec };
-      d.ui.toast(`${starText(stars)} ${tx(t.name)}${newBest ? ` · ${tx('New best!')}` : ''}`, t.icon);
-      if (stars) d.audio.star(); else d.audio.good();
-      // creatures met in the round (the sap trap's beetles) join the friends journal once the card is closed
-      for (const f of result.detail?.friends || []) met.add(f);
-      again = await this.results(t, score, stars, newBest, first, result);
-      d.save();
+      if (!d.busy) g.player.locked = false;
+      d.actCooldown = 0.5;
     }
-    this.round = null;
-    this.locks = false;
-    if (!d.busy) g.player.locked = false;
-    d.actCooldown = 0.5;
+    d.save();
     for (const f of met) d.meetFriend?.(f);
     return result;
   }
@@ -318,6 +344,8 @@ export class Tricks {
       hint: mk('trickHint', '<b></b><span></span>'),
       card: mk('trickCard', '<div class="box"></div>'),
     };
+    this.el.hud._tEl = this.el.hud.querySelector('.t');
+    this.el.hud._sEl = this.el.hud.querySelector('.s');
   }
 
   hud(t, ctx) {
@@ -330,17 +358,21 @@ export class Tricks {
   }
 
   setHud(score, timeLeft, t) {
+    // called every frame of a round: the page is only touched (and a text only built) when a shown value changes
     const h = this.el.hud;
-    const tt = timeLeft === null || timeLeft === undefined ? '' : fmtTime(timeLeft);
-    const s = `${score} ${tx(t.unit)}`;
-    if (h._t !== tt) { h._t = tt; h.querySelector('.t').textContent = tt; }
-    if (h._s !== s) { h._s = s; h.querySelector('.s').textContent = s; }
+    const secs = timeLeft === null || timeLeft === undefined ? -1 : Math.max(0, Math.ceil(timeLeft));
+    if (h._secs !== secs) { h._secs = secs; h._tEl.textContent = secs < 0 ? '' : fmtTime(secs); }
+    const lang = getLang();
+    if (h._score !== score || h._unit !== t.unit || h._lang !== lang) {
+      h._score = score; h._unit = t.unit; h._lang = lang;
+      h._sEl.textContent = `${score} ${tx(t.unit)}`;
+    }
   }
 
   showHint(text, name, life) {
     const h = this.el.hint;
-    h.querySelector('b').textContent = name ? `${name}:` : '';
-    h.querySelector('span').textContent = tx(text);
+    h.firstChild.textContent = name ? `${name}:` : '';
+    h.lastChild.textContent = tx(text);
     h.classList.remove('hidden');
     h.style.opacity = '1';
     this.hintLeft = life;
@@ -358,7 +390,7 @@ export class Tricks {
         // Backspace leaves the round: every waiting step resolves { quit: true } and the trick cleans up
         this.round.ctx.quit = true;
         for (const l of [...this.loops]) { this.loops.delete(l); l.res({ quit: true }); }
-      } else for (const l of [...this.loops]) {
+      } else for (const l of this.loops) {          // (a Set may lose its current entry while it is walked)
         let r;
         // a bug inside a round must not freeze the game: end that round as if quit, and say so in the console
         try { r = l.fn(dt); } catch (e) { console.error('trick round failed', e); r = { quit: true }; }
@@ -369,11 +401,23 @@ export class Tricks {
     if (this.hintLeft > 0) { this.hintLeft -= dt; if (this.hintLeft <= 0) this.hideHint(); }
     // the ambient look of each place: in season, at the trick's hours (as shown on screen), with Mika near
     if (!this.st) return;
-    const p = g.player.pos, hour = g.shownHour(), season = this.season();
+    const p = g.player.pos, hour = g.shownHour(), season = this.season(), inside = !!g.interiors?.active;
+    // signposts are small props: hidden beyond one and a half times the tier's prop distance (back 12 m inside it)
+    const far = (g.renderer?.q?.propDist ?? 240) * 1.5;
     for (const s of this.signs) {
       const t = s.t, mod = this.mods[t.id];
+      const dx = p.x - s.at.x, dz = p.z - s.at.z, d2 = dx * dx + dz * dz;
+      if (s.obj) {
+        const lim = s.obj.visible ? far : far - 12, show = !s.hidden && d2 < lim * lim;
+        if (s.obj.visible !== show) s.obj.visible = show;
+      }
+      if (mod === undefined) {
+        // not fetched yet: ask for it as Mika comes near, so its sign answers at once and its place can come alive
+        if (d2 < LOAD_R * LOAD_R && !inside && !this.loading[t.id] && this.ready()) this.module(t.id);
+        continue;
+      }
       if (!mod?.ambient) continue;
-      const near = Math.hypot(p.x - s.at.x, p.z - s.at.z) < AMBIENT_R && !g.interiors?.active;
+      const near = d2 < AMBIENT_R * AMBIENT_R && !inside;
       const on = near && this.round?.id !== t.id && t.seasons.includes(season) && inHours(hour, t.hours);
       if (on) { this.ambientOn.add(t.id); mod.ambient(dt, this.ambientCtx(t)); }
       else if (this.ambientOn.has(t.id)) { this.ambientOn.delete(t.id); mod.ambient(0, { ...this.ambientCtx(t), off: true }); }

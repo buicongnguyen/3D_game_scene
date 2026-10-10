@@ -58,6 +58,12 @@ the wheel").
 - `c1.page` → **Grandma's star diary.** Back home, Grandma reads Mika a page from the diary she kept as a girl, about the first lamp she lit. (These replace "Sora's pages": the same journal tab, now *with* her.)
 - **Party:** the Blossom Wave. Grandma dances badly and proudly.
 
+**The thread through the year (said out loud since October 2026):** Mika explores the village first (Grandma: "A list is
+not a race"), then mends Ōta's water wheel, which makes the valley's electricity ("power on the lamp line again"), and
+then lights the four lamp towers one a season. Each lit tower is thanked for by the neighbours it helps home (barks tagged
+`story: 'grandma'` in `src/content/barks.js`). At every tower and a few high places Mika can also **look up at the sky**
+(`src/game/skygaze.js`, `src/content/skyspots.js`): stars and shooting stars to wish on at night, clouds and birds by day.
+
 ### Chapter 2: summer, Takamori, "Peaches for the festival"
 - **Grandma's list:** cross the river · help Hana · peaches for my jam · light the Orchard Lamp
 - `c2.ferry` → Rin's ferry (Grandma: "Rin's ferry is the only boat in the valley that's never sunk. She's very proud of that.")

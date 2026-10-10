@@ -151,7 +151,10 @@ export class Railway {
         });
       return meshes;
     };
-    build(list.filter(i => !i.gap));
+    // one instanced mesh per ~75 m stretch: the whole line as one mesh was drawn in full (90 k triangles) wherever
+    // the camera looked, because its bounds span the valley
+    const laid = list.filter(i => !i.gap);
+    for (let i = 0; i < laid.length; i += 120) for (const m of build(laid.slice(i, i + 120))) m.computeBoundingSphere();
     this.gapSleepers = build(list.filter(i => i.gap));
     this.gapSleepers.forEach(m => { m.visible = false; });
   }

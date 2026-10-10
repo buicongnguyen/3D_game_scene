@@ -87,6 +87,30 @@ it to one of them, and every third throw someone cheers. While she plays, the ki
 than 9 m away tosses the ball back and ends her turn. There is one ball in the valley: it belongs to the ball game
 nearest Mika.
 
+## The playground yard
+
+East of Miss Endo's house, between the dock lane and the boathouse lane, stands the Kawabe Playground: a packed-earth
+court (6 x 11 m) with chalk lines and a low net, a rail fence with three gates, two benches, a scoreboard post, a box
+of balls and shuttlecocks, a hopscotch grid, a seesaw, a practice kick-board and a string of pennants. All of it is
+built in code from `src/content/yard.js` by `src/world/yard.js` (one merged, vertex-coloured mesh; no model files),
+and the ground under it is levelled by one `POST_SHAPES` row in `layout.js`.
+
+- **The kids' own play.** Kenta, Yui and Daichi have `{ play: 'footnet' | 'keepup', at: 'kawabe.yard' }` in their 9,
+  12 and 15 o'clock blocks, between tag, hopscotch and the ball. Town Life hands those kids to `director.yard`
+  (`src/game/yard/round.js`), which runs the same pure simulation Mika plays, with nobody human in it: two rally
+  over the net (first to three, the loser swaps with the one on the bench), or everybody keeps the shuttle up in a
+  ring; one kid alone juggles. It sleeps while every kid is beyond the draw distance.
+- **Mika joins.** On the court, or at the box of shuttlecocks: "Join the game: …" (kids playing) or "Play: …" (the
+  Kawabe kids who are out of doors are called over; at night she plays the kick-board). A fixed court camera north of
+  the court; move under the landing ring and press E / Do it as the outer ring closes on it. Perfect timing sends a
+  fast flat return, okay a high lob, too early is a whiff (try again), too late is the other side's point; the stick
+  aims. Foot-tennis is first to 5 (3 the first time); keep-it-up counts touches in a row for a minute, three drops
+  allowed. Backspace (or "Stop playing") leaves at any time. The record is `quest.state.yard`.
+- **Change the game** at the scoreboard post. The games are a small registry (`src/game/yard/index.js`): a module
+  with `teams / target / create / bot / focus` whose sim has the shape described there plugs in as a third game.
+- Rules are pure and seeded (`src/game/yard/rules.js`, `footnet.js`, `keepup.js`); `tests/yard.test.mjs` replays
+  recorded input through them and checks the site against roads, buildings, trick signs, name boards and sky spots.
+
 ## Inside the houses
 
 Every room has 2–4 things to do, matched to its furniture and to who lives there (`src/content/hotspots.js`,
@@ -140,3 +164,20 @@ People get a level of detail every 0.3 s (`Director.updateDetail`). The distance
 
 Measured against the previous release on the same save and camera views, the busier valley draws slightly fewer calls
 and triangles on low and medium quality, and the director's per-frame time also went down.
+
+### The Low tier (phones)
+
+A phone starts on **Low** (`detectQuality` in `src/engine/renderer.js`; the Settings choice is kept and wins). Low is
+built to be short of CPU rather than of pixels:
+- **One draw per character.** The plain parts of a person or animal (skin, hair, shirt…) become one skinned mesh with
+  a palette of colour and roughness per part (`src/engine/skin-merge.js`); tints still work. Mika too.
+- **Shadows every other frame** (`shadowEvery`), no shadows from fences and small props.
+- **Shorter distances** for bushes, rocks, flowers and reeds, the river bed (near the river only) and the trees on
+  the landslide scar.
+- **A frame governor** (`src/engine/governor.js`): when frames stay slow it takes one step down a fixed ladder
+  (people and prop distances, shadow rate, then resolution) and climbs back only while that has never backfired, so it
+  cannot bounce between two levels.
+
+On every tier: the parts of a character share one skeleton, world matrices are only rebuilt for what is shown and has
+moved (`src/engine/matrices.js`: hidden rooms and far people cost nothing), fence panels are instanced, and railway
+sleepers, the river bed and the orchard lanterns are culled when out of view.

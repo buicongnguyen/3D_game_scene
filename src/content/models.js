@@ -2,7 +2,7 @@
 export const CHARACTERS = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid'];
 export const ANIMALS = ['fox', 'bear', 'sheep', 'chicken', 'crow', 'rabbit', 'crab', 'fish-trout', 'fish-koi', 'fish-starfin', 'cat', 'duck', 'deer', 'cow', 'pig', 'goat', 'dog',
   'cricket', 'spider', 'spider-web', 'ladybug', 'dragonfly', 'butterfly', 'frog-pond', 'frog-tree', 'firefly'];
-export const ARCHITECTURE = ['kawabe-house-a', 'kawabe-house-b', 'kawabe-shop', 'boathouse', 'mill', 'drawbridge', 'star-lamp',
+export const ARCHITECTURE = ['kawabe-house-a', 'kawabe-house-b', 'kawabe-shop', 'boathouse', 'mill', 'drawbridge', 'star-lamp', 'star-lamp-grand',
   'takamori-house-a', 'takamori-house-b', 'bakery', 'belltower', 'station', 'platform', 'signal-cottage', 'engine-shed', 'shrine',
   'torii', 'stone-lantern', 'shrine-stairs'];
 export const RAILWAY = ['viaduct-span', 'viaduct-abutment', 'viaduct-broken', 'viaduct-repair', 'lamp-viaduct', 'sleeper', 'kobo', 'coach',

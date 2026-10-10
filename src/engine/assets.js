@@ -74,6 +74,7 @@ export class Assets {
     const entry = this.resolved?.get(name);
     if (!entry) return null;
     const obj = entry.animations.length ? SkeletonUtils.clone(entry.scene) : entry.scene.clone(true);
+    if (entry.animations.length) shareSkeletons(obj);
     obj.userData.clips = entry.animations;
     obj.userData.model = name;
     return obj;
@@ -115,6 +116,22 @@ export class Assets {
       m.emissiveIntensity = intensity;
     }
   }
+}
+
+/**
+ * SkeletonUtils.clone gives every skinned part of a character (skin, hair, shirt, shoes…) a skeleton of its own,
+ * although they all hang on the same bones. Let the parts share one again: the bone matrices are then worked out
+ * and sent to the GPU once per character and frame instead of once per part.
+ */
+export function shareSkeletons(root) {
+  const kept = [];
+  root.traverse(o => {
+    if (!o.isSkinnedMesh || !o.skeleton) return;
+    const s = o.skeleton;
+    const same = kept.find(k => k.bones.length === s.bones.length && k.bones.every((b, i) => b === s.bones[i])
+      && k.boneInverses.every((m, i) => m.equals(s.boneInverses[i])));
+    if (same) { o.skeleton = same; s.dispose(); } else kept.push(s);
+  });
 }
 
 /** Placeholder so the world still reads when a model is missing (e.g. while art is in progress). */

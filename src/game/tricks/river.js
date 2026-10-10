@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { river, riverHalfWidth, WATER_Y } from '../../world/layout.js';
 import { FISH } from '../story.js';
 import { tx, N_ } from '../../i18n/i18n.js';
+import { disposeRigs } from './util.js';
 
 /** Fish the lantern can find. model + tint/scale reuse the existing fish art; night: only at night (not on the rod). */
 export const NIGHT_FISH = {
@@ -80,7 +81,8 @@ export function shallowSpots(heightAt, x, z, n, { lo = 0.3, hi = 0.95, along = 1
 
 // ---------------------------------------------------------------------------------------------------- the round
 const V = () => new THREE.Vector3();
-const _v = V(), _c = new THREE.Color(), _m = new THREE.Matrix4();
+const _v = V(), _c = new THREE.Color(), _m = new THREE.Matrix4(), _up1 = V().set(0, 1, 0);
+const GLOW_COOL = new THREE.Color('#7fd8ff'), GLOW_WARM = new THREE.Color('#ffcf8a');   // what a fish gives back to the lantern
 
 function discTexture() {
   const c = document.createElement('canvas');
@@ -159,6 +161,7 @@ class RiverRound {
     // a ring that fills while naming a fish
     this.ring = this.add(new THREE.Mesh(new THREE.RingGeometry(0.3, 0.36, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#fff3c4', transparent: true, opacity: 0, depthWrite: false, fog: false })));
     this.ring.renderOrder = 8;
+    this.ring.name = 'trick:name-ring';               // (the name marks what dispose() frees)
     this.wasLantern = this.player.lantern?.visible;
     if (this.player.lantern) this.player.lantern.visible = true;
   }
@@ -215,7 +218,7 @@ class RiverRound {
     this.t += dt;
     this.I = Math.min(1, this.I + dt * 1.5);
     // the circle lies ~1.4 m ahead of the lantern, on the water
-    const lw = p.lanternWorld ? p.lanternWorld(_v) : _v.copy(p.pos).add({ x: 0, y: 1, z: 0 });
+    const lw = p.lanternWorld ? p.lanternWorld(_v) : _v.copy(p.pos).add(_up1);
     const fx = Math.sin(p.facing), fz = Math.cos(p.facing);
     const ax = lw.x + fx * 1.3, az = lw.z + fz * 1.3;
     const k = Math.min(1, dt * 8);
@@ -228,25 +231,7 @@ class RiverRound {
     this.clear.scale.setScalar(RADIUS * wob);
     this.clear.material.opacity = 0.42 * this.I;
     this.lightPos.set(this.cx * 0.5 + lw.x * 0.5, lw.y + 0.25, this.cz * 0.5 + lw.z * 0.5);
-    // fish: wander slowly; in the light they doze, hold still and show clearly
-    for (const f of this.fish) {
-      const d = Math.hypot(f.x - this.cx, f.z - this.cz), lit = d < RADIUS ? 1 : Math.max(0, 1 - (d - RADIUS) / 1.2);
-      f.calm += ((lit > 0.5 ? 1 : 0) - f.calm) * Math.min(1, dt * 2.5);
-      f.ph += dt * (1 - f.calm * 0.85);
-      if (f.calm < 0.6) {
-        f.ang += dt * 0.25 * (1 - f.calm);
-        const nx = f.hx + Math.cos(f.ang + f.ph * 0.1) * 1.4, nz = f.hz + Math.sin(f.ang + f.ph * 0.1) * 1.4;
-        f.face = Math.atan2(nx - f.x, nz - f.z);
-        f.x += (nx - f.x) * dt * 0.5 * (1 - f.calm); f.z += (nz - f.z) * dt * 0.5 * (1 - f.calm);
-      }
-      f.root.position.set(f.x, f.y + Math.sin(f.ph * 1.3) * 0.02, f.z);
-      f.root.rotation.set(0, f.face + Math.sin(f.ph * 6) * 0.08 * (1 - f.calm * 0.7), 0);
-      const shown = 0.2 + 0.8 * lit;
-      for (const c of f.mats) {
-        c.opacity = shown;
-        if (c.emissive) c.emissive.copy(_c.set(NIGHT_FISH[f.kind].glow ? '#7fd8ff' : '#ffcf8a')).multiplyScalar(0.12 + 0.3 * lit + (f.named ? 0.08 : 0));
-      }
-    }
+    this.swimFish(dt);
     // naming: hold the light over a fish
     const got = spotStep(this.fish, this.cx, this.cz, dt);
     let holding = null;
@@ -263,10 +248,40 @@ class RiverRound {
       audio?.good?.();
       if (fresh) audio?.chime?.(this.species.size);
       this.ctx.hint?.(def.night ? tx('A {fish}! It only comes out at night.', { fish: tx(def.name) }) : tx('A {fish}, fast asleep.', { fish: tx(def.name) }));
-      this.ctx.director?.fx?.burst?.(new THREE.Vector3(got.x, WATER_Y + 0.08, got.z), { n: 10, color: [1, 0.85, 0.5], speed: 0.6, size: 0.08, gravity: -0.6 });
+      this.ctx.director?.fx?.burst?.(_v.set(got.x, WATER_Y + 0.08, got.z), { n: 10, color: [1, 0.85, 0.5], speed: 0.6, size: 0.08, gravity: -0.6 });
       const st = this.ctx.director?.q?.state;
       if (st) { st.fishSeen ??= {}; st.fishSeen[got.kind] = (st.fishSeen[got.kind] || 0) + 1; }
     }
+    this.shrimpEyes(dt, audio);
+    if (p.swimming && !this.warned) { this.warned = true; this.ctx.hint?.(tx('Too deep! Stay in the shallows, where the water is below your knees.')); }
+    if (!p.swimming) this.warned = false;
+  }
+
+  // The two busy loops of a frame live in small methods of their own: the optimiser compiles those quickly, where the
+  // same arithmetic inside the long update() ran interpreted and made a new number object for every result.
+  swimFish(dt) {
+    // fish: wander slowly; in the light they doze, hold still and show clearly
+    for (const f of this.fish) {
+      const d = Math.hypot(f.x - this.cx, f.z - this.cz), lit = d < RADIUS ? 1 : Math.max(0, 1 - (d - RADIUS) / 1.2);
+      f.calm += ((lit > 0.5 ? 1 : 0) - f.calm) * Math.min(1, dt * 2.5);
+      f.ph += dt * (1 - f.calm * 0.85);
+      if (f.calm < 0.6) {
+        f.ang += dt * 0.25 * (1 - f.calm);
+        const nx = f.hx + Math.cos(f.ang + f.ph * 0.1) * 1.4, nz = f.hz + Math.sin(f.ang + f.ph * 0.1) * 1.4;
+        f.face = Math.atan2(nx - f.x, nz - f.z);
+        f.x += (nx - f.x) * dt * 0.5 * (1 - f.calm); f.z += (nz - f.z) * dt * 0.5 * (1 - f.calm);
+      }
+      f.root.position.set(f.x, f.y + Math.sin(f.ph * 1.3) * 0.02, f.z);
+      f.root.rotation.set(0, f.face + Math.sin(f.ph * 6) * 0.08 * (1 - f.calm * 0.7), 0);
+      const shown = 0.2 + 0.8 * lit, tint = NIGHT_FISH[f.kind].glow ? GLOW_COOL : GLOW_WARM, k = 0.12 + 0.3 * lit + (f.named ? 0.08 : 0);
+      for (const c of f.mats) {
+        c.opacity = shown;
+        if (c.emissive) c.emissive.copy(tint).multiplyScalar(k);
+      }
+    }
+  }
+
+  shrimpEyes(dt, audio) {
     // shrimp eyes: they shine back only when the light faces them (inside and just around the circle), twinkling
     const im = this.eyes;
     for (let i = 0; i < this.shrimp.length; i++) {
@@ -284,8 +299,6 @@ class RiverRound {
       }
     }
     if (im.instanceColor) im.instanceColor.needsUpdate = true;
-    if (p.swimming && !this.warned) { this.warned = true; this.ctx.hint?.(tx('Too deep! Stay in the shallows, where the water is below your knees.')); }
-    if (!p.swimming) this.warned = false;
   }
 
   get score() { return riverScore({ named: this.named, species: this.species.size, shrimp: this.shrimpSeen }); }
@@ -295,6 +308,7 @@ class RiverRound {
     if (this.light) this.g.lights?.remove(this.light);
     for (const o of this.added) {
       this.scene.remove(o);
+      disposeRigs(o);                 // every fish clone is rigged: a bone texture per skinned mesh
       o.traverse?.(c => {
         if (c.isMesh && c.name.startsWith('trick:')) { c.geometry.dispose(); [c.material].flat().forEach(m => m.dispose()); }
       });

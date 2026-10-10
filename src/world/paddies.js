@@ -3,12 +3,13 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { patchMaterial } from '../engine/effects.js';
 import { PADDIES } from './layout.js';
 import { lightingAt } from './seasons.js';
-import { VEG_BEDS, CUT_IN_AUTUMN, LIGHT_COLOURS, bedRows, fieldLights, lightGlow } from './fields.js';
+import { VEG_BEDS, CUT_IN_AUTUMN, LIGHT_COLOURS, bedRows, fieldLights, fieldOptions, lightGlow } from './fields.js';
 
 /*
  * The field grid west of Kawabe: flooded rice paddies and a few dry vegetable beds, each inside its bund, with paper
  * lanterns on the corner posts and fairy lights strung along two sides. Everything is instanced or merged: the rice
- * is one draw call, its ears one, the two vegetables one each, the soil, the posts and all the lights one each. Wind
+ * of each plot is one draw call and its ears one (so plots out of view are not drawn), the two vegetables one each,
+ * the soil, the posts and all the lights one each (two on Low, where the small lights are a lighter shape). Wind
  * comes from the shared foliage shader (effects.js); the lights glow at dusk and night from their own colour
  * (emissive, picked up by the bloom pass): there is not one real light among them.
  *
@@ -147,6 +148,15 @@ function lanternGeometry() {
   return g;
 }
 
+/** A fairy light for small screens: the same paper ball in 24 triangles instead of 104 (it is 14 cm across). */
+function bulbGeometry() {
+  const body = painted(new THREE.SphereGeometry(0.5, 5, 3).scale(1, 1.12, 1), [1, 1, 1]);
+  const cap = painted(new THREE.ConeGeometry(0.27, 0.2, 4, 1, true).translate(0, 0.62, 0), [0.1, 0.08, 0.06]);
+  const g = mergeGeometries([body, cap]);
+  body.dispose(); cap.dispose();
+  return g;
+}
+
 /** A ridge of tilled soil along z: a low triangular bank, a little lighter along its crest. */
 function ridge(s, x, y, z0, z1, w, h, colour) {
   const top = colour.map(v => v * 1.12);
@@ -157,10 +167,13 @@ function ridge(s, x, y, z0, z1, w, h, colour) {
   s.tri(a1, c1, b1, colour, colour, top);
 }
 
+const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _up = new THREE.Vector3(0, 1, 0), _p = new THREE.Vector3(), _s = new THREE.Vector3();
+
 export class Paddies {
   constructor(scene, assets, world) {
     this.world = world;
-    const low = world.quality?.name === 'Low';
+    // how densely the grid is planted and lit for this tier (fields.js fieldOptions: cropDensity, fieldLights, riceEars, detail)
+    const opt = this.options = fieldOptions(world.quality);
     this.group = new THREE.Group();
     this.group.name = 'paddies';
     scene.add(this.group);
@@ -172,7 +185,8 @@ export class Paddies {
     this.soilMat = patchMaterial(new THREE.MeshStandardMaterial({ color: '#6b4729', roughness: 1, vertexColors: true }));
     const bundMat = this.bundMat = patchMaterial(new THREE.MeshStandardMaterial({ color: '#7f8f3c', roughness: 0.95 }));
     const bunds = [], waters = [];
-    const rice = [], leafy = [], radish = [];
+    const leafy = [], radish = [];
+    const plots = [];                 // the rice plots: { p, list: [{ x, y, z, rot }] }
     const soil = new Soup(), earth = [1, 1, 1];
     for (const p of PADDIES) {
       const y = p.t;
@@ -190,7 +204,7 @@ export class Paddies {
         // a dry bed: tilled earth, ridges running north-south, greens and radishes in alternate rows
         const x0 = p.x - p.w / 2, x1 = p.x + p.w / 2, z0 = p.z - p.d / 2, z1 = p.z + p.d / 2, ys = y + 0.09;
         soil.quad([x0, ys, z0], [x0, ys, z1], [x1, ys, z0], [x1, ys, z1], earth.map(v => v * 0.86));
-        for (const row of bedRows(p, low ? 0.9 : 0.62)) {
+        for (const row of bedRows(p, opt.vegSpacing)) {
           // the hillside's foot covers the uphill edge of some plots: nothing is planted under the turf
           if (world.heightAt(row.x, p.z) > ys + 0.1) continue;
           ridge(soil, row.x, ys, row.z0, row.z1, 0.82, 0.17, earth);
@@ -203,12 +217,13 @@ export class Paddies {
       }
       waters.push(new THREE.PlaneGeometry(p.w, p.d).rotateX(-Math.PI / 2).translate(p.x, y + 0.08, p.z));
       // low quality plants the rice a little wider apart (about 40 % fewer plants)
-      const stepX = low ? 0.8 : 0.62, stepZ = low ? 0.75 : 0.58;
+      const stepX = opt.riceStepX, stepZ = opt.riceStepZ, rice = [];
       for (let ix = 0.6; ix < p.w - 0.3; ix += stepX) for (let iz = 0.55; iz < p.d - 0.3; iz += stepZ) {
         const rx = p.x - p.w / 2 + ix + (Math.sin(ix * 7 + iz) * 0.05), rz = p.z - p.d / 2 + iz;
         if (world.heightAt(rx, rz) > y + 0.2) continue;   // under the turf at the hillside's foot
-        rice.push({ x: rx, z: rz, y: y + 0.02, paddy: p.id, rot: (ix * 13.7 + iz * 7.1) % 6.28 });
+        rice.push({ x: rx, z: rz, y: y + 0.02, rot: (ix * 13.7 + iz * 7.1) % 6.28 });
       }
+      if (rice.length) plots.push({ p, list: rice });
     }
     this.water = new THREE.Mesh(mergeGeometries(waters), this.waterMat);
     this.water.receiveShadow = true;
@@ -219,18 +234,32 @@ export class Paddies {
     this.soil = new THREE.Mesh(soil.geometry(), this.soilMat);
     this.soil.name = 'vegetable-beds';
     this.soil.receiveShadow = true;
-    this.rice = new THREE.InstancedMesh(riceGeometry(), this.riceMat, rice.length);
-    this.riceRecords = rice;
-    this.rice.receiveShadow = true;
-    // the ears ride on the rice's own instance matrices (standing plants are written first: see setSeason)
-    this.ears = new THREE.InstancedMesh(earGeometry(), this.earMat, rice.length);
-    this.ears.instanceMatrix = this.rice.instanceMatrix;
+    // the rice: one instanced mesh a plot (a plot behind the camera costs nothing), each with a fixed bound. Its ears
+    // ride on the same instance matrices, so they are made without a buffer of their own.
+    const riceGeo = riceGeometry(), earGeo = earGeometry();
+    this.plots = plots.map(({ p, list }) => {
+      const rice = new THREE.InstancedMesh(riceGeo, this.riceMat, list.length);
+      rice.name = `rice:${p.id}`;
+      rice.receiveShadow = true;
+      const ears = new THREE.InstancedMesh(earGeo, this.earMat, 0);
+      ears.instanceMatrix = rice.instanceMatrix;
+      ears.count = list.length;
+      rice.boundingSphere = ears.boundingSphere = new THREE.Sphere(new THREE.Vector3(p.x, p.t + 0.6, p.z), Math.hypot(p.w / 2, p.d / 2) + 0.8);
+      this.group.add(rice, ears);
+      return { id: p.id, rice, ears, list };
+    });
     this.leafy = new THREE.InstancedMesh(leafyGeometry(), this.vegMat, Math.max(1, leafy.length));
     this.radish = new THREE.InstancedMesh(radishGeometry(), this.vegMat, Math.max(1, radish.length));
     this.leafyRecords = leafy;
     this.radishRecords = radish;
     this.leafy.receiveShadow = this.radish.receiveShadow = true;
-    this.group.add(this.water, this.bunds, this.soil, this.rice, this.ears, this.leafy, this.radish);
+    // a fixed bound for the vegetables too: the whole grid. (three.js measures an instanced mesh once, the first time
+    // it is drawn, and the crops' matrices change with the season.)
+    const box = new THREE.Box3();
+    for (const p of PADDIES) { box.expandByPoint(_p.set(p.x - p.w / 2, p.t - 0.5, p.z - p.d / 2)); box.expandByPoint(_p.set(p.x + p.w / 2, p.t + 2, p.z + p.d / 2)); }
+    const bound = box.getBoundingSphere(new THREE.Sphere());
+    for (const m of [this.leafy, this.radish]) m.boundingSphere = bound;
+    this.group.add(this.water, this.bunds, this.soil, this.leafy, this.radish);
     // autumn: the plots already cut get drying hay
     this.hay = new THREE.Group();
     for (const p of PADDIES.filter(q => CUT_IN_AUTUMN.has(q.id))) {
@@ -248,7 +277,8 @@ export class Paddies {
 
   /** Lantern posts and fairy lights round every plot (fields.js): one merged mesh of wood and wire, one of lights. */
   buildLights() {
-    const { posts, lanterns, wires } = fieldLights(PADDIES, (x, z) => this.world.heightAt(x, z));
+    if (!this.options.lights) return;        // a tier may leave the festival lights out altogether (fieldLights: 0)
+    const { posts, lanterns, wires } = fieldLights(PADDIES, (x, z) => this.world.heightAt(x, z), { bulbs: this.options.bulbs });
     const wood = [0.2, 0.09, 0.035], wire = [0.02, 0.014, 0.01];   // linear RGB
     const parts = [];
     for (const p of posts) parts.push(painted(new THREE.BoxGeometry(0.075, p.h, 0.075).translate(p.x, p.y + p.h / 2, p.z), wood));
@@ -275,51 +305,60 @@ export class Paddies {
     patchMaterial(mat, { snow: 0 });
     mat.customProgramCacheKey = () => 'fx00-field-lights';
     this.lanternMat = mat;
-    this.lanterns = new THREE.InstancedMesh(lanternGeometry(), mat, lanterns.length);
-    this.lanterns.name = 'field-lights';
+    // all the lights are one instanced mesh; with the lighter shape for the small ones (Low) they are two
     const M = new THREE.Matrix4(), c = new THREE.Color(), one = new THREE.Quaternion(), P = new THREE.Vector3(), S = new THREE.Vector3();
-    lanterns.forEach((l, i) => {
-      const s = l.big ? 0.3 : 0.14;
-      M.compose(P.set(l.x, l.y, l.z), one, S.set(s, s * (l.big ? 1.18 : 1), s));
-      this.lanterns.setMatrixAt(i, M);
-      this.lanterns.setColorAt(i, c.set(LIGHT_COLOURS[l.c]));
+    const light = this.options.lightGeometry === 'light';
+    const sets = light ? [[lanterns.filter(l => l.big), lanternGeometry()], [lanterns.filter(l => !l.big), bulbGeometry()]] : [[lanterns, lanternGeometry()]];
+    this.lightMeshes = sets.filter(([list]) => list.length).map(([list, geo], k) => {
+      const mesh = new THREE.InstancedMesh(geo, mat, list.length);
+      mesh.name = k ? 'field-lights-small' : 'field-lights';
+      list.forEach((l, i) => {
+        const s = l.big ? 0.3 : 0.14;
+        M.compose(P.set(l.x, l.y, l.z), one, S.set(s, s * (l.big ? 1.18 : 1), s));
+        mesh.setMatrixAt(i, M);
+        mesh.setColorAt(i, c.set(LIGHT_COLOURS[l.c]));
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.instanceColor.needsUpdate = true;
+      return mesh;
     });
-    this.lanterns.instanceMatrix.needsUpdate = true;
-    this.lanterns.instanceColor.needsUpdate = true;
+    this.lanterns = this.lightMeshes[0];
     const world = this.world;
-    this.lanterns.onBeforeRender = () => {
-      const night = lightingAt(world.season || 'summer', world.hour ?? 10).night;
+    // how dark it is, worked out again only when the clock has moved (a twelfth of a minute) or the season changed:
+    // the whole lighting table is heavy to ask every frame, and with the story's clock standing still it never changes
+    let litSeason = '', litTick = -1, lit = 0;
+    const glowNow = () => {
+      const season = world.season || 'summer', tick = Math.round((world.hour ?? 10) * 720);
+      if (litSeason !== season || litTick !== tick) { litSeason = season; litTick = tick; lit = lightGlow(lightingAt(season, tick / 720).night); }
       // a slow shimmer, like candle flames behind paper
-      this.glow.value = lightGlow(night) * (2.5 + 0.2 * Math.sin(performance.now() * 0.0021));
+      this.glow.value = lit * (2.5 + 0.2 * Math.sin(performance.now() * 0.0021));
     };
-    this.group.add(this.posts, this.lanterns);
+    for (const m of this.lightMeshes) m.onBeforeRender = glowNow;
+    this.group.add(this.posts, ...this.lightMeshes);
   }
 
   setSeason(season) {
     const s = SEASON[season];
+    if (!s || season === this.season) return;      // nothing to rewrite
+    this.season = season;
     this.riceMat.color.set(s.rice);
     this.bundMat.color.set(s.bund);
     this.soilMat.color.set(s.soil);
     this.vegMat.color.setRGB(...s.veg);
     if (s.ear) this.earMat.color.set(s.ear);
-    const M = new THREE.Matrix4(), q = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0), P = new THREE.Vector3(), S = new THREE.Vector3();
-    const isCut = r => s.cutAll || (season === 'autumn' && CUT_IN_AUTUMN.has(r.paddy));
-    // standing plants first, so the ears (which share these matrices) are simply the first `standing` instances
-    let n = 0, standing = 0;
-    for (const cut of [false, true]) {
-      for (const r of this.riceRecords) {
-        if (isCut(r) !== cut) continue;
-        const h = cut ? (season === 'winter' ? 0.16 : 0.22) : s.h;
+    const M = _m, q = _q, up = _up, P = _p, S = _s;
+    // a plot is cut (stubble) or standing as a whole; only standing rice carries ears
+    for (const plot of this.plots) {
+      const cut = s.cutAll || (season === 'autumn' && CUT_IN_AUTUMN.has(plot.id));
+      const h = cut ? (season === 'winter' ? 0.16 : 0.22) : s.h, wide = cut ? 1 : s.wide;
+      plot.list.forEach((r, i) => {
         q.setFromAxisAngle(up, r.rot);
-        M.compose(P.set(r.x, r.y, r.z), q, S.set(cut ? 1 : s.wide, h, cut ? 1 : s.wide));
-        this.rice.setMatrixAt(n++, M);
-      }
-      if (!cut) standing = n;
+        M.compose(P.set(r.x, r.y, r.z), q, S.set(wide, h, wide));
+        plot.rice.setMatrixAt(i, M);
+      });
+      plot.rice.instanceMatrix.needsUpdate = true;
+      plot.ears.visible = !!s.ear && !cut && this.options.ears;
     }
-    this.rice.count = n;
-    this.rice.instanceMatrix.needsUpdate = true;
-    this.ears.count = standing;
-    this.ears.visible = !!s.ear && standing > 0;
     for (const [mesh, list, show] of [[this.leafy, this.leafyRecords, s.leafy], [this.radish, this.radishRecords, true]]) {
       list.forEach((r, i) => {
         q.setFromAxisAngle(up, r.rot);

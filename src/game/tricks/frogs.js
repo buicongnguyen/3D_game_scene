@@ -10,6 +10,7 @@ import { PADDIES } from '../../world/layout.js';
 import { VEG_BEDS } from '../../world/fields.js';
 import { tx } from '../../i18n/i18n.js';
 import { Animator } from '../../actors/animator.js';
+import { disposeRigs } from './util.js';
 
 // ---------------------------------------------------------------------------------------------------- pure rules
 /**
@@ -158,7 +159,8 @@ export function paddyWater(x, z) {
 
 // ---------------------------------------------------------------------------------------------------- the round
 const V = () => new THREE.Vector3();
-const _v = V(), _w = V();
+const _v = V(), _w = V(), _up1 = V().set(0, 1, 0);
+const _sneak = { moving: false, quiet: false, dist: 0, dt: 0 };
 const PITCH = [0.72, 0.88, 1.06, 1.28, 1.52];
 
 class FrogRound {
@@ -292,7 +294,8 @@ class FrogRound {
     }
     const dist = Math.hypot(this.singer.x - p.pos.x, this.singer.z - p.pos.z);
     const moving = p.speed > 0.35;
-    const ev = this.singer.st === 'sit' ? sneakStep(this.st, { moving, quiet: ch.quiet, dist, dt }) : null;
+    _sneak.moving = moving; _sneak.quiet = ch.quiet; _sneak.dist = dist; _sneak.dt = dt;
+    const ev = this.singer.st === 'sit' ? sneakStep(this.st, _sneak) : null;
     if (ev === 'startle' || ev === 'flee') {
       // the nearest frogs that are still out jump in
       const near = this.frogs.filter(f => f.st === 'sit' && f !== this.singer).sort((a, b) => Math.hypot(a.x - p.pos.x, a.z - p.pos.z) - Math.hypot(b.x - p.pos.x, b.z - p.pos.z)).slice(0, 2);
@@ -331,7 +334,7 @@ class FrogRound {
     this.handT += dt;
     if (s.st === 'hand') {
       const grip = p.grip || p.model;
-      grip?.getWorldPosition?.(_v) ?? _v.copy(p.pos).add({ x: 0, y: 1, z: 0 });
+      grip?.getWorldPosition?.(_v) ?? _v.copy(p.pos).add(_up1);
       s.root.position.set(_v.x, _v.y + 0.08, _v.z);
       s.root.rotation.set(0, p.facing + Math.PI, 0);
       if (this.handT > 0.8 && this.handT - dt <= 0.8) this.croak(s, 1);
@@ -364,7 +367,11 @@ class FrogRound {
     for (const f of this.frogs) if (!this.row.includes(f) && f.st !== 'swim') this.hop(f, f.home.wx, f.home.wy, f.home.wz, 0.45, 0.4, 'swim');
     // frame the row from behind Mika's shoulder
     const mid = V().set(p.pos.x + fx * 2.1, p.pos.y + 0.2, p.pos.z + fz * 2.1);
-    g.follow?.cutscene?.({ pos: V().set(p.pos.x - fx * 0.6 - rx * 0.9, p.pos.y + 3.2, p.pos.z - fz * 0.6 - rz * 0.9), look: mid }, 0.9);
+    // (on a phone held upright the picture is narrow: the camera backs off along the same line until the whole row
+    // fits, or the outer frogs of a four-frog call could be neither seen nor tapped)
+    const cam = g.camera, half = Math.tan((cam?.fov || 55) * Math.PI / 360) * (cam?.aspect || 1.78);
+    const back = Math.max(1, ((n - 1) * 0.75 + 1.1) / (2 * half) / 4.13);          // 4.13 m: the shot's own distance
+    g.follow?.cutscene?.({ pos: V().set(mid.x + (-fx * 2.7 - rx * 0.9) * back, mid.y + 3.0 * back, mid.z + (-fz * 2.7 - rz * 0.9) * back), look: mid }, 0.9);
     this.simon = new Simon({ count: n, start: first ? 2 : 3, max: first ? 3 : 5 });
     this.sel = Math.floor(n / 2);
     this.show = { i: -1, t: -1.4 };          // a beat for the frogs to settle, then the call
@@ -450,6 +457,7 @@ class FrogRound {
     this.g.follow?.clearCutscene?.(false);
     for (const o of this.added) {
       this.scene.remove(o);
+      disposeRigs(o);                 // every frog clone is rigged: a bone texture per skinned mesh
       o.traverse?.(c => { if (c.isMesh && c.name.startsWith('trick:')) { c.geometry.dispose(); [c.material].flat().forEach(m => m.dispose()); } });
     }
   }

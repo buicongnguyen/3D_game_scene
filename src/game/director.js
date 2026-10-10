@@ -6,7 +6,8 @@ import { tx, N_ } from '../i18n/i18n.js';
 import { NPC } from '../actors/npc.js';
 import { Tamo } from '../actors/tamo.js';
 import { Wildlife } from '../actors/animals.js';
-import { Fishing, Cooking } from './minigames.js';
+import { Cooking } from './minigames.js';
+import { FishingSession } from './fishing/session.js';
 import { Scenes } from './scenes.js';
 import { PLACES, FALLEN_STARS, DECK_Y, river, riverHalfWidth } from '../world/layout.js';
 import { clockLabel } from '../world/seasons.js';
@@ -15,6 +16,8 @@ import { BarkBubbles } from '../ui/barks-ui.js';
 import { TownLife } from './townlife.js';
 import { Indoors } from './indoor.js';
 import { Tricks } from './tricks.js';
+import { SkyGaze } from './skygaze.js';
+import { Yard } from './yard/round.js';
 import { SHOPS } from '../content/shops.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
@@ -330,12 +333,16 @@ export class Director {
     this.indoor.spawn();
     // Grandma's countryside tricks: signs, teaching, rounds and the journal Tricks tab (game/tricks.js)
     this.tricks = new Tricks(this);
+    // "Look up at the sky" at the lamp towers and a few open places (game/skygaze.js)
+    this.sky = new SkyGaze(this);
+    // the Kawabe playground yard: the kids' foot-tennis and keep-it-up, and Mika joining in (game/yard/round.js)
+    this.yard = new Yard(this);
     // spark targets
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
     this.target('millLamp', L.get('mill')?.flame, N_('Light the Mill Lamp'), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10 });
     // the Orchard Lamp works from the gallery or from the foot of the tower
     this.target('orchardLamp', L.get('orchard')?.flame, N_('Light the Orchard Lamp'), () => this.step('c2.lamp'), () => this.event({ type: 'spark', target: 'orchardLamp' }), { r: 10, vy: 24 });
-    this.target('forestLamp', L.get('forest')?.flame, N_('Light the Forest Lamp'), () => this.step('c3.lamp'), () => this.event({ type: 'spark', target: 'forestLamp' }), { r: 7.5, vy: 10 });
+    this.target('forestLamp', L.get('forest')?.flame, N_('Light the Forest Lamp'), () => this.step('c3.lamp'), () => this.event({ type: 'spark', target: 'forestLamp' }), { r: 9, vy: 14 });   // the grand tower: its flame is 15 m up
     this.target('viaductLamp', L.get('viaduct')?.flame, N_('Light the Viaduct Lamp'), () => this.step('c4.lamp'), () => this.event({ type: 'spark', target: 'viaductLamp' }), { r: 7.5, vy: 10 });
     S.nodes.scarecrows.forEach((s, i) => {
       const bell = at(s.bell, V(s.x, s.y + 1.7, s.z));
@@ -615,7 +622,8 @@ export class Director {
 
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
   canSave() {
-    return !!this.quest && !this.scenes.active && !this.minigame && !this.tricks?.round && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
+    if (this.tourLock) return false;   // the scene tour borrows the valley: nothing it shows may reach a save file (game/tour.js)
+    return !!this.quest && !this.scenes.active && !this.minigame && !this.tricks?.round && !this.yard?.round && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
   }
 
   save() {
@@ -1257,12 +1265,9 @@ export class Director {
   // ------------------------------------------------------------------ minigames
   startFishing() {
     if (this.minigame) return;
-    const dusk = this.game.time.hour > 17.6 && this.game.time.hour < 20.5;
-    this.minigame = { kind: 'fish', m: new Fishing({ dusk, window: this.game.easy ? 2.6 : 1.6 }) };
+    // fishing happens in the world (camera, clear water, cast, line): the session owns it all and gives it back
+    this.minigame = { kind: 'fish', m: new FishingSession(this) };
     this.game.player.locked = true;
-    this.game.player.turnTo(Math.PI / 2, 1, 50);
-    this.game.player.gesture('Cast', { lock: true, then: 'Reel' });
-    this.ui.showFishing(true);
   }
 
   startCooking() {
@@ -1277,21 +1282,10 @@ export class Director {
     const mg = this.minigame;
     if (!mg) return;
     const inp = this.game.input;
-    // camera drags are not strikes: only the action buttons (and a tap) count
-    const press = inp.pressed('act') || inp.pressed('jump') || inp.pressed('tap');
     if (inp.pressed('back') || inp.pressed('pause')) { this.endMinigame(); return; }
     if (mg.kind === 'fish') {
-      const f = mg.m;
-      const before = f.phase;
-      f.update(dt, press);
-      if (before === 'wait' && f.phase === 'bite') { this.audio.reel(); this.game.follow.shake = 0.25; this.fx.splash(V(6.5, 0, 30)); }
-      this.ui.fishing(f.view());
-      if (f.phase === 'done') {
-        const token = this.minigame = { kind: 'ending' };
-        setTimeout(() => { if (this.minigame === token) this.endMinigame(); }, 900);
-        this.game.player.gesture('Cheer', { lock: true });
-        this.event({ type: 'catch', species: f.species });
-      }
+      mg.m.update(dt);                 // every catch arrives as this.event({ type: 'catch', species })
+      if (mg.m.done) this.endMinigame();
     } else if (mg.kind === 'cook') {
       const c = mg.m;
       if (Math.random() < dt * 6) this.audio.bubble();
@@ -1306,7 +1300,9 @@ export class Director {
   }
 
   endMinigame() {
+    const m = this.minigame?.m;
     this.minigame = null;
+    m?.dispose?.();
     this.ui.showFishing(false);
     this.ui.showCooking(false);
     this.actCooldown = 0.5;
@@ -1319,7 +1315,7 @@ export class Director {
     const g = this.game, p = g.player, inp = g.input;
     if (!this.quest) return;
     // the player is locked exactly while something owns the screen (dialogue, cutscene, minigame, transition)
-    p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks;
+    p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks || !!this.sky?.locks || !!this.yard?.locks;
     this.q.state.playtime += dt;
     // a gentle hint the first time Mika gets near the thieving crab
     const crab = this.wildlife.story.crab;
@@ -1334,6 +1330,8 @@ export class Director {
     this.town?.update(dt);
     this.indoor?.update();
     this.tricks?.update(dt);
+    this.sky?.update(dt);
+    this.yard?.update(dt);
     this.updateBarks(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);
@@ -1369,7 +1367,7 @@ export class Director {
     const kite = g.kite, hasKite = this.q.count('kite') > 0;
     if (kite && hasKite && inp.pressed('kite') && !this.busy && !this.minigame && !this.ui.overlay && !this.scenes.active && !this.game.interiors?.active) kite.toggle();
     this.ui.kiteButton(!!kite && hasKite && !this.game.interiors?.active && (kite.active || kite.canLaunch()));
-    const canAct = !this.busy && !this.minigame && !this.tricks?.round && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active && !p.aiming;
+    const canAct = !this.busy && !this.minigame && !this.tricks?.round && !this.yard?.round && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active && !p.aiming;
     const hard = !!this.game.hard;
     let best = null, bd = 1e9, aimHint = null, ad = 1e9;
     if (canAct) for (const it of this.interactables.values()) {
@@ -1406,7 +1404,7 @@ export class Director {
     }
     // marker
     // inside a home the arrow only leads to a treasure in this room (the world outside is far below)
-    this.ui.marker(g.camera, this.busy || this.tricks?.round ? null : g.interiors?.active ? this.huntInside() : this.markerTarget(), p.pos);
+    this.ui.marker(g.camera, this.busy || this.tricks?.round || this.yard?.round ? null : g.interiors?.active ? this.huntInside() : this.markerTarget(), p.pos);
     this.updateHunt();
     if (this.kiteStand) this.kiteStand.obj.visible = this.kiteStand.when();
     this.updateValley(dt);
