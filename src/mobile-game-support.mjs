@@ -209,7 +209,7 @@ export function installMobileGameSupport({ menus = [], controls = [], existingBu
     // HUD clocks and counters change text every frame; they do not need layout scans.
     if (!records.some(record => [...record.addedNodes, ...record.removedNodes].some(node => node.nodeType === 1))) return;
     if (queued) return; queued = true;
-    requestAnimationFrame(() => { queued = false; mount(); });
+    requestAnimationFrame(() => { queued = false; controlNodes = null; mount(); });
   });
   observer.observe(document.body, { childList: true, subtree: true });
   new MutationObserver(refresh).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
@@ -218,7 +218,18 @@ export function installMobileGameSupport({ menus = [], controls = [], existingBu
   // Games move their controls by toggling classes (mission started, panel opened, landscape layout).
   // Refresh in the same microtask batch as the class change, so a read right after the game moves
   // its controls never sees the previous (now stale) adjustment.
-  layoutObserver = new MutationObserver(() => keepControlsSafe());
-  layoutObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'hidden'], subtree: true });
+  // Only a change that can move a control counts: a class or hidden attribute that really changed, on a control or on
+  // one of its ancestors. The HUD re-applies classes every frame (classList.toggle queues a record even when nothing
+  // changes, and prompts, bubbles and markers toggle theirs all the time); answering each of those re-measured the
+  // controls with getComputedStyle between style writes: four forced layouts in every frame of play on a phone.
+  let controlNodes = null;
+  const movesControls = record => {
+    const now = record.target.getAttribute(record.attributeName);
+    if (now === record.oldValue) return false;
+    controlNodes ??= [...document.querySelectorAll(controls.join(',') || '[data-no-mobile-controls]')];
+    return controlNodes.some(node => record.target === node || record.target.contains(node));
+  };
+  layoutObserver = new MutationObserver(records => { if (records.some(movesControls)) keepControlsSafe(); });
+  layoutObserver.observe(document.body, { attributes: true, attributeFilter: ['class', 'hidden'], attributeOldValue: true, subtree: true });
   mount();
 }
