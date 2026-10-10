@@ -1044,6 +1044,19 @@ export class Director {
     return best;
   }
 
+  /** A friend met without a hello (the beetles of the sap trap): the journal entry, the toast and the first scene, once. */
+  meetFriend(id) {
+    const def = FRIEND_BY_KIND[id], st = this.q?.state;
+    if (!def || !st || st.friends[id]) return false;
+    st.friends[id] = true;
+    const n = Object.keys(st.friends).length;
+    this.ui.toast(tx('New friend: {name} ({n}/{total})', { name: tx(def.name), n, total: FRIENDS.length }), def.icon);
+    this.say(`friend_${id}`);
+    if (n === FRIENDS.length) { this.say('friends_all'); this.ui.toast(tx('Friend of the Valley!'), 'fallen-star'); }
+    this.save();
+    return true;
+  }
+
   befriend(f) {
     if (!f) return;
     const { a, def } = f, g = this.game, p = g.player, st = this.q.state;

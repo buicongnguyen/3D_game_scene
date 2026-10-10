@@ -11,7 +11,7 @@ import { freshState, migrate } from '../src/game/quest.js';
 const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
 
 test('every trick is well formed', () => {
-  assert.deepEqual(TRICKS.map(t => t.id).sort(), ['firefly', 'frogs', 'river', 'stars']);
+  assert.deepEqual(TRICKS.map(t => t.id).sort(), ['beetles', 'dew', 'firefly', 'frogs', 'kite', 'river', 'roast', 'stars']);
   for (const t of TRICKS) {
     for (const k of ['name', 'where', 'when', 'howReal', 'why', 'safety', 'unit', 'icon', 'intro']) assert.equal(typeof t[k], 'string', `${t.id}.${k}`);
     assert.ok(t.icon.startsWith('trick-'), t.id);

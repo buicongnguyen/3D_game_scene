@@ -61,13 +61,20 @@ VIEW = {
     'frog': (-38, 24), 'firefly': (-35, 42),
     # trick-card scenes (build_tricks.py --icons -> .tools/review/trick-scenes; render with --models there)
     'trick-firefly': (-25, 18), 'trick-river': (-30, 30), 'trick-stars': (0, 4), 'trick-frogs': (-30, 30),
+    # phase 2 (build_tricks2.py): beetles for the journal, the roasted potato, and the four trick-card scenes
+    'beetle-rhino': (-58, 26), 'beetle-stag': (-30, 52), 'sweet-potato': (-6, 34),
+    'trick-kite': (0, 4), 'trick-dew': (0, 4), 'trick-roast': (-8, 26), 'trick-beetles': (-10, 16),
 }
 # Rigged items: the glTF importer leaves the first clip (alphabetical) on the armature; pose these explicitly.
 POSE = {'butterfly': ('Rest', 0.0), 'dragonfly': ('Fly', 0.0), 'ladybug': ('Idle', 0.0), 'spider': ('Idle', 0.0),
-        'cricket': ('Idle', 0.0), 'frog-tree': ('Idle', 0.0), 'firefly': ('Rest', 0.0)}
+        'cricket': ('Idle', 0.0), 'frog-tree': ('Idle', 0.0), 'firefly': ('Rest', 0.0),
+        'beetle-rhino': ('Idle', 0.0), 'beetle-stag': ('Idle', 0.45)}
+# Variant nodes left out of an item's icon (the sweet potato icon is the roasted one).
+HIDE = {'sweet-potato': ('raw',)}
 # Icons named differently from their model (icon name -> model file).
 ALIAS = {'frog': 'frog-tree'}
-GLOW = {'fallen-star': 1.0, 'trick-firefly': .8, 'trick-river': .7, 'trick-stars': .6, 'firefly': .5}
+GLOW = {'fallen-star': 1.0, 'trick-firefly': .8, 'trick-river': .7, 'trick-stars': .6, 'firefly': .5,
+        'trick-roast': .6, 'trick-dew': .35}
 TMP = os.path.join(ROOT, '.tools', 'review', 'props', 'icons-raw')
 os.makedirs(TMP, exist_ok=True)
 os.makedirs(out_dir, exist_ok=True)
@@ -156,6 +163,8 @@ def render(name):
     s = reset()
     model = ALIAS.get(name, name)
     bpy.ops.import_scene.gltf(filepath=os.path.join(models, model + '.glb'))
+    for o in [o for o in bpy.data.objects if o.name in HIDE.get(name, ())]:
+        bpy.data.objects.remove(o, do_unlink=True)
     bpy.context.view_layer.update()
     # the glTF importer adds a bone-display shape (an Icosphere) for rigged models: not part of the item
     shapes = {pb.custom_shape for a in bpy.data.objects if a.type == 'ARMATURE' for pb in a.pose.bones if pb.custom_shape}

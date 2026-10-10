@@ -51,7 +51,8 @@ export const CONTRACTS = {
   // Critters (build_critters.py): real-size bugs at scatter-scale budgets (<= 300 tris, <= 3 materials, colour in COLOR_0).
   cricket: { family: 'critters', tris: 300, clips: ['Idle', 'Chirp', 'Hop'], icon: true },
   spider: { family: 'critters', tris: 300, clips: ['Idle', 'Walk'], icon: true },
-  'spider-web': { family: 'critters', tris: 400, mats: ['Web silk', 'Web dew'] },
+  // The dew drops are the child node 'dew' (material 'Web dew') so the Dew Webs trick can sparkle or hide them.
+  'spider-web': { family: 'critters', tris: 400, nodes: ['dew'], mats: ['Web silk', 'Web dew'] },
   ladybug: { family: 'critters', tris: 300, clips: ['Idle', 'Fly'], icon: true },
   dragonfly: { family: 'critters', tris: 300, clips: ['Fly'], mats: ['Dragonfly wing'], icon: true },
   butterfly: { family: 'critters', tris: 300, clips: ['Fly', 'Rest'], mats: ['Butterfly wing'], icon: true },
@@ -147,6 +148,16 @@ export const CONTRACTS = {
   // Rural tricks held props (build_tricks.py): parented to grip_R, rotations in art/CONTRACTS.md "Rural tricks".
   'glass-jar': { family: 'tricks', tris: 300, nodes: ['Inside'], mats: ['Jar glass', 'Jar cloth'] },
   'bug-net': { family: 'tricks', tris: 300, nodes: ['Hoop'], mats: ['Net mesh'] },
+  // Rural tricks phase 2 (build_tricks2.py): kite, sweet potato roast, beetle sap trap (the dew web is 'spider-web').
+  'beetle-rhino': { family: 'tricks', tris: 350, icon: true, clips: ['Idle', 'Walk'],
+    nodes: ['body', 'head', 'antenna_L', 'antenna_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R'] },
+  'beetle-stag': { family: 'tricks', tris: 350, icon: true, clips: ['Idle', 'Walk'],
+    nodes: ['body', 'head', 'jaw_L', 'jaw_R', 'antenna_L', 'antenna_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R'] },
+  moth: { family: 'tricks', tris: 150, clips: ['Idle', 'Fly'], nodes: ['body', 'wing_L', 'wing_R', 'hind_L', 'hind_R'] },
+  'kite-paper': { family: 'tricks', tris: 200, mats: ['Kite paper', 'Kite bamboo'] },
+  // Two variants in one file: show 'raw' or 'roasted', never both. The icon is the roasted one.
+  'sweet-potato': { family: 'tricks', tris: 200, icon: true, nodes: ['raw', 'roasted'], mats: ['Potato skin', 'Potato flesh'] },
+  'straw-pile': { family: 'tricks', tris: 300, nodes: ['embers'], mats: ['Straw', 'Straw embers'] },
   hearth: { family: 'props', tris: 3000, nodes: ['Fire'] },
   crate: { family: 'props', tris: 1200 },
   barrel: { family: 'props', tris: 1200 },
@@ -227,9 +238,12 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // 37.92 -> 37.95 MB: creature anatomy audit (+16 KB raw: six legs each for the dragonfly and butterfly, the cricket's two
 // forewings with their own bones plus cerci, the spider's six small eyes, the frogs' toes and stripes). The library sat
 // 1 KB under the old cap, so this is the smallest round step that also leaves a little room for the people audit.
-export const TOTAL_RAW_BYTES = 37_950_000;
+// 37.95 -> 38.135 MB: rural tricks phase 2 (beetle-rhino 59 KB, beetle-stag 64 KB, moth 28 KB, kite-paper 9 KB,
+// sweet-potato 8 KB, straw-pile 13 KB: 181.7 KB raw together, two thirds of it the beetles' clips; spider-web +0.1 KB).
+export const TOTAL_RAW_BYTES = 38_135_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
 // 14.3 -> 14.4 MB: rural tricks (frogs, firefly, jar, net: ~0.09 MB packed together).
-export const TOTAL_PACKED_BYTES = 14_400_000;
+// 14.4 -> 14.52 MB: rural tricks phase 2 (two beetles, moth, kite, sweet potato, straw pile: 0.117 MB packed together).
+export const TOTAL_PACKED_BYTES = 14_520_000;

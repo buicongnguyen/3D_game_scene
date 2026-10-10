@@ -576,6 +576,17 @@ export const DIALOGUE = {
     ['narrator', 'The frog blinks slowly, swells its throat like a little balloon, and sings one deep note, just for Mika.'],
   ],
   friend_frog_solo: [['narrator', 'Mika holds out a wet palm. The frog sits on it, cool and light, croaks once, and hops back to the bund.']],
+  // [tricks2-B: beetle friends] met at the sap trap (src/game/tricks/beetles.js), not by a hello in the field
+  friend_beetleRhino: [
+    ['tamo', "It has a FORK on its face. Is it going to eat with it? Is it going to eat ME with it?", 'Happy'],
+    ['narrator', "The rhinoceros beetle walks up Mika's sleeve as slowly as a tiny tractor, then stops and waits to be put back on its tree."],
+  ],
+  friend_beetleRhino_solo: [['narrator', "The rhinoceros beetle sits in Mika's palm, heavy as a pebble, horn up. She sets it back on the bark and it goes straight on with breakfast."]],
+  friend_beetleStag: [
+    ['tamo', 'Those antlers are its JAWS? I am keeping my points well away from that one.'],
+    ['narrator', 'The stag beetle opens its jaws wide, decides Mika is not a rival, and folds them again like a pair of scissors.'],
+  ],
+  friend_beetleStag_solo: [['narrator', 'The stag beetle lifts its jaws at Mika once, to be polite, and walks back to the sap without hurrying.']],
   friend_spider: [
     ['tamo', 'Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.'],
     ['narrator', 'The spider plucks one thread, and the whole web shivers like a little harp.'],
@@ -625,6 +636,30 @@ export const DIALOGUE = {
     ['rin', "Hear that racket by the bottom paddies at dusk? Frogs. Bet you can't get close to one.", 'Talk'],
     ['mika', "Bet I can. How hard can sneaking up on a frog be?"],
     ['rin', "Walk while they sing, freeze when they stop. They go quiet the moment they hear you."],
+  ],
+  trick_kite_intro: [
+    ['rin', "Feel that wind? Kite weather. Two bamboo sticks, some paper, a long tail. I'll show you once.", 'Talk'],
+    ['mika', "You make your own? In the city they come in a packet with instructions."],
+    ['rin', "Watch the grass and the clouds: they tell you where the wind's going before the kite does."],
+    ['rin', "Gusts will shove it about. Steer back into the wind and it climbs. The cow meadow, south of Kawabe."],
+  ],
+  trick_dew_intro: [
+    ['rin', "Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.", 'Talk'],
+    ['mika', "Hundreds of spiders. At sunrise. You keep making this place sound worse."],
+    ['rin', "You can't even see the webs by day. At dawn the dew lights them up like strings of glass beads."],
+    ['rin', "Keep the sun behind you and look low. Take pictures. Don't touch: that's somebody's house."],
+  ],
+  trick_roast_intro: [
+    ['rin', "Harvest's in, so the straw's dry. You know what that means? Roast sweet potatoes out in the meadow.", 'Talk'],
+    ['mika', "A potato. Cooked in a field. In the dirt."],
+    ['rin', "In the ash. Grandpa lights the straw, we bury them and watch the colour. Too early, raw. Too late, charcoal."],
+    ['rin', "Dig them out just right and share them round. Nothing tastes better with cold fingers."],
+  ],
+  trick_beetles_intro: [
+    ['rin', "Want to see a rhinoceros beetle? Horn like a little fork. They come out on summer nights for tree sap.", 'Talk'],
+    ['mika', "A beetle with a horn. And we want to meet it because…?"],
+    ['rin', "Because it's the best thing in the forest. Rub banana and sugar on a chestnut at dusk, look again at dawn."],
+    ['rin', "The chestnut grove on the shrine trail. Lift one gently, then put it back on its tree."],
   ],
   trick_firefly_note: [
     ['narrator', 'In the jar-light, a folded paper by the path: a drawing of a girl with a jar of fireflies, and a note.'],
@@ -767,6 +802,11 @@ export const FRIENDS = [
   // [tricks-B: frog friend]
   { id: 'frog', name: 'Paddy frog', icon: 'frog', verb: 'Hold out your hand to the frog',
     desc: 'Sings all evening with a throat that puffs up like a balloon. Loudest after rain, and gone with a plop the moment you run.', hint: 'On the paddy bunds and the low river banks, on spring and summer evenings. Walk, and it will wait for you.' },
+  // [tricks2-B: beetle friends] met by lifting one gently at the Beetle sap trap
+  { id: 'beetleRhino', name: 'Rhinoceros beetle', icon: 'beetle-rhino', verb: 'Lift the beetle gently',
+    desc: 'Glossy as a chestnut, with a forked horn for wrestling rivals off the sap. Strong enough to pull a toy cart.', hint: 'Comes to sweet sap on summer nights. Set the Beetle sap trap on an oak or a chestnut and lift one gently at dawn.' },
+  { id: 'beetleStag', name: 'Stag beetle', icon: 'beetle-stag', verb: 'Lift the beetle gently',
+    desc: 'Flat and black, with jaws like antlers. Looks fierce, and mostly wants to be left alone with its breakfast.', hint: 'Shares the sap with the rhinoceros beetles. Bait a chestnut well at dusk and look again at dawn.' },
 ];
 
 // ------------------------------------------------------------------------------------ keepsakes

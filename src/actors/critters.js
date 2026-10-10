@@ -19,6 +19,7 @@ import { rng } from '../engine/spline.js';
 import { BUILDINGS, PADDIES, PLACES, ORCHARD_FENCE, river, riverHalfWidth } from '../world/layout.js';
 import { FOOTPRINT } from '../world/structures.js';
 import { placeProblems, doorPoint } from '../world/roads.js';
+import { VEG_BEDS } from '../world/fields.js';
 
 export const DRAW = 45;          // critters are drawn within this distance of Mika (m): a 15 cm bug is a few pixels there
 export const ANIM = 32;          // ...and move and animate within this one
@@ -167,7 +168,9 @@ export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
       const side = Math.floor(R() * 4), u = (R() - 0.5) * 0.8;
       const ex = side < 2 ? u * p.w : (side === 2 ? -0.5 : 0.5) * p.w, ez = side < 2 ? (side === 0 ? -0.5 : 0.5) * p.d : u * p.d;
       const ix = side < 2 ? 0 : -Math.sign(ex), iz = side < 2 ? -Math.sign(ez) : 0;
-      slot('frog', p.x + ex, p.t + 0.29, p.z + ez, { tree: R() < 0.35, pitch: 0.85 + R() * 0.3, wx: p.x + ex + ix * 0.9, wy: p.t + 0.06, wz: p.z + ez + iz * 0.9 });
+      const frog = { tree: R() < 0.35, pitch: 0.85 + R() * 0.3, wx: p.x + ex + ix * 0.9, wy: p.t + 0.06, wz: p.z + ez + iz * 0.9 };
+      // the dry vegetable beds (world/fields.js) have no water to dive into: no frogs there (the dice are still rolled)
+      if (!VEG_BEDS.has(p.id)) slot('frog', p.x + ex, p.t + 0.29, p.z + ez, frog);
     }
   }
   for (let z = -100; z <= 66; z += 15) {

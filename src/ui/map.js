@@ -11,6 +11,7 @@
 
 import { PLACES, PATHS, BUILDINGS, LAMPS, FALLEN_STARS, rail, RAIL_PORTALS, VIADUCT, VIADUCT_SPANS, DOCKS, STONES, PADDIES, FERRY } from '../world/layout.js';
 import { PALETTES } from '../world/seasons.js';
+import { VEG_BEDS } from '../world/fields.js';
 import { DECIDUOUS } from '../world/scatter.js';
 import { fbm, clamp, smoothstep as sstep } from '../engine/spline.js';
 import { STAR_POEM, KEEPSAKES, TREASURES, huntProgress } from '../game/story.js';
@@ -721,8 +722,15 @@ export class JournalMap {
     const paddy = { spring: ['#9fd39a', '#5f9a4e'], summer: ['#7cc443', '#4f8f2e'], autumn: ['#e8c253', '#a8822a'], winter: ['#e6edf4', '#b3c2d2'] }[season] || ['#7cc443', '#4f8f2e'];
     for (const p of PADDIES) {
       const [a, b] = S(p.x - p.w / 2, p.z - p.d / 2);
-      ctx.fillStyle = paddy[0]; ctx.fillRect(a, b, p.w * s, p.d * s);
-      ctx.lineWidth = Math.max(0.8, 0.5 * s); ctx.strokeStyle = paddy[1]; ctx.setLineDash([]); ctx.strokeRect(a, b, p.w * s, p.d * s);
+      const veg = VEG_BEDS.has(p.id);
+      ctx.fillStyle = veg ? (season === 'winter' ? '#d9d3cc' : '#9a6a40') : paddy[0]; ctx.fillRect(a, b, p.w * s, p.d * s);
+      if (veg) {
+        // a vegetable bed: brown earth with green rows running north-south
+        ctx.fillStyle = season === 'winter' ? '#9fb89a' : season === 'spring' ? '#a9d67a' : '#5fae3c';
+        const rw = Math.max(0.8, 0.5 * s);
+        for (let k = 0; k < 5; k++) ctx.fillRect(a + (1.3 + k * (p.w - 2.6) / 4) * s - rw / 2, b + 0.9 * s, rw, (p.d - 1.8) * s);
+      }
+      ctx.lineWidth = Math.max(0.8, 0.5 * s); ctx.strokeStyle = veg ? '#6f4a2a' : paddy[1]; ctx.setLineDash([]); ctx.strokeRect(a, b, p.w * s, p.d * s);
     }
     // footpaths: a warm sand band with a darker edge
     for (const p of PATHS) line(p.pts, Math.max(2.6, (p.w + 0.9) * s), 'rgba(150, 104, 60, 0.55)');

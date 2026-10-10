@@ -43,6 +43,31 @@ export const STORY = {
       ['mika', "So, noise. Wet noise."],
       ['sora', "Creep up while they sing, stand still when they hush. Wet your hands first, and put them back after."],
     ],
+    trick_kite_intro: [
+      ['sora', "Kite wind today, Mi-chan. Your great-grandpa made his from two bamboo sticks and old newspaper.", 'Talk'],
+      ['mika', "Ours came from a shop. It had a cartoon shark on it."],
+      ['sora', "This one you tie yourself: the cross, the paper, a good long tail. The tail stops it spinning like a top."],
+      ['sora', "Then read the wind in the grass and the clouds, and steer back into it when a gust pushes."],
+      ['sora', "The cow meadow south of the village. The cows won't mind. They've seen worse flying."],
+    ],
+    trick_dew_intro: [
+      ['sora', "Up before the sun tomorrow, Mi-chan. The forest edge on the west trail wears its jewellery at dawn.", 'Talk'],
+      ['mika', "Jewellery. In a forest. At five in the morning."],
+      ['sora', "Spider webs, strung with dew. By day you'd walk straight past them. At sunrise every thread shines."],
+      ['sora', "Keep the sun at your back and look low between the stems. Take your pictures, and leave each one be."],
+    ],
+    trick_roast_intro: [
+      ['sora', "The rice is in and the straw is dry, Mi-chan. That means sweet potatoes out in the meadow.", 'Talk'],
+      ['mika', "We have a microwave at home. It takes four minutes."],
+      ['sora', "And tastes like four minutes. I light the straw, not you. You bury them in the ash and watch the colour."],
+      ['sora', "Too soon and they're raw, too late and they're coal. Dig them out just right and share with the children."],
+    ],
+    trick_beetles_intro: [
+      ['sora', "Summer dusk, Mi-chan. Time to lay the table for the beetles, up in the chestnut grove.", 'Talk'],
+      ['mika', "Grandma. We are not inviting beetles to dinner."],
+      ['sora', "Banana and a pinch of sugar, rubbed on the bark. Sleep on it, and at dawn we see who came."],
+      ['sora', "A rhinoceros beetle if we're lucky. Lift him gently, say hello, and put him back on his tree."],
+    ],
     trick_firefly_note: [
       ['narrator', 'In the jar-light, a folded paper by the path: a drawing of a small girl holding a jar of fireflies.'],
       ['sora', "\"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\" I kept it for tonight.", 'Talk'],

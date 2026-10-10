@@ -47,6 +47,9 @@ const CSS = `
  text-align:center;transition:opacity .3s;zoom:var(--ui-scale,1);pointer-events:none}
 #trickHint.top{bottom:auto;top:calc(76px + env(safe-area-inset-top,0px))}
 #trickHint b{color:#c2541c;margin-right:6px}
+body.trick-round #objective{visibility:hidden}
+@media (max-width:560px){body.trick-round #clock{visibility:hidden}}
+@media (max-width:520px){#trickHud .n{display:none}#trickHud{white-space:nowrap}}
 #trickCard{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,14,30,.35)}
 #trickCard .box{width:min(440px,92vw);max-height:88vh;overflow:auto;padding:20px 22px 16px;border-radius:24px;background:#fff8ea;box-shadow:0 14px 40px rgba(0,0,0,.35);
  font:700 15px Nunito,system-ui,sans-serif;color:#4a3020;text-align:center;zoom:var(--ui-scale,1)}
@@ -156,6 +159,7 @@ export class Tricks {
     const st = this.st;
     st.tricks[id] = { learned: true, best: 0, stars: 0, plays: 0, ...(st.tricks[id] || {}) };
     let again = true, result = null;
+    const met = new Set();
     while (again) {
       const first = !st.tricks[id].plays;
       const ctx = this.makeCtx(t, first);
@@ -174,6 +178,8 @@ export class Tricks {
       st.tricks[id] = { ...st.tricks[id], ...rec };
       d.ui.toast(`${starText(stars)} ${tx(t.name)}${newBest ? ` · ${tx('New best!')}` : ''}`, t.icon);
       if (stars) d.audio.star(); else d.audio.good();
+      // creatures met in the round (the sap trap's beetles) join the friends journal once the card is closed
+      for (const f of result.detail?.friends || []) met.add(f);
       again = await this.results(t, score, stars, newBest, first, result);
       d.save();
     }
@@ -181,6 +187,7 @@ export class Tricks {
     this.locks = false;
     if (!d.busy) g.player.locked = false;
     d.actCooldown = 0.5;
+    for (const f of met) d.meetFriend?.(f);
     return result;
   }
 
@@ -194,8 +201,9 @@ export class Tricks {
       debug: {},           // what a trick shows the QA autopilot (window.__STARLINE_QA__.director.tricks.round.ctx.debug)
       /** A speech bubble from the teacher (guided hints, cheers). life in seconds. */
       hint(text, life = 4.5) { self.showHint(text, self.teacherName(t), life); },
-      /** Put the hint bubble at the top of the screen (true) when the bottom is where the action is (stargazing). */
-      hintTop(on) { self.el.hint.classList.toggle('top', !!on); },
+      /** Put the hint bubble at the top of the screen (true) when the bottom is where the action is (stargazing).
+       *  top: optional distance from the top edge in px (below a trick's own gauge). */
+      hintTop(on, top = 0) { self.el.hint.classList.toggle('top', !!on); self.el.hint.style.top = on && top ? `calc(${top}px + env(safe-area-inset-top,0px))` : ''; },
       /** Top HUD: time left (seconds) and the score (number, with the trick's unit). */
       hud(score, timeLeft) { self.setHud(score, timeLeft, t); },
       /** Hold Mika still (true) or let her walk (false) during the round. */
@@ -229,6 +237,8 @@ export class Tricks {
     this.setNight(false);
     this.hideHint();
     this.el.hint.classList.remove('top');
+    this.el.hint.style.top = '';
+    document.body.classList.remove('trick-round');
     this.el.hud.classList.add('hidden');
     g.follow.clearCutscene(true);
     this.locks = false;
@@ -316,6 +326,7 @@ export class Tricks {
     h.querySelector('.n').textContent = tx(t.name);
     this.setHud(0, ctx.roundTime, t);
     h.classList.remove('hidden');
+    document.body.classList.add('trick-round');
   }
 
   setHud(score, timeLeft, t) {

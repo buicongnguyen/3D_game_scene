@@ -48,6 +48,47 @@ export const TRICKS = [
     safety: 'Wet your hands before you hold a frog, and put it back where you found it.',
     stars: [30, 60, 90], length: 70, firstLength: 30, unit: 'points',
   },
+  // ---- phase 2 (docs/RURAL-TRICKS.md §6)
+  {
+    id: 'kite', name: 'Make and fly a kite', icon: 'trick-kite',
+    place: { x: -28, z: 76, face: Math.PI }, where: 'the cow meadow, south of Kawabe',
+    seasons: ['autumn', 'winter'], hours: [9, 17], night: false, when: 'Autumn and winter, on a windy day',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_kite_intro',
+    howReal: 'Tie two thin bamboo sticks into a cross, glue on light paper and add a long tail. Stand with your back to the wind in a wide open field.',
+    why: 'Wind is steadier higher up, away from trees and roofs. The tail keeps a kite from spinning.',
+    safety: 'Fly far from power lines and roads, and never in a storm.',
+    stars: [40, 70, 100], length: 60, firstLength: 60, unit: 'points',
+  },
+  {
+    id: 'dew', name: 'Dew webs at dawn', icon: 'trick-dew',
+    place: { x: -52, z: -97, face: 0 }, where: 'the forest edge on the west trail, north of the mill',
+    seasons: ['spring', 'summer', 'autumn'], hours: [5, 7.5], night: false, when: 'Spring to autumn, at dawn',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_dew_intro',
+    howReal: 'Get up at sunrise after a cool, still night. Walk slowly along a hedge with the sun behind you and look low between the stems.',
+    why: 'Webs are almost invisible until dew or mist hangs tiny drops on every thread. Each drop shines like a little lens.',
+    safety: 'Look, don\'t touch: a web is a spider\'s home and its dinner table.',
+    stars: [30, 60, 75], length: 90, firstLength: 70, unit: 'points',
+  },
+  {
+    id: 'roast', name: 'Sweet potato roast', icon: 'trick-roast',
+    place: { x: -19, z: 51, face: -Math.PI / 2 }, where: 'the open meadow south of Kawabe, past the dock lane',
+    seasons: ['autumn'], hours: [15, 19], night: false, when: 'Autumn, late afternoon',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_roast_intro',
+    howReal: 'A grown-up burns a pile of dry straw down to glowing ash. Bury the sweet potatoes in the ash and wait about forty minutes.',
+    why: 'Ash keeps an even, gentle heat, like an oven. Slow heat turns the potato\'s starch into sugar.',
+    safety: 'Fires are for grown-ups: a grown-up lights the straw.',
+    stars: [30, 60, 90], length: 70, firstLength: 40, unit: 'points',
+  },
+  {
+    id: 'beetles', name: 'Beetle sap trap', icon: 'trick-beetles',
+    place: { x: 92, z: -103, face: Math.PI }, where: 'the chestnut grove on the shrine trail, past the orchard gate',
+    seasons: ['summer'], hours: [17, 21], night: false, when: 'Summer: set at dusk, check at dawn',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_beetles_intro',
+    howReal: 'At dusk, rub mashed banana and a little sugar on the bark of an oak or chestnut. Come back at dawn and look, gently.',
+    why: 'Beetles drink sweet tree sap at night. Oak and chestnut are their favourite trees.',
+    safety: 'Put every beetle back on the tree where you found it.',
+    stars: [30, 60, 90], length: 70, firstLength: 40, unit: 'points',
+  },
 ];
 
 export const TRICK = Object.fromEntries(TRICKS.map(t => [t.id, t]));

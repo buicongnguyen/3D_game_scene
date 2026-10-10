@@ -16,6 +16,8 @@ selling her catches, and spends them in three shops.
 | `src/game/schedule.js` | Pure. `Planner` turns a day plan into commands; `Meetings` handles rendezvous |
 | `src/game/folk.js` | Pure. Story stages, requests, shop buy/sell, and the journal summary |
 | `src/game/townlife.js` | Runtime. Runs the planners' commands on NPCs and handles props, kids' games, conversations, talking and shopping |
+| `src/content/signs.js` | Pure. `SIGNS`: the name board of every building (text, pictogram, where it stands); painted and built by `src/world/signs.js` |
+| `src/world/fields.js` | Pure. Which plots of the field grid are vegetable beds, and the lantern posts and fairy lights round them (`src/world/paddies.js` draws them) |
 
 The pure modules are covered by `tests/roads.test.mjs`, `tests/schedule.test.mjs` and `tests/folk.test.mjs`. These
 tests also validate the real content:

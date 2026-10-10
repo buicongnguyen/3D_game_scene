@@ -111,4 +111,4 @@ Each phase delivers:
 ## 7. Safety and kindness notes (shown on cards where relevant)
 - Always let fireflies, frogs, tadpoles, beetles and crabs go where you found them.
 - Go to the river at night only with a grown-up; stay in the shallows.
-- Fires are for grown-ups: Grandma lights the straw.
+- Fires are for grown-ups: a grown-up lights the straw.

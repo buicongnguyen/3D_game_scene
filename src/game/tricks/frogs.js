@@ -7,6 +7,7 @@
 // below only draws them. Cheap: up to 9 frog clones made once per round (no shadows), two rings, no lights.
 import * as THREE from 'three';
 import { PADDIES } from '../../world/layout.js';
+import { VEG_BEDS } from '../../world/fields.js';
 import { tx } from '../../i18n/i18n.js';
 import { Animator } from '../../actors/animator.js';
 
@@ -137,7 +138,7 @@ export function frogsScore({ startles = 0, reached = false, simon = 0 }) {
 export function bundSpots(x, z, r = 24, step = 1.6) {
   const out = [];
   for (const p of PADDIES) {
-    if (Math.hypot(p.x - x, p.z - z) > r + 8) continue;
+    if (VEG_BEDS.has(p.id) || Math.hypot(p.x - x, p.z - z) > r + 8) continue;   // dry vegetable beds hold no water
     const y = p.t + 0.29, wy = p.t + 0.06;
     for (let u = -p.w / 2 + 0.6; u <= p.w / 2 - 0.6; u += step) for (const sd of [-1, 1]) {
       out.push({ x: p.x + u, y, z: p.z + sd * p.d / 2, wx: p.x + u, wy, wz: p.z + sd * (p.d / 2 - 0.9) });
@@ -151,7 +152,7 @@ export function bundSpots(x, z, r = 24, step = 1.6) {
 
 /** Paddy water height at (x, z), or null when not over a paddy. */
 export function paddyWater(x, z) {
-  for (const p of PADDIES) if (Math.abs(x - p.x) < p.w / 2 && Math.abs(z - p.z) < p.d / 2) return p.t + 0.08;
+  for (const p of PADDIES) if (!VEG_BEDS.has(p.id) && Math.abs(x - p.x) < p.w / 2 && Math.abs(z - p.z) < p.d / 2) return p.t + 0.08;
   return null;
 }
 

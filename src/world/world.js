@@ -36,6 +36,7 @@ function shadeFromHillside(terrain, g) {
 export class World {
   constructor(scene, renderer, quality) {
     this.scene = scene;
+    this.quality = quality;   // the tier the world was built for (crop density, prop shadows)
     const t0 = performance.now();
     this.grid = new HeightGrid(quality.terrainStep);
     this.splat = new Splat(this.grid);

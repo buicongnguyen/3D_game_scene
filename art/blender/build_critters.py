@@ -429,10 +429,9 @@ def build_spider():
     export_critter('spider', arm)
 
 
-def build_web():
-    """Static orb web, 0.6 m across, origin at its hub, lying in the XZ plane (faces -Y in Blender = +Z
-    in three.js). Thin double-sided silk ribbons plus dew drops that catch the light."""
-    reset()
+def web_parts(width=1.0, bead=1.0):
+    """The orb web's two meshes (no reset): silk ribbons and the joined dew drops. width / bead scale the
+    ribbon width and the drop radius (the trick-dew icon scene uses fatter ones so they read at 48 px)."""
     silk = mat('Web silk', '#f3f1ff', rough=.35, emit=.35, emit_color='#fff6e8', double=True)
     dew = mat('Web dew', '#d8f1ff', rough=.04, emit=.25, emit_color='#eaf8ff')
     rng = random.Random(11)
@@ -448,7 +447,7 @@ def build_web():
     def ribbon(a, b, w):
         a, b = Vector(a), Vector(b)
         d = (b - a).normalized()
-        n = d.cross(Yv).normalized() * w / 2
+        n = d.cross(Yv).normalized() * w * width / 2
         vs = [bm.verts.new(a - n), bm.verts.new(b - n), bm.verts.new(b + n), bm.verts.new(a + n)]
         f = bm.faces.new(vs)
         f.normal_update()
@@ -477,13 +476,26 @@ def build_web():
         j, k = rng.randrange(1, len(rings)), rng.randrange(spokes)
         a, b = ring_pts[j][k], ring_pts[j][(k + 1) % spokes]
         p = a.lerp(b, rng.uniform(.25, .75)) + Vector((0, 0, -.003))
-        r = rng.uniform(.0045, .0068)
+        r = rng.uniform(.0060, .0090) * bead
         drops.append(sphere(f'Web dew {i}', (r, r, r * 1.1), p, dew, seg=4, rings=3))
-    d = join(drops, 'Web dew')
+    d = join(drops, 'dew')
+    d.data.transform(Matrix.Translation(d.location))        # the node's origin is the web's hub, not the first drop
+    d.location = (0, 0, 0)
+    return web, d
+
+
+def build_web():
+    """Static orb web, 0.6 m across, origin at its hub, lying in the XZ plane (faces -Y in Blender = +Z
+    in three.js, where it lies in XY). Thin double-sided silk ribbons (the root mesh 'spider_web') plus dew
+    drops that catch the light on their own child node 'dew' (material 'Web dew'), so the Dew Webs trick
+    can make the drops sparkle or hide them without touching the silk."""
+    reset()
+    web, d = web_parts()
     paint(web, 1.0)
     ensure_color([web, d])
-    root = join([web, d], 'spider_web')
-    info = export('spider-web', [root])
+    web.name = web.data.name = 'spider_web'
+    set_parent(d, web)
+    info = export('spider-web', [web])
     RESULTS['spider-web'] = dict(tris=info['tris'], kb=info['bytes'] / 1024, clips=[], mats=info['materials'])
     assert info['tris'] <= BUDGET['spider-web'], info
 

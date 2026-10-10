@@ -27,7 +27,8 @@
  {
   "s": "Grandpa Ōta",
   "ctx": [
-   "character name (ota)"
+   "character name (ota)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -93,7 +94,8 @@
   "s": "Granny Tsuru",
   "ctx": [
    "character name (v18)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -107,7 +109,8 @@
   "s": "Miss Endo",
   "ctx": [
    "character name (v9)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -149,21 +152,24 @@
   "s": "Aiko",
   "ctx": [
    "character name (v4)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
   "s": "Mr. Sato",
   "ctx": [
    "character name (v5)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
   "s": "Mr. Oda",
   "ctx": [
    "character name (v22)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -222,7 +228,8 @@
  {
   "s": "Peach",
   "ctx": [
-   "inventory item"
+   "inventory item",
+   "UI (src/game/tricks/beetles.js)"
   ]
  },
  {
@@ -240,7 +247,8 @@
  {
   "s": "Chestnut",
   "ctx": [
-   "inventory item"
+   "inventory item",
+   "UI (src/game/tricks/beetles.js)"
   ]
  },
  {
@@ -2423,6 +2431,42 @@
   ]
  },
  {
+  "s": "It has a FORK on its face. Is it going to eat with it? Is it going to eat ME with it?",
+  "ctx": [
+   "dialogue friend_beetleRhino, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The rhinoceros beetle walks up Mika's sleeve as slowly as a tiny tractor, then stops and waits to be put back on its tree.",
+  "ctx": [
+   "dialogue friend_beetleRhino, spoken by narrator"
+  ]
+ },
+ {
+  "s": "The rhinoceros beetle sits in Mika's palm, heavy as a pebble, horn up. She sets it back on the bark and it goes straight on with breakfast.",
+  "ctx": [
+   "dialogue friend_beetleRhino_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Those antlers are its JAWS? I am keeping my points well away from that one.",
+  "ctx": [
+   "dialogue friend_beetleStag, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The stag beetle opens its jaws wide, decides Mika is not a rival, and folds them again like a pair of scissors.",
+  "ctx": [
+   "dialogue friend_beetleStag, spoken by narrator"
+  ]
+ },
+ {
+  "s": "The stag beetle lifts its jaws at Mika once, to be polite, and walks back to the sap without hurrying.",
+  "ctx": [
+   "dialogue friend_beetleStag_solo, spoken by narrator"
+  ]
+ },
+ {
   "s": "Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.",
   "ctx": [
    "dialogue friend_spider, spoken by Tamo"
@@ -2595,6 +2639,102 @@
   "s": "Walk while they sing, freeze when they stop. They go quiet the moment they hear you.",
   "ctx": [
    "dialogue trick_frogs_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Feel that wind? Kite weather. Two bamboo sticks, some paper, a long tail. I'll show you once.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "You make your own? In the city they come in a packet with instructions.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Watch the grass and the clouds: they tell you where the wind's going before the kite does.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Gusts will shove it about. Steer back into the wind and it climbs. The cow meadow, south of Kawabe.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Hundreds of spiders. At sunrise. You keep making this place sound worse.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "You can't even see the webs by day. At dawn the dew lights them up like strings of glass beads.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Keep the sun behind you and look low. Take pictures. Don't touch: that's somebody's house.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Harvest's in, so the straw's dry. You know what that means? Roast sweet potatoes out in the meadow.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "A potato. Cooked in a field. In the dirt.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "In the ash. Grandpa lights the straw, we bury them and watch the colour. Too early, raw. Too late, charcoal.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Dig them out just right and share them round. Nothing tastes better with cold fingers.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Want to see a rhinoceros beetle? Horn like a little fork. They come out on summer nights for tree sap.",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "A beetle with a horn. And we want to meet it because…?",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Because it's the best thing in the forest. Rub banana and sugar on a chestnut at dusk, look again at dawn.",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "The chestnut grove on the shrine trail. Lift one gently, then put it back on its tree.",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Rin"
   ]
  },
  {
@@ -3564,6 +3704,50 @@
   ]
  },
  {
+  "s": "Rhinoceros beetle",
+  "ctx": [
+   "animal friend name",
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Lift the beetle gently",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Glossy as a chestnut, with a forked horn for wrestling rivals off the sap. Strong enough to pull a toy cart.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Comes to sweet sap on summer nights. Set the Beetle sap trap on an oak or a chestnut and lift one gently at dawn.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Stag beetle",
+  "ctx": [
+   "animal friend name",
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Flat and black, with jaws like antlers. Looks fierce, and mostly wants to be left alone with its breakfast.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Shares the sap with the rhinoceros beetles. Bait a chestnut well at dusk and look again at dawn.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
   "s": "Spring: the Blossom Wave",
   "ctx": [
    "photo album caption (a chapter's celebration photo)"
@@ -3745,6 +3929,7 @@
   "s": "Sora's cottage",
   "ctx": [
    "the home a keepsake is in",
+   "UI (src/content/signs.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -3757,7 +3942,8 @@
  {
   "s": "Hana's bakery",
   "ctx": [
-   "the home a keepsake is in"
+   "the home a keepsake is in",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -3770,6 +3956,7 @@
   "s": "Ōta's mill",
   "ctx": [
    "the home a keepsake is in",
+   "UI (src/content/signs.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -5387,6 +5574,108 @@
   ]
  },
  {
+  "s": "Kite wind today, Mi-chan. Your great-grandpa made his from two bamboo sticks and old newspaper.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Ours came from a shop. It had a cartoon shark on it.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "This one you tie yourself: the cross, the paper, a good long tail. The tail stops it spinning like a top.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Then read the wind in the grass and the clouds, and steer back into it when a gust pushes.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "The cow meadow south of the village. The cows won't mind. They've seen worse flying.",
+  "ctx": [
+   "dialogue trick_kite_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Up before the sun tomorrow, Mi-chan. The forest edge on the west trail wears its jewellery at dawn.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Jewellery. In a forest. At five in the morning.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Spider webs, strung with dew. By day you'd walk straight past them. At sunrise every thread shines.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Keep the sun at your back and look low between the stems. Take your pictures, and leave each one be.",
+  "ctx": [
+   "dialogue trick_dew_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "The rice is in and the straw is dry, Mi-chan. That means sweet potatoes out in the meadow.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "We have a microwave at home. It takes four minutes.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "And tastes like four minutes. I light the straw, not you. You bury them in the ash and watch the colour.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Too soon and they're raw, too late and they're coal. Dig them out just right and share with the children.",
+  "ctx": [
+   "dialogue trick_roast_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Summer dusk, Mi-chan. Time to lay the table for the beetles, up in the chestnut grove.",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Grandma. We are not inviting beetles to dinner.",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Banana and a pinch of sugar, rubbed on the bark. Sleep on it, and at dawn we see who came.",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "A rhinoceros beetle if we're lucky. Lift him gently, say hello, and put him back on his tree.",
+  "ctx": [
+   "dialogue trick_beetles_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
   "s": "In the jar-light, a folded paper by the path: a drawing of a small girl holding a jar of fireflies.",
   "ctx": [
    "dialogue trick_firefly_note, spoken by narrator"
@@ -5848,7 +6137,8 @@
  {
   "s": "Grandma's cottage",
   "ctx": [
-   "the home a keepsake is in"
+   "the home a keepsake is in",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -8280,7 +8570,8 @@
  {
   "s": "Kawabe postman",
   "ctx": [
-   "what Mr. Hirano does (journal)"
+   "what Mr. Hirano does (journal)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -8514,7 +8805,8 @@
  {
   "s": "Fisher",
   "ctx": [
-   "what Mr. Nakano does (journal)"
+   "what Mr. Nakano does (journal)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -8880,7 +9172,8 @@
  {
   "s": "Schoolteacher",
   "ctx": [
-   "what Miss Endo does (journal)"
+   "what Miss Endo does (journal)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -8994,7 +9287,8 @@
  {
   "s": "Carpenter",
   "ctx": [
-   "what Mr. Ishida does (journal)"
+   "what Mr. Ishida does (journal)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -9660,7 +9954,8 @@
  {
   "s": "Takamori postman",
   "ctx": [
-   "what Mr. Sato does (journal)"
+   "what Mr. Sato does (journal)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -9786,7 +10081,8 @@
  {
   "s": "Shepherd at the pasture",
   "ctx": [
-   "what Mr. Oda does (journal)"
+   "what Mr. Oda does (journal)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -9918,7 +10214,8 @@
  {
   "s": "Bell-ringer",
   "ctx": [
-   "what Mr. Tanabe does (journal)"
+   "what Mr. Tanabe does (journal)",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -10374,7 +10671,8 @@
  {
   "s": "Fujita Grocery",
   "ctx": [
-   "shop name"
+   "shop name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -10489,7 +10787,8 @@
  {
   "s": "Komori Sweets & Paper",
   "ctx": [
-   "shop name"
+   "shop name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -10585,7 +10884,8 @@
  {
   "s": "Takamori Market Stall",
   "ctx": [
-   "shop name"
+   "shop name",
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -12915,6 +13215,150 @@
   ]
  },
  {
+  "s": "Make and fly a kite",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the cow meadow, south of Kawabe",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Autumn and winter, on a windy day",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "Tie two thin bamboo sticks into a cross, glue on light paper and add a long tail. Stand with your back to the wind in a wide open field.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Wind is steadier higher up, away from trees and roofs. The tail keeps a kite from spinning.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Fly far from power lines and roads, and never in a storm.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Dew webs at dawn",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the forest edge on the west trail, north of the mill",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Spring to autumn, at dawn",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "Get up at sunrise after a cool, still night. Walk slowly along a hedge with the sun behind you and look low between the stems.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Webs are almost invisible until dew or mist hangs tiny drops on every thread. Each drop shines like a little lens.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Look, don't touch: a web is a spider's home and its dinner table.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Sweet potato roast",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the open meadow south of Kawabe, past the dock lane",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Autumn, late afternoon",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "A grown-up burns a pile of dry straw down to glowing ash. Bury the sweet potatoes in the ash and wait about forty minutes.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Ash keeps an even, gentle heat, like an oven. Slow heat turns the potato's starch into sugar.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Fires are for grown-ups: a grown-up lights the straw.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Beetle sap trap",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the chestnut grove on the shrine trail, past the orchard gate",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Summer: set at dusk, check at dawn",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "At dusk, rub mashed banana and a little sugar on the bark of an oak or chestnut. Come back at dawn and look, gently.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Beetles drink sweet tree sap at night. Oak and chestnut are their favourite trees.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Put every beetle back on the tree where you found it.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Pressed bellflower",
   "ctx": [
    "house memory: a small found object (journal)"
@@ -13170,6 +13614,108 @@
   "s": "The brass knob off an old train whistle, polished so often its star has nearly worn away.",
   "ctx": [
    "house memory description (journal)"
+  ]
+ },
+ {
+  "s": "Hoshi Station",
+  "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Engine shed",
+  "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Hirano family",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Kubo family",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Nakano family",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Ishida family",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Rin's boathouse",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Bell tower",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Tanabe family",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Hiro's house",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Nao's house",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Takamori Halt",
+  "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Forest Shrine",
+  "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Sheep pasture",
+  "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Peach orchard",
+  "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Rice paddies",
+  "ctx": [
+   "UI (src/content/signs.js)"
   ]
  },
  {
@@ -13745,6 +14291,300 @@
   ]
  },
  {
+  "s": "Oak",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "An oak: rough bark and acorns, full of sweet sap.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A chestnut: prickly husks and sappy bark. Beetles love it.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Beech",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A beech: smooth, dry bark with hardly any sap.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Maple",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A maple: thin, watery sap. Only a little comes.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Cherry",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A cherry: pretty, but beetles pass it by.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A peach tree: the fruit is sweet, the bark is not.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Cedar",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A cedar: sticky resin, not sap. Beetles keep away.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Pine",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A pine: sticky resin, not sap. Beetles keep away.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A rhinoceros beetle! The horn is for wrestling other beetles off the sap, not for hurting.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A stag beetle! Those antlers are its jaws. Hold it by the sides, like this.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Moth",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "{clue} Press {act} to set the trap here.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "No trap set",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Good choice! Now rub the banana and sugar in: press {act} each time the marker crosses the green.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Hmm, let's see what comes. Rub the bait in: press {act} each time the marker crosses the green.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Rub the bait in",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Lift slowly: hold and let go, hold and let go",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Lift slowly: hold {act}, let go, hold again",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A thin smear. Wait for the green!",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "A lovely thick patch. They'll smell that from far away.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "That will do. Now we wait for night.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Not much bait on there… we'll see who comes.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Dawn! Look who came for breakfast. Lift one gently to look: slow hands, or it flies.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Only moths this time. With more bait rubbed in, the beetles will find it.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Only moths. A {tree} has hardly any sap: try an oak or a chestnut next time.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Back on their tree, safe and sound. Well done.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "They'll be back tomorrow night. Slow hands next time.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Too fast! It opened its wings and flew. Slow hands next time.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Choose a tree for the trap. Beetles drink sweet sap, so an oak or a chestnut is best. Walk up to one and read its name.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Choose a tree: oak and chestnut have the sweetest sap.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Beetles: {b}, moths: {m}",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Photo: {act}",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Sun behind you!",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Six webs hide between the dry stems. Keep the sun behind you and they light up. Then press {act} for a photo.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Find the six dew webs. Sun behind you, then {act} for a photo.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Web {n} of {total}",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Got it! Every drop is a tiny lens. Five more to find.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "All six! By noon the dew is gone and they vanish again.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Too faint from this side. Walk round until the sun is behind you.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "No web close enough. Look for a glint low between two dry stems.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "There: something glinted. Go and look, with the sun at your back.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "The sun is up and the dew is drying. The rest will keep for another dawn.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "every web found",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
   "s": "Sweep the net when a firefly glows: press {act} right next to one.",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
@@ -13901,6 +14741,120 @@
   ]
  },
  {
+  "s": "Tie the bamboo cross",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Glue on the paper",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Tie on the tail",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "A bit wobbly, but it will fly.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Good and tight!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Perfect!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Three steps to a kite. Tap {act} when the marker is in the green.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Three steps to a kite. Press {act} or Space when the marker is in the green.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Keep the kite in the green",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Steer with the stick to stay in the wind. Jump gives the line a tug to climb.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Steer left and right to stay in the wind. Space gives the line a tug to climb.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Down on the grass. Wind it in and up again! A tug helps.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "See the grass streak sideways? A gust is coming. Steer against it!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Right at the top of the line! The wind is steadier up there.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "It is sliding out of the wind. Steer it back to the middle.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "See it wag? A longer, tighter tail would keep it steady.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Wind it in. That kite will fly again on any windy day.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "never touched the grass",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "reached the top of the line",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
   "s": "River catfish",
   "ctx": [
    "UI (src/game/tricks/river.js)"
@@ -13964,6 +14918,150 @@
   "s": "{n} kinds, {s} shrimp eyes",
   "ctx": [
    "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Roast potatoes! Save me one!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "That smells SO good!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Me! Me! The big one!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Hot hot hot! Blow on it!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Good. Carry it to the fire spot.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "One more armful of straw.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "{n} more armfuls of straw.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Stand back, Mi-chan. Lighting the fire is a grown-up's job.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Stand back. Grandpa lights it: fires are for grown-ups.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "The ash is ready. Stand by a hollow and press {act} to bury a sweet potato.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Bury the potatoes, then watch the ash over each one.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Now watch. Grey ash is still raw. An amber glow and white steam: dig it out with {act}. Black smoke is too late!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Amber glow and white steam: dig! Black smoke: too late.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Perfect! Golden, soft and sweet.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "A little firm in the middle, but good.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "A bit dark on one side, still tasty.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Too early: this one is still hard.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Oh no, charcoal! That one stayed too long.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "What a roast! Share them round while they're hot.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Hot potatoes for everyone. Blow on them first!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Never mind. The ash is still warm: we'll try again.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "First the fire needs straw. Walk to a straw pile and press {act}, then carry the armful here. Three will do.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Gather three armfuls of straw for the fire.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "{p} perfect, {o} good",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
   ]
  },
  {
@@ -14186,43 +15284,7 @@
   ]
  },
  {
-  "s": "Hoshi Station",
-  "ctx": [
-   "UI (src/ui/map.js)"
-  ]
- },
- {
-  "s": "Sheep pasture",
-  "ctx": [
-   "UI (src/ui/map.js)"
-  ]
- },
- {
-  "s": "Peach orchard",
-  "ctx": [
-   "UI (src/ui/map.js)"
-  ]
- },
- {
-  "s": "Takamori Halt",
-  "ctx": [
-   "UI (src/ui/map.js)"
-  ]
- },
- {
-  "s": "Forest Shrine",
-  "ctx": [
-   "UI (src/ui/map.js)"
-  ]
- },
- {
   "s": "Landslide scar",
-  "ctx": [
-   "UI (src/ui/map.js)"
-  ]
- },
- {
-  "s": "Engine shed",
   "ctx": [
    "UI (src/ui/map.js)"
   ]

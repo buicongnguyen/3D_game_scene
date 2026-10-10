@@ -5,6 +5,7 @@ import { BUILDINGS, LAMPS, DOCKS, STONES, PLACES, DECK_Y, VIADUCT, SCARECROWS, O
 import { SLIDE, SLIDE_SOLIDS, SLIDE_DRESSING, isEarth, fromSlide } from './landslide.js';
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
+import { Signs } from './signs.js';
 
 // Wall footprints (w, d, h) from art/CONTRACTS.md; colliders use these, not roof overhangs.
 export const FOOTPRINT = {
@@ -111,6 +112,8 @@ export class Structures {
     this.placeStones();
     this.placeDressing();
     this.placeLandslide();
+    // a name board at every building (content/signs.js); needs a canvas, so not in Node tests
+    if (typeof document !== 'undefined') this.signs = new Signs(this);
   }
 
   /**
@@ -451,6 +454,7 @@ export class Structures {
       const d2 = (c.x - camPos.x) ** 2 + (c.z - camPos.z) ** 2;
       c.obj.visible = c.obj.visible ? d2 < (c.prop ? p2 : b2) : d2 < (c.prop ? p2in : b2in);
     }
+    this.signs?.cull(camPos, q);
     if (!q.propShadows && !this.propShadowsOff) {
       this.propShadowsOff = true;
       for (const c of this.cullList) if (c.prop) c.obj.traverse(o => { if (o.isMesh) o.castShadow = false; });
@@ -466,6 +470,7 @@ export class Structures {
   }
 
   update(dt, night) {
+    this.signs?.setNight(night);
     for (const L of this.lamps.values()) {
       L.lit += (L.target - L.lit) * (1 - Math.exp(-dt * 2.2));
       const flicker = 0.92 + 0.08 * Math.sin(performance.now() * 0.011 + L.flame.x);
