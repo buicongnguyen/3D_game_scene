@@ -423,3 +423,19 @@ body.talking .bark, #hud.hidden ~ #barks .bark { display: none; }
   #title .menu .langs { grid-column: 1 / -1; }
   #title .hint { display: none; }
 }
+
+/* The title menu always fits the screen: two main buttons, the rest two abreast, sizes that follow the window's height. */
+#title { overflow-y: auto; gap: clamp(8px, 2.2vh, 28px); padding-top: calc(clamp(10px, 5vh, 64px) + var(--safe-t)); padding-bottom: calc(clamp(8px, 3vh, 40px) + var(--safe-b)); }
+#title .logo h1 { font-size: clamp(40px, min(12vw, 15vh), 128px); }
+#title .logo p { font-size: clamp(13px, min(2.4vw, 2.6vh), 20px); }
+#title .menu { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(6px, 1.4vh, 12px); width: min(380px, 90vw); flex: none; }
+#title .menu > * { grid-column: 1 / -1; }
+#title .menu > button.primary { padding: clamp(9px, 1.8vh, 14px) 20px; font-size: clamp(17px, 2.6vh, 20px); }
+#title .menu > button:not(.primary) { grid-column: auto; padding: clamp(8px, 1.5vh, 13px) 8px; font-size: clamp(14px, 2.2vh, 17px); line-height: 1.15; }
+#title .hint { margin: 0; font-size: clamp(11px, 1.7vh, 14px); }
+#title .menu > .langs ~ button:not(.primary) { grid-column: 1 / -1; justify-self: center; padding: 6px 18px; font-size: 14px; }
+@media (max-height: 640px) { #title .hint { display: none; } }
+@media (max-height: 480px) and (orientation: landscape) {
+  #title .menu { width: min(560px, 92vw); }
+  #title .menu > button.primary { grid-column: auto; padding: 9px 14px; font-size: 17px; }
+}

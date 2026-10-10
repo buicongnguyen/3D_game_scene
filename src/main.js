@@ -123,6 +123,9 @@ if (params.has('view')) {
   ui.hideLoading();
   game.start();
   window.__STARLINE_READY__ = true;
+  // The wait for the title menu must not be a top-level await: in the built site every chunk imported on demand
+  // (the title video, the scene tour) depends on this module and would hang until the player starts a game.
+  (async () => {
   const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
   const picked = auto ? { mode: auto, slot: +params.get('slot') || 1, story: params.get('story') || undefined } : await ui.title(Director.slots(), Director.lastSlot());
   const choice = picked.mode;
@@ -146,4 +149,5 @@ if (params.has('view')) {
   const started = director.begin(choice === 'continue' || choice === 'explore' ? saved : null);
   window.__STARLINE_PLAYING__ = true;
   await started;
+  })().catch(e => console.error('[start]', e));
 }
