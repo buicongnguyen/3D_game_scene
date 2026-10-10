@@ -1,3 +1,4 @@
+import './mobile-game-init.mjs';
 import * as THREE from 'three';
 import { Game } from './game/game.js';
 import { exploreState } from './game/fastforward.js';

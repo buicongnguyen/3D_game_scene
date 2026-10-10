@@ -42,6 +42,8 @@ export class Input {
     });
     addEventListener('keyup', e => { const a = KEYMAP[e.code]; if (a) this.keys.delete(a); });
     addEventListener('blur', () => this.releaseAll());
+addEventListener('pagehide', () => this.releaseAll());
+addEventListener('mobile-game-interruption', () => this.releaseAll());
     // a pad unplugged (or asleep) mid-hold must not leave sprint or dive on, and the next pad should take over
     addEventListener('gamepaddisconnected', e => {
       if (this.gamepadIndex !== null && e.gamepad.index !== this.gamepadIndex) return;
@@ -77,24 +79,27 @@ export class Input {
     c.addEventListener('touchstart', e => this._touch(e, 'start'), { passive: false });
     c.addEventListener('touchmove', e => this._touch(e, 'move'), { passive: false });
     c.addEventListener('touchend', e => this._touch(e, 'end'), { passive: false });
-    c.addEventListener('touchcancel', e => this._touch(e, 'end'), { passive: false });
+    c.addEventListener('touchcancel', () => this.releaseAll(), { passive: false });
+    addEventListener('resize', () => this.releaseAll());
     addEventListener('gamepadconnected', e => { this.gamepadIndex = e.gamepad.index; });
   }
 
   _touch(e, phase) {
     e.preventDefault();
     this.lastDevice = 'touch';
+    if (e.touches.length > 1 && this.touch.look) this.touch.look.multi = true;
     for (const t of e.changedTouches) {
       if (phase === 'start') {
         if (t.clientX < innerWidth * 0.45 && !this.touch.move) {
           this.touch.move = { id: t.identifier, ox: t.clientX, oy: t.clientY, x: t.clientX, y: t.clientY };
           this.onStick?.(this.touch.move);
         } else if (!this.touch.look) {
-          this.touch.look = { id: t.identifier, x: t.clientX, y: t.clientY, t0: performance.now(), sx: t.clientX, sy: t.clientY };
+          this.touch.look = { id: t.identifier, x: t.clientX, y: t.clientY, t0: performance.now(), sx: t.clientX, sy: t.clientY, moved: false, multi: e.touches.length > 1 };
         }
       } else if (phase === 'move') {
         if (this.touch.move?.id === t.identifier) { this.touch.move.x = t.clientX; this.touch.move.y = t.clientY; this.onStick?.(this.touch.move); }
         if (this.touch.look?.id === t.identifier) {
+          if (Math.hypot(t.clientX - this.touch.look.sx, t.clientY - this.touch.look.sy) > 12) this.touch.look.moved = true;
           this.look.x += (t.clientX - this.touch.look.x) * 1.35;
           this.look.y += (t.clientY - this.touch.look.y) * 1.35;
           this.touch.look.x = t.clientX; this.touch.look.y = t.clientY;
@@ -104,7 +109,7 @@ export class Input {
         if (this.touch.look?.id === t.identifier) {
           const l = this.touch.look;
           // a quick tap on the right side acts as "advance dialogue / interact"
-          if (performance.now() - l.t0 < 250 && Math.hypot(t.clientX - l.sx, t.clientY - l.sy) < 12) this.edges.add('tap');
+          if (!l.moved && !l.multi && performance.now() - l.t0 < 250 && Math.hypot(t.clientX - l.sx, t.clientY - l.sy) < 12) this.edges.add('tap');
           this.touch.look = null;
         }
       }

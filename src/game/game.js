@@ -39,6 +39,11 @@ export class Game {
     this.time = { hour: 10, speed: 0, season: 'spring' };
     this.systems = [];
     this.paused = false;
+    const suspendMobileGame = () => { this.input?.releaseAll(); this.togglePause(true); };
+    addEventListener('blur', suspendMobileGame);
+    addEventListener('pagehide', suspendMobileGame);
+    addEventListener('mobile-game-interruption', suspendMobileGame);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) suspendMobileGame(); });
     this.fps = 0;
   }
 
