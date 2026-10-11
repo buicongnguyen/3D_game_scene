@@ -4,15 +4,15 @@
 // giving back of the game while it runs.
 //
 // Nothing of the player's game is changed. While the tour runs:
-//   • the story is swapped for a throwaway one (the valley after the story: every lamp lit, every way open), so the
-//     townsfolk, animals, train and lamps are all alive, also from the title screen where no story is loaded;
+//   • the title uses a throwaway completed version of the default story; a paused story uses a copy of its current
+//     progress, keeping its lamps, repairs and returning families as the player has left them;
 //   • saving is blocked (director.tourLock and the shadowed save), and nothing can be picked up, sparked or talked to;
 //   • Mika is frozen and hidden, and stands in as the "where life happens" point under the camera's subject;
 //   • season, hour, weather, camera, HUD, lamps, the viaduct, the train and the festival dressing are borrowed.
 // close() puts every one of them back exactly (tests/tour-browser.mjs compares before and after).
 // The module is loaded on demand (ui.js imports it on the first click) and costs nothing until then.
 import * as THREE from 'three';
-import { TOURS, TOUR, YEAR, TEXT, FOV, TOUR_PLACES, timeline, poseAt, stopTime, shotOf } from '../content/tour.js';
+import { TOURS, TOUR, YEAR, TEXT, FOV, TOUR_PLACES, timeline, poseAt, stopTime, shotOf, captionFor } from '../content/tour.js';
 import { tx, onLangChange } from '../i18n/i18n.js';
 import { Quest } from './quest.js';
 import { stateAt, exploreState } from './fastforward.js';
@@ -21,6 +21,7 @@ import { STOPS } from '../world/railway.js';
 import { buildStars } from './skygaze.js';
 import { VideoLayer, loadManifest, clipFor, canPlay, lowTier } from './video.js';
 import { clipKey } from '../content/video.js';
+import { defaultStory } from '../ui/ui.js';
 
 const ICON = { spring: '🌸', summer: '☀️', autumn: '🍁', winter: '❄️', night: '🌙', year: '✨' };
 const $ = id => document.getElementById(id);
@@ -197,6 +198,9 @@ export class SceneTour {
   get d() { return this.g.director; }
   get ui() { return this.g.ui; }
 
+  /** The clips show Grandma's completed valley; a story save needs its own live view of current progress. */
+  canVideoTour() { return (!this.d.quest || this.d.explore) && (this.d.quest?.state.story || defaultStory()) === 'grandma'; }
+
   // ---------------------------------------------------------------- DOM
   buildDom() {
     if (!$('tourCss')) { const s = document.createElement('style'); s.id = 'tourCss'; s.textContent = CSS; document.head.appendChild(s); }
@@ -282,9 +286,10 @@ export class SceneTour {
     const box = this.el.pick.querySelector('#tourLive');
     let live = !lowTier(this.g);
     try { const v = JSON.parse(localStorage.getItem('starline-opt-tourLive')); if (typeof v === 'boolean') live = v; } catch { /* ignore */ }
-    box.checked = live;
+    box.checked = live || !this.canVideoTour();
+    box.parentNode.classList.toggle('hidden', !this.videos || !this.canVideoTour());
     if (this.g.params.has('live') || !canPlay()) this.videos = false;
-    else if (this.videos === undefined) loadManifest().then(m => { this.videos = !!m && Object.values(m.clips).some(c => c.tour); box.parentNode.classList.toggle('hidden', !this.videos); });
+    else if (this.videos === undefined) loadManifest().then(m => { this.videos = !!m && Object.values(m.clips).some(c => c.tour); box.parentNode.classList.toggle('hidden', !this.videos || !this.canVideoTour()); });
     this.ui.open('tourPick');
     if (!no) this.el.pick.querySelector('.tour-card').focus({ preventScroll: true });
   }
@@ -298,6 +303,7 @@ export class SceneTour {
     this.year = id === 'year';
     this.order = this.year ? TOURS.slice() : [TOUR[id]];
     if (live === undefined) live = !this.videos || this.el.pick.querySelector('#tourLive').checked;
+    if (!this.canVideoTour()) live = true;
     if (!live) { this.startVideo(); return true; }
     this.mode = 'live';
     this.enter();
@@ -314,6 +320,7 @@ export class SceneTour {
     const g = this.g, d = this.d, ui = this.ui;
     const hidden = id => $(id).classList.contains('hidden');
     this.mode = 'video';
+    this.currentProgress = false;
     this.fromGame = !!d.quest;
     this.vsaved = { hud: hidden('hud'), touch: hidden('touch'), title: hidden('title'), tourLock: d.tourLock };
     this.layer = VideoLayer.of(g);
@@ -448,10 +455,12 @@ export class SceneTour {
   enter() {
     const g = this.g, d = this.d, ui = this.ui, p = g.player, S = g.structures, R = g.railway, T = R.train;
     // 1) everything the tour owns is made first: a failure here leaves the game untouched
-    const story = storyId();
+    const previousStory = storyId(), story = d.quest?.state.story || defaultStory();
+    this.currentProgress = !!d.quest && !d.explore;
     let state;
-    try { state = stateAt('e.done', 'together', story); } catch { state = exploreState(); }
-    state.flags = { ...state.flags, huntAsked: true, explore: true, porchTalk: true, tour: true };
+    if (this.currentProgress) state = d.quest.save();
+    else { try { state = stateAt('e.done', 'together', story); } catch { state = exploreState(); } }
+    state.flags = { ...state.flags, tour: true, ...(this.currentProgress ? {} : { huntAsked: true, explore: true, porchTalk: true }) };
     state.inv = { ...state.inv, kite: 0 };
     const quest = new Quest(state);
     useStory(story);                                   // the story tables keep speaking the player's story
@@ -467,7 +476,7 @@ export class SceneTour {
       follow: { shot: g.follow.shot, tracking: g.follow.tracking, fovBase: g.follow.fovBase, pos: g.follow.pos.clone(), look: g.follow.look.clone() },
       hud: hidden('hud'), touch: hidden('touch'), title: hidden('title'),
       player: { visible: p.root.visible, pos: p.pos.clone() },
-      quest: d.quest ?? null, timetable: d.timetable, drawbridgeAngle: d.drawbridgeAngle, saveClock: d.saveClock, stepClock: d.stepClock, lastHour: d.lastHour,
+      quest: d.quest ?? null, story: previousStory, timetable: d.timetable, drawbridgeAngle: d.drawbridgeAngle, saveClock: d.saveClock, stepClock: d.stepClock, lastHour: d.lastHour,
       actCooldown: d.actCooldown, bees: d.bees, tourLock: d.tourLock,
       tamo: { hidden: d.tamo.hidden, visible: d.tamo.root.visible, pos: d.tamo.pos.clone(), light: d.tamo.light.intensity },
       lamps: [...S.lamps.entries()].map(([id, L]) => [id, L.target, L.lit]),
@@ -503,11 +512,13 @@ export class SceneTour {
     // Mika: frozen and hidden; her position follows the camera's subject so that life gathers there
     p.root.visible = false;
     p.update = () => {};
-    // the valley as it is after the story: lamps lit, the viaduct whole, everybody home
+    // The title/Explore previews the completed valley; a paused story keeps its current progress.
     S.setLampStyle?.(story === 'grandma' ? 'electric' : 'flame');   // the lamp towers of the player's story (electric bulbs in Grandma's)
-    for (const L of S.lamps.values()) { L.target = 1; L.lit = 1; }
-    R.setRepaired(true);
-    for (const [id] of this.saved.people) if (id !== 'sora' || story === 'grandma') d.npcs[id].setVisible(true);
+    if (!this.currentProgress) {
+      for (const L of S.lamps.values()) { L.target = 1; L.lit = 1; }
+      R.setRepaired(true);
+      for (const [id] of this.saved.people) if (id !== 'sora' || story === 'grandma') d.npcs[id].setVisible(true);
+    }
     g.weatherOff = false;
     this.focus = new THREE.Vector3();
     this.shot = { pos: new THREE.Vector3(), look: new THREE.Vector3() };
@@ -544,7 +555,7 @@ export class SceneTour {
     for (const k of ['save', 'canSave', 'canAim', 'event', 'run', 'say', 'collect']) delete d[k];
     delete g.togglePause; delete ui.openJournal; delete p.update;
     d.quest = s.quest;
-    useStory(s.quest?.state.story ?? storyId());
+    useStory(s.story);
     d.tourLock = s.tourLock;
     d.timetable = s.timetable; d.drawbridgeAngle = s.drawbridgeAngle; d.saveClock = s.saveClock; d.stepClock = s.stepClock; d.lastHour = s.lastHour;
     d.actCooldown = s.actCooldown; d.bees = s.bees;
@@ -640,7 +651,7 @@ export class SceneTour {
     this.stopI = -1;
     g.seasonOverride = this.tour.season;
     g.applyLook();
-    g.celebrate?.decorate?.(this.tour.festival ? 4 : this.saved.decor);
+    g.celebrate?.decorate?.(!this.currentProgress && this.tour.festival ? 4 : this.saved.decor);
     this.capKey = null;
     this.el.cap.classList.add('off');
     this.syncUi();
@@ -721,6 +732,7 @@ export class SceneTour {
   /** The train sets off so that it is on the viaduct while the camera rests there (`lead` seconds from now). */
   runTrain(lead) {
     const R = this.g.railway, v = 9;
+    if (this.currentProgress && !R.repaired) return;
     R.placeAt(Math.max(STOPS.station + 4, STOPS.viaductWest + 22 - lead * v));
     R.train.v = lead > 0 ? v : v * 0.8;
     R.goTo(STOPS.halt, v);
@@ -735,7 +747,7 @@ export class SceneTour {
       const c = this.el.cap;
       c.querySelector('small').textContent = tx(TEXT.of, { season: tx(this.tour.name), i: this.stopI + 1, n: this.tour.stops.length });
       c.querySelector('h2').textContent = tx(TOUR_PLACES[st.place].name);
-      c.querySelector('p').textContent = tx(st.line);
+      c.querySelector('p').textContent = tx(captionFor(this.tour, st, this.currentProgress ? this.d.quest.state : null));
     }
     this.el.cap.classList.toggle('off', !show || this.capKey !== key);
   }

@@ -105,6 +105,23 @@ export const TOURS = [
 export const TOUR = Object.fromEntries(TOURS.map(t => [t.id, t]));
 export const YEAR = { id: 'year', name: N_('Whole year'), blurb: N_('All five, one after another') };
 
+/** A paused story's tour describes the visible progress without promising a repair or a light still to come. */
+export function captionFor(tour, stop, progress = null) {
+  if (!progress) return stop.line;
+  if (stop.place === 'viaduct' && !progress.unlocked?.viaduct) return N_('The viaduct waits above the river.');
+  if (tour.id === 'spring' && stop.place === 'mill' && !progress.unlocked?.drawbridge) return N_('The old mill rests beside the river.');
+  if (!Object.values(progress.lamps || {}).some(Boolean)) {
+    if (tour.id === 'summer' && stop.place === 'takamori') return N_('Afternoon settles over the hilltop square.');
+    if (tour.id === 'night' && stop.place === 'kawabe') return N_('The main street is quiet under the stars.');
+  }
+  if (tour.id === 'night') {
+    if (stop.place === 'mill' && !progress.lamps?.mill) return N_('The Mill Lamp waits quietly on its island.');
+    if (stop.place === 'shrine' && !progress.lamps?.forest) return N_('The Forest Shrine stands quiet above the trees.');
+    if (stop.place === 'takamori' && !progress.lamps?.orchard) return N_('The bell tower watches over the sleeping square.');
+  }
+  return stop.line;
+}
+
 // Every line the tour shows that is not in the tables above (the i18n catalogue reads them from here).
 export const TEXT = {
   title: N_('Scene tour'),

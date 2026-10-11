@@ -68,10 +68,16 @@ async function open(browser, clip, query) {
   const { w, h } = CUTS[clip.cut];
   const ctx = await browser.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: SS });
   const page = await ctx.newPage();
+  await ctx.addInitScript(story => localStorage.setItem('starline-story', story), clip.story);
   page.on('pageerror', e => log('  PAGEERROR', e.message));
   await page.clock.install();
   await page.goto(`${url}?mute&quality=high&${query}`);
   await page.waitForFunction(() => window.__STARLINE_READY__, null, { timeout: 300000 });
+  // The title has no quest yet. Select its story and lamp appearance explicitly before recording either backdrop.
+  if (clip.kind !== 'intro') await page.evaluate(async ([story, lampStyle]) => {
+    const g = window.__STARLINE__, { useStory } = await import('/src/game/stories/index.js');
+    useStory(story); g.structures.setLampStyle(lampStyle);
+  }, [clip.story, clip.lampStyle]);
   await page.evaluate(([w, h]) => {
     const g = window.__STARLINE__, R = g.renderer;
     R.fixedScale = 1; R.scale = 1; R.resize();
@@ -122,13 +128,14 @@ async function take(page, dir, count, each) {
 // ---------------------------------------------------------------- the three kinds of clip
 async function recordTour(browser, clip, dir) {
   const tour = TOURS.find(t => t.id === clip.tour), tl = timeline(tour);
-  const { ctx, page } = await open(browser, clip, 'record=tour');
+  const { ctx, page } = await open(browser, clip, `record=tour&story=${clip.story}`);
   await page.waitForTimeout(1500);
   await page.evaluate(async id => {
     const g = window.__STARLINE__, m = await import('/src/game/tour.js');
     m.openTour(g).start(id, { live: true });
     document.getElementById('tourView').style.display = 'none';
   }, tour.id);
+  await assertLook(page, clip);
   // a quick first pass: every stop is visited so that whatever loads on demand (ambient places, festival dressing) is in
   for (let i = 0; i < tour.stops.length; i++) {
     await page.evaluate(i => { const t = window.__STARLINE__.tour; t.paused = true; t.goStop(i); t.paused = true; }, i);
@@ -146,7 +153,7 @@ async function recordTour(browser, clip, dir) {
   if (Math.abs(end.t - tl.length) > 0.2) throw new Error(`${clip.name}: the take ended at ${end.t.toFixed(2)} s of ${tl.length.toFixed(2)} s`);
   await ctx.close();
   return {
-    frames: count, duration: count / FPS, tour: tour.id,
+    frames: count, duration: count / FPS, tour: tour.id, story: clip.story, lampStyle: clip.lampStyle,
     stops: tour.stops.map((s, i) => ({ place: s.place, t: +stopTime(tl, i).toFixed(3), from: +(i ? tl.segs.find(x => x.kind === 'travel' && x.i === i).t0 : 0).toFixed(3) })),
     poster: Math.round((stopTime(tl, 0) + 2.5) * FPS),
   };
@@ -157,6 +164,7 @@ async function recordIntro(browser, clip, dir) {
   await page.clock.pauseAt(Date.now() + 3600e3);
   // the chapter card, then the arrival begins
   for (let i = 0; i < 600; i++) { await run(page, 0.1); if (await page.evaluate(() => window.__STARLINE__.director?.scenes?.active === 'arrival' && window.__STARLINE__.director.scenes.arrivalT !== undefined)) break; }
+  await assertLook(page, clip);
   const marks = {};
   const count = await take(page, dir, 60 * FPS, async i => {
     const s = await page.evaluate(() => { const sc = window.__STARLINE__.director.scenes; return { on: sc.active === 'arrival', marks: sc.arrivalMarks || {} }; });
@@ -164,11 +172,21 @@ async function recordIntro(browser, clip, dir) {
     return !s.on && i > 30;
   });
   await ctx.close();
-  return { frames: count, duration: count / FPS, story: clip.story, marks, poster: Math.round(4 * FPS) };
+  return { frames: count, duration: count / FPS, story: clip.story, lampStyle: clip.lampStyle, marks, poster: Math.round(4 * FPS) };
+}
+
+/** Record provenance from an asserted live state, so a future title-boot regression cannot silently produce flame cuts. */
+async function assertLook(page, clip) {
+  const actual = await page.evaluate(async () => {
+    const { storyId } = await import('/src/game/stories/index.js');
+    return { story: storyId(), lampStyle: window.__STARLINE__.structures.lampStyle };
+  });
+  if (actual.story !== clip.story || actual.lampStyle !== clip.lampStyle) throw new Error(`${clip.name}: expected ${clip.story}/${clip.lampStyle}, got ${actual.story}/${actual.lampStyle}`);
 }
 
 async function recordTitle(browser, clip, dir) {
   const { ctx, page } = await open(browser, clip, 'record=title');
+  await assertLook(page, clip);
   await page.waitForTimeout(1000);
   await page.clock.pauseAt(Date.now() + 3600e3);
   // the same vantage as the live title, on a short closed path so the last frame meets the first
@@ -204,7 +222,7 @@ async function recordTitle(browser, clip, dir) {
   }
   for (let i = 0; i < extra; i++) fs.rmSync(path.join(dir, `f${String(loop + i + 1).padStart(5, '0')}.jpg`));
   await ctx.close();
-  return { frames: loop, duration: loop / FPS, loop: true, poster: 1 };
+  return { frames: loop, duration: loop / FPS, loop: true, story: clip.story, lampStyle: clip.lampStyle, poster: 1 };
 }
 
 // ---------------------------------------------------------------- encoding

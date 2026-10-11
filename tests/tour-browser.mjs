@@ -69,7 +69,7 @@ const SNAP = () => {
     seasonOverride: g.seasonOverride ?? null, timeOverride: g.timeOverride ?? null, cycleHour: g.cycleHour ?? null, weatherOff: !!g.weatherOff, weather: g.fx.weatherKind ?? null,
     viewFocus: g.viewFocus ?? null, beforeUpdateSame: same('beforeUpdate', g.beforeUpdate ?? null), paused: g.paused,
     fovBase: g.follow.fovBase, tracking: !!g.follow.tracking,
-    lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
+    lampStyle: g.structures.lampStyle, lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
     rail: [!!g.railway.repaired, g.railway.repair?.visible, g.railway.scaffold?.visible, (g.railway.beams || []).map(b => b.visible).join(), r(g.railway.train.s), g.railway.train.target],
     decor: g.celebrate?.decor?.level ?? 0, meteors: g.fx.meteorOn, busy: d.busy, tourLock: !!d.tourLock, timetable: JSON.stringify(d.timetable ?? null),
     shadowed: ['save', 'canSave', 'canAim', 'event', 'run', 'say', 'collect'].filter(k => Object.hasOwn(d, k)).join() + (Object.hasOwn(g, 'togglePause') ? ',togglePause' : '') + (Object.hasOwn(g.ui, 'openJournal') ? ',openJournal' : ''),
@@ -138,6 +138,7 @@ async function fromTitle(browser, name, dev) {
   await page.waitForFunction(() => window.__STARLINE__.tour?.active);
   let s = await page.evaluate(SNAP);
   check(s.screen.title && s.screen.hud && !s.screen.view && s.tourLock && s.quest !== null && !s.player[4], 'the tour owns the screen: title and HUD hidden, Mika hidden, a throwaway story running');
+  check(JSON.parse(s.quest).story === 'grandma' && s.lampStyle === 'electric', `${name}: the title tour uses the default Grandma story and electric lamps`);
   // Playwright's own Chromium cannot decode H.264, so here the phone's video tour is not on offer: the picker hides
   // the choice and the tour flies live (tests/video-browser.mjs covers the video tour in Edge or Chrome)
   const how = await page.evaluate(() => ({ mode: window.__STARLINE__.tour.debug().mode, hold: !!window.__STARLINE__.renderer.hold, can: !!document.createElement('video').canPlayType('video/mp4; codecs="avc1.640020"'), offer: !document.querySelector('#tourPick .tour-live').classList.contains('hidden') }));
@@ -291,7 +292,8 @@ async function fromPause(browser, name, dev) {
   await hit('#tourPick [data-tour=winter]');
   await page.waitForFunction(() => window.__STARLINE__.tour?.active);
   let s = await page.evaluate(SNAP);
-  check(!s.paused && s.screen.hud && !s.player[4] && s.tourLock && !s.questSame && s.lamps.every(l => l[1] === 1) && s.rail[0] === true, `${name}: the tour runs unpaused with Mika hidden, on a throwaway story, lamps lit`);
+  check(!s.paused && s.screen.hud && !s.player[4] && s.tourLock && !s.questSame && s.lamps.every(l => l[1] === 0) && s.rail[0] === false, `${name}: the tour copies current progress, with Mika hidden, lamps dark and viaduct broken`);
+  check(JSON.parse(s.quest).step === 'c1.cogs' && s.lampStyle === before.lampStyle && s.people === before.people, `${name}: the chapter, lamp style and returning families keep their current progress`);
   await page.evaluate(() => { window.__STARLINE__.tour.paused = true; });
   const tour = TOURS.find(t => t.id === 'winter');
   for (let i = 0; i < tour.stops.length; i++) {
@@ -304,6 +306,7 @@ async function fromPause(browser, name, dev) {
   // the real story did not move while the tour's throwaway one ran, and no save was written
   s = await page.evaluate(SNAP);
   check(stable(s.ls) === stable(before.ls), `${name}: save files untouched during the tour`);
+  check(s.lamps.every(l => l[1] === 0) && !s.rail[0], `${name}: the whole pause tour leaves the unlit lamps and broken viaduct visible`);
   if (dev.hasTouch) await hit('#tourView [data-do=back]'); else await page.keyboard.press('Escape');
   let after = await page.evaluate(SNAP);
   same(before, after, `${name} pause menu, after the tour`);

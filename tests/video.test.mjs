@@ -43,6 +43,8 @@ test('video: every clip and poster in the manifest exists, and nothing else is l
   let total = fs.statSync(new URL('manifest.json', DIR)).size;
   for (const n of names) {
     const c = manifest.clips[n.name];
+    assert.equal(c.story, n.story, `${n.name}: recording story`);
+    assert.equal(c.lampStyle, n.lampStyle, `${n.name}: recording lamp appearance`);
     assert.equal(c.file, clipFile(n.id, n.cut)); assert.equal(c.posterFile, clipFile(n.id, n.cut, 'jpg'));
     for (const [f, bytes] of [[c.file, c.bytes], [c.posterFile, c.posterBytes]]) {
       assert.ok(fs.existsSync(new URL(f, DIR)), `${f} is missing`);

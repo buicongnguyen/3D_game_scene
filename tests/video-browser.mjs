@@ -73,7 +73,7 @@ const SNAP = () => {
     player: [r(p.pos.x), r(p.pos.y), r(p.pos.z), r(p.facing), p.root.visible, Object.hasOwn(p, 'update')],
     season: g.time.season, hour: r(g.time.hour, 4), shownSeason: g.shownSeason, seasonOverride: g.seasonOverride ?? null, timeOverride: g.timeOverride ?? null, weatherOff: !!g.weatherOff, weather: g.fx.weatherKind ?? null,
     viewFocus: g.viewFocus ?? null, beforeUpdateSame: ref('beforeUpdate', g.beforeUpdate ?? null), paused: g.paused, fovBase: g.follow.fovBase,
-    lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
+    lampStyle: g.structures.lampStyle, lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
     rail: [!!g.railway.repaired, r(g.railway.train.s), g.railway.train.target], decor: g.celebrate?.decor?.level ?? 0, busy: d.busy, tourLock: !!d.tourLock,
     shadowed: ['save', 'canSave', 'canAim', 'event', 'run', 'say', 'collect'].filter(k => Object.hasOwn(d, k)).join() + (Object.hasOwn(g, 'togglePause') ? ',togglePause' : '') + (Object.hasOwn(g.ui, 'openJournal') ? ',openJournal' : ''),
     children: g.scene.children.length,
@@ -247,7 +247,7 @@ async function titleAndTour() {
 
 // ---------------------------------------------------------------- from the pause menu
 async function fromPause() {
-  log('video tour from the pause menu');
+  log('current-progress live tour from the pause menu');
   const { ctx, page, errors } = await boot('start=continue&slot=1');
   await page.waitForFunction(() => window.__STARLINE_PLAYING__, null, { timeout: 60000 });
   for (let i = 0; i < 40; i++) {
@@ -264,18 +264,19 @@ async function fromPause() {
   await page.waitForSelector('#tourPick:not(.hidden)');
   await page.waitForSelector('#tourPick .tour-live:not(.hidden)', { timeout: 10000 }).catch(() => {});
   await page.tap('#tourPick [data-tour=winter]');
-  check(await playing(page, 'tour-winter-tall.mp4'), 'the winter tour plays as video from the pause menu');
+  await page.waitForFunction(() => window.__STARLINE__.tour?.active);
   const during = await page.evaluate(SNAP);
-  check(during.paused && during.questSame && during.quest === before.quest && during.shownSeason === before.shownSeason && during.player[4] === before.player[4] && during.screen.hud,
-    'the game stays paused and untouched under the clip (same story object, same season, Mika where she was)');
-  check((await idle(page)).ok, 'the renderer stands still');
+  check((await page.evaluate(VID)).tour.mode === 'live' && !(await page.evaluate(VID)).shown, 'a story save uses live 3D even on a phone, so the tour shows current progress');
+  check(!during.paused && !during.questSame && JSON.parse(during.quest).step === JSON.parse(before.quest).step && during.lamps.every(l => l[1] === 0) && !during.rail[0] && during.screen.hud,
+    'the tour copies the current chapter with lamps dark and viaduct broken');
+  check(during.lampStyle === before.lampStyle && during.decor === before.decor, 'lamp style and festival decorations keep current progress');
   await page.waitForTimeout(1500);
   await shot(page, 'p-pause-tour-winter');
   await page.tap('#tourView [data-do=next]');
   await page.waitForTimeout(600);
   await page.tap('#tourView [data-do=back]');
   const after = await page.evaluate(SNAP);
-  same(before, after, 'pause menu, after the video tour');
+  same(before, after, 'pause menu, after the current-progress tour');
   check(after.screen.overlay === 'pause' && after.paused, 'back in the pause menu');
   const v = await page.evaluate(VID);
   check(!v.hold && !v.shown, 'the clip is gone and the renderer draws again');

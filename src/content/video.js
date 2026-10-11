@@ -16,10 +16,10 @@ export const CUTS = {
 
 // kbps: the encoder's target bitrate for the clip (both cuts)
 export const CLIPS = [
-  ...TOURS.map(t => ({ id: `tour-${t.id}`, kind: 'tour', tour: t.id, kbps: 500 })),
-  { id: 'intro-grandma', kind: 'intro', story: 'grandma', kbps: 500 },
-  { id: 'intro-classic', kind: 'intro', story: 'classic', kbps: 500 },
-  { id: 'title', kind: 'title', kbps: 400 },
+  ...TOURS.map(t => ({ id: `tour-${t.id}`, kind: 'tour', tour: t.id, story: 'grandma', lampStyle: 'electric', kbps: 450 })),
+  { id: 'intro-grandma', kind: 'intro', story: 'grandma', lampStyle: 'electric', kbps: 450 },
+  { id: 'intro-classic', kind: 'intro', story: 'classic', lampStyle: 'flame', kbps: 450 },
+  { id: 'title', kind: 'title', story: 'grandma', lampStyle: 'electric', kbps: 400 },
 ];
 
 export const clipFile = (id, cut, ext = 'mp4') => `${id}-${cut}.${ext}`;

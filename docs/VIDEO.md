@@ -6,7 +6,7 @@ On a phone the three things a player only *watches* are shown as recorded video 
 |---|---|---|
 | Title backdrop | the valley drawn behind the menu | `title-*.mp4`, a 14 s seamless loop; the renderer is held under it |
 | New game: the arrival (the train runs in while the story is told) | `Scenes.arrival()` in `src/game/scenes.js` | `intro-grandma-*.mp4` / `intro-classic-*.mp4`, with the same captions told live over it and a Skip button |
-| Scene tour (Settings → Scene tour) | `src/game/tour.js`, the real flight | `tour-<season>-*.mp4`, with the same picker, captions, toolbar and keys |
+| Scene tour (Settings → Scene tour) | `src/game/tour.js`, the real flight | Grandma title/Explore: `tour-<season>-*.mp4`; story pause menu: live 3D showing current progress |
 
 Everything that is words or buttons stays HTML on top of the video (so it is translated and tappable); only the
 picture is video. Videos are muted, inline (`playsinline`) and fetched only when they are about to play.
@@ -15,6 +15,12 @@ picture is video. Videos are muted, inline (`playsinline`) and fetched only when
 Desktop keeps live 3D. The tour picker has a **Live 3D instead of video** box: a phone can tick it for the real
 flight, a desktop can untick it for the video; the choice is remembered (`starline-opt-tourLive`). `?live=1` in
 the address turns all video off.
+
+The five recorded tours show the completed **Grandma** valley, with electric bulbs. A tour opened during a story
+always uses live 3D, on phones too: lamps, repairs and returning families keep the current save's progress, and
+captions do not describe lights or train crossings the player has yet to restore. Classic tours also use live 3D.
+From the title, live tours use the story selected for new games, and restore the previous story tables and lamp
+appearance on exit. Both stories retain their own arrival videos.
 
 If a clip is missing, the browser cannot decode H.264, autoplay is refused or the clip stalls, the live version runs
 instead, by itself.
@@ -25,7 +31,8 @@ instead, by itself.
 a poster JPEG for each, and `manifest.json`. The manifest is written by the recorder: durations, sizes and, for
 tours, the time of every stop (`stops[i].t` = the rest begins, `.from` = the glide to it begins). The tour player
 reads the video's `currentTime` against those times, so captions and next/previous can never drift from the
-picture. `tests/video.test.mjs` fails if a clip no longer matches the tour data (then record it again).
+picture. Every entry also records `story` and `lampStyle`, asserted against the actual live take before recording.
+`tests/video.test.mjs` fails if a clip no longer matches the tour data or appearance (then record it again).
 
 The clip list, the two sizes and the bitrates are in `src/content/video.js`.
 
@@ -49,6 +56,8 @@ How it works:
    (Playwright's `page.clock`): timers, `requestAnimationFrame` and `performance.now()` advance only when the
    script says so, 1/30 s per video frame. The tour, the arrival cutscene, the train, water and weather therefore
    run at a perfectly steady 30 fps however long a frame takes to draw. Nothing in the game knows it is filmed.
+   The recorder explicitly selects Grandma/electric for tour and title cuts and the matching story/lamp style for
+   each intro; it checks the running game's story and style before capturing any frames.
 2. After each step the WebGL canvas is scaled down to the video size and saved as a JPEG in
    `.tools/video-frames/<clip>/`. HTML (captions, toolbar, fades) is not in the canvas, so it is not in the video.
 3. A tour is first visited stop by stop in real time, so everything it loads on demand is in; then it is restarted,
@@ -65,8 +74,9 @@ that the clips look out of date.
 
 ## Size
 
-About 55 MB for the whole set at 500 kbps (title 400). No clip is downloaded unless it is played; one tour is about
-5 MB. The budget is `TOTAL_VIDEO_BYTES` in `tests/asset-contracts.mjs`, separate from the model library's.
+Both orientations remain available, targeting 450 kbps for tours/intros and 400 for the title, below the 60 MB
+budget. No clip is downloaded unless it is played; one tour is about 4–5 MB. The budget is `TOTAL_VIDEO_BYTES` in
+`tests/asset-contracts.mjs`, separate from the model library's.
 
 ## Playback (`src/game/video.js`)
 
@@ -80,10 +90,15 @@ About 55 MB for the whole set at 500 kbps (title 400). No clip is downloaded unl
   captions, and at the end (or on Skip) dissolves back to the live platform. The story then continues exactly as
   after the live cutscene (`tests/video-browser.mjs` compares the two states).
 - The tour's video mode is in `src/game/tour.js` (`startVideo`, `vLoad`, `vTick`, `closeVideo`): it borrows only
-  the screen. No season change, no throwaway story; from the pause menu the game simply stays paused.
+  the screen. No season change or throwaway story. A story pause menu instead borrows a clone of the current
+  quest for the live flight, blocks interactions/saving and restores the real quest and paused state on exit.
 
 ## Tests
 
-- `node --test tests/video.test.mjs` (part of `npm test`): files, sizes, MP4 structure, stop times.
+- `node --test tests/video.test.mjs tests/tour-progress.test.mjs` (part of `npm test`): files, sizes, MP4 structure,
+  stop times, recording appearance, and captions for unfinished/partial/completed progress.
 - `node tests/video-browser.mjs`: a phone-sized page in Microsoft Edge or Google Chrome through Playwright
   (Playwright's own Chromium cannot decode H.264): title loop, video tour, fallback, arrival clip versus live.
+- `node tests/tour-browser.mjs`: title's default-story lamps, current-progress pause tours, and exact restoration.
+- After recording, extract and inspect frames from **every** wide/tall clip, including the Mill Lamp, Forest Lamp
+  and viaduct tour stops, plus arrival/title beginning, middle and end. Metadata checks cannot see outdated art.
