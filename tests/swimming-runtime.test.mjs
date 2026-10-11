@@ -81,7 +81,7 @@ function fixture(loop) {
   const sign={t:{id:'swimming'},obj:new THREE.Group(),hidden:false};scene.add(sign.obj);
   const visitor=new THREE.Group();visitor.name='npc:visitor';visitor.position.set(POOL.x,3,POOL.z);scene.add(visitor);
   const ctx={game:{scene,assets,world,player:p,input,follow,easy:false},player:p,input,first:true,ui:{touch:true},audio:{good(){}},director:{tricks:{signs:[sign]}},
-    roundTime:240,quit:false,lock(on){this.locked=on;},hud(){},loop:fn=>loop(fn,ctx)};
+    roundTime:240,quit:false,lookChanges:[],setNight(...args){this.lookChanges.push(args);},lock(on){this.locked=on;},hud(){},loop:fn=>loop(fn,ctx)};
   return {ctx,p,scene,follow,input,sign,visitor};
 }
 function guided(lesson) {
@@ -121,6 +121,7 @@ test('actual round requires exit check/entry, all six played skills and dry clim
     assert.deepEqual([...seen],['check','entry','lesson','out','climbing','done']);assert.equal(f.ctx.debug.exitCheck,true);assert.equal(f.ctx.debug.entered,true);assert.equal(f.ctx.debug.climbed,true);
     assert.deepEqual(playerState(f.p),before);assert.deepEqual(vector(f.follow.camera.position),cameraBefore);assert.deepEqual(f.scene.children,children);
     assert.equal(f.visitor.visible,true);assert.equal(f.sign.hidden,false);assert.equal(f.ctx.locked,false);assert.equal(env.document.getElementById('swimLesson'),null);
+    assert.deepEqual(f.ctx.lookChanges,[[true,11],[false]],'daylight practice restores the original story look');
   }finally{env.restore();}
 });
 
@@ -142,6 +143,7 @@ test('pointer cancellation, blur, Leave and thrown round errors all release hold
       if(mode==='error')await assert.rejects(swimming.play(f.ctx),/injected round failure/);
       else {const r=await swimming.play(f.ctx);assert.equal(r.score,0);if(mode==='timeout')assert.equal(r.detail.complete,false);else assert.equal(r.quit,true);}
       assert.deepEqual(playerState(f.p),before);assert.deepEqual(f.scene.children,children);assert.equal(f.ctx.locked,false);assert.equal(env.document.getElementById('swimLesson'),null);assert.equal(f.visitor.visible,true);
+      assert.deepEqual(f.ctx.lookChanges,[[true,11],[false]],mode);
     }finally{env.restore();}
   }
 });

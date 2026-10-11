@@ -236,6 +236,7 @@ export default { id:'swimming', async play(ctx) {
     detail:{complete:climbed,skills:lesson.skills,retries:lesson.retries,seconds:Math.round(total)}});
   try {
     ctx.lock(true); ctx.director.ground?.release('trick',true);
+    ctx.setNight(true,11); // The shared round-look override also supports daylight; frozen story clocks bypass hour gates.
     pool=makePool(g); ui=makeUi(ctx); restorePlayer=takeSwimmer(p);
     if(savedSign) { savedSign.hidden=true; if(savedSign.obj)savedSign.obj.visible=false; }
     // Hide nearby unrelated actors only while they could walk through this temporary pool.
@@ -316,6 +317,7 @@ export default { id:'swimming', async play(ctx) {
     follow.fovBase=savedFov;follow.yaw=savedYaw;follow.pitch=savedPitch;follow.shot=savedShot;follow.tracking=savedTracking;
     follow.look.copy(savedLook);follow.pos.copy(savedPos);follow.camera.position.copy(savedCameraPos);follow.camera.quaternion.copy(savedCameraRot);
     follow.camera.fov=savedCameraFov;follow.camera.near=savedCameraNear;follow.camera.updateProjectionMatrix();
+    ctx.setNight(false);
     ctx.lock(false);input.releaseAll?.();
   }
 } };
