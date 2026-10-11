@@ -230,6 +230,10 @@ export default { id:'swimming', async play(ctx) {
   let snap=deckSnap,exitWalk=0;
   const cameraPos=new THREE.Vector3(),cameraLook=new THREE.Vector3();
   const hidden=[];
+  const result=()=>({score:climbed?lesson.result().score:lesson.result().complete?0:lesson.result().score,
+    note:climbed?tx('You returned to the dry deck after all six game drills. Stars are game rewards.')
+      :tx("You practised {skills}/6 game skills. Replay and take your time with Rin's cues.",{skills:lesson.skills}),
+    detail:{complete:climbed,skills:lesson.skills,retries:lesson.retries,seconds:Math.round(total)}});
   try {
     ctx.lock(true); ctx.director.ground?.release('trick',true);
     pool=makePool(g); ui=makeUi(ctx); restorePlayer=takeSwimmer(p);
@@ -272,7 +276,7 @@ export default { id:'swimming', async play(ctx) {
         if(exitWalk>=1){climbed=true;phase='done';phaseTime=0;snap.clip='Idle';}
       } else if(phase==='done') {
         snap={...deckSnap,position:{...local},heading:0,clip:'Idle',progress:1};
-        if(phaseTime>=1.5)return {score:lesson.result().score,detail:{complete:true,skills:6,retries:lesson.retries,seconds:Math.round(total)}};
+        if(phaseTime>=1.5)return result();
       }
       const wet=phase==='lesson'||phase==='out';
       const ramp=pool.floor+.15+THREE.MathUtils.clamp((local.z-5)/3,0,1)*(POOL.deck-.15);
@@ -298,7 +302,7 @@ export default { id:'swimming', async play(ctx) {
       ui.nodes.progress.style.width=`${Math.round((phase==='lesson'?snap.progress:phase==='check'?exitCheck?1:0:phase==='entry'?Math.max(0,(8-local.z)/3):exitWalk)*100)}%`;
       const rhythm=phase==='lesson'&&['tread','glide','swim'].includes(snap.stage);ui.nodes.rhythm.hidden=!rhythm;ui.nodes.pulse.style.left=`${Math.min(98,(snap.beatPhase||0)*98)}%`;
       ctx.hud(lesson.result().score,Math.max(0,ctx.roundTime-total));
-      if(total>=ctx.roundTime)return {score:climbed?lesson.result().score:lesson.result().complete?0:lesson.result().score,detail:{complete:climbed,skills:lesson.skills,retries:lesson.retries,seconds:Math.round(total)}};
+      if(total>=ctx.roundTime)return result();
     };
     let lessonEvent=0;
     frame(0);
