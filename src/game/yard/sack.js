@@ -1,8 +1,8 @@
 // Sack race (đua bao bố): a straight 13 m course, a banner at each end, a lane each. Hop forward with one press per hop
 // (E / tap / Jump): a steady rhythm builds longer hops, mashing makes you wobble and, after a second wobble, tumble
-// (the kids get up laughing). A round is about fifteen seconds; the stars are the finishing place. Pure and seeded (no
+// (the kids get up laughing). A round is about fifteen seconds; solo stars use finish time, other races finishing place. Pure and seeded (no
 // three.js, no DOM): ./round.js shows it; the kids' own race is the same sim with nobody human in it.
-import { rng, clamp, starsFor } from './rules.js';
+import { rng, clamp } from './rules.js';
 import { N_, tx } from '../../i18n/i18n.js';
 
 export const COURSE = 13;          // metres from the start line to the finish
@@ -11,6 +11,10 @@ const IDEAL = 0.5;                 // the steady hop: seconds between presses
 const HOP_T = 0.34;                // a hop takes this long in the air
 const FALL_T = 1.2;                // lying in the sack, laughing
 const COUNT = 3.0;
+const TIMEOUT = 40;
+// Owner-approved solo rule: steady ~11 s gets 3 stars (<=13 s); <=18 s gets 2; any finish by 40 s gets 1.
+// Countdown is excluded. Completing the course is required for every reward, including races against kids.
+export const SOLO_TIMES = Object.freeze({ three: 13, two: 18, limit: TIMEOUT });
 
 /** How each kid races: interval between hops, how loosely they keep it, how often they topple. */
 export const PACE = {
@@ -53,10 +57,11 @@ export class SackSim {
       if (Math.ceil(this.timer) !== was && this.timer > 0) this.emit('count', { n: Math.ceil(this.timer) });
       if (this.timer <= 0) { this.state = 'race'; this.run = 0; this.emit('go', {}); }
     } else if (this.state === 'race') {
-      this.run += dt;
-      for (const p of this.players) if (!p.finish) this.stepPlayer(p, dt, input);
-      const fin = this.players.filter(p => p.finish), last = Math.max(0, ...fin.map(p => p.finish));
-      if (fin.length === this.players.length || this.run > 40 || (fin.length >= this.players.length - 1 && this.run - last > 3.5)) this.finishRace();
+      const raceDt = Math.min(dt, Math.max(0, TIMEOUT - this.run));
+      this.run += raceDt;
+      for (const p of this.players) if (p.finish === null) this.stepPlayer(p, raceDt, input);
+      const fin = this.players.filter(p => p.finish !== null), last = Math.max(0, ...fin.map(p => p.finish));
+      if (fin.length === this.players.length || this.run >= TIMEOUT || (fin.length > 0 && fin.length >= this.players.length - 1 && this.run - last > 3.5)) this.finishRace();
     } else if (this.state === 'done') {
       this.timer -= dt;
       if (this.timer <= 0) { this.state = 'over'; this.over = this.result(); this.emit('over', this.over); }
@@ -122,7 +127,7 @@ export class SackSim {
 
   finishRace() {
     // anyone still hopping is placed by how far they got
-    const rest = this.players.filter(p => !p.finish).sort((a, b) => b.d - a.d);
+    const rest = this.players.filter(p => p.finish === null).sort((a, b) => b.d - a.d);
     for (const p of rest) { p.place = ++this.placed; p.finish = null; }
     this.state = 'done'; this.timer = 1.6;
     this.score = [this.human ? this.human.place : 0, this.players.length];
@@ -130,10 +135,13 @@ export class SackSim {
 
   result() {
     const h = this.human, n = this.players.length;
-    const place = h ? h.place : 1, time = h?.finish ?? this.run;
-    const stars = place === 1 ? 3 : place === 2 ? 2 : place === 3 && n <= 3 ? 1 : place === 3 ? 1 : 0;
-    const score = h?.finish ? Math.max(1, Math.round((22 - h.finish) * 10)) : 0;
-    return { won: place === 1, place, n, time, score, rally: place, stars, touches: h?.hops || 0, falls: h?.falls || 0 };
+    const winner = this.players.find(p => p.place === 1 && p.finish !== null);
+    const racer = h || winner, finished = racer?.finish !== null && racer?.finish !== undefined;
+    const place = h ? h.place : winner ? 1 : 0, time = finished ? racer.finish : null;
+    const stars = !finished ? 0 : n === 1 ? (time <= SOLO_TIMES.three ? 3 : time <= SOLO_TIMES.two ? 2 : time <= TIMEOUT ? 1 : 0)
+      : place === 1 ? 3 : place === 2 ? (n === 2 ? 1 : 2) : place === 3 ? 1 : 0;
+    const score = h && finished ? Math.max(1, Math.round((22 - time) * 10)) : 0;
+    return { won: finished && place === 1, finished, place, n, time, score, rally: finished ? place : 0, stars, touches: h?.hops || 0, falls: h?.falls || 0 };
   }
 
   hud(names) {
@@ -150,7 +158,7 @@ export class SackSim {
 /** A stand-in for the player: hops every `gap` seconds (gap may be a function); null never. */
 export function sackBot(sim, gap = 0.5) {
   const out = { mx: 0, mv: 0, kick: false }, h = sim.human;
-  if (!h || sim.state !== 'race' || gap === null || h.fallT > 0 || h.finish) return out;
+  if (!h || sim.state !== 'race' || gap === null || h.fallT > 0 || h.finish !== null) return out;
   const g = typeof gap === 'function' ? gap(sim) : gap;
   out.kick = sim.run - h.last >= g - 1e-9;
   return out;
@@ -176,8 +184,8 @@ export default {
   card(res, rec, names, newBest) {
     const ord = [tx('1st'), tx('2nd'), tx('3rd'), tx('4th'), tx('5th')][Math.min(4, res.place - 1)];
     return {
-      verdict: res.place === 1 ? tx('You win the race!') : tx('You came {place}', { place: ord }), good: res.place <= 2,
-      score: res.time ? tx('{n} s across the green', { n: res.time.toFixed(1) }) : tx('Did not finish'),
+      verdict: !res.finished ? tx('Did not finish') : res.place === 1 ? tx('You win the race!') : tx('You came {place}', { place: ord }), good: res.finished && res.place <= 2,
+      score: res.finished ? tx('{n} s across the green', { n: res.time.toFixed(1) }) : tx('Did not finish'),
       best: newBest && rec.plays > 1 ? tx('New best!') : tx('Best: {n}', { n: rec.best }),
     };
   },
