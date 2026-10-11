@@ -1106,7 +1106,8 @@ export class Director {
     const { a, def } = f, g = this.game, p = g.player, st = this.q.state;
     if (a.kind !== 'bear' && a.kind !== 'duck') a.lookAt(p.pos.x, p.pos.z);
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
-    const low = !!a.slot || ['rabbit', 'chicken', 'cat', 'fox', 'pig', 'dog', 'frog'].includes(a.kind);
+    const low = a.slot ? a.pos.y < p.pos.y + 0.55
+      : ['rabbit', 'chicken', 'cat', 'fox'].includes(a.kind) && a.pos.y + 0.35 < p.pos.y + 0.55;
     if (!(low && this.ground.reach())) p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
     a.hold?.();                                                // a critter stays put for the hello
     const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag', cricket: 'Chirp', grasshopper: 'Hop', mantis: 'Look' }[a.kind];
