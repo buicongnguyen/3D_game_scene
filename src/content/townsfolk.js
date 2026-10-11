@@ -252,7 +252,7 @@ export const PEOPLE = [
         ['mika', "What did you tell him today?"],
         ['v18', "That Sora's girl is clearing out the cottage and not clearing off. He'd have liked that."] ],
         grandma: { lines: [
-          ['v18', "My Isamu built half the boats on this river. He's at the coast yard till winter. Every morning I tell his photograph the news."],
+          ['v18', "My Isamu built half the boats on this river. He's at the coast yard building boats. Every morning I tell his photograph the news."],
           ['mika', "What did you tell him today?"],
           ['v18', "That Sora's girl carries her shopping up the bluff and still beats her at cards. Then I post it to him. He writes back 'Ha!'"] ] } },
       { when: { chapter: [2, 5] }, ask: "Bring me a bunch of wildflowers from the stall in Takamori? Isamu always bought them there, every week, for my table.",
@@ -260,7 +260,7 @@ export const PEOPLE = [
         ['v18', "Oh. Oh, that's them. Yellow ones and the little blue ones. He'd come back from across the river smelling of them."],
         ['mika', "You couldn't get them yourself?"],
         ['v18', "Not with my knees and Rin's driving. They're for his shrine. Here, love, take this. No, take it. Don't argue with an old woman."] ],
-        grandma: { ask: "Bring me a bunch of wildflowers from the stall in Takamori? Isamu always buys them there for my table, and he's away till winter.", lines: [
+        grandma: { ask: "Bring me a bunch of wildflowers from the stall in Takamori? Isamu always buys them there for my table, and he's away building boats.", lines: [
           ['v18', "Oh. Oh, that's them. Yellow ones and the little blue ones. He always comes back from across the river smelling of them."],
           ['mika', "You couldn't get them yourself?"],
           ['v18', "Not with my knees and Rin's driving. I'll press one and post it to him. Here, love, take this. Don't argue with an old woman."] ] } },
