@@ -210,6 +210,7 @@ export class Tricks {
       // whatever happened above (a failed card included), the round never keeps the screen
       this.loops.clear();
       this.dropMoveHooks();
+      d.ground?.release('trick');
       this.el?.card.classList.add('hidden');
       this.round = null;
       this.locks = false;
@@ -245,6 +246,10 @@ export class Tricks {
       loop(fn) { return new Promise(res => { if (ctx.quit) res({ quit: true }); else self.loops.add({ fn, res }); }); },
       /** Run fn(dt) every frame, before Mika moves (a round that reshapes her input: creeping). Dropped when the round ends. */
       beforeMove(fn) { self.addMoveHook(fn); },
+      /** Ground poses are cosmetic; a round never delays its score, story events or action input for them. */
+      groundPose(input) { d.ground?.want('trick', input); },
+      groundReach(seconds) { return d.ground?.reach(seconds) || false; },
+      groundPickup(input) { return d.ground?.pickup(input) || false; },
       /** Wait on the game clock (pauses with the game). */
       wait(sec) { let t0 = 0; return ctx.loop(dt => ((t0 += dt) >= sec ? true : undefined)); },
       /** Fade the screen to black (true) or back (false). */
@@ -287,6 +292,7 @@ export class Tricks {
     for (const l of this.loops) l.res({ quit: true });
     this.loops.clear();
     this.dropMoveHooks();
+    this.d.ground?.release('trick');
     this.setNight(false);
     this.hideHint();
     this.el.hint.classList.remove('top');

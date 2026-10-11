@@ -267,6 +267,7 @@ export default {
 
     const res = await ctx.loop(dt => {
       left -= dt;
+      ctx.groundPose?.({ waiting: swing <= 0 && !ctx.pressed() && !g.input.pressed('tap') });
       const t = ctx.t;
       jarPoint(jar, jarAt);
       jarLight.intensity = Math.min(9, caught * 0.7);
@@ -400,6 +401,7 @@ export default {
     let t0 = 0;
     await ctx.loop(dt => {
       t0 += dt;
+      ctx.groundPose?.({ waiting: true });
       jarLight.intensity = Math.max(0, 6 - t0 * 1.4);
       sw.update(dt, ctx.t, jarAt, 0.5, sizeScale(g));
       return t0 > 5 ? true : undefined;

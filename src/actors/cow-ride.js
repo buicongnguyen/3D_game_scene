@@ -133,7 +133,7 @@ export class CowRide {
       g.scene.add(m);
       g.colliders?.cylinder?.(h.x, h.z, 1.0, y, y + 1.5);
       this.stacks.push({ ...h, y, obj: m });
-      d.interact(`hay:${h.id}`, new V3(h.x, y + 0.8, h.z), N_('Take some hay'), () => this.free() && this.hay < 1 && this.bond() !== 'all', () => this.takeHay(), 3.4, null, 0.2);
+      d.interact(`hay:${h.id}`, new V3(h.x, y + 0.8, h.z), N_('Take some hay'), () => this.free() && this.hay < 1 && this.bond() !== 'all', () => this.takeHay(h), 3.4, null, 0.2);
     }
     d.interact('feedCow', null, N_('Feed the cow'), () => this.free() && this.hay > 0 && !!this.feedTarget(), () => this.feed(this.feedTarget()), 4, () => this.feedTarget()?.pos, 0.45, 3);
     d.interact('rideCow', null, N_('Ride the cow'), () => this.free() && !!this.rideTarget(), () => this.mount(this.rideTarget()), 4, () => this.rideTarget()?.pos, 0.5, 3);
@@ -143,10 +143,19 @@ export class CowRide {
   feedTarget() { const a = this.nearCow(3.6); return a && !this.bonded(a) ? a : null; }
   rideTarget() { const a = this.nearCow(3.6); return a && this.bonded(a) ? a : null; }
 
-  takeHay() {
+  takeHay(target = null) {
     const d = this.d, p = this.g.player;
     this.hay = 1;
-    p.gesture('Interact', { lock: false });
+    const show = () => {
+      if (!this.hay) return;
+      this.hayBundle ??= makeHaystack();
+      this.hayBundle.name = 'cow:hay-armful';
+      this.hayBundle.scale.set(0.28, 0.18, 0.25);
+      this.hayBundle.position.set(0, -0.08, 0.04);
+      (p.grip || p.model).add(this.hayBundle);
+      p.carry?.want('worn', 'cow-hay');
+    };
+    if (!d.ground?.pickup({ target, onGrab: show })) { show(); p.gesture('Interact', { lock: false }); }
     d.audio.click();
     d.ui.toast(tx('A big armful of hay. Find a cow and feed her.'), 'cow-ride');
   }
@@ -155,10 +164,12 @@ export class CowRide {
     if (!a) return;
     const d = this.d, p = this.g.player, st = this.st;
     this.hay = 0;
+    this.hayBundle?.removeFromParent();
+    p.carry?.release('cow-hay');
     a.hold?.();
     a.lookAt(p.pos.x, p.pos.z);
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
-    p.gesture('Interact', { lock: false });
+    if (!d.ground?.reach()) p.gesture('Interact', { lock: false });
     a.farm.t = 4; a.farm.state = 'graze';
     if (a.anim?.has('Graze')) a.setIdle('Graze');
     d.audio.animal('cow', 0.8);

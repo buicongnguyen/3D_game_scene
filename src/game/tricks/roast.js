@@ -439,8 +439,10 @@ class RoastRound {
       near.taken = true;
       near.m.scale.multiplyScalar(0.6);                  // an armful gone from the pile
       this.carrying = true;
-      this.bundle.visible = true;
-      p.gesture?.('Interact', { lock: false });
+      if (!ctx.groundPickup?.({ target: { x: near.x, z: near.z }, onGrab: () => { this.bundle.visible = this.carrying; } })) {
+        this.bundle.visible = true;
+        p.gesture?.('Interact', { lock: false });
+      }
       ctx.audio?.pickup?.();
       this.hint(tx('Good. Carry it to the fire spot.'), 3);
     } else if (this.carrying && Math.hypot(this.centre.x - pos.x, this.centre.z - pos.z) < 1.9) {

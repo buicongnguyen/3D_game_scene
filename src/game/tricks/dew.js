@@ -272,6 +272,7 @@ export default {
 
         // the framed shot: Mika holds still, the camera looks at the web from its bright side
         if (st.phase === 'shot') {
+          ctx.groundPose?.({ kneel: true });
           shotT -= dt;
           if (shotT <= 0) {
             st.phase = 'look';
@@ -299,6 +300,7 @@ export default {
         const n = nearestWeb(webs, px, pz);
         st.near = n;
         st.check = n < 0 ? 'far' : photoCheck(px - webs[n].x, pz - webs[n].z, sunX, sunZ);
+        ctx.groundPose?.({ kneel: n >= 0 && st.check === 'ok' && Math.hypot(px - webs[n].x, pz - webs[n].z) <= 3.5 });
         const press = ctx.pressed() || clicked;
         clicked = false;
         let mode = '';
@@ -325,7 +327,7 @@ export default {
             flashT = 0.4; flash.style.opacity = '1';
             audio.click(); audio.twinkle(2); audio.good();
             fx.burst?.(w.pos.clone(), { n: 14, color: [0.8, 0.95, 1], speed: 0.9, size: 0.1, gravity: 0 });
-            p.gesture('Interact', { lock: false });
+            if (!p.anim?.has('Kneel')) p.gesture('Interact', { lock: false });
             // the shot: from the sunward side, a little above, the web filling the frame
             st.phase = 'shot'; shotT = SHOT_TIME;
             ctx.lock(true);

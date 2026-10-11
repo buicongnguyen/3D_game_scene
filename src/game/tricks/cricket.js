@@ -133,6 +133,8 @@ class CricketRound {
     this.t += dt;
     const p = this.player, pl = this.pl, ph = this.phase;
     pl.x = p.pos.x; pl.z = p.pos.z; pl.speed = p.speed;
+    const c = this.active;
+    this.ctx.groundPose?.({ kneel: ph === 'tickle' || ph === 'hunt' && !!c && Math.hypot(c.x - p.pos.x, c.z - p.pos.z) < 2.4 });
     this.flash = Math.max(0, this.flash - dt * 2.4);
     if (ph === 'hunt') {
       this.left -= dt;
@@ -220,7 +222,7 @@ class CricketRound {
         this.phase = 'hunt';
       } else {
         a?.[r === 'perfect' ? 'good' : 'blip']?.(r === 'perfect' ? undefined : 1.4);
-        this.player.gesture?.('Interact', { lock: false });
+        if (!this.ctx.groundReach?.()) this.player.gesture?.('Interact', { lock: false });
         if (k.n <= this.beatDots.length) this.beatDots[k.n - 1]?.classList.add('on');
         if (k.done) { this.finishTickle(k.quality); return; }
       }

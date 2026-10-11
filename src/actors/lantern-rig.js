@@ -148,7 +148,7 @@ export class LanternCarry {
     const arc = Math.sin(Math.PI * e);
     _at.x += -cf * 0.07 * arc; _at.z += sf * 0.07 * arc; _at.y += 0.03 * arc;      // out and around her coat, not through it
     // sitting (a chair, a bench, a floor cushion) there is no room for it at her hip: she stands it on her lap
-    const clip = a?.currentName, seated = clip === 'Sit' || clip === 'SitFloor' ? 1 : 0;
+    const clip = a?.currentName, seated = clip === 'Sit' || clip === 'SitFloor' || clip === 'SitGrass' ? 1 : 0;
     this.lapW = this.first ? seated : this.lapW + (seated - this.lapW) * (1 - Math.exp(-dt * 7));
     if (this.lapW < 0.002) this.lapW = 0;
     const lap = ease(this.lapW) * (1 - e);
@@ -156,6 +156,11 @@ export class LanternCarry {
       _v.setFromMatrixPosition(this.hips.matrixWorld);
       _v.x += sf * LAP_FWD; _v.z += cf * LAP_FWD; _v.y += LAP_UP + this.len * WORN_SCALE;
       _at.lerp(_v, lap);
+    }
+    // Deep ground poses need the short belt strap outside the bent thigh and above the turf.
+    if (/^(Crouch|Kneel|Pickup)/.test(clip || '') && e < 1) {
+      _at.x -= cf * 0.075 * (1 - e); _at.z += sf * 0.075 * (1 - e);
+      _at.y = Math.max(_at.y, p.root.position.y + this.len * WORN_SCALE + 0.055);
     }
 
     // sway: pushed by how the hanging point speeds up, in her own frame (x: her left, z: ahead)

@@ -294,6 +294,7 @@ class FrogRound {
     }
     const dist = Math.hypot(this.singer.x - p.pos.x, this.singer.z - p.pos.z);
     const moving = p.speed > 0.35;
+    this.ctx.groundPose?.({ waiting: ch.quiet && !moving });
     _sneak.moving = moving; _sneak.quiet = ch.quiet; _sneak.dist = dist; _sneak.dt = dt;
     const ev = this.singer.st === 'sit' ? sneakStep(this.st, _sneak) : null;
     if (ev === 'startle' || ev === 'flee') {
@@ -323,7 +324,7 @@ class FrogRound {
     this.handT = 0;
     this.mark.material.opacity = 0;
     p.turnTo?.(Math.atan2(s.x - p.pos.x, s.z - p.pos.z), 1, 50);
-    p.gesture?.('Interact', { lock: false });
+    if (!this.ctx.groundReach?.()) p.gesture?.('Interact', { lock: false });
     this.hop(s, s.x, s.y + 0.2, s.z, 0.35, 0.3, 'hand');
     this.ctx.audio?.good?.();
     this.ctx.hint?.(tx('It hopped onto your hand! Cool and light, and very calm.'));
@@ -441,6 +442,7 @@ class FrogRound {
   }
 
   update(dt) {
+    if (this.phase !== 'sneak') this.ctx.groundPose?.({ waiting: this.phase === 'simon' });
     if (this.phase === 'sneak') this.sneak(dt);
     else if (this.phase === 'hand') this.hand(dt);
     else if (this.phase === 'simon') this.simonStep(dt);

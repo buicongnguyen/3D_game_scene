@@ -92,7 +92,7 @@ export class FollowCamera {
     const dist = THREE.MathUtils.lerp(this.zoomTarget, 2.4, this.aimBlend) + this.flyBlend * 4;
     const fwd = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
     const right = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
-    const pivot = player.pos.clone().add(new THREE.Vector3(0, THREE.MathUtils.lerp(1.45, 1.55, this.aimBlend), 0));
+    const pivot = player.pos.clone().add(new THREE.Vector3(0, THREE.MathUtils.lerp(1.45, 1.55, this.aimBlend) - (player.groundCameraLower || 0), 0));
     pivot.addScaledVector(right, 0.62 * this.aimBlend);
     // collision: pull in before terrain or buildings block the view
     let d = dist;

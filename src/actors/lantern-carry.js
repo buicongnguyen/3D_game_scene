@@ -18,7 +18,8 @@ export const CARRY = {
 /** Clips that keep her body busy for as long as they play: nothing asked by anyone puts the lantern in her hand. */
 export const BODY_CLIPS = new Set(['Sit', 'SitFloor', 'Swim', 'Tread', 'Hang']);
 /** Gestures that use her hands: the lantern goes to the belt, unless an activity asked for it in her hand. */
-export const HAND_CLIPS = new Set(['Cast', 'Reel', 'Cheer', 'Stir', 'Hammer', 'Pet', 'Talk', 'Interact']);
+export const HAND_CLIPS = new Set(['Cast', 'Reel', 'Cheer', 'Stir', 'Hammer', 'Pet', 'Talk', 'Interact',
+  'Crouch', 'CrouchWalk', 'CrouchReach', 'CrouchReachHold', 'Kneel', 'Pickup', 'SitGrass']);
 /** Clips that hold the lantern out themselves. */
 export const LANTERN_CLIPS = new Set(['Aim']);
 /** Clips in which a held lantern is carried raised in front of her (the rig bends her right arm). */

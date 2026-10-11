@@ -201,6 +201,7 @@ class HopRound {
   caught(b) {
     const c = b.vis;
     if (!c) return;
+    this.ctx.groundReach?.();
     b.vis = null;
     c.pose(b.kind === 'mantis' ? 'strike' : 'struggle', true);
     this.carry.push({ c, t: 0, kind: b.kind, fx: c.root.position.x, fy: c.root.position.y, fz: c.root.position.z, tx: this.aim.x, tz: this.aim.z });
@@ -302,6 +303,7 @@ class HopRound {
     this.t += dt;
     this.sinceHit += dt;
     const p = this.player, inp = this.g.input, pl = this.pl;
+    this.ctx.groundPose?.({ creeping: !this.ending && this.cs.creeping });
     pl.x = p.pos.x; pl.z = p.pos.z; pl.speed = p.speed; pl.facing = p.facing;
     if (!this.ending) this.meadow.update(dt, pl);
     this.events();
@@ -309,7 +311,10 @@ class HopRound {
     const land = this.ending ? null : this.net.update(dt, { press: inp.pressed('act'), held: inp.held('act') || padHeld(), tap: inp.pressed('tap') });
     const phase = this.net.phase;
     if (phase !== this.phaseWas) {
-      if ((phase === 'quick' || phase === 'sweep') && this.phaseWas !== 'quick' && this.phaseWas !== 'sweep') { this.audio?.[phase === 'quick' ? 'whoosh' : 'stroke']?.(1.6); p.gesture?.('Interact', { lock: false }); }
+      if ((phase === 'quick' || phase === 'sweep') && this.phaseWas !== 'quick' && this.phaseWas !== 'sweep') {
+        this.audio?.[phase === 'quick' ? 'whoosh' : 'stroke']?.(1.6);
+        if (!(this.cs.creeping && p.anim?.has('Crouch'))) p.gesture?.('Interact', { lock: false });
+      }
       this.phaseWas = phase;
     }
     // where the ring lies: 1.5 m ahead, drawn toward a bug that is nearly under it

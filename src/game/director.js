@@ -21,6 +21,8 @@ import { SkyGaze } from './skygaze.js';
 import { makeBulb, disposeBulb } from '../world/bulb.js';
 import { Yard } from './yard/round.js';
 import { CowRide } from '../actors/cow-ride.js';
+import { GroundPoseSystem } from '../actors/ground-pose-system.js';
+import { SKY_SPOT } from '../content/skyspots.js';
 import { Workshop } from './workshop/index.js';
 import { SHOPS } from '../content/shops.js';
 import { MinigameMenu } from './minigame-menu.js';
@@ -48,6 +50,7 @@ export class Director {
     this.pickups = new Map();
     this.zones = new Map();
     this.npcs = {};
+    this.ground = new GroundPoseSystem(game.player);
     this.minigame = null;
     this.stepClock = 0;
     this.saveClock = 0;
@@ -341,7 +344,7 @@ export class Director {
     // Grandma's countryside tricks: signs, teaching, rounds and the journal Tricks tab (game/tricks.js)
     this.tricks = new Tricks(this);
     // her lantern (belt or hand) follows the pose every frame, with or without a quest (actors/lantern-carry.js)
-    if (!this.game.lanternSystem) this.game.systems.push(this.game.lanternSystem = { update: (dt, g) => g.player.lateUpdate?.(dt, g) });
+    if (!this.game.lanternSystem) this.game.systems.push(this.game.lanternSystem = { update: (dt, g) => { if (!this.quest) g.player.lateUpdate?.(dt, g); } });
     // "Look up at the sky" at the lamp towers and a few open places (game/skygaze.js)
     this.sky = new SkyGaze(this);
     // the Kawabe playground yard: the kids' foot-tennis and keep-it-up, and Mika joining in (game/yard/round.js)
@@ -560,6 +563,7 @@ export class Director {
     this.interact(`spark:${id}`, null, label, () => tamoHere() && !t.pending && t.when(), () => this.sparkAt(t),
       reach.r ?? 6, () => (t.posFn ? t.posFn() : t.pos), reach.prio ?? 2, reach.vy ?? 6);
     this.interactables.get(`spark:${id}`).spark = true;
+    this.interactables.get(`spark:${id}`).bulb = t.bulb;
   }
 
   sparkAt(t) {
@@ -616,7 +620,9 @@ export class Director {
     this.q.state.flags[pk.id] = true;
     this.removePickup(pk.id);
     this.fx.burst(pk.obj.position, { n: 24, speed: 2.5, size: 0.25 });
-    this.game.player.gesture('Interact', { lock: false });
+    const groundItem = ['cog', 'chestnut', 'mushroom', 'honeycomb'].includes(pk.item);
+    if (groundItem && this.ground.pickup({ object: pk.obj, target: pk.pos })) this.game.scene.add(pk.obj);
+    else this.game.player.gesture('Interact', { lock: false });
     if (pk.keepsake) { this.foundKeepsake(pk.keepsake); return; }
     if (pk.treasure) { this.foundTreasure(pk.treasure); return; }
     if (pk.letter) { this.foundLetter(pk.letter); return; }
@@ -1097,7 +1103,8 @@ export class Director {
     const { a, def } = f, g = this.game, p = g.player, st = this.q.state;
     if (a.kind !== 'bear' && a.kind !== 'duck') a.lookAt(p.pos.x, p.pos.z);
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
-    p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
+    const low = !!a.slot || ['rabbit', 'chicken', 'cat', 'fox', 'pig', 'dog', 'frog'].includes(a.kind);
+    if (!(low && this.ground.reach())) p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
     a.hold?.();                                                // a critter stays put for the hello
     const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag', cricket: 'Chirp', grasshopper: 'Hop', mantis: 'Look' }[a.kind];
     if (react && a.anim?.has?.(react)) a.anim.once(react, { then: a.idleClip || 'Idle' });
@@ -1419,11 +1426,12 @@ export class Director {
     this.focus = best;
     const labelOf = it => (typeof it.label === 'function' ? it.label() : tx(it.label));
     if (!best && aimHint) {
-      this.ui.prompt(tx('Aim and spark: {what}', { what: labelOf(aimHint) }), this.ui.touch ? tx('Aim') : tx('Right mouse'));
+      const fit = aimHint.bulb && this.electric();
+      this.ui.prompt(tx(fit ? N_('Aim, then {what}') : N_('Aim and spark: {what}'), { what: labelOf(aimHint) }), this.ui.touch ? tx('Aim') : tx('Right mouse'));
       // the first time in a session: how aiming works on this device
       if (!this.aimTaught) {
         this.aimTaught = true;
-        this.ui.toast(tx('Hard mode: hold {aim} to aim, then press {fire} to spark', this.ui.touch ? { aim: tx('Aim'), fire: tx('Spark') } : { aim: tx('Right mouse'), fire: tx('Left click') }));
+        this.ui.toast(tx(fit ? N_('Hard mode: hold {aim} to aim, then press {fire} to fit the bulb') : N_('Hard mode: hold {aim} to aim, then press {fire} to spark'), this.ui.touch ? { aim: tx('Aim'), fire: tx('Spark') } : { aim: tx('Right mouse'), fire: tx('Left click') }));
       }
     }
     else this.ui.prompt(best ? labelOf(best) : null);
@@ -1463,6 +1471,14 @@ export class Director {
     // river ambience
     const rv = river.nearest(p.pos.x, p.pos.z, 80);
     this.audio.ambience(dt, rv ? Math.max(0, rv.d - riverHalfWidth(rv.z)) : 80, g.night || 0, g.time.season);
+    const hill = SKY_SPOT['star-hill'];
+    this.ground.want('star-hill', { waiting: !this.tricks?.round && (g.night || 0) > 0.35 && Math.hypot(p.pos.x - hill.x, p.pos.z - hill.z) < hill.r });
+    this.ground.update(dt, {
+      blocked: this.busy > 0 || !!this.minigame || !!this.sky?.active || !!this.yard?.round || !!this.cows?.riding || !!p.mounted || !!p.climb || p.swimming || p.aiming || !!g.kite?.active || !!g.interiors?.active || !!this.ui.overlay,
+      moving: Math.hypot(inp.move.x, inp.move.y) > 0.05 || inp.pressed('jump'),
+    });
+    // Ground poses and procedural arms are current before the belt hook and lantern light are sampled.
+    p.lateUpdate?.(dt, g);
   }
 
   /** The valley's machinery wakes up with its lamps; the star compass points the way. */

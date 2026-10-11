@@ -44,7 +44,7 @@ export function creepFilter(input, state = { creeping: false }) {
   return () => {
     const m = input.move, len = Math.hypot(m.x, m.y);
     const held = input.keys.has('sprint');
-    state.creeping = false;
+    state.creeping = held;
     if (len < 0.05) return;
     const analog = input.lastDevice === 'touch' || input.lastDevice === 'gamepad';
     const s = Math.min(1, len);
@@ -219,6 +219,7 @@ function plainNet() {
 /** The net in her right hand: upright at rest, raised while the button is held, swung with k from 0 to 1. */
 export class NetRig {
   constructor(assets, player) {
+    this.player = player;
     this.grip = player.grip || player.model;
     this.onBone = this.grip !== player.model;
     this.net = assets?.clone?.('bug-net') || plainNet();
@@ -227,9 +228,22 @@ export class NetRig {
     this.rest = this.net.rotation.clone();
     this.grip.add(this.net);
     this.k = 0;
+    this.bends = ['upperarm_R', 'forearm_R'].map(name => {
+      const bone = player.model?.getObjectByName(name);
+      return bone ? { bone, base: new THREE.Quaternion(), wrote: new THREE.Quaternion(), on: false } : null;
+    });
   }
 
   pose(k) {
+    const low = /^Crouch/.test(this.player.pose || this.player.anim?.currentName || '');
+    // Preserve the crouched legs and torso: the sweep is only an arm overlay, sampled after the mixer.
+    for (let i = 0; i < this.bends.length; i++) {
+      const b = this.bends[i];
+      if (!b) continue;
+      if (b.on && b.bone.quaternion.equals(b.wrote)) b.bone.quaternion.copy(b.base);
+      b.on = low && k > 0.002;
+      if (b.on) { b.base.copy(b.bone.quaternion); b.bone.rotateX((i ? -0.45 : -1.05) * Math.sin(Math.PI * k)); b.wrote.copy(b.bone.quaternion); }
+    }
     if (Math.abs(k - this.k) < 0.002) return;
     this.k = k;
     if (this.onBone) this.net.rotation.set(Math.PI + (-2.478 - Math.PI) * k, 1.281 * k, -0.626 * k);
