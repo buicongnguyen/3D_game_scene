@@ -598,7 +598,7 @@ the footprint, front toward −Y). Every model except `star-tree` has an icon in
   uncompressed sources). Production builds re-encode every model with
   meshopt (`scripts/pack-models.mjs`), and the packed library must stay
   within `TOTAL_PACKED_BYTES` (`tests/pack.test.mjs`). Both numbers live in
-  `tests/asset-contracts.mjs`, each with the history of its raises (39.700 MB and 15.190 MB after the bug-catching games).
+  `tests/asset-contracts.mjs`, each with the history of its raises (39.900 MB and 15.380 MB after the bug-catching games and the cow ride).
 - Each rigged model loads in three.js with all listed clips. Every contract
   node and material listed above exists.
 
@@ -607,3 +607,5 @@ the footprint, front toward −Y). Every model except `star-tree` has an icon in
 Clips on `mika` and `villager-kid` only (Kenta/Yui/Daichi use the kid): `RideCow` (idle sway, 3 s loop), `RideCowTrot` (0.5 s loop, two bounces), `RideCowLean` (0.6 s loop, leaning forward, for Gallop). Thighs about 78 degrees out from vertical, shins hanging down the cow's sides, feet loose, torso upright, both hands on a rope at the cow's neck base. Node names unchanged, so the Low-tier merged skin is unaffected.
 
 Seat offset: attach the rider root to the cow's `spine` bone, on the centre line, standing on top of the saddle blanket. Cow back top about 1.33 m, blanket about 0.03 m, so root at height 1.36 m and 0.12 m toward the head (three.js x=0, y=1.36, z=+0.12 relative to the cow root). The clips drop the pelvis so the hip joints sit 0.075 x k above the root. Review scenes: `art/blender/rider_check.py`.
+
+Runtime rules for riders (the standing-kid fix): a mounted rider is on `RideCow` / `RideCowTrot` / `RideCowLean` (or, for a model without them, the documented fallback `Sit`) on EVERY frame, in every phase (line-up, countdown, race, podium, free ride): the clip is applied with `Animator.snap` in the frame it is attached (no blend, the skeleton is posed at once) and every frame `ensureSeated` (actors/cow-rig.js) puts any rider back on a ride clip and counts it (it must stay 0). The pooled kid riders have no owner but the race: it ticks their animators in every phase. Nobody cheers, waves or talks on a cow's back. The kid's seat height is measured from its own skeleton (`seatHeight`: hip joint in the RideCow pose over the saddle top, scaled by its size, clamped to 1.32-1.40 m), Mika's is the contract number above. Tests: tests/cowhelp.test.mjs.

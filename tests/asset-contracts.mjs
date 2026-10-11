@@ -261,6 +261,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // (beetle-rhino 59 -> 86 KB, beetle-stag 64 -> 91 KB: twelve more animated bones); the other five changed by < 1.1 KB each.
 // +0.327 MB: the bug-catching games (grasshopper 114 KB, mantis 184 KB, bug-cage 15 KB; the cricket 61 -> 128 KB with six
 // knees and two new clips). Almost all of it is the clips: every leg is two animated bones.
+// +0.225 MB: riding the cow (RideCow clips on mika +76 KB and villager-kid +66 KB; the cow's Trot and Gallop +50 KB). The raw
+// library is 39.867 MB, so this ceiling has only ~33 KB left: the next model raises it again, with its reason, here.
 export const TOTAL_RAW_BYTES = 39_900_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).

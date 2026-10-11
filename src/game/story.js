@@ -823,7 +823,7 @@ export const FRIENDS = [
   { id: 'cow', name: 'Meadow cow', icon: 'cow', verb: "Scratch the cow's chin",
     desc: 'Chews slowly, thinks slowly, and has never once been in a hurry. Her bell rings with every step.', hint: 'In the meadow south of Kawabe and along the pasture road to Takamori.' },
   { id: 'cowpal', name: 'Your riding cow', icon: 'cow-ride', verb: 'Pat the cow',
-    desc: 'Fed on hay, now a friend. Carries Mika anywhere there is grass, trots when asked, and stops for a snack whenever she likes.', hint: 'Take hay from the haystack by a pasture, feed a cow, then hop on and take a ride.' },
+    desc: 'Fed on hay, now a friend. Steer her, hold to trot and gallop, and let her rest and graze when she is tired.', hint: 'Take hay from the haystack by a pasture, feed a cow, then stand beside her and press {act} to ride.' },
   { id: 'pig', name: 'Takamori pig', icon: 'pig', verb: "Scratch the pig's back",
     desc: 'Snuffles through the lanes behind the houses, certain there are truffles in every garden.', hint: 'Behind the houses of Takamori.' },
   { id: 'goat', name: 'Hillside goat', icon: 'goat', verb: 'Pat the goat',

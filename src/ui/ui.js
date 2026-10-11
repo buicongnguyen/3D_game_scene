@@ -841,6 +841,7 @@ export class UI {
         head(N_('Flying the Star Kite')), row([tx('Kite')], N_('Take off, or land the kite')), row([], N_('Left thumb: steer')),
         row([tx('Jump')], N_('Climb (hold)')), row([tx('Dive')], N_('Descend (hold)')),
         ...(motors ? [row([tx('Boost')], N_('With motors: boost while the battery lasts (hold)')), row([], hover)] : [row([], bench)]),
+        head(N_('Looking up at the sky')), row([tx('Fly up')], N_('Fly up on the Star Kite, above the mountains, for a clear sky')), row(['◀', '▶'], N_('Turn the sky clock half an hour at a time')),
         head(N_('Countryside tricks')), row([tx('Do it')], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips'))].join('');
     }
     return [head(N_('Walking')), row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')),
@@ -851,6 +852,7 @@ export class UI {
       head(N_('Flying the Star Kite')), row(['G'], N_('Take off, or land the kite')), row(['W', 'A', 'S', 'D'], N_('Steer')),
       row(['Space'], N_('Climb (hold)')), row(['C', 'N'], N_('Descend (hold)')), row(['Shift'], N_('Fly faster')),
       ...(motors ? [row(['Shift'], N_('With motors: a stronger boost while the battery lasts')), row([], hover)] : [row([], bench)]),
+      head(N_('Looking up at the sky')), row(['U', 'G'], N_('Fly up on the Star Kite, above the mountains, for a clear sky')), row(['PageUp', 'PageDown'], N_('Turn the sky clock half an hour at a time')),
       head(N_('Countryside tricks')), row(['E'], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips')),
       row(['Backspace'], N_('Stop a trick early')),
       row(['🎮'], N_('Gamepad supported'))].join('');

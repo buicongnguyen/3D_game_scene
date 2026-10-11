@@ -9,8 +9,22 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
  * drops her hips 0.45 m below her root, so the root is at back height minus that.
  */
 export const SEAT = { x: 0, y: 1.36, z: 0.12 };
-/** Her little rider friends are shorter: their Sit clip is the same 0.45 m hip drop. */
+/** Her little rider friends are shorter: their Sit clip is the same 0.45 m hip drop. (The race then measures each kid: seatHeight.) */
 export const KID_SEAT = { x: 0, y: 1.36, z: 0.12 };
+/** Saddle top above the cow root, the clearance of a seated hip joint over it for a Mika-sized rider, and Mika's standing hip height. */
+export const BACK_TOP = 1.33, HIP_CLEAR = 0.1, MIKA_HIPS = 0.64;
+
+/**
+ * Where a rider's root goes over the cow root so that its seated hip joints sit HIP_CLEAR (scaled by the model's size) above the
+ * saddle top: from the model's own skeleton, not a number for one model. bindHips = hip joint height over the root in the bind pose
+ * (its size: a kid's is 0.49 against Mika's 0.64), rideHips = the same in the RideCow pose. Clamped to 4 cm either side of the
+ * contract's 1.36 m, so a glitchy measurement can never sink a rider into the cow or lift it off.
+ */
+export function seatHeight(bindHips, rideHips) {
+  const k = bindHips > 0 ? bindHips / MIKA_HIPS : 1;
+  const y = BACK_TOP + HIP_CLEAR * k - (rideHips ?? 0.075);
+  return Math.min(1.40, Math.max(1.32, y));
+}
 
 const _c = new THREE.Color();
 /** A box (or other geometry) painted one colour, as a non-indexed-free merge input (position, normal, uv, color). */
@@ -171,4 +185,40 @@ export function playGait(anim, v, rider = false, fade = 0.2) {
   anim.play(anim.has(name) ? name : (rider ? 'Sit' : 'Walk'), { speed: Math.max(0.6, Math.min(1.4, v / g.auth)), fade });
   return g;
 }
-export const riderPose = anim => (anim?.has('RideCow') ? 'RideCow' : anim?.has('Sit') ? 'Sit' : 'Idle');
+
+/** The three seated clips of a rider (art/CONTRACTS.md "Riding the cow"). A model without them falls back to Sit (documented), then Idle. */
+export const RIDE_CLIPS = ['RideCow', 'RideCowTrot', 'RideCowLean'];
+export const isRideClip = name => RIDE_CLIPS.includes(name);
+/** A clip a mounted rider may be on: a ride clip, or the documented fallback Sit. Anything else (Idle, Talk, Cheer, bind pose) is a kid standing on a cow. */
+export const isSeatedClip = name => isRideClip(name) || name === 'Sit';
+/** The clip a rider plays for `want`: that ride clip if the model has it, else RideCow, else Sit, else Idle. */
+export const riderClip = (anim, want = 'RideCow') => (anim?.has(want) ? want : anim?.has('RideCow') ? 'RideCow' : anim?.has('Sit') ? 'Sit' : 'Idle');
+export const riderPose = anim => riderClip(anim, 'RideCow');
+
+const _hp = new THREE.Vector3(), _rp = new THREE.Vector3();
+/** Height of a model's hip joint over its root right now (world space), or null when it has no hips bone. */
+export function hipsHeight(model, root) {
+  const hips = model?.getObjectByName?.('hips');
+  if (!hips || !root) return null;
+  root.updateWorldMatrix(true, true);
+  hips.getWorldPosition(_hp); root.getWorldPosition(_rp);
+  return _hp.y - _rp.y;
+}
+
+/** Put a rider on its ride clip right now: no blend, the skeleton posed this frame (a rider never shows one frame of standing). */
+export function seatRider(anim, want = 'RideCow', speed = 1) {
+  if (!anim) return false;
+  return anim.snap(riderClip(anim, want), { speed });
+}
+
+/**
+ * The per-frame self-check of a mounted rider: whatever else touched its animator (a one-shot gesture still playing, an
+ * Idle after a reset, a mixer that was never ticked), it ends up on a seated clip. Returns true when it had to correct
+ * (the caller counts and logs that: it must not happen).
+ */
+export function ensureSeated(anim, want = 'RideCow', speed = 1) {
+  if (!anim) return false;
+  if (!anim.busy && isSeatedClip(anim.currentName)) return false;
+  seatRider(anim, want, speed);
+  return true;
+}

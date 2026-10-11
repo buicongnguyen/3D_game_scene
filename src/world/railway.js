@@ -285,6 +285,7 @@ export class Railway {
       s -= car.length + (i === 0 ? 0 : 0.3); // Kobo -> coach centres 8.35 m apart (buffers touching)
     });
     const lc = this.cars[0].obj;
+    if (lc.visible) lc.updateWorldMatrix(true, false);   // (matrices.js skips hidden objects: the first frame out of the tunnel would use the matrix from the way in)
     this.headPos.set(0, 2.0, 7).applyMatrix4(lc.matrixWorld);
     this.headI = lc.visible && night > 0.3 ? 18 * night : 0;
     this.smokeRate = Math.min(1, Math.abs(T.v) / 5) * 0.8 + 0.2;

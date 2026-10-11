@@ -270,9 +270,12 @@ export class OanSim {
 
   /** The squares the hint lights: every one with a legal move, those that capture first. */
   hintSquares() {
+    // (the board draws this every frame while the hint is on: a position changes only when a move is played)
+    if (this.hintFor === this.board && this.hintMover === this.mover) return this.hintList;
     const seen = [];
     for (const m of hints(this.board, this.mover)) if (!seen.includes(m.sq)) seen.push(m.sq);
-    return seen.slice(0, 6);
+    this.hintFor = this.board; this.hintMover = this.mover;
+    return (this.hintList = seen.slice(0, 6));
   }
 
   /** Mika taps one of her squares (null: let go). */

@@ -17,6 +17,7 @@ export const ARCH = {
   minDraw: 0.25,          // releasing before this lets the bow down (no arrow is used)
   yawMax: 0.24, pitchMin: -0.08, pitchMax: 0.16,   // the aim cone (radians): about 14 degrees to each side, 5 down, 9 up
   muzzle: { u: 0.45, v: 0.28 },   // where the arrow leaves the bow (lane units; y is the eye height)
+  eye: 1.12,              // the height it leaves at: about Mika's cheek (content/archery.js repeats it: the tests keep the two in step)
   sway: 0.0017,           // the bow's own slow sway at a full draw (radians, about 0.1 degrees)
   tremble: 0.014,         // extra sway at the end of a too-long hold (radians, about 0.8 degrees)
   holdFree: 0.7,          // seconds at full draw before the tremble starts
@@ -28,6 +29,10 @@ export const ARCH = {
   ringsN: 10,
   perfect: 10,            // the ring that is a bullseye
   arrowsFirst: 4, arrows: 6, arrowsMoving: 4,
+  easyScale: 1.5,         // the first end of the first try: the target face is this much bigger...
+  easyWind: 0.45,         // ...and the wind this much weaker
+  guideIdle: 6,           // seconds of doing nothing on the first try before the ghost hand shows how
+  guideAim: 0.05,         // radians of aiming that count as "has aimed"
   stars: [60, 100, 140],  // (content/tricks.js repeats them: the test keeps the two in step)
 };
 
@@ -41,11 +46,15 @@ export function rng(seed) {
 /**
  * The ends of a round: three at 10, 15 and 20 m, and (after the first try) a fourth at a sliding target.
  * easy: Easy mode in the settings. first: the guided first try (fewer arrows, a gentler wind, no sliding target).
+ * The very first end of the first try is an "easy end": its target face is half as big again and the wind half as strong
+ * as the rest of that try (end.scale, end.wind), and its dotted aim arc is drawn big (end.bigArc).
  */
 export function roundPlan(first, easy = false) {
   const n = first ? ARCH.arrowsFirst : ARCH.arrows;
   const ends = [{ target: 0, arrows: n }, { target: 1, arrows: n }, { target: 2, arrows: n }];
-  if (!first) ends.push({ target: 'moving', arrows: ARCH.arrowsMoving });
+  for (const e of ends) { e.scale = 1; e.wind = 1; e.bigArc = false; }
+  if (first) { ends[0].scale = ARCH.easyScale; ends[0].wind = ARCH.easyWind; ends[0].bigArc = true; }
+  if (!first) ends.push({ target: 'moving', arrows: ARCH.arrowsMoving, scale: 1, wind: 1, bigArc: false });
   return { ends, windScale: first || easy ? 0.5 : 1, arc: first || easy };
 }
 
@@ -63,7 +72,7 @@ export function arcAlpha(plays, easy = false) {
  * The wind of a round: one per end, a base crosswind (signed: + pushes toward +v, the shooter's right), a slow swing and a
  * timetable of gusts. Stronger at the far ends. Seeded: the same seed gives the same wind.
  */
-export function makeWind(seed, ends = 4, scale = 1) {
+export function makeWind(seed, ends = 4, scale = 1, endMul = null) {
   const R = rng(seed), out = { scale, ends: [] };
   const mags = [[0.7, 1.7], [1.4, 2.9], [2.1, 3.9], [1.2, 2.5]];
   let sign = R() < 0.5 ? -1 : 1;
@@ -73,7 +82,7 @@ export function makeWind(seed, ends = 4, scale = 1) {
     const base = sign * (lo + R() * (hi - lo));
     const gusts = [];
     for (let t = 2 + R() * 3; t < 60; t += 3.5 + R() * 5) gusts.push({ t, dur: 1.4 + R() * 1.6, k: (R() < 0.8 ? 1 : -0.5) * (0.35 + R() * 0.55) });
-    out.ends.push({ base, swing: 0.2 + R() * 0.15, per: 6.5 + R() * 4, ph: R() * 6.283, gusts });
+    out.ends.push({ base, swing: 0.2 + R() * 0.15, per: 6.5 + R() * 4, ph: R() * 6.283, gusts, mul: endMul?.[e] ?? 1 });
   }
   return out;
 }
@@ -86,7 +95,7 @@ export function windAt(wind, end, t) {
     const x = (t - g.t) / g.dur;
     if (x > 0 && x < 1) k += g.k * Math.sin(x * Math.PI) ** 2;
   }
-  const v = w.base * k * wind.scale;
+  const v = w.base * k * wind.scale * (w.mul ?? 1);
   return v > ARCH.gustMax ? ARCH.gustMax : v < -ARCH.gustMax ? -ARCH.gustMax : v;
 }
 
@@ -141,7 +150,7 @@ export function starsOf(total, stars = ARCH.stars) { return stars.filter(s => to
  * eye: release height above the line's ground. state: 'fly' | 'hit' (a face) | 'back' | 'ground' | 'side' | 'other' (a target
  * that is not the one being shot at).
  */
-export function launch(a, aim, draw, t0, eye = 1.38, out = null) {
+export function launch(a, aim, draw, t0, eye = ARCH.eye, out = null) {
   const s = speedFor(draw), cp = Math.cos(aim.pitch);
   const o = a || {};
   o.u = ARCH.muzzle.u; o.v = ARCH.muzzle.v; o.y = eye;
@@ -185,6 +194,7 @@ export function stepArrow(a, wind, end, dt, scene) {
       const f = (tg.u - pu) / ((a.u - pu) || 1e-9), cv = pv + (a.v - pv) * f, cy = py + (a.y - py) * f;
       const tv = tg.moving ? scene.vAt(i, a.t0 + a.t - h * (1 - f)) : tg.v;
       const d = Math.hypot(cv - tv, cy - tg.y);
+      if (i === scene.active) { a.passV = cv - tv; a.passY = cy - tg.y; a.passD = d; }      // where it crossed the target's plane, from its middle (for "too high")
       if (d <= tg.r) {
         a.u = tg.u; a.v = cv; a.y = cy; a.hitU = tg.u; a.hitV = cv - tv; a.hitY = cy - tg.y; a.hitIdx = i; a.dist = d;
         if (i === scene.active) { a.state = 'hit'; a.ring = ringOf(d, tg.r); } else { a.state = 'other'; a.ring = 0; }
@@ -206,8 +216,57 @@ export function stepArrow(a, wind, end, dt, scene) {
   return a;
 }
 
+/** Why an arrow that did not score missed: 'high' | 'low' | 'left' | 'right' | 'wind' (pushed that way by a real wind) | 'short' (fell before the target) | 'other' (another target) | null (it scored). v is + to the shooter's right. */
+export function missReason(a, windV = 0) {
+  if (a.state === 'hit') return null;
+  if (a.state === 'other') return 'other';
+  if (a.passD === undefined) return a.state === 'ground' ? 'short' : 'low';
+  const dy = a.passY, dv = a.passV;
+  if (Math.abs(dy) >= Math.abs(dv)) return dy > 0 ? 'high' : 'low';
+  if (Math.abs(windV) >= 0.9 && Math.sign(windV) === Math.sign(dv)) return 'wind';
+  return dv > 0 ? 'right' : 'left';
+}
+
+/**
+ * Where an arrow shot with this aim and draw (no wind) crosses the plane of a target (u metres down the lane, v and the face's middle y,
+ * radius r): how far from the middle sideways (dv, + = right) and up (dy), and whether that is on the face. For the crosshair that turns green.
+ */
+export function aimOffset(aim, draw, tg, eye = ARCH.eye) {
+  const s = speedFor(Math.max(0.3, draw)), cp = Math.cos(aim.pitch);
+  const vu = s * cp * Math.cos(aim.yaw), vv = s * cp * Math.sin(aim.yaw), vy = s * Math.sin(aim.pitch);
+  const t = (tg.u - ARCH.muzzle.u) / (vu || 1e-9);
+  const v = ARCH.muzzle.v + vv * t, y = eye + vy * t - 0.5 * ARCH.g * t * t;
+  const dv = v - (tg.v ?? 0), dy = y - tg.y, d = Math.hypot(dv, dy);
+  return { dv, dy, d, on: d <= tg.r };
+}
+
+// ----------------------------------------------------------------------------------------------- the first-try guide
+/**
+ * What a first-time player still has to learn, in order: 'aim' (move the crosshair), 'hold' (draw), 'release' (let go while drawing),
+ * then null. done: { aimed, drew, shot } flags; drawing: the string is being drawn now.
+ */
+export function guideStep(done, drawing = false) {
+  if (!done.aimed) return 'aim';
+  if (!done.drew && !drawing) return 'hold';
+  if (!done.shot) return 'release';
+  return null;
+}
+
+/** Does the ghost hand show how now? On the first try, after guideIdle seconds with no aiming or drawing, before the first shot, and not while another help is up. */
+export function ghostWanted(first, done, idle, busy = false) {
+  return !!first && !busy && !done.shot && !done.drew && idle >= ARCH.guideIdle;
+}
+
+/** The tutorial's device: 'touch', 'pad' (a gamepad) or 'key' (mouse and keyboard). */
+export function guideDevice(touch, lastDevice) { return touch ? 'touch' : lastDevice === 'gamepad' ? 'pad' : 'key'; }
+
+/** The first-try guide's slow motion: the first arrow of the first try flies at this fraction of real time. */
+export const SLOWMO = 0.3;
+/** Is this arrow the one that flies in slow motion? (the first of the first try's first end) */
+export function slowMo(first, shots) { return !!first && shots === 1; }
+
 /** Fly one arrow to its end in one go (tests, the solver). Returns the arrow. */
-export function flyAll(aim, draw, wind, end, t0, scene, eye = 1.38, dt = 1 / 60) {
+export function flyAll(aim, draw, wind, end, t0, scene, eye = ARCH.eye, dt = 1 / 60) {
   const a = launch({}, aim, draw, t0, eye);
   let n = 0;
   while (a.state === 'fly' && n++ < 1200) stepArrow(a, wind, end, dt, scene);
@@ -215,7 +274,7 @@ export function flyAll(aim, draw, wind, end, t0, scene, eye = 1.38, dt = 1 / 60)
 }
 
 /** The dotted aim arc: n points (u, v, y triples into `out`) of an arrow shot without wind, spaced dt seconds apart. */
-export function arc(aim, draw, n, dt, out, eye = 1.38) {
+export function arc(aim, draw, n, dt, out, eye = ARCH.eye) {
   const s = speedFor(draw), cp = Math.cos(aim.pitch);
   const vu = s * cp * Math.cos(aim.yaw), vv = s * cp * Math.sin(aim.yaw), vy = s * Math.sin(aim.pitch);
   for (let i = 0; i < n; i++) {
@@ -229,7 +288,7 @@ export function arc(aim, draw, n, dt, out, eye = 1.38) {
  * The aim that sends an arrow of the given draw through the middle of target `i` for the wind known at the release (a bot's
  * and the tests' helper): a few corrections of yaw and pitch from the flights themselves.
  */
-export function solveAim(i, draw, wind, end, t0, scene, eye = 1.38) {
+export function solveAim(i, draw, wind, end, t0, scene, eye = ARCH.eye) {
   const tg = scene.targets[i], tv = tg.moving ? scene.vAt(i, t0 + 0.7) : tg.v;
   const aim = { yaw: Math.atan2(tv - ARCH.muzzle.v, tg.u - ARCH.muzzle.u), pitch: 0.03 };
   const sc = { ...scene, active: i };

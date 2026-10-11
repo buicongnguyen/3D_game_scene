@@ -9,9 +9,27 @@ export const R = 900;                                  // dome radius around the
 const RAD = Math.PI / 180;
 const COLOUR = { w: [1, 1, 0.96], b: [0.72, 0.84, 1], y: [1, 0.93, 0.68], o: [1, 0.78, 0.5], r: [1, 0.58, 0.45] };
 const LOW_MIN = 30, MAX_LIFT = 20;                      // degrees (see the lift in buildStarSky)
+
+// A low group is drawn lifted by up to MAX_LIFT degrees, scaled by uLiftK (1 on the ground; the sky viewer lowers it to 0
+// while Mika flies up with the Star Kite, when the groups stand where they really are). The positions in the buffers are
+// the real ones; aLift (radians) is the group's lift, added to the altitude in the vertex shader, so nothing is rebuilt.
+const LIFT_GLSL = `
+attribute float aLift;
+uniform float uLiftK;
+vec3 liftIt(vec3 p) {
+  float amt = aLift * uLiftK;
+  if (amt == 0.0) return p;
+  float r = length(p);
+  float alt = asin(clamp(p.y / r, -1.0, 1.0)) + amt;
+  vec2 h = p.xz;
+  float hl = length(h);
+  h = hl > 1e-4 ? h / hl : vec2(1.0, 0.0);
+  float c = cos(alt);
+  return vec3(h.x * c, sin(alt), h.y * c) * r;
+}`;
 const LINE_HALF = 0.0014;                              // half width of a figure line (radians of the dome)
 
-const VERT = `
+const VERT = `${LIFT_GLSL}
 attribute float aSize;
 attribute vec3 aColor;
 attribute float aSel;
@@ -21,7 +39,7 @@ uniform float uFade;
 uniform float uMin;
 varying vec3 vColor;
 void main() {
-  gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(liftIt(position), 1.0);
   float tw = 0.82 + 0.18 * sin(uTime * (1.2 + fract(position.x * 0.13) * 3.0) + position.z);
   gl_PointSize = aSize * uPx * step(uMin, aSize) * (1.0 + aSel * (0.5 + 0.12 * sin(uTime * 3.0)));
   vColor = mix(aColor, vec3(1.0, 0.86, 0.5), aSel * 0.4) * tw * uFade * (1.0 + aSel * 0.45);
@@ -33,11 +51,11 @@ void main() {
   float a = smoothstep(0.5, 0.05, d);
   gl_FragColor = vec4(vColor, a * a);
 }`;
-const LINE_VERT = `
+const LINE_VERT = `${LIFT_GLSL}
 attribute float aA;
 varying vec2 vUv;
 varying float vA;
-void main() { vUv = uv; vA = aA; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+void main() { vUv = uv; vA = aA; gl_Position = projectionMatrix * modelViewMatrix * vec4(liftIt(position), 1.0); }`;
 const LINE_FRAG = `
 uniform float uFade;
 varying vec2 vUv;
@@ -60,13 +78,13 @@ export function buildStarSky({ season, hour, profile, look, low = false }) {
   const lv = skyLevels(low);
   let seed = 20261010;
   const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
-  const pos = [], size = [], col = [], sel = [];
+  const pos = [], size = [], col = [], sel = [], lifts = [];
   const tmp = [0, 0, 0];
   const put = (ra, dec, s, c, lift = 0) => {
     const h = horizontal(ra, dec, lst, lat);
     if (h.alt < -3) return -1;
-    worldDir(h.alt + lift, h.az, tmp);
-    pos.push(tmp[0] * R, tmp[1] * R, tmp[2] * R); size.push(s); col.push(c[0], c[1], c[2]); sel.push(0);
+    worldDir(h.alt, h.az, tmp);                                // the real place; the shader adds the lift (liftK)
+    pos.push(tmp[0] * R, tmp[1] * R, tmp[2] * R); size.push(s); col.push(c[0], c[1], c[2]); sel.push(0); lifts.push(lift * RAD);
     return size.length - 1;
   };
   const tint = () => { const k = rand(); return k < 0.16 ? [0.74, 0.85, 1] : k < 0.27 ? [1, 0.86, 0.66] : [1, 1, 0.95]; };
@@ -96,10 +114,11 @@ export function buildStarSky({ season, hour, profile, look, low = false }) {
   for (const i of infos) {
     const base = byId[i.group.liftLike] || i, shared = i.group.stars.some(id => count.get(id) > 1);
     i.lift = shared ? 0 : Math.min(MAX_LIFT, Math.max(0, LOW_MIN - base.alt));
-    i.dir = new THREE.Vector3(...worldDir(i.alt + i.lift, i.az));
+    i.dir = new THREE.Vector3(...worldDir(i.alt + i.lift, i.az));                // where it is drawn now (setLift moves it)
   }
   const union = new Map();                                    // star id -> point index
-  const starDir = new Map();
+  const starDir = new Map();                                  // star id -> where it is drawn now (the labels and the aim read it)
+  const starReal = new Map(), starAt = new Map();            // the real direction (the figures are built on it); { alt, az, lift }
   for (const info of infos) {
     for (const id of info.group.stars) {
       const s = STARS[id];
@@ -109,18 +128,18 @@ export function buildStarSky({ season, hour, profile, look, low = false }) {
         const h = horizontal(s.ra, s.dec, lst, lat);
         const idx = put(s.ra, s.dec, Math.min(15, Math.max(4, 5.2 + (3.6 - mag) * 1.9)), [c[0] * b, c[1] * b, c[2] * b], info.lift);
         union.set(id, idx);
-        if (idx >= 0) starDir.set(id, new THREE.Vector3(...worldDir(h.alt + info.lift, h.az)));
+        if (idx >= 0) { starDir.set(id, new THREE.Vector3(...worldDir(h.alt + info.lift, h.az))); starReal.set(id, new THREE.Vector3(...worldDir(h.alt, h.az))); starAt.set(id, { alt: h.alt, az: h.az, lift: info.lift }); }
       }
       if (union.get(id) >= 0) info.stars.push({ id, dir: starDir.get(id), mag: magIn(id, profile), idx: union.get(id) });
     }
   }
   // the figures: ribbons on the dome
-  const lp = [], lu = [], lidx = [];
+  const lp = [], lu = [], lidx = [], llift = [];
   const A = new THREE.Vector3(), B = new THREE.Vector3(), W = new THREE.Vector3(), M = new THREE.Vector3(), a2 = new THREE.Vector3(), b2 = new THREE.Vector3();
   for (const info of infos) {
     for (const [ia, ib] of info.group.lines) {
       if (!starDir.has(ia) || !starDir.has(ib) || !info.stars.some(s => s.id === ia) || !info.stars.some(s => s.id === ib)) continue;
-      A.copy(starDir.get(ia)); B.copy(starDir.get(ib));
+      A.copy(starReal.get(ia)); B.copy(starReal.get(ib));
       const theta = Math.max(1e-4, A.angleTo(B)), k = Math.min(0.22, 0.014 / theta);        // leave a gap round each star
       a2.copy(A).lerp(B, k).normalize().multiplyScalar(R * 0.985); b2.copy(B).lerp(A, k).normalize().multiplyScalar(R * 0.985);
       M.copy(a2).add(b2).normalize();
@@ -128,6 +147,7 @@ export function buildStarSky({ season, hour, profile, look, low = false }) {
       const base = lp.length / 3;
       lp.push(a2.x - W.x, a2.y - W.y, a2.z - W.z, a2.x + W.x, a2.y + W.y, a2.z + W.z, b2.x - W.x, b2.y - W.y, b2.z - W.z, b2.x + W.x, b2.y + W.y, b2.z + W.z);
       lu.push(0, 0, 1, 0, 0, 1, 1, 1);
+      for (let v = 0; v < 4; v++) llift.push(info.lift * RAD);
       lidx.push(base, base + 1, base + 2, base + 1, base + 3, base + 2);
       info.segs.push(base / 4);
     }
@@ -139,7 +159,8 @@ export function buildStarSky({ season, hour, profile, look, low = false }) {
   geo.setAttribute('aColor', new THREE.Float32BufferAttribute(col, 3));
   const selAttr = new THREE.BufferAttribute(new Float32Array(sel), 1).setUsage(THREE.DynamicDrawUsage);
   geo.setAttribute('aSel', selAttr);
-  const uniforms = { uPx: { value: 1 }, uTime: { value: 0 }, uFade: { value: 0 }, uMin: { value: 0 } };
+  geo.setAttribute('aLift', new THREE.Float32BufferAttribute(lifts, 1));
+  const uniforms = { uPx: { value: 1 }, uTime: { value: 0 }, uFade: { value: 0 }, uMin: { value: 0 }, uLiftK: { value: 1 } };
   const points = new THREE.Points(geo, new THREE.ShaderMaterial({ vertexShader: VERT, fragmentShader: FRAG, uniforms, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
   points.frustumCulled = false; points.renderOrder = 5;
 
@@ -148,8 +169,9 @@ export function buildStarSky({ season, hour, profile, look, low = false }) {
   lgeo.setAttribute('uv', new THREE.Float32BufferAttribute(lu, 2));
   const aA = new THREE.BufferAttribute(new Float32Array(lp.length / 3), 1).setUsage(THREE.DynamicDrawUsage);
   lgeo.setAttribute('aA', aA);
+  lgeo.setAttribute('aLift', new THREE.Float32BufferAttribute(llift, 1));
   lgeo.setIndex(lidx);
-  const lines = new THREE.Mesh(lgeo, new THREE.ShaderMaterial({ vertexShader: LINE_VERT, fragmentShader: LINE_FRAG, uniforms: { uFade: uniforms.uFade }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
+  const lines = new THREE.Mesh(lgeo, new THREE.ShaderMaterial({ vertexShader: LINE_VERT, fragmentShader: LINE_FRAG, uniforms: { uFade: uniforms.uFade, uLiftK: uniforms.uLiftK }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide, fog: false }));
   lines.frustumCulled = false; lines.renderOrder = 6;
 
   const group = new THREE.Group();
@@ -167,9 +189,26 @@ export function buildStarSky({ season, hour, profile, look, low = false }) {
     infos.forEach((info, gi) => { const v = faint + (dusk ? 0.55 : 0.8) * level[gi]; for (const s of info.segs) for (let k = 0; k < 4; k++) aA.array[s * 4 + k] = v; });
     aA.needsUpdate = true;
   };
+  let liftK = 1;
   return {
     group, points, lines, infos, uniforms, bgCount, union,
     get selected() { return selected; },
+    get liftK() { return liftK; },
+    /**
+     * How much of the low groups' lift is left (1 = drawn lifted by up to MAX_LIFT degrees, 0 = where they really are).
+     * The shader moves the stars; this keeps the directions the labels and the aim use in step. True when it changed.
+     */
+    setLift(k) {
+      k = Math.min(1, Math.max(0, k));
+      if (Math.abs(k - liftK) < 1e-3 && k !== 0 && k !== 1) return false;
+      if (k === liftK) return false;
+      liftK = k;
+      uniforms.uLiftK.value = k;
+      for (const i of infos) worldDir(i.alt + i.lift * k, i.az, tmp), i.dir.set(tmp[0], tmp[1], tmp[2]);
+      for (const [id, v] of starDir) { const a = starAt.get(id); worldDir(a.alt + a.lift * k, a.az, tmp); v.set(tmp[0], tmp[1], tmp[2]); }
+      dirty = true;
+      return true;
+    },
     select(i) { selected = i; infos.forEach((_, gi) => { want[gi] = gi === i ? 1 : 0; }); },
     /** Ease the levels; true when anything changed (labels and highlights need a refresh). */
     tick(dt) {

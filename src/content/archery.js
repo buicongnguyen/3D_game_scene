@@ -22,8 +22,8 @@ export const ARCHERY = {
   centreH: 1.25,                // the target's middle above the ground
   // the sliding target of the fourth end ("yabusame" practice): it rides a rail across the lane
   moving: { u: 17.5, vMax: 2.4, period: 10, r: 0.85, dist: 17 },
-  eye: 1.38,                    // release height above the ground at the line
-  stand: { u: -0.2, v: 0 },     // where Mika stands for the round
+  eye: 1.12,                    // release height above the ground at the line
+  stand: { u: 0.06, v: 0.3 },    // where Mika stands for the round (on the board, her bow arm reaching the muzzle)
   quiver: { u: -1.3, v: 2.3 },
   bench: { u: -3.6, v: 3.1, face: 1 },   // a bench behind the line, on the right (face: which way, in lane units of quarter turns)
   sock: { u: 7.5, v: -3.6, h: 3.3 },      // the wind sock pole, beside the left rope (far enough down the lane to be in view over the shoulder)

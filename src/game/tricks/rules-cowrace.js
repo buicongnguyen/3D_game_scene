@@ -18,6 +18,7 @@ export const TRACK = {
 };
 
 export const BEAT = 0.62;           // seconds between the cow's footfalls (the ring in the corner pulses at this pace)
+export const PRACTICE_BEAT = 0.8;   // the first try (the practice lap): a slower beat, so the ring is slower and easy to hit
 export const WINDOW = { good: 0.13, ok: 0.24 };   // seconds either side of a beat (widened while learning)
 export const SPEED = {
   cruise: 1.3,               // the cow ambles at least this fast on its own
@@ -64,6 +65,7 @@ export function newRace(opts = {}) {
   const others = lanes.filter(l => l !== playerLane);
   const race = {
     t: 0, seed, assist, over: false, finishedCount: 0, order: [],
+    beat: opts.beat || BEAT,          // seconds between footfalls in this race (BEAT, or PRACTICE_BEAT on the first try)
     window: { good: WINDOW.good * (1 + assist * 0.55), ok: WINDOW.ok * (1 + assist * 0.5) },
     racers: [newRacer('mika', playerLane, { player: true })],
     last: null,           // the last tap { t, grade }
@@ -78,14 +80,32 @@ export function newRace(opts = {}) {
 }
 
 /** Where the cow's next footfall is, in seconds: the nearest beat and how far off `t` is from it. */
-export function beatOffset(t) {
-  const k = Math.round(t / BEAT);
-  return t - k * BEAT;
+export function beatOffset(t, beat = BEAT) {
+  const k = Math.round(t / beat);
+  return t - k * beat;
+}
+
+/**
+ * What a graded tap should be called on screen: 'perfect' (right on the footfall), 'good', 'okEarly' / 'okLate' (a little
+ * off, it still pushes), 'early' / 'late' (a miss: before or after the nearest footfall), or 'mash'. t is the race time of the tap.
+ */
+export function tapKind(race, t, grade) {
+  if (grade === 'mash') return 'mash';
+  const off = beatOffset(t, race.beat || BEAT);
+  if (grade === 'good') return Math.abs(off) <= race.window.good * 0.5 ? 'perfect' : 'good';
+  if (grade === 'ok') return off < 0 ? 'okEarly' : 'okLate';
+  return off < 0 ? 'early' : 'late';
+}
+
+/** Seconds until the next footfall at race time t (the ring closes then), and how far through the beat we are (0..1). */
+export function beatPhase(t, beat = BEAT) {
+  const into = ((t % beat) + beat) % beat;
+  return { toBeat: beat - into, f: into / beat };
 }
 
 /** Grade a tap at race time t: 'good' | 'ok' | 'miss'. */
 export function gradeTap(race, t) {
-  const d = Math.abs(beatOffset(t));
+  const d = Math.abs(beatOffset(t, race.beat || BEAT));
   return d <= race.window.good ? 'good' : d <= race.window.ok ? 'ok' : 'miss';
 }
 
@@ -102,7 +122,7 @@ export function tap(race) {
   const r = race.racers[0];
   if (race.over || r.finished != null) return null;
   const t = race.t;
-  if (t - r.lastTap < MASH_GAP) {
+  if (t - r.lastTap < (race.beat || BEAT) * 0.55) {
     // mashing: no push, and the cow starts to puff
     r.lastTap = t;
     r.puff = Math.min(1.5, r.puff + 0.34);
@@ -163,7 +183,8 @@ export function stepRace(race, dt, input = {}) {
     if (r.player) {
       // the cow's own pace: slows to a walk when Mika stops asking, speeds toward the top speed she has earned
       let top = topSpeed(r, race);
-      if (race.t - r.lastPush > BEAT * 2.6 && r.combo > 0) r.combo = Math.max(0, r.combo - 1), r.lastPush = race.t - BEAT * 1.4;
+      const bt = race.beat || BEAT;
+      if (race.t - r.lastPush > bt * 2.6 && r.combo > 0) r.combo = Math.max(0, r.combo - 1), r.lastPush = race.t - bt * 1.4;
       const k = 1 - Math.exp(-dt * (top > r.v ? 1.6 : 2.4));
       r.v += (top - r.v) * k;
       r.lane = Math.round(r.lat);
@@ -219,14 +240,15 @@ export function botTaps(race, rand, { jitter = 0.03, mash = false, idle = false,
   if (idle) return;
   const me = race.racers[0], t = race.t;
   if (mash) { if (t - me.lastTap >= 0.1) tap(race); return; }
-  if (race.bot === undefined) race.bot = { next: BEAT + (rand() - 0.5) * 2 * jitter };
+  const bt = race.beat || BEAT;
+  if (race.bot === undefined) race.bot = { next: bt + (rand() - 0.5) * 2 * jitter };
   while (race.bot.next <= t) {
-    race.bot.next += BEAT;
+    race.bot.next += bt;
     if (rand() < lazy) continue;
     // the tap lands `jitter` off the beat: replay it at its own moment by shifting the race clock for the grade only
     const real = race.t;
-    race.t = Math.round(real / BEAT) * BEAT + (rand() - 0.5) * 2 * jitter;
-    if (race.t - me.lastTap < MASH_GAP) race.t = real;
+    race.t = Math.round(real / bt) * bt + (rand() - 0.5) * 2 * jitter;
+    if (race.t - me.lastTap < bt * 0.55) race.t = real;
     tap(race);
     race.t = real;
   }

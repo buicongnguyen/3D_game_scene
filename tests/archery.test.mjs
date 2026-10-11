@@ -4,8 +4,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   ARCH, rng, roundPlan, maxScore, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, ringOf, starsOf,
-  launch, stepArrow, flyAll, arc, solveAim,
+  launch, stepArrow, flyAll, arc, solveAim, missReason, aimOffset, guideStep, ghostWanted, guideDevice, slowMo, SLOWMO,
 } from '../src/game/tricks/rules-archery.js';
+import * as THREE from 'three';
+import { solveArm, handBasis, STANCE, nockAt } from '../src/actors/archer-rig.js';
 import { ARCHERY, toWorld, toLane, laneSamples, archerySolids } from '../src/content/archery.js';
 import { TRICK } from '../src/content/tricks.js';
 import { SIGNS, signPlace } from '../src/content/signs.js';
@@ -339,4 +341,128 @@ test('the teaching scene exists in both stories, and the data row reads like the
   assert.equal(t.unit, 'points');
   assert.ok(t.length <= 90 && t.firstLength <= t.length);
   assert.ok(fs.readFileSync(new URL('../src/content/archery.js', import.meta.url), 'utf8').includes('WEST'));
+});
+
+// ------------------------------------------------------------------------------------------------ the first try's guide
+test('the first end of the first try is an easy end: a bigger face, a weaker wind, a big arc; nothing else changes', () => {
+  const first = roundPlan(true), full = roundPlan(false);
+  assert.ok(first.ends[0].scale > 1.3 && first.ends[0].wind < 0.6 && first.ends[0].bigArc, 'the first end is easy');
+  for (const e of first.ends.slice(1)) assert.ok(e.scale === 1 && e.wind === 1 && !e.bigArc, 'the others are as usual');
+  for (const e of full.ends) assert.ok(e.scale === 1 && e.wind === 1 && !e.bigArc, 'later tries have no easy end');
+  // the weaker wind of an end is a multiple of the same seeded wind
+  const w1 = makeWind(9, 3, 0.5), w2 = makeWind(9, 3, 0.5, first.ends.map(e => e.wind));
+  for (const t of [0, 1.7, 4, 9]) {
+    near(windAt(w2, 0, t), windAt(w1, 0, t) * first.ends[0].wind, 1e-9, 'end 0');
+    near(windAt(w2, 1, t), windAt(w1, 1, t), 1e-9, 'end 1 is untouched');
+  }
+  // a bigger face really is easier: an aim about 0.75 of a plain face's radius to the side misses it and hits the big one
+  const sc = scene(0), r0 = sc.targets[0].r;
+  const aim = solveAim(0, 1, calm, 0, 0, sc);
+  aim.yaw += 0.75 * r0 / (A.targets[0].u - ARCH.muzzle.u) * 1.0;
+  aim.yaw += 0.3 * r0 / 9.55;                                    // (about 1.05 r in all: off the plain face, inside the big one)
+  const plain = flyAll(aim, 1, calm, 0, 0, sc);
+  sc.targets[0].r = r0 * first.ends[0].scale;
+  const big = flyAll(aim, 1, calm, 0, 0, sc);
+  assert.ok(plain.state === 'back' || plain.state === 'ground', 'it misses the plain face: ' + plain.state);
+  assert.equal(big.state, 'hit', 'and hits the bigger one');
+  assert.ok(big.ring >= 1 && big.ring <= 3, 'near its edge');
+});
+
+test('a miss is explained: too high, too low, to the left, to the right, the wind, or too short', () => {
+  const sc = scene(1), solved = solveAim(1, 1, calm, 0, 0, sc);
+  const shoot = (dyaw, dpitch) => flyAll({ yaw: solved.yaw + dyaw, pitch: solved.pitch + dpitch }, 1, calm, 0, 0, sc);
+  assert.equal(missReason(shoot(0, 0)), null, 'a hit has no reason');
+  assert.equal(missReason(shoot(0, 0.05)), 'high');
+  assert.equal(missReason(shoot(0, -0.05)), 'low');
+  assert.equal(missReason(shoot(0.06, 0)), 'right');
+  assert.equal(missReason(shoot(-0.06, 0)), 'left');
+  // a push of the wind is named as the wind
+  const a = shoot(0.06, 0);
+  assert.equal(missReason(a, 3), 'wind'); assert.equal(missReason(a, -3), 'right', 'the wind blew the other way: it was the aim');
+  // an arrow that never reaches the target: short
+  const low = flyAll({ yaw: solved.yaw, pitch: -0.07 }, 0.3, calm, 0, 0, sc);
+  assert.equal(low.state, 'ground');
+  assert.equal(missReason(low), 'short');
+  assert.equal(missReason({ state: 'other' }), 'other');
+});
+
+test('aimOffset says where an arrow crosses the target and whether that is the face: the crosshair turns green', () => {
+  const sc = scene(0);
+  for (const i of [0, 1, 2]) {
+    const tg = sc.targets[i], aim = solveAim(i, 1, calm, 0, 0, sc);
+    const o = aimOffset(aim, 1, tg, A.eye);
+    assert.ok(o.on && o.d < 0.05 * tg.r + 0.02, `the solved aim is on target ${i}: ${o.d}`);
+    assert.ok(!aimOffset({ yaw: aim.yaw + 3 * tg.r / tg.u, pitch: aim.pitch }, 1, tg, A.eye).on, 'three radii off is not on the face');
+    assert.ok(aimOffset({ yaw: aim.yaw, pitch: aim.pitch + 0.02 }, 1, tg, A.eye).dy > 0 && aimOffset({ yaw: aim.yaw + 0.02, pitch: aim.pitch }, 1, tg, A.eye).dv > 0, 'dy up and dv to the right are positive');
+  }
+  // it matches the real flight (no wind): where aimOffset says the arrow crosses is where the physics puts it
+  const tg = sc.targets[1], aim = { yaw: 0.04, pitch: 0.07 }, o = aimOffset(aim, 1, tg, A.eye);
+  const a = flyAll(aim, 1, calm, 0, 0, { ...sc, active: 1 });
+  near(a.passV, o.dv, 1e-3, 'the sideways crossing'); near(a.passY, o.dy, 1e-3, 'the height crossing');
+});
+
+test('the guide teaches in order: aim, hold, let go; the ghost hand waits six idle seconds and only before the first draw', () => {
+  const none = { aimed: false, drew: false, shot: false };
+  assert.equal(guideStep(none), 'aim');
+  assert.equal(guideStep({ ...none, aimed: true }), 'hold');
+  assert.equal(guideStep({ ...none, aimed: true }, true), 'release', 'drawing now: let go next');
+  assert.equal(guideStep({ aimed: true, drew: true, shot: false }), 'release');
+  assert.equal(guideStep({ aimed: true, drew: true, shot: true }), null);
+  assert.ok(!ghostWanted(true, none, ARCH.guideIdle - 0.1) && ghostWanted(true, none, ARCH.guideIdle));
+  assert.equal(ARCH.guideIdle, 6, 'six seconds, as the brief says');
+  assert.ok(!ghostWanted(false, none, 99), 'not after the first try');
+  assert.ok(!ghostWanted(true, { ...none, drew: true }, 99) && !ghostWanted(true, { ...none, shot: true }, 99), 'not once they have drawn or shot');
+  assert.ok(!ghostWanted(true, none, 99, true), 'not while the card is up');
+  assert.equal(guideDevice(true, 'touch'), 'touch'); assert.equal(guideDevice(false, 'gamepad'), 'pad'); assert.equal(guideDevice(false, 'keyboard'), 'key');
+  assert.ok(slowMo(true, 1) && !slowMo(true, 2) && !slowMo(false, 1) && SLOWMO > 0.1 && SLOWMO < 0.6, 'only the very first arrow of the first try is slowed');
+});
+
+// ------------------------------------------------------------------------------------------------ Mika's hands
+test('the two-bone arm solver puts the wrist where asked when it can, stretches straight when it cannot, and keeps the bone lengths', () => {
+  const S = new THREE.Vector3(0, 1, 0), l1 = 0.191, l2 = 0.177, pole = new THREE.Vector3(0, -1, 0), E = new THREE.Vector3(), Wr = new THREE.Vector3();
+  const T = new THREE.Vector3(0.1, 1.05, 0.28);
+  const r = solveArm(S, T, l1, l2, pole, E, Wr);
+  assert.ok(r < 1 && r > 0.5);
+  near(Wr.distanceTo(T), 0, 1e-9, 'the wrist is on the target');
+  near(E.distanceTo(S), l1, 1e-9, 'upper arm'); near(E.distanceTo(Wr), l2, 1e-9, 'forearm');
+  assert.ok(E.y < 1.0, 'the elbow follows the pole (down)');
+  // too far: straight toward it, never longer
+  const far = new THREE.Vector3(0, 1, 2), r2 = solveArm(S, far, l1, l2, pole, E, Wr);
+  assert.ok(r2 > 1); near(Wr.distanceTo(S), (l1 + l2) * 0.9995, 1e-6); near(E.distanceTo(S), l1, 1e-9);
+  assert.ok(Wr.z > 0.3 && Math.abs(Wr.x) < 1e-6, 'it points at the target');
+  // the pole picks the side the elbow bends to
+  const up = solveArm(S, T, l1, l2, new THREE.Vector3(0, 1, 0), E, Wr);
+  assert.ok(E.y > 1.0 && up === r);
+  // a pole along the line of the arm still gives a valid elbow
+  solveArm(S, new THREE.Vector3(0, 1, 0.3), l1, l2, new THREE.Vector3(0, 0, 1), E, Wr);
+  assert.ok(Number.isFinite(E.x + E.y + E.z));
+});
+
+test('a hand frame points the fingers along y with the thumb up and is a proper rotation', () => {
+  for (const dir of [[0, 0, -1], [1, 0.2, 0], [-0.3, -0.1, 1]]) {
+    const y = new THREE.Vector3(...dir).normalize(), q = handBasis(y, new THREE.Vector3(0, 1, 0));
+    near(new THREE.Vector3(0, 1, 0).applyQuaternion(q).dot(y), 1, 1e-9, 'fingers');
+    const thumb = new THREE.Vector3(0, 0, -1).applyQuaternion(q);                // the hand's -z is the thumb
+    assert.ok(thumb.y > 0.9, `the thumb is up (${thumb.y})`);
+    near(q.length(), 1, 1e-9);
+  }
+});
+
+test("the stance fits Mika: the bow hand and the string hand reach with the measured arm, the arrow is a kid's length", () => {
+  // measured on Mika (art/CONTRACTS.md rig, metres): upper arm 0.191, forearm 0.177, palm centre 0.042 from the wrist, shoulders 0.138 off the middle at 0.985
+  const reach = 0.191 + 0.177 + 0.042;
+  const sin = Math.sin(STANCE.side * (1 - STANCE.chestBack)), cos = Math.cos(STANCE.side * (1 - STANCE.chestBack));
+  // lane frame (u down the range, v to the right): Mika's middle at the stand; her left shoulder is ahead of her middle and to the left of it
+  const C = A.stand, SL = { u: C.u + 0.138 * sin, v: C.v - 0.138 * cos }, SR = { u: C.u - 0.138 * sin, v: C.v + 0.138 * cos };
+  const hand = (S, P, dy) => Math.hypot(P.u - S.u, P.v - S.v, dy);
+  const dy = A.eye - 0.985;
+  const gripD = hand(SL, ARCH.muzzle, dy);
+  assert.ok(gripD < reach * 1.0 && gripD > reach * 0.62, `the bow arm reaches the muzzle without a fully stretched or folded arm: ${gripD.toFixed(2)} of ${reach.toFixed(2)}`);
+  const braceD = hand(SR, { u: ARCH.muzzle.u - nockAt(0), v: ARCH.muzzle.v }, dy), fullD = hand(SR, { u: ARCH.muzzle.u - nockAt(1), v: ARCH.muzzle.v }, dy);
+  assert.ok(braceD < reach * 1.02, `the string hand reaches the string at rest: ${braceD.toFixed(2)}`);
+  assert.ok(fullD > 0.1 && fullD < reach * 0.7, `and comes back to the cheek with a bent arm: ${fullD.toFixed(2)}`);
+  assert.ok(STANCE.arrow > nockAt(1) && STANCE.arrow < nockAt(1) + 0.2, 'the arrow is a little longer than the draw');
+  assert.ok(A.eye > 1.0 && A.eye < 1.25, 'the arrow leaves from about the height of her cheek');
+  assert.equal(A.eye, ARCH.eye, 'the content and the rules agree on that height');
+  assert.ok(A.stand.u > -0.85 && A.stand.u < 0.36, 'she stands on the shooting board');
 });

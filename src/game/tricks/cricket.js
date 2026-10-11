@@ -12,7 +12,7 @@ import { N_, tx } from '../../i18n/i18n.js';
 import { inHours } from '../../content/tricks.js';
 import { placeProblems } from '../../world/roads.js';
 import { CRICKET, rng, tempFor, celsius, fahrenheit, thermoTimes, guessOptions, Tickle, Crickets, cricketScore } from './rules-cricket.js';
-import { BUG_CSS, Critter, Cage, Release } from './bugkit.js';
+import { BUG_CSS, Critter, Cage, Release, plural } from './bugkit.js';
 import { addCss } from './util.js';
 
 const V3 = THREE.Vector3;
@@ -47,7 +47,6 @@ const CSS = `
 @keyframes cricketN{40%{transform:scale(1.18)}}
 `;
 
-const plural = (n, one, many) => (n === 1 ? tx(one) : tx(many, { n }));
 
 class CricketRound {
   constructor(ctx, seed) {

@@ -203,7 +203,7 @@ export class SceneTour {
     const pick = document.createElement('div');
     pick.id = 'tourPick';
     pick.className = 'overlay hidden';
-    pick.innerHTML = `<div class="book small"><header><h2></h2><button class="close" type="button" aria-label="Close">✕</button></header>
+    pick.innerHTML = `<div class="book small"><header><h2></h2><button class="close" type="button">✕</button></header>
       <p class="tour-intro"></p><div class="tour-cards">${[...TOURS, YEAR].map(t => `<button type="button" class="tour-card${t.id === 'year' ? ' year' : ''}" data-tour="${t.id}"><span class="ic" aria-hidden="true">${ICON[t.id]}</span><b></b><small></small><em></em></button>`).join('')}</div>
       <label class="tour-live hidden"><input type="checkbox" id="tourLive"> <span></span></label>
       <p class="note tour-safe"></p><p class="tour-busy" role="status"></p></div>`;
@@ -251,6 +251,7 @@ export class SceneTour {
       b.querySelector('small').textContent = tx(t.blurb);
       b.querySelector('em').textContent = tx(TEXT.length, { n: Math.max(1, Math.round(secs / 60)) });
     });
+    pick.querySelector('.close').setAttribute('aria-label', tx('Close'));
     view.setAttribute('aria-label', tx(TEXT.title));
     view.querySelector('[data-do=prev]').setAttribute('aria-label', tx(TEXT.prev));
     view.querySelector('[data-do=next]').setAttribute('aria-label', tx(TEXT.next));
@@ -268,7 +269,7 @@ export class SceneTour {
     if (!d?.quest) return null;                       // the title screen: nothing is going on
     const p = g.player;
     return !!(d.scenes?.active || d.minigame || d.tricks?.round || d.tricks?.locks || d.sky?.active || d.sky?.locks || d.busy > 0 || this.ui.dialogueOpen
-      || g.interiors?.active || p.mounted || g.kite?.active || d.running);
+      || d.yard?.round || d.minigameMenu?.running || d.workshop?.active || g.interiors?.active || p.mounted || g.kite?.active || d.running);
   }
 
   openPicker() {
@@ -429,6 +430,9 @@ export class SceneTour {
     clearTimeout(this.hideT);
     this.hideT = setTimeout(() => { if (!this.active) this.el.view.classList.add('hidden'); this.el.view.querySelector('.tour-bar').style.display = ''; }, 480);
   }
+
+  /** play() was refused. An AbortError only means a pause() or a new clip overtook it (a quick double tap): not a reason to leave the video. */
+  playFailed(e) { if (e?.name !== 'AbortError') this.vFallback(); }
 
   /** When a stop's rest begins, on whichever clock is running (the flight's or the clip's). */
   stopT(i) { return this.mode === 'video' ? this.clip?.stops[i]?.t ?? 0 : stopTime(this.tl, i); }
@@ -750,7 +754,7 @@ export class SceneTour {
     if (!this.active) return;
     if (this.done) return this.replay();
     this.paused = !this.paused;
-    if (this.mode === 'video') { const v = this.layer.el; if (this.paused) v.pause(); else v.play().catch(() => this.vFallback()); }
+    if (this.mode === 'video') { const v = this.layer.el; if (this.paused) v.pause(); else v.play().catch(e => this.playFailed(e)); }
     this.syncUi();
   }
 
@@ -769,7 +773,7 @@ export class SceneTour {
       if (this.done) { this.done = false; this.paused = false; }
       this.fading = false;
       this.stopI = -1; this.capKey = null;
-      if (this.mode === 'video') { const v = this.layer.el; v.currentTime = this.t + 0.02; if (again) v.play().catch(() => this.vFallback()); }
+      if (this.mode === 'video') { const v = this.layer.el; v.currentTime = this.t + 0.02; if (again) v.play().catch(e => this.playFailed(e)); }
       this.update(0, true);
       this.syncUi();
     });

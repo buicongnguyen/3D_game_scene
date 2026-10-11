@@ -9,10 +9,12 @@ import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { NPC } from '../../actors/npc.js';
-import { makeRig, removeRig, ridingMaterial, SEAT, KID_SEAT, playGait, riderPose } from '../../actors/cow-rig.js';
+import { makeRig, removeRig, ridingMaterial, SEAT, KID_SEAT, playGait, riderPose, riderClip, seatRider, ensureSeated, hipsHeight, seatHeight } from '../../actors/cow-rig.js';
+import { RaceCard, icon } from '../../actors/cow-help.js';
 import { addCss, disposeRigs } from './util.js';
 import { SITE } from '../../content/cowtrack.js';
-import { TRACK, BEAT, newRace, stepRace, tap, placeNow, result, raceScore } from './rules-cowrace.js';
+import { TRACK, PRACTICE_BEAT, newRace, stepRace, tap, tapKind, beatPhase, placeNow, result, raceScore } from './rules-cowrace.js';
+import { tapLabel, coachLine, COACH_TAPS, ghostDue, GHOST_SHOW, STARS_NOTE } from './rules-cowhelp.js';
 
 const V3 = THREE.Vector3;
 /** The track: it starts at (x0, z) and runs east (+X). Lane 0 is the north-most (left when you look east is north). */
@@ -27,27 +29,58 @@ const CSS = `
 #cowRace.on{display:block}
 #cowRace .strip{position:absolute;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);width:min(340px,76vw);height:22px;border-radius:12px;background:#fff7e8e6;box-shadow:0 3px 12px rgba(40,20,0,.22)}
 #cowRace .strip i{position:absolute;top:4px;width:14px;height:14px;margin-left:-7px;border-radius:50%;box-shadow:0 0 0 2px #fff;transition:none}
+#cowRace .strip i.me{top:-2px;width:26px;height:26px;margin-left:-13px;z-index:2;box-shadow:0 0 0 3px #fff,0 3px 8px rgba(40,20,0,.35)}
+#cowRace .strip i.me u{position:absolute;left:50%;top:29px;transform:translateX(-50%);text-decoration:none;padding:0 7px;border-radius:9px;background:#c2541c;color:#fff;font:700 11px/16px Nunito,sans-serif;white-space:nowrap}
+#cowRace .strip i.me svg{position:absolute;left:3px;top:3px;width:20px;height:20px}
 #cowRace .strip b{position:absolute;right:4px;top:-1px;font-size:15px}
 #cowRace .strip .m1{position:absolute;top:2px;height:18px;border-radius:5px;background:#7a5230;opacity:.55}
-#cowRace .place{position:absolute;left:50%;top:calc(92px + env(safe-area-inset-top,0px));transform:translateX(-50%);padding:2px 14px;border-radius:14px;background:#fff7e8e6;font:600 20px Fredoka,Nunito,sans-serif;color:#c2541c}
-#cowRace .ring{position:absolute;left:50%;bottom:calc(88px + env(safe-area-inset-bottom,0px));width:84px;height:84px;margin-left:-42px}
-#cowRace .ring .core{position:absolute;inset:22px;border-radius:50%;border:5px solid #fff;background:#f08a3ccc;box-shadow:0 2px 8px rgba(40,20,0,.35)}
-#cowRace .ring .core.good{background:#5fcf68}#cowRace .ring .core.ok{background:#f2c542}#cowRace .ring .core.bad{background:#e4584a}
-#cowRace .ring .shrink{position:absolute;inset:0;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 2px #c2541c66;will-change:transform}
-#cowRace .combo{position:absolute;left:50%;bottom:calc(180px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;gap:4px}
-#cowRace .combo i{width:12px;height:12px;border-radius:50%;background:#fff7e8aa;box-shadow:0 0 0 2px #fff6}
-#cowRace .combo i.on{background:#f2a51a}
-#cowRace .puff{position:absolute;left:50%;bottom:calc(200px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:120px;height:8px;border-radius:5px;background:#fff7e899;overflow:hidden}
-#cowRace .puff i{display:block;height:100%;width:0;background:#e4584a;transition:none}
-#cowRace .say{position:absolute;left:50%;top:calc(132px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:min(380px,88vw);padding:7px 14px;border-radius:16px;background:#fffdf6f2;box-shadow:0 4px 14px rgba(40,20,0,.25);text-align:center;opacity:0;transition:opacity .25s}
+#cowRace .info{position:absolute;left:50%;top:calc(112px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:5px 6px;max-width:min(560px,92vw)}
+#cowRace .place{padding:2px 14px;border-radius:14px;background:#fff7e8e6;font:600 20px Fredoka,Nunito,sans-serif;color:#c2541c;min-height:26px}
+#cowRace .place:empty{display:none}
+#cowRace .chip{display:flex;align-items:center;gap:4px;height:24px;padding:0 8px 0 5px;border-radius:12px;background:#fff7e8e6;box-shadow:0 2px 8px rgba(40,20,0,.18);font:700 11px Nunito,sans-serif;white-space:nowrap;color:#5a3a22;transition:opacity .2s}
+#cowRace .chip .ic{display:flex;width:16px;height:16px}#cowRace .chip .ic svg{width:16px;height:16px}
+#cowRace .chip .bar{width:34px;height:7px;border-radius:4px;background:#5a3a2222;overflow:hidden}
+#cowRace .chip .bar i{display:block;height:100%;width:0;border-radius:4px;background:#e4584a}
+#cowRace .chip.boost .bar i{background:#5fcf68}
+#cowRace .chip.streak .v{min-width:18px;color:#c2541c;font-size:12px}
+#cowRace .chip.off{opacity:.5}
+#cowRace .chip.hot{box-shadow:0 0 0 2px #f2a51a,0 2px 8px rgba(40,20,0,.18)}
+#cowRace .chip.bad{box-shadow:0 0 0 2px #e4584a,0 2px 8px rgba(40,20,0,.18);color:#b02a1c}
+#cowRace .helpbtn{pointer-events:auto;width:34px;height:34px;padding:0;border:0;border-radius:50%;background:#f08a3c;color:#fff;font:700 20px/34px Fredoka,Nunito,sans-serif;box-shadow:0 3px 0 #b8581c,0 4px 10px rgba(40,20,0,.3);touch-action:manipulation}
+#cowRace .say{position:absolute;left:50%;top:calc(146px + env(safe-area-inset-top,0px));transform:translateX(-50%);max-width:min(380px,88vw);padding:7px 14px;border-radius:16px;background:#fffdf6f2;box-shadow:0 4px 14px rgba(40,20,0,.25);text-align:center;opacity:0;transition:opacity .25s}
 #cowRace .say.on{opacity:1}
 #cowRace .big{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%);font:600 84px Fredoka,Nunito,sans-serif;color:#fff;text-shadow:0 4px 0 #c2541c,0 8px 18px rgba(40,20,0,.4);opacity:0}
-#cowRace .pop{position:absolute;left:50%;bottom:calc(228px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);font:600 26px Fredoka,Nunito,sans-serif;color:#fff;text-shadow:0 2px 0 #c2541c;opacity:0}
-#cowRace .giddy{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(196px + env(safe-area-inset-bottom,0px));min-width:104px;min-height:70px;border:0;border-radius:22px;font:700 20px Fredoka,Nunito,sans-serif;
- color:#fff;background:#f08a3c;box-shadow:0 5px 0 #b8581c,0 8px 18px rgba(40,20,0,.32);pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;display:none}
-#cowRace.touch .giddy{display:block}
-@media (max-width:560px){#cowRace .strip{left:calc(12px + env(safe-area-inset-left,0px));transform:none;width:calc(100vw - 150px)}#cowRace .place{left:calc(12px + env(safe-area-inset-left,0px));transform:none}#cowRace .say{top:calc(134px + env(safe-area-inset-top,0px))}#cowRace .ring,#cowRace .combo,#cowRace .puff{left:34%}}
+#cowRace .beat{--r:84px;position:absolute;left:50%;bottom:calc(92px + env(safe-area-inset-bottom,0px));width:var(--r);height:var(--r);margin-left:calc(var(--r) / -2);opacity:0;transition:opacity .25s}
+#cowRace.racing .beat{opacity:1}
+#cowRace .beat.lg{--r:116px}
+#cowRace .beat .core{position:absolute;inset:calc(var(--r) * .26);border-radius:50%;border:5px solid #fff;background:#f08a3ccc;box-shadow:0 2px 8px rgba(40,20,0,.35);display:flex;align-items:center;justify-content:center}
+#cowRace .beat .core svg{width:56%;height:56%}
+#cowRace .beat .core.good{background:#5fcf68}#cowRace .beat .core.ok{background:#f2c542}#cowRace .beat .core.bad{background:#e4584a}
+#cowRace .beat .core.now{border-color:#fff3b0;box-shadow:0 0 0 4px #ffffff99,0 2px 8px rgba(40,20,0,.35)}
+#cowRace .beat .shrink{position:absolute;inset:0;border-radius:50%;border:4px solid #fff;box-shadow:0 0 0 2px #c2541c66;will-change:transform}
+#cowRace .beat .pop{position:absolute;left:50%;bottom:calc(100% + var(--r) * .5 + 8px);transform:translateX(-50%);font:600 30px Fredoka,Nunito,sans-serif;color:#fff;text-shadow:0 2px 0 #c2541c,0 3px 10px rgba(40,20,0,.45);opacity:0;white-space:nowrap}
+#cowRace .beat .cap{position:absolute;left:50%;bottom:calc(100% + var(--r) * .5 + 46px);transform:translateX(-50%);padding:3px 12px;border-radius:12px;background:#fffdf6f2;box-shadow:0 2px 8px rgba(40,20,0,.25);font:700 14px Nunito,sans-serif;white-space:nowrap;opacity:0;transition:opacity .3s}
+#cowRace .beat .cap.on{opacity:1}
+#cowRace .beat .ghost{position:absolute;left:calc(100% + var(--r) * .5 + 14px);top:50%;transform:translateY(-50%);display:none;align-items:center;gap:8px;padding:6px 10px;border-radius:14px;background:#fffdf6f2;box-shadow:0 3px 10px rgba(40,20,0,.28);white-space:nowrap}
+#cowRace:not(.touch) .beat .ghost.show{display:flex}
+#cowRace .ghost .kc{display:inline-block;min-width:26px;padding:3px 7px;border-radius:7px;background:#fff;border:2px solid #b89a78;border-bottom-width:4px;font:700 13px Nunito,sans-serif;text-align:center;transition:transform .08s}
+#cowRace .ghost.press .kc{transform:translateY(3px);background:#ffd08a;border-bottom-width:2px}
+#cowRace .ghostf{position:absolute;right:calc(44px + env(safe-area-inset-right,0px));bottom:calc(252px + env(safe-area-inset-bottom,0px));width:44px;height:56px;display:none;transition:transform .09s;filter:drop-shadow(0 3px 4px rgba(40,20,0,.35))}
+#cowRace.touch .ghostf.show{display:block}
+#cowRace .ghostf.press{transform:translateY(16px) scale(.94)}
+#cowRace .giddy{position:absolute;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(196px + env(safe-area-inset-bottom,0px));min-width:104px;min-height:70px;padding:6px 14px;border:0;border-radius:22px;font:700 20px Fredoka,Nunito,sans-serif;
+ color:#fff;background:#f08a3c;box-shadow:0 5px 0 #b8581c,0 8px 18px rgba(40,20,0,.32);pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;display:none;align-items:center;justify-content:center;gap:7px;transition:transform .08s,filter .08s}
+#cowRace .giddy svg{width:22px;height:22px;flex:none}
+#cowRace.touch .giddy{display:flex}
+#cowRace .giddy.hit{transform:scale(1.1);filter:brightness(1.12)}
+body.cow-race #inventory{visibility:hidden}
+#cowRace.fin .giddy,#cowRace.fin .ghostf{display:none!important}#cowRace.fin .beat{opacity:0}
 #cowRace .giddy:active{transform:translateY(4px)}
+@media (max-width:560px){#cowRace .strip{left:calc(12px + env(safe-area-inset-left,0px));transform:none;width:calc(100vw - 150px)}
+ #cowRace .info{left:calc(12px + env(safe-area-inset-left,0px));transform:none;justify-content:flex-start;max-width:calc(100vw - 24px - env(safe-area-inset-left,0px))}
+ #cowRace .chip{padding:0 6px 0 4px;gap:3px;font-size:10.5px}#cowRace .chip .bar{width:26px}
+ #cowRace .helpbtn{width:40px;height:40px;line-height:40px}
+ #cowRace .say{top:calc(190px + env(safe-area-inset-top,0px))}#cowRace .beat{left:34%}}
 `;
 
 // ---------------------------------------------------------------------------------------------------------- geometry
@@ -274,41 +307,70 @@ export default {
     await ctx.ensureModels(['cow', 'villager-kid']);
     if (ctx.quit) return { score: 0, quit: true };
     addCss('cowRaceCss', CSS);
+    const touch = !!ctx.ui.touch;
+    const practice = !!ctx.first;                     // the first try: a bigger, slower ring, a word for every tap, the teacher's tips
 
-    // ---- the page: a progress strip, the beat ring, the combo pips, the puff meter and a bubble for the commentators
+    // ---- the page: a progress strip (Mika's cow is the big marker), the meters, the beat ring, the combo, a bubble for the commentators
     const root = document.createElement('div');
     root.id = 'cowRace';
-    root.innerHTML = `<div class="strip"><span class="m1"></span><b>🏁</b></div><div class="place"></div><div class="say"></div><div class="big"></div><div class="pop"></div>
-      <div class="puff"><i></i></div><div class="ring"><div class="shrink"></div><div class="core"></div></div><div class="combo">${'<i></i>'.repeat(9)}</div><button class="giddy"></button>`;
+    root.innerHTML = `<div class="strip"><span class="m1"></span><b>🏁</b></div>
+      <div class="info"><div class="place"></div>
+        <div class="chip streak"><span class="ic">${icon('flame')}</span><span class="lb"></span><span class="v"></span></div>
+        <div class="chip tired off"><span class="ic">${icon('puff')}</span><span class="lb"></span><span class="bar"><i></i></span></div>
+        <div class="chip boost off"><span class="ic">${icon('grass')}</span><span class="lb"></span><span class="bar"><i></i></span></div>
+        <button class="helpbtn" type="button">?</button></div>
+      <div class="say"></div><div class="big"></div>
+      <div class="beat${practice ? ' lg' : ''}"><div class="cap"></div><div class="pop"></div><div class="shrink"></div><div class="core">${icon('hoof')}</div>
+        <div class="ghost"><span class="kc">E</span><span class="gt"></span></div></div>
+      <svg class="ghostf" viewBox="0 0 32 40"><path d="M12 4a3 3 0 0 1 6 0v14l4-1a3 3 0 0 1 3 4l-2 12a6 6 0 0 1-6 5h-4a7 7 0 0 1-6-4L3 24a3 3 0 0 1 5-3l4 5z" fill="#fff" stroke="#5a3a22" stroke-width="2"/></svg>
+      <button class="giddy" type="button">${icon('hoof')}<span></span></button>`;
     document.body.appendChild(root);
     const q = s => root.querySelector(s);
-    const el = { strip: q('.strip'), m1: q('.m1'), place: q('.place'), say: q('.say'), big: q('.big'), pop: q('.pop'), puff: q('.puff i'), shrink: q('.shrink'), core: q('.core'), pips: [...root.querySelectorAll('.combo i')], giddy: q('.giddy'), dots: [] };
+    const el = { strip: q('.strip'), m1: q('.m1'), place: q('.place'), say: q('.say'), big: q('.big'), shrink: q('.shrink'), core: q('.core'), beat: q('.beat'), cap: q('.cap'), pop: q('.pop'),
+      ghost: q('.ghost'), ghostf: q('.ghostf'), giddy: q('.giddy'), dots: [], help: q('.helpbtn'),
+      streak: q('.chip.streak'), streakV: q('.chip.streak .v'), tired: q('.chip.tired'), tiredBar: q('.chip.tired .bar i'), boost: q('.chip.boost'), boostBar: q('.chip.boost .bar i') };
     const mudA = TRACK.mud[0] / TRACK.len * 100, mudB = TRACK.mud[1] / TRACK.len * 100;
-    el.m1.style.left = `${(mudA * 0.92 + 4).toFixed(1)}%`; el.m1.style.width = `${((mudB - mudA) * 0.92).toFixed(1)}%`;
+    el.m1.style.left = `${(8 + mudA * 0.84).toFixed(1)}%`; el.m1.style.width = `${((mudB - mudA) * 0.84).toFixed(1)}%`;
     for (let i = 0; i < 4; i++) {
       const dot = document.createElement('i');
       dot.style.background = LANE_COLORS[i];
-      if (i === 0) { dot.style.width = dot.style.height = '18px'; dot.style.top = '2px'; dot.style.zIndex = 2; dot.style.marginLeft = '-9px'; }   // Mika's cow: a little bigger, on top
+      dot.style.left = '8%';
+      if (i === 0) { dot.className = 'me'; dot.innerHTML = `<svg viewBox="0 0 64 68"><ellipse cx="32" cy="40" rx="15" ry="22" fill="#fff"/><ellipse cx="27" cy="36" rx="5" ry="6" fill="#3a2a22"/><ellipse cx="32" cy="13" rx="9" ry="8" fill="#fff"/><ellipse cx="32" cy="9" rx="6" ry="4" fill="#f4a6b4"/></svg><u></u>`; }   // Mika's cow: big, with her name
       el.strip.appendChild(dot); el.dots.push(dot);
     }
-    el.giddy.textContent = tx('Giddy-up!');
-    root.classList.toggle('touch', !!ctx.ui.touch);
-    let giddyReq = false;
+    const label = () => {
+      el.dots[0].querySelector('u').textContent = tx('Mika');
+      q('.chip.streak .lb').textContent = tx('Streak');
+      q('.chip.tired .lb').textContent = tx('Tired');
+      q('.chip.boost .lb').textContent = tx('Boost');
+      el.giddy.lastChild.textContent = tx('Giddy-up!');
+      el.help.setAttribute('aria-label', tx('How to play'));
+      el.cap.textContent = tx('Tap when the ring closes');
+      q('.ghost .gt').textContent = tx('Tap now!');
+    };
+    label();
+    root.classList.toggle('touch', touch);
+    let giddyReq = false, helpReq = false;
     el.giddy.addEventListener('pointerdown', e => { e.preventDefault(); giddyReq = true; });
+    el.help.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); helpReq = true; });
+    const card = new RaceCard(touch);
+    let helpOpen = false;
 
     // ---- the pooled actors: four cows, three kid riders, Mika's seat
     const cows = [], kids = [], rigs = [];
-    let S = null, race = null, cleaned = false;
+    let S = null, race = null, cleaned = false, fixes = 0;
     const slabs = [];                                  // the podium blocks (made at the end of a race)
     const tmp = { x: 0, y: 0, z: 0 }, v1 = new V3();
     const syncRigs = () => { for (let i = 0; i < rigs.length; i++) { cows[i].root.updateMatrixWorld(true); rigs[i].userData.update(); } };
     const seatM = new THREE.Object3D();
     const was = { zoom: g.follow.zoomTarget, pose: p.pose };
+    const qa = typeof window !== 'undefined' && window.__STARLINE_QA__ ? (window.__STARLINE_QA__.cowRace = { cows, kids, race: null, site: null, dbg: { fixes: 0, helpOpen: false, taps: 0, ghost: false, phase: 'setup' } }) : null;
     const cleanup = () => {
       if (cleaned) return;
       cleaned = true;
-      p.mounted = null; p.pose = was.pose ?? null;
+      p.mounted = null; p.pose = was.pose ?? null; p.poseSpeed = 1;
       p.anim?.cancelOneShot();
+      p.anim?.snap(p.anim.has(was.pose) ? was.pose : 'Idle');      // standing again on the very frame she leaves the seat
       for (const c of cows) { c.root.parent?.remove(c.root); c.root.removeFromParent(); disposeRigs(c.root); }
       for (const k of kids) { k.root.removeFromParent(); disposeRigs(k.root); }
       for (const r of rigs) removeRig(r);
@@ -316,6 +378,7 @@ export default {
       slabs.length = 0;
       cows.length = kids.length = rigs.length = 0;
       seatM.removeFromParent();
+      card.dispose();
       root.remove();
       document.body.classList.remove('cow-race');
       S?.reset();
@@ -326,7 +389,49 @@ export default {
       const pl = ctx.place;
       p.teleport(pl.x - 1.8, pl.z + 0.2, undefined, -Math.PI / 2 + 0.3);
       p.carry?.release('cowrace');
+      if (qa) { qa.dbg.phase = 'done'; if (window.__STARLINE_QA__.cowRace === qa) window.__STARLINE_QA__.cowRace = null; }   // (test hook only: nothing of this round is left for the next one to read)
     };
+
+    // Every rider is posed by the same per-frame step in EVERY phase (the line-up, the hint card, the countdown, the race,
+    // the podium): the animators of the cows and the kids belong to nobody else, so a phase that did not tick them left the
+    // kids in their bind pose, standing on the cows' backs. After the ticks each rider is checked and corrected if it is not
+    // on a ride clip (this must never fire; it is counted in fixes and logged).
+    const keepSeated = () => {
+      const fix = (anim, who) => { if (ensureSeated(anim, 'RideCow')) { fixes++; if (fixes <= 3) console.warn(`[cowrace] ${who} was not on a ride clip: corrected`); } };
+      kids.forEach((k, i) => fix(k.anim, race?.racers[i + 1]?.id || `kid${i + 1}`));
+      if (p.mounted) fix(p.anim, 'mika');
+    };
+    const tick = dt => {
+      for (const c of cows) c.anim?.update(dt);
+      for (const k of kids) k.anim?.update(dt);
+      syncRigs();
+      poseMika();
+      keepSeated();
+      if (qa) qa.dbg.fixes = fixes;
+    };
+    const poseMika = () => {
+      if (!race) return;
+      cows[0].root.updateMatrixWorld(true);
+      seatM.getWorldPosition(p.pos);
+      p.facing = cows[0].facing;
+      p.root.position.copy(p.pos);
+      p.root.rotation.y = p.facing;
+      p.speed = race.racers[0].v; p.vel.set(0, 0, 0); p.grounded = true;
+      p.lastSafe.copy(cows[0].pos);
+    };
+
+    // the help card ("?"): the same three steps as the intro, reopened any time; the race stands still while it is up
+    let helpGrace = 0;
+    const openHelp = start => new Promise(res => { helpOpen = true; helpGrace = 0; card.open(() => { helpOpen = false; res(); }, { start }); });
+    /** Called by every waiting step and the race: opens the card on "?", closes it on E / Space; true while it is up. */
+    const pollHelp = dt => {
+      if (helpReq && !helpOpen) { helpReq = false; openHelp(!race || race.t === 0); }
+      if (!helpOpen) return false;
+      helpGrace += dt;
+      if (helpGrace > 0.4 && (input.pressed('act') || input.pressed('jump'))) card.close();
+      return true;                                   // (the frame that closes it is still a frozen one: the closing key is not a tap)
+    };
+    const waitLive = sec => { let t0 = 0; return ctx.loop(dt => { tick(dt); if (pollHelp(dt)) return undefined; return (t0 += dt) >= sec ? true : undefined; }); };
 
     try {
       S = ensureSite(g);
@@ -355,7 +460,10 @@ export default {
         k.root.position.set(KID_SEAT.x, KID_SEAT.y, KID_SEAT.z);
         cows[i].root.add(k.root);
         k.riding = true;
-        k.anim?.play(riderPose(k.anim));
+        // the seat height comes from the kid's own skeleton (hips in the bind pose = its size, hips in the ride pose), then it sits
+        const bindHips = hipsHeight(k.model, k.root);
+        seatRider(k.anim, 'RideCow');                  // seated before the first frame is drawn: never the bind pose
+        k.root.position.y = seatHeight(bindHips, hipsHeight(k.model, k.root));
         kids.push(k);
       }
       document.body.classList.add('cow-race');
@@ -363,30 +471,25 @@ export default {
 
       // ---- the race and the line-up
       const assist = ctx.first ? 1 : (g.easy ? 0.5 : 0);
-      race = newRace({ seed: Math.floor(Math.random() * 1e6) + 1, assist });
+      race = newRace({ seed: Math.floor(Math.random() * 1e6) + 1, assist, beat: practice ? PRACTICE_BEAT : undefined });
       const me = race.racers[0];
-      if (typeof window !== 'undefined' && window.__STARLINE_QA__) window.__STARLINE_QA__.cowRace = { race, cows, kids, site: S };   // test hook (?qa=1 only)
+      if (qa) { qa.race = race; qa.site = S; qa.help = { open: () => { helpReq = true; }, isOpen: () => helpOpen, el }; }
       const place = (i, s, lat) => {
-        const r = race.racers[i], a = cows[i];
+        const a = cows[i];
         trackPos(world, s, lat, tmp);
         a.pos.set(tmp.x, tmp.y, tmp.z);
         a.root.position.copy(a.pos);
         a.facing = Math.PI / 2;
         a.root.rotation.y = a.facing;
-        void r;
       };
       race.racers.forEach((r, i) => place(i, -1.8, r.lane));
       p.mounted = { obj: seatM, offset: new V3(), facingOffset: 0 };
+      p.anim?.cancelOneShot();                         // a talk or a gesture still playing from before the round must not leave her standing
       p.pose = riderPose(p.anim);
-      const poseMika = () => {
-        cows[0].root.updateMatrixWorld(true);
-        seatM.getWorldPosition(p.pos);
-        p.facing = cows[0].facing;
-        p.root.position.copy(p.pos);
-        p.root.rotation.y = p.facing;
-        p.speed = me.v; p.vel.set(0, 0, 0); p.grounded = true;
-        p.lastSafe.copy(cows[0].pos);
-      };
+      p.poseSpeed = 1;
+      seatRider(p.anim, 'RideCow');
+      for (let i = 0; i < 4; i++) cows[i].anim?.play('Idle');
+      syncRigs();
       poseMika();
 
       // the camera: a pan down the track to the gate, then behind Mika's cow; wider on a tall phone screen
@@ -405,47 +508,66 @@ export default {
       await ctx.wait(0.1);
       await ctx.fade(false, 450);
       if (ctx.quit) return { score: 0, quit: true };
-      ctx.hintTop(true, 196);
+      ctx.hintTop(true, touch ? 236 : 196);
       audio.whoosh?.(2);
       // a slow pan from the finish line to the start gate while the riders line up
       g.follow.cutscene({ pos: camPos.clone(), look: camLook.clone() }, 2.6);
-      for (let i = 0; i < 4; i++) cows[i].anim?.play('Idle');
       let pan = 0;
-      await ctx.loop(dt => { for (let i = 0; i < 4; i++) cows[i].anim?.update(dt); syncRigs(); poseMika(); S.setSpect(ctx.t, false); return (pan += dt) > 2.6 ? true : undefined; });
+      if (qa) qa.dbg.phase = 'lineup';
+      await ctx.loop(dt => { S.setSpect(ctx.t, false); tick(dt); return (pan += dt) > 2.6 ? true : undefined; });
       if (ctx.quit) return { score: 0, quit: true };
       g.follow.track(() => camPos, () => camLook, 4);
 
       const say = (text, life = 2.6) => { el.say.textContent = text; el.say.classList.add('on'); el.sayLeft = life; };
-      if (ctx.first) {
-        ctx.hint(ctx.ui.touch ? N_('Tap Giddy-up when the ring closes: on the beat of her hooves!') : N_('Press E or Space when the ring closes: on the beat of her hooves!'), 5.5);
-        await ctx.wait(3.2);
+      if (practice) {
+        // the first try: the intro card, three steps with their little pictures. The race waits until it is closed.
+        if (qa) qa.dbg.phase = 'intro';
+        openHelp(true);
+        await ctx.loop(dt => { tick(dt); return pollHelp(dt) ? undefined : true; });
+        if (ctx.quit) return { score: 0, quit: true };
       }
       // ---- 3, 2, 1, go
+      if (qa) qa.dbg.phase = 'countdown';
       const flash = text => { el.big.textContent = text; el.big.style.transition = 'none'; el.big.style.opacity = '1'; el.big.style.transform = 'translate(-50%,-50%) scale(1.25)'; requestAnimationFrame(() => { el.big.style.transition = 'opacity .7s, transform .7s'; el.big.style.opacity = '0'; el.big.style.transform = 'translate(-50%,-50%) scale(0.9)'; }); };
-      for (const [n, pitch] of [['3', 0.8], ['2', 0.9], ['1', 1.0]]) { flash(n); audio.blip(pitch * 1.4); await ctx.wait(0.8); if (ctx.quit) return { score: 0, quit: true }; }
+      for (const [n, pitch] of [['3', 0.8], ['2', 0.9], ['1', 1.0]]) { flash(n); audio.blip(pitch * 1.4); await waitLive(0.8); if (ctx.quit) return { score: 0, quit: true }; }
       flash(tx(N_('Go!')));
       audio.whoosh?.(5); audio.good();
       S.setSpect(ctx.t, true);
       ctx.hud(0, null);
+      root.classList.add('racing');
       for (let i = 0; i < 4; i++) race.racers[i].v = 0.4;
+      if (qa) qa.dbg.phase = 'race';
 
       // ---- the race
-      let lastBeatN = -1, mudShown = false, tiredShown = false, said = 0, lineAt = 0, popLeft = 0, finishedMe = false, lastPlace = 0, ribbonT = 0, hintLevel = 0, ringOn = true;
+      const beat = race.beat;
+      let lastBeatN = -1, mudShown = false, tiredShown = false, said = 0, lineAt = 0, popLeft = 0, finishedMe = false, lastPlace = 0, ribbonT = 0, hintLevel = 0;
+      let taps = 0, goodRow = 0, ghostEnd = -99, ghostUntil = -1, ghostOn = false;
       const kidSay = [N_('Come on, cow! Come ON!'), N_('Slow and steady, Moo-moo!'), N_('Look at her go!'), N_('Mud ahead! Mind your socks!'), N_('Yeah, Mika! Yeah!')];
-      const pop = (text, color) => { el.pop.textContent = text; el.pop.style.color = color || '#fff'; el.pop.style.transition = 'none'; el.pop.style.opacity = '1'; el.pop.style.transform = 'translateX(-50%) translateY(0)'; popLeft = 0.5; };
+      const TONE = { good: '#bff5c2', ok: '#ffe9a0', bad: '#ffb3a8' };
+      const pop = (text, color, life = 0.5) => { el.pop.textContent = text; el.pop.style.color = color || '#fff'; el.pop.style.transition = 'none'; el.pop.style.opacity = '1'; el.pop.style.transform = 'translateX(-50%) translateY(0)'; popLeft = life; };
+      const popMsg = (text, color) => pop(text, color, 0.9);        // a message in the pop spot ("Yum!"): a little longer
       const drawStrip = () => {
-        for (let i = 0; i < 4; i++) { const f = Math.min(1, Math.max(0, race.racers[i].s / TRACK.len)), q = Math.round(f * 460); if (el.dots[i]._q !== q) { el.dots[i]._q = q; el.dots[i].style.left = `${(4 + q / 5).toFixed(1)}%`; } }
+        for (let i = 0; i < 4; i++) { const f = Math.min(1, Math.max(0, race.racers[i].s / TRACK.len)), q = Math.round(f * 460); if (el.dots[i]._q !== q) { el.dots[i]._q = q; el.dots[i].style.left = `${(8 + q / 460 * 84).toFixed(1)}%`; } }
       };
       const pressNow = () => { const r = giddyReq || input.pressed('act') || input.pressed('jump') || input.pressed('tap'); giddyReq = false; return r; };
+      const setGhost = on => { ghostOn = on; el.ghost.classList.toggle('show', on); el.ghostf.classList.toggle('show', on); if (!on) { el.ghost.classList.remove('press'); el.ghostf.classList.remove('press'); } if (qa) qa.dbg.ghost = on; };
       const res = await ctx.loop(dt => {
+        if (pollHelp(dt)) { tick(dt); if (qa) qa.dbg.helpOpen = true; return undefined; }          // the "?" card is up: the race waits
         // ---- input and rules
-        if (pressNow()) {
+        if (pressNow() && !me.finished) {
           const grade = tap(race);
-          if (grade === 'good') { pop(tx(N_('Good!')), '#bff5c2'); audio.blip(1.3 + me.combo * 0.06); el.core.className = 'core good'; }
-          else if (grade === 'ok') { pop(tx(N_('Nice')), '#ffe9a0'); audio.click(); el.core.className = 'core ok'; }
-          else if (grade === 'mash') { pop(tx(N_('Puff!')), '#ffb3a8'); audio.miss(); el.core.className = 'core bad'; }
-          else { pop(tx(N_('Off the beat')), '#ffd2b8'); audio.miss(); el.core.className = 'core bad'; }
-          ringOn = false; el.coreAt = 0.18;
+          if (grade) {
+            const kind = tapKind(race, race.last.t, grade), lab = tapLabel(kind, practice);
+            if (kind === 'perfect' || kind === 'good') audio.blip(1.3 + me.combo * 0.06); else if (lab.tone === 'ok') audio.click(); else audio.miss();
+            pop(tx(lab.text), TONE[lab.tone]);
+            el.core.className = `core ${lab.tone}`;
+            el.coreAt = 0.18;
+            if (practice && taps < COACH_TAPS) { const line = coachLine(kind, taps); if (line) ctx.hint(line, 3); }
+            taps++;
+            goodRow = lab.tone === 'good' ? goodRow + 1 : 0;
+            if (ghostOn) { setGhost(false); ghostEnd = race.t; }
+            if (qa) qa.dbg.taps = taps;
+          }
         }
         stepRace(race, dt, { steer: input.move.x });
         // ---- the events of this frame
@@ -454,7 +576,7 @@ export default {
           if (e.type === 'grass') {
             S.eat(Math.max(0, Math.min(7, race.racers[e.who].lane * 2 + e.i)));
             fx.burst(v1.set(a.pos.x, a.pos.y + 1.1, a.pos.z), { n: 12, color: [0.45, 0.85, 0.3], speed: 1.6, size: 0.2, gravity: 1 });
-            if (e.who === 0) { audio.good(); pop(tx(N_('Yum! Fresh grass!')), '#d5ffa8'); }
+            if (e.who === 0) { audio.good(); popMsg(tx(N_('Yum! Fresh grass!')), '#d5ffa8'); }
           } else if (e.type === 'mud' && e.who === 0 && !mudShown) { mudShown = true; if (ctx.first) ctx.hint(N_('Mud! Everyone slows down. Keep the beat, do not mash.'), 3.5); }
           else if (e.type === 'tired' && e.who === 0 && !tiredShown) { tiredShown = true; audio.miss(); ctx.hint(N_('Puff, puff! She is out of breath. Ease off and tap on the beat.'), 3.5); }
           else if (e.type === 'finish') {
@@ -469,6 +591,7 @@ export default {
             }
             if (e.who === 0) {
               finishedMe = true;
+              root.classList.add('fin');
               say(who.place === 1 ? tx(N_('Mika is first!')) : tx(N_('Mika crosses the line!')), 2.4);
               ctx.hud(raceScore(who.place, who.finished), null);
               audio.good();
@@ -477,9 +600,9 @@ export default {
         }
         race.events.length = 0;
 
-        // ---- the picture: cows on the track, kids on the cows
+        // ---- the picture: cows on the track, kids on the cows (each rider keeps a ride clip: Mika through p.pose, the kids by name)
         for (let i = 0; i < 4; i++) {
-          const r = race.racers[i], a = cows[i];
+          const r = race.racers[i], a = cows[i], kid = i > 0 ? kids[i - 1] : null;
           trackPos(world, r.s, r.lat, tmp);
           const lean = Math.max(-0.4, Math.min(0.4, (r.latV || 0) * 0.35));
           a.facing = Math.PI / 2 - lean;
@@ -488,21 +611,21 @@ export default {
           a.root.position.set(a.pos.x, a.pos.y + bob, a.pos.z);
           a.root.rotation.y = a.facing;
           a.root.rotation.x = Math.sin(r.stride * 1.9) * 0.012;
-          if (r.finished != null && r.v < 0.5) a.anim?.play('Idle', { fade: 0.4 });
-          else {
+          if (r.finished != null && r.v < 0.5) {
+            // across the line and standing: the cow stands, the rider keeps sitting (the sway clip), nobody cheers on her back
+            a.anim?.play('Idle', { fade: 0.4 });
+            if (kid) kid.anim?.play(riderPose(kid.anim), { fade: 0.3 }); else { p.pose = riderPose(p.anim); p.poseSpeed = 1; }
+          } else {
             const gb = playGait(a.anim, r.v, false, 0.15);
-            if (gb && i > 0) kids[i - 1].anim?.play(kids[i - 1].anim.has(gb.rider) ? gb.rider : riderPose(kids[i - 1].anim), { speed: Math.max(0.6, Math.min(1.4, r.v / gb.auth)), fade: 0.15 });
-            else if (i > 0) kids[i - 1].anim?.play(riderPose(kids[i - 1].anim), { fade: 0.2 });
-            if (i === 0) p.pose = gb && p.anim?.has(gb.rider) ? gb.rider : riderPose(p.anim);
+            const sp = gb ? Math.max(0.6, Math.min(1.4, r.v / gb.auth)) : 1;
+            if (kid) kid.anim?.play(gb ? riderClip(kid.anim, gb.rider) : riderPose(kid.anim), { speed: sp, fade: 0.15 });
+            else { p.pose = gb ? riderClip(p.anim, gb.rider) : riderPose(p.anim); p.poseSpeed = sp; }
           }
-          a.anim?.update(dt);
-          if (i > 0) kids[i - 1].anim?.update(dt);
           // mud splashes and the puffing cow
           if (r.mud && r.v > 0.8 && ((ctx.t * 7 + i) % 1) < dt * 7) fx.burst(v1.set(a.pos.x - 0.6, a.pos.y + 0.1, a.pos.z), { n: 4, color: [0.35, 0.24, 0.14], speed: 1.8, size: 0.3, gravity: 5 });
           if (r.tiredT > 0 && ((ctx.t * 3 + i) % 1) < dt * 3) fx.burst(v1.set(a.pos.x + 1.0, a.pos.y + 1.0, a.pos.z), { n: 3, color: [1, 1, 1], speed: 0.8, size: 0.28, gravity: -0.5 });
         }
-        syncRigs();
-        poseMika();
+        tick(dt);
         frame();
         // ---- the page
         ctx.hud(raceScore(placeNow(race), null), race.t);
@@ -510,44 +633,68 @@ export default {
         const pl = placeNow(race);
         if (pl !== lastPlace) { lastPlace = pl; el.place.textContent = tx(ordinal(pl)); }
         // the ring: an outer ring closes on the core exactly at each beat
-        const toBeat = BEAT - ((race.t % BEAT) + BEAT) % BEAT;            // seconds until the next footfall
-        const k = 1 + Math.min(1, toBeat / BEAT) * 0.95;
+        const { toBeat } = beatPhase(race.t, beat);                       // seconds until the next footfall
+        const k = 1 + Math.min(1, toBeat / beat) * 0.95;
         const kq = Math.round(k * 40);
-        if (kq !== el.kq) { el.kq = kq; el.shrink.style.transform = `scale(${(kq / 40).toFixed(2)})`; el.shrink.style.opacity = (0.35 + (1 - Math.min(1, toBeat / BEAT)) * 0.65).toFixed(2); }
+        if (kq !== el.kq) { el.kq = kq; el.shrink.style.transform = `scale(${(kq / 40).toFixed(2)})`; el.shrink.style.opacity = (0.35 + (1 - Math.min(1, toBeat / beat)) * 0.65).toFixed(2); }
+        const now = toBeat < 0.07;
+        if (now !== el.now) { el.now = now; el.core.classList.toggle('now', now); }
         if (el.coreAt > 0) { el.coreAt -= dt; if (el.coreAt <= 0) el.core.className = 'core'; }
-        const n = Math.floor(race.t / BEAT);
-        if (n !== lastBeatN) { lastBeatN = n; ringOn = true; }
-        for (let i = 0; i < 9; i++) { const on = i < me.combo; if (el.pips[i]._on !== on) { el.pips[i]._on = on; el.pips[i].classList.toggle('on', on); } }
-        const pw = Math.min(100, Math.round(me.puff * 100));
-        if (el.pw !== pw) { el.pw = pw; el.puff.style.width = `${pw}%`; }
+        const n = Math.floor(race.t / beat);
+        if (n !== lastBeatN) lastBeatN = n;
+        // the caption under the first try, and the ghost: no tap for 5 s and a hand shows how, on the beat
+        const capOn = ghostOn || (practice && taps < 8 && race.t < 40) || (taps < 3 && race.t > 2);
+        if (capOn !== el.capOn) { el.capOn = capOn; el.cap.classList.toggle('on', capOn); }
+        if (!ghostOn && !finishedMe && ghostDue(race.t, me.lastTap, taps, ghostEnd)) { setGhost(true); ghostUntil = race.t + GHOST_SHOW; }
+        if (ghostOn) {
+          if (race.t > ghostUntil || finishedMe) { setGhost(false); ghostEnd = race.t; }
+          else { const pressed = toBeat < 0.14 || toBeat > beat - 0.02; el.ghost.classList.toggle('press', pressed); el.ghostf.classList.toggle('press', pressed); }
+        }
+        const pulse = touch && (ghostOn || (practice && taps < 3)) && toBeat < beat * 0.22;
+        if (pulse !== el.pulse) { el.pulse = pulse; el.giddy.classList.toggle('hit', pulse); }
+        // the meters: streak (taps in a row on the beat), tired (mashing), boost (fresh grass)
+        const cb = Math.min(me.combo, 9);
+        if (el.cb !== cb) { el.cb = cb; el.streakV.textContent = cb ? `×${cb}` : ''; el.streak.classList.toggle('off', !cb); el.streak.classList.toggle('hot', cb >= 4); }
+        const pw = Math.min(100, Math.round(me.puff * 100)), tr = me.tiredT > 0;
+        if (el.pw !== pw || el.tr !== tr) { el.pw = pw; el.tr = tr; el.tiredBar.style.width = `${pw}%`; el.tired.classList.toggle('off', pw < 8 && !tr); el.tired.classList.toggle('bad', tr); }
+        const bq = Math.round(Math.max(0, me.boostT) / TRACK.grassBoost * 100);
+        if (el.bq !== bq) { el.bq = bq; el.boostBar.style.width = `${bq}%`; el.boost.classList.toggle('off', bq <= 0); el.boost.classList.toggle('hot', bq > 0); }
         if (popLeft > 0) { popLeft -= dt; el.pop.style.transition = 'opacity .45s, transform .45s'; if (popLeft <= 0) { el.pop.style.opacity = '0'; el.pop.style.transform = 'translateX(-50%) translateY(-16px)'; } }
         if (el.sayLeft > 0) { el.sayLeft -= dt; if (el.sayLeft <= 0) el.say.classList.remove('on'); }
         // the commentators
         said -= dt;
         if (said <= 0 && !finishedMe && race.t > 3) { said = 5.5; say(tx(kidSay[lineAt++ % kidSay.length]), 2.4); }
         if (ctx.first && !finishedMe) {
-          if (hintLevel === 0 && race.t > 4) { hintLevel = 1; ctx.hint(N_('Steer between the lanes. Fresh grass makes her run faster!'), 3.5); }
+          if (hintLevel === 0 && race.t > 6 && taps >= 3) { hintLevel = 1; ctx.hint(N_('Steer between the lanes. Fresh grass makes her run faster!'), 3.5); }
           else if (hintLevel === 1 && me.s > TRACK.len * 0.8) { hintLevel = 2; ctx.hint(N_('Nearly there! Keep the beat to the ribbon.'), 3); }
         }
         if (S.tail.visible) { ribbonT += dt; S.tail.rotation.z = Math.sin(ribbonT * 6) * 0.3; S.tail.position.y -= dt * 0.35 * (S.tail.position.y > world.heightAt(S.tail.position.x, S.tail.position.z) + 0.1 ? 1 : 0); }
+        if (qa) qa.dbg.helpOpen = helpOpen;
         return race.over ? { done: true } : undefined;
       });
       if (res?.quit || ctx.quit) return { score: 0, quit: true };
+      setGhost(false);
+      root.classList.remove('racing');
 
-      // ---- the podium: the first three cows stand on blocks in front of the stands, the kids cheer
+      // ---- the podium: the first three cows stand on blocks in front of the stands, the kids cheer FROM THE STANDS: the riders
+      // stay seated on their cows (the sway clip), nobody stands on a cow's back
+      if (qa) qa.dbg.phase = 'podium';
       const rs = result(race);
       ctx.hud(rs.score, null);
       ctx.hintTop(false);
       const order = race.order.slice(0, 3);
       const half = TRACK.lanes * TRACK.laneW / 2, pz = SITE.z + half + 5.2, ph = [0.7, 0.45, 0.25], px0 = SITE.x0 + TRACK.len - 12;
+      for (let i = 0; i < 4; i++) {                                    // every cow stands, every rider sits (no cow trots on the spot)
+        cows[i].anim?.play('Idle', { fade: 0.2 });
+        if (i > 0) kids[i - 1].anim?.play(riderPose(kids[i - 1].anim), { speed: 1, fade: 0.2 });
+      }
+      p.pose = riderPose(p.anim); p.poseSpeed = 1;
       order.forEach((ri, k) => {
         const a = cows[ri], px = px0 + (k === 0 ? 0 : k === 1 ? -3.4 : 3.4), z = pz;
         const y = world.heightAt(px, z);
         const blk = new THREE.Mesh(new THREE.BoxGeometry(2.4, ph[k], 2.4), new THREE.MeshStandardMaterial({ color: ['#f4c542', '#cfd6dc', '#c98a52'][k], roughness: 0.6 }));
-        blk.position.set(px, y + ph[k] / 2, z); blk.receiveShadow = true; scene.add(blk); slabs.push(blk);
+        blk.name = 'race-podium'; blk.position.set(px, y + ph[k] / 2, z); blk.receiveShadow = true; scene.add(blk); slabs.push(blk);
         a.pos.set(px, y + ph[k], z); a.facing = Math.PI + (k === 0 ? 0.25 : k === 1 ? 0.55 : -0.55); a.root.position.copy(a.pos); a.root.rotation.y = a.facing; a.root.rotation.x = 0;
-        a.anim?.play('Idle', { fade: 0.2 });
-        if (ri === 0) poseMika();
       });
       const camP = new V3(px0 - 1.5, world.heightAt(px0, pz) + 3.6, SITE.z - 4.5);
       const camL = new V3(px0, world.heightAt(px0, pz) + 1.5, pz);
@@ -557,12 +704,12 @@ export default {
       if (rs.place === 1) { audio.star?.(); fx.burst(v1.set(px0, world.heightAt(px0, pz) + 2.8, pz), { n: 60, speed: 5, size: 0.35, gravity: 1 }); }
       S.setSpect(0, true);
       let tp = 0;
-      await ctx.loop(dt => { tp += dt; for (const a of cows) a.anim?.update(dt); for (const k of kids) k.anim?.update(dt); syncRigs(); S.setSpect(ctx.t, true); poseMika(); return tp > 3.6 ? true : undefined; });
-      if (ctx.quit) return { score: rs.score, quit: false };
+      await ctx.loop(dt => { tp += dt; S.setSpect(ctx.t, true); tick(dt); return tp > 3.6 ? true : undefined; });
+      if (ctx.quit) return { score: rs.score, quit: false, extra: ordinal(rs.place), detail: { place: rs.place, time: rs.time }, note: tx(STARS_NOTE) };
       await ctx.fade(true, 350);
       cleanup();
       await ctx.fade(false, 400);
-      return { score: rs.score, quit: false, extra: ordinal(rs.place), detail: { place: rs.place, time: rs.time } };
+      return { score: rs.score, quit: false, extra: ordinal(rs.place), detail: { place: rs.place, time: rs.time }, note: tx(STARS_NOTE) };
     } finally {
       if (!cleaned) {
         cleanup();

@@ -8,6 +8,10 @@
 // on: what Mika stands on. 'ground' spots pass placeProblems (dry, level, clear of walls and the river). The others are
 //   built things over the water or up a tower: 'island' = the mill island, 'deck' = the viaduct deck (y = DECK_Y),
 //   'gallery' = the bell-tower gallery (its height comes from the model at runtime).
+// lift: how many metres above the spot the Star Kite takes Mika for "Fly up" (game/skyflight.js). The valley is a bowl whose rim
+//   stands 15-50 degrees up from the floor, hiding the low sky; this is the lowest altitude (multiple of 10) at which at least 95 per
+//   cent of the evening star groups of every season, in both language profiles, clear the rim: `node scripts/measure-horizon.mjs`
+//   and tests/skyflight.test.mjs. Default SKY_LIFT_DEFAULT. Spots on the deck or the gallery count from their own floor.
 // The forest spots are placed from the lamp's and the gate's own positions in layout.js, never from fixed metres off
 //   the shrine model, and have generous radii: the shrine and its lamp may be rebuilt larger.
 import { LAMPS, BUILDINGS, PLACES, DECK_Y } from '../world/layout.js';
@@ -21,25 +25,28 @@ const toward = (a, b, d) => { const l = Math.hypot(b.x - a.x, b.z - a.z) || 1; r
 const mill = lamp('mill'), forest = lamp('forest'), viaduct = lamp('viaduct');
 const tower = building('belltower'), gateTop = building('toriiTop');
 
+/** The sky altitude (metres above the spot) of a spot without its own `lift`, and the limits the guided lift stays within. */
+export const SKY_LIFT_DEFAULT = 130, SKY_LIFT_MIN = 40, SKY_LIFT_MAX = 170;
+
 export const SKY_SPOTS = [
   // ---- the four lamp towers
   { id: 'mill-lamp', ...toward(mill, { x: PLACES.mill.x, z: mill.z }, 2.6), r: 3, on: 'island', lamp: 'mill', face: { x: mill.x, z: mill.z },
-    why: 'on the mill island, at the foot of the Mill Lamp' },
+    lift: 140, why: 'on the mill island, at the foot of the Mill Lamp' },
   { id: 'orchard-lamp', x: tower.x, z: tower.z + 9, r: 3, on: 'ground', lamp: 'orchard', face: { x: tower.x, z: tower.z },
-    why: 'in the Takamori square, under the bell tower that carries the Orchard Lamp' },
+    lift: 130, why: 'in the Takamori square, under the bell tower that carries the Orchard Lamp' },
   { id: 'forest-lamp', ...toward(forest, gateTop, 5), r: 5, on: 'ground', lamp: 'forest', face: { x: forest.x, z: forest.z },
-    why: 'on the shrine hilltop, beside the Forest Lamp (toward the upper gate, clear of the shrine)' },
+    lift: 130, why: 'on the shrine hilltop, beside the Forest Lamp (toward the upper gate, clear of the shrine)' },
   { id: 'viaduct-lamp', x: viaduct.x - 3.5, z: viaduct.z - 1.5, y: DECK_Y, r: 3, on: 'deck', lamp: 'viaduct', face: { x: viaduct.x, z: viaduct.z },
-    why: 'on the viaduct deck by the Viaduct Lamp, high over the river' },
+    lift: 120, why: 'on the viaduct deck by the Viaduct Lamp, high over the river' },
   // ---- other high, open places
   { id: 'belltower-top', x: tower.x, z: tower.z, r: 3.2, on: 'gallery', lamp: 'orchard', face: { x: tower.x, z: tower.z + 40 },
-    why: 'up on the bell-tower gallery, the highest floor in the valley' },
+    lift: 120, why: 'up on the bell-tower gallery, the highest floor in the valley' },
   { id: 'shrine-steps', x: gateTop.x, z: gateTop.z + 2, r: 3.5, on: 'ground', face: { x: PLACES.shrineStairsBase.x, z: PLACES.shrineStairsBase.z },
-    why: 'at the top of the shrine steps, looking back out over the forest' },
+    lift: 130, why: 'at the top of the shrine steps, looking back out over the forest' },
   { id: 'star-hill', x: -56, z: 161, r: 3.2, on: 'ground', face: { x: -56, z: 120 },
-    why: 'the stargazing hill behind the cottage (a few steps from the Stargazing sign)' },
+    lift: 120, why: 'the stargazing hill behind the cottage (a few steps from the Stargazing sign)' },
   { id: 'pasture', x: 142, z: -30, r: 3.5, on: 'ground', face: { x: 142, z: -70 },
-    why: 'the open sheep pasture above Takamori' },
+    lift: 140, why: 'the open sheep pasture above Takamori' },
 ];
 
 export const SKY_SPOT = Object.fromEntries(SKY_SPOTS.map(s => [s.id, s]));

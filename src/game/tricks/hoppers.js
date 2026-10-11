@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { placeProblems } from '../../world/roads.js';
 import { rng, BUGS, noiseOf, aimSpot, catchable, Meadow, Net, Tally } from './rules-hoppers.js';
-import { BUG_CSS, Critter, NetRig, Cage, Release, creepFilter, padHeld } from './bugkit.js';
+import { BUG_CSS, Critter, NetRig, Cage, Release, creepFilter, padHeld, plural } from './bugkit.js';
 import { addCss } from './util.js';
 
 const V3 = THREE.Vector3;
@@ -27,7 +27,6 @@ const CSS = `
 @keyframes bugFloat{from{opacity:1;margin-top:0}to{opacity:0;margin-top:-52px}}
 `;
 
-const plural = (n, one, many) => (n === 1 ? tx(one) : tx(many, { n }));
 /** "3 grasshoppers and 1 mantis" for the results card, in the player's language. */
 export function caughtText(g, m) {
   const a = g ? plural(g, N_('1 grasshopper'), N_('{n} grasshoppers')) : '', b = m ? plural(m, N_('1 mantis'), N_('{n} mantises')) : '';

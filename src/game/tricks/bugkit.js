@@ -4,6 +4,10 @@
 import * as THREE from 'three';
 import { Animator } from '../../actors/animator.js';
 import { fit, trampleGrass } from './util.js';
+import { tx } from '../../i18n/i18n.js';
+
+/** "1 cricket" / "{n} crickets": the singular and the plural are two strings of their own (languages count differently). */
+export const plural = (n, one, many) => (n === 1 ? tx(one) : tx(many, { n }));
 
 const V3 = THREE.Vector3;
 const SIZE = { grasshopper: 0.5, mantis: 0.65, cricket: 0.34 };         // metres, longest side (true bugs are a few cm: drawn about 7x larger, to read from the camera's 5 m)

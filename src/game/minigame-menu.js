@@ -75,7 +75,7 @@ export class MinigameMenu {
     try { state = stateAt('e.done', 'together', st.story || storyId()); } catch { state = stateAt('e.done', 'together', 'grandma'); }
     state.flags = { ...state.flags, explore: true };
     // what the save has already learned travels along (so the picker's bests are honest); it never travels back
-    for (const k of ['tricks', 'yard', 'workshop', 'starGroups', 'fishLog', 'fishBest', 'wishes']) if (st[k] !== undefined) state[k] = JSON.parse(JSON.stringify(st[k]));
+    for (const k of ['tricks', 'yard', 'workshop', 'starGroups', 'fishLog', 'fishBest', 'wishes', 'friends']) if (st[k] !== undefined) state[k] = JSON.parse(JSON.stringify(st[k]));
     const q = new Quest(state, { story: state.story });
     const saved = {
       quest: d.quest, seasonOverride: g.seasonOverride ?? null, timeOverride: g.timeOverride ?? null, cycleHour: g.cycleHour, weatherOff: g.weatherOff,
@@ -228,6 +228,8 @@ export class MinigameMenu {
     } else if (e.kind === 'sky') {
       const spot = g.director?.sky?.spots.find(s => s.id === e.ref) || d.sky.spots.find(s => s.id === e.ref);
       if (!spot) throw new Error(`no sky spot ${e.ref}`);
+      // the Star Kite carries her up for a clear sky ("Fly up"): a throwaway or Explore valley owns it, as for the workshop
+      if (!(d.quest.state.inv.kite > 0)) d.quest.state.inv.kite = 1;
       await ui.fade(false, 420);
       d.sky.start(spot);
       await this.until(() => !d.sky.active && !(d.sky.returning > 0));

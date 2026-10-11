@@ -9,7 +9,9 @@
 import * as THREE from 'three';
 import { WATER_Y, WORLD } from '../world/layout.js';
 import { N_, tx } from '../i18n/i18n.js';
-import { makeRig, removeRig, makeHaystack, SEAT, playGait, riderPose, gaitFor } from './cow-rig.js';
+import { makeRig, removeRig, makeHaystack, SEAT, playGait, riderPose, riderClip, gaitFor, seatRider, ensureSeated } from './cow-rig.js';
+import { RideCoachCard, icon, ensureCss } from './cow-help.js';
+import { newRideCoach, stepRideCoach, skipRideStep, rideCoachDone, cowHintText } from '../game/tricks/rules-cowhelp.js';
 
 const V3 = THREE.Vector3;
 /** Speeds in metres per second at a kid's scale; stamina per second. */
@@ -31,22 +33,43 @@ const CSS = `
 #cowUi{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;display:none;flex-direction:column;align-items:center;gap:8px;
  pointer-events:none;zoom:var(--ui-scale,1);font:700 14px Nunito,system-ui,sans-serif;color:#5a3a22}
 #cowUi.on{display:flex}
-#cowUi .bar{width:min(240px,60vw);height:14px;border-radius:8px;background:#fff7e8e6;box-shadow:0 3px 12px rgba(40,20,0,.25);overflow:hidden;position:relative}
+#cowUi .row{display:flex;align-items:center;gap:8px}
+#cowUi .en{display:flex;align-items:center;gap:6px;padding:4px 12px 4px 6px;border-radius:14px;background:#fff7e8e6;box-shadow:0 3px 12px rgba(40,20,0,.25)}
+#cowUi .en .ic{display:flex;width:20px;height:20px}#cowUi .en .ic svg{width:20px;height:20px}
+#cowUi .en .lb{min-width:44px;font:700 12px Nunito,sans-serif;white-space:nowrap}
+#cowUi .en.low .lb{color:#c2541c}#cowUi .en.out .lb{color:#c0301c}
+#cowUi .bar{width:min(190px,46vw);height:14px;border-radius:8px;background:#5a3a2222;overflow:hidden;position:relative}
 #cowUi .bar i{position:absolute;left:0;top:0;bottom:0;width:100%;background:#7fcf6a;border-radius:8px;transform-origin:left;transition:background .2s}
 #cowUi .bar.low i{background:#f0a040}
 #cowUi .bar.out i{background:#e4584a}
+#cowUi .help{pointer-events:auto;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:#f08a3c;color:#fff;font:700 20px/36px Fredoka,Nunito,sans-serif;box-shadow:0 3px 0 #b8581c,0 4px 10px rgba(40,20,0,.3);touch-action:manipulation}
 #cowUi .tip{padding:5px 12px;border-radius:12px;background:#fff7e8e6;box-shadow:0 3px 12px rgba(40,20,0,.2);max-width:min(440px,90vw);text-align:center}
+#cowUi .legend{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;padding:5px 12px;border-radius:14px;background:#fff7e8e6;box-shadow:0 3px 12px rgba(40,20,0,.2);font:700 12px Nunito,sans-serif}
+#cowUi .legend span{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:1px 3px}
+#cowUi .legend .ch-kc{min-width:18px;padding:1px 5px;font-size:11px;border-bottom-width:3px}
+#cowUi .legend span.hl{animation:cowHl .8s ease-in-out infinite}
 #cowUi .btns{display:none;gap:10px;pointer-events:auto}
 #cowUi.touch .btns{display:flex}
-#cowUi button{min-width:76px;min-height:56px;padding:6px 14px;border:0;border-radius:18px;font:700 16px Fredoka,Nunito,sans-serif;color:#fff;background:#f08a3c;box-shadow:0 4px 0 #b8581c,0 6px 14px rgba(40,20,0,.3);touch-action:none;user-select:none;-webkit-user-select:none}
+#cowUi.touch .legend{display:none}
+#cowUi button.act{display:flex;align-items:center;justify-content:center;gap:6px;min-width:96px;min-height:60px;padding:6px 14px;border:0;border-radius:18px;font:700 17px Fredoka,Nunito,sans-serif;color:#fff;background:#f08a3c;box-shadow:0 4px 0 #b8581c,0 6px 14px rgba(40,20,0,.3);touch-action:none;user-select:none;-webkit-user-select:none}
+#cowUi button.act svg{width:22px;height:22px;flex:none}
 #cowUi button.moo{background:#4d9fd8;box-shadow:0 4px 0 #2a6a9a,0 6px 14px rgba(40,20,0,.3)}
 #cowUi button.off{background:#8a7a68;box-shadow:0 4px 0 #5a4a3a,0 6px 14px rgba(40,20,0,.3)}
 #cowUi button.on{transform:translateY(3px);filter:brightness(1.1)}
-@media (max-width:700px){#cowUi.touch{bottom:calc(150px + env(safe-area-inset-bottom,0px));left:auto;right:calc(12px + env(safe-area-inset-right,0px));transform:none;align-items:flex-end}#cowUi.touch .btns{flex-direction:column-reverse}#cowUi.touch .bar{width:92px}
- #cowUi.touch .tip{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));right:calc(110px + env(safe-area-inset-right,0px));top:calc(176px + env(safe-area-inset-top,0px));max-width:none;text-align:left}}
+#cowUi button.hl{animation:cowHl .8s ease-in-out infinite}
+@keyframes cowHl{0%,100%{transform:scale(1);box-shadow:0 0 0 0 #ffd08aaa}50%{transform:scale(1.08);box-shadow:0 0 0 8px #ffd08a00}}
+#cowHint{position:fixed;left:0;top:0;z-index:13;display:none;pointer-events:none;padding:6px 12px;border-radius:14px;background:#fffdf6f4;box-shadow:0 4px 14px rgba(40,20,0,.3);border:2px solid #f08a3c;
+ font:700 14px Nunito,system-ui,sans-serif;color:#4a3020;white-space:nowrap;will-change:transform}
+#cowHint::after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-7px;border:7px solid transparent;border-top-color:#f08a3c;border-bottom:0}
+@media (max-width:700px){#cowUi.touch{bottom:calc(150px + env(safe-area-inset-bottom,0px));left:auto;right:calc(12px + env(safe-area-inset-right,0px));transform:none;align-items:flex-end}#cowUi.touch .btns{flex-direction:column-reverse}#cowUi.touch .bar{width:84px}
+ #cowUi.touch .en .lb{min-width:0;font-size:11px}
+ #cowUi.touch .tip{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));right:calc(130px + env(safe-area-inset-right,0px));top:calc(176px + env(safe-area-inset-top,0px));max-width:none;text-align:left}}
 `;
 
 const ZERO = new V3();
+const LS = 'starline-cow-help';
+const lsGet = () => { try { return JSON.parse(localStorage.getItem(LS) || '{}') || {}; } catch { return {}; } };
+const lsSet = o => { try { localStorage.setItem(LS, JSON.stringify({ ...lsGet(), ...o })); } catch { /* private mode */ } };
 
 export class CowRide {
   constructor(director) {
@@ -70,6 +93,8 @@ export class CowRide {
     this.dustT = 0;
     this.prevZoom = 0;
     this.warn = 0;
+    this.coach = null;       // the free-ride coach's progress ({ step, ... } from rules-cowhelp) while its card is up
+    this.fixes = 0;          // how many times the rider had to be put back on a ride clip (must stay 0)
     this.buildUi();
   }
 
@@ -162,14 +187,17 @@ export class CowRide {
     this.v = 0; this.stamina = 1; this.hold = 0; this.graze = 0; this.warn = 0;
     this.heading = a.facing;
     this.phase = 'mount';
+    this.landed = false;
     this.t = 0;
     this.from.copy(p.pos);
     p.climb = null;
     p.vel.set(0, 0, 0);
     p.carry?.want('worn', 'cowride');
     p.anim?.once('Jump', { hold: true, fade: 0.08 });
+    p.poseSpeed = 1;
     this.d.audio.click();
     this.showUi(true);
+    this.hideHint();
   }
 
   seatWorld(out) {
@@ -182,12 +210,16 @@ export class CowRide {
     p.anim?.cancelOneShot();
     p.mounted = { obj: this.seat, offset: ZERO, facingOffset: 0 };
     p.pose = riderPose(p.anim);
+    p.poseSpeed = 1;
+    seatRider(p.anim, 'RideCow');                    // seated on the very frame the hop ends: no blend through standing
     p.speed = 0;
     this.phase = 'ride';
     this.prevZoom = this.g.follow.zoomTarget;
     this.g.follow.zoomTarget = Math.max(this.g.follow.zoomTarget, (this.g.camera.aspect || 1.7) < 0.9 ? 7.6 : 9.6);   // closer on a tall phone screen: the cow is narrow
-    this.tip(this.d.ui.touch ? N_('Stick steers. Hold Gallop to trot, then run. Jump hops off.') : N_('Move to steer. Hold E or Shift to trot, hold on to gallop. M moos. Space hops off.'), 6);
     this.rode = true;
+    // the first ride on this device teaches itself: three steps, each done by doing it ("?" brings it back any time)
+    if (!lsGet().rideCoach) this.startCoach();
+    else this.tip(this.d.ui.touch ? N_('Stick steers. Hold Gallop to trot, then run. Jump hops off.') : N_('Move to steer. Hold E or Shift to trot, hold on to gallop. M moos. Space hops off.'), 6);
     void a;
   }
 
@@ -214,9 +246,11 @@ export class CowRide {
     this.t = 0;
     p.mounted = null;
     p.pose = null;
+    p.poseSpeed = 1;
     p.anim?.once('Jump', { hold: true, fade: 0.08 });
     this.g.follow.zoomTarget = this.prevZoom || 6.2;
     this.d.audio.click();
+    this.stopCoach(false);
   }
 
   release() {
@@ -238,7 +272,10 @@ export class CowRide {
     this.phase = null;
     this.v = 0;
     p.carry?.release('cowride');
+    p.poseSpeed = 1;
+    this.stopCoach(false);
     this.showUi(false);
+    if (this.rode) lsSet({ rides: (lsGet().rides || 0) + 1 });
     // the first ride makes the friendship official once she is back on her own feet (the hello is a short scene)
     if (this.rode) { this.rode = false; this.d.meetFriend?.('cowpal'); }
   }
@@ -247,8 +284,9 @@ export class CowRide {
   abort() {
     if (!this.phase) return;
     const p = this.g.player;
-    p.mounted = null; p.pose = null;
+    p.mounted = null; p.pose = null; p.poseSpeed = 1;
     p.anim?.cancelOneShot();
+    p.anim?.snap('Idle');                            // standing on the frame she leaves the seat, not a blend from sitting
     if (this.cow) { const s = this.cow.pos; p.teleport(s.x + 1.6, s.z, undefined, p.facing); }
     this.g.follow.zoomTarget = this.prevZoom || 6.2;
     this.release();
@@ -258,7 +296,7 @@ export class CowRide {
   update(dt) {
     if (this.mooCd > 0) this.mooCd -= dt;
     if (this.tipLeft > 0) { this.tipLeft -= dt; if (this.tipLeft <= 0) this.setTip(''); }
-    if (!this.phase) return;
+    if (!this.phase) { this.updateHint(); return; }
     const g = this.g, p = g.player, a = this.cow, d = this.d;
     // anything that takes Mika away drops her where she is
     if (d.busy || d.scenes?.active || d.tricks?.round || g.interiors?.active || p.swimming || p.aiming) { this.abort(); return; }
@@ -271,6 +309,8 @@ export class CowRide {
       p.facing = a.facing;
       this.place(p);
       this.keepCow(dt, 0);
+      // the hop ends already sitting: she lands in the saddle on a ride clip, never a frame standing on the cow's back
+      if (k >= 0.8 && !this.landed) { this.landed = true; p.anim?.cancelOneShot(); p.pose = riderPose(p.anim); p.poseSpeed = 1; seatRider(p.anim, 'RideCow'); }
       if (k >= 1) this.finishMount();
       return;
     }
@@ -385,10 +425,12 @@ export class CowRide {
     a.root.rotation.x = Math.sin(phase * Math.PI * 2) * 0.012 * Math.min(1, this.v / 4);
     // grazing: stand still a moment and the cow lowers her head to eat (the stamina fills faster)
     if (this.v < 0.1 && want === 0) this.graze += dt; else this.graze = 0;
-    if (this.v > 0.4) { playGait(a.anim, this.v); const rp = gaitFor(this.v)?.rider; p.pose = p.anim?.has(rp) ? rp : p.pose; }
+    if (this.v > 0.4) { const gb = playGait(a.anim, this.v); p.pose = riderClip(p.anim, gb?.rider); p.poseSpeed = gb ? Math.max(0.6, Math.min(1.4, this.v / gb.auth)) : 1; }
     else if (this.graze > 0.9 && a.anim?.has('Graze') && !a.anim.busy) a.anim.play('Graze', { fade: 0.4 });
     else if (this.graze <= 0.9 && !a.anim.busy) a.anim?.play('Idle', { fade: 0.3 });
-    if (this.v <= 0.4) p.pose = riderPose(p.anim);
+    if (this.v <= 0.4) { p.pose = riderPose(p.anim); p.poseSpeed = 1; }
+    // the rider's self-check: whatever else touched Mika's animator while she is mounted (a gesture still playing, an Idle), she sits
+    if (ensureSeated(p.anim, p.pose, p.poseSpeed)) { this.fixes++; if (this.fixes <= 3) console.warn('[cow-ride] Mika was not on a ride clip: corrected'); }
 
     // ---- Mika on the seat, after the cow has moved
     a.root.updateMatrixWorld(true);
@@ -409,12 +451,15 @@ export class CowRide {
       d.fx.burst(a.pos.clone().add(new V3(-sx * 0.9, 0.12, -sz * 0.9)), wet ? { n: 6, color: [0.75, 0.88, 1], speed: 1.6, size: 0.25, gravity: 3 } : { n: 3, color: [0.82, 0.72, 0.5], speed: 0.8, size: 0.3, gravity: -0.6 });
     }
     this.writeUi(gait);
+    this.coachTick(dt, { steering: mag > 0.1 && this.v > 0.8, holding: holding && mag > 0.1 && this.stamina > 0.02, mooed: !!this.mooedNow });
+    this.mooedNow = false;
   }
 
   moo() {
     const d = this.d, a = this.cow;
     if (!a || this.mooCd > 0) return;
     this.mooCd = 1.6;
+    this.mooedNow = true;
     d.audio.animal('cow', 1);
     if (this.v < 0.8 && a.anim?.has('Moo')) a.anim.once('Moo', { then: this.graze > 0.9 ? 'Graze' : 'Idle' });
     d.fx.burst(a.pos.clone().add(new V3(Math.sin(this.heading) * 1.1, 1.5, Math.cos(this.heading) * 1.1)), { n: 14, color: [1, 0.9, 0.5], speed: 1.8, size: 0.22, gravity: -0.8 });
@@ -437,6 +482,7 @@ export class CowRide {
   // ------------------------------------------------------------------ ui
   buildUi() {
     if (typeof document === 'undefined') { this.el = null; return; }
+    ensureCss();
     if (!document.getElementById('cowUiCss')) {
       const s = document.createElement('style');
       s.id = 'cowUiCss';
@@ -445,23 +491,38 @@ export class CowRide {
     }
     const root = document.createElement('div');
     root.id = 'cowUi';
-    root.innerHTML = '<div class="tip"></div><div class="bar"><i></i></div><div class="btns"><button class="off"></button><button class="moo"></button><button class="go"></button></div>';
+    root.innerHTML = `<div class="tip"></div>
+      <div class="row"><div class="en"><span class="ic">${icon('bolt')}</span><span class="lb"></span><div class="bar"><i></i></div></div><button class="help" type="button">?</button></div>
+      <div class="legend"><span data-k="steer"><i class="ch-kc">WASD</i><b></b></span><span data-k="gallop"><i class="ch-kc">E</i><i class="ch-kc">Shift</i><b></b></span><span data-k="moo"><i class="ch-kc">M</i><b></b></span><span data-k="off"><i class="ch-kc">Space</i><b></b></span></div>
+      <div class="btns"><button class="act off" type="button">${icon('hop')}<span></span></button><button class="act moo" type="button">${icon('moo')}<span></span></button><button class="act go" type="button">${icon('hoof')}<span></span></button></div>`;
     document.body.appendChild(root);
     const q = s => root.querySelector(s);
-    this.el = { root, tip: q('.tip'), bar: q('.bar'), fill: q('.bar i'), off: q('.off'), moo: q('.moo'), go: q('.go'), shown: false, fillW: -1, cls: '' };
+    this.el = { root, tip: q('.tip'), bar: q('.bar'), fill: q('.bar i'), en: q('.en'), enLb: q('.en .lb'), help: q('.help'), legend: q('.legend'), off: q('.off'), moo: q('.moo'), go: q('.go'), shown: false, fillW: -1, cls: '' };
     this.el.off.onclick = () => this.dismount();
     this.el.moo.onclick = () => { this.mooReq = true; };
+    this.el.help.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); if (this.phase === 'ride') this.startCoach(); });
     const hold = on => e => { e.preventDefault(); this.btn.gallop = on; this.el.go.classList.toggle('on', on); };
     this.el.go.addEventListener('pointerdown', hold(true));
     for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) this.el.go.addEventListener(ev, hold(false));
+    // the coach card, and the little "press E to ride" bubble that floats over the cow
+    this.coachCard = new RideCoachCard(!!this.d.ui.touch, { onNext: () => this.coachNext(), onSkip: () => this.stopCoach(true) });
+    const hint = document.createElement('div');
+    hint.id = 'cowHint';
+    document.body.appendChild(hint);
+    this.hintEl = hint;
     this.refreshLabels();
   }
 
   refreshLabels() {
     if (!this.el) return;
-    this.el.off.textContent = tx('Hop off');
-    this.el.moo.textContent = tx('Moo!');
-    this.el.go.textContent = tx('Gallop');
+    const e = this.el, set = (b, t) => { b.lastElementChild.textContent = tx(t); };
+    set(e.off, N_('Hop off')); set(e.moo, N_('Moo!')); set(e.go, N_('Gallop'));
+    e.help.setAttribute('aria-label', tx('How to ride'));
+    e.legend.querySelector('[data-k=steer] b').textContent = tx('Steer');
+    e.legend.querySelector('[data-k=gallop] b').textContent = tx('Gallop');
+    e.legend.querySelector('[data-k=moo] b').textContent = tx('Moo!');
+    e.legend.querySelector('[data-k=off] b').textContent = tx('Hop off');
+    this.energyText = null;
   }
 
   showUi(on) {
@@ -489,7 +550,96 @@ export class CowRide {
     const w = Math.round(this.stamina * 100);
     if (w !== e.fillW) { e.fillW = w; e.fill.style.transform = `scaleX(${(w / 100).toFixed(2)})`; }
     const cls = this.exhausted ? 'bar out' : this.stamina < 0.3 ? 'bar low' : 'bar';
-    if (cls !== e.cls) { e.cls = cls; e.bar.className = cls; }
+    if (cls !== e.cls) {
+      e.cls = cls; e.bar.className = cls;
+      e.en.classList.toggle('low', cls === 'bar low'); e.en.classList.toggle('out', cls === 'bar out');
+      const text = cls === 'bar' ? tx('Energy') : tx('Low! Let her rest');
+      if (text !== this.energyText) { this.energyText = text; e.enLb.textContent = text; }
+    } else if (this.energyText == null) { this.energyText = tx('Energy'); e.enLb.textContent = this.energyText; }
     void gait;
+  }
+
+  // ------------------------------------------------------------------ the coach: three steps, learn by doing
+  startCoach() {
+    if (!this.coachCard?.el) return;
+    this.coach = newRideCoach();
+    this.setTip('');
+    this.coachCard.step = -1;
+    this.coachCard.show(true);
+    this.coachCard.render(0, false);
+    this.highlight(0);
+  }
+  coachNext() { if (this.coach) { skipRideStep(this.coach); this.afterCoachStep(); } }
+  afterCoachStep() {
+    const c = this.coach;
+    if (!c) return;
+    if (rideCoachDone(c)) {
+      if (!c.closeIn) { c.closeIn = 5; this.coachCard.render(3, false); this.highlight(3); lsSet({ rideCoach: true }); }
+      else this.stopCoach(true);                     // "Got it" on the closing line
+      return;
+    }
+    this.coachCard.render(c.step, false);
+    this.highlight(c.step);
+  }
+  stopCoach(remember) {
+    if (remember) lsSet({ rideCoach: true });
+    this.coach = null;
+    this.coachCard?.show(false);
+    this.highlight(-1);
+  }
+  /** The control the step is about pulses (the on-screen button on a phone, its key on a keyboard). */
+  highlight(step) {
+    const e = this.el;
+    if (!e) return;
+    e.go.classList.toggle('hl', step === 1);
+    e.moo.classList.toggle('hl', step === 2);
+    e.off.classList.toggle('hl', step === 2);
+    e.legend.querySelector('[data-k=steer]').classList.toggle('hl', step === 0);
+    e.legend.querySelector('[data-k=gallop]').classList.toggle('hl', step === 1);
+    e.legend.querySelector('[data-k=moo]').classList.toggle('hl', step === 2);
+    e.legend.querySelector('[data-k=off]').classList.toggle('hl', step === 2);
+  }
+  coachTick(dt, sig) {
+    const c = this.coach;
+    if (!c) return;
+    if (c.closeIn) {                                   // the closing "Great riding!" line stays a few seconds
+      c.closeIn -= dt;
+      if (c.closeIn <= 0) this.stopCoach(true);
+      return;
+    }
+    const wasDone = c.doneT > 0;
+    const changed = stepRideCoach(c, dt, sig);
+    if (changed) this.afterCoachStep();
+    else if (!wasDone && c.doneT > 0) this.coachCard.render(c.step, true);      // done: a green tick, then on to the next step
+  }
+
+  // ------------------------------------------------------------------ the floating hint over a cow
+  hideHint() { if (this.hintEl && this.hintShown) { this.hintShown = false; this.hintEl.style.display = 'none'; } }
+  /** "Press E to ride" over a friend who is near (and "feed her" over a cow you carry hay for), until you have ridden a few times. */
+  updateHint() {
+    const el = this.hintEl;
+    if (!el) return;
+    let target = null, kind = 'ride';
+    if (this.free() && !this.d.ui.dialogueOpen && (lsGet().rides || 0) < 3) {
+      const p = this.g.player.pos;
+      let best = 14;
+      for (const a of this.cows()) {
+        if (!a.visible || a.far || a.ridden) continue;
+        const bonded = this.bonded(a);
+        if (!(bonded || this.hay > 0)) continue;
+        const dd = Math.hypot(a.pos.x - p.x, a.pos.z - p.z);
+        if (dd < best) { best = dd; target = a; kind = bonded ? 'ride' : 'feed'; }
+      }
+      if (target) this.hintNear = best <= 3.6;
+    }
+    if (!target) { this.hideHint(); return; }
+    const v = this.hv ??= new V3();
+    v.set(target.pos.x, target.pos.y + 2.05, target.pos.z).project(this.g.camera);
+    if (v.z > 1 || Math.abs(v.x) > 1.1 || Math.abs(v.y) > 1.1) { this.hideHint(); return; }
+    const text = tx(cowHintText(kind, this.hintNear));
+    if (text !== this.hintText) { this.hintText = text; el.textContent = text; }
+    if (!this.hintShown) { this.hintShown = true; el.style.display = 'block'; }
+    const x = (v.x * 0.5 + 0.5) * innerWidth, y = (-v.y * 0.5 + 0.5) * innerHeight;
+    el.style.transform = `translate(${Math.round(x - el.offsetWidth / 2)}px,${Math.round(y - el.offsetHeight - 12)}px)`;
   }
 }

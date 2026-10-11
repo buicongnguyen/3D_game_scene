@@ -120,7 +120,7 @@ test('language profiles: Vietnamese looks from Vietnam, everything else from the
   for (const g of groupsFor(VN)) {
     const t = textOf(g, VN, s => `EN:${s}`);
     for (const k of ['name', 'short', 'story', 'tip']) assert.ok(t[k] && !t[k].startsWith('EN:'), `${g.id}.${k} is Vietnamese`);
-    assert.ok(/[^ -]/.test(t.name), `${g.id}: Vietnamese name`);
+    assert.ok(/[^\x00-\x7f]/.test(t.name), `${g.id}: Vietnamese name`);
     assert.ok(/\(.+\)/.test(t.name), `${g.id}: the international name in brackets`);
     assert.ok(t.story.length <= 260 && t.tip.length <= 190, `${g.id}: Vietnamese texts fit the card`);
     assert.ok(!/\b(chết|buồn|khóc|mất)\b/i.test(t.story + t.tip), `${g.id}: keep it happy`);

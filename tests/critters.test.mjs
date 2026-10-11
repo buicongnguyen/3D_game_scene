@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planCritters, presence, CRITTER_KINDS } from '../src/actors/critters.js';
+import { planCritters, presence, CRITTER_KINDS, Critters } from '../src/actors/critters.js';
 import { scatter } from '../src/world/scatter.js';
 import { sharedGrid, placeProblems } from '../src/world/roads.js';
 import { river, riverHalfWidth, PADDIES } from '../src/world/layout.js';
@@ -40,4 +40,19 @@ test('season and hour decide who is out; everyone can be met at some time of yea
     assert.ok(FRIENDS.some(f => f.id === kind), `${kind} is a valley friend`);
     assert.ok(ANIMALS.includes(CRITTER_KINDS[kind].model), `${kind} model is loaded`);
   }
+});
+
+test('a grasshopper with no dry ground to hop to sits a while instead of crouching again every frame', () => {
+  const stub = Object.assign(Object.create(Critters.prototype), { world: { heightAt: () => 0 }, play() {}, launch() { throw new Error('must not hop into the water'); } });
+  const clips = [];
+  const v = { anim: { has: () => true, clips: new Map([['Hop', { duration: 0.6 }]]), once: (n) => clips.push(n) } };
+  const s = { st: 'idle', t: 0, hold: 0, x: 0, y: 1, z: 0, hx: 0, hz: 0, face: 0 };
+  stub.place = () => {};
+  stub.grasshopper(v, s, 0.016, false, 1, 0, 1);      // bored: crouches
+  assert.equal(s.st, 'crouch');
+  stub.grasshopper(v, s, 0.4, false, 1, 0, 1);        // the crouch is over, the water is all around: no hop
+  assert.equal(s.st, 'idle');
+  assert.ok(s.t >= 1, `a rest before the next try (${s.t})`);
+  for (let i = 0; i < 30; i++) stub.grasshopper(v, s, 0.016, false, 1, 0, 1);
+  assert.equal(clips.length, 1, 'the Hop clip is not replayed every frame');
 });

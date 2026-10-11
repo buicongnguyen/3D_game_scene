@@ -562,7 +562,7 @@ export class Critters {
         ax /= l; az /= l;
         const tx = s.x + (ax - az * j) * r, tz = s.z + (az + ax * j) * r;
         if (this.world.heightAt(tx, tz) > 0.8) { this.launch(s, tx, this.world.heightAt(tx, tz), tz, 0.36, 0.3); s.st = 'hop'; }
-        else s.st = 'idle';
+        else { s.st = 'idle'; s.t = 1 + Math.random() * 3; }   // no dry ground that way: sit a while (s.t was left <= 0, so it would crouch again every frame)
       }
     } else if (startled || ((s.t -= dt) <= 0 && s.hold <= 0)) {
       s.scared = startled;

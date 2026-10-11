@@ -8,33 +8,56 @@
 // Safety is built in: the aim is a narrow cone down the lane, arrows stop at targets, ground, backstop or side limit, and
 // nothing else in the world can be hit (they are practice arrows with soft rubber tips, too).
 //
-// Drawing: a bow (a bent tube of 60 vertices rewritten each frame, a string), up to 12 pooled arrows sharing one geometry,
-// a dotted aim arc (one Points), and a small DOM layer (crosshair with the draw ring, sight pins, wind gauge, buttons).
+// Drawing: Mika's arms and hands posed by hand (actors/archer-rig.js) round a bamboo bow and a nocked arrow (./archery-gear.js),
+// up to 12 pooled arrows sharing one geometry, a dotted aim arc (one Points), and a small DOM layer (crosshair with the draw
+// ring, sight pins, wind gauge, buttons). The first try is guided (./archery-guide.js: a "How to shoot" card, a cue under the
+// crosshair, hints one at a time, a ghost hand after a few idle seconds, an easy first end, and the first arrow in slow motion).
 // Everything made here is removed and freed when the round ends, quit or not.
 import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { addCss } from './util.js';
-import { Kit, RING_COLOURS } from '../../world/archery.js';
+import { RING_COLOURS } from '../../world/archery.js';
+import { ArcherRig, STANCE, nockAt } from '../../actors/archer-rig.js';
+import { arrowGeometry, makeBow, makeFingers, dotTexture, BOW } from './archery-gear.js';
+import { createGuide, GUIDE_CSS, GHOST_LOOP } from './archery-guide.js';
 import { ARCHERY } from '../../content/archery.js';
 import {
   ARCH, roundPlan, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, launch, stepArrow, arc, solveAim,
+  missReason, aimOffset, guideStep, ghostWanted, guideDevice, SLOWMO, slowMo,
 } from './rules-archery.js';
 
 const V3 = THREE.Vector3;
 const A = ARCHERY;
 const POOL = 12;            // arrows alive at most (6 stuck per end + the one nocked + slack)
-const ARROW_XY = 2.6, ARROW_Z = 1.2;   // the practice arrows are drawn thicker than life so they read from the line
+const ARROW_LEN = STANCE.arrow;   // metres
+const ARROW_XY = 1.4, ARROW_Z = STANCE.arrow / 0.8;   // the practice arrows are drawn thicker than life so they read from the line (the model is 0.8 long)
 const ARC_N = 26;           // dots in the aim arc
-const BOW_N = 13;           // rings along the bow's limbs
-const CAM_BACK = 2.6;       // the camera stands this far behind the bow hand...
-const CAM_SIDE = 0.55, CAM_UP = 0.5;   // ...a little to the right and above it, so the bow and Mika sit low on the left
-const CONVERGE = 17;        // and looks at the bore line this far down the range
+// the camera stands `back` behind the bow hand, `side` to its right and `up` above it (so Mika, her bow and her string hand show past her
+// shoulder, low on the left) and looks at the bore line `conv` down the range; fov 0: the game's own
+const CAM = { back: 2.3, side: 1.4, up: 0.6, conv: 9, fov: 0 };
+const CAM_TALL = { back: 3.4, side: 0.7, up: 0.8, conv: 10, fov: 72 };   // a phone held upright sees a narrow strip: stand further back and look wider
 const LOOK = 0.0016;        // radians of aim per pixel dragged (mouse, finger)
 const KEYAIM = 0.5;         // radians per second with the keys or the stick
 
 const GRADE = [N_('Nice shot!'), N_('Very close!')];
+// why an arrow missed (rules-archery.js missReason) -> what Grandma says
+const MISS = {
+  high: N_('Too high. Aim a little lower.'),
+  low: N_('Too low. Aim a little higher.'),
+  left: N_('A bit to the left. Aim a little to the right.'),
+  right: N_('A bit to the right. Aim a little to the left.'),
+  wind: N_('See the wind sock? It points where the wind blows. Aim a little the other way.'),
+  short: N_('That one fell short. A longer draw makes a faster, flatter arrow.'),
+  other: N_('That was another target!'),
+};
+// the first try's hints, one at a time, for each device
+const STEP_HINT = {
+  aim: { key: N_('Move the mouse to put the circle on the target.'), touch: N_('Drag a finger on the screen to put the circle on the target.'), pad: N_('Push the stick to put the circle on the target.') },
+  hold: { key: N_('Now hold {act} (or the mouse button) to pull the string back.'), touch: N_('Now press and hold the orange Draw button.'), pad: N_('Now hold the right trigger (RT) to pull the string back.') },
+  release: { key: N_('Now let go to shoot!'), touch: N_('Now let go to shoot!'), pad: N_('Now let go to shoot!') },
+};
 
-const CSS = `
+const CSS = GUIDE_CSS + `
 #archUi{position:fixed;inset:0;z-index:15;pointer-events:none;font:700 14px Nunito,system-ui,sans-serif;color:#5a3a22;user-select:none;-webkit-user-select:none;touch-action:none}
 #archUi .panel{position:absolute;padding:6px 12px;border-radius:14px;background:rgba(255,247,232,.93);box-shadow:0 4px 14px rgba(40,20,0,.22);zoom:var(--ui-scale,1)}
 #archUi .end{left:50%;top:calc(62px + env(safe-area-inset-top,0px));transform:translateX(-50%);text-align:center;white-space:nowrap}
@@ -65,89 +88,16 @@ const CSS = `
 #archBreathe.cool{opacity:.55}
 #archBreathe.on{background:#7cc4f2}
 #archLeave{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(62px + env(safe-area-inset-top,0px));padding:7px 12px;border-radius:12px;background:rgba(90,58,34,.82);zoom:var(--ui-scale,1)}
+#archUi .halo{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border-radius:50%;box-sizing:border-box;border:3px solid rgba(255,255,255,.8);box-shadow:0 0 0 1px #0004;transition:border-color .12s,box-shadow .12s,transform .12s}
+#archUi .halo.on{border-color:#4fe03d;box-shadow:0 0 0 1px #0004,0 0 10px 2px #4fe03d99;transform:scale(1.15)}
+#archUi .sight.on .dot{background:#d8ffd0;box-shadow:0 0 0 1.5px #2f9a22,0 0 6px #4fe03d}
+#archUi .halo.off{opacity:0}
 body.arch-round{cursor:none}
+body.arch-help{cursor:auto}
+body.arch-help #archUi #archDraw,body.arch-help #archUi #archBreathe{visibility:hidden}
 body.arch-round #tJump,body.arch-round #tAct,body.arch-round #btnMenu,body.arch-round #btnJournal{visibility:hidden}
 @media (max-width:520px){#archUi .end{top:calc(68px + env(safe-area-inset-top,0px));max-width:62vw}#archUi .wind{top:calc(60px + env(safe-area-inset-top,0px))}#archUi .pip{min-width:17px;height:17px;font-size:10px;line-height:17px}#archLeave{top:calc(112px + env(safe-area-inset-top,0px))}}
 `;
-
-// --------------------------------------------------------------------------------------------- the bow and the arrows
-/** An arrow with the tip at the origin and the shaft behind it (-z): bamboo, a blunt rubber tip, three bright feather vanes. */
-function arrowGeometry() {
-  const k = new Kit(), L = 0.8;
-  k.add(new THREE.CylinderGeometry(0.013, 0.013, L, 6), '#ead7a4', 0, 0, -L / 2, Math.PI / 2, 0, 0);
-  k.add(new THREE.SphereGeometry(0.028, 8, 6), '#ff7a2a', 0, 0, 0.0);
-  k.add(new THREE.CylinderGeometry(0.02, 0.016, 0.07, 8), '#ff7a2a', 0, 0, -0.05, Math.PI / 2, 0, 0);
-  ['#e8553d', '#fff6e0', '#4aa3df'].forEach((c, i) => {
-    const g = new THREE.PlaneGeometry(0.2, 0.065);        // along the shaft (z) and out from it (local x, turned round the shaft)
-    g.rotateY(Math.PI / 2);
-    g.translate(0, 0.032, 0);
-    g.rotateZ(i * Math.PI * 2 / 3);
-    k.add(g, c, 0, 0, -L + 0.14);
-  });
-  return k.merge();
-}
-
-/** The bow: a bamboo limb tube of BOW_N rings (rewritten in setBow), a string, and a leather grip. */
-function makeBow() {
-  const RAD = 6, pos = new Float32Array(BOW_N * RAD * 3), nor = new Float32Array(BOW_N * RAD * 3), idx = [];
-  for (let r = 0; r < BOW_N - 1; r++) for (let a = 0; a < RAD; a++) {
-    const a2 = (a + 1) % RAD, i0 = r * RAD + a, i1 = r * RAD + a2, i2 = (r + 1) * RAD + a, i3 = (r + 1) * RAD + a2;
-    idx.push(i0, i2, i1, i1, i2, i3);
-  }
-  const g = new THREE.BufferGeometry();
-  const pa = new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage), na = new THREE.BufferAttribute(nor, 3).setUsage(THREE.DynamicDrawUsage);
-  g.setAttribute('position', pa); g.setAttribute('normal', na); g.setIndex(idx);
-  const mat = new THREE.MeshStandardMaterial({ color: '#d8a43e', roughness: 0.7, emissive: '#4a2a08', emissiveIntensity: 0.25, side: THREE.DoubleSide });
-  const limb = new THREE.Mesh(g, mat);
-  limb.frustumCulled = false;
-  const sg = new THREE.BufferGeometry();
-  const sp = new THREE.BufferAttribute(new Float32Array(9), 3).setUsage(THREE.DynamicDrawUsage);
-  sg.setAttribute('position', sp);
-  const smat = new THREE.LineBasicMaterial({ color: '#fff7e6' });
-  const string = new THREE.Line(sg, smat);
-  string.frustumCulled = false;
-  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.16, 8), new THREE.MeshStandardMaterial({ color: '#c2441f', roughness: 0.8 }));
-  grip.frustumCulled = false;
-  const root = new THREE.Group();
-  root.name = 'archery:bow';
-  root.add(limb, string, grip);
-  return { root, pa, na, sp, own: [g, mat, sg, smat, grip.geometry, grip.material], nock: new V3() };
-}
-
-/** Bend the bow for a draw (0..1): the tips come back toward the archer, the string's middle comes back further. */
-function setBow(b, draw) {
-  const RAD = 6, pa = b.pa.array, na = b.na.array, H = 0.5;
-  const tip = 0.05 + 0.11 * draw;
-  for (let r = 0; r < BOW_N; r++) {
-    const f = r / (BOW_N - 1) * 2 - 1, y = f * H, z = -tip * Math.abs(f) ** 1.7, rad = 0.02 * (1 - 0.4 * Math.abs(f));
-    // tangent angle of the limb in the y-z plane
-    const dz = -tip * 1.7 * Math.abs(f) ** 0.7 * Math.sign(f) / H, ang = Math.atan(dz);
-    const e2y = Math.cos(ang), e2z = Math.sin(ang);
-    for (let a = 0; a < RAD; a++) {
-      const ph = a / RAD * Math.PI * 2, ca = Math.cos(ph), sa = Math.sin(ph), i = (r * RAD + a) * 3;
-      pa[i] = ca * rad; pa[i + 1] = y + sa * rad * e2y * 0; pa[i + 2] = z + sa * rad;
-      na[i] = ca; na[i + 1] = 0; na[i + 2] = sa;
-      void e2z;
-    }
-  }
-  b.pa.needsUpdate = true; b.na.needsUpdate = true;
-  const nk = -(0.06 + 0.52 * draw), sp = b.sp.array;
-  sp[0] = 0; sp[1] = H; sp[2] = -tip;
-  sp[3] = 0; sp[4] = 0; sp[5] = nk;
-  sp[6] = 0; sp[7] = -H; sp[8] = -tip;
-  b.sp.needsUpdate = true;
-  b.nock.set(0, 0, nk);
-}
-
-function dotTexture() {
-  const c = document.createElement('canvas'); c.width = c.height = 32;
-  const x = c.getContext('2d'), gr = x.createRadialGradient(16, 16, 0, 16, 16, 15);
-  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.55, 'rgba(255,255,255,0.95)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
-  x.fillStyle = gr; x.fillRect(0, 0, 32, 32);
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
-}
 
 // the ambient wind of the sock when nobody shoots: one slow seeded wind (a fresh second counter each minute)
 const AMBIENT = makeWind(71, 2, 0.8);
@@ -177,7 +127,7 @@ export default {
     const plan = roundPlan(ctx.first, easy);
     const touch = !!ctx.ui.touch;
     const y0 = R.y0, hAt = (x, z) => world.heightAt(x, z);
-    const wind = makeWind(Math.floor(Math.random() * 1e6) + 1, plan.ends.length, plan.windScale);
+    const wind = makeWind(Math.floor(Math.random() * 1e6) + 1, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind));
 
     // ---- the lane <-> world conversions (no allocation: callers pass the vector to fill)
     const W = (u, v, y, out) => out.set(A.x - u, y0 + y, A.z - v);
@@ -190,14 +140,17 @@ export default {
       windT: 0, wS: 0, left: ctx.roundTime, drawT: 0, draw: 0, steady: 0, steadyCool: 0, armed: false, free: 0,
       yaw: 0, pitch: 0.03, camYaw: 0, camPitch: 0.03, sw: { yaw: 0, pitch: 0 }, mode: 'aim', modeK: 0, cur: null,
       hitW: new V3(), impact: 0, endSummary: 0, teach: 0, said: {}, leaveHeld: false, script: null,
+      hold: 1, relT: 99, relDraw: 0, slow: false,
+      // the first try's guide: what the player has done, idle seconds, the ghost hand's clock, the hint now shown
+      done: { aimed: false, drew: false, shot: false }, aimAcc: 0, idle: 0, ghostT: -1, helpSeen: false, stepKey: null, stepT: 0,
     };
     const input_ = { mdx: 0, mdy: 0, padDX: 0, padDY: 0, mouse: false, btn: false, btnId: -1, lx: 0, ly: 0, breatheTap: false };
     const added = [], disposables = [];
-    let ui = null, cleaned = false, savedFov = 0, hadLock = false;
+    let ui = null, cleaned = false, savedFov = 0, hadLock = false, rig = null, lanternWas = null;
     const cleanups = [];
     const scenery = { targets: [], active: -1, back: A.back, side: A.side, ground, vAt: (i, t) => movingV(A.moving, t) };
-    for (const t of A.targets) scenery.targets.push({ u: t.u, v: t.v, r: t.r, y: hAt(A.x - t.u, A.z - t.v) - y0 + A.centreH });
-    scenery.targets.push({ u: A.moving.u, v: 0, r: A.moving.r, y: hAt(A.x - A.moving.u, A.z) - y0 + A.centreH, moving: true, off: true });
+    for (const t of A.targets) scenery.targets.push({ u: t.u, v: t.v, r: t.r, r0: t.r, y: hAt(A.x - t.u, A.z - t.v) - y0 + A.centreH });
+    scenery.targets.push({ u: A.moving.u, v: 0, r: A.moving.r, r0: A.moving.r, y: hAt(A.x - A.moving.u, A.z) - y0 + A.centreH, moving: true, off: true });
 
     const cleanup = () => {
       if (cleaned) return;
@@ -211,8 +164,12 @@ export default {
       if (savedFov) g.follow.fovBase = savedFov;
       g.follow.clearCutscene(true);
       // the targets and arrows are put back as the world built them
-      for (const t of R.targets) { t.group.visible = true; t.group.scale.setScalar(1); t.flag.visible = false; }
+      for (const t of R.targets) { t.group.visible = true; t.group.scale.setScalar(1); t.group.position.y = t.baseY; t.flag.visible = false; }
       R.moving.group.visible = false; R.moving.group.scale.setScalar(1);
+      rig?.leave();
+      p.facing = A.heading - st.yaw;                     // she turns square to the lane again (the stance is side-on)
+      p.root.rotation.y = p.facing;
+      if (lanternWas !== null && p.lantern) p.lantern.visible = lanternWas;
       p.pose = st.poseWas ?? null;
       p.carry?.release('archery');
       ctx.lock(false);
@@ -230,12 +187,23 @@ export default {
       p.teleport(stand.x, stand.z, stand.y, A.heading);
       st.poseWas = p.pose ?? null;
       p.pose = 'Aim';
+      // her belt lantern would swing about in the middle of the picture all round: it stays out of sight while she shoots
+      if (p.lantern) { lanternWas = p.lantern.visible; p.lantern.visible = false; }
       savedFov = g.follow.fovBase;
       document.body.classList.add('arch-round');
 
       // ---- the pieces
       const bow = makeBow();
       scene.add(bow.root); added.push(bow.root); disposables.push(...bow.own);
+      // Mika's hands: the rig poses her arms; her fingers are small parts on the hand bones (the rig has no finger bones)
+      rig = new ArcherRig(p);
+      if (rig.ok) {
+        const fl = makeFingers('grip', rig.palmL.clone().multiply(rig.fist), -1), fr = makeFingers('hook', rig.palmR.clone().multiply(rig.fist), 1);
+        rig.b.haL.add(fl.mesh); rig.b.haR.add(fr.mesh);
+        added.push(fl.mesh, fr.mesh); disposables.push(...fl.own, ...fr.own);
+        rig.setHands(fl.mesh, fr.mesh);
+        rig.enter();
+      }
       const aGeo = arrowGeometry(), aMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.7, side: THREE.DoubleSide, emissive: '#2a1a08', emissiveIntensity: 0.3 });
       disposables.push(aGeo, aMat);
       const pool = [];
@@ -261,19 +229,32 @@ export default {
       ui.innerHTML = `<div class="panel end"><b></b><div class="pips"></div></div>
         <div class="panel wind"><div class="lab"></div><div class="dir"></div><div class="n"></div></div>
         <div class="cross pins"><div class="tick t10"><span>10</span></div><div class="tick t15"><span>15</span></div><div class="tick t20"><span>20</span></div></div>
-        <div class="cross sight"><div class="ring"></div><div class="dot"></div></div>
+        <div class="cross sight"><div class="halo"></div><div class="ring"></div><div class="dot"></div></div>
         <div class="pop"></div>
-        <button id="archLeave"></button><button id="archBreathe"></button><button id="archDraw"></button>`;
+        <button id="archLeave"></button><button id="archHelpBtn"></button><button id="archBreathe"></button><button id="archDraw"></button>`;
       document.body.appendChild(ui);
       const q = s => ui.querySelector(s);
       const el = {
         endB: q('.end b'), pips: q('.pips'), windLab: q('.wind .lab'), windDir: q('.wind .dir'), windN: q('.wind .n'), cross: q('.sight'), ring: q('.ring'), dot: q('.dot'),
-        ticks: [q('.t10'), q('.t15'), q('.t20')], pop: q('.pop'), draw: q('#archDraw'), breathe: q('#archBreathe'), leave: q('#archLeave'),
+        ticks: [q('.t10'), q('.t15'), q('.t20')], pop: q('.pop'), draw: q('#archDraw'), breathe: q('#archBreathe'), leave: q('#archLeave'), help: q('#archHelpBtn'), halo: q('.halo'),
       };
       el.windLab.textContent = tx('Wind');
       el.draw.textContent = tx('Draw');
       el.breathe.textContent = tx('Breathe');
       el.leave.textContent = tx('Leave');
+      el.help.textContent = '?';
+      el.help.setAttribute('aria-label', tx('How to shoot'));
+      // the "How to shoot" card (opens by itself on the first try, and from the ? button): it holds the round still while it is up
+      const dev = () => guideDevice(touch, input.lastDevice);
+      const guide = createGuide(ui, dev(), () => { st.armed = false; st.free = 0; st.idle = 0; input_.mouse = false; });
+      const onHelp = e => { e.preventDefault(); if (st.phase !== 'done' && st.phase !== 'timeUp') guide.open(dev()); };
+      el.help.addEventListener('pointerdown', onHelp);
+      // (with the mouse locked to the game the ? button cannot be clicked: H opens the card too)
+      const onKey = e => { if ((e.code === 'KeyH' || e.key === '?') && !e.repeat && !e.ctrlKey && !e.metaKey) onHelp(e); };
+      addEventListener('keydown', onKey);
+      el.help.title = tx('How to shoot') + (touch ? '' : ' (H)');
+      cleanups.push(() => { removeEventListener('keydown', onKey); el.help.removeEventListener('pointerdown', onHelp); guide.destroy(); document.body.classList.remove('arch-help'); });
+      ctx.debug.guide = guide;
       // desktop: the buttons stay (a mouse can use them) but are smaller on a big screen
       if (!touch) { el.draw.style.width = el.draw.style.height = '84px'; el.breathe.style.width = el.breathe.style.height = '64px'; el.breathe.style.right = '120px'; el.draw.style.fontSize = '16px'; }
       // cached writes: the page is only touched when a shown value changes
@@ -345,9 +326,16 @@ export default {
         scenery.targets.forEach((t, i) => { t.off = moving ? i !== 3 : i === 3; });
         scenery.active = moving ? 3 : plan.ends[e].target;
         const tg = scenery.targets[scenery.active];
+        // the easy end: a bigger face (about its middle: the stand sinks a little into the ground), a big dotted arc
+        const big = plan.ends[e].scale;
+        scenery.targets.forEach((t, i) => { t.r = t.r0 * (i === scenery.active && !moving ? big : 1); });
+        R.targets.forEach((t, i) => { const on = i === scenery.active && !moving, k = on ? big : 1; t.group.scale.setScalar(k); t.group.position.y = t.baseY + A.centreH * (1 - k); });
+        arcMat.size = plan.ends[e].bigArc ? 0.27 : 0.16;
         // the first aim points at the target's middle, a little high for the drop
         st.yaw = Math.atan2((tg.moving ? 0 : tg.v) - ARCH.muzzle.v, tg.u - ARCH.muzzle.u);
         st.pitch = 0.03;
+        // the very first aim of the first try starts a little off the target, so the first thing to learn (move the circle onto it) is a real thing to do
+        if (ctx.first && e === 0) st.yaw += 0.11;
         st.camYaw = st.yaw; st.camPitch = st.pitch;
       };
       const endDist = e => (plan.ends[e].target === 'moving' ? A.moving.dist : A.targets[plan.ends[e].target].dist);
@@ -403,8 +391,7 @@ export default {
       };
       placeAim(1, null);
       camR.set(-camD.z, 0, camD.x).normalize();
-      camPos.copy(eyeW).addScaledVector(camD, -CAM_BACK).addScaledVector(camR, CAM_SIDE); camPos.y += CAM_UP;
-      camLook.copy(eyeW).addScaledVector(camD, CONVERGE);
+      { const C = cam.aspect < 0.9 ? CAM_TALL : CAM; camPos.copy(eyeW).addScaledVector(camD, -C.back).addScaledVector(camR, C.side); camPos.y += C.up; camLook.copy(eyeW).addScaledVector(camD, C.conv); }
       g.follow.cutscene({ pos: camPos, look: camLook }, 0.001);
       g.follow.track(() => camPos, () => camLook, 8);
       st.mode = 'aim'; st.modeK = 8;
@@ -412,7 +399,7 @@ export default {
       ctx.debug.archery = () => ({
         phase: st.phase, end: st.end, arrow: st.arrow, shots: st.shots, total: st.total, scores: st.scores.slice(), ends: st.ends || null, left: st.left, draw: st.draw,
         yaw: st.yaw, pitch: st.pitch, wind: windAt(wind, Math.max(0, st.end), st.windT), windT: st.windT, bulls: st.bulls, hits: st.hits, plan: plan.ends.map(e => e.arrows),
-        alive: pool.filter(s => s.use !== 'free').length, mode: st.mode, steady: st.steady, arc: arcMat.opacity, sock: R.sockWind,
+        hit: st.hitW.toArray(), alive: pool.filter(s => s.use !== 'free').length, mode: st.mode, steady: st.steady, arc: arcMat.opacity, sock: R.sockWind,
       });
       /** QA: shoot now with a given aim and draw (the next 'ready' frame), exactly as the pure rules fly it. */
       ctx.debug.fire = (yaw, pitch, draw = 1) => { st.script = { yaw, pitch, draw }; };
@@ -421,6 +408,15 @@ export default {
       /** QA: set the seconds left on the clock (to reach the time-up path quickly). */
       ctx.debug.setLeft = sec => { st.left = sec; };
       ctx.debug.scene = scenery;
+      /** QA: hold the draw at this many seconds (undefined: let it run). */
+      ctx.debug.freeze = sec => { st.qaDraw = sec; };
+      ctx.debug.stance = STANCE;
+      ctx.debug.camCfg = cam.aspect < 0.9 ? CAM_TALL : CAM;
+      ctx.debug.arms = () => ({ reachL: rig.reachL, reachR: rig.reachR, eL: rig.elbowL.toArray(), eR: rig.elbowR.toArray(), sL: rig.shoulderL.toArray(), sR: rig.shoulderR.toArray(), gL: rig.gripL.toArray(), hR: rig.hookR.toArray(), M: bowM.toArray() });
+      ctx.debug.rig = () => ({ ok: rig.ok, reachL: +rig.reachL.toFixed(3), reachR: +rig.reachR.toFixed(3), gripL: rig.gripL.toArray().map(v => +v.toFixed(3)), hookR: rig.hookR.toArray().map(v => +v.toFixed(3)), M: bowM.toArray().map(v => +v.toFixed(3)), root: p.root.position.toArray().map(v => +v.toFixed(3)), facing: p.facing, aim: aimD.toArray() });
+      let dbgCam = null;
+      /** QA: a free camera ({ pos: [x,y,z], look: [x,y,z] } in world units), or null for the round's own. */
+      ctx.debug.cam = c => { dbgCam = c ? { pos: new V3(...c.pos), look: new V3(...c.look), fov: c.fov } : null; };
 
       el.leave.style.display = '';
       ctx.hud(0, ctx.roundTime);
@@ -428,8 +424,10 @@ export default {
       await ctx.fade(false, 450);
       if (ctx.quit) return { score: 0, quit: true };
       ctx.hintTop(true, touch ? 150 : 128);
-      ctx.hint(touch ? N_('Hold Draw and drag to aim. Let go to shoot. Watch the wind sock!')
-        : N_('Aim with the mouse. Hold {act} (or the mouse button) to draw, let go to shoot. Space steadies you.'), 7);
+      if (!ctx.first) {
+        ctx.hint(touch ? N_('Hold Draw and drag to aim. Let go to shoot. Watch the wind sock!')
+          : N_('Aim with the mouse. Hold {act} (or the mouse button) to draw, let go to shoot. Space steadies you.'), 7);
+      }
 
       // -------------------------------------------------------------------------- the round
       const padHeld = () => {
@@ -465,6 +463,11 @@ export default {
         s.use = 'fly'; s.a.state = 'fly';
         st.phase = 'flight'; st.t = 0; st.shots++;
         W(s.a.u, s.a.v, s.a.y, s.mesh.position);
+        s.lead = Math.max(0, ARROW_LEN - nockAt(st.draw));          // the nocked arrow's tip stood this far ahead of the muzzle
+        st.relT = 0; st.relDraw = st.draw;
+        st.done.shot = true;
+        st.slow = slowMo(ctx.first, st.shots);                       // the first arrow of the first try flies in slow motion
+        if (st.slow) ctx.hint(N_('Watch it fly!'), 2.4);
         // the twang and whoosh
         audio.tone(210 + st.draw * 90, { type: 'triangle', dur: 0.18, vol: 0.09, glide: 0.8, rev: 0.1 });
         audio.noise({ dur: 0.14, vol: 0.05, freq: 3000, q: 1.2, sweep: 0.5 });
@@ -498,11 +501,14 @@ export default {
         pop.style.left = `${Math.max(40, Math.min(innerWidth - 40, vis ? scr.x : innerWidth / 2))}px`;
         pop.style.top = `${Math.max(90, Math.min(innerHeight - 160, vis ? scr.y - 40 : innerHeight / 2))}px`;
         pop.classList.remove('go'); void pop.offsetWidth; pop.classList.add('go');
-        if (a.state === 'other') hint('other', N_('That was another target!'), 3);
+        // what Grandma says: on the first try every arrow gets an answer (it flew to the target, or why it missed), later only now and then
+        const why = missReason(a, windAt(wind, st.end, st.windT));
+        if (a.state === 'other') hint('other', MISS.other, 3);
         else if (ring >= 9) ctx.hint(N_('Bullseye! The village will hear about this.'), 3);
-        else if (st.shots === 1 && ctx.first) ctx.hint(hit ? GRADE[ring >= 7 ? 1 : 0] : N_('Not on the target yet. Arrows drop as they fly: aim a little higher.'), 3.5);
-        else if (!hit && a.state === 'ground' && a.u < a.hitU + 99 && st.shots < 5) hint('short2', N_('That one fell short. A longer draw makes a faster, flatter arrow.'), 3.5);
-        else if (!hit && st.shots === 2 && ctx.first) ctx.hint(N_('See the wind sock? It points where the wind blows. Aim a little the other way.'), 4.5);
+        else if (ctx.first) {
+          if (hit) ctx.hint(st.shots === 1 ? N_('Great! It flew to the target') : GRADE[ring >= 7 ? 1 : 0], 3.5);
+          else ctx.hint(why === 'low' && st.shots === 1 ? N_('Not on the target yet. Arrows drop as they fly: aim a little higher.') : MISS[why] || MISS.low, 4.2);
+        } else if (!hit && a.state === 'ground' && st.shots < 5) hint('short2', MISS.short, 3.5);
         pipsFor();
       };
       const showSummary = () => {
@@ -512,20 +518,22 @@ export default {
         audio.good();
       };
 
-      const bowAt = new V3();
+      const bowAt = new V3(), bowM = new V3(), bowL = new V3(), bowU = new V3(), bowQ = new THREE.Quaternion(), AXZ = new V3(0, 0, 1);
       const res = await ctx.loop(dt => {
         st.t += dt;
         const ph = st.phase;
         // ---- time: it runs only while the player is lining up a shot
-        const timed = ph === 'ready' || ph === 'draw';
+        const helpUp = guide.isOpen;       // the "How to shoot" card holds the round still
+        if (helpUp && (input.pressed('act') || input.pressed('jump'))) guide.dismiss();
+        const timed = (ph === 'ready' || ph === 'draw') && !helpUp;
         if (timed) st.left = Math.max(0, st.left - dt);
         st.windT += dt;
         const w = st.end >= 0 ? windAt(wind, st.end, st.windT) : 0;
         st.wS += (w - st.wS) * Math.min(1, dt * 4);
 
         // ---- input: aim, draw, breathe
-        const held = input_.mouse || input.held('act') || input_.btn || padHeld();
-        if (!held) { st.free += dt; if (st.free > 0.2) st.armed = true; } else st.free = 0;
+        const held = !helpUp && (input_.mouse || input.held('act') || input_.btn || padHeld());
+        if (!held) { st.free += dt; if (st.free > 0.2 && !helpUp) st.armed = true; } else st.free = 0;
         let dx = 0, dy = 0;
         const mouseMoved = input_.mdx !== 0 || input_.mdy !== 0;
         // a stick sweeps the cone in a blink at the touch/mouse scale: slow it down
@@ -534,13 +542,19 @@ export default {
         dx += input_.padDX; dy += input_.padDY;
         input_.mdx = input_.mdy = input_.padDX = input_.padDY = 0;
         const fine = ph === 'draw' ? 0.6 : 1;
-        const canAim = ph === 'ready' || ph === 'draw';
+        const canAim = (ph === 'ready' || ph === 'draw') && !helpUp;
+        let moved = 0;
         if (canAim) {
+          const yaw0 = st.yaw, pit0 = st.pitch;
           st.yaw += dx * LOOK * fine + input.move.x * KEYAIM * fine * dt;
           st.pitch += -dy * LOOK * 0.9 * fine + input.move.y * KEYAIM * 0.6 * fine * dt;
           clampAim(st);
+          moved = Math.abs(st.yaw - yaw0) + Math.abs(st.pitch - pit0);
+          st.aimAcc += moved;
         }
-        const breathe = input_.breatheTap || input.pressed('jump');
+        // the first try's idle clock: seconds of neither aiming nor drawing (the ghost hand shows how at guideIdle)
+        if (ph === 'ready' && !helpUp && !held && moved < 1e-4) st.idle += dt; else st.idle = 0;
+        const breathe = !helpUp && (input_.breatheTap || input.pressed('jump'));
         input_.breatheTap = false;
         st.steadyCool = Math.max(0, st.steadyCool - dt);
         if (st.steady > 0) { st.steady -= dt; if (st.steady <= 0) st.steadyCool = ARCH.steadyCool; }
@@ -550,7 +564,10 @@ export default {
         if (ph === 'intro') {
           if (st.t > 1.1) { st.phase = 'endIntro'; st.t = 0; setEndLabel(); pipsFor(); }
         } else if (ph === 'endIntro') {
-          if (st.t > 1.4) { st.phase = 'ready'; st.t = 0; st.cur = take(); }
+          if (st.t > 1.4) {
+            st.phase = 'ready'; st.t = 0; st.cur = take();
+            if (ctx.first && !st.helpSeen) { st.helpSeen = true; guide.open(dev()); }      // the first try starts with the "How to shoot" card
+          }
         } else if (ph === 'ready' || ph === 'draw') {
           if (st.script && ph === 'ready') {
             const sc = st.script; st.script = null;
@@ -558,9 +575,9 @@ export default {
             st.draw = sc.draw; st.sw.yaw = st.sw.pitch = 0;
             fire();
           } else if (ph === 'ready') {
-            if (held && st.armed && st.left > 0) { st.phase = 'draw'; st.drawT = 0; audio.reel(); }
+            if (held && st.armed && st.left > 0) { st.phase = 'draw'; st.drawT = 0; st.done.drew = true; audio.reel(); }
           } else {
-            st.drawT += dt;
+            st.drawT = st.qaDraw !== undefined ? st.qaDraw : st.drawT + dt;      // (QA can freeze the draw at a given second)
             st.draw = drawAt(st.drawT);
             swayAt(st.t * 1.0, swayAmp(st.drawT, st.steady), st.sw);
             tick -= dt;
@@ -576,15 +593,16 @@ export default {
           if (st.left <= 0 && st.phase !== 'flight') { st.phase = 'timeUp'; st.t = 0; ctx.hint(N_('Time is up! Well shot.'), 3); audio.good(); setMode('aim', 8); }
         } else if (ph === 'flight') {
           const s = st.cur, a = s.a;
-          stepArrow(a, wind, st.end, dt, scenery);
+          stepArrow(a, wind, st.end, st.slow ? dt * SLOWMO : dt, scenery);
           W(a.u, a.v, a.y, s.mesh.position);
           dirW(a.vu, a.vv, a.vy, tmpD);
+          if (a.state === 'fly' && a.t < 0.12 && s.lead > 0) s.mesh.position.addScaledVector(tmpD, s.lead * (1 - a.t / 0.12));
           if (a.state === 'fly') {
             tmpO.position.copy(s.mesh.position);
             tmpO.lookAt(tmpV.copy(s.mesh.position).add(tmpD));
             s.mesh.quaternion.copy(tmpO.quaternion);
           } else landed(s, a);
-          if (st.t > 4 && a.state === 'fly') { a.state = 'ground'; landed(s, a); }
+          if (st.t > (st.slow ? 7 : 4) && a.state === 'fly') { a.state = 'ground'; landed(s, a); }
         } else if (ph === 'impact') {
           if (st.t > 1.15) {
             st.arrow++;
@@ -621,31 +639,43 @@ export default {
           if (ph === 'ready' || ph === 'endIntro' || ph === 'intro') { st.sw.yaw *= 0.8; st.sw.pitch *= 0.8; }
         } else placeAim(dt, null);
         const drawNow = ph === 'draw' ? st.draw : 0;
-        if (memo.bowDraw !== drawNow) { memo.bowDraw = drawNow; setBow(bow, drawNow); }
-        bowAt.copy(eyeW).addScaledVector(aimD, -0.2);
+        // ---- Mika, her bow and the arrow in it: she turns side-on to the lane, the bow is held at the muzzle with its string back to her cheek
+        st.relT += dt;
+        st.hold = ph === 'done' ? Math.max(0, st.hold - dt * 3) : Math.min(1, st.hold + dt * 4);
+        const rt = st.relT;
+        // after the release the string rebounds (a quick, damped swing past rest) and the string hand springs back and out
+        const drawVis = ph === 'draw' ? st.draw : rt < 0.6 ? Math.max(-0.25, st.relDraw * Math.exp(-rt * 15) * Math.cos(rt * 50)) : 0;
+        const follow = Math.min(1, rt * 10) * Math.max(0, 1 - rt / 1.7) ** 2;
+        bow.set(Math.round(drawVis * 200) / 200);
+        tmpO.position.set(0, 0, 0);
+        tmpO.lookAt(aimD.x, aimD.y, aimD.z);
+        bowQ.copy(tmpO.quaternion).multiply(tmpQ.setFromAxisAngle(AXZ, BOW.cant));
+        bowL.set(1, 0, 0).applyQuaternion(bowQ); bowU.set(0, 1, 0).applyQuaternion(bowQ);
+        W(ARCH.muzzle.u, ARCH.muzzle.v, A.eye, bowM);                                      // where the arrow leaves (the rules' muzzle)
+        bowAt.copy(bowM).addScaledVector(bowL, -BOW.restX).addScaledVector(bowU, -BOW.restY);   // the grip centre (the arrow lies left of it, on top)
+        tmpV.copy(bow.nock).applyQuaternion(bowQ).add(bowAt).addScaledVector(bowU, -0.022);       // the string hand's hook, just under the nock
+        if (rig.ok) { rig.update(bowAt, tmpV, aimD, Math.max(0, drawVis), st.hold, follow); bowAt.copy(rig.gripL); }
+        p.facing = A.heading - st.yaw - STANCE.side * st.hold;
+        p.root.rotation.y = p.facing;
         bow.root.position.copy(bowAt);
-        tmpO.position.copy(bowAt);
-        tmpO.lookAt(tmpV.copy(bowAt).add(aimD));
-        bow.root.quaternion.copy(tmpO.quaternion);
-        bow.root.rotateZ(0.3);
+        bow.root.quaternion.copy(bowQ);
         bow.root.visible = ph !== 'done';
         const nockS = st.cur;
         if (nockS && nockS.use === 'nock' && (ph === 'ready' || ph === 'draw' || ph === 'endIntro')) {
-          // the arrow rests on the bow, its tail on the string
-          tmpV.set(0, 0, bow.nock.z + 0.8).applyQuaternion(bow.root.quaternion).add(bowAt);
+          // the arrow lies on the bow's rest, its nock on the string: tip = tail + the arrow's length down the aim
+          tmpV.set(BOW.restX, BOW.restY, bow.nock.z + ARROW_LEN).applyQuaternion(bowQ).add(bowAt);
           nockS.mesh.position.copy(tmpV);
-          nockS.mesh.quaternion.copy(tmpO.quaternion);
+          nockS.mesh.quaternion.copy(bowQ);
         }
-        // Mika follows her aim with her whole body
-        p.facing = A.heading - (st.yaw + (st.sw.yaw || 0) * 0.5);
-        p.root.rotation.y = p.facing;
 
         // camera
         if (st.mode === 'aim') {
           camR.set(-camD.z, 0, camD.x).normalize();
-          camPos.copy(eyeW).addScaledVector(camD, -CAM_BACK).addScaledVector(camR, CAM_SIDE); camPos.y += CAM_UP;
-          camLook.copy(eyeW).addScaledVector(camD, CONVERGE);
-          g.follow.fovBase = savedFov * (1 - 0.18 * drawNow);
+          const C = cam.aspect < 0.9 ? CAM_TALL : CAM;
+          // drawing: the camera comes in a little toward the line and the picture zooms, but Mika (and her string hand) stay in view
+          camPos.copy(eyeW).addScaledVector(camD, -C.back).addScaledVector(camR, C.side * (1 - 0.22 * drawNow)); camPos.y += C.up;
+          camLook.copy(eyeW).addScaledVector(camD, C.conv);
+          g.follow.fovBase = (C.fov || savedFov) * (1 - 0.1 * drawNow);
         } else if (st.mode === 'flight') {
           const a = st.cur.a;
           W(a.u, a.v, a.y, tmpE);
@@ -656,6 +686,7 @@ export default {
           camPos.copy(st.hitW); camPos.x += 5.2; camPos.y += 1.5; camPos.z += 1.8;
           camLook.copy(st.hitW); camLook.y += 0.1;
         }
+        if (dbgCam) { camPos.copy(dbgCam.pos); camLook.copy(dbgCam.look); if (dbgCam.fov) g.follow.fovBase = dbgCam.fov; }     // QA: a free camera (close-ups of her hands)
         // wobble of the stuck arrows
         for (const s of pool) if (s.use === 'stuck' && s.wob > 0.002) {
           s.age += dt;
@@ -683,13 +714,55 @@ export default {
           W(U, ARCH.muzzle.v + pvv * tt, A.eye + pvy * tt - 0.5 * ARCH.g * tt * tt, tmpV);
           const vis = toScreen(tmpV, scr);
           const cx = innerWidth / 2, cy = innerHeight / 2;
-          const px = Math.round((scr.x - cx) * 2) / 2, py = Math.round((scr.y - cy) * 2) / 2, show = vis && (ph === 'ready' || ph === 'draw') && Math.abs(px) < innerWidth * 0.45 && Math.abs(py) < innerHeight * 0.45;
+          const px = Math.round((scr.x - cx) * 2) / 2, py = Math.round((scr.y - cy) * 2) / 2, show = vis && (ph === 'ready' || ph === 'draw') && !(ctx.first && st.end === 0) && Math.abs(px) < innerWidth * 0.45 && Math.abs(py) < innerHeight * 0.45;
           setStyle(el.ticks[i], `tk${i}`, 'transform', show ? `translate(${px}px,${py}px)` : 'translate(-999px,-999px)');
         }
-        // radians -> pixels: the picture is as tall as 2 tan(fov / 2) units
-        const pxr = innerHeight / (2 * Math.tan(THREE.MathUtils.degToRad(cam.fov) / 2));
-        const ox = Math.round(st.sw.yaw * pxr * 2) / 2, oy = Math.round(-st.sw.pitch * pxr * 2) / 2;
+        // the crosshair stands where an arrow of a full draw (no wind) would cross the plane of the target in play: the camera looks
+        // past Mika's shoulder, so it is not the middle of the picture. The halo turns green when that is on the target's face.
+        const aimTot = { yaw: st.yaw + st.sw.yaw, pitch: st.pitch + st.sw.pitch }, d0 = endDist(Math.max(0, st.end));
+        const s1 = speedFor(1), cpT = Math.cos(aimTot.pitch), t1 = (d0 - ARCH.muzzle.u) / (s1 * cpT * Math.cos(aimTot.yaw));
+        W(d0, ARCH.muzzle.v + s1 * cpT * Math.sin(aimTot.yaw) * t1, A.eye + s1 * Math.sin(aimTot.pitch) * t1 - 0.5 * ARCH.g * t1 * t1, tmpV);
+        const vis0 = toScreen(tmpV, scr), lim = 0.45;
+        const ox = vis0 ? Math.round(Math.max(-innerWidth * lim, Math.min(innerWidth * lim, scr.x - innerWidth / 2)) * 2) / 2 : 0;
+        const oy = vis0 ? Math.round(Math.max(-innerHeight * lim, Math.min(innerHeight * lim, scr.y - innerHeight / 2)) * 2) / 2 : 0;
         setStyle(el.cross, 'cross', 'transform', `translate(${ox}px,${oy}px)`);
+        const tgA = scenery.targets[scenery.active], aimPh = ph === 'ready' || ph === 'draw';
+        const onTgt = !!tgA && !tgA.moving && aimPh && aimOffset(aimTot, 1, tgA, A.eye).on;
+        if (memo.halo !== (aimPh ? (onTgt ? 2 : 1) : 0)) {
+          memo.halo = aimPh ? (onTgt ? 2 : 1) : 0;
+          el.halo.classList.toggle('on', onTgt); el.halo.classList.toggle('off', !aimPh); el.cross.classList.toggle('on', onTgt);
+        }
+        // ---- the first try's guide: the cue under the crosshair, the marker over the target, the hint of the step, the ghost hand
+        const cxs = innerWidth / 2 + ox, cys = innerHeight / 2 + oy;
+        if (ctx.first && !helpUp && aimPh) {
+          if (onTgt && st.aimAcc > 0.015) st.done.aimed = true;
+          const step = guideStep(st.done, ph === 'draw');
+          if (step !== st.stepKey) {
+            st.stepKey = step; st.stepT = 0;
+            if (step) ctx.hint(STEP_HINT[step][dev()], step === 'release' ? 4 : 6);
+          } else if (step && (st.stepT += dt) > 9) { st.stepT = 0; ctx.hint(STEP_HINT[step][dev()], 5); }       // still not done: say it again
+          guide.setCue(ph === 'ready' && ghostWanted(ctx.first, st.done, st.idle, helpUp) ? null : step, cxs, cys);      // (not under the ghost's own label)
+          const mk = !!tgA && !tgA.moving && step === 'aim' && !onTgt;
+          if (mk) { W(tgA.u, tgA.v, tgA.y, tmpV); toScreen(tmpV, scr); }
+          guide.setMark(mk, scr.x, scr.y);
+          const pulse = step === 'hold';
+          if (memo.pulse !== pulse) { memo.pulse = pulse; el.draw.classList.toggle('pulse', pulse); }
+          // the ghost: nothing done for guideIdle seconds -> it shows the draw, up to three times, then waits for the next idle spell
+          if (ph === 'ready' && ghostWanted(ctx.first, st.done, st.idle, helpUp)) {
+            if (st.ghostT < 0) st.ghostT = 0;
+            st.ghostT += dt;
+            if (st.ghostT > GHOST_LOOP * 3) { st.ghostT = -1; st.idle = 0; guide.setGhost(false); }
+            else {
+              const br = el.draw.getBoundingClientRect();
+              if (tgA && !tgA.moving) { W(tgA.u, tgA.v, tgA.y, tmpV); toScreen(tmpV, scr); }
+              guide.setGhost(true, st.ghostT, { cx: cxs, cy: cys, tx: scr.x, ty: scr.y, bx: br.left + br.width / 2, by: br.top + br.height / 2 });
+            }
+          } else if (st.ghostT >= 0) { st.ghostT = -1; guide.setGhost(false); }
+        } else {
+          guide.setCue(null, 0, 0); guide.setMark(false, 0, 0);
+          if (st.ghostT >= 0) { st.ghostT = -1; guide.setGhost(false); }
+          if (memo.pulse) { memo.pulse = false; el.draw.classList.remove('pulse'); }
+        }
         const showRing = ph === 'draw';
         if (memo.ringOn !== showRing) { memo.ringOn = showRing; el.ring.classList.toggle('on', showRing); }
         const pct = Math.round(drawAt(st.drawT) * 50) * 2;
@@ -718,6 +791,7 @@ export default {
       const allHit = st.shots > 0 && st.hits === st.shots;
       return {
         score: st.total, quit: false, detail: { shots: st.shots, hits: st.hits, bulls: st.bulls, ends: st.ends },
+        fact: { title: tx('Rings'), text: tx('The middle of the target is 10 (a bullseye). Each ring further out is worth 1 less. A miss is 0.') },
         extra: st.bulls >= 1 ? N_('a bullseye!') : allHit ? N_('every arrow found the target') : undefined,
       };
 

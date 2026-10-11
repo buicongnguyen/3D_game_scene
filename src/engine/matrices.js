@@ -18,9 +18,11 @@ let stamp = 0;
 
 function visit(o, parentChanged) {
   if (o.visible === false) return;
-  // seen last frame? If not (new, or hidden until now) everything below is rebuilt
-  const fresh = o._mwStamp !== stamp - 1;
+  // seen last frame, under the same parent? If not (new, hidden until now, or moved to another parent with the same
+  // local transform) everything below is rebuilt
+  const fresh = o._mwStamp !== stamp - 1 || o._mwParent !== o.parent;
   o._mwStamp = stamp;
+  o._mwParent = o.parent;
   if (o.updateMatrixWorld !== native && !o.isSkinnedMesh) {
     o.updateMatrixWorld(parentChanged || fresh);
     for (const c of o.children) markSeen(c);
@@ -56,6 +58,7 @@ function visit(o, parentChanged) {
 // a subtree three.js just updated itself: remember that it is current
 function markSeen(o) {
   o._mwStamp = stamp;
+  o._mwParent = o.parent;
   if (o._mwTRS !== undefined) o._mwTRS[0] = NaN;
   for (const c of o.children) markSeen(c);
 }

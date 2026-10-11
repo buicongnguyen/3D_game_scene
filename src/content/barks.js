@@ -283,7 +283,8 @@ export const BARKS = [
   { who: 'any', text: "Welcome, welcome! Take any path. They all end at tea.", when: {} },
   { who: 'man', text: "Hi, hi! Tell your feet I said well done.", when: {} },
   { who: 'woman', text: "Ahoy! That's how they say hello by the river, I think.", when: {} },
-  { who: 'any', text: "Evening! Lantern oil is half price.", when: {night:true} },
+  // (from spring on: in the Grandma story the flood took the lamp oil and Fujita has some again only after the winter)
+  { who: 'any', text: "Evening! Lantern oil is half price.", when: {night:true, chapter:[1,5]} },
   { who: 'any', text: "Morning! The bread's still warm, if you're quick.", when: {night:false} },
   { who: 'genzo', text: "Mind the platform edge. I'm not mopping you up.", when: {} },
   { who: 'genzo', text: "Brass doesn't polish itself. I checked.", when: {} },

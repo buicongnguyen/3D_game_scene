@@ -61,6 +61,26 @@ export class Animator {
     return true;
   }
 
+  /**
+   * Jump straight into a looping clip, no blend, and pose the skeleton now. For a character placed on a seat (a cow rider):
+   * not one frame of the bind pose, of the clip it was playing before, or of a half-way blend between the two.
+   */
+  snap(name, { speed = 1, time = 0 } = {}) {
+    const a = this.action(name);
+    if (!a) return false;
+    this.oneShot = null;
+    this.oneShotLocks = false;
+    this.mixer.stopAllAction();
+    a.reset().setLoop(THREE.LoopRepeat, Infinity).setEffectiveWeight(1);
+    a.timeScale = speed;
+    a.time = time;
+    a.play();
+    this.current = a;
+    this.currentName = name;
+    this.mixer.update(0);
+    return true;
+  }
+
   get busy() { return !!this.oneShot; }
 
   cancelOneShot() { this.oneShot = null; this.oneShotLocks = false; }

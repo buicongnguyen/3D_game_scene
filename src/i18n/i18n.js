@@ -77,11 +77,14 @@ export function applyDom(root = document) {
   }
 }
 
+let setSeq = 0;
 export async function setLang(l) {
   if (!LANGS[l]) l = 'en';
+  const mine = ++setSeq;
   let next = null;
   if (l !== 'en') {
     try { next = (await loaders[l]()).default; } catch (e) { console.warn('language pack failed', l, e); l = 'en'; }
+    if (mine !== setSeq) return lang;      // a newer choice was made while the pack loaded: it stands
   }
   lang = l;
   pack = next;

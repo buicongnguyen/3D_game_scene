@@ -4,6 +4,13 @@
 // By day: the clouds, a few birds, and a line saying the stars come out at night. The story clock is never touched.
 // Leave any time: move, Jump, Backspace, Esc or the "Look down" button; Mika is free the moment she looks down.
 //
+// Fly up: the valley is a bowl, and its rim hides the low sky. "Fly up" (U or G, the pad's D-pad up, the button by "Auto
+// tour") calls the Star Kite, which lifts Mika straight up over the spot (game/skyflight.js: the climb, the descent and every
+// interrupt are a small state machine; actors/kite.js moves the handle where it says). Up there the groups stand where they
+// really are: the lift cheat of skystars.js is scaled by what is left of the climb. A clock chip shows the hour and season;
+// PageUp / PageDown / the arrows turn the sky's own clock in half hours (the game clock is never touched). Any way out of the
+// viewer while she is up brings her down first (3 s at most); something that takes the screen puts her down at once.
+//
 // At night the sky shows real star groups (content/constellations.js, game/skystars.js): pick one with the strip (Tab and
 // [ ] on a keyboard, the shoulder buttons of a pad, or the buttons on screen) and it is drawn with its name, its story
 // and how to find it; read for two seconds it is learned (the save's starGroups, the journal's star groups). The sky
@@ -13,9 +20,11 @@
 // shooting stars, one Points for their heads and one tiny mesh for the birds. All of it is built when Mika looks up and
 // disposed when she looks down; nothing is allocated per frame (labels are a pool of 12 divs, set only when the view moves).
 import * as THREE from 'three';
+import { Colliders } from '../world/colliders.js';
 import { SKY_SPOTS, LAMP_STEP, skyLook, cleanWishes, wishLineIndex } from '../content/skyspots.js';
 import { tx, N_, getLang, onLangChange } from '../i18n/i18n.js';
 import { buildStarSky, R } from './skystars.js';
+import { SkyFlight, nightAxis, clockOf, stepNight, canStepNight, hhmm, hourIcon } from './skyflight.js';
 import { profileFor, groupsFor, textOf, starName, shapeSvg, cleanStarGroups, learnGroup, tonightGroups } from '../content/constellations.js';
 
 const ELEV = 37 * Math.PI / 180;        // how far up the view centre is
@@ -46,16 +55,33 @@ const LINES = {
   rain: [N_('Rain on my face. No stars tonight, but the lamp towers still shine.')],
 };
 
+// Mika's thoughts on the way up, at the top and on the way down
+const FLY_LINES = {
+  upWind: N_('The evening wind has the kite. Up we go, nice and gently.'),
+  upMotor: N_('Motors on, kite! Up we go, nice and gently.'),
+  topNight: N_('No mountains in the way up here. Just stars, and the valley asleep below.'),
+  topDusk: N_('The valley is tucking itself in down there. The first stars are out.'),
+  topDay: N_('The whole valley from up here. The stars come out after dark.'),
+  down: N_('Easy now. Back down to the grass.'),
+  time: N_('Turn the night with the arrows. The stars swing round the North Star.'),
+  noKite: N_('Get the Star Kite first'),
+  noRoom: N_('Not enough room above to fly up here.'),
+};
+const SEASON_NAMES = { spring: N_('Spring'), summer: N_('Summer'), autumn: N_('Autumn'), winter: N_('Winter') };
+const FLY_PITCH = 0.2;                  // how high the view looks while the valley falls away (radians)
+const SVG_SUN = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><circle cx="10" cy="10" r="4" fill="#ffd76a"/><g stroke="#ffd76a" stroke-width="1.8" stroke-linecap="round"><path d="M10 1.5v2.5M10 16v2.5M1.5 10H4M16 10h2.5M4 4l1.8 1.8M14.2 14.2L16 16M4 16l1.8-1.8M14.2 5.8L16 4"/></g></svg>';
+const SVG_MOON = '<svg viewBox="0 0 20 20" width="20" height="20" aria-hidden="true"><path d="M15.5 12.8A7 7 0 0 1 7.2 4.5a7 7 0 1 0 8.3 8.3z" fill="#f4e7b0"/></svg>';
+
 const CSS = `
 #skyGaze{position:fixed;inset:0;z-index:15;pointer-events:none;font:700 16px Nunito,system-ui,sans-serif;zoom:var(--ui-scale,1)}
-#skyGaze .line{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:min(520px,88vw);
+#skyGaze .line{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:min(520px,88vw);
  padding:10px 16px;border-radius:18px;background:rgba(20,26,54,.78);color:#fff;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.3);transition:opacity .4s}
 #skyGaze .line.wish{background:rgba(255,214,107,.95);color:#3b1c05}
 #skyGaze .count{position:absolute;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translateX(-50%);padding:6px 14px;border-radius:999px;
  background:rgba(20,26,54,.7);color:#ffe9a8;font:600 17px Fredoka,Nunito,sans-serif;white-space:nowrap}
 #skyGaze .count.pop{animation:skyPop .5s}
 #skyGaze .down{position:absolute;left:50%;bottom:calc(30px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);pointer-events:auto;cursor:pointer;
- padding:9px 18px;border:0;border-radius:999px;background:rgba(255,253,246,.94);color:#4a3020;font:700 15px Nunito,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3);white-space:nowrap}
+ padding:9px 18px;min-height:44px;border:0;border-radius:999px;background:rgba(255,253,246,.94);color:#4a3020;font:700 15px Nunito,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.3);white-space:nowrap}
 #skyGaze .down kbd{font:700 12px Nunito,sans-serif;padding:1px 6px;border-radius:5px;background:#0002;margin-left:8px}
 body.touch #skyGaze .line{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 body.touch #skyGaze .down{left:16px;transform:none;bottom:auto;top:calc(16px + env(safe-area-inset-top,0px));padding:11px 18px}
@@ -96,7 +122,7 @@ body.sky-gaze .bark{display:none}
 #skyGaze .sg-strip .cur i{display:block;font:700 11px Nunito,sans-serif;color:#aeb9e0;font-style:normal}
 #skyGaze .sg-strip kbd{font:700 11px Nunito,sans-serif;padding:1px 5px;border-radius:5px;background:#0002;margin-left:6px}
 #skyGaze.sg-on .line{bottom:auto;top:calc(62px + env(safe-area-inset-top,0px))}
-body.touch #skyGaze.sg-on .line{top:calc(112px + env(safe-area-inset-top,0px));max-width:min(340px,86vw)}
+body.touch #skyGaze.sg-on .line{top:calc(112px + env(safe-area-inset-top,0px));bottom:auto;max-width:min(340px,86vw)}
 body.touch #skyGaze .sg-strip{bottom:calc(196px + env(safe-area-inset-bottom,0px));left:12px;right:12px;transform:none;justify-content:space-between}
 body.touch #skyGaze .sg-strip .cur{min-width:0;flex:1;max-width:none}
 body.touch #skyGaze .sg-card{left:12px;right:12px;width:auto;bottom:calc(256px + env(safe-area-inset-bottom,0px));max-height:34vh;font-size:13.5px}
@@ -105,7 +131,57 @@ body.touch #skyGaze .banner,#skyGaze .banner.low{top:calc(118px + env(safe-area-
  #skyGaze .sg-strip .cur{min-width:0;flex:1;max-width:none}
  #skyGaze .sg-card{left:12px;right:12px;width:auto;bottom:calc(256px + env(safe-area-inset-bottom,0px));max-height:34vh}
  #skyGaze.sg-on .line{top:calc(112px + env(safe-area-inset-top,0px));max-width:min(340px,86vw)}}
+@media (orientation:landscape) and (max-height:520px){
+ body.touch #skyGaze.sg-on .line{top:calc(58px + env(safe-area-inset-top,0px));max-width:min(420px,50vw)}
+ body.touch #skyGaze .sg-strip{left:50%;right:auto;transform:translateX(-50%);width:min(440px,60vw);bottom:calc(10px + env(safe-area-inset-bottom,0px))}
+ body.touch #skyGaze .sg-card{left:auto;right:calc(12px + env(safe-area-inset-right,0px));width:min(300px,36vw);bottom:auto;top:calc(112px + env(safe-area-inset-top,0px));max-height:min(150px,40vh);font-size:12.5px}
+ body.touch #skyGaze .sg-card .pic{display:none}
+ body.touch #skyGaze .banner{top:calc(58px + env(safe-area-inset-top,0px))}}
 @media (max-height:520px){#skyGaze .sg-card{max-height:48vh;font-size:12.5px;bottom:calc(76px + env(safe-area-inset-bottom,0px))}#skyGaze .sg-card .pic{display:none}}
+/* the clock chip, Fly up and the sky time (these rules come last on purpose: they move the older pieces over to make room) */
+#skyGaze .count{left:auto;right:calc(16px + env(safe-area-inset-right,0px));transform:none}
+#skyGaze .sg-clock{position:absolute;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);display:flex;align-items:center;gap:6px;min-height:44px;padding:3px 5px 3px 14px;
+ border-radius:999px;background:rgba(14,20,48,.8);color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.35);pointer-events:auto;white-space:nowrap}
+#skyGaze .sg-clock .ico{display:inline-flex;width:20px;height:20px}
+#skyGaze .sg-clock .tm{font:600 17px Fredoka,Nunito,sans-serif;margin-right:2px}
+#skyGaze .sg-clock.set .tm{color:#ffd76a}
+#skyGaze .sg-clock button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:rgba(255,253,246,.94);color:#4a3020;font:700 15px Nunito,system-ui,sans-serif;cursor:pointer;padding:0 12px}
+#skyGaze .sg-clock button:disabled{opacity:.38;cursor:default}
+#skyGaze .sg-clock .tnow{display:none;background:#ffd76a;color:#3b1c05}
+#skyGaze .sg-clock.set .tnow{display:inline-block}
+#skyGaze .sg-clock.nosky .tprev,#skyGaze .sg-clock.nosky .tnext{display:none}
+#skyGaze .sg-clock.nosky{padding-right:14px}
+#skyGaze.sg-on .line{top:calc(72px + env(safe-area-inset-top,0px))}
+#skyGaze .banner{top:calc(74px + env(safe-area-inset-top,0px))}
+#skyGaze .sg-strip .fly{font-size:14px;white-space:nowrap}
+#skyGaze .sg-strip .fly.off{opacity:.55}
+#skyGaze .sg-strip .fly.dn{background:#ffd76a;color:#3b1c05}
+body.sky-gaze #clock{visibility:hidden}
+#skyGaze:not(.sg-on) .sg-strip{display:flex;justify-content:center}
+#skyGaze:not(.sg-on) .sg-strip>:not(.fly){display:none}
+#skyGaze:not(.sg-on) .line{bottom:calc(150px + env(safe-area-inset-bottom,0px))}
+#skyGaze .sg-strip .br{display:none}
+body.touch #skyGaze .sg-clock{top:calc(66px + env(safe-area-inset-top,0px))}
+@media (max-aspect-ratio:1/1){body.touch #skyGaze .sg-clock{left:calc(12px + env(safe-area-inset-left,0px));transform:none;padding-left:10px;gap:4px}
+ body.touch #skyGaze .sg-clock .tm{font-size:15px}
+ body.touch #skyGaze .sg-clock.set .sn{display:none}}
+body.touch #skyGaze.sg-on .line{top:calc(124px + env(safe-area-inset-top,0px))}
+body.touch #skyGaze .banner,#skyGaze .banner.low{top:calc(130px + env(safe-area-inset-top,0px))}
+body.touch #skyGaze .sg-strip{flex-wrap:wrap;border-radius:26px}
+body.touch #skyGaze .sg-strip .br{display:block;flex:0 0 100%;height:0}
+body.touch #skyGaze .sg-strip .tour,body.touch #skyGaze .sg-strip .fly{flex:1}
+body.touch #skyGaze .sg-card{bottom:calc(316px + env(safe-area-inset-bottom,0px));max-height:30vh}
+body.touch #skyGaze:not(.sg-on) .sg-strip{bottom:calc(206px + env(safe-area-inset-bottom,0px));left:50%;right:auto;transform:translateX(-50%);width:max-content}
+body.touch #skyGaze:not(.sg-on) .line{bottom:auto;top:calc(124px + env(safe-area-inset-top,0px))}
+@media (orientation:landscape) and (max-height:520px){
+ body.touch #skyGaze .sg-clock{top:calc(8px + env(safe-area-inset-top,0px))}
+ body.touch #skyGaze.sg-on .line,body.touch #skyGaze:not(.sg-on) .line{top:calc(66px + env(safe-area-inset-top,0px));bottom:auto}
+ body.touch #skyGaze .banner{top:calc(66px + env(safe-area-inset-top,0px))}
+ body.touch #skyGaze .sg-strip{flex-wrap:nowrap;border-radius:999px}
+ body.touch #skyGaze .sg-strip .br{display:none}
+ body.touch #skyGaze .sg-strip .tour,body.touch #skyGaze .sg-strip .fly{flex:0 0 auto}
+ body.touch #skyGaze:not(.sg-on) .sg-strip{bottom:calc(10px + env(safe-area-inset-bottom,0px));width:max-content}
+ body.touch #skyGaze .sg-card{top:calc(70px + env(safe-area-inset-top,0px));bottom:auto;max-height:min(150px,40vh)}}
 `;
 
 const STAR_VERT = `
@@ -230,6 +306,10 @@ export class SkyGaze {
     this.birds = [];
     for (let i = 0; i < BIRDS; i++) this.birds.push({ off: new V3(), phase: i * 1.7, size: 1 });
     this.labPool = [];
+    this.flight = null;                // the climb (game/skyflight.js); one per look-up, so it is never stale
+    this.guide = null;                 // what the kite reads while it carries her: { alt, heading, onToggle() }
+    this.leaving = false;              // the viewer is closing: she comes down first
+    this.eye0 = new V3(); this.takeoff = new V3(); this.focusPt = new V3();
     this.onKey = e => {
       if (!this.active || this.g.paused || this.d.ui.overlay || this.d.ui.dialogueOpen) return;
       const c = e.code;
@@ -242,6 +322,10 @@ export class SkyGaze {
       else if (c === 'BracketLeft' || c === 'Comma') dir = -1;
       if (dir && this.hasGroups) { e.preventDefault(); e.stopImmediatePropagation(); this.step(dir); }
       else if (c === 'KeyT' && this.hasGroups) { e.preventDefault(); e.stopImmediatePropagation(); this.toggleTour(); }
+      // Fly up / Come down (U, or G: the kite's own key), and the sky's own clock (PageUp / PageDown, Home = now)
+      else if ((c === 'KeyU' || c === 'KeyG') && !e.repeat && !e.ctrlKey && !e.metaKey) { e.preventDefault(); e.stopImmediatePropagation(); this.toggleFly(); }
+      else if (c === 'PageUp' || c === 'PageDown') { e.preventDefault(); e.stopImmediatePropagation(); this.stepSky(c === 'PageUp' ? 1 : -1); }
+      else if (c === 'Home') { e.preventDefault(); e.stopImmediatePropagation(); this.stepSky(0); }
     };
     this.offLang = null;
     for (const s of SKY_SPOTS) this.register(s);
@@ -287,6 +371,9 @@ export class SkyGaze {
     this.locks = true;
     this.t = 0; this.wantLeave = false; this.moved = true; this.lineT = 0; this.lineI = 0; this.thoughtT = 0; this.saveDue = false;
     this.m = this.mode(spot);
+    this.season = g.shownSeason || g.time.season;
+    this.flight = new SkyFlight({ lift: spot.lift });
+    this.guide = null; this.leaving = false; this.pendingDown = false; this.focusSet = false; this.skyHour = null; this.skyFade = 1; this.timeHinted = false; this.clockT = 0; this.flyKey = '';
     this.profile = profileFor(getLang());
     this.offLang = onLangChange(() => this.onLang());
     this.sel = -1; this.selT = 0; this.tour = false; this.tourT = 0; this.userPicked = false; this.bannerLeft = 0; this.labelsDirty = true; this.lv = null;
@@ -320,6 +407,7 @@ export class SkyGaze {
     this.Rt.crossVectors(this.F, this.b.set(0, 1, 0)).normalize();
     this.U.crossVectors(this.Rt, this.F).normalize();
     this.look.copy(eye).addScaledVector(this.F, 20);
+    this.eye0.copy(eye); this.takeoff.copy(p.pos);           // the ground view, and where the climb starts (the camera rides above it)
     g.follow.yaw = this.yaw;                                 // Tamo keeps his place at her side, as seen from the new view
     this.vyaw = this.tyaw = this.yaw; this.vpitch = this.tpitch = ELEV;
     // a phone held upright sees a narrow sky: look wider while looking up (the follow camera eases to its fovBase)
@@ -335,6 +423,8 @@ export class SkyGaze {
     this.extraLine = this.tonightLine();
     this.say(this.lines()[0], 6);
     this.card();
+    this.clock(true);
+    this.flyUi();
     this.nextStar = this.m.look === 'night' ? 2.2 : 5.5;
     d.audio.twinkle?.(1.5);
   }
@@ -394,7 +484,8 @@ export class SkyGaze {
     el.id = 'skyGaze';
     el.innerHTML = '<div class="count"></div><div class="banner hide"></div><div class="line hide"></div><div class="sg-labels"></div>'
       + '<div class="sg-card empty"><div class="head"><div class="pic"></div><div><b class="nm"></b><i class="cnt"></i></div></div><p class="story"></p><p class="tip"></p></div>'
-      + '<div class="sg-strip"><button class="prev" type="button">◀</button><span class="cur"><b></b><i></i></span><button class="next" type="button">▶</button><button class="tour" type="button"></button></div>'
+      + '<div class="sg-strip"><button class="prev" type="button">◀</button><span class="cur"><b></b><i></i></span><button class="next" type="button">▶</button><span class="br"></span><button class="tour" type="button"></button><button class="fly" type="button"></button></div>'
+      + '<div class="sg-clock"><span class="ico"></span><b class="tm"><span class="sn"></span><span class="hm"></span></b><button class="tprev" type="button">◀</button><button class="tnext" type="button">▶</button><button class="tnow" type="button"></button></div>'
       + '<button class="down" type="button"></button>';
     const down = el.querySelector('.down');
     this.uiTexts();
@@ -404,6 +495,10 @@ export class SkyGaze {
     el.querySelector('.prev').addEventListener('click', () => this.step(-1));
     el.querySelector('.next').addEventListener('click', () => this.step(1));
     el.querySelector('.tour').addEventListener('click', () => this.toggleTour());
+    el.querySelector('.fly').addEventListener('click', () => this.toggleFly());
+    el.querySelector('.tprev').addEventListener('click', () => this.stepSky(-1));
+    el.querySelector('.tnext').addEventListener('click', () => this.stepSky(1));
+    el.querySelector('.tnow').addEventListener('click', () => this.stepSky(0));
     el.querySelector('.sg-card').addEventListener('click', e => e.currentTarget.classList.toggle('min'));
     const host = el.querySelector('.sg-labels');
     this.labPool = [];
@@ -421,6 +516,12 @@ export class SkyGaze {
     down.textContent = tx('Look down');
     if (!this.d.ui.touch) { const k = document.createElement('kbd'); k.textContent = 'Space'; down.appendChild(k); }
     el.querySelector('.tour').textContent = tx('Auto tour');
+    el.querySelector('.tprev').setAttribute('aria-label', tx('Earlier'));
+    el.querySelector('.tnext').setAttribute('aria-label', tx('Later'));
+    el.querySelector('.tnow').textContent = tx('Now');
+    el.querySelector('.sg-clock').setAttribute('aria-label', tx('Sky time'));
+    this.flyKey = '';
+
     el.querySelector('.prev').setAttribute('aria-label', tx('Previous star group'));
     el.querySelector('.next').setAttribute('aria-label', tx('Next star group'));
   }
@@ -448,8 +549,9 @@ export class SkyGaze {
   buildSky() {
     const g = this.g, season = g.shownSeason || g.time.season, look = this.m.look;
     this.season = season;
-    this.skySt = buildStarSky({ season, hour: g.shownHour(), profile: this.profile, look, low: !!(g.renderer?.q?.name === 'Low') });
+    this.skySt = buildStarSky({ season, hour: this.curHour(), profile: this.profile, look, low: !!(g.renderer?.q?.name === 'Low') });
     this.skySt.uniforms.uMin.value = look === 'dusk' ? 4.3 : 0;
+    this.skySt.setLift(this.flight ? this.flight.liftK : 1);
     this.group.add(this.skySt.group);
     this.sel = -1;
   }
@@ -482,6 +584,9 @@ export class SkyGaze {
     if (this.tour && this.sel < 0) this.step(1);
   }
 
+  /** How low the view may look: 8 degrees up on the ground (the hills fill the rest); once she is up, down at the valley. */
+  minPitch() { return this.flight && this.flight.alt > 8 ? -0.6 : 8 * Math.PI / 180; }
+
   /** Turn the view so the group's middle lands where the cards leave the sky free (left of the card, or above it on a phone). */
   aimAt(info) {
     const cam = this.g.camera, portrait = cam.aspect < 1;
@@ -492,7 +597,7 @@ export class SkyGaze {
     const tv = Math.tan(fov * Math.PI / 360), th = tv * cam.aspect;
     const wantX = portrait ? 0 : -0.2, wantY = portrait ? 0.34 : 0.04;
     const gy = Math.atan2(info.dir.x, info.dir.z), gp = Math.asin(info.dir.y);
-    this.tpitch = THREE.MathUtils.clamp(gp - Math.atan(wantY * tv), 8 * Math.PI / 180, 84 * Math.PI / 180);
+    this.tpitch = THREE.MathUtils.clamp(gp - Math.atan(wantY * tv), this.minPitch(), 84 * Math.PI / 180);
     this.tyaw = gy + Math.atan(wantX * th) / Math.max(0.3, Math.cos(this.tpitch));
   }
 
@@ -500,7 +605,7 @@ export class SkyGaze {
   updateView(dt, inp) {
     const lx = inp.look.x, ly = inp.look.y;
     if ((lx || ly) && this.t > 0.6) {
-      this.tyaw -= lx * 0.0042; this.tpitch = THREE.MathUtils.clamp(this.tpitch - ly * 0.0034, 8 * Math.PI / 180, 84 * Math.PI / 180);
+      this.tyaw -= lx * 0.0042; this.tpitch = THREE.MathUtils.clamp(this.tpitch - ly * 0.0034, this.minPitch(), 84 * Math.PI / 180);
       this.userPicked = true;
     }
     const k = 1 - Math.exp(-dt * 4.5);
@@ -522,7 +627,7 @@ export class SkyGaze {
     const on = this.hasGroups;
     el.classList.toggle('sg-on', on);
     if (!on) return;
-    const info = this.infos[this.sel], rec = this.starRec(), N = groupsFor(this.profile).length;
+    const info = this.infos[this.sel], rec = this.starRec(), seen = groupsFor(this.profile), N = seen.length;
     el.querySelector('.cur b').textContent = info ? this.gtext(info).short : tx('Star groups');
     el.querySelector('.cur i').textContent = info ? `${this.sel + 1}/${this.infos.length}` : `${this.infos.length}`;
     const card = el.querySelector('.sg-card');
@@ -533,9 +638,15 @@ export class SkyGaze {
     card.querySelector('.story').textContent = t.story;
     card.querySelector('.tip').textContent = t.tip;
     card.querySelector('.pic').innerHTML = shapeSvg(info.group, true, 64);
-    card.querySelector('.cnt').textContent = tx('Star groups: {n} of {total}', { n: rec.learned.length, total: N });
+    // only the groups this sky can show count (a group learned under the other language's sky is kept in the save)
+    card.querySelector('.cnt').textContent = tx('Star groups: {n} of {total}', { n: rec.learned.filter(id => seen.some(g => g.id === id)).length, total: N });
   }
-  starRec() { const st = this.st; return (st.starGroups = cleanStarGroups(st.starGroups)); }
+  /** The save's clean star-group record. Cleaned once per record (it is asked for every frame while a group is read). */
+  starRec() {
+    const st = this.st, cur = st.starGroups;
+    if (cur && cur === this.recOk) return cur;
+    return (this.recOk = st.starGroups = cleanStarGroups(cur));
+  }
 
   /** A group read for two seconds is learned: a chime, a ribbon, and a line in the journal. */
   learn(info) {
@@ -576,6 +687,244 @@ export class SkyGaze {
     this.card();
     this.labelsDirty = true;
     this.uiTexts();
+    this.clock(true);
+    this.flyUi();
+  }
+
+  // ------------------------------------------------------------------ fly up
+  /** The hour the stars are drawn for: the sky's own clock while it is turned, else the game's hour. */
+  curHour() { return this.skyHour == null ? this.g.shownHour() : clockOf(this.skyHour); }
+
+  /** Does she own the Star Kite? (the story gives it; the Mini games sessions start from a finished valley.) */
+  kiteOwned() { return !!this.g.kite && this.d.q.count('kite') > 0; }
+
+  /** Is the column above her free? A deck, a porch or a tree crown over the spot would stop the kite. */
+  pathClear() {
+    const g = this.g, p = g.player, x = p.pos.x, z = p.pos.z;
+    for (const it of g.colliders.near(x, z)) {
+      if (!it.enabled || it.y0 <= p.pos.y + 1.8 || it.y1 - it.y0 > 60) continue;      // (the invisible story walls are not overhead)
+      if (Colliders.contains(it, x, z, 0.9)) return false;
+    }
+    return !g.kite.treeAt(x, z, 0.6);
+  }
+
+  /** The button, the U and G keys, the pad: up when she stands, down when she is up (or on her way). */
+  toggleFly() {
+    if (!this.active || this.leaving || !this.flight) return;
+    if (this.flight.wantsUp) this.flyUp(); else this.comeDown();
+  }
+
+  flyUp() {
+    const f = this.flight, k = this.g.kite;
+    if (!this.kiteOwned()) { this.say(FLY_LINES.noKite, 3.5); return; }
+    if (f.phase === 'down') { this.handle(f.request('up')); this.flyUi(); return; }       // changed her mind on the way down
+    if (f.phase !== 'ground') return;
+    if (!this.pathClear()) { this.say(FLY_LINES.noRoom, 3.5); return; }
+    this.guide = { alt: 0, heading: this.yaw, onToggle: () => this.onKiteKey() };
+    if (!k.launch(this.guide)) { this.guide = null; return; }
+    this.pendingDown = false;
+    this.handle(f.request('up'));
+    this.flyUi();
+  }
+
+  comeDown() {
+    const f = this.flight, k = this.g.kite;
+    if (f.phase === 'summon') {
+      if (k.state === 'arrive') this.dropArrive();
+      else this.pendingDown = true;                   // the kite already has her: down as soon as the climb begins
+    } else this.handle(f.request('down'));
+    this.flyUi();
+  }
+
+  /** The touch Kite button (or the pad's Y, which also starts the tour: it is ignored then) while the kite carries her. */
+  onKiteKey() {
+    if (this.t - (this.padYT ?? -9) < 0.12) return true;
+    if (!this.leaving && !this.flight.wantsUp) this.comeDown();
+    return true;
+  }
+
+  handle(events) { for (const e of events) this.onFlightEvent(e); }
+
+  onFlightEvent(e) {
+    const f = this.flight, look = this.m.look;
+    if (e === 'ascend') {
+      document.body.classList.add('sky-fly');
+      this.setFocus(true);
+      this.minCard(true);
+      if (this.pendingDown || this.leaving) { this.pendingDown = false; this.handle(f.request(this.leaving ? 'leave' : 'down')); return; }
+      if (!this.userPicked) this.tpitch = FLY_PITCH;       // look out at the valley sinking while she rises
+      this.say(this.g.kite.assist ? FLY_LINES.upMotor : FLY_LINES.upWind, 5);
+    } else if (e === 'top') {
+      this.say(look === 'night' ? FLY_LINES.topNight : look === 'dusk' ? FLY_LINES.topDusk : FLY_LINES.topDay, 7);
+      this.reaim();
+    } else if (e === 'descend') {
+      if (!this.leaving) this.say(FLY_LINES.down, 4);
+      this.reaim();
+    } else if (e === 'touchdown') {
+      this.freeKite();
+      this.endFlightFx();
+      this.reaim();
+    } else if (e === 'abort' || e === 'cancel') this.dropArrive();
+  }
+
+  /** On a phone held upright the open name card hides the low groups: it folds to its name while she is up (a tap opens it). */
+  minCard(on) {
+    const card = this.el?.querySelector('.sg-card');
+    if (!card) return;
+    if (on) { if (this.d.ui.touch && this.g.camera.aspect < 1 && !card.classList.contains('min')) { card.classList.add('min'); this.cardFolded = true; } }
+    else if (this.cardFolded) { card.classList.remove('min'); this.cardFolded = false; }
+  }
+
+  /** The view goes back to the picked group, or to the open sky. */
+  reaim() {
+    const i = this.infos[this.sel];
+    if (i) this.aimAt(i);
+    else if (!this.userPicked) this.tpitch = this.flight.airborne && this.m.look !== 'night' ? -0.1 : ELEV;       // by day: the valley panorama
+  }
+
+  /** Let the kite go: set down on her spot if it carries her (the kite flies off), called off if it has not reached her yet. */
+  freeKite() {
+    const k = this.g.kite;
+    if (k && this.guide && k.guide === this.guide) {
+      if (k.carrying) k.guidedLand();
+      else { if (k.state === 'arrive') k.send(); k.guide = null; }
+    }
+    this.guide = null;
+  }
+
+  /** The kite was called off before it took hold of her. */
+  dropArrive() {
+    this.freeKite();
+    this.flight.request('snap');
+    this.endFlightFx();
+    this.flyUi();
+  }
+
+  /** Something else owns the screen (or the kite lost her): straight to the ground, no flying. */
+  snapDown() {
+    this.flight?.request('snap');
+    this.freeKite();
+    this.endFlightFx();
+  }
+
+  /** Whatever happened to the kite in the air, Mika is put back on her spot on the ground. */
+  emergency() {
+    const p = this.g.player, k = this.g.kite;
+    const mine = k && this.guide && k.guide === this.guide;
+    if (mine && k.carrying) { k.spot = { x: this.takeoff.x, z: this.takeoff.z, y: this.takeoff.y, water: false }; this.guide = null; k.release(true); }
+    else { if (mine) k.guide = null; this.guide = null; }
+    this.flight.request('snap');
+    if (p.mounted) p.mounted = null;
+    p.teleport(this.takeoff.x, this.takeoff.z, this.takeoff.y, this.yaw);
+    p.vel.set(0, 0, 0);
+  }
+
+  /** The things a flight changes besides Mika and the kite: the body class and the focus of the level of detail. */
+  endFlightFx() {
+    document.body.classList.remove('sky-fly');
+    this.setFocus(false);
+    this.minCard(false);
+    this.pendingDown = false;
+  }
+
+  /** While she is up the world's level of detail, shadows and sky dome stay on the valley floor below her. */
+  setFocus(on) {
+    const g = this.g;
+    if (on && !this.focusSet) { this.focusWas = g.viewFocus ?? null; g.viewFocus = this.focusPt.copy(this.takeoff); this.focusSet = true; }
+    else if (!on && this.focusSet) { if (g.viewFocus === this.focusPt) g.viewFocus = this.focusWas; this.focusWas = null; this.focusSet = false; }
+  }
+
+  /** A soft exit while she is up: she comes down first (3 s at most); the viewer closes when she stands on the ground. */
+  beginLeave() {
+    const f = this.flight, k = this.g.kite;
+    this.leaving = true; this.pendingDown = false;
+    if (f.phase === 'summon') { if (k.state === 'arrive') this.dropArrive(); else this.pendingDown = true; }
+    else { this.handle(f.request('leave')); this.say(FLY_LINES.down, 3); }
+    this.flyUi();
+  }
+
+  updateFlight(dt) {
+    const f = this.flight, g = this.g, k = g.kite, p = g.player;
+    if (!f) return;
+    // the kite lost her in mid-air (something else moved her): back to the ground at once, safely
+    if (this.guide && f.airborne && !(k.guide === this.guide && k.carrying && p.mounted?.obj === k.anchor)) { this.emergency(); this.endFlightFx(); this.flyUi(); return; }
+    if (!f.busy) return;
+    this.handle(f.update(dt, !!this.guide && k.guide === this.guide && k.state === 'fly'));
+    if (this.guide) this.guide.alt = f.alt;
+    this.flyUi();
+  }
+
+  /** The camera rides above the ground view: it lifts with her and drops back a little, clear of the kite's canopy. */
+  placeEye() {
+    const a = this.flight.alt, k = THREE.MathUtils.smoothstep(a, 0, 12), back = 1.5 * k;
+    this.eye.set(this.eye0.x - Math.sin(this.yaw) * back, this.eye0.y + a + 1.6 * k, this.eye0.z - Math.cos(this.yaw) * back);
+    if (this.shot) this.shot.to.pos.copy(this.eye);
+  }
+
+  /** The Fly up / Come down button: its words, and grey when she has no kite (a press then says why). */
+  flyUi() {
+    const b = this.el?.querySelector('.fly'), f = this.flight;
+    if (!b || !f) return;
+    const up = f.wantsUp || this.pendingDown, off = !this.kiteOwned() || this.leaving || (f.phase === 'down' && f.mode === 'leave');
+    const key = `${up}|${off}|${getLang()}`;
+    if (key === this.flyKey) return;
+    this.flyKey = key;
+    b.classList.toggle('off', off);
+    b.classList.toggle('dn', !up);
+    b.setAttribute('aria-disabled', String(off));
+    b.textContent = `${up ? '↑' : '↓'} ${up ? tx('Fly up') : tx('Come down')}`;
+    if (!this.d.ui.touch) { const kb = document.createElement('kbd'); kb.textContent = 'U'; b.appendChild(kb); }
+  }
+
+  // ------------------------------------------------------------------ the clock and the sky time
+  /** The clock chip: the hour and season of the sky, the sun or the moon, and the arrows for the sky's own clock. */
+  clock(force = false) {
+    const el = this.el?.querySelector('.sg-clock');
+    if (!el) return;
+    const hour = this.curHour(), set = this.skyHour != null;
+    const text = `${tx(SEASON_NAMES[this.season] || SEASON_NAMES.spring)} · ${hhmm(hour)}`;
+    const night = this.m.look === 'night', cur = set ? this.skyHour : nightAxis(this.g.shownHour());
+    const key = `${text}|${set}|${night}|${cur}`;
+    if (!force && key === this.clockKey) return;
+    this.clockKey = key;
+    el.querySelector('.sn').textContent = `${tx(SEASON_NAMES[this.season] || SEASON_NAMES.spring)} · `;
+    el.querySelector('.hm').textContent = hhmm(hour);
+    el.querySelector('.ico').innerHTML = hourIcon(hour) === 'sun' ? SVG_SUN : SVG_MOON;
+    el.classList.toggle('set', set);
+    el.classList.toggle('nosky', !night);
+    el.querySelector('.tprev').disabled = !(night && cur != null && canStepNight(cur, -1));
+    el.querySelector('.tnext').disabled = !(night && cur != null && canStepNight(cur, 1));
+  }
+
+  /** Turn the sky's own clock half an hour later (+1) or earlier (-1), or back to the game's hour (0). The game clock never moves. */
+  stepSky(dir) {
+    if (!this.active || this.leaving || !this.skySt || this.m.look !== 'night') return;
+    const real = nightAxis(this.g.shownHour()), cur = this.skyHour ?? real;
+    let next = null;
+    if (dir !== 0) {
+      if (cur == null) return;
+      next = stepNight(cur, dir);
+      if (next === cur) return;                                  // the end of the night
+      if (real != null && Math.abs(next - real) < 1e-6) next = null;
+    }
+    if (next === this.skyHour) return;
+    this.skyHour = next;
+    this.rebuildSky();
+    this.clock(true);
+    this.d.audio.twinkle?.(1);
+    if (!this.timeHinted) { this.timeHinted = true; this.say(FLY_LINES.time, 6); }
+  }
+
+  /** The stars for a new hour: the groups that rose or set change, the picked one is kept if it is still up. */
+  rebuildSky() {
+    const keep = this.infos[this.sel]?.id;
+    this.skySt.dispose();
+    this.buildSky();
+    this.skyFade = 0.15;
+    this.selT = 0; this.tourT = 0;
+    if (keep) { const i = this.infos.findIndex(x => x.id === keep); if (i >= 0) this.selectGroup(i); }
+    this.labelsDirty = true;
+    this.card();
   }
 
   // ------------------------------------------------------------------ labels
@@ -594,7 +943,7 @@ export class SkyGaze {
       v.copy(dir).multiplyScalar(R).add(cam.position).project(cam);
       if (Math.abs(v.x) > 0.94) return;
       const x = (v.x * 0.5 + 0.5) * W + dx, y = (-v.y * 0.5 + 0.5) * H + dy, w = text.length * (kind === 'g' ? 8.4 : 6.6) + 12, h = 20;
-      if (y < 74 || y > H - (z < 1.2 && W < H ? 330 : 150)) return;          // keep clear of the pills at the top and the strip at the bottom
+      if (y < (this.d.ui.touch && W < H ? 128 : 78) || y > H - (z < 1.2 && W < H ? 330 : 150)) return;          // keep clear of the chip and pills at the top and the strip at the bottom
       const left = kind === 'g' ? x - w / 2 : x;
       for (const r of placed) if (left < r[0] + r[2] && left + w > r[0] && y - h / 2 < r[1] + r[3] && y + h / 2 > r[1]) return;
       placed.push([left, y - h / 2, w, h]);
@@ -628,11 +977,15 @@ export class SkyGaze {
     const pads = navigator.getGamepads?.();
     const p = pads && [...pads].find(x => x && x.connected);
     if (!p) return;
-    const now = [!!p.buttons[4]?.pressed, !!p.buttons[5]?.pressed, !!p.buttons[3]?.pressed], was = this.padWas ||= [false, false, false];
+    const now = [4, 5, 3, 12, 14, 15, 13].map(i => !!p.buttons[i]?.pressed), was = this.padWas ||= now.map(() => false);
     if (now[0] && !was[0]) this.step(-1);
     if (now[1] && !was[1]) this.step(1);
-    if (now[2] && !was[2]) this.toggleTour();
-    was[0] = now[0]; was[1] = now[1]; was[2] = now[2];
+    if (now[2] && !was[2]) { this.padYT = this.t; this.toggleTour(); }          // (Y is also the kite key: onKiteKey ignores it then)
+    if (now[3] && !was[3]) this.toggleFly();
+    if (now[4] && !was[4]) this.stepSky(-1);
+    if (now[5] && !was[5]) this.stepSky(1);
+    if (now[6] && !was[6]) this.stepSky(0);
+    for (let i = 0; i < now.length; i++) was[i] = now[i];
   }
 
   // ------------------------------------------------------------------ shooting stars
@@ -736,13 +1089,19 @@ export class SkyGaze {
     // freezes the game, this included: the look simply goes on when the game does.
     if (d.busy || d.scenes?.active || d.minigame || d.tricks?.round || d.ui.overlay || d.ui.dialogueOpen || g.interiors?.active || g.follow.shot !== this.shot) { this.stop(true); return; }
     this.t += dt;
+    this.updateFlight(dt);
+    if (!this.active) return;
+    if (this.leaving && !this.flight.busy) { this.leaving = false; this.stop(false); return; }       // she stands on the ground again: now it closes
     const mv = Math.hypot(inp.move.x, inp.move.y);
     if (mv < 0.2) this.moved = false;                       // the stick must come back to rest before it can end the look
-    if (this.wantLeave || inp.pressed('back') || inp.pressed('jump') || (this.t > 0.45 && !this.moved && mv > 0.45)) { this.stop(false); return; }
+    if (!this.leaving && (this.wantLeave || inp.pressed('back') || inp.pressed('jump') || (this.t > 0.45 && !this.moved && mv > 0.45))) {
+      this.stop(false);                                     // (while she is up this starts the way down and goes on)
+      if (!this.active) return;
+    }
 
     // Mika: turned to the view, head tipped back
     p.vel.set(0, 0, 0);
-    p.turnTo(this.yaw, dt, 7);
+    if (!this.flight.busy) p.turnTo(this.yaw, dt, 7);
     const h = this.head;
     if (h) {
       // the walk cycle rewrites the head each frame (then this adds to it); a clip with no head track leaves our own value
@@ -754,15 +1113,19 @@ export class SkyGaze {
     }
 
     const look = this.m.look, cam = g.camera;
+    this.placeEye();
     this.updateView(dt, inp);
     if (this.skySt) {
+      // the low groups stand where they really are once she is up (the lift is scaled by what is left of the climb)
+      if (this.skySt.setLift(this.flight.liftK)) this.labelsDirty = true;
       // the dome rides with the camera (the birds below fly in the world)
       this.skySt.group.position.copy(cam.position); this.ribbons.position.copy(cam.position); this.heads.position.copy(cam.position);
       const px = (g.renderer.renderer.domElement.height || innerHeight) / 720;
       const u = this.skySt.uniforms, hu = this.heads.material.uniforms;
       u.uPx.value = hu.uPx.value = px;
       u.uTime.value = hu.uTime.value = this.t;
-      u.uFade.value = this.fadeTo * Math.min(1, Math.max(0, (this.t - 0.5) / 1.6));
+      this.skyFade = Math.min(1, this.skyFade + dt / 0.45);
+      u.uFade.value = this.fadeTo * Math.min(1, Math.max(0, (this.t - 0.5) / 1.6)) * this.skyFade;
       // the star groups: the first one is picked for a player who only watches; reading one for two seconds learns it
       if (this.hasGroups) {
         if (this.sel < 0 && !this.userPicked && this.t > 2.2) this.selectGroup(0);
@@ -787,6 +1150,7 @@ export class SkyGaze {
       if (s && this.t > 0.4 && (inp.pressed('act') || (d.ui.touch && inp.pressed('tap')))) this.wish(s);
     }
     if (this.flock) this.updateBirds(dt);
+    if ((this.clockT -= dt) <= 0) { this.clockT = 0.5; this.clock(); }
 
     // the lines: Mika's thoughts take turns, gently
     if (this.lineLeft > 0 && (this.lineLeft -= dt) <= 0) { this.el?.querySelector('.line')?.classList.add('hide'); this.lineT = 0; }
@@ -802,6 +1166,11 @@ export class SkyGaze {
   stop(hard) {
     const g = this.g, p = g.player, f = g.follow;
     if (!this.active) return;
+    if (this.flight?.busy || this.guide) {
+      if (!hard) { if (!this.leaving) this.beginLeave(); return; }       // up in the air: down first, then the viewer closes
+      this.snapDown();                                                  // something else owns the screen: straight down
+    }
+    this.leaving = false;
     this.active = null;
     this.locks = false;
     removeEventListener('keydown', this.onKey, true);
@@ -850,6 +1219,8 @@ export class SkyGaze {
   /** For the QA autopilot and tests. */
   debug() {
     return { head: this.head?.name || null, active: this.active?.id || null, look: this.active ? this.m.look : null, falling: !!(this.active && this.skySt && this.wishable()), wishes: this.wishes, returning: this.returning > 0,
+      flight: this.flight ? { phase: this.flight.phase, alt: +this.flight.alt.toFixed(2), lift: this.flight.lift, liftK: +this.flight.liftK.toFixed(3), leaving: this.leaving } : null,
+      skyHour: this.skyHour, hour: this.active ? this.curHour() : null, clock: this.el?.querySelector('.sg-clock .tm')?.textContent || null,
       groups: this.infos.map(i => i.id), sel: this.infos[this.sel]?.id || null, learned: [...(this.st?.starGroups?.learned || [])], profile: this.profile?.id || null, tour: !!this.tour,
       labels: this.labPool.filter(l => l.style.display !== 'none').map(l => l.textContent) };
   }

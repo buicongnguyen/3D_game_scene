@@ -323,6 +323,14 @@ export class Tricks {
     q('.again').innerHTML = `${tx('Play again')}${touch ? '' : '<kbd>Space</kbd>'}`;
     q('.done').innerHTML = `${tx('Done')}${touch ? '' : '<kbd>E</kbd>'}`;
     if (res?.extra) q('.score').textContent += ` · ${tx(res.extra)}`;
+    // a round may explain its stars in one line under the score (the cow race: "1st place = 3 stars"), already translated
+    if (res?.note) {
+      const n = document.createElement('div');
+      n.className = 'starnote';
+      n.style.cssText = 'margin:4px 0 0;font-size:13px;font-weight:600;color:#7a6a58';
+      n.textContent = res.note;
+      q('.best').after(n);
+    }
     // a round may add one more fact of its own (the cricket's thermometer): res.fact = { title, text }, already translated
     if (res?.fact) {
       const f = document.createElement('div');

@@ -1286,7 +1286,7 @@ export class Workshop {
     this.discK = -1;
     flightNumbers(this.spec, this.charge, this.N);
     if (this.spec && !this.kit) {
-      const low = g.renderer?.q?.name === 'low';
+      const low = g.renderer?.q?.name === 'Low';
       const a = makeKiteKit(low);
       a.castShadow = g.world?.quality?.propShadows !== false;
       const b = new THREE.Mesh(a.geometry, a.material);

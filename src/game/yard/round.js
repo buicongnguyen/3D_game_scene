@@ -299,7 +299,7 @@ export class Yard {
     for (const it of A.kids) { it.yPath = null; if (it.n.anim && !it.n.anim.busy) it.n.anim.play('Idle'); }
     c.amb = null;
     c.override = null;
-    this.views.hideAll();
+    this.views.hideAll(c.Y.id);
     this.showBoard(c);
   }
 
@@ -307,7 +307,7 @@ export class Yard {
     const ids = kids.map(k => k.p.id), Y = c.Y;
     const R = ambientRoles(game, ids, prev?.rounds || 0, prev?.loser || null);
     const G = YARD_GAME[R.game], S = stageOf(Y, G.id);
-    this.views.hideAll();                 // (the last game's pieces go away: a new one is starting)
+    this.views.hideAll(c.Y.id);                 // (the last game's pieces go away: a new one is starting)
     const by = id => kids.find(k => k.p.id === id);
     for (const it of [...c.seated.keys()]) if (!R.watch.includes(it.p.id)) this.unseat(c, it);
     for (const id of R.watch) this.seat(c, by(id));
@@ -320,7 +320,7 @@ export class Yard {
     });
     const seed = (prev?.seed || Math.floor(Math.random() * 1e9)) + 1;
     const sim = G.create({ seed, players, level: 'normal', target: 3 });
-    const view = this.views.get(G.look);
+    const view = this.views.get(G.look, Y.id);
     view?.attach(S, this.ground(S.x, S.z));
     c.amb = { want: game, game: R.game, G, S, kids, roles: R, sim, view, bodies: sim.players.map(pl => by(pl.id) || null), rounds: prev?.rounds || 0, loser: null, seed, rest: 3, awake: true };
     this.showBoard(c, sim, R.game);
@@ -393,7 +393,6 @@ export class Yard {
     if (!sim.events.length) return;
     const d = this.d, a = d.audio, hear = this.near(c), by = who => kids.find(k => k.p.id === who);
     const talk = this.near(c, BARK_RANGE), id = G.id, tone = (f, o) => hear && a.tone(f, o), noise = o => hear && a.noise(o);
-    const here = () => this.views.get(G.look);
     for (const e of sim.events) {
       const it = e.who ? by(e.who) : null;
       switch (e.type) {
@@ -479,7 +478,6 @@ export class Yard {
         default: break;
       }
     }
-    void here; void S;
     sim.events.length = 0;
   }
 
@@ -576,6 +574,7 @@ export class Yard {
     follow.cutscene({ pos: shot.pos, look: shot.look }, R.fresh ? 0.01 : 0.5);
     follow.yaw = shot.yaw;
     R.yaw = shot.yaw;
+    R.aspect = innerWidth / innerHeight;
     R.fresh = false;
   }
 
@@ -691,7 +690,10 @@ export class Yard {
     for (const it of T.turn || []) if (!players.some(q => q.id === it.p.id)) players.push({ id: it.p.id, team: 0, style: KID_STYLE[it.p.id] });
     const sim = G.create({ seed: this.debug.seed ?? Math.floor(Math.random() * 1e9), players, level, target: G.target(level), wall: !!T.wall });
     sim.touchUi = d.ui.touch;
-    const view = this.views.get(G.look);
+    // nothing is left over from the last round: a pad button held when it ended, a queued sow, the gamepad's half-made flick
+    this.gpHold = false; this.stickDir = 0;
+    this.pad.dir = 0; this.pad.hint = false; this.pad.hold = false; this.pad.aim = null; this.pad.pick = null;
+    const view = this.views.get(G.look, Y.id);
     view?.attach(S, y0);
     const R = this.round = { id, G, sim, S, y0, kids: playing, level, fresh: true, c, yaw: 0 };
     const human = sim.human;
@@ -725,6 +727,7 @@ export class Yard {
     let lastHint = '';
     // ---- the game
     const out = await this.loop(dt => {
+      if (Math.abs(innerWidth / innerHeight - R.aspect) > 0.02) this.frame(R);          // a phone turned on its side: the court is framed again
       const inp = g.input, th = R.yaw;
       // Mika's stick in stage space (the camera may stand behind or beside)
       this.stick(S, th, INP);
@@ -776,7 +779,7 @@ export class Yard {
       return undefined;
     });
     // ---- the end of it
-    this.views.hideAll();
+    this.views.hideAll(Y.id);
     this.ring.visible = this.ringOut.visible = false;
     this.el.hud.classList.add('hidden');
     this.el.stop.classList.add('hidden');
@@ -813,7 +816,7 @@ export class Yard {
 
   /** Keyboard play of the oan quan board: left / right moves along her squares, E sows counter-clockwise (right), Space the other way, W asks for a hint. */
   boardKeys(sim, inp, out) {
-    if (sim.state !== 'think' || !sim.cur.human) return;
+    if (sim.state !== 'think' || !sim.cur.human) { this.pad.pick = null; this.pad.dir = 0; this.pad.hint = false; return; }     // (a tap in the kid's turn must not wait and sow later)
     const mine = [1, 2, 3, 4, 5].filter(i => sim.board.dan[i] > 0);
     if (!mine.length) return;
     // (a gamepad's stick counts as left / right when it is pushed past a threshold, once per push)
@@ -839,7 +842,7 @@ export class Yard {
   /** Give the camera, the kids and the screen back. */
   endRound(c, keep) {
     const g = this.g, town = this.d.town;
-    this.views.hideAll();
+    this.views.hideAll(c.Y.id);
     this.ring.visible = this.ringOut.visible = false;
     if (this.el) {
       for (const k of ['hud', 'stop', 'cam', 'hint', 'pad', 'card']) this.el[k].classList.add('hidden');

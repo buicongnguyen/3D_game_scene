@@ -253,7 +253,7 @@ function audit(name, { json, gltf, bytes }) {
     const harmless = / same colour$/.test(k);
     const decal = DECALS_OK.find(([m, re]) => m === name && re.test(k));
     // back to back single-sided faces cannot fight: each is culled where the other is seen
-    const backToBack = /back-to-back/.test(k) && !/double/.test(k) && [...fights.keys()].length >= 0 && !(doubleMats.has(k.split(' / ')[0]) || doubleMats.has(k.split(' / ')[1].split(',')[0]));
+    const backToBack = /back-to-back/.test(k) && !(doubleMats.has(k.split(' / ')[0]) || doubleMats.has(k.split(' / ')[1].split(',')[0]));
     (harmless || decal || backToBack ? I : f.min < diag * 5e-4 ? E : f.min < diag * 2e-3 ? W : I)(msg + (harmless ? ' (no visible fight: identical shading)' : decal ? ` (accepted: ${decal[2]})` : backToBack ? ' (single-sided: each is culled where the other is seen)' : f.min < diag * 5e-4 ? ': z-fighting' : ''));
   }
 

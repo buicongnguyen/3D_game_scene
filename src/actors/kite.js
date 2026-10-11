@@ -73,6 +73,7 @@ export class StarKite {
     this.camIdle = 0;
     this.noFly = null;                     // optional (x, z) => true where the kite must not go
     this.assist = null;                    // the workshop's motors (game/workshop): { numbers(), use(dt, boost, climb, hover) }, or null
+    this.guide = null;                     // a guided lift (game/skygaze.js "Fly up"): { alt, heading, onToggle() }, or null
     this.offset = new THREE.Vector3(0, -KITE.hang, 0);
     this.expect = new THREE.Vector3();
     this.palm = new THREE.Vector3(0, KITE.hang, KITE.fwd);
@@ -180,9 +181,14 @@ export class StarKite {
     return true;
   }
 
-  /** Whistle for the kite: it swoops in from the sky and grabs Mika. Returns false if it can't come now. */
-  launch() {
-    if (!this.canLaunch()) return false;
+  /**
+   * Whistle for the kite: it swoops in from the sky and grabs Mika. Returns false if it can't come now.
+   * guide: a guided lift (game/skygaze.js): the kite takes Mika straight up and down over this spot with no steering,
+   * while the sky viewer holds her still (so the free-flight checks of canLaunch do not apply, only that nothing else has her).
+   */
+  launch(guide = null) {
+    if (guide ? (this.active || this.game.player.mounted) : !this.canLaunch()) return false;
+    this.guide = guide;
     const g = this.game, p = g.player, yaw = g.follow?.yaw ?? p.facing;
     const fwd = V1.set(Math.sin(yaw), 0, Math.cos(yaw)), right = V2.set(-Math.cos(yaw), 0, Math.sin(yaw));
     // appear up and to the right, ahead of the camera, so the swoop crosses the screen
@@ -216,6 +222,7 @@ export class StarKite {
 
   /** One button: launch if possible, otherwise land (or keep flying if a landing is under way). */
   toggle() {
+    if (this.guide) return this.guide.onToggle?.() ?? false;   // the sky viewer's kite key: "Come down"
     if (this.state === 'land' && !this.quick && !this.game.player.locked) { this.state = 'fly'; return true; }
     if (this.active) return this.land();
     return this.launch();
@@ -251,7 +258,7 @@ export class StarKite {
 
   arrive(dt) {
     const g = this.game, p = g.player;
-    if (p.mounted || p.locked || p.climb || p.pos.y > KITE.maxY - 20) { this.send(); return; }
+    if (p.mounted || (p.locked && !this.guide) || p.climb || p.pos.y > KITE.maxY - 20) { this.send(); return; }
     const u = Math.min(1, this.stateT / 1.55);
     const e = 1 - Math.pow(1 - u, 2.2);
     const G = this.grabPoint(V1);
@@ -301,12 +308,38 @@ export class StarKite {
     this.vel.set(0, (y - this.pos.y) / Math.max(dt, 1e-4), 0);
     this.pos.y = y;
     this.thrust = 0.9;
-    if (this.game.player.locked) { this.land(true); return; }
+    if (this.game.player.locked && !this.guide) { this.land(true); return; }
     if (u >= 1) { this.state = 'fly'; this.stateT = 0; }
+  }
+
+  /** The guided lift: the handle goes where the sky viewer says (guide.alt metres above the spot), straight up and down. */
+  guided(dt) {
+    const G = this.guide;
+    G.x ??= this.pos.x; G.z ??= this.pos.z;
+    const prev = V1.copy(this.pos);
+    this.pos.set(G.x, this.liftFrom + G.alt, G.z);          // liftFrom = the handle's height when she stood; alt = metres gained (3 after the kite's own lift)
+    const k = damp(8, dt);
+    this.vel.x *= 1 - k; this.vel.z = 0; this.vel.y += ((this.pos.y - prev.y) / Math.max(dt, 1e-4) - this.vel.y) * k;
+    this.turn(G.heading ?? this.heading, dt, 2);
+    // the hum: a breath of wind, louder with the climb (stronger with the workshop's motors)
+    this.thrust = clamp(0.34 + 0.5 * Math.abs(this.vel.y) / 40 + (this.assist ? 0.12 : 0), 0.2, 1);
+    this.boostK += (0 - this.boostK) * damp(2, dt);
+  }
+
+  /** Set Mika down on the spot she lifted from (the guided lift is over, or the viewer must close at once). */
+  guidedLand() {
+    if (!this.guide || !this.carrying) return;
+    const G = this.guide;
+    this.pos.set(G.x ?? this.pos.x, this.liftFrom, G.z ?? this.pos.z);
+    this.vel.set(0, 0, 0);
+    this.spot = { x: this.pos.x, z: this.pos.z, y: this.liftFrom - KITE.hang, water: false };
+    this.placeAnchor();
+    this.release(true);
   }
 
   fly(dt) {
     const g = this.game, inp = g.input, p = g.player;
+    if (this.guide) { this.guided(dt); return; }
     if (p.locked) { this.land(true); this.landing(dt); return; }
     const yawC = g.follow.yaw;
     const mx = inp.move.x, my = inp.move.y;
@@ -391,6 +424,7 @@ export class StarKite {
   /** Let go of Mika. landed: she is set down at the kite's position (feet on the spot, or dropped into the river). */
   release(landed, teleported = false) {
     const g = this.game, p = g.player;
+    this.guide = null;
     const s = this.saved;
     if (s) {
       p.pivot.position.y = s.pivotY;
@@ -418,6 +452,7 @@ export class StarKite {
 
   hide() {
     this.state = 'idle';
+    this.guide = null;
     this.root.visible = false;
     this.lightI = 0;
     this.vel.set(0, 0, 0);

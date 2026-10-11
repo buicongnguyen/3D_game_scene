@@ -3,8 +3,8 @@
   "s": "Mika",
   "ctx": [
    "character name (mika)",
-   "UI (src/game/yard/round.js)",
-   "UI (src/ui/map.js)"
+   "UI (src/game/tricks/cowrace.js)",
+   "UI (src/game/yard/round.js)"
   ]
  },
  {
@@ -3652,13 +3652,13 @@
   ]
  },
  {
-  "s": "Fed on hay, now a friend. Carries Mika anywhere there is grass, trots when asked, and stops for a snack whenever she likes.",
+  "s": "Fed on hay, now a friend. Steer her, hold to trot and gallop, and let her rest and graze when she is tired.",
   "ctx": [
    "animal friend: description"
   ]
  },
  {
-  "s": "Take hay from the haystack by a pasture, feed a cow, then hop on and take a ride.",
+  "s": "Take hay from the haystack by a pasture, feed a cow, then stand beside her and press {act} to ride.",
   "ctx": [
    "animal friend: where to find it"
   ]
@@ -14561,6 +14561,71 @@
   ]
  },
  {
+  "s": "Gallop",
+  "ctx": [
+   "UI (src/actors/cow-help.js)",
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "MOO!",
+  "ctx": [
+   "UI (src/actors/cow-help.js)"
+  ]
+ },
+ {
+  "s": "Giddy-up!",
+  "ctx": [
+   "UI (src/actors/cow-help.js)",
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Got it",
+  "ctx": [
+   "UI (src/actors/cow-help.js)"
+  ]
+ },
+ {
+  "s": "Next",
+  "ctx": [
+   "UI (src/actors/cow-help.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Skip",
+  "ctx": [
+   "UI (src/actors/cow-help.js)",
+   "UI (src/game/tricks/archery-guide.js)",
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "How to win the cow race",
+  "ctx": [
+   "UI (src/actors/cow-help.js)"
+  ]
+ },
+ {
+  "s": "Let's race!",
+  "ctx": [
+   "UI (src/actors/cow-help.js)"
+  ]
+ },
+ {
+  "s": "Back to the race",
+  "ctx": [
+   "UI (src/actors/cow-help.js)"
+  ]
+ },
+ {
+  "s": "Tap when the ring closes. Not too fast: tired cows are slow.",
+  "ctx": [
+   "UI (src/actors/cow-help.js)"
+  ]
+ },
+ {
   "s": "Ride on, city girl!",
   "ctx": [
    "UI (src/actors/cow-ride.js)"
@@ -14657,7 +14722,26 @@
   ]
  },
  {
-  "s": "Gallop",
+  "s": "How to ride",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Steer",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Energy",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Low! Let her rest",
   "ctx": [
    "UI (src/actors/cow-ride.js)"
   ]
@@ -15589,7 +15673,7 @@
   ]
  },
  {
-  "s": "Ride a friendly cow around the meadow.",
+  "s": "Race four cows down the track: steer, and tap on the beat.",
   "ctx": [
    "UI (src/content/minigames.js)"
   ]
@@ -15703,7 +15787,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/game/skygaze.js)"
   ]
  },
  {
@@ -15711,7 +15795,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/game/skygaze.js)"
   ]
  },
  {
@@ -15719,7 +15803,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/game/skygaze.js)"
   ]
  },
  {
@@ -15727,7 +15811,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/game/skygaze.js)"
   ]
  },
  {
@@ -16889,6 +16973,7 @@
   "s": "Aim",
   "ctx": [
    "UI (src/game/director.js)",
+   "UI (src/game/tricks/archery-guide.js)",
    "menu / screen text"
   ]
  },
@@ -17265,6 +17350,60 @@
   ]
  },
  {
+  "s": "The evening wind has the kite. Up we go, nice and gently.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Motors on, kite! Up we go, nice and gently.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "No mountains in the way up here. Just stars, and the valley asleep below.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "The valley is tucking itself in down there. The first stars are out.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "The whole valley from up here. The stars come out after dark.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Easy now. Back down to the grass.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Turn the night with the arrows. The stars swing round the North Star.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Get the Star Kite first",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Not enough room above to fly up here.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
   "s": "Look down",
   "ctx": [
    "UI (src/game/skygaze.js)"
@@ -17272,6 +17411,30 @@
  },
  {
   "s": "Auto tour",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Earlier",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Later",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Now",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Sky time",
   "ctx": [
    "UI (src/game/skygaze.js)"
   ]
@@ -17320,6 +17483,19 @@
   ]
  },
  {
+  "s": "Fly up",
+  "ctx": [
+   "UI (src/game/skygaze.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Come down",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
   "s": "A shooting star! Press {act} to wish on it.",
   "ctx": [
    "UI (src/game/skygaze.js)"
@@ -17329,6 +17505,14 @@
   "s": "A big one! That wish counts double. Probably.",
   "ctx": [
    "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Close",
+  "ctx": [
+   "UI (src/game/tour.js)",
+   "UI (src/ui/minigames-ui.js)",
+   "UI (src/ui/ui.js)"
   ]
  },
  {
@@ -17440,6 +17624,123 @@
   ]
  },
  {
+  "s": "Hold",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Let go",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Move the mouse. Put the circle on the target.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Hold {act} or the mouse button. The string comes back.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Let go to shoot!",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Drag a finger on the screen. Put the circle on the target.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Press and hold the orange Draw button.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Lift your finger to shoot!",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Move the stick. Put the circle on the target.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Hold the right trigger (RT). The string comes back.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "A green circle means: right on the target.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "The ring fills up: a long draw flies fast and straight.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Does the wind sock bend? Aim a little upwind.",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Draw",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)",
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "How to shoot",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)",
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Got it!",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)",
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Hold, then let go!",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Hold Draw",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
+  "s": "Let go!",
+  "ctx": [
+   "UI (src/game/tricks/archery-guide.js)"
+  ]
+ },
+ {
   "s": "Nice shot!",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
@@ -17452,6 +17753,90 @@
   ]
  },
  {
+  "s": "Too high. Aim a little lower.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Too low. Aim a little higher.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "A bit to the left. Aim a little to the right.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "A bit to the right. Aim a little to the left.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "See the wind sock? It points where the wind blows. Aim a little the other way.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "That one fell short. A longer draw makes a faster, flatter arrow.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "That was another target!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Move the mouse to put the circle on the target.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Drag a finger on the screen to put the circle on the target.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Push the stick to put the circle on the target.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Now hold {act} (or the mouse button) to pull the string back.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Now press and hold the orange Draw button.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Now hold the right trigger (RT) to pull the string back.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Now let go to shoot!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
   "s": "The range is not ready yet.",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
@@ -17459,12 +17844,6 @@
  },
  {
   "s": "Wind",
-  "ctx": [
-   "UI (src/game/tricks/archery.js)"
-  ]
- },
- {
-  "s": "Draw",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
   ]
@@ -17500,6 +17879,12 @@
   ]
  },
  {
+  "s": "Watch it fly!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
   "s": "Miss",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
@@ -17510,13 +17895,7 @@
   "ctx": [
    "UI (src/game/tricks/archery.js)",
    "UI (src/game/tricks/kite.js)",
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "That was another target!",
-  "ctx": [
-   "UI (src/game/tricks/archery.js)"
+   "UI (src/game/tricks/rules-cowhelp.js)"
   ]
  },
  {
@@ -17526,19 +17905,13 @@
   ]
  },
  {
+  "s": "Great! It flew to the target",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
   "s": "Not on the target yet. Arrows drop as they fly: aim a little higher.",
-  "ctx": [
-   "UI (src/game/tricks/archery.js)"
-  ]
- },
- {
-  "s": "That one fell short. A longer draw makes a faster, flatter arrow.",
-  "ctx": [
-   "UI (src/game/tricks/archery.js)"
-  ]
- },
- {
-  "s": "See the wind sock? It points where the wind blows. Aim a little the other way.",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
   ]
@@ -17587,6 +17960,18 @@
  },
  {
   "s": "That is the end of the round. Put the bow down and have a drink of water.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Rings",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "The middle of the target is 10 (a bullseye). Each ring further out is worth 1 less. A miss is 0.",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
   ]
@@ -17850,19 +18235,40 @@
   ]
  },
  {
-  "s": "Giddy-up!",
+  "s": "Streak",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)",
+   "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
+  "s": "Tired",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
   ]
  },
  {
-  "s": "Tap Giddy-up when the ring closes: on the beat of her hooves!",
+  "s": "Boost",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)",
+   "UI (src/game/workshop/text.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "How to play",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
   ]
  },
  {
-  "s": "Press E or Space when the ring closes: on the beat of her hooves!",
+  "s": "Tap when the ring closes",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Tap now!",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
   ]
@@ -17902,31 +18308,6 @@
   "s": "Yeah, Mika! Yeah!",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
-  ]
- },
- {
-  "s": "Good!",
-  "ctx": [
-   "UI (src/game/tricks/cowrace.js)"
-  ]
- },
- {
-  "s": "Nice",
-  "ctx": [
-   "UI (src/game/tricks/cowrace.js)"
-  ]
- },
- {
-  "s": "Puff!",
-  "ctx": [
-   "UI (src/game/tricks/cowrace.js)"
-  ]
- },
- {
-  "s": "Off the beat",
-  "ctx": [
-   "UI (src/game/tricks/cowrace.js)",
-   "UI (src/game/yard/round.js)"
   ]
  },
  {
@@ -17993,14 +18374,6 @@
   "s": "Cricket",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
-  ]
- },
- {
-  "s": "Skip",
-  "ctx": [
-   "UI (src/game/tricks/cricket.js)",
-   "UI (src/game/video.js)",
-   "menu / screen text"
   ]
  },
  {
@@ -18862,6 +19235,217 @@
   ]
  },
  {
+  "s": "1. Steer",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Drag on the left side of the screen to steer your cow.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Press W A S D (or the arrow keys) to steer your cow.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "2. Hold to gallop",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Hold the Gallop button: she trots, then runs.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Hold E or Shift: she trots, then runs.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "The Energy bar goes down. Low? Let her rest and graze.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "3. Moo and hop off",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Tap Moo! to moo. Tap Hop off to get down.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Press M to moo. Press Space to hop off.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Great riding!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Tap Hop off whenever you want to get down.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Press Space whenever you want to hop off.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Drag on the left side of the screen to steer between the lanes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Press A and D (or the arrow keys) to steer between the lanes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "2. Tap on the beat",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Tap Giddy-up! when the ring closes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Press E or Space when the ring closes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "3. Do not mash",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Tapping too fast tires the cow. Eat the grass bundles for a boost, and finish first!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Good!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Too early!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)",
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Nice",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Too late!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Puff!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Perfect! That is the beat of her hooves.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Good! One tap for every ring.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "A bit early. Wait until the ring closes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "A bit late. Tap a little sooner.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Too fast! Cows get tired. Wait for the next ring.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Stars: 1st place = 3 stars. A slower place or time earns fewer.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Press {act} to ride",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Walk up to her, then press {act} to ride",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Press {act} to feed her",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Walk up to her, then press {act} to feed her",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
   "s": "Alkaid, the tip of the handle",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
@@ -19065,13 +19649,6 @@
   "s": "Switch on",
   "ctx": [
    "UI (src/game/workshop/text.js)"
-  ]
- },
- {
-  "s": "Boost",
-  "ctx": [
-   "UI (src/game/workshop/text.js)",
-   "UI (src/ui/ui.js)"
   ]
  },
  {
@@ -19600,12 +20177,6 @@
   ]
  },
  {
-  "s": "Streak",
-  "ctx": [
-   "UI (src/game/yard/rope.js)"
-  ]
- },
- {
   "s": "Press {act} just before the rope reaches the ground",
   "ctx": [
    "UI (src/game/yard/rope.js)"
@@ -19666,12 +20237,6 @@
   ]
  },
  {
-  "s": "Too early!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
   "s": "{n}!",
   "ctx": [
    "UI (src/game/yard/round.js)"
@@ -19697,6 +20262,12 @@
  },
  {
   "s": "Good heave",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Off the beat",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -20159,12 +20730,6 @@
   ]
  },
  {
-  "s": "Got it!",
-  "ctx": [
-   "UI (src/game/yard/say.js)"
-  ]
- },
- {
   "s": "Keep it up!",
   "ctx": [
    "UI (src/game/yard/say.js)"
@@ -20563,13 +21128,6 @@
   ]
  },
  {
-  "s": "Close",
-  "ctx": [
-   "UI (src/ui/minigames-ui.js)",
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
   "s": "Arrows to move · Enter to play · Esc to close",
   "ctx": [
    "UI (src/ui/minigames-ui.js)"
@@ -20775,12 +21333,6 @@
  },
  {
   "s": "Lamps {n}/4 · Stars {s}/12 · {time}",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
-  "s": "Next",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -21055,6 +21607,24 @@
   ]
  },
  {
+  "s": "Looking up at the sky",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Fly up on the Star Kite, above the mountains, for a clear sky",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Turn the sky clock half an hour at a time",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Walk up to a trick sign to play; the grown-up who teaches you gives the first tips",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -21092,12 +21662,6 @@
  },
  {
   "s": "Next / back in conversations",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
-  "s": "Steer",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]

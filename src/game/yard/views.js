@@ -292,14 +292,17 @@ export class MarblesView extends View {
 /** All the views, made on first use and kept. */
 export class Views {
   constructor(scene, quality) { this.scene = scene; this.q = quality; this.by = {}; }
-  get(look) {
-    if (this.by[look]) return this.by[look];
+  /** `owner`: a yard's id. Each yard gets its own pieces, so two yards playing the same game at once (rope jumping) never share a mesh. */
+  get(look, owner = '') {
+    const key = owner ? `${owner}:${look}` : look;
+    if (this.by[key]) return this.by[key];
     const s = this.scene, q = this.q;
     const make = { shuttle: () => new FlierView(s, q, 'shuttle'), ball: () => new FlierView(s, q, 'ball'), rope: () => new RopeView(s, q), tug: () => new TugView(s, q),
       board: () => new BoardView(s, q), sack: () => new SackView(s, q), marbles: () => new MarblesView(s, q) }[look];
-    return (this.by[look] = make ? make() : null);
+    return (this.by[key] = make ? make() : null);
   }
-  hideAll() { for (const v of Object.values(this.by)) v.hide(); }
-  setNight(n) { this.by.shuttle?.setNight?.(n); this.by.ball?.setNight?.(n); }
+  /** Hide the pieces of one yard (or of every yard). */
+  hideAll(owner = '') { for (const [k, v] of Object.entries(this.by)) if (v && (!owner || k.startsWith(`${owner}:`))) v.hide(); }
+  setNight(n) { for (const v of Object.values(this.by)) v?.setNight?.(n); }
 }
 void toCourt; void HANDS; void MARBLE_RING;
