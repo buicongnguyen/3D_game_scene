@@ -210,7 +210,7 @@ export class Tricks {
       // whatever happened above (a failed card included), the round never keeps the screen
       this.loops.clear();
       this.dropMoveHooks();
-      d.ground?.release('trick');
+      d.ground?.release('trick', true);
       this.el?.card.classList.add('hidden');
       this.round = null;
       this.locks = false;
@@ -292,7 +292,7 @@ export class Tricks {
     for (const l of this.loops) l.res({ quit: true });
     this.loops.clear();
     this.dropMoveHooks();
-    this.d.ground?.release('trick');
+    this.d.ground?.release('trick', true);
     this.setNight(false);
     this.hideHint();
     this.el.hint.classList.remove('top');

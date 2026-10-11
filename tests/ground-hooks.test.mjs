@@ -55,6 +55,16 @@ test('a scene interrupts only this system\'s pose and removes its temporary pick
   assert.equal(system.items.length, 0);
 });
 
+test('leaving a ground trick immediately releases its reach action, camera and carry props', () => {
+  const p = actor(), system = new GroundPoseSystem(p);
+  system.want('trick', { kneel: true }); system.reach(); system.update(0.016);
+  assert.equal(p.anim.currentName, 'CrouchReach'); assert.equal(p.anim.busy, true);
+  system.release('trick', true);
+  assert.equal(p.pose, null); assert.equal(p.anim.busy, false); assert.equal(system.reachLeft, 0);
+  assert.equal(p.groundCameraLower, 0);
+  system.update(0.016); assert.equal(p.pose, null);
+});
+
 test('old models keep their existing gestures and held poses', () => {
   const p = actor(() => false), system = new GroundPoseSystem(p);
   p.pose = 'Sit';

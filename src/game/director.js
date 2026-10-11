@@ -631,6 +631,9 @@ export class Director {
 
   // ------------------------------------------------------------------ game start / load
   async begin(saved) {
+    this.ground.reset();
+    // Hay and unfinished pickup pictures are session props, never part of a loaded story save.
+    this.cows.hay = 0; this.cows.hayBundle?.removeFromParent(); this.game.player.carry?.release('cow-hay');
     if (this.ui.pendingLaunch) this.ui.fade(true, 0);    // the Mini games menu from the title: no flash of the valley before the game's own place
     this.quest = new Quest(saved?.quest, { story: this.newStory });
     this.ui.applyStory?.();              // the diary tab and credits line of this save's story

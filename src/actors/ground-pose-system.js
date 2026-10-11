@@ -15,7 +15,18 @@ export class GroundPoseSystem {
   }
 
   want(key, input) { this.requests.set(key, input); }
-  release(key) { this.requests.delete(key); }
+  release(key, cancelAction = false) {
+    this.requests.delete(key);
+    if (cancelAction) {
+      this.rule.clear();
+      this.reachLeft = 0;
+      this.clearItems();
+      this.apply({ active: false, clip: null, cameraLower: 0 });
+      this.p.groundCameraLower = 0;
+    }
+  }
+
+  reset() { this.requests.clear(); this.release(null, true); }
 
   /** Returns false for old models, letting callers keep their existing gesture. Inventory changes stay instant. */
   pickup({ object = null, target = null, onGrab = null, onDone = null } = {}) {
