@@ -632,6 +632,12 @@ export const DIALOGUE = {
     ['mika', "Grandma would say we've been properly introduced."],
   ],
   // Grandma's countryside tricks (content/tricks.js): Rin teaches them in Classic, once, the first time Mika talks to her in season
+  trick_swimming_intro: [
+    ['rin', "Let's practise at the calm pool, city girl. A grown-up is watching, and we find the exit before we get in.", 'Talk'],
+    ['mika', "Bubbles, floating, then back to the exit. Slowly. I can practise that."],
+    ['rin', "This is a game lesson. In real water, learn with a qualified swimming teacher and a grown-up watching."],
+    ['rin', "No breath-holding contest. Gentle bubbles, normal breaths, and time to try again."],
+  ],
   trick_firefly_intro: [
     ['rin', "Summer night, city girl. Know what lives by the paddies after dark? Fireflies. Hundreds of them.", 'Talk'],
     ['mika', "Hundreds of bugs. In the dark. You're really selling it."],

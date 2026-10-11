@@ -10,6 +10,16 @@ import { ARCHERY } from './archery.js';
 
 export const TRICKS = [
   {
+    id: 'swimming', name: 'Learn to swim', icon: 'trick-river',
+    place: { x: -16, z: 57, face: Math.PI }, where: 'the supervised practice pool south of Kawabe',
+    seasons: ['spring', 'summer', 'autumn'], hours: [9, 18], night: false, when: 'Spring to autumn, in daylight',
+    teacher: { grandma: 'rin', classic: 'rin' }, intro: 'trick_swimming_intro',
+    howReal: 'Learn in a supervised pool with a qualified swimming teacher. Practise gentle bubbles, floating, turning and returning to a safe exit at your own pace.',
+    why: 'Calm breathing, balance and finding the exit are swimming foundations. Game practice does not prove that you can swim safely in real water.',
+    safety: 'In real water, learn with a qualified swimming teacher and a grown-up watching.',
+    stars: [60, 80, 95], length: 240, firstLength: 240, unit: 'points',
+  },
+  {
     id: 'firefly', name: 'Firefly jar', icon: 'trick-firefly',
     place: { x: -66, z: 10, face: -Math.PI / 2 }, where: 'the paddy edge, west of Kawabe',
     seasons: ['summer'], hours: [19.5, 4], night: true, when: 'Summer, dusk to night',

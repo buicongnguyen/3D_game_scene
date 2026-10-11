@@ -32,6 +32,7 @@ export const CATEGORY = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
  *   isNew  shown with a "New" badge until it is played once
  */
 export const META = {
+  'trick:swimming': { cat: 'country', desc: N_('Practise bubbles, floating and a gentle swim back to the exit.'), season: 'summer', hour: 11, isNew: true },
   'trick:firefly': { cat: 'country', desc: N_('Scoop glowing fireflies into a jar.'), season: 'summer', hour: 21 },
   'trick:river': { cat: 'country', desc: N_('Wade the shallows with a torch and spot the sleepy fish.'), season: 'summer', hour: 22 },
   'trick:stars': { cat: 'sky', desc: N_('Join the dots of the Big Dipper and find the North Star.'), season: 'autumn', hour: 22 },

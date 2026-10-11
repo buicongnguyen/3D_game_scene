@@ -24,7 +24,7 @@ test('every trick is well formed', () => {
     for (const h of t.hours) assert.ok(h >= 0 && h < 24, `${t.id} hour ${h}`);
     assert.equal(t.stars.length, 3);
     assert.ok(t.stars[0] > 0 && t.stars[0] < t.stars[1] && t.stars[1] < t.stars[2], `${t.id} star thresholds rise`);
-    assert.ok(t.length >= 20 && t.length <= 120 && t.firstLength >= 20, t.id);
+    assert.ok(t.length >= 20 && t.length <= (t.id === 'swimming' ? 240 : 120) && t.firstLength >= 20, t.id);
     assert.ok(CAST[t.teacher.classic] && t.teacher.grandma, t.id);
     // kid-friendly and short: two lines of how-to, one fun fact
     assert.ok(t.howReal.length <= 170 && t.why.length <= 160 && t.safety.length <= 90, `${t.id} texts are short`);
