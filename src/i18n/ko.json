@@ -510,7 +510,7 @@
  "Gamepad supported": "게임패드 지원",
  "Trackside lanterns lit {n} / {total}": "밝힌 선로 등불 {n} / {total}",
  "Light the way home": "집으로 가는 길을 밝혀요",
- "Hoshi Valley": "호시 계곡",
+ "Hoshi Valley": "호시 계곡 (별의 골짜기)",
  "Light the four Star Lamps. Bring the Star Train home.": "네 별등을 밝히고, 별빛 열차를 집으로 데려오세요.",
  "Continue": "이어하기",
  "New Game": "새 게임",
@@ -3546,5 +3546,6 @@
  "New star group: {name}": "새 별자리: {name}",
  "Tonight, look for {a}, {b} and {c}.": "오늘 밤은 {a}, {b}, {c}를 찾아봐요.",
  "Look for it on {when} evenings.": "{when} 저녁에 찾아봐요.",
- "Look up at the sky at night, pick a star group and read about it to learn it.": "밤하늘을 올려다보고, 별자리를 골라 읽어서 이름을 익혀요."
+ "Look up at the sky at night, pick a star group and read about it to learn it.": "밤하늘을 올려다보고, 별자리를 골라 읽어서 이름을 익혀요.",
+ "Hoshi Valley is a Japanese-style village. Many of its games, sky stories and tales come from Vietnam.": "호시 계곡은 일본풍 마을이에요. 게임과 별 이야기, 옛이야기 중 많은 것이 베트남에서 왔어요."
 }

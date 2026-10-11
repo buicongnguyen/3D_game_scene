@@ -20732,6 +20732,12 @@
   ]
  },
  {
+  "s": "Hoshi Valley is a Japanese-style village. Many of its games, sky stories and tales come from Vietnam.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Which story?",
   "ctx": [
    "UI (src/ui/ui.js)"

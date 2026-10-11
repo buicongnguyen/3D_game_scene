@@ -382,7 +382,7 @@
   "Gamepad supported": "Hỗ trợ tay cầm",
   "Trackside lanterns lit {n} / {total}": "Đèn ven đường ray đã thắp {n} / {total}",
   "Light the way home": "Thắp sáng đường về",
-  "Hoshi Valley": "Thung lũng Hoshi",
+  "Hoshi Valley": "Thung lũng Hoshi (Ngôi Sao)",
   "Light the four Star Lamps. Bring the Star Train home.": "Thắp bốn ngọn Đèn Sao. Đưa Tàu Sao về nhà.",
   "Continue": "Tiếp tục",
   "New Game": "Chơi mới",
@@ -3546,5 +3546,6 @@
   "When": "Khi nào",
   "{n} of 3 stars": "{n}/3 sao",
   "New": "Mới",
-  "Try me": "Thử đi"
+  "Try me": "Thử đi",
+  "Hoshi Valley is a Japanese-style village. Many of its games, sky stories and tales come from Vietnam.": "Thung lũng Hoshi là một ngôi làng kiểu Nhật. Nhiều trò chơi, chuyện về bầu trời và câu chuyện trong game đến từ Việt Nam."
 }

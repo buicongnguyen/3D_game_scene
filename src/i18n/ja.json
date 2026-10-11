@@ -382,7 +382,7 @@
   "Gamepad supported": "ゲームパッド対応",
   "Trackside lanterns lit {n} / {total}": "ともしたランタン {n} / {total}",
   "Light the way home": "帰り道に、灯りを。",
-  "Hoshi Valley": "星の谷",
+  "Hoshi Valley": "ほしのたに",
   "Light the four Star Lamps. Bring the Star Train home.": "四つの星灯をともし、星の列車を呼び戻そう。",
   "Continue": "つづきから",
   "New Game": "はじめから",
@@ -3546,5 +3546,6 @@
   "New star group: {name}": "新しい星座：{name}",
   "Tonight, look for {a}, {b} and {c}.": "今夜は{a}、{b}、{c}を探してみよう。",
   "Look for it on {when} evenings.": "{when}の夕方に探してみよう。",
-  "Look up at the sky at night, pick a star group and read about it to learn it.": "夜空を見上げて、星座をえらんで読むと、名前をおぼえられます。"
+  "Look up at the sky at night, pick a star group and read about it to learn it.": "夜空を見上げて、星座をえらんで読むと、名前をおぼえられます。",
+  "Hoshi Valley is a Japanese-style village. Many of its games, sky stories and tales come from Vietnam.": "星の谷は日本風の村です。あそびや星の話、昔話の多くは、ベトナムから来ています。"
 }

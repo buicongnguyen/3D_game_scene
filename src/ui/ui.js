@@ -174,6 +174,12 @@ export class UI {
     if (tab) tab.textContent = g ? tx("Grandma's Diary") : tx("Sora's Pages");
     if (line) line.textContent = g ? tx('A story about a railway, two villages, a tiny fallen star and a year with Grandma.')
       : tx('A story about a railway, two villages, a tiny fallen star and the night everybody looked away.');
+    // where the games and sky tales come from (a second line, made here so index.html stays untouched)
+    if (line) {
+      let note = $('creditsNote');
+      if (!note) { note = document.createElement('p'); note.id = 'creditsNote'; line.after(note); }
+      note.textContent = tx('Hoshi Valley is a Japanese-style village. Many of its games, sky stories and tales come from Vietnam.');
+    }
   }
 
   /** Which story a new game plays: "A Year with Grandma" (the default) or "Starline Classic". Resolves with an id or null. */
