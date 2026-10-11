@@ -73,7 +73,7 @@ const SNAP = () => {
     player: [r(p.pos.x), r(p.pos.y), r(p.pos.z), r(p.facing), p.root.visible, Object.hasOwn(p, 'update')],
     season: g.time.season, hour: r(g.time.hour, 4), shownSeason: g.shownSeason, seasonOverride: g.seasonOverride ?? null, timeOverride: g.timeOverride ?? null, weatherOff: !!g.weatherOff, weather: g.fx.weatherKind ?? null,
     viewFocus: g.viewFocus ?? null, beforeUpdateSame: ref('beforeUpdate', g.beforeUpdate ?? null), paused: g.paused, fovBase: g.follow.fovBase,
-    lampStyle: g.structures.lampStyle, lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
+    lampStyle: g.structures.lampStyle || 'flame', lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
     rail: [!!g.railway.repaired, r(g.railway.train.s), g.railway.train.target], decor: g.celebrate?.decor?.level ?? 0, busy: d.busy, tourLock: !!d.tourLock,
     shadowed: ['save', 'canSave', 'canAim', 'event', 'run', 'say', 'collect'].filter(k => Object.hasOwn(d, k)).join() + (Object.hasOwn(g, 'togglePause') ? ',togglePause' : '') + (Object.hasOwn(g.ui, 'openJournal') ? ',openJournal' : ''),
     children: g.scene.children.length,

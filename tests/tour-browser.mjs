@@ -69,7 +69,7 @@ const SNAP = () => {
     seasonOverride: g.seasonOverride ?? null, timeOverride: g.timeOverride ?? null, cycleHour: g.cycleHour ?? null, weatherOff: !!g.weatherOff, weather: g.fx.weatherKind ?? null,
     viewFocus: g.viewFocus ?? null, beforeUpdateSame: same('beforeUpdate', g.beforeUpdate ?? null), paused: g.paused,
     fovBase: g.follow.fovBase, tracking: !!g.follow.tracking,
-    lampStyle: g.structures.lampStyle, lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
+    lampStyle: g.structures.lampStyle || 'flame', lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
     rail: [!!g.railway.repaired, g.railway.repair?.visible, g.railway.scaffold?.visible, (g.railway.beams || []).map(b => b.visible).join(), r(g.railway.train.s), g.railway.train.target],
     decor: g.celebrate?.decor?.level ?? 0, meteors: g.fx.meteorOn, busy: d.busy, tourLock: !!d.tourLock, timetable: JSON.stringify(d.timetable ?? null),
     shadowed: ['save', 'canSave', 'canAim', 'event', 'run', 'say', 'collect'].filter(k => Object.hasOwn(d, k)).join() + (Object.hasOwn(g, 'togglePause') ? ',togglePause' : '') + (Object.hasOwn(g.ui, 'openJournal') ? ',openJournal' : ''),
