@@ -1,6 +1,6 @@
 // Technical audit of exported GLBs (geometry, skin, clips, materials). Re-runnable evidence, not a test gate.
 //
-//   node art/blender/validate_glb.mjs [--dir public/models] [--json out.json] name...
+//   node art/blender/validate_glb.mjs [--dir public/models] [--json out.json] [--clips-only Crouch,...] name...
 //   (no names: the rural-tricks phase 2 set)
 //
 // Per model it prints ERR (a real defect), WARN (look at it) and info lines:
@@ -27,6 +27,7 @@ const argv = process.argv.slice(2);
 const opt = k => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[1] : null; };
 const DIR = path.resolve(ROOT, opt('--dir') || 'public/models');
 const JSON_OUT = opt('--json');
+const CLIPS_ONLY = opt('--clips-only')?.split(','); // Focused animation audit; geometry remains covered by the default invocation.
 const NAMES = argv.length ? argv : ['beetle-rhino', 'beetle-stag', 'moth', 'kite-paper', 'sweet-potato', 'straw-pile', 'spider-web'];
 // Large single-sided sheets that are fine because their back can never be seen (reason shown in the report).
 // Overlaps that are decals by design: [model, regex of the pair key, reason]. The game separates static decals at load
@@ -281,8 +282,14 @@ function audit(name, { json, gltf, bytes }) {
   }
 
   // ---- clips
+  if (CLIPS_ONLY) {
+    out.err.length = out.warn.length = out.info.length = 0;
+    I(`animation-only audit (${CLIPS_ONLY.join(', ')}); run without --clips-only to audit existing geometry/materials too`);
+    for (const requested of CLIPS_ONLY) if (!gltf.animations.some(c => c.name === requested)) E(`missing clip ${requested}`);
+  }
   const nodeNames = new Set(); gltf.scene.traverse(o => nodeNames.add(o.name));
-  for (const clip of gltf.animations) {
+  const auditedClips = gltf.animations.filter(c => !CLIPS_ONLY || CLIPS_ONLY.includes(c.name));
+  for (const clip of auditedClips) {
     let seam = 0, seamTrack = '', scaleTracks = 0, nonUnitScale = 0;
     for (const tr of clip.tracks) {
       const dotAt = tr.name.lastIndexOf('.'), node = tr.name.slice(0, dotAt), prop = tr.name.slice(dotAt + 1);
@@ -302,7 +309,7 @@ function audit(name, { json, gltf, bytes }) {
 
   // ---- gaits (Walk, Trot, Gallop, Run): do planted feet stay planted, and do all feet agree on the ground speed?
   const legKey = nm => { const m = LEG.exec(nm); if (m) return m[1]; const f = /^(?:upperarm|forearm|paw)_([LR])$/.exec(nm); return f ? 'F_' + f[1] : null; };
-  for (const walk of gltf.animations.filter(cl => /^(Walk|Trot|Gallop|Run)$/.test(cl.name))) {
+  for (const walk of auditedClips.filter(cl => /^(Walk|Trot|Gallop|Run|CrouchWalk)$/.test(cl.name))) {
   if (skinnedAll.length) {
     const feet = new Map(), cands = new Map();
     for (const o of skinnedAll) {
@@ -337,7 +344,10 @@ function audit(name, { json, gltf, bytes }) {
       const lines = [], speeds = []; let worstSide = 0, worstUneven = 0, heldLegs = 0;
       for (const [k, pts] of [...paths].sort()) {
         const lowest = Math.min(...pts.map(p => p.y)), lift = Math.max(...pts.map(p => p.y)) - lowest;
-        const down = pts.map(p => p.y < lowest + Math.max(lift * 0.06, diag * 0.002));
+        // A creeping shuffle lifts only a few centimetres: the general gait threshold also
+        // counted the easing portion of its swing as planted. Measure actual sole contact.
+        const contactTolerance = walk.name === 'CrouchWalk' ? 0.00025 : Math.max(lift * 0.06, diag * 0.002);
+        const down = pts.map(p => p.y < lowest + contactTolerance);
         // the stance is the longest run of planted samples (cyclic)
         let best = [0, 0];
         for (let s = 0; s < N; s++) if (down[s] && !down[(s + N - 1) % N]) { let len = 0; while (len < N && down[(s + len) % N]) len++; if (len > best[1]) best = [s, len]; }
@@ -352,11 +362,35 @@ function audit(name, { json, gltf, bytes }) {
         lines.push(`${k}: planted ${(st.length / N * 100).toFixed(0)}% of the loop, travels ${(travel * 1000).toFixed(2)} mm, slides sideways ${(side * 1000).toFixed(2)} mm, uneven by ${(off * 1000).toFixed(2)} mm, lifts ${(lift * 1000).toFixed(2)} mm`);
       }
       const sp = speeds.length ? [Math.min(...speeds), Math.max(...speeds)] : [0, 0];
+      if (walk.name === 'CrouchWalk' && speeds.some(speed => Math.abs(speed - 0.6) > 0.015)) E(`CrouchWalk authored speed must be 0.6 m/s; got ${sp.join('..')}`);
+      if (walk.name === 'CrouchWalk') {
+        const thigh = gltf.scene.getObjectByName('thigh_L'), shin = gltf.scene.getObjectByName('shin_L'), foot = gltf.scene.getObjectByName('foot_L');
+        const legLength = thigh && shin && foot ? shin.position.length() + foot.position.length() : size.y * 0.45;
+        if (Math.max(worstSide, worstUneven) > legLength * 0.01) E(`CrouchWalk foot slide exceeds 1% of leg length (${legLength.toFixed(4)} m)`);
+      }
       const skate = worstSide / size.z > 0.01 || (sp[1] - sp[0]) / (sp[1] || 1) > 0.1 || speeds.length + heldLegs < feet.size;
       (skate ? E : I)(`${walk.name} feet: sideways slide up to ${(worstSide * 1000).toFixed(2)} mm (${(worstSide / size.z * 100).toFixed(1)}% of body length), ground speed implied by the feet ${(sp[0] * 1000).toFixed(1)}..${(sp[1] * 1000).toFixed(1)} mm/s` + (skate ? ': feet skate (they slide sideways or disagree on the speed)' : ' (move the model at this speed x its scale)'));
       lines.forEach(I);
     }
   }
+  }
+  // Ground poses: evaluate the real skinned surface at every authored frame, not just bone heights.
+  const groundClips = new Set(['Crouch', 'CrouchWalk', 'CrouchReach', 'CrouchReachHold', 'Kneel', 'Pickup', 'SitGrass']);
+  for (const cl of auditedClips.filter(c => groundClips.has(c.name))) {
+    const mixer = new THREE.AnimationMixer(gltf.scene), action = mixer.clipAction(cl); action.play();
+    let low = Infinity, frame = 0;
+    for (let f = 0; f <= Math.round(cl.duration * 30); f++) {
+      mixer.setTime(f / 30); gltf.scene.updateMatrixWorld(true);
+      for (const o of skinnedAll) {
+        o.skeleton.update();
+        for (let i = 0; i < o.geometry.attributes.position.count; i++) {
+          o.getVertexPosition(i, v); v.applyMatrix4(o.matrixWorld);
+          if (v.y < low) { low = v.y; frame = f; }
+        }
+      }
+    }
+    (low < -0.0005 ? E : I)(`clip ${cl.name}: lowest skinned surface ${(low * 1000).toFixed(3)} mm at frame ${frame} (ground 0)`);
+    action.stop(); mixer.stopAllAction();
   }
   return out;
 }

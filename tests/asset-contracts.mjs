@@ -7,7 +7,8 @@ const HUMAN_BONES = ['root', 'hips', 'spine', 'chest', 'neck', 'head', 'upperarm
 const VILLAGER_MATS = ['Villager shirt', 'Villager trousers', 'Villager hair'];
 // Town Life adds chores and play: Run, Jump (in-place hop), Bow, Interact, Hammer, Sweep, Carry, Sit, Throw, Kick.
 const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Run', 'Jump', 'Bow', 'Interact', 'Hammer', 'Sweep', 'Carry', 'Sit', 'Throw', 'Kick'];
-const KID_CLIPS = [...VILLAGER_CLIPS, 'RideCow', 'RideCowTrot', 'RideCowLean'];
+export const GROUND_CLIPS = ['Crouch', 'CrouchWalk', 'CrouchReach', 'CrouchReachHold', 'Kneel', 'Pickup', 'SitGrass'];
+const KID_CLIPS = [...VILLAGER_CLIPS, 'RideCow', 'RideCowTrot', 'RideCowLean', ...GROUND_CLIPS];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
   'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
@@ -19,7 +20,7 @@ const HOME_NODES = ['Spawn', 'Exit', 'Light_1', 'Light_2', 'Light_3', 'Spot_npc_
 export const CONTRACTS = {
   // ---------------------------------------------------------------- characters
   mika: { family: 'characters', tris: 16000, nodes: [...HUMAN_BONES, 'scarf_1'],
-    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang', 'Sit', 'SitFloor', 'Pet', 'RideCow', 'RideCowTrot', 'RideCowLean'] },
+    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang', 'Sit', 'SitFloor', 'Pet', 'RideCow', 'RideCowTrot', 'RideCowLean', ...GROUND_CLIPS] },
   genzo: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Sad', 'ArmsCrossed', 'Bow'] },
   rin: { family: 'characters', tris: 12000, nodes: [...HUMAN_BONES, 'hat'], clips: ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cast', 'Reel', 'Pole', 'Cheer'] },
   ota: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Bow', 'Sad'] },
@@ -263,7 +264,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // knees and two new clips). Almost all of it is the clips: every leg is two animated bones.
 // +0.225 MB: riding the cow (RideCow clips on mika +76 KB and villager-kid +66 KB; the cow's Trot and Gallop +50 KB). The raw
 // library is 39.867 MB, so this ceiling has only ~33 KB left: the next model raises it again, with its reason, here.
-export const TOTAL_RAW_BYTES = 39_900_000;
+// +0.31 MB: seven 30fps ground clips on each existing Mika/kid rig (40,183,428 B measured).
+export const TOTAL_RAW_BYTES = 40_210_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -272,7 +274,8 @@ export const TOTAL_RAW_BYTES = 39_900_000;
 // +0.331 MB: the great shrine hall (163 -> 338 KB packed) and the grand Forest Lamp (156 KB packed).
 // +0.046 MB: tricks phase 2 art audit (the beetles' knee bones: 36 -> 57 KB and 41 -> 63 KB packed).
 // +0.279 MB: the bug-catching games (grasshopper 84 KB, mantis 140 KB, bug-cage 11 KB packed; the cricket 44 -> 103 KB).
-export const TOTAL_PACKED_BYTES = 15_380_000;
+// +0.20 MB: packed ground clips; measured 15,552,652 B for the unchanged 184-model library.
+export const TOTAL_PACKED_BYTES = 15_580_000;
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

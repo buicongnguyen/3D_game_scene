@@ -787,4 +787,7 @@ def extras(A, who):
         ex.update(ArmsCrossed=lambda: arms_crossed(A))
     if who == 'hana':
         ex.update(Knead=lambda: knead(A))
+    if who in ('mika', 'villager-kid'):
+        import ground_anims
+        ex.update(ground_anims.extras(A))
     return ex
