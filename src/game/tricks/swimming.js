@@ -285,9 +285,11 @@ export default { id:'swimming', async play(ctx) {
       pool.update(dt,{...snap,position:{...local}},total);hideNearby();
       const portrait=innerHeight>innerWidth;
       const stationary=phase==='lesson'&&['bubbles','float','tread'].includes(snap.stage);
-      const camZ=stationary?local.z+5.8:Math.min(10.5,local.z+9);
-      cameraPos.set(POOL.x+(stationary?3.4:0),pool.waterY+(portrait?stationary?6.4:10.8:stationary?4.4:7.2),POOL.z+camZ);
-      cameraLook.set(POOL.x,pool.waterY+(wet?0.1:0.6),POOL.z+(stationary?local.z:local.z-2.6));
+      const overview=phase!=='lesson' || phase==='lesson'&&snap.stage==='turn';
+      follow.fovBase=portrait?(overview?68:stationary?57:60):52;
+      const camZ=portrait&&overview?14:stationary?local.z+5.8:Math.min(10.5,local.z+9);
+      cameraPos.set(POOL.x+(stationary?3.4:0),pool.waterY+(portrait?overview?17:stationary?6.4:10.8:stationary?4.4:7.2),POOL.z+camZ);
+      cameraLook.set(POOL.x,pool.waterY+(wet?0.1:0.6),POOL.z+(portrait&&overview?2:stationary?local.z:local.z-2.6));
       const inst=instructions(phase==='lesson'?snap.stage:phase,lesson,snap);
       setText(ui.nodes.title,tx('{step} · {name}',{step:phase==='lesson'?`${snap.stageIndex+2}/8`:phase==='check'?'1/8':phase==='entry'?'1/8':'8/8',name:tx(STAGE[phase==='lesson'?snap.stage:phase]||STAGE.out)}));
       setText(ui.nodes.instruction,inst.text);setText(ui.nodes.cue,inst.cue);setText(ui.nodes.act,inst.button);
