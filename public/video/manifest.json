@@ -5,18 +5,22 @@
    "frames": 420,
    "duration": 14,
    "loop": true,
+   "story": "grandma",
+   "lampStyle": "electric",
    "poster": 1,
    "file": "title-wide.mp4",
    "posterFile": "title-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 684532,
-   "posterBytes": 74914
+   "bytes": 686086,
+   "posterBytes": 75029
   },
   "tour-spring-wide": {
    "frames": 2349,
    "duration": 78.3,
    "tour": "spring",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "kawabe",
@@ -64,13 +68,15 @@
    "posterFile": "tour-spring-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 4832536,
-   "posterBytes": 79667
+   "bytes": 4356487,
+   "posterBytes": 80959
   },
   "tour-spring-tall": {
    "frames": 2349,
    "duration": 78.3,
    "tour": "spring",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "kawabe",
@@ -118,13 +124,14 @@
    "posterFile": "tour-spring-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 4903992,
-   "posterBytes": 69992
+   "bytes": 4406596,
+   "posterBytes": 70664
   },
   "intro-grandma-wide": {
    "frames": 789,
    "duration": 26.3,
    "story": "grandma",
+   "lampStyle": "electric",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
@@ -134,13 +141,15 @@
    "posterFile": "intro-grandma-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 1915070,
-   "posterBytes": 73329
+   "bytes": 1735194,
+   "posterBytes": 74451
   },
   "tour-summer-wide": {
    "frames": 2285,
    "duration": 76.16666666666667,
    "tour": "summer",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "takamori",
@@ -188,13 +197,15 @@
    "posterFile": "tour-summer-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 4119667,
-   "posterBytes": 102018
+   "bytes": 3697308,
+   "posterBytes": 103285
   },
   "tour-summer-tall": {
    "frames": 2285,
    "duration": 76.16666666666667,
    "tour": "summer",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "takamori",
@@ -242,13 +253,15 @@
    "posterFile": "tour-summer-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 4216094,
-   "posterBytes": 95599
+   "bytes": 3782756,
+   "posterBytes": 95065
   },
   "tour-autumn-wide": {
    "frames": 2344,
    "duration": 78.13333333333334,
    "tour": "autumn",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "fields",
@@ -296,13 +309,15 @@
    "posterFile": "tour-autumn-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 4761742,
-   "posterBytes": 90467
+   "bytes": 4292724,
+   "posterBytes": 90111
   },
   "tour-autumn-tall": {
    "frames": 2344,
    "duration": 78.13333333333334,
    "tour": "autumn",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "fields",
@@ -350,13 +365,15 @@
    "posterFile": "tour-autumn-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 4883648,
-   "posterBytes": 81094
+   "bytes": 4389029,
+   "posterBytes": 81924
   },
   "tour-winter-wide": {
    "frames": 2076,
    "duration": 69.2,
    "tour": "winter",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "viaduct",
@@ -399,13 +416,15 @@
    "posterFile": "tour-winter-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 4389799,
-   "posterBytes": 62082
+   "bytes": 3961549,
+   "posterBytes": 61996
   },
   "tour-winter-tall": {
    "frames": 2076,
    "duration": 69.2,
    "tour": "winter",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "viaduct",
@@ -448,13 +467,15 @@
    "posterFile": "tour-winter-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 4377631,
-   "posterBytes": 52025
+   "bytes": 3952720,
+   "posterBytes": 51971
   },
   "tour-night-wide": {
    "frames": 2503,
    "duration": 83.43333333333334,
    "tour": "night",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "kawabe",
@@ -502,13 +523,15 @@
    "posterFile": "tour-night-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 4889647,
-   "posterBytes": 47417
+   "bytes": 4387835,
+   "posterBytes": 49180
   },
   "tour-night-tall": {
    "frames": 2503,
    "duration": 83.43333333333334,
    "tour": "night",
+   "story": "grandma",
+   "lampStyle": "electric",
    "stops": [
     {
      "place": "kawabe",
@@ -556,13 +579,14 @@
    "posterFile": "tour-night-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 5012492,
-   "posterBytes": 43340
+   "bytes": 4510619,
+   "posterBytes": 43149
   },
   "intro-grandma-tall": {
    "frames": 789,
    "duration": 26.3,
    "story": "grandma",
+   "lampStyle": "electric",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
@@ -572,13 +596,14 @@
    "posterFile": "intro-grandma-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 1894452,
-   "posterBytes": 62402
+   "bytes": 1716426,
+   "posterBytes": 64223
   },
   "intro-classic-wide": {
    "frames": 789,
    "duration": 26.3,
    "story": "classic",
+   "lampStyle": "flame",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
@@ -588,13 +613,14 @@
    "posterFile": "intro-classic-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 1920615,
-   "posterBytes": 74126
+   "bytes": 1734476,
+   "posterBytes": 74309
   },
   "intro-classic-tall": {
    "frames": 789,
    "duration": 26.3,
    "story": "classic",
+   "lampStyle": "flame",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
@@ -604,20 +630,22 @@
    "posterFile": "intro-classic-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 1895765,
-   "posterBytes": 63129
+   "bytes": 1715130,
+   "posterBytes": 64055
   },
   "title-tall": {
    "frames": 420,
    "duration": 14,
    "loop": true,
+   "story": "grandma",
+   "lampStyle": "electric",
    "poster": 1,
    "file": "title-tall.mp4",
    "posterFile": "title-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 659468,
-   "posterBytes": 66633
+   "bytes": 665602,
+   "posterBytes": 67203
   }
  }
 }
