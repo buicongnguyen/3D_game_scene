@@ -19,6 +19,7 @@ test('partial lamp progress keeps completed captions and protects only unfinishe
   assert.equal(line('night', 'mill', partial), line('night', 'mill', complete));
   assert.equal(line('spring', 'mill', partial), line('spring', 'mill', complete));
   assert.equal(line('night', 'shrine', partial), 'The Forest Shrine stands quiet above the trees.');
+  assert.equal(line('summer', 'takamori', partial), 'Afternoon settles over the hilltop square.');
   assert.equal(line('spring', 'viaduct', partial), 'The viaduct waits above the river.');
 });
 

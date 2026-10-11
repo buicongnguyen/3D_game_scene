@@ -9634,7 +9634,7 @@
   ]
  },
  {
-  "s": "My Isamu built half the boats on this river. He's at the coast yard till winter. Every morning I tell his photograph the news.",
+  "s": "My Isamu built half the boats on this river. He's at the coast yard building boats. Every morning I tell his photograph the news.",
   "ctx": [
    "Granny Tsuru's story, said by Granny Tsuru"
   ]
@@ -9682,7 +9682,7 @@
   ]
  },
  {
-  "s": "Bring me a bunch of wildflowers from the stall in Takamori? Isamu always buys them there for my table, and he's away till winter.",
+  "s": "Bring me a bunch of wildflowers from the stall in Takamori? Isamu always buys them there for my table, and he's away building boats.",
   "ctx": [
    "Granny Tsuru asks Mika for something (also shown in the journal)"
   ]
@@ -16366,6 +16366,48 @@
   ]
  },
  {
+  "s": "The viaduct waits above the river.",
+  "ctx": [
+   "UI (src/content/tour.js)"
+  ]
+ },
+ {
+  "s": "The old mill rests beside the river.",
+  "ctx": [
+   "UI (src/content/tour.js)"
+  ]
+ },
+ {
+  "s": "Afternoon settles over the hilltop square.",
+  "ctx": [
+   "UI (src/content/tour.js)"
+  ]
+ },
+ {
+  "s": "The main street is quiet under the stars.",
+  "ctx": [
+   "UI (src/content/tour.js)"
+  ]
+ },
+ {
+  "s": "The Mill Lamp waits quietly on its island.",
+  "ctx": [
+   "UI (src/content/tour.js)"
+  ]
+ },
+ {
+  "s": "The Forest Shrine stands quiet above the trees.",
+  "ctx": [
+   "UI (src/content/tour.js)"
+  ]
+ },
+ {
+  "s": "The bell tower watches over the sleeping square.",
+  "ctx": [
+   "UI (src/content/tour.js)"
+  ]
+ },
+ {
   "s": "Scene tour",
   "ctx": [
    "UI (src/content/tour.js)",
@@ -16964,6 +17006,12 @@
   ]
  },
  {
+  "s": "Aim, then {what}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Aim and spark: {what}",
   "ctx": [
    "UI (src/game/director.js)"
@@ -16979,6 +17027,12 @@
  },
  {
   "s": "Right mouse",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
+  "s": "Hard mode: hold {aim} to aim, then press {fire} to fit the bulb",
   "ctx": [
    "UI (src/game/director.js)"
   ]
@@ -20448,6 +20502,12 @@
   ]
  },
  {
+  "s": "Did not finish",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
   "s": "You win the race!",
   "ctx": [
    "UI (src/game/yard/sack.js)"
@@ -20461,12 +20521,6 @@
  },
  {
   "s": "{n} s across the green",
-  "ctx": [
-   "UI (src/game/yard/sack.js)"
-  ]
- },
- {
-  "s": "Did not finish",
   "ctx": [
    "UI (src/game/yard/sack.js)"
   ]

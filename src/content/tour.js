@@ -110,8 +110,8 @@ export function captionFor(tour, stop, progress = null) {
   if (!progress) return stop.line;
   if (stop.place === 'viaduct' && !progress.unlocked?.viaduct) return N_('The viaduct waits above the river.');
   if (tour.id === 'spring' && stop.place === 'mill' && !progress.unlocked?.drawbridge) return N_('The old mill rests beside the river.');
+  if (tour.id === 'summer' && stop.place === 'takamori' && !progress.lamps?.orchard) return N_('Afternoon settles over the hilltop square.');
   if (!Object.values(progress.lamps || {}).some(Boolean)) {
-    if (tour.id === 'summer' && stop.place === 'takamori') return N_('Afternoon settles over the hilltop square.');
     if (tour.id === 'night' && stop.place === 'kawabe') return N_('The main street is quiet under the stars.');
   }
   if (tour.id === 'night') {
