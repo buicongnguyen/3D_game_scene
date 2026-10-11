@@ -575,6 +575,74 @@ def sit(A, frames=60):
     return 'Sit', frames, pose, True
 
 
+RIDE_SEAT = 0.075   # RideCow*: the hip joints sit this far (x k) above the rider's root, which stands on the saddle's top
+RIDE_ABD = 78.0     # RideCow*: thighs swing this far out from vertical, astride the barrel (degrees)
+
+
+def ride_cow(A, frames=90, mode='idle'):
+    """Riding a cow astride. The root stands on the TOP of the saddle blanket, on the cow's centre line, facing the cow's
+    way; the clip drops the pelvis so the hip joints sit RIDE_SEAT * k above the root (hips@loc), spreads the thighs
+    RIDE_ABD degrees out and lets the shins hang down the cow's sides, feet loose. The torso stays upright (the cow's
+    spine rocks under it), both hands hold a rope low in front: where the cow's neck meets its body, in front of the
+    belly (about 0.3 k ahead of the chest and 0.25 k below it), the rope running on to the halter.
+      idle   RideCow       loop 3 s   a gentle sway, the feet swing a little
+      trot   RideCowTrot   loop 0.5 s (the cow's Trot loop): the rider bounces twice a loop, feet kicked up by each bounce
+      lean   RideCowLean   loop 0.6 s (the cow's Gallop loop): leaning forward over the neck, knees gripping, hands low"""
+    k = A.k
+    hip0 = (A.hip['L'] + A.hip['R']) / 2
+    drop = RIDE_SEAT * k - hip0.z
+    l_th = (A.knee['L'] - A.hip['L']).length
+    l_sh = (A.ank['L'] - A.knee['L']).length
+    trot, lean = mode == 'trot', mode == 'lean'
+    abd = math.radians(RIDE_ABD + (4 if lean else 0))
+    fwd_th = 0.25 if not lean else 0.12          # the thigh points a little forward (the knees reach for the shoulder)
+
+    def pose(p):
+        s = A.standing({}, p, breathe=0.7, shift=0.0, lk=0.4)
+        sw = sn(p, 1)
+        if trot:
+            bn = cs(p, 2, 0.1)                      # +1 at the top of a bounce
+            lag = sn(p, 2, 0.1)
+        elif lean:
+            bn = cs(p, 1, 0.05)
+            lag = sn(p, 1, 0.05)
+        else:
+            bn = 0.0
+            lag = 0.0
+        s['hips@loc'] = (0.012 * k * sw * (0 if (trot or lean) else 1), (-0.035 * k if lean else 0.0),
+                         drop + (0.016 * k * bn if trot else (0.012 * k * bn if lean else 0.004 * k * sn(p, 2))))
+        pitch = 20.0 if lean else 0.0
+        s['hips'] = (pitch * 0.3 + (3 * lag if (trot or lean) else 0), (-2.2 * sw if mode == 'idle' else 0), 1.5 * sn(p, 1, 0.1))
+        s['spine'] = (pitch * 0.4 - 1.5 * lag * (1 if (trot or lean) else 0) + 1.0 * sn(p, 2), 1.6 * sw if mode == 'idle' else 0, -1.2 * sn(p, 1, 0.1))
+        s['chest'] = (pitch * 0.3 - 1.0 * lag * (1 if trot else 0), 0.8 * sw if mode == 'idle' else 0, 0)
+        s['neck'] = (-pitch * 0.45 + 0.6 * sn(p, 2), 0, 0)
+        s['head'] = (-pitch * 0.55 - 2.0 * lag * (1 if (trot or lean) else 0) + 1.2 * sn(p, 2, 0.15), -1.5 * sw if mode == 'idle' else 0,
+                     5 * sn(p, 1, 0.3) * (1 if mode == 'idle' else 0.4))
+        for S in 'LR':
+            sg = A.sx(S)
+            hip = A.hip[S] + V((0, 0, drop))
+            dth = V((sg * math.sin(abd), -fwd_th, -math.cos(abd))).normalized()
+            knee = hip + dth * l_th
+            back = 0.10 if not lean else 0.32
+            dsh = V((sg * 0.22, back, -0.97)).normalized()
+            ph = 0.0 if S == 'L' else 0.5
+            sway_y = 0.028 * k * sn(p, 1, ph + 0.25) if mode == 'idle' else (0.05 * k * lag * (1 if S == 'L' else -1) * 0.0)
+            kick = (0.03 * k * max(0.0, bn) if trot else (0.02 * k * max(0.0, bn) if lean else 0.0))
+            ank = knee + dsh * l_sh * 0.985 + V((0, sway_y - (0.0 if mode == 'idle' else 0.0), kick))
+            A.plant(s, S, ank - A.ank[S], pitch=(25 if mode == 'idle' else 30) + 6 * sn(p, 1, ph + 0.4), pole=(sg * 1.0, -0.45, 0.1))
+        # both hands on the rope, low and in front
+        hy, hz = (-0.40, 0.62) if lean else (-0.30, 0.80)
+        for S in 'LR':
+            wob = 0.004 * k * sn(p, 2, 0.2 if S == 'L' else 0.45) * (3 if (trot or lean) else 1)
+            A.arm_to(s, S, 1, A.L(0.075, hy, hz + wob * 4, S), pole=(A.sx(S) * 1.0, 0.4, -0.9), end_rel=(-25, 0, A.sx(S) * -20))
+        A.secondary(s, p, drag=(10 if lean else 4), k=(1 if lean else 2), amp=(1.1 if (trot or lean) else 0.35), up=(6 if lean else 0))
+        return s
+    names = {'idle': 'RideCow', 'trot': 'RideCowTrot', 'lean': 'RideCowLean'}
+    n = {'idle': frames, 'trot': 15, 'lean': 18}[mode]
+    return names[mode], n, pose, True
+
+
+
 def throw(A, frames=30):
     """Underarm toss with the right hand (ball in grip_R): back-swing 0-.4, forward swing, release at
     p = 0.55 (frame 16 of 30), follow-through."""
@@ -705,12 +773,14 @@ def extras(A, who):
     ex = {}
     if who.startswith('villager-'):
         ex.update(Interact=lambda: interact(A), Hammer=lambda: hammer(A), Jump=lambda: hop(A), Sweep=lambda: sweep(A),
-                  Carry=lambda: carry(A), Sit=lambda: sit(A), Throw=lambda: throw(A), Kick=lambda: kick(A))
+                  Carry=lambda: carry(A), Sit=lambda: sit(A), Throw=lambda: throw(A), Kick=lambda: kick(A),
+                  RideCow=lambda: ride_cow(A), RideCowTrot=lambda: ride_cow(A, mode='trot'), RideCowLean=lambda: ride_cow(A, mode='lean'))
     if who == 'mika':
         ex.update(Aim=lambda: aim(A), Point=lambda: point(A), Cast=lambda: cast(A), Reel=lambda: reel(A),
                   Interact=lambda: interact(A), Stir=lambda: stir(A), Hammer=lambda: hammer(A),
                   Swim=lambda: swim(A), Tread=lambda: tread(A), Hang=lambda: hang(A),
-                  Sit=lambda: sit(A), SitFloor=lambda: sit_floor(A), Pet=lambda: pet(A))
+                  Sit=lambda: sit(A), SitFloor=lambda: sit_floor(A), Pet=lambda: pet(A),
+                  RideCow=lambda: ride_cow(A), RideCowTrot=lambda: ride_cow(A, mode='trot'), RideCowLean=lambda: ride_cow(A, mode='lean'))
     if who == 'rin':
         ex.update(Cast=lambda: cast(A, energy=1.4), Reel=lambda: reel(A), Pole=lambda: pole(A))
     if who == 'genzo':

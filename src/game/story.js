@@ -552,6 +552,11 @@ export const DIALOGUE = {
   friend_duck: [['tamo', "Quack! …Did I say it right? They're all looking at me. Mika, what did I SAY?"]],
   friend_duck_solo: [['narrator', 'Mika waves. The ducks discuss her at length, very loudly, and then all waggle their tails at once.']],
   friend_cow: [['narrator', 'The cow lifts her head, considers Mika for a long, kind moment, and goes back to her grass. Her bell says thank you.']],
+  friend_cowpal: [
+    ['tamo', "Mika, you are SITTING on a cow. The cow is allowing it. I have so many questions.", 'Happy'],
+    ['narrator', 'The cow flicks an ear, as if this is entirely normal. Her bell rings once for every happy step.'],
+  ],
+  friend_cowpal_solo: [['narrator', 'Mika pats her cow, who leans into it with a long, pleased breath. Tomorrow they will go somewhere much further than the next patch of grass.']],
   friend_pig: [['narrator', 'The pig leans into the scratching with a grunt of pure joy, then flops over, completely finished with the day.']],
   friend_goat: [['narrator', "The goat sniffs Mika's sleeve, finds no snacks, and forgives her at once."]],
   friend_dog: [['narrator', 'Kinako barks twice, sits, and wags so hard that the whole back half of her wags with it.']],
@@ -607,6 +612,17 @@ export const DIALOGUE = {
     ['narrator', 'The butterfly decides Tamo is not a flower after all, and drifts off to find a real one.'],
   ],
   friend_butterfly_solo: [['narrator', 'Mika follows the butterfly round and round the meadow until it lands on her sleeve, as if that had been the plan all along.']],
+  // [tricks3: meadow bugs] the grasshoppers and mantises of the long grass (src/actors/critters.js; the net trick lets Mika meet them too)
+  friend_grasshopper: [
+    ['tamo', 'It looked at me with BOTH eyes and neither one blinked. Is that a thing? That has to be a thing.'],
+    ['narrator', 'The grasshopper scrapes a back leg along its wing, plays one scratchy little note, and springs onto a taller stalk to wait for an answer.'],
+  ],
+  friend_grasshopper_solo: [['narrator', 'Mika holds very still. The grasshopper climbs onto her sleeve, tests the wool with every foot, and decides it is a perfectly good meadow.']],
+  friend_mantis: [
+    ['tamo', "Its head turned ALL the way round to look at me! Mika, that's not allowed. Is that allowed?", 'Happy'],
+    ['narrator', 'The mantis folds its front legs like a tiny, polite professor, and bobs once.'],
+  ],
+  friend_mantis_solo: [['narrator', 'The mantis turns its head to look at Mika, folds its front legs like a tiny, polite professor, and bobs once. Mika bobs back.']],
   friends_all: [
     ['tamo', "That's everyone! Every creature in the valley knows your name now.", 'Happy'],
     ['mika', "Grandma would say we've been properly introduced."],
@@ -660,6 +676,30 @@ export const DIALOGUE = {
     ['mika', "A beetle with a horn. And we want to meet it because…?"],
     ['rin', "Because it's the best thing in the forest. Rub banana and sugar on a chestnut at dusk, look again at dawn."],
     ['rin', "The chestnut grove on the shrine trail. Lift one gently, then put it back on its tree."],
+  ],
+  trick_cowrace_intro: [
+    ['rin', "In the valley you ride a cow, city girl. Tomorrow's the cow race, up on the pasture at Takamori. Four cows, four lanes!", 'Talk'],
+    ['mika', "A race. On cows. Who thought of that?"],
+    ['rin', "Farmers, ages ago. In An Giang, in Vietnam, oxen race through flooded rice fields every year, and the whole village cheers."],
+    ['rin', "Tap Giddy-up on the beat of her hooves. Mash it and she gets puffed. Cows get cheered and fed, never hit."],
+  ],
+  trick_hoppers_intro: [
+    ['rin', "Below the paddies there's a meadow that hops. Grasshoppers and mantises, thick as the grass. Take my net.", 'Talk'],
+    ['mika', "Grasshoppers. They jump, right? Straight at your face?"],
+    ['rin', "Away from it, mostly. Creep up: they crouch just before they jump. A mantis watches you, so go slow while it stares."],
+    ['rin', "Have a good look, then let them go. Catch and release, city girl."],
+  ],
+  trick_cricket_intro: [
+    ['rin', "At dusk the crickets tune up on the hill above Takamori. Walk toward the song, and when it stops, you stop.", 'Talk'],
+    ['mika', "Follow a noise. Across a field. In the dark. I love it."],
+    ['rin', "Stand still like a fence post and he starts again. Then tap along with his beat, gently, and he hops in the cage."],
+    ['rin', "Count his chirps for fourteen seconds: it's a thermometer. Don't ask me how. Then let him go home."],
+  ],
+  trick_archery_intro: [
+    ['rin', "There's an archery range behind the Kawabe houses. Bamboo bow, straw targets, practice arrows with soft rubber tips.", 'Talk'],
+    ['mika', "Archery. Me. With a pointy thing."],
+    ['rin', "A rubber tip, and only ever at the targets. Hold to draw, let go to shoot. The wind sock shows which way it will drift."],
+    ['rin', "Ten, fifteen, twenty metres. Aim a little upwind, city girl."],
   ],
   trick_firefly_note: [
     ['narrator', 'In the jar-light, a folded paper by the path: a drawing of a girl with a jar of fireflies, and a note.'],
@@ -782,6 +822,8 @@ export const FRIENDS = [
   // the farm animals of the two villages
   { id: 'cow', name: 'Meadow cow', icon: 'cow', verb: "Scratch the cow's chin",
     desc: 'Chews slowly, thinks slowly, and has never once been in a hurry. Her bell rings with every step.', hint: 'In the meadow south of Kawabe and along the pasture road to Takamori.' },
+  { id: 'cowpal', name: 'Your riding cow', icon: 'cow-ride', verb: 'Pat the cow',
+    desc: 'Fed on hay, now a friend. Carries Mika anywhere there is grass, trots when asked, and stops for a snack whenever she likes.', hint: 'Take hay from the haystack by a pasture, feed a cow, then hop on and take a ride.' },
   { id: 'pig', name: 'Takamori pig', icon: 'pig', verb: "Scratch the pig's back",
     desc: 'Snuffles through the lanes behind the houses, certain there are truffles in every garden.', hint: 'Behind the houses of Takamori.' },
   { id: 'goat', name: 'Hillside goat', icon: 'goat', verb: 'Pat the goat',
@@ -807,6 +849,13 @@ export const FRIENDS = [
     desc: 'Glossy as a chestnut, with a forked horn for wrestling rivals off the sap. Strong enough to pull a toy cart.', hint: 'Comes to sweet sap on summer nights. Set the Beetle sap trap on an oak or a chestnut and lift one gently at dawn.' },
   { id: 'beetleStag', name: 'Stag beetle', icon: 'beetle-stag', verb: 'Lift the beetle gently',
     desc: 'Flat and black, with jaws like antlers. Looks fierce, and mostly wants to be left alone with its breakfast.', hint: 'Shares the sap with the rhinoceros beetles. Bait a chestnut well at dusk and look again at dawn.' },
+  // [tricks3: meadow bugs] in the long grass by day; also met by catch and release at the Grasshopper and mantis trick
+  { id: 'grasshopper', name: 'Meadow grasshopper', icon: 'grasshopper', verb: 'Say hello to the grasshopper',
+    desc: 'Hears with ears on its belly and plays tunes with its back legs. Hops three times, then needs a little rest.',
+    hint: 'In the long grass of the meadows, on summer and autumn days. Creep up on one, or catch and release one at the Grasshopper and mantis trick.' },
+  { id: 'mantis', name: 'Praying mantis', icon: 'mantis', verb: 'Greet the mantis politely',
+    desc: 'Turns its head almost right round to watch you, and keeps perfectly still while you creep. A friend of every garden.',
+    hint: 'On a stalk in the long grass, on summer and autumn days. Go slowly while it watches you.' },
 ];
 
 // ------------------------------------------------------------------------------------ keepsakes

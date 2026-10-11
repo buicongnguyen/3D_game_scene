@@ -17,7 +17,9 @@ const near = (a, b, eps = 1e-9) => Math.abs(a - b) <= eps;
 
 // ------------------------------------------------------------------------------------------------ data and places
 test('phase 2 tricks: seasons, hours and room to play', () => {
-  assert.deepEqual(TRICKS.slice(4).map(t => t.id), ['kite', 'dew', 'roast', 'beetles']);
+  const ids = TRICKS.map(t => t.id);
+  for (const id of ['kite', 'dew', 'roast', 'beetles']) assert.ok(ids.includes(id), id);          // (later tricks may follow: new rows need no edit here)
+  assert.ok(ids.indexOf('kite') < ids.indexOf('dew') && ids.indexOf('dew') < ids.indexOf('roast') && ids.indexOf('roast') < ids.indexOf('beetles'));
   assert.deepEqual(TRICK.kite.seasons, ['autumn', 'winter']);
   assert.deepEqual(TRICK.dew.seasons, ['spring', 'summer', 'autumn']);
   assert.deepEqual(TRICK.roast.seasons, ['autumn']);

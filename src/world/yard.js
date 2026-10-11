@@ -6,7 +6,10 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { patchMaterial } from '../engine/effects.js';
-import { YARD, fenceRuns, yardSolids, hopCells } from '../content/yard.js';
+import { YARDS, fenceRuns, yardSolids, hopCells, stageOf, toWorld } from '../content/yard.js';
+import { COURSE, START_V } from '../game/yard/sack.js';
+import { LINE as TUG_LINE } from '../game/yard/tug.js';
+import { RING as MARBLE_RING } from '../game/yard/marbles.js';
 
 const WOOD = '#b98850', WOOD_DARK = '#93683a', WOOD_PALE = '#dcb98a', CHALK = '#f6f1e4';
 const PAINT = ['#e2543a', '#3f8fd0', '#f2b53a', '#5fae3e', '#e0567a', '#1fa5a0'];
@@ -49,14 +52,71 @@ export function shuttleGeometry() {
   return k.merge();
 }
 
+/**
+ * What is marked or standing on open ground for the games with a stage of their own (content/yard.js `stages`): the oan
+ * quan board scratched in the dirt, the marble ring, the tug-of-war strip with its stakes and the sack-race course with
+ * its banners. Static pieces go into the yard's one merged mesh; the moving parts are drawn by game/yard/views.js.
+ */
+function stageProps(k, Y, hAt, world, low) {
+  const sp = world.splat, LINE_C = '#5b3f25', ly = 0.025;
+  const put = (S, u, v) => { const w = toWorld(u, v, {}, S); return [w.x, hAt(w.x, w.z) + ly, w.z]; };
+  const yaw = S => -(S.rot || 0) * Math.PI / 180;
+  const flat = (S, hu, hv, u, v, color) => { const [x, y, z] = put(S, u, v); k.add(new THREE.PlaneGeometry(hu * 2, hv * 2), color, x, y, z, -Math.PI / 2, yaw(S), 0); };
+  const pole = (S, u, v, h, color) => { const w = toWorld(u, v, {}, S), gy = hAt(w.x, w.z); k.add(new THREE.CylinderGeometry(0.05, 0.06, h, 7), color, w.x, gy + h / 2, w.z); return [w.x, gy, w.z]; };
+  for (const id of Y.games) {
+    const S = stageOf(Y, id);
+    if (id === 'oanquan') {
+      // 2 rows of 5 small squares and a half-circle quan square at each end, scratched with a stick
+      if (sp) { const c = toWorld(0, 0, {}, S); sp.paintRect(c.x, c.z, 1.6, 2.4, S.rot || 0, 3, 0, 0.8); sp.paintRect(c.x, c.z, 1.5, 2.3, S.rot || 0, 0, 0.85, 0.9); }
+      const t = 0.035;
+      flat(S, 1.25 + t, t / 2, 0, 0.5, LINE_C); flat(S, 1.25 + t, t / 2, 0, -0.5, LINE_C); flat(S, 1.25, t / 2, 0, 0, LINE_C);
+      for (let i = 0; i <= 5; i++) flat(S, t / 2, 0.5, -1.25 + i * 0.5, 0, LINE_C);
+      for (const side of [-1, 1]) {
+        const [x, y, z] = put(S, side * 1.25, 0);
+        k.add(new THREE.RingGeometry(0.47, 0.5, 24, 1, side > 0 ? Math.PI / 2 : -Math.PI / 2, Math.PI), LINE_C, x, y, z, -Math.PI / 2, yaw(S), 0);
+      }
+    } else if (id === 'marbles') {
+      if (sp) { const c = toWorld(0, 0, {}, S); sp.paintDisc(c.x, c.z, 1.25, 3, 0, 0.7); sp.paintDisc(c.x, c.z, 1.2, 0, 0.9, 0.8); }
+      const [x, y, z] = put(S, 0, 0);
+      k.add(new THREE.RingGeometry(MARBLE_RING - 0.025, MARBLE_RING + 0.025, 48), CHALK, x, y + 0.005, z, -Math.PI / 2, 0, 0);
+    } else if (id === 'tug') {
+      // a strip of chalk: the middle mark, a line each side, and a short stake with a pennant at each end of the rope
+      if (sp) { const c = toWorld(0, 0, {}, S); sp.paintRect(c.x, c.z, 7.4, 1.15, S.rot || 0, 3, 0, 0.7); sp.paintRect(c.x, c.z, 7.2, 1.0, S.rot || 0, 0, 0.8, 0.8); }     // bare dirt under the rope
+      flat(S, 0.03, 0.9, 0, 0, CHALK);
+      for (const side of [-1, 1]) flat(S, 0.04, 0.9, side * TUG_LINE, 0, side > 0 ? '#e2543a' : '#3f8fd0');
+      for (const side of [-1, 1]) {
+        const [x, gy, z] = pole(S, side * 6.9, -0.9, 1.6, WOOD_DARK);
+        k.box(0.42, 0.28, 0.02, PAINT[side > 0 ? 0 : 1], x, gy + 1.42, z, 0, yaw(S), 0);
+        pole(S, side * 6.9, 0.9, 1.0, WOOD_DARK);
+      }
+    } else if (id === 'sack') {
+      if (sp) { const c = toWorld(0, 0, {}, S); sp.paintRect(c.x, c.z, 3.1, 7.6, S.rot || 0, 3, 0.1, 1); }
+      const half = COURSE / 2;
+      flat(S, 3.3, 0.04, 0, START_V, CHALK);
+      // the finish line: a chalk checker
+      for (let i = 0; i < 14; i++) for (let j = 0; j < 2; j++) flat(S, 0.22, 0.11, -3.0 + i * 0.46, -half + (j ? 0.11 : -0.11), (i + j) % 2 ? '#2d2d2d' : CHALK);
+      for (const side of [-1, 1]) flat(S, 0.03, half, side * 3.3, 0, CHALK);
+      // banners: a pole each side and a cloth across
+      for (const [v, color, tall] of [[START_V + 0.25, PAINT[3], 4.4], [-half - 0.25, PAINT[0], 2.6]]) {
+        const [x1, g1, z1] = pole(S, -3.4, v, tall, WOOD_DARK), [x2, , z2] = pole(S, 3.4, v, tall, WOOD_DARK);
+        const mx = (x1 + x2) / 2, mz = (z1 + z2) / 2, len = Math.hypot(x2 - x1, z2 - z1);
+        k.box(len, 0.5, 0.03, color, mx, g1 + tall - 0.35, mz, 0, yaw(S), 0);
+        k.box(len, 0.06, 0.04, '#ffffff', mx, g1 + tall - 0.1, mz, 0, yaw(S), 0);
+      }
+    }
+  }
+}
+
 export class YardBuild {
-  /** structures: the world's Structures (scene group, colliders, cull list). */
-  constructor(structures) {
-    const world = structures.world, Y = YARD, f = Y.fence, q = world.quality || {};
+  /** structures: the world's Structures (scene group, colliders, cull list); Y: a yard of content/yard.js. */
+  constructor(structures, Y = YARDS.kawabe) {
+    const world = structures.world, f = Y.fence, q = world.quality || {};
+    this.Y = Y;
+    const sandy = Y.look === 'sand', ground = sandy ? 1 : 0;       // the splat channel the court is painted in: shore sand, or path earth
     const hAt = (x, z) => world.heightAt(x, z);
     const y0 = this.y0 = hAt(Y.x, Y.z);
     this.group = new THREE.Group();
-    this.group.name = 'yard';
+    this.group.name = `yard:${Y.id}`;
     this.disposables = [];
     const k = new Kit();
 
@@ -67,9 +127,12 @@ export class YardBuild {
       sp.paintRect(mx, mz, (f.x1 - f.x0) / 2 - 0.3, (f.z1 - f.z0) / 2 - 0.3, 0, 3, 0.3, 1.2);
       sp.paintRect(mx, mz, (f.x1 - f.x0) / 2 - 0.3, (f.z1 - f.z0) / 2 - 0.3, 0, 0, 0.3, 1.2);
       sp.paintRect(Y.x, Y.z, Y.w / 2 + 0.5, Y.l / 2 + 0.5, 0, 3, 0, 0.8);
-      sp.paintRect(Y.x, Y.z, Y.w / 2 + 0.4, Y.l / 2 + 0.4, 0, 0, 0.95, 0.9);
-      sp.paintRect(Y.hop.x - 1.8, Y.hop.z, 2.3, 1.0, 0, 3, 0, 0.6);
-      sp.paintRect(Y.hop.x - 1.8, Y.hop.z, 2.2, 0.9, 0, 0, 0.9, 0.7);
+      sp.paintRect(Y.x, Y.z, Y.w / 2 + 0.4, Y.l / 2 + 0.4, 0, ground, sandy ? 0.9 : 0.95, 0.9);
+      if (sandy) sp.paintRect(Y.x, Y.z, Y.w / 2 + 0.4, Y.l / 2 + 0.4, 0, 0, 0.35, 0.9);     // a little earth through the sand
+      if (Y.hop) {
+        sp.paintRect(Y.hop.x - 1.8, Y.hop.z, 2.3, 1.0, 0, 3, 0, 0.6);
+        sp.paintRect(Y.hop.x - 1.8, Y.hop.z, 2.2, 0.9, 0, 0, 0.9, 0.7);
+      }
       for (const g of Y.gaps) {
         const m = (g.a + g.b) / 2, [gx, gz] = g.side === 'n' ? [m, f.z0] : g.side === 's' ? [m, f.z1] : [f.x0, m];
         sp.paintDisc(gx, gz, 1.1, 0, 0.8, 1.1); sp.paintDisc(gx, gz, 1.1, 3, 0, 1.1);
@@ -86,8 +149,8 @@ export class YardBuild {
     }
     k.flat(Y.w, lw * 0.8, CHALK, Y.x, ly, Y.z);
     // hopscotch squares in coloured chalk
-    const hc = Y.hop.cell, tones = ['#f7b6c8', '#bfe0ff', '#fff0a8'];
-    for (const c of hopCells()) {
+    const tones = ['#f7b6c8', '#bfe0ff', '#fff0a8'], hc = Y.hop ? Y.hop.cell : 0;
+    if (Y.hop) for (const c of hopCells(Y)) {
       const col = tones[c.n % 3], t = 0.05;
       for (const s of [-1, 1]) {
         k.flat(hc, t, col, c.x, ly, c.z + s * (hc / 2 - t / 2));
@@ -97,21 +160,24 @@ export class YardBuild {
       const dots = Math.min(c.n, 5);
       for (let i = 0; i < dots; i++) k.flat(0.06, 0.06, CHALK, c.x - 0.14 + (i % 3) * 0.14, ly, c.z - 0.07 + Math.floor(i / 3) * 0.14);
     }
-    k.add(new THREE.RingGeometry(0.34, 0.4, 14, 1, 0, Math.PI), tones[0], Y.hop.x - hc * 6, ly, Y.hop.z, -Math.PI / 2, Math.PI / 2, 0);   // "home" half-circle
+    if (Y.hop) k.add(new THREE.RingGeometry(0.34, 0.4, 14, 1, 0, Math.PI), tones[0], Y.hop.x - hc * 6, ly, Y.hop.z, -Math.PI / 2, Math.PI / 2, 0);   // "home" half-circle
 
     // ---- the fence: posts with painted caps and two rails
     let cap = 0;
     const low = q.name === 'Low';
-    for (const [x0, z0, x1, z1] of fenceRuns()) {
+    const logs = Y.fenceStyle === 'log';
+    for (const [x0, z0, x1, z1] of fenceRuns(Y)) {
       const len = Math.hypot(x1 - x0, z1 - z0), n = Math.max(1, Math.round(len / (low ? 2.6 : 1.9))), alongX = z0 === z1;
       for (let i = 0; i <= n; i++) {
         const x = x0 + (x1 - x0) * i / n, z = z0 + (z1 - z0) * i / n, gy = hAt(x, z);
+        if (logs) { k.add(new THREE.CylinderGeometry(0.1, 0.12, f.h, 7), i % 2 ? '#7d5a36' : '#6b4a2c', x, gy + f.h / 2, z); k.add(new THREE.CylinderGeometry(0.1, 0.1, 0.03, 7), '#d9b783', x, gy + f.h + 0.015, z); cap++; continue; }
         k.box(0.12, f.h, 0.12, i % 2 ? WOOD : WOOD_DARK, x, gy + f.h / 2, z);
         k.box(0.16, 0.07, 0.16, PAINT[cap++ % PAINT.length], x, gy + f.h + 0.035, z);
       }
       const gy = (hAt(x0, z0) + hAt(x1, z1)) / 2, mx = (x0 + x1) / 2, mz = (z0 + z1) / 2;
       const tilt = Math.atan2(hAt(x1, z1) - hAt(x0, z0), len);
-      for (const ry of [0.3, 0.56]) k.box(alongX ? len : 0.05, 0.09, alongX ? 0.05 : len, WOOD_PALE, mx, gy + ry, mz, alongX ? 0 : -tilt, 0, alongX ? tilt : 0);
+      if (logs) k.box(alongX ? len : 0.16, 0.16, alongX ? 0.16 : len, '#8a6a42', mx, gy + 0.36, mz, alongX ? 0 : -tilt, 0, alongX ? tilt : 0);   // one thick log along the top
+      else for (const ry of [0.3, 0.56]) k.box(alongX ? len : 0.05, 0.09, alongX ? 0.05 : len, WOOD_PALE, mx, gy + ry, mz, alongX ? 0 : -tilt, 0, alongX ? tilt : 0);
     }
 
     // ---- the net: two red posts with white caps, a white tape, a cord along the bottom
@@ -121,7 +187,8 @@ export class YardBuild {
       k.add(new THREE.SphereGeometry(0.085, 8, 6), CHALK, Y.x + s * nx, y0 + Y.netH + 0.13, Y.z);
     }
     k.box(nx * 2, 0.07, 0.025, '#ffffff', Y.x, y0 + Y.netH, Y.z);
-    k.box(nx * 2, 0.025, 0.02, '#e8e2d2', Y.x, y0 + 0.52, Y.z);
+    const band = Y.netH > 1.8 ? 1.0 : 0.77;
+    k.box(nx * 2, 0.025, 0.02, '#e8e2d2', Y.x, y0 + Y.netH - band, Y.z);
 
     // ---- benches (seat top 0.45 m: the Sit clip's seat), bright paint
     Y.benches.forEach((b, i) => {
@@ -159,6 +226,7 @@ export class YardBuild {
     sg.dispose();
 
     // ---- the seesaw: a log, a tilted plank, two handles
+    if (Y.seesaw) {
     const W = Y.seesaw, sy = hAt(W.x, W.z), tilt = 0.2;
     k.add(new THREE.CylinderGeometry(0.2, 0.2, 0.46, 10), WOOD_DARK, W.x, sy + 0.2, W.z, 0, 0, Math.PI / 2);
     k.box(0.28, 0.05, W.len, PAINT[2], W.x, sy + 0.44, W.z, tilt, 0, 0);
@@ -168,12 +236,15 @@ export class YardBuild {
       k.box(0.04, 0.26, 0.04, WOOD_DARK, W.x, sy + 0.58 + dy, W.z + dz, tilt, 0, 0);
       k.box(0.3, 0.04, 0.04, WOOD_DARK, W.x, sy + 0.71 + dy, W.z + dz, tilt, 0, 0);
     }
+    }
 
     // ---- the practice kick-board on the south fence: planks, two posts, a painted target (facing the court)
+    if (Y.wall) {
     const K = Y.wall, ky = hAt(K.x, K.z), nPl = 8, pw = K.w / nPl;
     for (let i = 0; i < nPl; i++) k.box(pw - 0.02, K.h - 0.12, 0.05, i % 2 ? WOOD_PALE : '#cfa873', K.x - K.w / 2 + pw * (i + 0.5), ky + 0.12 + (K.h - 0.12) / 2, K.z);
     for (const s of [-1, 1]) k.box(0.13, K.h + 0.15, 0.13, WOOD_DARK, K.x + s * (K.w / 2 - 0.1), ky + (K.h + 0.15) / 2, K.z + 0.09);
     [[0.62, PAINT[0]], [0.42, CHALK], [0.22, PAINT[0]]].forEach(([r, col], i) => k.add(new THREE.CircleGeometry(r, 18), col, K.x, ky + 1.05, K.z - 0.03 - i * 0.004, 0, Math.PI, 0));
+    }
 
     // ---- a string of pennants along the west side (two tall poles)
     const pz0 = f.z0, pz1 = f.z1, ph = 2.7, px = f.x0;
@@ -187,6 +258,8 @@ export class YardBuild {
       k.add(tri, PAINT[i % PAINT.length], px, py - sag, z);
     }
 
+    stageProps(k, Y, hAt, world, low);
+
     const geo = k.merge();
     const mat = patchMaterial(new THREE.MeshStandardMaterial({ name: 'Yard paint', vertexColors: true, roughness: 0.85, metalness: 0, side: THREE.DoubleSide }));
     const mesh = new THREE.Mesh(geo, mat);
@@ -198,7 +271,7 @@ export class YardBuild {
 
     // ---- winter: the kids sweep the court (the snowy ground would hide it); one more plane, drawn in winter only
     const wg = new THREE.PlaneGeometry(Y.w + 0.5, Y.l + 0.5);
-    const wm = patchMaterial(new THREE.MeshStandardMaterial({ name: 'Yard swept court', color: '#b39472', roughness: 1, metalness: 0 }), { snow: 0 });
+    const wm = patchMaterial(new THREE.MeshStandardMaterial({ name: 'Yard swept court', color: sandy ? '#cdb487' : '#b39472', roughness: 1, metalness: 0 }), { snow: 0 });
     const swept = this.swept = new THREE.Mesh(wg, wm);
     swept.rotation.x = -Math.PI / 2;
     swept.position.set(Y.x, y0 + 0.014, Y.z);
@@ -210,7 +283,7 @@ export class YardBuild {
     this.disposables.push(wg, wm);
 
     // ---- the net's strings: one line mesh (and a faint sheet behind them on the better tiers, so it reads from afar)
-    const pts = [], top = y0 + Y.netH - 0.03, bot = y0 + 0.53, stepX = low ? 0.3 : 0.17;
+    const pts = [], top = y0 + Y.netH - 0.03, bot = y0 + Y.netH - band, stepX = low ? 0.3 : 0.17;
     for (let x = -nx; x <= nx + 1e-6; x += stepX) pts.push(Y.x + x, bot, Y.z, Y.x + x, top, Y.z);
     for (let y = bot + 0.16; y < top - 0.05; y += 0.16) pts.push(Y.x - nx, y, Y.z, Y.x + nx, y, Y.z);
     const lg = new THREE.BufferGeometry();
@@ -255,10 +328,10 @@ export class YardBuild {
     }
 
     structures.group.add(this.group);
-    structures.cullList.push({ obj: this.group, x: Y.x, z: Y.z, prop: true });
+    structures.cullList.push({ obj: this.group, x: Y.x, z: Y.z - 6, prop: true });
 
     // ---- what can be bumped into
-    const { boxes, posts } = yardSolids(), col = structures.colliders;
+    const { boxes, posts } = yardSolids(Y), col = structures.colliders;
     this.solids = [];
     for (const b of boxes) {
       const gy = hAt(b.x, b.z);

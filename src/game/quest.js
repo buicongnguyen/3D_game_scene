@@ -6,6 +6,7 @@ import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, huntProgress, CHAPTERS } from './
 import { useStory, DEFAULT_STORY, STORIES } from './stories/index.js';
 import { cleanTricks } from '../content/tricks.js';
 import { cleanWishes } from '../content/skyspots.js';
+import { cleanStarGroups } from '../content/constellations.js';
 import { cleanYard } from '../content/yard.js';
 import { cleanWorkshop, freshWorkshop } from './workshop/rules.js';
 
@@ -21,6 +22,7 @@ export function freshState(story = DEFAULT_STORY) {
     tricks: {}, fishSeen: {},   // fishSeen: fish named by lantern light on the night river (not catches)
         // Grandma's countryside tricks: { id: { learned, best, stars, plays, intro?, note? } } (content/tricks.js)
     wishes: 0,                  // shooting stars wished on while looking up at the sky (game/skygaze.js)
+    starGroups: { learned: [] },   // the star groups named and read under the night sky (content/constellations.js); not the Fallen Stars (stars)
     yard: { game: 'footnet' },  // the Kawabe playground: the game on the scoreboard and each game's record (content/yard.js)
     workshop: freshWorkshop(),  // the Kite workshop: { built, stars, best, plays, prog } (game/workshop/rules.js)
   };
@@ -57,6 +59,7 @@ export function migrate(saved) {
   s.memories = s.memories.filter(h => typeof h === 'string');
   s.tricks = cleanTricks(s.tricks);
   s.wishes = cleanWishes(s.wishes);
+  s.starGroups = cleanStarGroups(s.starGroups);
   s.yard = cleanYard(s.yard);
   s.workshop = cleanWorkshop(s.workshop);
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.

@@ -29,9 +29,9 @@ export const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
  *   reach: how far from the landing ring the kicker may stand. slow: incoming shuttles hang this much longer.
  */
 export const LEVELS = {
-  first: { p0: 0.02, p1: 0.30, ok: 0.70, reach: 1.75, slow: 1.3, miss: 1.25, kind: 0.75 },
-  easy: { p0: 0.03, p1: 0.26, ok: 0.60, reach: 1.6, slow: 1.15, miss: 1.1, kind: 0.6 },
-  normal: { p0: 0.04, p1: 0.20, ok: 0.46, reach: 1.35, slow: 1, miss: 1, kind: 0.4 },
+  first: { p0: 0.02, p1: 0.30, ok: 0.70, reach: 1.75, slow: 1.3, miss: 1.5, kind: 0.8 },
+  easy: { p0: 0.03, p1: 0.26, ok: 0.60, reach: 1.6, slow: 1.15, miss: 1.25, kind: 0.6 },
+  normal: { p0: 0.04, p1: 0.20, ok: 0.46, reach: 1.35, slow: 1, miss: 1, kind: 0.1 },
 };
 
 /** 'perfect' | 'ok' | 'early' for a swing tau seconds before the landing (tau < 0, after it, is never asked). */
@@ -45,20 +45,23 @@ export function judge(tau, L) {
  * is the fast flat one; net / out = chance their own kick dies in the net or sails out; aim = where they send it.
  */
 export const STYLES = {
-  strong: { speed: 3.9, miss: 0.07, flat: 0.5, net: 0.02, out: 0.03, aim: 'deep' },      // Kenta: hard and deep
-  tricky: { speed: 3.6, miss: 0.10, flat: 0.3, net: 0.03, out: 0.03, aim: 'away' },      // Yui: wherever you are not
-  wobbly: { speed: 3.3, miss: 0.17, flat: 0.12, net: 0.06, out: 0.07, aim: 'any' },      // Daichi: anywhere, also out
-  steady: { speed: 3.6, miss: 0.10, flat: 0.25, net: 0.03, out: 0.03, aim: 'any' },
+  strong: { speed: 3.9, miss: 0.06, flat: 0.6, net: 0.02, out: 0.03, aim: 'deep', spike: 0.8 },      // Kenta: hard and deep
+  tricky: { speed: 3.6, miss: 0.08, flat: 0.4, net: 0.03, out: 0.03, aim: 'away', spike: 0.5 },      // Yui: wherever you are not
+  wobbly: { speed: 3.3, miss: 0.14, flat: 0.15, net: 0.06, out: 0.07, aim: 'any', spike: 0.25 },      // Daichi: anywhere, also out
+  steady: { speed: 3.6, miss: 0.10, flat: 0.25, net: 0.03, out: 0.03, aim: 'any', spike: 0.4 },
+  captain: { speed: 3.9, miss: 0.08, flat: 0.6, net: 0.05, out: 0.06, aim: 'deep', spike: 0.95 },    // Hiro: always spikes, now and then into the net
+  never: { speed: 3.7, miss: 0.04, flat: 0.2, net: 0.01, out: 0.01, aim: 'any', spike: 0.15 },       // Nao: never misses, never smashes
+  dreamy: { speed: 3.3, miss: 0.14, flat: 0.3, net: 0.03, out: 0.05, aim: 'away', spike: 0.4 },      // Sumi: elsewhere, now and then
 };
 
 /**
  * A flight from a to b ({ u, y, v }) lasting dur seconds, rising h above the straight line at its middle. When the
  * line crosses the net the arc is raised until it clears the tape by `clear` metres (unless `net`: it is meant to die there).
  */
-export function makeFlight(a, b, dur, h, { clear = 0.3, net = false } = {}) {
+export function makeFlight(a, b, dur, h, { clear = 0.3, net = false, netH = COURT.NET } = {}) {
   const f = { au: a.u, ay: a.y, av: a.v, bu: b.u, by: b.y, bv: b.v, h, dur, t: 0 };
   if (!net && a.v * b.v < 0) {
-    const k = a.v / (a.v - b.v), line = a.y + (b.y - a.y) * k, need = COURT.NET + clear - line;
+    const k = a.v / (a.v - b.v), line = a.y + (b.y - a.y) * k, need = netH + clear - line;
     if (need > 0) f.h = Math.max(h, need / (4 * k * (1 - k)));
   }
   return f;

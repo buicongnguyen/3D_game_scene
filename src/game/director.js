@@ -8,6 +8,7 @@ import { Tamo } from '../actors/tamo.js';
 import { Wildlife } from '../actors/animals.js';
 import { Cooking } from './minigames.js';
 import { FishingSession } from './fishing/session.js';
+import { SPOTS as FISHING_SPOTS } from './fishing/places.js';
 import { Scenes } from './scenes.js';
 import { PLACES, FALLEN_STARS, DECK_Y, river, riverHalfWidth } from '../world/layout.js';
 import { clockLabel } from '../world/seasons.js';
@@ -19,8 +20,10 @@ import { Tricks } from './tricks.js';
 import { SkyGaze } from './skygaze.js';
 import { makeBulb, disposeBulb } from '../world/bulb.js';
 import { Yard } from './yard/round.js';
+import { CowRide } from '../actors/cow-ride.js';
 import { Workshop } from './workshop/index.js';
 import { SHOPS } from '../content/shops.js';
+import { MinigameMenu } from './minigame-menu.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
 import { VILLAGERS, RETURNING, ROUTES } from '../content/villagers.js';
@@ -58,6 +61,7 @@ export class Director {
     // the remarks people call out as Mika walks past (game/barks.js says what, ui/barks-ui.js draws the bubbles)
     this.barks = { clock: new BarkClock(), ui: new BarkBubbles(), recent: new Set(), mine: new Map(), scan: 0, lit: new Set() };
     this.registerStatic();
+    this.minigameMenu = new MinigameMenu(this);   // the Mini games menu: any game from the title or the pause menu (game/minigame-menu.js)
   }
 
   // ------------------------------------------------------------------ setup
@@ -295,7 +299,8 @@ export class Director {
     // interactables
     const chestPos = at(S.nodes.chest, V(-55.6, 16.6, 138.4));
     this.interact('chest', chestPos, N_('Open Sora\'s chest'), () => this.step('p.chest'), () => this.event({ type: 'interact', target: 'chest' }), 2.4);
-    this.interact('fishingSpot', V(4.2, 0.9, 30), N_('Fish'), () => this.q.unlocked('ferry') || this.q.has('canFish'), () => this.startFishing(), 2.6);
+    // two places to fish (src/game/fishing/places.js): Rin's dock and Ōta's mill pool, both open once Rin has taught fishing
+    for (const s of Object.values(FISHING_SPOTS)) this.interact(s.interact.id, V(s.interact.x, s.interact.y, s.interact.z), s.label, () => this.q.unlocked('ferry') || this.q.has('canFish'), () => this.startFishing(s), s.interact.r);
     const mill = S.byId.get('mill');
     this.interact('millAxle', V(mill.x + 4.2, mill.y + 1, mill.z + 2.2), () => (storyId() === 'grandma' ? tx('Fit the cogs and the dynamo') : tx('Fit the cogs and repair the wheel')), () => this.step('c1.wheel'), () => this.event({ type: 'interact', target: 'millAxle' }), 3.2);
     this.interact('drawbridgeUp', V(-9.8, 1.2, -45), N_('Look at the drawbridge'), () => !this.q.unlocked('drawbridge'), () => this.say('drawbridge_up'), 2.4);
@@ -341,6 +346,9 @@ export class Director {
     this.sky = new SkyGaze(this);
     // the Kawabe playground yard: the kids' foot-tennis and keep-it-up, and Mika joining in (game/yard/round.js)
     this.yard = new Yard(this);
+    // riding the farm cows (feed one hay, then hop on) and the cow race that uses the same saddle (actors/cow-ride.js)
+    this.cows = new CowRide(this);
+    this.cows.register();
     // the Kite workshop at the cradle in the cottage, and flying with its motors afterwards (game/workshop/index.js)
     this.workshop = new Workshop(this);
     // spark targets. In the Grandma story the four Star Lamps are electric: the same aim and press, but Tamo carries a new
@@ -617,6 +625,7 @@ export class Director {
 
   // ------------------------------------------------------------------ game start / load
   async begin(saved) {
+    if (this.ui.pendingLaunch) this.ui.fade(true, 0);    // the Mini games menu from the title: no flash of the valley before the game's own place
     this.quest = new Quest(saved?.quest, { story: this.newStory });
     this.ui.applyStory?.();              // the diary tab and credits line of this save's story
     this.game.structures.setLampStyle(storyId() === 'grandma' ? 'electric' : 'flame');
@@ -633,12 +642,15 @@ export class Director {
     if (STEP_INDEX[st.step] > STEP_INDEX['c3.lamp'] && !st.inv.acorn && !st.flags.treePlanted && !st.flags.acornGiven) { st.inv.acorn = 1; st.flags.acornGiven = true; }
     if (resumed && st.step === 'e.free' && this.q.has('allStars')) this.event({ type: 'cutscene', id: 'starfall' });
     else if (resumed && st.chapter === 5 && !st.flags.huntAsked && !st.flags.hunt) this.run([{ cutscene: 'huntAsk' }]);
+    const launch = this.ui.pendingLaunch;               // chosen on the title's Mini games menu: start that game now
+    this.ui.pendingLaunch = null;
+    if (launch) await this.minigameMenu.launchFirst(launch.id);
   }
 
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
   canSave() {
     if (this.tourLock) return false;   // the scene tour borrows the valley: nothing it shows may reach a save file (game/tour.js)
-    return !!this.quest && !this.scenes.active && !this.minigame && !this.tricks?.round && !this.yard?.round && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
+    return !!this.quest && !this.scenes.active && !this.minigame && !this.tricks?.round && !this.yard?.round && !this.cows?.riding && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
   }
 
   save() {
@@ -1087,7 +1099,7 @@ export class Director {
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
     p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
     a.hold?.();                                                // a critter stays put for the hello
-    const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag', cricket: 'Chirp' }[a.kind];
+    const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag', cricket: 'Chirp', grasshopper: 'Hop', mantis: 'Look' }[a.kind];
     if (react && a.anim?.has?.(react)) a.anim.once(react, { then: a.idleClip || 'Idle' });
     if (['cow', 'pig', 'goat', 'dog'].includes(a.kind)) this.audio.animal(a.kind, 0.9);
     if (a.kind === 'cricket') this.audio.chirp?.(1, a.slot?.pitch ?? 1);
@@ -1278,10 +1290,10 @@ export class Director {
   }
 
   // ------------------------------------------------------------------ minigames
-  startFishing() {
+  startFishing(spot = FISHING_SPOTS.dock) {
     if (this.minigame) return;
     // fishing happens in the world (camera, clear water, cast, line): the session owns it all and gives it back
-    this.minigame = { kind: 'fish', m: new FishingSession(this) };
+    this.minigame = { kind: 'fish', m: new FishingSession(this, { spot }) };
     this.game.player.locked = true;
   }
 
@@ -1330,7 +1342,7 @@ export class Director {
     const g = this.game, p = g.player, inp = g.input;
     if (!this.quest) return;
     // the player is locked exactly while something owns the screen (dialogue, cutscene, minigame, transition)
-    p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks || !!this.sky?.locks || !!this.yard?.locks;
+    p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks || !!this.sky?.locks || !!this.yard?.locks || !!this.cows?.riding;
     this.q.state.playtime += dt;
     // a gentle hint the first time Mika gets near the thieving crab
     const crab = this.wildlife.story.crab;
@@ -1348,9 +1360,11 @@ export class Director {
     this.sky?.update(dt);
     this.yard?.update(dt);
     this.workshop?.update(dt);
+    this.minigameMenu?.update(dt);
     this.updateBarks(dt);
     this.updateTrain(dt);
     this.wildlife.update(dt, p, this);
+    this.cows?.update(dt);                 // after the animals: the ridden cow is steered, and Mika sits on her
     this.tamo.update(dt, p, g.night || 0, !!p.aiming, g.follow.yaw, g.camera);
     this.updateMinigame(dt);
     this.animateWorld(dt);

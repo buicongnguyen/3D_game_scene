@@ -4,7 +4,7 @@
 // score is the longest run of touches.
 // Pure and seeded like ./footnet.js (same step / events / result shape, so the yard's round runner shows either).
 import { COURT, LEVELS, STYLES, KICK_Y, WINDUP, HUMAN_SPEED, rng, clamp, judge, makeFlight, flightAt, stepToward, starsFor } from './rules.js';
-import { N_ } from '../../i18n/i18n.js';
+import { N_, tx } from '../../i18n/i18n.js';
 
 export const RING = { u: 0, v: 2.9, r: 2.0 };       // the ring's middle (court space) and radius
 export const KEEPUP_STARS = [6, 12, 24];
@@ -198,6 +198,12 @@ export class KeepupSim {
     this.server = who || this.server;
   }
 
+  hud() {
+    const s = Math.max(0, Math.ceil(this.timeLeft));
+    return { l: tx('Touches'), big: String(this.count), r: tx('Best: {n}', { n: this.best }), sub: `${'♥'.repeat(Math.max(0, this.lives))}${'♡'.repeat(Math.max(0, 3 - this.lives))}${this.human ? ` · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : ''}` };
+  }
+  hint() { return this.state === 'serve' && this.server === this.human ? tx('Press {act} to serve') : null; }
+
   result() {
     return { won: this.best >= KEEPUP_STARS[0], score: this.best, rally: this.best, stars: starsFor(this.best, KEEPUP_STARS), touches: this.touches, lives: this.lives };
   }
@@ -220,10 +226,21 @@ export function keepupBot(sim, at = 0.12) {
 export default {
   id: 'keepup',
   name: N_('Keep it up'),
+  look: 'shuttle',
+  moves: true,
+  sideOk: true,
   /** Everybody plays (up to three kids with Mika); alone she juggles. */
   teams(kids) { return { mine: kids.slice(0, 3), theirs: [] }; },
   target: () => 0,
   create: opts => new KeepupSim(opts),
   bot: keepupBot,
   focus: { u: RING.u, v: RING.v, w: COURT.W + 1, l: RING.r * 2 + 3 },
+  roles(ids) { return { game: 'keepup', play: ids.slice(0, 4), watch: ids.slice(4) }; },
+  ambientTeam: () => 0,
+  card(res, rec, names, newBest) {
+    return {
+      verdict: res.stars >= 3 ? tx('Nobody in Kawabe keeps it up like that!') : res.stars ? tx('Well kept up!') : tx('Good try!'), good: res.stars > 0,
+      score: tx('{n} touches in a row', { n: res.score }), best: newBest && rec.plays > 1 ? tx('New best!') : tx('Best: {n}', { n: rec.best }),
+    };
+  },
 };

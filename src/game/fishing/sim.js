@@ -30,13 +30,15 @@ export const BIG = 0.78;          // above this fraction of the range the catch 
  * Which fish comes to the float. table = FISH (weights); at dusk the starfin takes 45 % of the bites (it has no
  * weight of its own); forced (the story's first three trout) wins over everything.
  */
-export function pickSpecies(table, rand = Math.random, { dusk = false, forced = null } = {}) {
+export function pickSpecies(table, rand = Math.random, { dusk = false, forced = null, mult = null } = {}) {
   if (forced) return forced;
   if (dusk && rand() < 0.45 && table.starfin) return 'starfin';
-  const ids = Object.keys(table).filter(k => table[k].weight > 0);
-  const total = ids.reduce((a, k) => a + table[k].weight, 0);
+  // mult: a place's own stock, e.g. { koi: 3 } makes the koi three times as common there
+  const w = k => table[k].weight * (mult?.[k] ?? 1);
+  const ids = Object.keys(table).filter(k => w(k) > 0);
+  const total = ids.reduce((a, k) => a + w(k), 0);
   let r = rand() * total;
-  for (const k of ids) { r -= table[k].weight; if (r <= 0) return k; }
+  for (const k of ids) { r -= w(k); if (r <= 0) return k; }
   return ids[ids.length - 1];
 }
 
@@ -59,8 +61,8 @@ export function fishPower(table, species, cm, easy = false) {
 }
 
 /** A whole fish for the sim's `choose`: { species, cm, power }. */
-export function makeFish(table, rand, { dusk = false, forced = null, easy = false } = {}) {
-  const species = pickSpecies(table, rand, { dusk, forced });
+export function makeFish(table, rand, { dusk = false, forced = null, easy = false, mult = null } = {}) {
+  const species = pickSpecies(table, rand, { dusk, forced, mult });
   const cm = fishSize(species, rand);
   return { species, cm, power: fishPower(table, species, cm, easy) };
 }
@@ -219,34 +221,41 @@ export class FishingSim {
   }
 }
 
-// ------------------------------------------------------------------------------------------------ the catch on the dock
-// Landed fish lie in two short ranks on the dock planks just west of Mika (close, so a phone's narrow view keeps them),
-// heads to the water, clear of her feet, of Rin's place on the south side and of both edges; at most PILE.cap show,
-// older ones go into the creel that stands by her.
-export const PILE = {
-  cap: 8, x0: 2.84, dx: 0.33, z: [29.44, 30.4], scale: 0.55,  // scale: a fish out of the water against one in it
-  dock: { x0: 0.2, x1: 4.3, z0: 28.75, z1: 31.25, y: 0.72 },  // the planks
-  creel: { x: 3.3, z: 29.08, r: 0.24 },
-  keepOut: [{ x: 3.8, z: 30.1, r: 0.5 }, { x: 3.6, z: 31.2, r: 0.55 }],   // Mika's feet; Rin's place in chapter one
-};
-
-/** Where the i-th fish of the row lies: { x, z, yaw } (yaw: heading of its head; a slight fan, a slight stagger). */
-export function pileSlot(i) {
-  const k = Math.max(0, Math.min(PILE.cap - 1, i));
-  const col = k >> 1, rank = k & 1;        // the two places nearest her fill first
-  return { x: PILE.x0 - col * PILE.dx, z: PILE.z[rank], yaw: Math.PI + (col - 1.5) * 0.06 };
+// ------------------------------------------------------------------------------------------------ the catch on the ground
+// Landed fish lie in two short ranks beside Mika (close, so a phone's narrow view keeps them), heads to the water, clear
+// of her feet and of whatever else stands there; at most cap show, older ones go into the creel that stands by her.
+// A pile is data: origin = the first place, yaw = where the heads point, side = the way the columns step (unit),
+// dx = column spacing, back = rank spacing (nose to tail); y = the planks' height, or null on open ground (the view
+// reads the terrain); region = a rectangle the fish must stay inside (a dock), creel = { x, z, r }.
+export function makePile({ origin, yaw, side, dx = 0.33, back = 0.96, cap = 8, scale = 0.55, y = null, region = null, creel, keepOut = [] }) {
+  return { origin, yaw, side, dx, back, cap, scale, y, dock: region ? { ...region, y } : null, creel, keepOut, head: { x: Math.sin(yaw), z: Math.cos(yaw) } };
 }
 
-/** Length on the dock (m) of a fish that is `len` m long in the water at school size `size`. */
-export function pileLength(len, size) { return len * size * PILE.scale; }
+// The Kawabe dock: the row lies on the planks just west of Mika, clear of Rin's place on the south side.
+export const PILE = makePile({
+  origin: { x: 2.84, z: 29.44 }, yaw: Math.PI, side: { x: -1, z: 0 }, y: 0.72,
+  region: { x0: 0.2, x1: 4.3, z0: 28.75, z1: 31.25 },                           // the planks
+  creel: { x: 3.3, z: 29.08, r: 0.24 },
+  keepOut: [{ x: 3.8, z: 30.1, r: 0.5 }, { x: 3.6, z: 31.2, r: 0.55 }],        // Mika's feet; Rin's place in chapter one
+});
+
+/** Where the i-th fish of the row lies: { x, z, yaw } (yaw: heading of its head; a slight fan). */
+export function pileSlot(i, P = PILE) {
+  const k = Math.max(0, Math.min(P.cap - 1, i));
+  const col = k >> 1, rank = k & 1;        // the two places nearest her fill first
+  return { x: P.origin.x + P.side.x * col * P.dx - P.head.x * rank * P.back, z: P.origin.z + P.side.z * col * P.dx - P.head.z * rank * P.back, yaw: P.yaw + (col - 1.5) * 0.06 };
+}
+
+/** Length on the ground (m) of a fish that is `len` m long in the water at school size `size`. */
+export function pileLength(len, size, P = PILE) { return len * size * P.scale; }
 
 /**
  * The row after one more fish is landed (pure). pile: [{ id }] oldest first. Returns { pile, creel: [ids that went
  * into the creel] }: the newcomer takes the last place, and the oldest move on when the row is full.
  */
-export function pileAdd(pile, item) {
+export function pileAdd(pile, item, cap = PILE.cap) {
   const next = [...pile, item], creel = [];
-  while (next.length > PILE.cap) creel.push(next.shift().id);
+  while (next.length > cap) creel.push(next.shift().id);
   return { pile: next, creel };
 }
 

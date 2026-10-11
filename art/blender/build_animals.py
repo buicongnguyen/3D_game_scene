@@ -12,7 +12,7 @@ analytic IK (animal_kit.Player) so paws plant without sliding at these runtime s
   fox   Walk 1.2 m/s, Run 5.0 m/s      sheep  Walk 0.8 m/s, Run 3.5 m/s     bear  Walk 1.0 m/s
   cat   Walk 0.6 m/s                   deer   Walk 1.3 m/s                  chicken Walk 0.5 m/s
   rabbit Hop 1.6 m/s                   crab   Walk 0.35 m/s sideways (+X, the crab's left)
-  cow   Walk 0.7 m/s                   pig    Walk 0.9 m/s                   goat   Walk 1.0 m/s
+  cow   Walk 0.7, Trot 4, Gallop 9 m/s  pig    Walk 0.9 m/s                   goat   Walk 1.0 m/s
   dog   Walk 1.1 m/s, Run 4.5 m/s      (the farm animals are authored at real size, no export scale)
 """
 import sys, os
@@ -2556,9 +2556,9 @@ def build_cow():
     """Village dairy cow: a chunky black-and-white Holstein (reads on green grass and gold stubble), a big
     chibi head with a pink muzzle, nostrils, lashed amber-brown eyes, small cream horns, leaf ears, a forelock tuft,
     cloven hooves, an udder, a tufted tail and a brass bell on a red collar (the bell swings). About 1.9 m nose to tail,
-    1.3 m at the back. Clips: Idle, Walk (0.7 m/s), Graze, Moo (once), Sleep."""
+    1.3 m at the back. Clips: Idle, Walk (0.7 m/s), Trot (4 m/s), Gallop (9 m/s), Graze, Moo (once), Sleep."""
     reset()
-    hide = mat('Cow hide', '#f6f1e7', rough=.7)
+    hide = mat('Cow hide', '#efe5cd', rough=.7)        # warm cream: albedo luminance 0.79 (a pure white blooms in sunlight)
     patch = mat('Cow patch', '#29232a', rough=.7)
     pink = mat('Cow nose', '#f3a2a8', rough=.5)
     horn = mat('Cow horn', '#f1e2b6', rough=.5)
@@ -2686,7 +2686,7 @@ def build_cow():
     mesh = make_skin('cow', arm, parts, dict(rays=36, distance=.3, strength=.6, ground=0.0))
 
     # ---------------------------------------------------------------- animation
-    P, T = quad_player(arm)
+    P, T = quad_player(arm, roll=True)
 
     def stand():
         return {k: (T[k].copy(), 0.0) for k in T}
@@ -2734,6 +2734,76 @@ def build_cow():
         return pose
     P.clip('Walk', WF, walk)
     foot_report(P, 'cow Walk', walk, WF, .7)
+
+    # Trot: two-beat diagonal gait (front left + hind right, then front right + hind left), 4 m/s, 0.5 s per loop, a short
+    # suspension between the pairs; the body bobs twice a loop and rolls a little toward the planted pair
+    TF, TV = 15, 4.0
+    TDF, TDH = .24, .30                       # stance share of the loop: the forelegs reach less far than the hind legs
+    TD = {'FL': TDF, 'FR': TDF, 'HL': TDH, 'HR': TDH}
+    tsweep = {k: TV * TF / FPS * d for k, d in TD.items()}
+
+    def trot(p):
+        ik = {}
+        for legs, ph in ((('FL', 'FR'), {'FL': 0, 'FR': .5}), (('HL', 'HR'), {'HR': 0, 'HL': .5})):
+            ik.update(gait(P, T, p, ph, TD[legs[0]], tsweep[legs[0]], (.17, .15), curl=(60, 48), roll=10, tangent=.5,
+                           offset={'FL': V(0, .06, 0), 'FR': V(0, .06, 0), 'HL': V(0, .02, 0), 'HR': V(0, .02, 0)}))
+        pose = {'ik': ik}
+        add(pose, 'hips@loc', (0, 0, -.05 + .028 * C(p, 2, .16)))
+        yw = 1.0
+        add(pose, 'hips', (-1.5 * S(p, 2, .1), 1.6 * yw * S(p, 1, .05), 1.2 * yw * S(p, 1)))
+        add(pose, 'spine', (1.2 * S(p, 2, .1), -1.0 * yw * S(p, 1, .05), -1.0 * yw * S(p, 1)))
+        add(pose, 'chest', (-1.5 * S(p, 2, .1), -1.6 * yw * S(p, 1, .05), -1.2 * yw * S(p, 1, .1)))
+        add(pose, 'neck_1', (-2 + 3 * S(p, 2, .2), 0, 3 * S(p, 1, .3)))
+        add(pose, 'neck_2', (-2 + 4 * S(p, 2, .25), 0, 2 * S(p, 1, .3)))
+        add(pose, 'head', (-3 + 3 * S(p, 2, .3), 0, 2 * S(p, 1, .4)))
+        add(pose, 'jaw', (3, 0, 0))
+        add(pose, 'ear_L', (0, 0, 10 + 8 * S(p, 2, .3)))
+        add(pose, 'ear_R', (0, 0, -10 - 8 * S(p, 2, .3)))
+        add(pose, 'tail_1', (-24 + 4 * S(p, 2, .1), 0, 6 * S(p, 1, .1)))
+        wave_chain(pose, ['tail_1', 'tail_2', 'tail_3'], p, 12, 1, .14)
+        add(pose, 'tail_2', (-8, 0, 0))
+        add(pose, 'bell', (28 * S(p, 2, .1), 0, 0))
+        set_lids(pose, eyes, 0, deg=105)
+        return pose
+    P.clip('Trot', TF, trot)
+    foot_report(P, 'cow Trot', trot, TF, TV, stance=({'FL': 0, 'HR': 0, 'FR': .5, 'HL': .5}, TD))
+
+    # Gallop: four-beat rotary gallop (hind left, hind right, front right, front left), 9 m/s, 0.6 s per loop. All four feet
+    # leave the ground twice a loop: gathered (legs under the belly) and extended (legs reaching out fore and aft). The
+    # body rocks nose-down / nose-up with the spine, the head bobs, the tail streams up and back.
+    GF, GV = 18, 9.0
+    GDF, GDH = .12, .14
+    GD = {'FL': GDF, 'FR': GDF, 'HL': GDH, 'HR': GDH}
+    gsweep = {k: GV * GF / FPS * d for k, d in GD.items()}
+
+    def gallop(p):
+        ik = {}
+        for legs, ph in ((('FL', 'FR'), {'FR': .45, 'FL': .55}), (('HL', 'HR'), {'HL': 0, 'HR': .1})):
+            ik.update(gait(P, T, p, ph, GD[legs[0]], gsweep[legs[0]], (.24, .22), curl=(75, 62), roll=14, tangent=.42,
+                           offset={'FL': V(0, -.04, 0), 'FR': V(0, -.04, 0), 'HL': V(0, .03, 0), 'HR': V(0, .03, 0)}))
+        pose = {'ik': ik}
+        ext = pulse(p, .87, .17)                     # all four reaching out: the long suspension
+        gat = pulse(p, .37, .09)                     # all four gathered under the belly: the short one
+        flex = ext - gat                             # +1 extended, -1 gathered
+        add(pose, 'hips@loc', (0, 0, -.075 + .085 * ext + .045 * gat))
+        add(pose, 'hips', (-6 * flex - 2 * S(p, 1, .1), 0, 0))
+        add(pose, 'spine', (-6 * flex, 0, 0))
+        add(pose, 'chest', (-3 * flex + 3 * ext, 0, 0))
+        add(pose, 'neck_1', (-5 - 6 * flex, 0, 0))
+        add(pose, 'neck_2', (-4 - 8 * flex, 0, 0))
+        add(pose, 'head', (-2 - 7 * flex, 0, 2 * S(p, 1)))
+        add(pose, 'jaw', (6 + 6 * ext, 0, 0))
+        add(pose, 'ear_L', (-14, 0, 22 + 8 * S(p, 1)))
+        add(pose, 'ear_R', (-14, 0, -22 - 8 * S(p, 1)))
+        add(pose, 'tail_1', (-48 - 8 * flex, 0, 4 * S(p, 1, .1)))
+        wave_chain(pose, ['tail_1', 'tail_2', 'tail_3'], p, 10, 1, .16)
+        add(pose, 'tail_2', (-14, 0, 0))
+        add(pose, 'tail_3', (-8, 0, 0))
+        add(pose, 'bell', (44 * S(p, 1, .1), 0, 0))
+        set_lids(pose, eyes, 0, deg=105)
+        return pose
+    P.clip('Gallop', GF, gallop)
+    foot_report(P, 'cow Gallop', gallop, GF, GV, stance=({'HL': 0, 'HR': .1, 'FR': .45, 'FL': .55}, GD))
 
     # Graze: head down to the grass, tearing and chewing, a brief look up in the middle
     def graze_body(k):

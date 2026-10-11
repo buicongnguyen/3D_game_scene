@@ -45,7 +45,7 @@ const CSS = `
 #trickHud.hidden,#trickHint.hidden,#trickCard.hidden{display:none}
 #trickHint{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:16;max-width:min(520px,90vw);
  padding:10px 16px;border-radius:18px;background:rgba(255,253,246,.96);box-shadow:0 6px 18px rgba(40,20,0,.25);font:700 16px Nunito,system-ui,sans-serif;color:#4a3020;
- text-align:center;transition:opacity .3s;zoom:var(--ui-scale,1);pointer-events:none}
+ text-align:center;transition:opacity .3s;zoom:var(--ui-scale,1);pointer-events:none;width:max-content}
 #trickHint.top{bottom:auto;top:calc(76px + env(safe-area-inset-top,0px))}
 #trickHint b{color:#c2541c;margin-right:6px}
 body.trick-round #objective{visibility:hidden}
@@ -81,6 +81,8 @@ export class Tricks {
     this.locks = false;         // true while a round holds Mika still (read by director.update)
     this.ambientOn = new Set();
     this.loops = new Set();     // per-frame callbacks of the running round (ctx.loop)
+    this.moveHooks = new Set(); // callbacks run before Mika moves each frame (ctx.beforeMove); dropped when the round ends
+    this.hookOn = false;
     this.signs = [];
     this.t = 0;
     this.buildUi();
@@ -207,6 +209,7 @@ export class Tricks {
     } finally {
       // whatever happened above (a failed card included), the round never keeps the screen
       this.loops.clear();
+      this.dropMoveHooks();
       this.el?.card.classList.add('hidden');
       this.round = null;
       this.locks = false;
@@ -240,6 +243,8 @@ export class Tricks {
       setNight(on, hour = 22.5) { self.setNight(on, hour); },
       /** Run fn(dt) every frame until it returns a value (resolved). Backspace (back) quits: resolves { quit: true }. */
       loop(fn) { return new Promise(res => { if (ctx.quit) res({ quit: true }); else self.loops.add({ fn, res }); }); },
+      /** Run fn(dt) every frame, before Mika moves (a round that reshapes her input: creeping). Dropped when the round ends. */
+      beforeMove(fn) { self.addMoveHook(fn); },
       /** Wait on the game clock (pauses with the game). */
       wait(sec) { let t0 = 0; return ctx.loop(dt => ((t0 += dt) >= sec ? true : undefined)); },
       /** Fade the screen to black (true) or back (false). */
@@ -258,10 +263,30 @@ export class Tricks {
     return ctx;
   }
 
+  /** Chain a callback into the frame, between the input being read and Mika moving (the game's own beforeUpdate slot). */
+  addMoveHook(fn) {
+    this.moveHooks.add(fn);
+    if (this.hookOn) return;
+    const g = this.g;
+    this.hookOn = true;
+    this.hookPrev = g.beforeUpdate;
+    this.hookFn = dt => { this.hookPrev?.(dt); for (const f of this.moveHooks) f(dt); };
+    g.beforeUpdate = this.hookFn;
+  }
+
+  dropMoveHooks() {
+    this.moveHooks.clear();
+    if (!this.hookOn) return;
+    this.hookOn = false;
+    if (this.g.beforeUpdate === this.hookFn) this.g.beforeUpdate = this.hookPrev;
+    this.hookPrev = this.hookFn = null;
+  }
+
   endRound(ctx) {
     const g = this.g;
     for (const l of this.loops) l.res({ quit: true });
     this.loops.clear();
+    this.dropMoveHooks();
     this.setNight(false);
     this.hideHint();
     this.el.hint.classList.remove('top');
@@ -298,6 +323,15 @@ export class Tricks {
     q('.again').innerHTML = `${tx('Play again')}${touch ? '' : '<kbd>Space</kbd>'}`;
     q('.done').innerHTML = `${tx('Done')}${touch ? '' : '<kbd>E</kbd>'}`;
     if (res?.extra) q('.score').textContent += ` · ${tx(res.extra)}`;
+    // a round may add one more fact of its own (the cricket's thermometer): res.fact = { title, text }, already translated
+    if (res?.fact) {
+      const f = document.createElement('div');
+      f.className = 'fact';
+      f.innerHTML = '<b></b><span></span>';
+      f.firstChild.textContent = res.fact.title;
+      f.lastChild.textContent = res.fact.text;
+      el.querySelectorAll('.fact')[1].after(f);
+    }
     el.classList.remove('hidden');
     return new Promise(resolve => {
       let t0 = 0;

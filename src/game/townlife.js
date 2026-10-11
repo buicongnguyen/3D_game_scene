@@ -15,6 +15,8 @@ import { STEPS, STEP_INDEX, ITEMS } from './story.js';
 import { BARK_RANGE } from './barks.js';
 import { tx, N_ } from '../i18n/i18n.js';
 import { inStory, forStory, storyId } from './stories/index.js';
+import { YARD_GAME } from './yard/index.js';
+import { yardAt, leavePath } from '../content/yard.js';
 
 /** A neighbour as the chosen story tells them: Grandma-story stage lines and chatter where they differ. */
 const storyPerson = p => (storyId() !== 'grandma' ? p : { ...p, story: (p.story || []).map(forStory), chatter: p.chatterGrandma || p.chatter, role: p.roleGrandma || p.role });
@@ -202,7 +204,9 @@ export class TownLife {
         const keep = c.clip !== 'Run' && it.cmd?.type === 'clip' && ['bucket', 'basket', 'letters', 'hand-lantern'].includes(it.propName);
         this.setProp(it, keep ? it.propName : null);
         n.setIdle('Idle');
-        n.walk(c.path, () => it.plan.arrived(c.path[c.path.length - 1]), c.speed, c.clip);
+        // leaving a playground yard: out by the gate, never through the rails
+        const Y = yardAt(n.pos.x, n.pos.z, 22), way = Y ? leavePath(Y, n.pos.x, n.pos.z) : [];
+        n.walk(way.length ? [...way, ...c.path] : c.path, () => it.plan.arrived(c.path[c.path.length - 1]), c.speed, c.clip);
         break;
       }
       case 'teleport': n.place(c.at[0], c.at[1], c.face); break;
@@ -442,7 +446,7 @@ export class TownLife {
       if (!kids.length) continue;
       if (gm.game === 'ball') this.ballStep(gm, kids, dt, p);
       else if (gm.game === 'tag') this.tagStep(gm, kids, dt);
-      else if (gm.game === 'footnet' || gm.game === 'keepup') this.d.yard?.ambient(gm, kids);   // the playground yard runs its own games
+      else if (YARD_GAME[gm.game]) this.d.yard?.ambient(gm, kids);   // the playground yards run their own games (game/yard/)
       else this.hopStep(gm, kids, dt);
     }
   }

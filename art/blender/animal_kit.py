@@ -450,10 +450,12 @@ class Player:
         self.legs = {}
         self.report = {}
 
-    def leg(self, name, upper, lower, foot, plane=None, yaw=False):
+    def leg(self, name, upper, lower, foot, plane=None, yaw=False, roll=False):
         """Register a 3-bone leg (upper, lower, foot) whose foot tail is the ground contact.
         plane: horizontal in-plane direction (default +Y, i.e. a sagittal leg bending about X);
-        yaw: also swing the leg about Z at the hip to follow off-plane targets (crab legs)."""
+        yaw: also swing the leg about Z at the hip to follow off-plane targets (crab legs).
+        roll: abduct the leg about its own plane axis at the hip so a target that the swaying parent has pushed sideways is
+        still reached: planted feet of a rolling body stay put (the leg tilts instead of the foot sliding)"""
         bs = self.arm.data.bones
         H, K, A, T = (bs[upper].head_local.copy(), bs[lower].head_local.copy(), bs[foot].head_local.copy(),
                       bs[foot].tail_local.copy())
@@ -461,7 +463,7 @@ class Player:
         h.z = 0
         h.normalize()
         ax = h.cross(Vector((0, 0, 1))).normalized()
-        L = dict(bones=(upper, lower, foot), parent=self.parent[upper], H=H, K=K, A=A, T=T, h=h, ax=ax, yaw=yaw,
+        L = dict(bones=(upper, lower, foot), parent=self.parent[upper], H=H, K=K, A=A, T=T, h=h, ax=ax, yaw=yaw, roll=roll,
                  L1=(K - H).length, L2=(A - K).length, L3=(T - A).length)
         uv = lambda v: (v.dot(h), v.z)
         k2, a2 = uv(K - H), uv(A - H)
@@ -530,6 +532,15 @@ class Player:
             d0 = t - H
             psi = math.atan2(d0.dot(side), d0.dot(h))
             t = H + Matrix.Rotation(-psi, 3, 'Z') @ (t - H)
+        phi = 0.0
+        if L['roll'] and not L['yaw']:
+            d0 = t - H
+            perp = d0 - h * d0.dot(h)
+            if perp.z < -1e-4:
+                u1 = Vector((0, 0, -1))
+                u2 = perp.normalized()
+                phi = math.atan2(u1.cross(u2).dot(h), u1.dot(u2))
+                t = H + Quaternion(h, -phi) @ d0
         L1, L2 = L['L1'], L['L2']
         reach = (L1 + L2) * .999
 
@@ -541,6 +552,8 @@ class Player:
             fp = Di.to_3x3() @ fw
             if psi:
                 fp = Matrix.Rotation(-psi, 3, 'Z') @ fp
+            if phi:
+                fp = Quaternion(h, -phi) @ fp
             f2 = uv(fp)
             f2 = f2.normalized() if f2.length > 1e-6 else Vector((0, -1))
             return uv(t - H) - f2 * L['L3'], f2
@@ -581,6 +594,8 @@ class Player:
         q1 = Quaternion(ax, c1)
         if psi:
             q1 = Quaternion(Zv, psi) @ q1
+        if phi:
+            q1 = Quaternion(h, phi) @ q1
         return [q1, Quaternion(ax, c2), Quaternion(ax, c3)], err
 
     def aim_chain(self, pose, bones, points):

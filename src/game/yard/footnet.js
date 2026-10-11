@@ -7,7 +7,7 @@
 // With nobody to play against (wall: true) Mika practises against the kick-board behind the far end: every third
 // return in a row is a point for her, every drop one for the board.
 import { COURT, LEVELS, STYLES, KICK_Y, WINDUP, HUMAN_SPEED, rng, clamp, judge, makeFlight, flightAt, homes, stepToward } from './rules.js';
-import { N_ } from '../../i18n/i18n.js';
+import { N_, tx } from '../../i18n/i18n.js';
 
 const SERVE_WAIT = 1.3, POINT_PAUSE = 1.7, AI_REACH = 1.3;
 const side = team => (team === 0 ? 1 : -1);
@@ -274,6 +274,9 @@ export class FootnetSim {
     this.server = this.wall ? this.human : this.pickServer(team);
   }
 
+  hud(names) { return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: this.wall ? tx('Three in a row: a point') : tx('First to {n}', { n: this.target }) }; }
+  hint() { return this.state === 'serve' && this.server === this.human ? tx('Press {act} to serve') : null; }
+
   /** The winning team, or null while the match is on. */
   won() { return this.score[0] >= this.target ? 0 : this.score[1] >= this.target ? 1 : null; }
 
@@ -305,6 +308,9 @@ export function footnetBot(sim, at = 0.12) {
 export default {
   id: 'footnet',
   name: N_('Foot-tennis'),
+  look: 'shuttle',
+  moves: true,
+  sideOk: true,                     // the camera may also stand at the side of the court
   /** Who stands where: with three kids Mika gets a partner; with fewer she plays them alone; with none, the board. */
   teams(kids) {
     if (!kids.length) return { mine: [], theirs: [], wall: true };
@@ -315,4 +321,17 @@ export default {
   create: opts => new FootnetSim(opts),
   bot: footnetBot,
   focus: { u: 0, v: 0, w: COURT.W + 1.5, l: COURT.L + 1.5 },      // what the camera must show
+  /** The kids on their own: one against one, two against two with four, the third sits on the bench. */
+  roles(ids, round = 0, loser = null) {
+    if (ids.length < 2) return { game: 'keepup', play: ids.slice(), watch: [] };
+    if (ids.length >= 4) return { game: 'footnet', play: ids.slice(0, 4), watch: ids.slice(4) };
+    if (ids.length === 2) return { game: 'footnet', play: ids.slice(), watch: [] };
+    let bench = ids[round % 3];
+    if (loser && ids.includes(loser)) bench = loser;
+    return { game: 'footnet', play: ids.filter(i => i !== bench), watch: [bench] };
+  },
+  ambientTeam: (play, i) => (play.length === 2 ? i : i % 2),
+  card(res, rec, names) {
+    return { verdict: res.won ? tx('You win!') : tx('The kids win this one'), good: res.won, score: `${names.mine} ${res.mine} : ${res.theirs} ${names.theirs}`, best: tx('Wins: {n} · Longest rally: {m}', { n: rec.wins, m: rec.rally }) };
+  },
 };

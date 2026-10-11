@@ -247,7 +247,7 @@ Bone names are free, but every clip listed must exist.
 | `cat` | 0.55 m | Idle, Walk, Sit, Sleep | ≤ 4k | Calico. |
 | `duck` | 0.4 m | Swim, Idle | ≤ 2k | — |
 | `deer` | 1.5 m | Idle, Walk, Graze | ≤ 6k | — |
-| `cow` | 1.9 m long | Idle, Walk, Graze, Sleep, Moo *once* | ≤ 6k | Authored walk 0.7 m/s. |
+| `cow` | 1.9 m long | Idle, Walk, Trot, Gallop, Graze, Sleep, Moo *once* | ≤ 6k | Authored speeds: Walk 0.7, Trot 4 (loop 0.5 s), Gallop 9 m/s (loop 0.6 s, suspension phase); hide is warm cream (luminance 0.79, no bloom). |
 | `pig` | 1.1 m long | Idle, Walk, Snuffle, Sleep, Oink *once* | ≤ 6k | Authored walk 0.9 m/s. |
 | `goat` | 1.0 m long | Idle, Walk, Graze, Sleep, Bleat *once* | ≤ 6k | Authored walk 1.0 m/s. |
 | `dog` | 0.7 m long | Idle, Walk, Run, Sit, Wag *once*, Bark *once* | ≤ 6k | Shiba: pricked ears that thin to a point and tip forward, warm cream inner ear facing forward; a snug red collar ring (2 cm) round the neck just behind the head, square to the neck, with a small round gold tag under the throat on the `bell` bone (no bandana); cream lower cheeks are part of the head (no fluff balls, no brow dots, no chest puff); closed dark-line smile. Walk 1.1 m/s, Run 4.5 m/s. Farm animals have a `public/icons/<kind>.webp` journal icon. |
@@ -259,6 +259,7 @@ Bone names are free, but every clip listed must exist.
 | `butterfly` | 6 cm span | Fly (loop 0.4 s flap), Rest (loop 4 s: wings ease from 18° open to 82° closed and back) | ≤ 300 | `Butterfly wing` is tinted by the runtime (`material.color`); the dark border and dusky root are vertex paint, so any tint keeps the pattern. Material extras `variants` = `#ff8c2e,#62b8ff` (orange, sky blue). Six thin legs under the thorax, clubbed antennae. Origin at the perch under the feet. |
 | `frog-tree` | 4 cm long, ~2.2 cm tall (real size) | Idle (loop 3 s: breathing, throat pumps, head looks about), Croak (loop 1.2 s: the `throat` bone scales 1 → 1.95, body squeezes, head lifts), Hop *once* (0.6 s: crouch, hind legs kick straight back, 5 cm in-place arc, air p 0.25–0.8, arms reach for the landing), Swim (loop 0.8 s: quick kick p 0–0.22, glide and refold) | ≤ 300 | `build_critters.py`. Japanese tree frog: bright leaf green `Frog skin`, cream `Frog belly` (belly + throat sac), big golden `Frog eye` with a painted horizontal pupil, a dark stripe from nostril through the eye to the shoulder (its own small patch), four separate toes with round pads on every foot, single throat sac. Origin on the ground under the body, faces −Y (three +Z). The throat sac is skinned only to the bone **`throat`**, whose scale is keyed in every clip (1.0 outside Idle/Croak) so crossfades never leave it puffed. Hop carries its own arc; the runtime adds the travel (~0.12 m per hop). Swim stays in place: put the origin ~1 cm under the water line and move the frog. Journal icon `public/icons/frog.webp` (rendered from `frog-tree`). |
 | `frog-pond` | 7 cm long (real size, = `frog-tree` × 1.75) | Same clips and durations as `frog-tree`; Hop arc 8.5 cm | ≤ 300 | Pond frog: warm olive `Frog skin` with dark brown blotches (painted), a pale stripe down the back, cream belly and sac, coppery eyes, pointed unwebbed fingers and webbed hind feet (no toe pads). Same rig and bone names as `frog-tree`. |
+| `cricket` (bug games) | 5 cm long | Idle (3 s), Chirp (0.8 s, three bursts: what critters.js plays with the audio), **Sing** (loop 0.267 s: wings held up and sawing, for a cricket that sings without a pause), **Walk** (loop 0.6 s, tripod gait, 14.4 mm/s at 1×), Hop *once* (0.6 s, 4 cm arc) | ≤ 340 | `build_critters.py` (all cricket notes above still hold). Every leg now has a knee: bones `leg1_L/R`+`shin1_L/R` (front), `leg2_*`+`shin2_*` (middle) and the hind `thigh_L/R`+`shin_L/R`; Idle, Chirp, Sing and Walk pose all six by IK so the claws stay planted (Hop kicks the hind legs by hand and tucks the other four). Cerci are a third of the body long, the antennae 3.5 cm. |
 | `firefly` | 1.5 cm long | Rest (loop 3 s: breathing, a slow look, a wing-case twitch), Fly (loop 0.4 s: cases open and up, hind wings spread and buzz 8 beats, body nose-up 18°) | ≤ 300 | Genji firefly: black `Firefly body`, pink-red shield and pale belly/wings on `Firefly pale`, and a glowing tail on **`Firefly glow`** (emissive `#d4ff4a` at strength 2.5 in the file): the runtime pulses its `emissiveIntensity` (clone the material per firefly, or drive the instanced glow points and keep the model for close-ups). Origin at the perch under the body. Icon `public/icons/firefly.webp`. |
 
 | `beetle-rhino` | 4.6 cm body, 6.6 cm with the horn, 3.2 cm tall at the horn tips (real size) | Idle (loop 3 s: breathing, the head and horn lift once, antennae twitch, three legs lift and reset in turn; the other claws stay put), Walk (loop 0.8 s: tripod gait, every claw planted 56% of the loop and travelling straight back 7 mm: **15.6 mm/s at 1×**, so move the beetle at 0.0156 × its scale m/s and the feet do not skate) | ≤ 350 | `build_tricks2.py`. Japanese rhinoceros beetle (kabutomushi), male: chestnut wing cases with a dark seam and broad shoulders, a darker domed shield as wide as they are, a small head with the thick up-curved horn that forks in two and each branch in two again, a short thorax horn, six stout legs with knees, stubby antennae. `Rhino shell` (roughness 0.5; all colour is vertex paint) and `Rhino eye`. Bones: `root` > `body` > `head` (carries the horn; rotate it to nod or lift) > `antenna_L/R`; under `body` each leg is two bones, `leg1_L/R` (front), `leg2_*`, `leg3_*` at the hip and `shin1_*`…`shin3_*` at the knee. The legs are posed by IK baked into the clips: do not drive them by hand. Origin on the ground under the body, faces −Y (three +Z). Icon `public/icons/beetle-rhino.webp`. |
@@ -414,6 +415,56 @@ Idle/Walk `grip_R` +Y points from the palm toward the fingertips (down when the 
   rotation (1.512, −1.861, −0.626); raised catch (net forward and up at ~40°, for fireflies in the air):
   rotation (−2.478, 1.281, −0.626). Slerp between the two for a swing.
 
+#### Menu icons — `build_icons.py`
+
+The Mini games menu, its category cards and the game cards. No models: each icon is a vignette scene built from primitives and posed copies of
+the game's own models (cow, kids, Mika, koi, trout, ball, glass jar, star kite) and written to `.tools/review/trick-scenes/<name>.glb`
+(`blender -b --factory-startup --python art/blender/build_icons.py -- [--only a,b]`), then rendered with
+`render_icons.py -- --models .tools/review/trick-scenes <names>` into `public/icons/<name>.webp`: 160 × 160, lossless WebP, thin dark outline
+(reads on dark panels, parchment and at 48 px). `icon_post.py` keeps every icon at or under 12 KB: over that, it saves a dithered 256-colour palette
+(and fewer colours if still over) with the alpha rounded to five levels; all 21 are 7.2 to 11.6 KB. Icon files are not counted in `TOTAL_RAW_BYTES`
+or `TOTAL_PACKED_BYTES` (they are not models). The names are exact:
+
+| Icon (`public/icons/<name>.webp`) | Picture |
+|---|---|
+| `trick-archery` | straw target with painted rings on an easel, a wooden practice bow and a feathered arrow in flight with a blunt red rubber tip |
+| `trick-cowrace` | a smiling cow galloping with a kid in a straw saddle blanket, two pennants, speed lines, dust and a mud splash |
+| `yard-footnet` | a shuttlecock over a low net, a foot in a red shoe kicking it |
+| `yard-keepup` | four feet in a chalk ring keeping a shuttle up (seen from above) |
+| `yard-volley` | a volleyball over a tall net |
+| `yard-rope` | a skipping rope mid-turn over a jumping kid, tied to two stakes |
+| `yard-tug` | a tug-of-war rope with a flag in the middle, two pairs of hands with team wristbands |
+| `yard-oanquan` | the ô ăn quan board drawn in dirt: two rows of five squares with pebbles, a big stone in each end cell |
+| `yard-sack` | a kid hopping in a burlap sack |
+| `yard-marbles` | swirl glass marbles in a chalk circle, the shooter in front |
+| `fish-dock` | a rod over the Kawabe dock planks, a bobber with ripples, a koi below |
+| `fish-mill` | a rod beside the mill's water wheel, a trout in the stream |
+| `cow-ride` | a Mika-like kid sitting on a calm cow in a meadow |
+| `kite-workshop` | the star kite flat on a bench with its four motors, a battery with wires and a screwdriver |
+| `sky-stars` | the Big Dipper as glowing dots and lines in a night sky, with a shooting star |
+| `minigames` | the menu card: a controller, a ball, a diamond kite and an arrow in a target |
+| `cat-tricks`, `cat-yard`, `cat-fish`, `cat-sky`, `cat-animals` | category icons, one object each: a firefly jar, the ball, a koi, a gold star, the cow |
+
+The older trick icons (`trick-firefly`, `-river`, `-stars`, `-frogs`, `-kite`, `-dew`, `-roast`, `-beetles`, `-hoppers`, `-cricket`) are unchanged.
+
+#### Bug-catching games — `build_bugs.py`
+
+Grasshopper, mantis and the bug cage (the cricket is in `build_critters.py`, the net in `build_tricks.py`). Icons
+`public/icons/{grasshopper,mantis,bug-cage}.webp` are item renders (the mantis icon is its Threat pose);
+`trick-hoppers` and `trick-cricket` are renders of review-only scenes: `build_bugs.py -- --icons` writes
+`.tools/review/trick-scenes/trick-*.glb`, then `render_icons.py -- --models .tools/review/trick-scenes trick-hoppers trick-cricket`.
+All creatures: real size, faces −Y (three +Z), origin on the ground under the body. **Legs are two bones**: `leg{n}_{L|R}` (hip > knee)
+and `shin{n}_{L|R}` (knee > claw), n = 1 front, 2 middle, 3 hind, and every clip is posed by two-bone IK (`bug_kit.py`), so planted claws
+do not move while the body breathes, sways or rears: never drive the leg bones by hand. Bone tree: `root` > `body` > `head` (> `antenna_L/R`),
+the legs, and for the mantis the wings. Walk speeds are authored for 1× scale: move the bug at (speed × its scale).
+`node art/blender/validate_glb.mjs grasshopper mantis bug-cage cricket` must report 0 errors and 0 warnings.
+
+| Model | Size | Clips | Tris | Notes |
+|---|---|---|---|---|
+| `grasshopper` | 4 cm (3.4 cm body, antennae 1.5 cm) | Idle (3 s: breathing, antenna twitches, chewing in two bursts, a claw lifts), Walk (loop 0.8 s, tripod gait, **13.4 mm/s**), Hop *once* (0.6 s, in place, 3 cm arc: crouch 0–0.28, hind legs extend and trail straight back in the air 0.4–0.8, other legs tucked, landing reach), Struggle (loop 0.4 s: held in a hand, hind legs kick in turn, the others flail) | ≤ 350 | `build_bugs.py`. Rice-field grasshopper: fresh green with a cream stripe down the pronotum and back, big dark-brown eye, folded wing cases past the abdomen, fat hind femurs folded along the body. Materials **`Hopper body`** (the tintable green; `extras.variants` = `#7cc83a,#a0703a`: set the material colour to `#a0703a` for the brown form, the vertex shading and the stripe stay), `Hopper stripe` (cream), `Hopper eye`. Bones: `body`, `head` (chews), `antenna_L/R`, `leg1..3_*`, `shin1..3_*`. |
+| `mantis` | 8 cm (6.9 cm body, antennae to 8.3 cm) | Idle (3 s: sways like a leaf, the head tilts), Walk (loop 1.2 s, slow stalking on the four rear legs, forelegs held up, **11.0 mm/s**), Look / LookR *once* (0.8 s: the head swivels 55° left / right and tilts, then returns), Strike *once* (0.3 s: forelegs snap straight out and back, the body lunges), Threat *once* (1.2 s, **ends in the pose**: rears up 38°, forelegs spread wide, wings fanned; the Animator holds the last frame, play it at p < 1 or clamp it), Struggle (loop 0.5 s) | ≤ 400 | `build_bugs.py`. Praying mantis: slim green body, triangular head with big eyes on a long prothorax, raptorial forelegs folded (cream spines), long thin middle and hind legs, green wing cases over cream hind wings. `Mantis body`, `Mantis wing` (double-sided: wings, hind wings and the spines), `Mantis eye`. Bones as the grasshopper plus `wing_L/R` (wing cases) and `hind_L/R` (hind wings); `head` pivots at the neck. Forelegs are `leg1_*`/`shin1_*` (femur / tibia). |
+| `bug-cage` | 17 cm wide, 20.8 cm tall with the hook | — (static) | ≤ 300 | `build_bugs.py`. Bamboo mushikago: 20 slats and three wood bands, a floor, a twig and two leaves inside. Root mesh `bug_cage`; child node **`lid`** (a dome with a hook handle; its origin is the middle of the rim, 12.5 cm up: lift it by moving or tilting the node). All three materials (`Cage bamboo`, `Cage wood`, `Cage leaf`) are double-sided. |
+
 #### Phase 2 — `build_tricks2.py`
 
 Kite, dew webs, sweet potato roast and beetle sap trap. The two beetles and the moth are rigged (see "Animal rigs");
@@ -547,6 +598,12 @@ the footprint, front toward −Y). Every model except `star-tree` has an icon in
   uncompressed sources). Production builds re-encode every model with
   meshopt (`scripts/pack-models.mjs`), and the packed library must stay
   within `TOTAL_PACKED_BYTES` (`tests/pack.test.mjs`). Both numbers live in
-  `tests/asset-contracts.mjs`, each with the history of its raises (39.335 MB and 14.894 MB after the tricks art audit).
+  `tests/asset-contracts.mjs`, each with the history of its raises (39.700 MB and 15.190 MB after the bug-catching games).
 - Each rigged model loads in three.js with all listed clips. Every contract
   node and material listed above exists.
+
+## Riding the cow
+
+Clips on `mika` and `villager-kid` only (Kenta/Yui/Daichi use the kid): `RideCow` (idle sway, 3 s loop), `RideCowTrot` (0.5 s loop, two bounces), `RideCowLean` (0.6 s loop, leaning forward, for Gallop). Thighs about 78 degrees out from vertical, shins hanging down the cow's sides, feet loose, torso upright, both hands on a rope at the cow's neck base. Node names unchanged, so the Low-tier merged skin is unaffected.
+
+Seat offset: attach the rider root to the cow's `spine` bone, on the centre line, standing on top of the saddle blanket. Cow back top about 1.33 m, blanket about 0.03 m, so root at height 1.36 m and 0.12 m toward the head (three.js x=0, y=1.36, z=+0.12 relative to the cow root). The clips drop the pelvis so the hip joints sit 0.075 x k above the root. Review scenes: `art/blender/rider_check.py`.

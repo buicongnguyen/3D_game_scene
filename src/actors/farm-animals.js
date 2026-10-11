@@ -40,6 +40,7 @@ function walkTo(a, x, z, speed, authored, done, clip = 'Walk') {
 
 /** One frame for one farm animal. */
 export function farmStep(wl, a, dt, player, game) {
+  if (a.ridden) return;                                       // Mika is riding her (actors/cow-ride.js)
   const F = a.farm, def = F.def, night = game?.game?.night ?? 0;
   F.t -= dt; F.callWait -= dt; F.retarget -= dt; F.bark -= dt;
   const dx = player.pos.x - a.pos.x, dz = player.pos.z - a.pos.z, d = Math.hypot(dx, dz);

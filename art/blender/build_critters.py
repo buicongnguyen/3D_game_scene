@@ -15,7 +15,8 @@ These are scatter-scale creatures (lightweight-game-objects: 16-48 px on a phone
 and the paint is multiplied into the baked AO in COLOR_0, so spots, bands, wing borders and pupils
 cost no extra materials. Heads and eyes are a little oversized so they read at a few metres.
 
-  cricket    5 cm long   Idle, Chirp (loop: the two forewings lift and scissor), Hop (once, in-place arc 4 cm)
+  cricket    5 cm long   Idle, Chirp (0.8 s: the two forewings lift and scissor in three bursts), Hop (once, in-place arc 4 cm),
+                         Walk (loop 0.6 s, claws planted), Sing (loop 0.267 s: the wings held up and rubbing)
   spider     3.3 cm body Idle (legs shift), Walk (~0.05 m/s)        + static 'spider-web' (0.6 m)
   ladybug    1 cm        Idle, Fly (once: wing cases open, wings unfold and buzz)
   dragonfly  7 cm span   Fly (loop: wing buzz)
@@ -30,6 +31,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from kit import *  # noqa: F401,F403
 from rig import build_armature, bind, bind_blend, ramp, skin, export_rigged, clip, FPS
 from animal_kit import S, C, pulse, window, smooth, lerp, tri_count
+from bug_kit import (make_legs, leg_bones, solve_legs, stride_target, to_body, skinned_leg, CLAMPED)
 from mathutils import Quaternion, noise
 
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -38,7 +40,7 @@ ONLY = ALL
 if '--only' in ARGV:
     ONLY = [n.strip() for n in ARGV[ARGV.index('--only') + 1].split(',') if n.strip()]
 NO_SAVE = '--no-save' in ARGV
-BUDGET = {'cricket': 300, 'spider': 300, 'spider-web': 400, 'ladybug': 300, 'dragonfly': 300, 'butterfly': 300, 'frog-tree': 300, 'frog-pond': 300,
+BUDGET = {'cricket': 340, 'spider': 300, 'spider-web': 400, 'ladybug': 300, 'dragonfly': 300, 'butterfly': 300, 'frog-tree': 300, 'frog-pond': 300,
           'firefly': 300}
 RESULTS = {}
 Xv, Yv, Zv = Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
@@ -221,9 +223,12 @@ def export_critter(name, arm):
 def build_cricket():
     """Field cricket (enma-korogi), 5 cm: glossy chestnut brown, a round head as wide as the saddle-shaped
     pronotum, a stout abdomen that follows on without a waist, two dark forewings lying flat on the back
-    (right over left), two tail spikes (cerci), long sweeping antennae and chunky jumping legs. Six legs,
-    all on the thorax. Males sing by rubbing the two raised forewings together, so Chirp moves the wings,
-    not the legs."""
+    (right over left), two long tail spikes (cerci), long sweeping antennae and chunky jumping legs. Six legs,
+    all on the thorax, each with a knee: the claws stay planted while it breathes, chirps or walks (two-bone IK
+    baked into the clips). Males sing by rubbing the two raised forewings together, so Chirp / Sing move the
+    wings, not the legs.
+    Clips: Idle, Chirp (0.8 s, three bursts: what critters.js plays with the audio), Hop, Walk (0.6 s loop),
+    Sing (0.267 s loop: the wings held up and rubbing, for a cricket that sings without pause)."""
     reset()
     body_m = mat('Cricket body', '#8f5626', rough=.5)
     wing_m = mat('Cricket wing', '#4f2b14', rough=.38)
@@ -231,22 +236,23 @@ def build_cricket():
     H, Hr = V(0, -.0146, .0106), (.0064, .0060, .0068)
     T, Tr = V(0, -.0066, .0102), (.0066, .0070, .0062)
     A, Ar = V(0, .0090, .0090), (.0066, .0150, .0060)
+    PIV = V(0, -.006, .010)                       # the body bone's head: the body breathes and tilts about it
 
+    legs = make_legs([dict(n=1, hip=V(.0042, -.0100, .0064), knee=V(.0100, -.0132, .0085), foot=V(.0125, -.0176, .0004)),
+                      dict(n=2, hip=V(.0048, -.0050, .0064), knee=V(.0122, -.0034, .0085), foot=V(.0165, -.0006, .0004)),
+                      dict(n=3, hip=V(.0058, -.0008, .0068), knee=V(.0108, .0150, .0168), foot=V(.0128, .0262, .0006),
+                           leg='thigh', shin='shin')])
     bones = [('root', (0, 0, 0), (0, 0, .004), None),
-             ('body', (0, -.006, .010), (0, -.016, .010), 'root'),
+             ('body', PIV, (0, -.016, .010), 'root'),
              ('wings', (0, -.0030, .0142), (0, .012, .0142), 'body')]
-    hind = {}
     for s, sd in ((1, 'L'), (-1, 'R')):
-        hip, knee, foot = sx(V(.0058, -.0008, .0068), s), sx(V(.0108, .0150, .0168), s), sx(V(.0128, .0262, .0006), s)
-        hind[sd] = (hip, knee, foot)
         ab = sx(V(.0022, -.0200, .0152), s)
         bones += [(f'antenna_{sd}', ab, sx(V(.0070, -.0350, .0240), s), 'body'),
-                  (f'wing_{sd}', sx(V(.0016, -.0030, .0142), s), sx(V(.0016, .012, .0142), s), 'wings'),
-                  (f'thigh_{sd}', hip, knee, 'body'), (f'shin_{sd}', knee, foot, f'thigh_{sd}')]
+                  (f'wing_{sd}', sx(V(.0016, -.0030, .0142), s), sx(V(.0016, .012, .0142), s), 'wings')]
+    bones += leg_bones(legs)
     arm = build_armature('Cricket', bones)
 
     P = Parts()
-    underside = lambda co: .72 if co.z < .0075 else 1.0
     P.add(sphere('Cricket head', Hr, H, body_m, seg=7, rings=4), 'body', lambda co: .78 if co.z < .008 else 1.0)
     # pronotum: darker than the head, like a little saddle
     P.add(sphere('Cricket thorax', Tr, T, body_m, seg=6, rings=3), 'body', lambda co: .55 if co.z < .0075 else .72)
@@ -260,19 +266,26 @@ def build_cricket():
               lambda co: 1.45 if abs(co.x) > .0056 else 1.0)
     for s, sd in ((1, 'L'), (-1, 'R')):
         P.add(sphere(f'Cricket eye {sd}', .0025, sx(V(.0050, -.0176, .0134), s), eye_m, seg=5, rings=3), 'body')
-        P.add(stick(f'Cricket antenna {sd}', [sx(V(.0022, -.0200, .0152), s), sx(V(.0070, -.0350, .0240), s),
-                                              sx(V(.0165, -.0500, .0255), s)], .0007, body_m, taper=.5), f'antenna_{sd}', .6)
-        # cerci: the two tail spikes every cricket carries
-        P.add(stick(f'Cricket cercus {sd}', [sx(V(.0022, .0222, .0086), s), sx(V(.0058, .0330, .0112), s)], .0007, body_m,
-                    taper=.4), 'body', .6)
-        for nm, pts in (('front', (V(.0042, -.0100, .0064), V(.0100, -.0132, .0085), V(.0125, -.0176, .0004))),
-                        ('mid', (V(.0048, -.0050, .0064), V(.0122, -.0034, .0085), V(.0165, -.0006, .0004)))):
-            P.add(stick(f'Cricket {nm} leg {sd}', [sx(p, s) for p in pts], .0009, body_m, taper=.6), 'body', 1.15)
-        hip, knee, foot = hind[sd]
-        P.add(stick(f'Cricket thigh {sd}', [hip, hip.lerp(knee, .45) + sx(V(.0006, 0, .0008), s), knee], .0024, body_m,
-                    verts=4, taper=.45), f'thigh_{sd}', lambda co: .85 if co.z < .011 else 1.0)
-        P.add(stick(f'Cricket shin {sd}', [knee, foot], .0008, body_m, taper=.7), f'shin_{sd}', 1.1)
+        P.add(stick(f'Cricket antenna {sd}', [sx(V(.0020, -.0190, .0147), s), sx(V(.0070, -.0350, .0240), s),
+                                              sx(V(.0165, -.0500, .0255), s)], .0007, body_m, taper=.15), f'antenna_{sd}', .6)
+        # cerci: the two long tail spikes every cricket carries (a third of the body long)
+        P.add(stick(f'Cricket cercus {sd}', [sx(V(.0022, .0222, .0086), s), sx(V(.0050, .0310, .0108), s),
+                                             sx(V(.0082, .0395, .0124), s)], .0007, body_m, taper=.15), 'body', .6)
+    for L in legs:
+        if L['n'] < 3:
+            ob = skinned_leg(tube, f'Cricket leg{L["n"]} {L["sd"]}', L, [L['hip'], L['knee'], L['foot']],
+                             (.0011, .0009, .0003), body_m)
+            paint(ob, 1.15)
+        else:
+            s = 1 if L['sd'] == 'L' else -1
+            mid = L['hip'].lerp(L['knee'], .45) + sx(V(.0006, 0, .0008), s)
+            ob = skinned_leg(tube, f'Cricket hind leg {L["sd"]}', L, [L['hip'], mid, L['knee'], L['knee'].lerp(L['foot'], .5), L['foot']],
+                             (.0024, .0027, .0012, .0009, .0003), body_m, verts=4, leg_rings=3)
+            paint(ob, lambda co: .85 if co.z < .011 else 1.1)
+        P.append(ob)
     finish('cricket', arm, P, dict(rays=32, distance=.012, strength=.55, ground=0.0))
+
+    GROUP_A = {(1, 'L'), (3, 'L'), (2, 'R')}
 
     def antennae(p, amp=1.0, ph=0.0, sweep=0.0):
         tw_l = pulse(p, .18 + ph, .03) + pulse(p, .63 + ph, .025)
@@ -280,37 +293,57 @@ def build_cricket():
         return {'antenna_L': (-8 * tw_l * amp + sweep, 0, 10 * S(p, 1, .1) * amp - 6 * tw_l),
                 'antenna_R': (-8 * tw_r * amp + sweep, 0, -10 * S(p, 1, .3) * amp + 6 * tw_r)}
 
-    # Idle (3 s): breathing, lazy antenna sweeps with twitches, a hind-leg shuffle
-    def idle_ch():
-        ch = {'body@loc': lambda p: (0, 0, .00025 * S(p, 3)),
-              'body': lambda p: (1.2 * S(p, 3), 0, 3 * S(p, 1, .2)),
-              'wings': lambda p: (2 * pulse(p, .7, .05), 0, 0),
-              'thigh_L': lambda p: (10 * pulse(p, .5, .05), 0, 0),
-              'shin_L': lambda p: (-8 * pulse(p, .5, .05), 0, 0)}
+    def with_antennae(ch, amp=1.0, ph=0.0, sweep=0.0):
         for b in ('antenna_L', 'antenna_R'):
-            ch[b] = (lambda b: lambda p: antennae(p)[b])(b)
+            ch[b] = (lambda b: lambda p: antennae(p, amp, ph, sweep)[b])(b)
         return ch
-    clip(arm, 'Idle', 90, idle_ch())
+
+    # Idle (3 s): breathing, lazy antenna sweeps with twitches, a hind-leg shuffle (the claw lifts and sets down again)
+    idle_rot = lambda p: (1.2 * S(p, 3), 0, 3 * S(p, 1, .2))
+    idle_loc = lambda p: (0, 0, .00025 * S(p, 3))
+
+    def idle_foot(L, p):
+        k = pulse(p, .5, .05) if L['leg'] == 'thigh_L' else 0.0
+        return L['foot'] + V(0, -.0015 * k, .0030 * k)
+    ch = {'body@loc': idle_loc, 'body': idle_rot, 'wings': lambda p: (2 * pulse(p, .7, .05), 0, 0)}
+    ch.update(solve_legs(legs, PIV, idle_rot, idle_loc, idle_foot))
+    clip(arm, 'Idle', 90, with_antennae(ch))
 
     # Chirp (loop, 0.8 s): the forewings lift off the back and scissor quickly across each other (the file on one
     # wing scrapes the edge of the other: that is the song). Three bursts with short rests, like the real call;
     # the body hums along and the legs stay planted.
     def burst(p):
         return max(window(p, .02, .26, .25), window(p, .35, .59, .25), window(p, .68, .92, .25))
+    chirp_rot = lambda p: (-4 + .7 * S(p, 6) * burst(p), 0, 0)
+    chirp_loc = lambda p: (0, 0, .00018 * S(p, 6) * burst(p))
+    ch = {'wings': lambda p: (30 + 6 * burst(p), 0, 0),
+          'wing_L': lambda p: (0, 0, 3 + 5 * S(p, 6) * burst(p)),
+          'wing_R': lambda p: (0, 0, -3 - 5 * S(p, 6) * burst(p)),
+          'body': chirp_rot, 'body@loc': chirp_loc}
+    ch.update(solve_legs(legs, PIV, chirp_rot, chirp_loc, lambda L, p: L['foot']))
+    clip(arm, 'Chirp', 24, with_antennae(ch, .6, .1))
 
-    def chirp_ch():
-        lift = lambda p: 30 + 6 * burst(p)
-        ch = {'wings': lambda p: (lift(p), 0, 0),
-              'wing_L': lambda p: (0, 0, 3 + 5 * S(p, 6) * burst(p)),
-              'wing_R': lambda p: (0, 0, -3 - 5 * S(p, 6) * burst(p)),
-              'body': lambda p: (-4 + .7 * S(p, 6) * burst(p), 0, 0),
-              'body@loc': lambda p: (0, 0, .00018 * S(p, 6) * burst(p))}      # no leg channels: the legs rest
-        for b in ('antenna_L', 'antenna_R'):
-            ch[b] = (lambda b: lambda p: antennae(p, .6, .1)[b])(b)
-        return ch
-    clip(arm, 'Chirp', 24, chirp_ch())
+    # Sing (loop, 0.267 s = 8 frames, 7.5 rubs a second): the wings held up and sawing without a pause, the body
+    # humming; for a cricket that is singing right now (the wing motion of Chirp, minus the rests)
+    sing_rot = lambda p: (-4 + .6 * S(p, 2), 0, 0)
+    sing_loc = lambda p: (0, 0, .00015 * S(p, 2))
+    ch = {'wings': lambda p: (34 + 2 * S(p, 2, .25), 0, 0),
+          'wing_L': lambda p: (0, 0, 3 + 5 * S(p, 2)),
+          'wing_R': lambda p: (0, 0, -3 - 5 * S(p, 2)),
+          'body': sing_rot, 'body@loc': sing_loc}
+    ch.update(solve_legs(legs, PIV, sing_rot, sing_loc, lambda L, p: L['foot']))
+    clip(arm, 'Sing', 8, with_antennae(ch, .3, .1))
 
-    # Hop (once, 0.6 s): crouch, kick the hind legs straight, 4 cm in-place arc, land and settle
+    # Walk (loop 0.6 s): tripod gait, every claw planted 58% of the loop and travelling straight back 5 mm
+    walk_rot = lambda p: (0, 1.4 * S(p, 1), 2 * S(p, 1, .25))
+    walk_loc = lambda p: (0, 0, .0003 * C(p, 2))
+    ch = {'body@loc': walk_loc, 'body': walk_rot}
+    ch.update(solve_legs(legs, PIV, walk_rot, walk_loc, lambda L, p: stride_target(L, p, GROUP_A, .0050, .58, .0030)))
+    clip(arm, 'Walk', 18, with_antennae(ch, .6))
+    assert not CLAMPED[0], f'cricket: {CLAMPED[0]} leg targets out of reach'
+
+    # Hop (once, 0.6 s): crouch, kick the hind legs straight, 4 cm in-place arc, land and settle; the other four
+    # legs fold up under the body while it is in the air and reach for the ground again on the way down
     def hop_air(p):
         return math.sin(math.pi * (p - .25) / .55) if .25 < p < .8 else 0.0
 
@@ -319,18 +352,22 @@ def build_cricket():
 
     def kick(p):
         return window(p, .22, .75, .2)
+    hop_rot = lambda p: (5 * crouch(p) - 14 * window(p, .22, .5, .4) + 10 * window(p, .5, .8, .4), 0, 0)
+    hop_loc = lambda p: (0, 0, .04 * hop_air(p) - .0016 * crouch(p))
 
-    def hop_ch():
-        ch = {'body@loc': lambda p: (0, 0, .04 * hop_air(p) - .0016 * crouch(p)),
-              'body': lambda p: (5 * crouch(p) - 14 * window(p, .22, .5, .4) + 10 * window(p, .5, .8, .4), 0, 0),
-              'wings': lambda p: (6 * kick(p), 0, 0)}
-        for sd in ('L', 'R'):
-            ch[f'thigh_{sd}'] = lambda p: (16 * crouch(p) - 38 * kick(p), 0, 0)
-            ch[f'shin_{sd}'] = lambda p: (-12 * crouch(p) + 70 * kick(p), 0, 0)
-        ch['antenna_L'] = lambda p: (24 * window(p, .2, .85, .3), 0, -8 * window(p, .2, .85, .3))
-        ch['antenna_R'] = lambda p: (24 * window(p, .2, .85, .3), 0, 8 * window(p, .2, .85, .3))
-        return ch
-    clip(arm, 'Hop', 18, hop_ch(), loop=False)
+    def hop_tuck(L, p):
+        if L['n'] == 3:
+            return None
+        return to_body(PIV, hop_rot, hop_loc, p, L['foot']) + V(0, .0035, .0075) * window(p, .2, .84, .3)
+    ch = {'body@loc': hop_loc, 'body': hop_rot, 'wings': lambda p: (6 * kick(p), 0, 0)}
+    ch.update(solve_legs([L for L in legs if L['n'] < 3], PIV, hop_rot, hop_loc, lambda L, p: L['foot'], hop_tuck))
+    for sd in ('L', 'R'):
+        ch[f'thigh_{sd}'] = lambda p: (16 * crouch(p) - 38 * kick(p), 0, 0)
+        ch[f'shin_{sd}'] = lambda p: (-12 * crouch(p) + 70 * kick(p), 0, 0)
+    ch['antenna_L'] = lambda p: (24 * window(p, .2, .85, .3), 0, -8 * window(p, .2, .85, .3))
+    ch['antenna_R'] = lambda p: (24 * window(p, .2, .85, .3), 0, 8 * window(p, .2, .85, .3))
+    clip(arm, 'Hop', 18, ch, loop=False)
+    CLAMPED[0] = 0
     export_critter('cricket', arm)
 
 # ====================================================================== SPIDER

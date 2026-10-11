@@ -60,11 +60,13 @@ def build_legs(parts, species, F, H, fpts, frad, hpts, hrad, mats, mat_fn=None, 
                     parts.append(bind(p_, bone))
 
 
-def quad_player(arm):
+def quad_player(arm, roll=False):
+    """roll=True: the legs tilt about their own axis at the hip to keep planted feet in place while the body rolls
+    (see Player.leg); the cow uses it."""
     P = Player(arm)
     for sd in 'LR':
-        P.leg(f'F{sd}', f'upperarm_{sd}', f'forearm_{sd}', f'paw_{sd}')
-        P.leg(f'H{sd}', f'thigh_{sd}', f'shin_{sd}', f'foot_{sd}')
+        P.leg(f'F{sd}', f'upperarm_{sd}', f'forearm_{sd}', f'paw_{sd}', roll=roll)
+        P.leg(f'H{sd}', f'thigh_{sd}', f'shin_{sd}', f'foot_{sd}', roll=roll)
     T = {k: v['T'].copy() for k, v in P.legs.items()}
     return P, T
 
@@ -133,26 +135,32 @@ def wave_chain(pose, names, p, amp, cycles=1.0, lag=.1, axis=2, grow=.3):
     return pose
 
 
-def foot_report(P, label, pose_fn, frames, speed, K=1.0, tol=.004):
+def foot_report(P, label, pose_fn, frames, speed, K=1.0, tol=.004, stance=None):
     """Self-check for a gait clip: samples every frame, solves the IK and reports the world speed of each foot
-    contact point while it is on the ground (should equal `speed` in m/s, no sliding)."""
+    contact point while it is on the ground (should equal `speed` in m/s, no sliding). stance = (phases, duty) of the gait
+    also reports how high the foot is (cm) during its nominal stance: a clamped leg floats there."""
     dt = 1.0 / FPS
     out = []
     for leg, L in P.legs.items():
         bone, tip = L['bones'][2], L['T']
         pts = []
+        zs = []
         for f in range(frames):
             rots, locs, scales = P.pose_quats(pose_fn(f / frames))
             M = P._fk(rots, locs, scales)
             w = M[bone] @ P.rest[bone].inverted() @ tip
-            pts.append((w.y * K, w.z * K))
-        vs = []
+            pts.append((w.y * K, w.z * K, w.x * K))
+            if stance and (f / frames - stance[0][leg]) % 1.0 < (stance[1][leg] if isinstance(stance[1], dict) else stance[1]):
+                zs.append(w.z * K)
+        vs, xs = [], []
         for i in range(frames):
             a, b = pts[i], pts[(i + 1) % frames]
             if a[1] < tol * K and b[1] < tol * K:
                 vs.append((b[0] - a[0]) / dt)
+                xs += [a[2], b[2]]
         if vs:
-            out.append(f'{leg} on ground {len(vs)}/{frames} frames, speed {min(vs):.2f}..{max(vs):.2f} (mean {sum(vs) / len(vs):.2f})')
+            out.append(f'{leg} on ground {len(vs)}/{frames} frames, speed {min(vs):.2f}..{max(vs):.2f} (mean {sum(vs) / len(vs):.2f})'
+                       + (f', stance float max {max(zs) * 100:.1f} cm' if zs else '') + f', sideways {(max(xs) - min(xs)) * 100:.1f} cm')
         else:
             out.append(f'{leg} never reaches the ground')
     print(f'FOOTCHECK {label} target {speed} m/s: ' + ' | '.join(out))

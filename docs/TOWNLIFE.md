@@ -87,29 +87,32 @@ it to one of them, and every third throw someone cheers. While she plays, the ki
 than 9 m away tosses the ball back and ends her turn. There is one ball in the valley: it belongs to the ball game
 nearest Mika.
 
-## The playground yard
+## The playground yards
 
-East of Miss Endo's house, between the dock lane and the boathouse lane, stands the Kawabe Playground: a packed-earth
-court (6 x 11 m) with chalk lines and a low net, a rail fence with three gates, two benches, a scoreboard post, a box
-of balls and shuttlecocks, a hopscotch grid, a seesaw, a practice kick-board and a string of pennants. All of it is
-built in code from `src/content/yard.js` by `src/world/yard.js` (one merged, vertex-coloured mesh; no model files),
-and the ground under it is levelled by one `POST_SHAPES` row in `layout.js`.
+A yard is DATA (`src/content/yard.js` `YARDS`): a site, a court, a fence with gates, props, a Town Life spot, the Kawabe or
+Takamori kids who play there, and the list of `games` its scoreboard cycles through. `src/world/yard.js` builds any yard
+from that (one merged vertex-coloured mesh, no model files); `src/game/yard/round.js` runs them.
 
-- **The kids' own play.** Kenta, Yui and Daichi have `{ play: 'footnet' | 'keepup', at: 'kawabe.yard' }` in their 9,
-  12 and 15 o'clock blocks, between tag, hopscotch and the ball. Town Life hands those kids to `director.yard`
-  (`src/game/yard/round.js`), which runs the same pure simulation Mika plays, with nobody human in it: two rally
-  over the net (first to three, the loser swaps with the one on the bench), or everybody keeps the shuttle up in a
-  ring; one kid alone juggles. It sleeps while every kid is beyond the draw distance.
-- **Mika joins.** On the court, or at the box of shuttlecocks: "Join the game: …" (kids playing) or "Play: …" (the
-  Kawabe kids who are out of doors are called over; at night she plays the kick-board). A fixed court camera north of
-  the court; move under the landing ring and press E / Do it as the outer ring closes on it. Perfect timing sends a
-  fast flat return, okay a high lob, too early is a whiff (try again), too late is the other side's point; the stick
-  aims. Foot-tennis is first to 5 (3 the first time); keep-it-up counts touches in a row for a minute, three drops
-  allowed. Backspace (or "Stop playing") leaves at any time. The record is `quest.state.yard`.
-- **Change the game** at the scoreboard post. The games are a small registry (`src/game/yard/index.js`): a module
-  with `teams / target / create / bot / focus` whose sim has the shape described there plugs in as a third game.
-- Rules are pure and seeded (`src/game/yard/rules.js`, `footnet.js`, `keepup.js`); `tests/yard.test.mjs` replays
-  recorded input through them and checks the site against roads, buildings, trick signs, name boards and sky spots.
+- **Kawabe Playground** (east of Miss Endo's house): foot-tennis, keep it up, rope jumping, marbles and ô ăn quan. A packed-earth
+  court (6 x 11 m) with a 1.3 m net, a rail fence with three gates, benches, a scoreboard, a ball box, hopscotch, a seesaw and a
+  practice board; the oan quan board and the marble ring are scratched in the dirt just outside the south rails.
+- **Takamori Green** (north of the bell tower): volleyball, tug of war, the sack race and rope jumping. A sand-and-earth court with a
+  2.2 m net and a log edging, the tug-of-war strip west of the fence and the three sack-race lanes north of it. The ground under the
+  lanes is levelled by one `POST_SHAPES` row in `layout.js` (keep `tests/tour.test.mjs`'s 70 m/s camera limit in mind when
+  touching those rows).
+- **The kids' own play.** The Kawabe kids (Kenta, Yui, Daichi) and the Takamori kids (Hiro, Nao, Sumi) have `{ play: '<game>', at:
+  'kawabe.yard' | 'takamori.court' }` tasks between tag, hopscotch and the ball. Town Life hands those kids to `director.yard`, which
+  runs the same pure simulation Mika plays with nobody human in it; it sleeps while every kid is beyond the draw distance or the
+  yard is far from Mika. Kids walk in and out through the gates (`pathBetween`, `leavePath`), never through the rails.
+- **Mika joins** at the court, the scoreboard or the game's own spot: "Join the game" when kids are playing, "Play" otherwise (the
+  village kids are called over; at night she plays the practice board). A fixed camera, behind the near side or from the side (a
+  button in the round remembers the choice), the landing / beat ring, kids' bubbles, a results card with a short note on where the
+  game comes from. The record is `quest.state.yard` (`game` for Kawabe's scoreboard, `pick` for the others, one record per game;
+  marbles keep a `total` of marbles won).
+- **Games** (each a module of `src/game/yard/` with a pure seeded sim, tested in `tests/yard.test.mjs` / `yard2.test.mjs`):
+  foot-tennis, keep it up, volleyball (bump, set, spike), rope jumping, tug of war (on the beat), ô ăn quan (the real rules,
+  minimax opponent, hints), sack race, marbles (2D physics). A new game: write the module, add it to `index.js`, give it a name,
+  rule line and note in `content/yard.js`, a view in `views.js` (or reuse one) and list it in a yard's `games`.
 
 ## Inside the houses
 

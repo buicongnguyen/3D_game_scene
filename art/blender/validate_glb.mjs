@@ -29,6 +29,11 @@ const DIR = path.resolve(ROOT, opt('--dir') || 'public/models');
 const JSON_OUT = opt('--json');
 const NAMES = argv.length ? argv : ['beetle-rhino', 'beetle-stag', 'moth', 'kite-paper', 'sweet-potato', 'straw-pile', 'spider-web'];
 // Large single-sided sheets that are fine because their back can never be seen (reason shown in the report).
+// Overlaps that are decals by design: [model, regex of the pair key, reason]. The game separates static decals at load
+// (engine/coplanar.js); a skinned model keeps them a few millimetres proud, which holds up to ~60 m.
+const DECALS_OK = [['cow', new RegExp('^Cow hide / Cow patch'), 'coat patches are decals 2-9 mm proud of the hide'],
+  ['cow', new RegExp('^Cow (eye / Cow (pupil|iris)|iris / Cow pupil)'), 'iris and pupil are decals on the eyeball']];
+const SCALE_OK = { cow: ['Moo', 'Sleep'] };   // clips that scale bones on purpose (a swelling throat, a breathing chest)
 const SHEETS_OK = {
   'beetle-rhino': 'wing cases lie on the belly', 'beetle-stag': 'wing cases lie on the belly',
   'straw-pile': 'the mound and the ember bed sit on the ground',
@@ -37,7 +42,7 @@ const SHEETS_OK = {
 const srgb = c => (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055);
 const hex = rgb => '#' + rgb.map(c => Math.round(255 * Math.min(1, Math.max(0, srgb(c)))).toString(16).padStart(2, '0')).join('');
 const at = p => p.toArray().map(x => +x.toFixed(4)).join(' ');
-const LEG = /^(?:leg|shin|foot)(\d_[LR])$/;
+const LEG = /^(?:leg|thigh|shin|foot)(\d?_[LR])$/;
 
 async function load(file) {
   const buf = readFileSync(file);
@@ -184,7 +189,13 @@ function audit(name, { json, gltf, bytes }) {
   // Rays leave the middle of the opening in 26 directions; if most of them soon hit another part, it is buried.
   const DIRS = [];
   for (let x = -1; x <= 1; x++) for (let y = -1; y <= 1; y++) for (let z = -1; z <= 1; z++) if (x || y || z) DIRS.push(new THREE.Vector3(x, y, z).normalize());
-  const inside = (p, own) => {
+  const tri = new THREE.Triangle(), cp = new THREE.Vector3();
+  // buried = most rays hit another part soon, or the opening lies against another part (a tube end that meets a body)
+  const inside = (p, own, size) => {
+    for (const s of shells) {
+      if (s === own || s.box.distanceToPoint(p) > size) continue;
+      for (const t of s.tris) { tri.set(t[0], t[1], t[2]); tri.closestPointToPoint(p, cp); if (cp.distanceTo(p) < size * 0.6) return true; }
+    }
     let hit = 0; const tmp = new THREE.Vector3(), ray = new THREE.Ray(p, DIRS[0]);
     for (const d of DIRS) {
       ray.direction.copy(d);
@@ -202,7 +213,7 @@ function audit(name, { json, gltf, bytes }) {
   for (const s of shells) if (s.open && !s.double) {
     parts++; partTris += s.fis.length;
     for (const l of s.loops) {
-      if (inside(l.at, s)) buried++;
+      if (inside(l.at, s, l.size)) buried++;
       else if (l.size > diag * 0.2) big++;
       else if (l.size > diag * 0.012) { holes++; if (holeAt.length < 6) holeAt.push(`${(l.size * 1000).toFixed(1)} mm at ${at(l.at)}`); }
     }
@@ -220,6 +231,7 @@ function audit(name, { json, gltf, bytes }) {
     flat.push({ si, t, n: nn, d: nn.dot(t[0]), f: F[fi], box: new THREE.Box3().setFromPoints(t) });
   }));
   const fights = new Map();
+  const doubleMats = new Set(F.filter(f => f.double).map(f => f.mat));
   for (let i = 0; i < flat.length; i++) for (let j = i + 1; j < flat.length; j++) {
     const A = flat[i], B = flat[j];
     if (A.si === B.si) continue;
@@ -239,7 +251,10 @@ function audit(name, { json, gltf, bytes }) {
   for (const [k, f] of fights) {
     const msg = `overlapping near-coplanar faces, ${k}: ${f.n} pair(s), gap ${(f.min * 1000).toFixed(2)}..${(f.max * 1000).toFixed(2)} mm (${(f.min / diag * 100).toFixed(3)}% of the model)`;
     const harmless = / same colour$/.test(k);
-    (harmless ? I : f.min < diag * 5e-4 ? E : f.min < diag * 2e-3 ? W : I)(msg + (harmless ? ' (no visible fight: identical shading)' : f.min < diag * 5e-4 ? ': z-fighting' : ''));
+    const decal = DECALS_OK.find(([m, re]) => m === name && re.test(k));
+    // back to back single-sided faces cannot fight: each is culled where the other is seen
+    const backToBack = /back-to-back/.test(k) && !/double/.test(k) && [...fights.keys()].length >= 0 && !(doubleMats.has(k.split(' / ')[0]) || doubleMats.has(k.split(' / ')[1].split(',')[0]));
+    (harmless || decal || backToBack ? I : f.min < diag * 5e-4 ? E : f.min < diag * 2e-3 ? W : I)(msg + (harmless ? ' (no visible fight: identical shading)' : decal ? ` (accepted: ${decal[2]})` : backToBack ? ' (single-sided: each is culled where the other is seen)' : f.min < diag * 5e-4 ? ': z-fighting' : ''));
   }
 
   // ---- skin
@@ -259,7 +274,8 @@ function audit(name, { json, gltf, bytes }) {
     }
     if (zero) E(`skin: ${zero} vertex(es) with no weights`);
     if (bad) E(`skin: ${bad} vertex(es) whose weights do not sum to 1`);
-    const idle = bones.map(bn => bn.name).filter(nm => !usedJ.has(nm) && nm !== 'root');
+    const drives = nm => usedJ.has(nm) || bones.some(bn => bn.parent && bn.parent.name === nm && drives(bn.name));   // a pure pivot (parent of moving bones) is fine
+    const idle = bones.map(bn => bn.name).filter(nm => !drives(nm) && nm !== 'root');
     I(`skin: ${bones.length} joints (${bones.map(bn => bn.name).join(', ')}), up to ${maxInf} influence(s) per vertex`);
     if (idle.length) W(`skin: joints that move no vertex: ${idle.join(', ')}`);
   }
@@ -278,42 +294,54 @@ function audit(name, { json, gltf, bytes }) {
       if (d > seam) { seam = d; seamTrack = tr.name; }
       if (prop === 'scale') { scaleTracks++; for (const x of vals) if (Math.abs(x - 1) > 1e-4) { nonUnitScale++; break; } }
     }
-    (seam > 0.5 ? E : I)(`clip ${clip.name}: ${clip.duration.toFixed(3)} s, ${clip.tracks.length} tracks, loop seam ${seam.toFixed(3)} (deg or mm) on ${seamTrack || '-'}`);
-    if (nonUnitScale) W(`clip ${clip.name}: ${nonUnitScale} scale track(s) with keys other than 1`);
+    const ENDS_POSED = new Set(['Threat']);               // one-shot clips that end holding their pose on purpose
+    (seam > 0.5 && !ENDS_POSED.has(clip.name) ? E : I)(`clip ${clip.name}: ${clip.duration.toFixed(3)} s, ${clip.tracks.length} tracks, loop seam ${seam.toFixed(3)} (deg or mm) on ${seamTrack || '-'}`);
+    if (nonUnitScale) (SCALE_OK[name]?.includes(clip.name) ? I : W)(`clip ${clip.name}: ${nonUnitScale} scale track(s) with keys other than 1${SCALE_OK[name]?.includes(clip.name) ? ' (by design: breathing / throat pulses)' : ''}`);
     else if (scaleTracks) I(`clip ${clip.name}: ${scaleTracks} scale track(s) that never leave 1 (two keys each: harmless weight from the shared exporter)`);
   }
 
-  // ---- Walk: do planted feet stay planted, and do all feet agree on the ground speed?
-  const walk = gltf.animations.find(cl => cl.name === 'Walk');
-  if (walk && skinnedAll.length) {
-    const feet = new Map();
+  // ---- gaits (Walk, Trot, Gallop, Run): do planted feet stay planted, and do all feet agree on the ground speed?
+  const legKey = nm => { const m = LEG.exec(nm); if (m) return m[1]; const f = /^(?:upperarm|forearm|paw)_([LR])$/.exec(nm); return f ? 'F_' + f[1] : null; };
+  for (const walk of gltf.animations.filter(cl => /^(Walk|Trot|Gallop|Run)$/.test(cl.name))) {
+  if (skinnedAll.length) {
+    const feet = new Map(), cands = new Map();
     for (const o of skinnedAll) {
       const sw = o.geometry.attributes.skinWeight, si = o.geometry.attributes.skinIndex, pos = o.geometry.attributes.position;
       for (let i = 0; i < pos.count; i++) {
         const ws = [sw.getX(i), sw.getY(i), sw.getZ(i), sw.getW(i)], js = [si.getX(i), si.getY(i), si.getZ(i), si.getW(i)];
-        const m = LEG.exec(o.skeleton.bones[js[ws.indexOf(Math.max(...ws))]].name);
+        const m = legKey(o.skeleton.bones[js[ws.indexOf(Math.max(...ws))]].name);
         if (!m) continue;
         o.getVertexPosition(i, v); v.applyMatrix4(o.matrixWorld);
-        if (!feet.has(m[1]) || v.y < feet.get(m[1]).y) feet.set(m[1], { o, i, y: v.y });
+        (cands.get(m) || cands.set(m, []).get(m)).push({ o, i, y: v.y });
       }
+    }
+    // a foot is the centroid of the leg's lowest vertices (a hoof's whole sole, a claw's tip), not one arbitrary corner of it
+    for (const [m, list] of cands) {
+      const low = Math.min(...list.map(c => c.y)), tol = Math.max(diag * 0.0025, 1e-4);
+      feet.set(m, { y: low, group: list.filter(c => c.y < low + tol) });
     }
     if (feet.size) {
       const mixer = new THREE.AnimationMixer(gltf.scene), act = mixer.clipAction(walk); act.play();
-      const N = 96, paths = new Map([...feet.keys()].map(k => [k, []]));
+      const N = 192, paths = new Map([...feet.keys()].map(k => [k, []]));
       for (let s = 0; s < N; s++) {
         mixer.setTime(walk.duration * s / N);
         gltf.scene.updateMatrixWorld(true);
         for (const o of skinnedAll) o.skeleton.update();
-        for (const [k, f] of feet) { f.o.getVertexPosition(f.i, v); v.applyMatrix4(f.o.matrixWorld); paths.get(k).push(v.clone()); }
+        for (const [k, f] of feet) {
+          const c = new THREE.Vector3();
+          for (const g of f.group) { g.o.getVertexPosition(g.i, v); v.applyMatrix4(g.o.matrixWorld); c.add(v); }
+          paths.get(k).push(c.multiplyScalar(1 / f.group.length));
+        }
       }
       act.stop(); mixer.setTime(0);
-      const lines = [], speeds = []; let worstSide = 0, worstUneven = 0;
+      const lines = [], speeds = []; let worstSide = 0, worstUneven = 0, heldLegs = 0;
       for (const [k, pts] of [...paths].sort()) {
         const lowest = Math.min(...pts.map(p => p.y)), lift = Math.max(...pts.map(p => p.y)) - lowest;
         const down = pts.map(p => p.y < lowest + Math.max(lift * 0.06, diag * 0.002));
         // the stance is the longest run of planted samples (cyclic)
         let best = [0, 0];
         for (let s = 0; s < N; s++) if (down[s] && !down[(s + N - 1) % N]) { let len = 0; while (len < N && down[(s + len) % N]) len++; if (len > best[1]) best = [s, len]; }
+        if (lowest > diag * 0.08) { lines.push(`${k}: held clear of the ground (not checked)`); heldLegs++; continue; }
         if (best[1] < 4) { lines.push(`${k}: never planted`); continue; }
         const st = Array.from({ length: best[1] }, (_, q) => pts[(best[0] + q) % N]);
         const side = Math.max(...st.map(p => p.x)) - Math.min(...st.map(p => p.x));
@@ -324,10 +352,11 @@ function audit(name, { json, gltf, bytes }) {
         lines.push(`${k}: planted ${(st.length / N * 100).toFixed(0)}% of the loop, travels ${(travel * 1000).toFixed(2)} mm, slides sideways ${(side * 1000).toFixed(2)} mm, uneven by ${(off * 1000).toFixed(2)} mm, lifts ${(lift * 1000).toFixed(2)} mm`);
       }
       const sp = speeds.length ? [Math.min(...speeds), Math.max(...speeds)] : [0, 0];
-      const skate = worstSide / size.z > 0.01 || (sp[1] - sp[0]) / (sp[1] || 1) > 0.1 || speeds.length < feet.size;
-      (skate ? E : I)(`Walk feet: sideways slide up to ${(worstSide * 1000).toFixed(2)} mm (${(worstSide / size.z * 100).toFixed(1)}% of body length), ground speed implied by the feet ${(sp[0] * 1000).toFixed(1)}..${(sp[1] * 1000).toFixed(1)} mm/s` + (skate ? ': feet skate (they slide sideways or disagree on the speed)' : ' (move the model at this speed x its scale)'));
+      const skate = worstSide / size.z > 0.01 || (sp[1] - sp[0]) / (sp[1] || 1) > 0.1 || speeds.length + heldLegs < feet.size;
+      (skate ? E : I)(`${walk.name} feet: sideways slide up to ${(worstSide * 1000).toFixed(2)} mm (${(worstSide / size.z * 100).toFixed(1)}% of body length), ground speed implied by the feet ${(sp[0] * 1000).toFixed(1)}..${(sp[1] * 1000).toFixed(1)} mm/s` + (skate ? ': feet skate (they slide sideways or disagree on the speed)' : ' (move the model at this speed x its scale)'));
       lines.forEach(I);
     }
+  }
   }
   return out;
 }

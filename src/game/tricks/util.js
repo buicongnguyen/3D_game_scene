@@ -27,3 +27,24 @@ export function addCss(id, css) {
   s.textContent = css;
   document.head.appendChild(s);
 }
+
+/**
+ * Trample the grass in a disc of radius r round (x, z) (the splat map's grass channel, as the sweet potato roast does for its
+ * hearth) and give back a function that puts it back. Null when the world has no splat map (a Node test).
+ */
+export function trampleGrass(world, x, z, r, pad = r + 2) {
+  const sp = world?.splat;
+  if (!sp?.paintDisc || !sp.data) return null;
+  const i0 = Math.max(0, Math.floor(x - pad - sp.x0)), i1 = Math.min(sp.w - 1, Math.ceil(x + pad - sp.x0));
+  const j0 = Math.max(0, Math.floor(z - pad - sp.z0)), j1 = Math.min(sp.h - 1, Math.ceil(z + pad - sp.z0));
+  const rows = [];
+  for (let j = j0; j <= j1; j++) rows.push(sp.data.slice((j * sp.w + i0) * 4, (j * sp.w + i1 + 1) * 4));
+  sp.paintDisc(x, z, r, 3, 0, 1.2);
+  let done = false;
+  return () => {
+    if (done) return;
+    done = true;
+    rows.forEach((row, k) => sp.data.set(row, ((j0 + k) * sp.w + i0) * 4));
+    sp.texture.needsUpdate = true;
+  };
+}

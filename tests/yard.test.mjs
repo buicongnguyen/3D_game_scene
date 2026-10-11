@@ -154,7 +154,7 @@ test('yard rules: flights clear the net, land where they are sent, and the timin
   assert.ok(first.ok > easy.ok && easy.ok > normal.ok && first.p1 - first.p0 > easy.p1 - easy.p0 && easy.p1 - easy.p0 > normal.p1 - normal.p0, 'wider windows');
   assert.ok(first.reach > easy.reach && easy.reach > normal.reach && first.slow > easy.slow && easy.slow > normal.slow && normal.slow === 1, 'slower shuttles, longer legs');
   // the kids: Kenta strong, Yui tricky, Daichi wobbly
-  assert.deepEqual(KID_STYLE, { v3: 'strong', v20: 'tricky', v10: 'wobbly' });
+  assert.deepEqual(KID_STYLE, { v3: 'strong', v20: 'tricky', v10: 'wobbly', v6: 'captain', v23: 'never', v13: 'dreamy' });
   const { strong, tricky, wobbly } = STYLES;
   assert.ok(strong.flat > tricky.flat && tricky.flat > wobbly.flat && strong.miss < tricky.miss && tricky.miss < wobbly.miss && wobbly.net + wobbly.out > 2 * (strong.net + strong.out));
   assert.equal(tricky.aim, 'away');
@@ -398,12 +398,14 @@ test('keep it up: touches in a row are counted; three drops or the clock end the
 
 // ------------------------------------------------------------------------------------------------ the registry, the save, the kids' day
 test('yard games: a registry of games with one shape, so another plugs in', () => {
-  assert.deepEqual(YARD_GAMES.map(g => g.id), ['footnet', 'keepup']);
+  assert.deepEqual(YARD_GAMES.map(g => g.id), ['footnet', 'keepup', 'volley', 'rope', 'tug', 'oanquan', 'sack', 'marbles']);
   assert.deepEqual(Object.keys(YARD_NAMES), YARD_GAMES.map(g => g.id));
-  assert.equal(nextGame('footnet'), 'keepup');
-  assert.equal(nextGame('keepup'), 'footnet');
-  assert.equal(nextGame('nonsense'), 'footnet');
-  for (const G of YARD_GAMES) {
+  // the scoreboard cycles only the games of its own yard
+  assert.equal(nextGame('footnet', ['footnet', 'keepup']), 'keepup');
+  assert.equal(nextGame('keepup', ['footnet', 'keepup']), 'footnet');
+  assert.equal(nextGame('rope', ['volley', 'tug', 'sack', 'rope']), 'volley');
+  assert.equal(nextGame('volley', ['volley', 'tug', 'sack', 'rope']), 'tug');
+  for (const G of YARD_GAMES.filter(g => g.moves)) {      // the games Mika walks about in; the others are in yard2.test.mjs
     assert.equal(G.name, YARD_NAMES[G.id]);
     for (const f of ['teams', 'target', 'create', 'bot']) assert.equal(typeof G[f], 'function', `${G.id}.${f}`);
     assert.ok(G.focus.w > 0 && G.focus.l > 0);
@@ -413,7 +415,7 @@ test('yard games: a registry of games with one shape, so another plugs in', () =
       const players = [MIKA, ...T.mine.map(id => ({ id, team: 0 })), ...T.theirs.map(id => ({ id, team: 1 }))];
       const sim = G.create({ seed: 1, players, level: 'first', target: G.target('first'), wall: !!T.wall });
       // the shape the round runner reads
-      for (const k of ['players', 'shuttle', 'marker', 'score', 'events', 'L']) assert.ok(sim[k], `${G.id}: sim.${k}`);
+      for (const k of ['players', 'shuttle', 'marker', 'score', 'events']) assert.ok(sim[k], `${G.id}: sim.${k}`);
       assert.equal(sim.state, 'serve');
       assert.equal(sim.over, null);
       const r = play(sim, s => G.bot(s, 0.12), 400);
@@ -472,18 +474,18 @@ test('yard save: the record lives in quest.state.yard and survives odd saves', (
 });
 
 test('yard kids: Kenta, Yui and Daichi play at the yard part of the day, together, and keep their other places', () => {
-  const kids = Object.keys(KID_STYLE).map(id => PEOPLE.find(p => p.id === id));
+  const kids = YARD.kids.map(id => PEOPLE.find(p => p.id === id));
   const roads = buildRoads({ spots: SPOTS });
   for (const k of kids) {
     assert.equal(k.village, 'kawabe');
     const tasks = k.plan.flatMap(b => b.tasks);
     const yard = tasks.filter(t => t.at === YARD.spot);
-    assert.ok(yard.some(t => t.play === 'footnet') && yard.some(t => t.play === 'keepup'), `${k.name} plays both games`);
+    assert.ok(yard.some(t => t.play === 'footnet') && yard.some(t => t.play === 'keepup') && yard.some(t => t.play === 'rope'), `${k.name} plays foot-tennis, keep it up and rope jumping`);
     assert.ok(yard.every(t => YARD_GAME[t.play] && t.t >= 30 && t.t <= 60));
     for (const t of yard) for (const o of t.with) assert.ok(KID_STYLE[o] && o !== k.id, `${k.name} plays with the other kids`);
     // not all day: tag, hopscotch and the rest are still in the plan, and no block is only the yard
     assert.ok(tasks.some(t => t.play === 'tag') && tasks.some(t => t.at === 'kawabe.playground'));
-    for (const b of k.plan) { const y = b.tasks.filter(t => t.at === YARD.spot).length; assert.ok(y <= 1 && (y === 0 || b.tasks.length >= 2), 'a block has other things in it'); }
+    for (const b of k.plan) { const y = b.tasks.filter(t => t.at === YARD.spot).length; assert.ok(y <= 3 && (y === 0 || b.tasks.length > y), 'a block has other things in it'); }
     // every daytime block of theirs that has the yard has it for the friends they name, so they find each other
     for (const b of k.plan) for (const t of b.tasks.filter(q => q.at === YARD.spot)) {
       for (const o of t.with) {

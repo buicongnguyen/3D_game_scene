@@ -63,18 +63,26 @@ VIEW = {
     'trick-firefly': (-25, 18), 'trick-river': (-30, 30), 'trick-stars': (0, 4), 'trick-frogs': (-30, 30),
     # phase 2 (build_tricks2.py): beetles for the journal, the roasted potato, and the four trick-card scenes
     'beetle-rhino': (-58, 26), 'beetle-stag': (-30, 52), 'sweet-potato': (-6, 34),
+    'grasshopper': (-48, 34), 'mantis': (-32, 14), 'bug-cage': (-28, 24), 'trick-hoppers': (-8, 20), 'trick-cricket': (-6, 14),
+    # menu icons (build_icons.py): facing medallions are seen almost head on, the floor scenes from above
+    'trick-archery': (-6, 8), 'trick-cowrace': (-6, 8), 'yard-footnet': (-6, 8), 'yard-volley': (-6, 8), 'yard-rope': (-6, 8),
+    'yard-tug': (-6, 8), 'yard-sack': (-6, 8), 'yard-keepup': (-8, 40), 'yard-marbles': (-8, 50), 'yard-oanquan': (0, 52),
+    'fish-dock': (-6, 8), 'fish-mill': (-6, 8), 'cow-ride': (-6, 8), 'kite-workshop': (-8, 46), 'sky-stars': (0, 4), 'minigames': (-6, 8),
+    'cat-tricks': (-6, 8), 'cat-yard': (-6, 8), 'cat-fish': (-6, 8), 'cat-sky': (0, 4), 'cat-animals': (-6, 8),
     'trick-kite': (0, 4), 'trick-dew': (0, 4), 'trick-roast': (-8, 26), 'trick-beetles': (-10, 16),
 }
 # Rigged items: the glTF importer leaves the first clip (alphabetical) on the armature; pose these explicitly.
 POSE = {'butterfly': ('Rest', 0.0), 'dragonfly': ('Fly', 0.0), 'ladybug': ('Idle', 0.0), 'spider': ('Idle', 0.0),
         'cricket': ('Idle', 0.0), 'frog-tree': ('Idle', 0.0), 'firefly': ('Rest', 0.0),
-        'beetle-rhino': ('Idle', 0.0), 'beetle-stag': ('Idle', 0.45)}
+        'beetle-rhino': ('Idle', 0.0), 'beetle-stag': ('Idle', 0.45),
+        'grasshopper': ('Idle', 0.0), 'mantis': ('Threat', 0.55)}
 # Variant nodes left out of an item's icon (the sweet potato icon is the roasted one).
 HIDE = {'sweet-potato': ('raw',)}
 # Icons named differently from their model (icon name -> model file).
 ALIAS = {'frog': 'frog-tree'}
 GLOW = {'fallen-star': 1.0, 'trick-firefly': .8, 'trick-river': .7, 'trick-stars': .6, 'firefly': .5,
-        'trick-roast': .6, 'trick-dew': .35}
+        'trick-roast': .6, 'trick-dew': .35, 'trick-cricket': .7,
+        'sky-stars': .8, 'cat-sky': .8, 'cat-tricks': .6, 'yard-keepup': .25}
 TMP = os.path.join(ROOT, '.tools', 'review', 'props', 'icons-raw')
 os.makedirs(TMP, exist_ok=True)
 os.makedirs(out_dir, exist_ok=True)

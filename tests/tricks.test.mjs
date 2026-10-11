@@ -11,7 +11,11 @@ import { freshState, migrate } from '../src/game/quest.js';
 const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
 
 test('every trick is well formed', () => {
-  assert.deepEqual(TRICKS.map(t => t.id).sort(), ['beetles', 'dew', 'firefly', 'frogs', 'kite', 'river', 'roast', 'stars']);
+  for (const id of ['beetles', 'dew', 'firefly', 'frogs', 'kite', 'river', 'roast', 'stars']) assert.ok(TRICK[id], id);   // the originals stay; new rows are checked below like any other
+  assert.equal(new Set(TRICKS.map(t => t.id)).size, TRICKS.length, 'unique ids');
+  const MODULELESS = [];            // a trick with no game module must be listed here on purpose
+  for (const t of TRICKS) if (!MODULELESS.includes(t.id)) assert.ok(fs.existsSync(new URL(`../src/game/tricks/${t.id}.js`, import.meta.url)), `${t.id} has a module`);
+  for (const story of ['classic', 'grandma']) { useStory(story); for (const t of TRICKS) assert.ok(DIALOGUE[t.intro]?.length, `${t.id} has an intro in ${story}`); }
   for (const t of TRICKS) {
     for (const k of ['name', 'where', 'when', 'howReal', 'why', 'safety', 'unit', 'icon', 'intro']) assert.equal(typeof t[k], 'string', `${t.id}.${k}`);
     assert.ok(t.icon.startsWith('trick-'), t.id);

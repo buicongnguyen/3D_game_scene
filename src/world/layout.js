@@ -110,6 +110,7 @@ export const POST_SHAPES = [
   { kind: 'rect', x: -9.6, z: -45, hw: 1.1, hd: 1.9, f: 1.2, t: 1.1 }, // stone landing for the drawbridge
   { kind: 'ramp', ax: -16, az: -112, bx: 8, bz: -112, ha: -0.9, hb: -0.9, w: 3, f: 3, onlyBelow: true }, // shallow ford
   { kind: 'rect', x: -21.1, z: 16.6, hw: 7.15, hd: 10.45, f: 2.2, t: 3.0 },  // Kawabe playground yard: level to its east fence (content/yard.js)
+  { kind: 'rect', x: 114, z: -36.2, hw: 8.6, hd: 4.4, f: 3, t: 21.0 },     // Takamori Green: the sack-race lanes north of the court (content/yard.js)
 ];
 
 // ------------------------------------------------------------------ buildings & big props

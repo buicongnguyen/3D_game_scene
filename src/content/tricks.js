@@ -5,6 +5,7 @@
 // seasons / hours: when it can be played. hours [from, to] wraps past midnight. A frozen story clock never blocks a trick
 // (the round puts on its own night look); a running clock (Explore cycle) must be inside the hours.
 // stars: score needed for 1, 2 and 3 stars. length: round seconds; firstLength: the guided first try.
+import { ARCHERY } from './archery.js';
 // Texts are English source strings (translated with tx(); collected by scripts/i18n-extract.mjs).
 
 export const TRICKS = [
@@ -89,9 +90,50 @@ export const TRICKS = [
     safety: 'Put every beetle back on the tree where you found it.',
     stars: [30, 60, 90], length: 70, firstLength: 40, unit: 'points',
   },
+  // ---- phase 3: the meadow (docs/RURAL-TRICKS.md §3 #5 and the bug catching)
+  {
+    id: 'hoppers', name: 'Grasshopper and mantis', icon: 'trick-hoppers',
+    place: { x: -38, z: -68, face: 2.4 }, where: 'the sunny long-grass meadow north of the mill, by the river and the west forest trail',
+    seasons: ['summer', 'autumn'], hours: [8, 17], night: false, when: 'Summer and autumn, on a sunny day',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_hoppers_intro',
+    howReal: 'Creep through long grass with a soft net. Sweep it low over a sitting grasshopper, take a good look, then let it go.',
+    why: 'A grasshopper hears with ears on its belly. A mantis can turn its head almost right round, so it sees you coming. Move slowly when it watches.',
+    safety: 'Look, then let them go where you found them. Mantises are friends of the garden.',
+    stars: [40, 80, 120], length: 75, firstLength: 40, unit: 'points',
+  },
+  {
+    id: 'cricket', name: 'Cricket by its song', icon: 'trick-cricket',
+    place: { x: 76, z: 10, face: -Math.PI / 2 }, where: 'the hillside meadow west of Takamori, above the bakery lane',
+    seasons: ['summer', 'autumn'], hours: [18.5, 4], night: true, when: 'Summer and autumn, from dusk',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_cricket_intro',
+    howReal: 'At dusk, stand still in a quiet meadow and listen. Walk toward the song, stop when it stops, and look low in the grass.',
+    why: 'Only male crickets chirp, by rubbing their wings. The warmer the night, the faster they chirp: chirps in 14 seconds plus 40 is the temperature in °F.',
+    safety: 'Keep your torch low, and put the cricket back in the grass before bed.',
+    stars: [30, 60, 90], length: 90, firstLength: 50, unit: 'points',
+  },
+  {
+    id: 'archery', name: 'Bow and arrow', icon: 'trick-archery',
+    place: { x: ARCHERY.sign.x, z: ARCHERY.sign.z, face: ARCHERY.sign.face }, where: 'the archery range, west of Kawabe behind the houses',
+    seasons: ['spring', 'summer', 'autumn'], hours: [9, 18], night: false, when: 'Spring to autumn, in the daytime',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_archery_intro',
+    howReal: 'Stand side-on to the target, feet apart. Nock the arrow, draw to your cheek, breathe out slowly, then let go smoothly.',
+    why: 'A bent bow stores energy like a spring and hands it to the arrow. Wind pushes a light arrow sideways, so aim a little upwind.',
+    safety: 'Only at the target, with a grown-up and practice arrows.',
+    stars: [60, 100, 140], length: 90, firstLength: 60, unit: 'points',
+  },
+  {
+    id: 'cowrace', name: 'Cow race', icon: 'trick-cowrace',
+    place: { x: 86.5, z: -45, face: -Math.PI / 2 }, where: 'the Takamori north pasture, past the pasture road',
+    seasons: ['spring', 'summer', 'autumn'], hours: [9, 18], night: false, when: 'Spring to autumn, in the daytime',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_cowrace_intro',
+    howReal: 'In An Giang, Vietnam, oxen race at harvest festivals, pulling a driver across a flooded paddy. Here we race on grass, with a grown-up.',
+    why: 'Cows have a steady walking rhythm, so a rider moves with it. Racing oxen are fed, cheered and rested, never hit: a happy cow runs best.',
+    safety: 'Never ride a real cow without a grown-up who knows her.',
+    stars: [30, 60, 80], length: 60, firstLength: 60, unit: 'points',
+  },
 ];
 
-export const TRICK = Object.fromEntries(TRICKS.map(t => [t.id, t]));
+export const TRICK =Object.fromEntries(TRICKS.map(t => [t.id, t]));
 
 /** True when `hour` lies in [from, to), wrapping past midnight when from > to. */
 export function inHours(hour, range) {

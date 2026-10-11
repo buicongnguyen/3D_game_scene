@@ -1,7 +1,8 @@
 // The valley's small living things: crickets singing in the grass, spiders on their webs under the eaves, on fences and
 // between forest trees, ladybugs on flowers and bushes, dragonflies darting over the river and the rice paddies, and
 // butterflies drifting over meadows and gardens, and frogs on the paddy bunds and the river banks that sing at dusk
-//   in spring and summer and plop into the water when Mika runs up.
+//   in spring and summer and plop into the water when Mika runs up. Grasshoppers sit in the long grass by day and crouch
+//   and hop away from a Mika who comes close; mantises stand on their stalks and turn their heads to watch her.
 //
 // Cheap by construction (see the lightweight-game-objects skill):
 // - Where they live is planned once, as plain data (planCritters, Node-testable), with its own seeded RNG.
@@ -38,6 +39,9 @@ export const CRITTER_KINDS = {
   butterfly: { model: 'butterfly', pool: 6, scale: 2.8, seasons: { spring: 1, summer: 1, autumn: 0.4, winter: 0 }, day: 1, night: 0 },
   // two looks (7 cm brown pond frog, 4 cm green tree frog) share one pool, drawn 2.6x like the other critters
   frog: { model: 'frog-pond', models: ['frog-pond', 'frog-tree'], pool: 6, scale: 2.6, seasons: { spring: 0.9, summer: 1, autumn: 0.25, winter: 0 }, day: 0.35, night: 1 },
+  // the long-grass meadows by day (docs/RURAL-TRICKS.md, the Grasshopper and mantis trick). low: how many on the Low tier.
+  grasshopper: { model: 'grasshopper', pool: 4, low: 2, scale: 4.2, seasons: { spring: 0.2, summer: 1, autumn: 0.9, winter: 0 }, day: 1, night: 0 },
+  mantis: { model: 'mantis', pool: 2, low: 1, scale: 4.2, seasons: { spring: 0, summer: 0.8, autumn: 1, winter: 0 }, day: 1, night: 0 },
 };
 /** Croaks per minute for one frog at this hour: a swell at dusk (18:00-22:30), a murmur through the night, little by day. */
 export function croakRate(hour) {
@@ -76,7 +80,7 @@ const near = (x, z, list) => list.some(([cx, cz, r]) => Math.hypot(x - cx, z - c
 export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
   const R = rng(seed);
   const ok = (x, z) => !placeProblems(x, z, grid).length;
-  const out = { cricket: [], spider: [], ladybug: [], dragonfly: [], butterfly: [], frog: [] };
+  const out = { cricket: [], spider: [], ladybug: [], dragonfly: [], butterfly: [], frog: [], grasshopper: [], mantis: [] };
   const slot = (kind, x, y, z, extra) => {
     const s = { kind, i: out[kind].length, hx: x, hy: y, hz: z, x, y, z, face: R() * Math.PI * 2, luck: R(), ph: R() * 10,
       st: 'idle', t: R() * 3, u: 0, dur: 0, fx: 0, fy: 0, fz: 0, tx: 0, ty: 0, tz: 0, arc: 0, d: 1e9, want: false, vis: null, hold: 0, ...extra };
@@ -187,6 +191,18 @@ export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
       }
     }
   }
+  // grasshoppers (four) and mantises (two) in the long grass of every meadow. They are planned last, so the dice of
+  // everything above fall exactly as they always did.
+  for (const [cx, cz, r] of MEADOWS) {
+    for (const [kind, want] of [['grasshopper', 4], ['mantis', 2]]) {
+      for (let n = 0, k = 0; n < want && k < 40; k++) {
+        const x = cx + (R() - 0.5) * 2 * r, z = cz + (R() - 0.5) * 2 * r;
+        if (!ok(x, z) || out[kind].some(q => Math.hypot(q.hx - x, q.hz - z) < 3.5)) continue;
+        slot(kind, x, grid.heightAt(x, z), z, {});
+        n++;
+      }
+    }
+  }
   return out;
 }
 
@@ -237,7 +253,8 @@ export class Critters {
       if (def.web && !this.makeWebs(def)) continue;
       const quality = game.renderer?.q?.name === 'Low' ? 0.6 : 1;
       const pool = this.pools[kind] = [];
-      for (let i = 0; i < Math.max(2, Math.round(def.pool * quality)); i++) {
+      const size = quality < 1 && def.low !== undefined ? def.low : Math.max(2, Math.round(def.pool * quality));
+      for (let i = 0; i < size; i++) {
         const v = this.makeVisual(kind, def, models[i % models.length]);
         if (!v) break;
         pool.push(v);
@@ -412,7 +429,7 @@ export class Critters {
     this.nearCrickets = 0; this.nearestCricket = 1e9; this.nearFrogs = 0; this.nearestFrog = 1e9;
     for (const kind in CRITTER_KINDS) {
       const slots = this.slots[kind], pool = this.pools[kind];
-      const share = indoor ? 0 : presence(kind, season, hour);
+      const share = indoor || this.hidden?.has(kind) ? 0 : presence(kind, season, hour);   // (a bug-catching trick has its own bugs: these stay out of sight meanwhile)
       const cand = this.cand;
       cand.length = 0;
       for (const s of slots) {
@@ -455,6 +472,8 @@ export class Critters {
       // Mika running close by, or walking right up to one, startles the jumpy ones (unless it is being befriended)
       const startled = s.hold <= 0 && (d < 1.2 && player.speed > 0.3 || d < 3.5 && player.speed > 3.2);
       if (v.kind === 'cricket') this.cricket(v, s, dt, startled, dx, dz, d, night, audio);
+      else if (v.kind === 'grasshopper') this.grasshopper(v, s, dt, startled, dx, dz, d);
+      else if (v.kind === 'mantis') this.mantis(v, s, dt, startled || d < 3 && player.speed > 2.4, dx, dz, d);
       else if (v.kind === 'spider') this.spider(v, s, dt);
       else if (v.kind === 'ladybug') this.ladybug(v, s, dt, startled);
       else if (v.kind === 'dragonfly') this.dragonfly(v, s, dt, player);
@@ -462,8 +481,8 @@ export class Critters {
       else this.butterfly(v, s, dt, startled || d < 2 && player.speed > 3.2 && s.hold <= 0);
       v.anim?.update(dt);
     }
-    // a gentle chorus from the crickets further off, louder at night
-    if (this.nearCrickets && (this.chorusT -= dt) <= 0) {
+    // a gentle chorus from the crickets further off, louder at night (not while the cricket trick is listening for one)
+    if (this.nearCrickets && !this.quiet && (this.chorusT -= dt) <= 0) {
       const rate = (0.4 + night * 2.6) * Math.min(1, this.nearCrickets / 6);
       this.chorusT = (0.4 + Math.random()) / Math.max(0.1, rate);
       audio?.chirp?.((0.12 + night * 0.3) * Math.max(0, 1 - this.nearestCricket / DRAW), 0.9 + Math.random() * 0.25);
@@ -514,7 +533,7 @@ export class Critters {
     // chirping: more often at night; the nearer, the louder
     if ((v.chirpT -= dt) <= 0) {
       v.chirpT = night > 0.5 ? 1.5 + Math.random() * 4 : 5 + Math.random() * 10;
-      if (s.st !== 'hop' && d < 28) {
+      if (s.st !== 'hop' && d < 28 && !this.quiet) {
         if (v.anim?.has('Chirp')) { v.clip = ''; v.anim.once('Chirp', { then: 'Idle' }); v.clip = 'Idle'; }
         audio?.chirp?.((1 - d / 28) ** 1.5, s.pitch);
       }
@@ -526,6 +545,47 @@ export class Critters {
     this.launch(s, tx, this.world.heightAt(tx, tz), tz, 0.42, 0.32);
     s.st = 'hop';
     if (v.anim?.has('Hop')) { v.anim.once('Hop', { then: 'Idle', speed: 1.2 }); v.clip = 'Idle'; }
+  }
+
+  /**
+   * A grasshopper sits in the grass; Mika coming close (or a while of sitting) makes it crouch for 0.3 s, then hop:
+   * away from her when she is close, a short hop round its home when it is only bored. Never far from home.
+   */
+  grasshopper(v, s, dt, startled, dx, dz, d) {
+    if (s.st === 'hop') {
+      if (this.fly(s, dt, false)) { s.st = 'idle'; s.t = 4 + Math.random() * 9; this.play(v, 'Idle'); }
+    } else if (s.st === 'crouch') {
+      if ((s.t -= dt) <= 0) {
+        const far = Math.hypot(s.x - s.hx, s.z - s.hz) > 5;
+        let ax = far ? s.hx - s.x : dx, az = far ? s.hz - s.z : dz;
+        const l = Math.hypot(ax, az) || 1, r = s.scared ? 1.5 + Math.random() * 0.9 : 0.5 + Math.random() * 0.5, j = (Math.random() - 0.5) * 1.1;
+        ax /= l; az /= l;
+        const tx = s.x + (ax - az * j) * r, tz = s.z + (az + ax * j) * r;
+        if (this.world.heightAt(tx, tz) > 0.8) { this.launch(s, tx, this.world.heightAt(tx, tz), tz, 0.36, 0.3); s.st = 'hop'; }
+        else s.st = 'idle';
+      }
+    } else if (startled || ((s.t -= dt) <= 0 && s.hold <= 0)) {
+      s.scared = startled;
+      s.st = 'crouch'; s.t = 0.3;
+      s.face = Math.atan2(dx, dz);
+      // the Hop clip starts with the crouch, so it starts now and the leap happens when the crouch is over
+      if (v.anim?.has('Hop')) { const dur = v.anim.clips.get('Hop').duration || 0.66; v.clip = ''; v.anim.once('Hop', { then: 'Idle', speed: dur / 0.66 }); v.clip = 'Idle'; }
+    }
+    this.place(v, s);
+  }
+
+  /** A mantis stands on its stalk and slowly turns its head (the whole body, here) toward Mika when she is near; a runner makes it rear up. */
+  mantis(v, s, dt, startled, dx, dz, d) {
+    if (d < 7) {
+      const want = Math.atan2(-dx, -dz);
+      s.face += Math.atan2(Math.sin(want - s.face), Math.cos(want - s.face)) * Math.min(1, dt * 1.6);
+      if (!s.seen) { s.seen = true; if (v.anim?.has('Look')) { v.clip = ''; v.anim.once('Look', { then: 'Idle' }); v.clip = 'Idle'; } }
+    } else s.seen = false;
+    if (startled && s.hold <= 0) {
+      if (v.anim?.has('Threat')) { v.clip = ''; v.anim.once('Threat', { then: 'Idle' }); v.clip = 'Idle'; }
+      s.hold = 4;
+    }
+    this.place(v, s);
   }
 
   /** Sits on the bund or bank and sings; hops into the water when startled, swims a while, then climbs back. */

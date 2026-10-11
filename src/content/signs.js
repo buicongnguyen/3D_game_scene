@@ -51,6 +51,8 @@ export const SIGNS = [
   { id: 'orchard', at: { x: 90.6, z: -28, rot: 25 }, kind: 'place', mount: 'stand', text: N_('Peach orchard'), icon: '🍑' },
   { id: 'paddies', at: { x: -66.6, z: 25.5, rot: 90 }, kind: 'place', mount: 'stand', text: N_('Rice paddies'), icon: '🌾' },
   { id: 'yard', at: { x: -23.5, z: 26.2, rot: 0 }, kind: 'place', mount: 'stand', text: N_('Kawabe Playground'), icon: '🏸' },
+  { id: 'green', at: { x: 118, z: -11.9, rot: 0 }, kind: 'place', mount: 'stand', text: N_('Takamori Green'), icon: '🏐' },
+  { id: 'archery', at: { x: -67.2, z: 55.8, rot: 90 }, kind: 'place', mount: 'stand', text: N_('Archery range'), icon: '🏹' },
 ];
 
 // board face sizes in metres (3 : 1, like the texture cell)

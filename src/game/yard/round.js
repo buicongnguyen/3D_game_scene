@@ -1,144 +1,94 @@
-// The Kawabe playground yard at runtime (content/yard.js, world/yard.js, ./index.js). Three jobs:
-//   - the kids' own play: Town Life hands over the kids whose day plan says `play: 'footnet' | 'keepup'` (townlife.js
-//     updateGames -> ambient); they rally by themselves, the same pure simulation Mika plays, with nobody human in it.
-//     It sleeps while every kid is beyond the draw distance.
-//   - Mika joins: "Join the game" on the court or at the box of shuttlecocks starts a scored round of the game on the
-//     scoreboard (the kids there take sides; with nobody about, the Kawabe kids are called over; at night she plays
-//     the kick-board). A fixed court camera, a small HUD, the landing ring, kids' speech bubbles, a results card.
-//   - "Change the game" at the scoreboard post picks the other game (./index.js YARD_GAMES).
-// The round runner is modelled on game/tricks.js (HUD pill, hint, results card with stars, Play again / Done,
-// Backspace quits, the record kept in quest.state.yard); the yard is not one of Grandma's tricks, so it has its own.
+// The playground yards at runtime (content/yard.js, world/yard.js, ./index.js, ./views.js). Three jobs:
+//   - the kids' own play: Town Life hands over the kids whose day plan says `play: '<game>'` at a yard's spot (townlife.js
+//     updateGames -> ambient); they play by themselves, the same pure simulation Mika plays with nobody human in it. It
+//     sleeps while every kid is beyond the draw distance or the yard is far from Mika.
+//   - Mika joins: "Join the game" at the yard starts a scored round of the game on its scoreboard (the kids there take
+//     sides; with nobody about, the village kids are called over; at night she plays the practice board). A fixed camera
+//     (behind the court or from the side, her choice), a small HUD, the landing ring, kids' speech bubbles, a results card
+//     with the real-world note.
+//   - "Change the game" at the scoreboard post picks the next game of THAT yard's list.
+// The round runner is modelled on game/tricks.js (HUD pill, hint, results card with stars, Play again / Done, Backspace
+// quits, the record kept in quest.state.yard); the yard is not one of Grandma's tricks, so it has its own.
 import * as THREE from 'three';
-import { YARD, toWorld, toCourt, KID_STYLE, YARD_NAMES, recordYard, cleanYard } from '../../content/yard.js';
+import { YARD_LIST, stageOf, toWorld, toCourt, pathBetween, enterPoint, KID_STYLE, YARD_NAMES, YARD_RULES, YARD_NOTES, recordYard, cleanYard, gameOn, setGameOn, yardAt } from '../../content/yard.js';
 import { YARD_GAME, nextGame, levelFor, ambientRoles } from './index.js';
+import { Views } from './views.js';
+import { squareAt } from './views.js';
+import { Poses } from './poses.js';
+import { SAY, CSS } from './say.js';
 import { COURT } from './rules.js';
-import { shuttleGeometry } from '../../world/yard.js';
 import { BARK_RANGE } from '../barks.js';
-import { tx, N_, getLang } from '../../i18n/i18n.js';
+import { tx, getLang } from '../../i18n/i18n.js';
 
 const HEAR = 30;              // the yard's sounds carry this far
 const INVITE_R = 11;          // a kid calls Mika over when she comes this close to a game
-const SHUTTLE_SCALE = 2.0;    // a touch bigger than life, so it reads from the court camera
-const V = new THREE.Vector3(), V2 = new THREE.Vector3(), DOWN = new THREE.Vector3(0, -1, 0), QT = new THREE.Quaternion();
-const W1 = { x: 0, z: 0 }, W2 = { x: 0, z: 0 }, C1 = { u: 0, v: 0 }, INP = { mx: 0, mv: 0, kick: false, pos: C1 };   // per-frame scratch
-
-// what the kids call out
-const SAY = {
-  invite: [N_('Mika! Come and play!'), N_('We need one more! Mika!')],
-  join: [N_("Mika's playing! Mika's playing!"), N_('City girl on the court!')],
-  nice: [N_('Whoa, nice one!'), N_('Did you see that?'), N_('Good kick, Mika!')],
-  ours: [N_('Yes! Our point!'), N_('That one was ours!')],
-  aww: [N_('Aww!'), N_('Hey! No fair!')],
-  theirs: [N_('Got you!'), N_('Too slow!'), N_('Point for us!')],
-  net: [N_('The net moved!'), N_('Oops. Into the net.')],
-  out: [N_('That was in! …It was out.'), N_('Out! Way out!')],
-  strong: [N_("That's my power kick!"), N_('Captain scores!')],
-  tricky: [N_("Didn't see that coming, did you?"), N_('Over there! No, there!')],
-  wobbly: [N_('Oops. That was the wind.'), N_('I meant to do that!')],
-  drop: [N_('Dropped it!'), N_('Again! From one!')],
-  count: [N_('Ten! Keep going!'), N_('Twenty! Nobody breathe!'), N_("Thirty! That's a record!")],
-  win: [N_('You beat us! Again tomorrow?'), N_('Mika wins! She kicks like a Kawabe kid!')],
-  lose: [N_('We win! Rematch any time, city girl.'), N_('Kawabe wins! You were close, though.')],
-  watch: [N_('Go on! Go on!'), N_("I'm next!"), N_('Point!')],
-  own: [N_('Mine!'), N_('Over the net!'), N_('Got it!'), N_('Point!'), N_('Keep it up!')],
-  footnet: [N_("Foot-tennis! I'll take this side!")],
-  keepup: [N_('Keep it up! Everybody in a ring!')],
-};
+const AWAKE_R = 85;           // a yard's own game runs while Mika is this close
+const V = new THREE.Vector3();
+const W1 = { x: 0, z: 0 }, W2 = { x: 0, z: 0 }, C1 = { u: 0, v: 0 }, C2 = { u: 0, v: 0 };
+const INP = { mx: 0, mv: 0, kick: false, jump: false, hold: false, pos: C1, aimU: null, aimV: null, pick: null, dir: 0, hint: false };
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
+const CAM_KEY = 'starline-yard-cam';
 
-const CSS = `
-#yardHud{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:16;display:flex;gap:10px;align-items:center;white-space:nowrap;
- padding:7px 16px;border-radius:999px;background:rgba(255,247,232,.94);box-shadow:0 6px 20px rgba(40,20,0,.25);font:700 16px Nunito,system-ui,sans-serif;color:#5a3a22;zoom:var(--ui-scale,1)}
-#yardHud .big{font:600 22px Fredoka,Nunito,sans-serif;color:#c2541c;min-width:56px;text-align:center}
-#yardHud .sub{font:700 13px Nunito,sans-serif;color:#8a6a4a}
-#yardHud .l,#yardHud .r{max-width:28vw;overflow:hidden;text-overflow:ellipsis}
-#yardHud.hidden,#yardHint.hidden,#yardCard.hidden,#yardStop.hidden{display:none}
-#yardHint{position:fixed;left:50%;top:calc(66px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:16;max-width:min(520px,90vw);
- padding:8px 15px;border-radius:16px;background:rgba(255,253,246,.94);box-shadow:0 6px 18px rgba(40,20,0,.22);font:700 15px Nunito,system-ui,sans-serif;color:#4a3020;
- text-align:center;zoom:var(--ui-scale,1);pointer-events:none}
-#yardHint.good{background:rgba(220,255,214,.96);color:#1f6a34}
-#yardHint.bad{background:rgba(255,232,214,.96);color:#a2441c}
-#yardStop{position:fixed;left:14px;top:calc(64px + env(safe-area-inset-top,0px));z-index:17;padding:8px 14px;border:0;border-radius:999px;cursor:pointer;
- background:rgba(255,253,246,.92);color:#4a3020;font:700 14px Nunito,system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);zoom:var(--ui-scale,1)}
-#yardStop kbd{font:700 11px Nunito,sans-serif;padding:1px 5px;border-radius:5px;background:#0002;margin-left:6px}
-body.touch #yardStop kbd{display:none}
-@media (max-width:560px){#yardHud{font-size:14px;padding:6px 12px;gap:7px}#yardHud .big{font-size:19px;min-width:44px}#yardHud .sub{display:none}
- #yardHint{top:calc(112px + env(safe-area-inset-top,0px));font-size:14px;max-width:78vw}#yardStop{top:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px));left:12px}}
-#yardCard{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,14,30,.35)}
-#yardCard .box{width:min(400px,90vw);padding:20px 22px 16px;border-radius:24px;background:#fff8ea;box-shadow:0 14px 40px rgba(0,0,0,.35);
- font:700 15px Nunito,system-ui,sans-serif;color:#4a3020;text-align:center;zoom:var(--ui-scale,1)}
-#yardCard h2{margin:2px 0;font:600 24px Fredoka,Nunito,sans-serif;color:#7a3e16}
-#yardCard .verdict{font:600 18px Fredoka,Nunito,sans-serif;color:#2f8a4a}
-#yardCard .stars{font-size:38px;letter-spacing:4px;color:#f2a51a;text-shadow:0 2px 0 #b8640a33}
-#yardCard .stars i{font-style:normal;display:inline-block;animation:yardStar .5s both}
-#yardCard .score{font:600 26px Fredoka,Nunito,sans-serif;margin:2px 0}
-#yardCard .best{color:#7a6a58;min-height:1.2em}
-#yardCard .btns{display:flex;gap:10px;justify-content:center;margin-top:14px}
-#yardCard button{flex:1;padding:11px 10px;border:0;border-radius:14px;font:700 16px Nunito,sans-serif;cursor:pointer;background:#f4dfb5;color:#5a3a22}
-#yardCard button.main{background:#f08a3c;color:#fff}
-#yardCard kbd{font:700 12px Nunito,sans-serif;padding:1px 5px;border-radius:5px;background:#0002;margin-left:6px}
-@keyframes yardStar{from{transform:scale(0) rotate(-40deg);opacity:0}to{transform:none;opacity:1}}
-`;
+/** What the QA autopilot (debug.auto) feeds each game's stand-in: a careful player, and a hopeless one. */
+const QA = {
+  win: { footnet: 0.12, keepup: 0.12, volley: 0.12, rope: 0.27, tug: 0, sack: 0.5, marbles: 0.95, oanquan: 2 },
+  lose: { footnet: () => -1, keepup: () => -1, volley: () => -1, rope: () => -1, tug: () => 0.7, sack: () => 0.18, marbles: () => 0.08, oanquan: 0 },
+};
 
 export class Yard {
   constructor(director) {
     this.d = director;
     this.g = director.game;
-    this.round = null;            // the round Mika is playing { id, sim, … }
+    this.round = null;            // the round Mika is playing { id, sim, ... }
     this.locks = false;           // true while the round holds Mika still (read by director.update)
     this.loops = new Set();       // per-frame steps of the running round
-    this.here = [];               // kids Town Life handed over this frame (their plan says: play at the yard)
-    this.hereGame = null;
-    this.amb = null;              // the kids' own game { sig, game, sim, roles, … }
-    this.override = null;         // the game Mika chose at the post while kids are playing
-    this.held = [];               // kids taken out of their day plan for Mika's round
-    this.seated = new Map();      // kid -> bench seat index
-    this.kickT = 9;               // Mika's leg swing clock
-    this.inviteCool = 0;
-    this.debug = { auto: null, seed: null, at: 0.12 };   // QA: auto = 'win' | 'lose' plays Mika's part (window.__STARLINE_QA__.director.yard)
-    this.y0 = this.g.world.heightAt(YARD.x, YARD.z);
+    this.poses = new Poses();
+    this.kickT = 9;
+    this.debug = { auto: null, seed: null };   // QA: auto = 'win' | 'lose' plays Mika's part (window.__STARLINE_QA__.director.yard)
+    this.cam = 'end';
+    try { const c = localStorage.getItem(CAM_KEY); if (c === 'side' || c === 'end') this.cam = c; } catch { /* no storage */ }
+    this.pad = { dir: 0, hint: false, hold: false, aim: null, pick: null };
+    this.ctl = {};
+    for (const Y of YARD_LIST) this.ctl[Y.id] = { Y, y0: this.g.world.heightAt(Y.x, Y.z), here: [], hereGame: null, amb: null, override: null, held: [], seated: new Map(), inviteCool: 0 };
+    this.views = new Views(this.g.scene, this.g.world.quality);
     this.build();
     this.buildUi();
-    this.register();
-    this.showBoard();
+    for (const c of Object.values(this.ctl)) { this.register(c); this.showBoard(c); }
   }
 
   // ------------------------------------------------------------------ state helpers
   get st() { return this.d.q?.state; }
   get save() { const st = this.st; if (!st) return { game: 'footnet' }; if (!st.yard?.game) st.yard = cleanYard(st.yard); return st.yard; }
-  /** The yard is part of the valley from chapter one on, and in Explore. */
+  /** The yards are part of the valley from chapter one on, and in Explore. */
   ready() { return !!this.st && this.st.chapter >= 1; }
-  /** Kids are on the court playing by themselves, close enough to be drawn. */
-  kidsPlaying() { return !!this.amb && this.amb.awake; }
-  /** The game on the scoreboard: the one the kids are at, or the one Mika chose. */
-  current() { return this.amb ? (YARD_GAME[this.override] ? this.override : this.amb.want) : this.save.game; }
-  near(r = HEAR) { const p = this.g.player.pos; return Math.hypot(p.x - YARD.x, p.z - YARD.z) < r; }
+  /** Kids are playing by themselves at this yard, close enough to be drawn. */
+  kidsPlaying(c) { return !!c.amb && c.amb.awake; }
+  /** The game on a yard's scoreboard: the one the kids are at, or the one Mika chose. */
+  current(c) { return c.amb ? (c.Y.games.includes(c.override) ? c.override : c.amb.want) : gameOn(this.save, c.Y); }
+  near(c, r = HEAR) { const p = this.g.player.pos; return Math.hypot(p.x - c.Y.x, p.z - c.Y.z) < r; }
+  /** The yard Mika is nearest to (within `r`), or null. */
+  nearest(r = 60) { const p = this.g.player.pos, Y = yardAt(p.x, p.z, r); return Y ? this.ctl[Y.id] : null; }
+  mikaBody() { const p = this.g.player; return (this._mb ??= { model: p.model, root: p.root, anim: p.anim, pivot: p.pivot }); }
+  kidBody(it) { return (it._yb ??= { model: it.n.model, root: it.n.root, anim: it.n.anim, get far() { return it.n.far; } }); }
+  ground(x, z) { return this.g.world.heightAt(x, z); }
 
-  // ------------------------------------------------------------------ the few things the games draw
+  // ------------------------------------------------------------------ the few shared things the games draw
   build() {
     const scene = this.g.scene;
-    const geo = shuttleGeometry();
-    const mat = new THREE.MeshStandardMaterial({ name: 'Yard shuttle', vertexColors: true, roughness: 0.7, side: THREE.DoubleSide, emissive: '#fff4dc', emissiveIntensity: 0 });
-    const sh = this.shuttle = new THREE.Mesh(geo, mat);
-    sh.name = 'yard:shuttle';
-    sh.scale.setScalar(SHUTTLE_SCALE);
-    sh.castShadow = this.g.world.quality?.propShadows !== false;
-    sh.visible = false;
-    // the shadow under it and the landing ring (inner ring = where; outer ring closes in on it = when)
+    // the landing / beat ring: the inner ring is where, the outer ring closes on it: when
     const flat = (g, color, opacity) => {
       const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide }));
-      m.rotation.x = -Math.PI / 2;
-      m.renderOrder = 2;
-      m.visible = false;
+      m.rotation.x = -Math.PI / 2; m.renderOrder = 2; m.visible = false;
       return m;
     };
-    this.blob = flat(new THREE.CircleGeometry(0.2, 14), '#1a2a14', 0.35);
     this.ring = flat(new THREE.RingGeometry(0.44, 0.56, 28), '#ffd34a', 0.95);
     this.ringOut = flat(new THREE.RingGeometry(0.6, 0.635, 32), '#ffffff', 0.7);
-    this.blob.name = 'yard:blob'; this.ring.name = 'yard:ring'; this.ringOut.name = 'yard:ringOut';
-    scene.add(sh, this.blob, this.ring, this.ringOut);
-    this.prev = new THREE.Vector3();
+    this.ring.name = 'yard:ring'; this.ringOut.name = 'yard:ringOut';
+    scene.add(this.ring, this.ringOut);
     this.tmpCam = new THREE.PerspectiveCamera();
+    this.ray = new THREE.Raycaster();
+    this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   }
 
   buildUi() {
@@ -154,20 +104,52 @@ export class Yard {
       hud: mk('div', 'yardHud', '<span class="l"></span><span class="big"></span><span class="r"></span><span class="sub"></span>'),
       hint: mk('div', 'yardHint', ''),
       stop: mk('button', 'yardStop', ''),
+      cam: mk('button', 'yardCam', ''),
+      pad: mk('div', 'yardPad', ''),
       card: mk('div', 'yardCard', '<div class="box"></div>'),
     };
     const h = this.el.hud;
     h._l = h.querySelector('.l'); h._big = h.querySelector('.big'); h._r = h.querySelector('.r'); h._sub = h.querySelector('.sub');
     this.el.stop.addEventListener('click', () => this.quit());
+    this.el.cam.addEventListener('click', () => this.toggleCam());
+    // the pad: on-screen buttons for the games that are not one-button (oan quan: hint and the two ways round; marbles: hold to flick)
+    const pad = this.el.pad, btn = (cls, label, down, up) => {
+      const b = document.createElement('button');
+      b.className = cls; b.textContent = label; b.setAttribute('aria-label', label);
+      b.addEventListener('pointerdown', e => { e.preventDefault(); e.stopPropagation(); b.classList.add('down'); down(); });
+      const rel = e => { e.preventDefault(); b.classList.remove('down'); up?.(); };
+      b.addEventListener('pointerup', rel); b.addEventListener('pointercancel', rel); b.addEventListener('pointerleave', rel);
+      pad.appendChild(b);
+      return b;
+    };
+    this.padBtns = {
+      hint: btn('', '?', () => { this.pad.hint = true; }),
+      left: btn('', '◀', () => { this.pad.dir = -1; }),
+      right: btn('', '▶', () => { this.pad.dir = 1; }),
+      flick: btn('big', tx('Hold to flick'), () => { this.pad.hold = true; }, () => { this.pad.hold = false; }),
+    };
+    const canvas = this.g.renderer.renderer.domElement;
+    canvas.addEventListener('pointerdown', e => this.onPointer(e));
   }
 
-  register() {
-    const d = this.d, p = this.g.player, Y = YARD;
-    const rack = new THREE.Vector3(Y.rack.x + 0.6, this.y0 + 1, Y.rack.z);
-    const post = new THREE.Vector3(Y.board.x, this.y0 + 1, Y.board.z);
+  /** The on-screen buttons that belong to a game (none for the one-button games). */
+  showPad(look) {
+    if (!this.el) return;
+    const on = look === 'board' || look === 'marbles';
+    this.el.pad.classList.toggle('hidden', !on);
+    this.padBtns.hint.style.display = this.padBtns.left.style.display = this.padBtns.right.style.display = look === 'board' ? '' : 'none';
+    this.padBtns.flick.style.display = look === 'marbles' ? '' : 'none';
+    this.padBtns.flick.textContent = tx('Hold to flick');
+    document.body.classList.toggle('yard-pad', on);
+  }
+
+  register(c) {
+    const d = this.d, p = this.g.player, Y = c.Y, y0 = c.y0;
+    const rack = new THREE.Vector3(Y.rack.x + 0.6, y0 + 1, Y.rack.z);
+    const post = new THREE.Vector3(Y.board.x, y0 + 1, Y.board.z);
     const text = { key: '', join: '', board: '' };
     const refresh = () => {
-      const id = this.current(), playing = this.kidsPlaying(), key = `${getLang()}|${id}|${playing}`;
+      const id = this.current(c), playing = this.kidsPlaying(c), key = `${getLang()}|${id}|${playing}`;
       if (key === text.key) return;
       text.key = key;
       const name = tx(YARD_NAMES[id]);
@@ -175,80 +157,109 @@ export class Yard {
       text.board = tx('Change the game (now: {name})', { name });
     };
     const free = () => this.ready() && !this.round && !d.busy && !d.scenes.active && !this.g.interiors?.active && !this.g.kite?.active;
-    // on the court itself the prompt follows Mika; off it, it waits at the box of shuttlecocks
+    // on the court itself the prompt follows Mika; a game with a stage of its own answers anywhere near that stage; off both it waits at the ball box
     const onCourt = () => Math.abs(p.pos.x - Y.x) < Y.w / 2 + 0.4 && Math.abs(p.pos.z - Y.z) < Y.l / 2 + 0.4 && Math.abs(p.pos.z - Y.z) > 0.5;
-    d.interact('yard:join', null, () => { refresh(); return text.join; }, free, () => this.play(), 2.6,
-      () => (onCourt() ? V.copy(p.pos).setY(p.pos.y + 1) : rack), 0.3);
-    d.interact('yard:board', post, () => { refresh(); return text.board; }, free, () => this.changeGame(), 2.1, null, 0.6);
+    const stagePos = new THREE.Vector3();
+    const anchor = () => {
+      const id = this.current(c), S = Y.stages?.[id];
+      if (S) {
+        const reach = id === 'tug' || id === 'sack' ? 9 : 4.5;
+        if (Math.hypot(p.pos.x - S.x, p.pos.z - S.z) < reach) return V.copy(p.pos).setY(p.pos.y + 1);
+        return stagePos.set(S.x, y0 + 1, S.z);
+      }
+      return onCourt() ? V.copy(p.pos).setY(p.pos.y + 1) : rack;
+    };
+    d.interact(`yard:join:${Y.id}`, null, () => { refresh(); return text.join; }, free, () => this.play(c), 2.6, anchor, 0.3);
+    d.interact(`yard:board:${Y.id}`, post, () => { refresh(); return text.board; }, free, () => this.changeGame(c), 2.1, null, 0.6);
   }
 
   // ------------------------------------------------------------------ the scoreboard
-  showBoard(sim = null, id = this.current()) {
-    const b = this.g.structures?.yard;
+  showBoard(c, sim = null, id = this.current(c)) {
+    const b = this.g.structures?.yards?.[c.Y.id];
     if (!b) return;
     const name = tx(YARD_NAMES[id]);
-    if (!sim) b.setBoard(name, id === 'keepup' ? '0' : '0 : 0', '');
-    else if (id === 'keepup') b.setBoard(name, String(sim.count), tx('Best: {n}', { n: sim.best }));
-    else b.setBoard(name, `${sim.score[0]} : ${sim.score[1]}`, sim.wall ? tx('Three in a row: a point') : tx('First to {n}', { n: sim.target }));
+    if (!sim || !sim.hud) b.setBoard(name, id === 'keepup' ? '0' : id === 'rope' || id === 'sack' ? '-' : id === 'tug' || id === 'marbles' || id === 'oanquan' || id === 'volley' || id === 'footnet' ? '0 : 0' : '0', tx(YARD_RULES[id], {}));
+    else { const h = sim.hud({ mine: '', theirs: '' }); b.setBoard(name, h.big, h.sub || ''); }
   }
 
-  changeGame() {
-    const id = nextGame(this.current());
-    this.save.game = id;
-    if (this.amb) { this.override = id; this.shoutAny(this.amb.kids, pick(SAY[id])); }
-    this.d.ui.toast(tx('Next game: {name}', { name: tx(YARD_NAMES[id]) }));
+  changeGame(c) {
+    const id = nextGame(this.current(c), c.Y.games);
+    setGameOn(this.save, c.Y, id);
+    if (c.amb) { c.override = id; this.shoutAny(c, c.amb.kids, pick(SAY[id] || SAY.own)); }
+    this.d.ui.toast(`${tx('Next game: {name}', { name: tx(YARD_NAMES[id]) })} · ${tx(YARD_RULES[id])}`);
     this.d.audio.click();
-    if (!this.amb) this.showBoard(null, id);
+    if (!c.amb) this.showBoard(c, null, id);
     this.d.save?.();
   }
 
   // ------------------------------------------------------------------ bodies
   /** A speech bubble over a kid (Town Life person `it`). */
-  shout(it, text, life = 2.4) {
+  shout(c, it, text, life = 2.4) {
     if (!it || !it.n.visible || it.n.far) return;
     const n = it.n;
     this.d.barks.ui.show(`yard:${it.p.id}`, text, out => { n.head(out); out.y += 0.3 - (n.sitting ? 0.35 : 0); return out; }, { name: tx(it.p.name || ''), life });
-    if (this.near()) this.d.audio?.blip?.(1.4);
+    if (this.near(c)) this.d.audio?.blip?.(1.4);
   }
-  shoutAny(kids, text) { const k = kids?.length ? pick(kids) : null; if (k) this.shout(k, text); }
+  shoutAny(c, kids, text) { const k = kids?.length ? pick(kids) : null; if (k) this.shout(c, k, text); }
 
-  /** Put a sim player's body where the sim has it: a kid runs or stands, turning to the shuttle. */
-  drive(it, pl, sim, dt) {
-    const n = it.n, w = toWorld(pl.u, pl.v, W1);
+  /** Where a kid looks in a game (a world point), or null. */
+  lookAt(G, pl, sim, S) {
+    const out = W2;
+    const to = (u, v) => toWorld(u, v, out, S);
+    if (G.look === 'shuttle' || G.look === 'ball') return sim.shuttle.on ? to(sim.shuttle.u, sim.shuttle.v) : null;
+    if (G.id === 'tug') return to(pl.team === 0 ? 4 : -4, 0);
+    if (G.id === 'rope') return pl.role === 'turn' ? to(-pl.u, 0) : to(0, 3);
+    if (G.id === 'sack') return to(pl.u, -9);
+    if (G.id === 'oanquan') return to(0, pl.v > 0 ? -1 : 1);
+    if (G.id === 'marbles') return to(0, 0);
+    return null;
+  }
+
+  /** Put a sim player's body where the sim has it: a kid runs or stands, turning to what matters; far moves go through the gates. */
+  drive(c, it, pl, sim, dt, G, S) {
+    const n = it.n, Y = c.Y, w = toWorld(pl.u, pl.v, W1, S);
+    n.path = null; n.sitting = false;
+    const gy = this.ground(w.x, w.z), a = n.anim;
+    if (it.yPath?.length) {
+      const [tx_, tz] = it.yPath[0], dx = tx_ - n.pos.x, dz = tz - n.pos.z, d = Math.hypot(dx, dz), step = Math.min(d, 5 * dt);
+      n.pos.x += dx / (d || 1) * step; n.pos.z += dz / (d || 1) * step; n.pos.y = this.ground(n.pos.x, n.pos.z);
+      n.targetFacing = Math.atan2(dx, dz);
+      if (d < 0.1) it.yPath.shift();
+      if (a && !a.busy) { if (a.has('Run')) a.play('Run', { speed: 1.1 }); }
+      return;
+    }
     const dx = w.x - n.pos.x, dz = w.z - n.pos.z, moved = Math.hypot(dx, dz);
-    n.path = null;
-    n.sitting = false;
-    n.pos.x = w.x; n.pos.z = w.z; n.pos.y = this.y0;
+    if (moved > 1.6) { it.yPath = pathBetween(Y, n.pos.x, n.pos.z, w.x, w.z); return; }
+    n.pos.x = w.x; n.pos.z = w.z; n.pos.y = gy + (pl.y || 0);
     if (pl.moving && moved > 1e-4) n.targetFacing = Math.atan2(dx, dz);
-    else if (sim.shuttle.on) { const s = toWorld(sim.shuttle.u, sim.shuttle.v, W2); if (Math.hypot(s.x - w.x, s.z - w.z) > 0.6) n.targetFacing = Math.atan2(s.x - w.x, s.z - w.z); }
-    const a = n.anim;
+    else { const l = this.lookAt(G, pl, sim, S); if (l && Math.hypot(l.x - w.x, l.z - w.z) > 0.6) n.targetFacing = Math.atan2(l.x - w.x, l.z - w.z); }
     if (!a || a.busy) return;
-    if (pl.moving && a.has('Run')) a.play('Run', { speed: Math.min(1.2, Math.max(0.55, moved / Math.max(dt, 1e-3) / 4.2)) });
+    if (pl.moving && a.has('Run') && G.moves) a.play('Run', { speed: Math.min(1.2, Math.max(0.55, moved / Math.max(dt, 1e-3) / 4.2)) });
     else a.play('Idle');
   }
 
   /** Sit a kid on a bench to watch. */
-  seat(it) {
-    if (this.seated.has(it)) return;
-    const used = new Set(this.seated.values());
+  seat(c, it) {
+    if (!it || c.seated.has(it)) return;
+    const used = new Set(c.seated.values()), B = c.Y.benches;
     let i = 0;
     while (used.has(i) && i < 4) i++;
-    this.seated.set(it, i);
-    const b = YARD.benches[Math.floor(i / 2) % YARD.benches.length], off = i % 2 ? -0.42 : 0.42, n = it.n;
+    c.seated.set(it, i);
+    const b = B[Math.floor(i / 2) % B.length], off = i % 2 ? -0.42 : 0.42, n = it.n;
     const x = b.x + 0.02, z = b.z + off;
     const sit = () => {
-      if (this.seated.get(it) !== i) return;
+      if (c.seated.get(it) !== i) return;
       n.place(x, z, b.face);
       n.sitting = true;
       const clip = n.anim?.has?.('Sit') ? 'Sit' : 'Idle';
       n.setIdle(clip);
       if (n.anim && !n.anim.busy) n.anim.play(clip);
     };
-    if (Math.hypot(n.pos.x - x, n.pos.z - z) > 1.2 && !this.round) n.walk([[x + 0.5, z]], sit, 2.4); else sit();
+    if (Math.hypot(n.pos.x - x, n.pos.z - z) > 1.2 && !this.round) { const path = pathBetween(c.Y, n.pos.x, n.pos.z, x + 0.5, z); n.walk(path, sit, 2.4); } else sit();
   }
 
-  unseat(it) {
-    if (!this.seated.delete(it)) return;
+  unseat(c, it) {
+    if (!c.seated.delete(it)) return;
     const n = it.n;
     if (n.sitting) { n.sitting = false; n.place(n.pos.x + 0.7, n.pos.z, n.facing); }
     n.setIdle('Idle');
@@ -257,106 +268,107 @@ export class Yard {
 
   cheer(it) {
     const a = it.n.anim;
-    if (!a || !a.has('Cheer') || it.n.far) return;
+    if (!a || !a.has('Cheer') || it.n.far || a.busy) return;
     a.once('Cheer', { then: it.n.sitting ? it.n.idleClip : 'Idle' });
   }
 
   // ------------------------------------------------------------------ the kids' own play
+  /** QA: put the yard's kids into `game` at once (their day plan waits); no game: let them go. window.__STARLINE_QA__.director.yard.debugAmbient('takamori', 'tug') */
+  debugAmbient(yardId, game) {
+    const c = this.ctl[yardId], town = this.d.town;
+    for (const it of c.dbg?.kids || []) it.yardHold = false;
+    c.dbg = null;
+    if (!game) return;
+    const kids = c.Y.kids.map(id => town.byId.get(id)).filter(Boolean);
+    for (const it of kids) { it.yardHold = true; it.n.setHidden(false); }
+    c.dbg = { game, kids };
+  }
+
   /** Town Life: these kids' plans say "play at the yard" right now (called every frame for each such game). */
   ambient(gm, kids) {
-    for (const k of kids) if (!this.here.includes(k)) this.here.push(k);
-    this.hereGame ??= gm.game;
+    const Y = yardAt(gm.at[0], gm.at[1], 12), c = Y && this.ctl[Y.id];
+    if (!c) return;
+    for (const k of kids) if (!c.here.includes(k)) c.here.push(k);
+    c.hereGame ??= gm.game;
   }
 
-  endAmbient() {
-    const A = this.amb;
+  endAmbient(c) {
+    const A = c.amb;
     if (!A) return;
-    for (const it of [...this.seated.keys()]) this.unseat(it);
-    for (const it of A.kids) { if (it.n.anim && !it.n.anim.busy) it.n.anim.play('Idle'); }
-    this.amb = null;
-    this.override = null;
-    this.hideShuttle();
-    this.showBoard();
+    for (const it of [...c.seated.keys()]) this.unseat(c, it);
+    for (const it of A.kids) { it.yPath = null; if (it.n.anim && !it.n.anim.busy) it.n.anim.play('Idle'); }
+    c.amb = null;
+    c.override = null;
+    this.views.hideAll();
+    this.showBoard(c);
   }
 
-  startAmbient(kids, game, prev) {
-    const ids = kids.map(k => k.p.id);
+  startAmbient(c, kids, game, prev) {
+    const ids = kids.map(k => k.p.id), Y = c.Y;
     const R = ambientRoles(game, ids, prev?.rounds || 0, prev?.loser || null);
-    const G = YARD_GAME[R.game];
+    const G = YARD_GAME[R.game], S = stageOf(Y, G.id);
+    this.views.hideAll();                 // (the last game's pieces go away: a new one is starting)
     const by = id => kids.find(k => k.p.id === id);
-    for (const it of [...this.seated.keys()]) if (!R.watch.includes(it.p.id)) this.unseat(it);
-    for (const id of R.watch) this.seat(by(id));
+    for (const it of [...c.seated.keys()]) if (!R.watch.includes(it.p.id)) this.unseat(c, it);
+    for (const id of R.watch) this.seat(c, by(id));
+    // a kid who is outside the rails steps in at the gate first (the ones whose game is outside walk there on their own)
     const players = R.play.map((id, i) => {
-      const it = by(id), c = toCourt(it.n.pos.x, it.n.pos.z);
-      return { id, team: R.game === 'footnet' ? (R.play.length === 2 ? i : i % 2) : 0, style: KID_STYLE[id] || 'steady', u: c.u, v: c.v };
+      const it = by(id);
+      if (G.look === 'shuttle' || G.look === 'ball') { const e = enterPoint(Y, it.n.pos.x, it.n.pos.z); if (e) { it.n.place(e[0], e[1], it.n.facing); it.yPath = null; } }
+      const cc = toCourt(it.n.pos.x, it.n.pos.z, {}, S);
+      return { id, team: G.ambientTeam(R.play, i), style: KID_STYLE[id] || 'steady', u: cc.u, v: cc.v };
     });
     const seed = (prev?.seed || Math.floor(Math.random() * 1e9)) + 1;
     const sim = G.create({ seed, players, level: 'normal', target: 3 });
-    this.amb = { want: game, game: R.game, kids, roles: R, sim, bodies: sim.players.map(pl => by(pl.id) || null), rounds: prev?.rounds || 0, loser: null, seed, rest: 3, awake: true };
-    this.showBoard(sim, R.game);
+    const view = this.views.get(G.look);
+    view?.attach(S, this.ground(S.x, S.z));
+    c.amb = { want: game, game: R.game, G, S, kids, roles: R, sim, view, bodies: sim.players.map(pl => by(pl.id) || null), rounds: prev?.rounds || 0, loser: null, seed, rest: 3, awake: true };
+    this.showBoard(c, sim, R.game);
   }
 
-  stepAmbient(dt) {
-    const kids = this.here, want = this.override && YARD_GAME[this.override] ? this.override : this.hereGame;
-    if (!kids.length || !want) { this.endAmbient(); return; }
-    // (the same kids at the same game as last frame: nothing to work out)
-    let same = !!this.amb && this.amb.want === want && this.amb.kids.length === kids.length;
-    for (let i = 0; same && i < kids.length; i++) same = this.amb.kids.includes(kids[i]);
-    if (!same) this.startAmbient(kids.slice(), want, this.amb);
-    const A = this.amb, sim = A.sim;
-    // nobody near enough to be drawn: the game sleeps where it stands
-    A.awake = A.kids.some(k => !k.n.far);
-    if (!A.awake) { this.hideShuttle(); return; }
+  stepAmbient(c, dt) {
+    const kids = c.here, want = c.Y.games.includes(c.override) ? c.override : c.hereGame;
+    if (!kids.length || !want) { this.endAmbient(c); return; }
+    let same = !!c.amb && c.amb.want === want && c.amb.kids.length === kids.length;
+    for (let i = 0; same && i < kids.length; i++) same = c.amb.kids.includes(kids[i]);
+    if (!same) this.startAmbient(c, kids.slice(), want, c.amb);
+    const A = c.amb, sim = A.sim, G = A.G;
+    // nobody near enough to be drawn (or the yard far from Mika): the game sleeps where it stands
+    const asleep = !A.kids.some(k => !k.n.far) || !this.near(c, AWAKE_R);
+    A.awake = !asleep;
+    if (asleep) { A.view?.hide(); return; }
     if (sim.over) {
       A.rest -= dt;
-      for (let i = 0; i < A.bodies.length; i++) if (A.bodies[i]) { sim.players[i].moving = false; this.drive(A.bodies[i], sim.players[i], sim, dt); }
+      for (let i = 0; i < A.bodies.length; i++) if (A.bodies[i]) { sim.players[i].moving = false; this.drive(c, A.bodies[i], sim.players[i], sim, dt, G, A.S); }
       if (A.rest <= 0) {
-        // the loser sits the next one out (with three kids)
         A.rounds++;
-        A.loser = A.game === 'footnet' ? sim.players.find(q => q.team === (sim.over.won ? 1 : 0))?.id || null : null;
-        this.startAmbient(A.kids, A.want, A);
+        A.loser = G.id === 'footnet' || G.id === 'volley' ? sim.players.find(q => q.team === (sim.over.won ? 1 : 0))?.id || null : null;
+        this.startAmbient(c, A.kids, A.want, A);
       }
       return;
     }
     sim.step(Math.min(dt, 0.05));
-    for (let i = 0; i < A.bodies.length; i++) if (A.bodies[i]) this.drive(A.bodies[i], sim.players[i], sim, dt);
-    this.present(sim, dt, false);
-    this.events(sim, A.kids, A.game, false);
+    for (let i = 0; i < A.bodies.length; i++) if (A.bodies[i]) this.drive(c, A.bodies[i], sim.players[i], sim, dt, G, A.S);
+    this.present(A.view, sim, dt, false, A.S, this.ground(A.S.x, A.S.z));
+    this.events(c, sim, A.kids, G, false, A.S);
     // a kid calls Mika over when she walks up
-    this.inviteCool -= dt;
-    if (this.inviteCool <= 0 && this.ready() && this.near(INVITE_R) && !this.d.busy && !this.d.ui.dialogueOpen) {
-      this.inviteCool = 45;
-      this.shoutAny(A.kids, pick(SAY.invite), 3);
+    c.inviteCool -= dt;
+    if (c.inviteCool <= 0 && this.ready() && this.near(c, INVITE_R) && !this.d.busy && !this.d.ui.dialogueOpen) {
+      c.inviteCool = 45;
+      this.shoutAny(c, A.kids, pick(SAY.invite), 3);
     }
   }
 
   // ------------------------------------------------------------------ showing a sim (the kids' game and Mika's)
-  hideShuttle() { this.shuttle.visible = false; this.blob.visible = false; this.ring.visible = false; this.ringOut.visible = false; this.prevOn = false; }
-
-  present(sim, dt, withRing) {
-    const S = sim.shuttle, sh = this.shuttle;
-    sh.visible = S.on;
-    this.blob.visible = S.on && S.y > 0.25;
-    if (S.on) {
-      const w = toWorld(S.u, S.v, W1);
-      V.set(w.x, this.y0 + Math.max(0.1, S.y), w.z);
-      // the cork leads: turn it along the way it is flying
-      if (this.prevOn && sim.flight) {
-        V2.subVectors(V, this.prev);
-        if (V2.lengthSq() > 1e-6) { QT.setFromUnitVectors(DOWN, V2.normalize()); sh.quaternion.slerp(QT, Math.min(1, dt * 14)); }
-      } else sh.quaternion.identity();
-      sh.position.copy(V);
-      this.prev.copy(V); this.prevOn = true;
-      this.blob.position.set(w.x, this.y0 + 0.035, w.z);
-      this.blob.scale.setScalar(1 + Math.min(2, S.y * 0.25));
-    } else this.prevOn = false;
-    const M = sim.marker, on = withRing && M.on && sim.state === 'rally';
+  present(view, sim, dt, withRing, S, y0) {
+    view?.update(sim, dt);
+    const M = sim.marker, on = withRing && M.on && (sim.state === 'rally' || sim.state === 'pull');
     this.ring.visible = on;
     this.ringOut.visible = on && M.mine && !M.out;
     if (on) {
-      const w = toWorld(M.u, M.v, W1), L = sim.L, mat = this.ring.material;
-      this.ring.position.set(w.x, this.y0 + 0.045, w.z);
-      this.ringOut.position.set(w.x, this.y0 + 0.05, w.z);
+      const w = toWorld(M.u, M.v, W1, S), L = sim.L || { p0: 0, p1: sim.W?.perfect ?? 0.14 }, mat = this.ring.material;
+      this.ring.position.set(w.x, y0 + 0.045, w.z);
+      this.ringOut.position.set(w.x, y0 + 0.05, w.z);
       const mid = (L.p0 + L.p1) / 2;
       this.ringOut.scale.setScalar(1 + Math.min(1.25, Math.max(0, M.tau - mid)) * 1.7);
       const state = M.out ? 3 : !M.mine ? 2 : M.tau <= L.p1 ? 1 : 0;
@@ -369,47 +381,122 @@ export class Yard {
     }
   }
 
-  /** The sim's events: sounds, kicks, cheers, bubbles. kids: the Town Life people in it. */
-  events(sim, kids, id, mine) {
+  /** A pose on a kid (or on Mika). */
+  pose(who, kind, c, kids, human) {
+    if (human) { this.poses.start(this.mikaBody(), kind); return; }
+    const it = kids?.find(k => k.p.id === who);
+    if (it && !it.n.far) this.poses.start(this.kidBody(it), kind);
+  }
+
+  /** The sim's events: sounds, poses, cheers, bubbles. kids: the Town Life people in it. */
+  events(c, sim, kids, G, mine, S) {
     if (!sim.events.length) return;
-    const d = this.d, a = d.audio, hear = this.near(), by = who => kids.find(k => k.p.id === who);
-    const talk = this.near(BARK_RANGE);
+    const d = this.d, a = d.audio, hear = this.near(c), by = who => kids.find(k => k.p.id === who);
+    const talk = this.near(c, BARK_RANGE), id = G.id, tone = (f, o) => hear && a.tone(f, o), noise = o => hear && a.noise(o);
+    const here = () => this.views.get(G.look);
     for (const e of sim.events) {
       const it = e.who ? by(e.who) : null;
       switch (e.type) {
-        case 'windup': if (it && !it.n.far && it.n.anim?.has?.('Kick')) it.n.anim.once('Kick', { then: 'Idle' }); break;
+        case 'windup':
+          if (id === 'volley') this.pose(e.who, e.kind === 'set' ? 'set' : e.kind === 'bump' ? 'bump' : 'spike', c, kids, false);
+          else if (it && !it.n.far && it.n.anim?.has?.('Kick')) it.n.anim.once('Kick', { then: 'Idle' });
+          break;
         case 'serve':
         case 'kick':
-          if (e.human) this.kickT = 0;
-          if (hear) {
-            a.tone(e.quality === 'perfect' ? 640 : 470, { type: 'triangle', dur: 0.07, vol: mine ? 0.1 : 0.05, rev: 0.1 });
-            a.noise({ dur: 0.05, vol: mine ? 0.09 : 0.04, freq: 2200 });
-          }
-          if (e.human && e.quality === 'perfect') { this.hint(tx('Perfect!'), 0.9, 'good'); d.fx?.twinkle?.(this.shuttle.position); if (Math.random() < 0.3) this.shoutAny(kids, pick(SAY.nice)); }
-          if (!mine && talk && e.type === 'kick' && Math.random() < 0.12) this.shout(it, pick(SAY.own), 1.6);
-          if (id === 'keepup') { this.showBoard(sim, id); if (mine && [10, 20, 30].includes(sim.count)) this.shoutAny(kids, SAY.count[sim.count / 10 - 1]); }
+          if (e.human) { this.kickT = 0; if (id === 'volley') this.poses.start(this.mikaBody(), e.kind === 'set' ? 'set' : e.kind === 'bump' ? 'bump' : e.kind === 'spike' ? 'spike' : 'bump'); else this.poses.start(this.mikaBody(), 'kick'); }
+          tone(e.quality === 'perfect' ? 640 : 470, { type: 'triangle', dur: 0.07, vol: mine ? 0.1 : 0.05, rev: 0.1 });
+          noise({ dur: 0.05, vol: mine ? 0.09 : 0.04, freq: id === 'volley' ? 900 : 2200 });
+          if (e.human && e.quality === 'perfect') { this.hint(tx('Perfect!'), 0.9, 'good'); if (Math.random() < 0.3) this.shoutAny(c, kids, pick(SAY.nice)); }
+          if (!mine && talk && e.type === 'kick' && Math.random() < 0.12) this.shout(c, it, pick(SAY.own), 1.6);
+          if (id === 'keepup') { this.showBoard(c, sim, id); if (mine && [10, 20, 30].includes(sim.count)) this.shoutAny(c, kids, SAY.count[sim.count / 10 - 1]); }
+          if (id === 'volley' && e.kind === 'spike' && talk && it && Math.random() < 0.5) this.shout(c, it, pick(SAY[KID_STYLE[it.p.id]] || SAY.spike), 1.8);
+          break;
+        case 'pass':
+          if (id === 'volley' && talk && Math.random() < 0.25) this.shoutAny(c, kids, pick(SAY.set), 1.6);
+          if (id === 'volley' && e.kind === 'set') { this.pose(e.who, 'set', c, kids, !!(sim.human && sim.human.id === e.who)); }
           break;
         case 'whiff':
           this.kickT = 0;
-          if (hear) a.noise({ dur: 0.12, vol: 0.05, freq: 900, sweep: 1.5 });
+          noise({ dur: 0.12, vol: 0.05, freq: 900, sweep: 1.5 });
           this.hint(e.why === 'far' ? tx('Too far: stand in the ring') : tx('Too early!'), 1.1, 'bad');
           break;
-        case 'wall': if (hear) { a.tone(170, { dur: 0.1, vol: 0.13, rev: 0.15 }); a.noise({ dur: 0.05, vol: 0.08, freq: 1500 }); } break;
+        case 'wall': tone(170, { dur: 0.1, vol: 0.13, rev: 0.15 }); noise({ dur: 0.05, vol: 0.08, freq: 1500 }); break;
         case 'land': if (hear) a.land(0.25); break;
-        case 'point': this.onPoint(sim, kids, id, mine, e, talk); break;
+        case 'point': this.onPoint(c, sim, kids, G, mine, e, talk); break;
+        // ---- rope jumping
+        case 'ground': tone(150, { dur: 0.05, vol: 0.05, rev: 0 }); for (const p of sim.players) if (p.role === 'turn') this.pose(p.id, 'turn', c, kids, false); break;
+        case 'jump': this.pose(e.who, 'jump', c, kids, !!e.human); noise({ dur: 0.08, vol: 0.04, freq: 1600, sweep: 0.5 }); break;
+        case 'count':
+          if (id === 'rope') {
+            tone(520 + Math.min(12, e.n) * 22, { type: 'triangle', dur: 0.09, vol: mine ? 0.09 : 0.04, rev: 0.1 });
+            if (mine) { this.showBoard(c, sim, id); if (e.n >= 3 && talk) { const t = sim.players.find(p => p.role === 'turn'); if (t && (e.n % 5 === 0 || e.n < 10)) this.shout(c, by(t.id), tx('{n}!', { n: e.n }), 1.1); } }
+            if (mine && [8, 16, 30].includes(e.n)) { d.audio.star?.(); this.hint(tx('{n} in a row!', { n: e.n }), 1.3, 'good'); }
+          } else if (id === 'sack') { tone(300 + e.n * -50 + 300, { type: 'triangle', dur: 0.12, vol: 0.08 }); this.hint(String(e.n), 0.8, 'good'); }
+          break;
+        case 'trip':
+          if (hear) a.miss();
+          if (mine && e.human) this.hint(tx('Tripped! Streak {n}', { n: e.streak }), 1.2, 'bad');
+          if (talk) this.shoutAny(c, kids.filter(k => k.p.id !== e.who), pick(SAY.tripped), 1.8);
+          this.showBoard(c, sim, id);
+          break;
+        case 'go':
+          if (id === 'sack' || id === 'tug') { tone(660, { type: 'triangle', dur: 0.25, vol: 0.1 }); this.hint(tx('Go!'), 0.8, 'good'); }
+          break;
+        // ---- tug of war
+        case 'beat': tone(220, { dur: 0.1, vol: mine ? 0.08 : 0.04, rev: 0.1 }); if (talk) { const t = sim.players.find(p => !p.human); if (t) this.shout(c, by(t.id), pick(SAY.heave), 0.9); } break;
+        case 'pull': this.pose(e.who, 'pull', c, kids, false); break;
+        case 'heave':
+          this.poses.start(this.mikaBody(), 'pull');
+          tone(e.quality === 'perfect' ? 520 : e.quality === 'good' ? 420 : 200, { type: 'triangle', dur: 0.12, vol: 0.09 });
+          this.hint(e.quality === 'perfect' ? tx('Perfect heave!') : e.quality === 'good' ? tx('Good heave') : tx('Off the beat'), 0.7, e.quality === 'off' ? 'bad' : 'good');
+          break;
+        // ---- sack race
+        case 'hop': this.pose(e.who, 'hop', c, kids, !!e.human); tone(200 + (e.rhythm || 0) * 120, { type: 'triangle', dur: 0.05, vol: e.human ? 0.07 : 0.03, rev: 0.05 }); break;
+        case 'wobble': if (e.human) { this.hint(tx('Wobbling! Slow down'), 0.9, 'bad'); a.bad(); } break;
+        case 'fall': if (hear) a.plop?.(0.6); if (talk && it) this.shout(c, it, pick(SAY.fell), 1.8); if (e.human) this.hint(tx('You tumbled! Get up and go'), 1.2, 'bad'); break;
+        case 'finish': if (hear) a.chime?.(e.place); if (e.human) this.hint(tx('You finished!'), 1.2, 'good'); break;
+        // ---- marbles
+        case 'charge': tone(300, { type: 'triangle', dur: 0.08, vol: 0.06 }); break;
+        case 'shoot': this.pose(e.who, 'flick', c, kids, !!e.human); tone(380, { type: 'triangle', dur: 0.1, vol: 0.1 }); noise({ dur: 0.08, vol: 0.06, freq: 2400 }); break;
+        case 'click': tone(1200 + Math.random() * 600, { type: 'triangle', dur: 0.04, vol: 0.05 * (0.5 + e.strength), rev: 0 }); break;
+        case 'out':
+          if (hear) a.pickup?.();
+          if (e.human) this.hint(tx('Marble out! It is yours'), 1.2, 'good');
+          if (talk && !e.human && it) this.shout(c, it, pick(SAY.flick), 1.6);
+          this.showBoard(c, sim, id);
+          break;
+        case 'shotdone': if (e.got === 0 && talk && it && !it.p.human) this.shout(c, it, pick(SAY.soft), 1.4); break;
+        // ---- oan quan
+        case 'sow': this.pose(e.who, 'sow', c, kids, !!e.human); break;
+        case 'pick': tone(330, { type: 'triangle', dur: 0.06, vol: 0.06 }); break;
+        case 'drop': tone(700 + Math.random() * 120, { type: 'triangle', dur: 0.035, vol: 0.05, rev: 0 }); noise({ dur: 0.02, vol: 0.03, freq: 3000 }); break;
+        case 'take': if (hear) a.chime?.(2); if (talk && it && !e.human) this.shout(c, it, pick(SAY.take), 1.6); if (e.human) this.hint(e.quan ? tx('You captured a quan!') : tx('You captured {n}', { n: e.dan }), 1.4, 'good'); break;
+        case 'refill': if (e.human) this.hint(e.borrowed ? tx('Your side is empty: you borrow {n}', { n: e.borrowed }) : tx('Your side is empty: you refill it'), 1.8); break;
+        case 'done': this.showBoard(c, sim, id); break;
+        case 'select': tone(520, { type: 'triangle', dur: 0.05, vol: 0.06 }); break;
+        case 'refuse': a.bad?.(); break;
+        case 'up': break;
         default: break;
       }
     }
+    void here; void S;
     sim.events.length = 0;
   }
 
-  onPoint(sim, kids, id, mine, e, talk) {
-    const d = this.d;
-    this.showBoard(sim, id);
-    for (const it of this.seated.keys()) { this.cheer(it); if (talk && Math.random() < 0.3) this.shout(it, pick(SAY.watch), 1.8); }
+  onPoint(c, sim, kids, G, mine, e, talk) {
+    const d = this.d, id = G.id;
+    this.showBoard(c, sim, id);
+    for (const it of c.seated.keys()) { this.cheer(it); if (talk && Math.random() < 0.3) this.shout(c, it, pick(SAY.watch), 1.8); }
     if (id === 'keepup') {
       if (mine && e.human) { d.audio.miss(); this.hint(e.lives > 0 ? tx('Dropped it! Lives left: {n}', { n: e.lives }) : tx('Dropped it!'), 1.6, 'bad'); }
-      else if (talk && (mine || Math.random() < 0.4)) this.shout(kids.find(k => k.p.id === e.who), pick(SAY.drop), 1.8);
+      else if (talk && (mine || Math.random() < 0.4)) this.shout(c, kids.find(k => k.p.id === e.who), pick(SAY.drop), 1.8);
+      return;
+    }
+    if (id === 'tug') {
+      const win = e.team === 0;
+      if (mine) { (win ? d.audio.good() : d.audio.miss()); this.hint(win ? tx('You pulled the flag over the line!') : tx('They pulled the flag over'), 1.6, win ? 'good' : 'bad'); }
+      for (const it of kids) this.cheer(it);
+      if (talk) this.shoutAny(c, kids, pick(win ? SAY.tugWin : SAY.tugLose), 2.2);
       return;
     }
     const scorers = sim.players.filter(p => p.team === e.team && !p.human).map(p => kids.find(k => k.p.id === p.id)).filter(Boolean);
@@ -419,11 +506,11 @@ export class Yard {
       if (e.team === 0) { d.audio.good(); this.hint(e.why === 'streak' ? tx('Three in a row: a point!') : tx('Point for Mika!'), 1.5, 'good'); } else { d.audio.miss(); this.hint(sim.wall ? tx('Point for the kick-board') : tx('Point for the kids'), 1.5, 'bad'); }
     }
     if (!talk) return;
-    if (e.why === 'net' || e.why === 'out') this.shoutAny(losers, pick(SAY[e.why]));
-    else if (mine && e.team === 0) this.shoutAny(scorers.length ? scorers : losers, pick(scorers.length ? SAY.ours : SAY.aww));
+    if (e.why === 'net' || e.why === 'out') this.shoutAny(c, losers, pick(SAY[e.why]));
+    else if (mine && e.team === 0) this.shoutAny(c, scorers.length ? scorers : losers, pick(scorers.length ? SAY.ours : SAY.aww));
     else if (scorers.length && (mine || Math.random() < 0.5)) {
       const it = pick(scorers), own = SAY[KID_STYLE[it.p.id]];
-      this.shout(it, mine ? pick(Math.random() < 0.5 && own ? own : SAY.theirs) : pick(own || SAY.own));
+      this.shout(c, it, mine ? pick(Math.random() < 0.5 && own ? own : SAY.theirs) : pick(own || SAY.own));
     }
   }
 
@@ -436,64 +523,104 @@ export class Yard {
     this.hintLeft = life;
   }
 
-  setHud(sim, id, names) {
-    const h = this.el.hud;
-    let l, big, r, sub;
-    if (id === 'keepup') {
-      l = tx('Touches'); big = String(sim.count); r = tx('Best: {n}', { n: sim.best });
-      const s = Math.max(0, Math.ceil(sim.timeLeft));
-      sub = `${'♥'.repeat(Math.max(0, sim.lives))}${'♡'.repeat(Math.max(0, 3 - sim.lives))} · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
-    } else { l = names.mine; big = `${sim.score[0]} : ${sim.score[1]}`; r = names.theirs; sub = sim.wall ? tx('Three in a row: a point') : tx('First to {n}', { n: sim.target }); }
-    if (h._kl !== l) { h._kl = l; h._l.textContent = l; }
-    if (h._kb !== big) { h._kb = big; h._big.textContent = big; }
-    if (h._kr !== r) { h._kr = r; h._r.textContent = r; }
-    if (h._ks !== sub) { h._ks = sub; h._sub.textContent = sub; }
+  setHud(sim, names) {
+    const h = this.el.hud, o = sim.hud ? sim.hud(names) : { l: '', big: '', r: '', sub: '' };
+    if (h._kl !== o.l) { h._kl = o.l; h._l.textContent = o.l; }
+    if (h._kb !== o.big) { h._kb = o.big; h._big.textContent = o.big; }
+    if (h._kr !== o.r) { h._kr = o.r; h._r.textContent = o.r; }
+    if (h._ks !== (o.sub || '')) { h._ks = o.sub || ''; h._sub.textContent = o.sub || ''; }
   }
 
-  // ------------------------------------------------------------------ Mika's round
-  /** The Kawabe kids who can play right now: those on the court first, then whoever is out of doors (never at night). */
-  callKids() {
-    const town = this.d.town, out = [];
-    if (!town || this.d.townFrozen?.()) return out;
-    const c = { x: YARD.x, z: YARD.z };
-    for (const id of Object.keys(KID_STYLE)) {
-      const it = town.byId.get(id);
-      if (!it || !it.n.visible || it.n.riding) continue;
-      out.push(it);
-    }
-    const at = it => (this.here.includes(it) || this.amb?.kids.includes(it) ? 0 : 1000) + Math.hypot(it.n.pos.x - c.x, it.n.pos.z - c.z);
-    return out.sort((a, b) => at(a) - at(b));
+  toggleCam() {
+    this.cam = this.cam === 'side' ? 'end' : 'side';
+    try { localStorage.setItem(CAM_KEY, this.cam); } catch { /* no storage */ }
+    if (this.round?.sim) this.frame(this.round);
+    this.labelCam();
   }
+  labelCam() { if (this.el) this.el.cam.textContent = this.cam === 'side' ? tx('Behind view') : tx('Side view'); }
 
-  /** Where the court camera stands for this screen: north of the court, high enough to see it all. */
-  cameraFor(focus) {
-    const portrait = innerHeight > innerWidth * 1.15;
-    const cam = this.tmpCam, fov = portrait ? 66 : 50, pitch = (portrait ? 56 : 27) * Math.PI / 180;
+  // ------------------------------------------------------------------ the camera
+  /**
+   * A camera that fits `focus` (stage space: centre u, v and the extents w, l) on this screen: behind the near side ('end') or
+   * from the side ('side', on the -u side). Returns { pos, look, fov, yaw } (yaw: the heading, which the stick is read against).
+   */
+  cameraFor(S, focus, mode = 'end', y0 = this.ground(S.x, S.z)) {
+    const portrait = innerHeight > innerWidth * 1.15, th = (S.rot || 0) * Math.PI / 180;
+    const cam = this.tmpCam, fov = portrait ? 66 : 50;
+    const pitch = (focus.pitch ? focus.pitch + (portrait ? 6 : 0) : mode === 'side' ? (portrait ? 50 : 24) : portrait ? 56 : 27) * Math.PI / 180;
     cam.fov = fov; cam.aspect = innerWidth / innerHeight; cam.near = 1; cam.far = 500; cam.updateProjectionMatrix();
-    const c = toWorld(focus.u, focus.v), look = new THREE.Vector3(c.x, this.y0 + 0.6, c.z);
-    const pos = new THREE.Vector3();
-    const top = portrait ? 0.74 : 0.6, bottom = portrait ? -0.56 : -0.88, side = 0.9;
+    const c = toWorld(focus.u, focus.v, {}, S), look = new THREE.Vector3(c.x, y0 + 0.6, c.z), pos = new THREE.Vector3();
+    const dir = mode === 'side' ? [Math.cos(th), Math.sin(th)] : [Math.sin(th), -Math.cos(th)];
+    const top = portrait ? 0.74 : 0.6, bottom = portrait ? -0.56 : -0.86, side = 0.9;
     const pts = [];
     for (const su of [-1, 1]) for (const sv of [-1, 1]) pts.push([focus.u + su * focus.w / 2, 0, focus.v + sv * focus.l / 2]);
-    pts.push([focus.u, 2.4, focus.v - focus.l / 2], [focus.u - focus.w / 2, 1.5, focus.v + focus.l / 2], [focus.u + focus.w / 2, 1.5, focus.v + focus.l / 2]);
-    for (let dist = 7; dist <= 42; dist += 0.5) {
-      pos.set(look.x, look.y + Math.sin(pitch) * dist, look.z - Math.cos(pitch) * dist);
+    pts.push([focus.u, 2.4, focus.v - focus.l / 2], [focus.u, 2.4, focus.v + focus.l / 2], [focus.u - focus.w / 2, 1.5, focus.v], [focus.u + focus.w / 2, 1.5, focus.v]);
+    for (let dist = 6; dist <= 48; dist += 0.5) {
+      pos.set(look.x + dir[0] * Math.cos(pitch) * dist, look.y + Math.sin(pitch) * dist, look.z + dir[1] * Math.cos(pitch) * dist);
       cam.position.copy(pos); cam.lookAt(look); cam.updateMatrixWorld(true);
       let ok = true;
       for (const [u, y, v] of pts) {
-        const w = toWorld(u, v);
-        V.set(w.x, this.y0 + y, w.z).project(cam);
+        const w = toWorld(u, v, W2, S);
+        V.set(w.x, y0 + y, w.z).project(cam);
         if (Math.abs(V.x) > side || V.y > top || V.y < bottom) { ok = false; break; }
       }
       if (ok) break;
     }
-    return { pos, look, fov };
+    return { pos, look, fov, yaw: Math.atan2(-dir[0], -dir[1]) };
   }
 
-  async play() {
+  /** Put the round's camera where it belongs (also when the player changes the view). */
+  frame(R) {
+    const follow = this.g.follow, shot = this.cameraFor(R.S, R.G.focus, R.G.sideOk ? this.cam : 'end', R.y0);
+    follow.fovBase = shot.fov;
+    follow.cutscene({ pos: shot.pos, look: shot.look }, R.fresh ? 0.01 : 0.5);
+    follow.yaw = shot.yaw;
+    R.yaw = shot.yaw;
+    R.fresh = false;
+  }
+
+  /** The stick in stage space: +u right, +v toward the near side, for a camera heading `yaw` and a stage S. */
+  stick(S, yaw, out) {
+    const inp = this.g.input, mx = inp.move.x, my = inp.move.y, th = (S.rot || 0) * Math.PI / 180, c = Math.cos(th), s = Math.sin(th);
+    const fx = Math.sin(yaw), fz = Math.cos(yaw), rx = -Math.cos(yaw), rz = Math.sin(yaw);
+    const dx = fx * my + rx * mx, dz = fz * my + rz * mx;
+    out.mx = -dx * c - dz * s;
+    out.mv = dx * s - dz * c;
+    return out;
+  }
+
+  // ------------------------------------------------------------------ pointer (marbles aim, oan quan squares)
+  onPointer(e) {
+    const R = this.round;
+    if (!R?.sim || (R.G.look !== 'board' && R.G.look !== 'marbles') || !this.el.card.classList.contains('hidden')) return;
+    const canvas = this.g.renderer.renderer.domElement, r = canvas.getBoundingClientRect();
+    const ndc = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    this.ray.setFromCamera(ndc, this.g.camera);
+    this.plane.constant = -(R.y0 + 0.03);
+    if (!this.ray.ray.intersectPlane(this.plane, V)) return;
+    const cc = toCourt(V.x, V.z, C2, R.S);
+    if (R.G.look === 'marbles') this.pad.aim = { u: cc.u, v: cc.v };
+    else { const sq = squareAt(cc.u, cc.v); if (sq !== null) this.pad.pick = sq; }
+  }
+
+  // ------------------------------------------------------------------ Mika's round
+  /** The village kids who can play right now: those at the yard first, then whoever is out of doors, nearest first. */
+  callKids(c) {
+    const town = this.d.town, out = [];
+    if (!town || this.d.townFrozen?.()) return out;
+    for (const id of c.Y.kids) {
+      const it = town.byId.get(id);
+      if (!it || !it.n.visible || it.n.riding) continue;
+      out.push(it);
+    }
+    const at = it => (c.here.includes(it) || c.amb?.kids.includes(it) ? 0 : 1000) + Math.hypot(it.n.pos.x - c.Y.x, it.n.pos.z - c.Y.z);
+    return out.sort((a, b) => at(a) - at(b));
+  }
+
+  async play(c = this.nearest(40)) {
     const d = this.d, g = this.g;
-    if (this.round || d.busy || d.minigame || d.tricks?.round || !this.ready()) return null;
-    const id = this.current(), G = YARD_GAME[id];
+    if (!c || this.round || d.busy || d.minigame || d.tricks?.round || !this.ready()) return null;
+    const id = this.current(c), G = YARD_GAME[id];
     if (!G) return null;
     this.round = { id, starting: true };
     d.ui.prompt(null);
@@ -503,12 +630,12 @@ export class Yard {
     try {
       this.locks = true;
       g.player.vel.set(0, 0, 0);
-      g.player.carry?.want('worn', 'yard');      // arms out for balance: the lantern stays on her belt
+      g.player.carry?.want('worn', 'yard');         // hands free: the lantern rides on her belt
       await d.ui.fade(true, 280);
       let again = true, first = true;
       while (again) {
         const st = this.save, level = levelFor(st[id], g.easy);
-        const res = await this.runRound(G, level, first);
+        const res = await this.runRound(c, G, level, first);
         first = false;
         result = res || { quit: true };
         if (result.quit) break;
@@ -525,7 +652,7 @@ export class Yard {
       // whatever happened, the round never keeps the screen, the camera or the kids
       for (const l of this.loops) l.res({ quit: true });
       this.loops.clear();
-      this.endRound(keep);
+      this.endRound(c, keep);
       this.round = null;
       this.locks = false;
       g.player.carry?.release('yard');
@@ -538,132 +665,202 @@ export class Yard {
   }
 
   /** One round: sides, places, camera, then the sim runs on Mika's input until it is over (or she stops). */
-  async runRound(G, level, first) {
-    const d = this.d, g = this.g, p = g.player, id = G.id, town = d.town;
+  async runRound(c, G, level, first) {
+    const d = this.d, g = this.g, p = g.player, id = G.id, town = d.town, Y = c.Y;
+    const S = stageOf(Y, id), y0 = this.ground(S.x, S.z);
     // ---- who plays where
-    const kids = this.callKids();
+    const kids = this.callKids(c);
     const T = G.teams(kids);
-    const playing = [...T.mine, ...T.theirs], watching = kids.filter(k => !playing.includes(k));
-    this.endAmbient();
-    for (const it of this.held) it.yardHold = false;
-    this.held = kids.slice();
+    const playing = [...T.mine, ...T.theirs, ...(T.turn || []).filter(k => !T.theirs.includes(k))], watching = kids.filter(k => !playing.includes(k));
+    this.endAmbient(c);
+    for (const it of c.held) it.yardHold = false;
+    c.held = kids.slice();
     for (const it of kids) {
       it.yardHold = true;
-      it.wasHere = this.here.includes(it) || !!it.game && (it.game.game === 'footnet' || it.game.game === 'keepup');
+      it.yPath = null;
+      it.wasHere = c.here.includes(it) || !!it.game;
       town.setProp(it, null);
       it.n.path = null; it.n.onPathDone = null; it.n.sitting = false;
       it.n.anim?.cancelOneShot?.();
     }
-    for (const it of [...this.seated.keys()]) this.unseat(it);
-    for (const it of watching) this.seat(it);
+    for (const it of [...c.seated.keys()]) this.unseat(c, it);
+    for (const it of watching) this.seat(c, it);
     const players = [{ id: 'mika', team: 0, human: true }];
     for (const it of T.mine) players.push({ id: it.p.id, team: 0, style: KID_STYLE[it.p.id] });
     for (const it of T.theirs) players.push({ id: it.p.id, team: 1, style: KID_STYLE[it.p.id] });
+    for (const it of T.turn || []) if (!players.some(q => q.id === it.p.id)) players.push({ id: it.p.id, team: 0, style: KID_STYLE[it.p.id] });
     const sim = G.create({ seed: this.debug.seed ?? Math.floor(Math.random() * 1e9), players, level, target: G.target(level), wall: !!T.wall });
-    const R = this.round = { id, sim, kids: playing, level };
+    sim.touchUi = d.ui.touch;
+    const view = this.views.get(G.look);
+    view?.attach(S, y0);
+    const R = this.round = { id, G, sim, S, y0, kids: playing, level, fresh: true, c, yaw: 0 };
     const human = sim.human;
     // ---- places (under the fade)
-    const hw = toWorld(human.u, human.v);
+    const hw = toWorld(human.u, human.v, W1, S);
     p.teleport(hw.x, hw.z, undefined, 0);
-    for (const pl of sim.players) { const it = playing.find(k => k.p.id === pl.id); if (it) { const w = toWorld(pl.u, pl.v); it.n.place(w.x, w.z, pl.team === 0 ? 0 : Math.PI); it.n.setIdle('Idle'); it.n.anim?.play('Idle'); } }
+    const bodies = sim.players.map(pl => (pl.human ? null : playing.find(k => k.p.id === pl.id) || null));
+    for (const it of kids) { const e = enterPoint(Y, it.n.pos.x, it.n.pos.z); if (e && (G.look === 'shuttle' || G.look === 'ball')) it.n.place(e[0], e[1], it.n.facing); }
+    sim.players.forEach((pl, i) => { const it = bodies[i]; if (it) { const w = toWorld(pl.u, pl.v, W1, S); it.n.place(w.x, w.z, pl.team === 0 ? 0 : Math.PI); it.n.setIdle('Idle'); it.n.anim?.play('Idle'); } });
     // ---- camera and HUD
-    const shot = this.cameraFor(G.focus), follow = g.follow;
-    follow.fovBase = shot.fov;
-    follow.cutscene({ pos: shot.pos, look: shot.look }, 0.01);
-    follow.yaw = 0;                                   // Mika's stick is read against this heading: up = up the court
+    this.frame(R);
+    this.labelCam();
     const names = {
       mine: T.mine.length ? `${tx('Mika')} & ${tx(T.mine[0].p.name)}` : tx('Mika'),
-      theirs: T.wall ? tx('Kick-board') : T.theirs.map(k => tx(k.p.name)).join(' & '),
+      theirs: T.wall ? tx('Kick-board') : (T.theirs.length ? T.theirs : T.turn || []).map(k => tx(k.p.name)).join(' & '),
     };
     R.names = names;
-    this.setHud(sim, id, names);
-    this.showBoard(sim, id);
+    this.setHud(sim, names);
+    this.showBoard(c, sim, id);
+    this.showPad(G.look);
     this.el.hud.classList.remove('hidden');
     this.el.stop.classList.remove('hidden');
+    this.el.cam.classList.toggle('hidden', !G.sideOk);
     this.el.stop.innerHTML = `${tx('Stop playing')}<kbd>⌫</kbd>`;
     document.body.classList.add('trick-round', 'yard-round');
     this.hintLeft = 0; this.el.hint.classList.add('hidden');
     await d.ui.fade(false, 280);
-    this.locks = false;
-    if (first && playing.length) this.shoutAny(playing, pick(SAY.join), 2.6);
-    this.hint(tx('Press {act} to serve'), 60);
-    let taught = level !== 'first', served = false, serveHint = true;
-    const bodies = sim.players.map(pl => (pl.human ? null : playing.find(k => k.p.id === pl.id) || null));
-    // ---- the rally
+    this.locks = !G.moves;
+    if (first && playing.length && SAY[id]) this.shoutAny(c, playing, pick(SAY[id]), 2.6);
+    else if (first && playing.length) this.shoutAny(c, playing, pick(SAY.join), 2.6);
+    let lastHint = '';
+    // ---- the game
     const out = await this.loop(dt => {
-      const inp = g.input;
-      let mx = inp.move.x, mv = -inp.move.y, kick = inp.pressed('act') || inp.pressed('tap');
-      // keep her on her half
-      const c = toCourt(p.pos.x, p.pos.z, C1);
-      const cu = Math.max(-COURT.W / 2 - 0.8, Math.min(COURT.W / 2 + 0.8, c.u)), cv = Math.max(0.45, Math.min(COURT.HALF + 1.2, c.v));
-      if (cu !== c.u || cv !== c.v) { const w = toWorld(cu, cv, W1); p.pos.x = w.x; p.pos.z = w.z; }
+      const inp = g.input, th = R.yaw;
+      // Mika's stick in stage space (the camera may stand behind or beside)
+      this.stick(S, th, INP);
+      INP.kick = inp.pressed('act') || (G.look !== 'board' && G.look !== 'marbles' && inp.pressed('tap'));
+      INP.jump = inp.pressed('jump');
+      INP.hold = inp.held('act') || this.pad.hold;
+      // a gamepad has no held "act": for the flick, one press starts the charge and the next lets it go
+      if (G.look === 'marbles' && inp.lastDevice === 'gamepad') { if (inp.pressed('act')) this.gpHold = !this.gpHold; INP.hold = this.gpHold; } else this.gpHold = false;
+      INP.aimU = this.pad.aim ? this.pad.aim.u : null; INP.aimV = this.pad.aim ? this.pad.aim.v : null; this.pad.aim = null;
+      INP.pick = null; INP.dir = 0; INP.hint = false;
+      if (G.look === 'board') this.boardKeys(sim, inp, INP);
+      if (G.moves) {
+        // keep her on her half of the court
+        const cc = toCourt(p.pos.x, p.pos.z, C1, S);
+        const cu = clamp(cc.u, -COURT.W / 2 - 0.8, COURT.W / 2 + 0.8), cv = clamp(cc.v, 0.45, COURT.HALF + 1.2);
+        if (cu !== cc.u || cv !== cc.v) { const w = toWorld(cu, cv, W1, S); p.pos.x = w.x; p.pos.z = w.z; }
+      }
       const A = this.debug.auto;
       if (A) {
-        // QA autopilot: the bot's stick moves her (same speed as her run), its kick is her kick
-        const b = G.bot(sim, A === 'lose' ? () => -1 : this.debug.at);
-        mx = b.mx; mv = b.mv; kick = b.kick;
-        const w = toWorld(cu + mx * 4.4 * dt, cv + mv * 4.4 * dt, W1);
-        p.pos.x = w.x; p.pos.z = w.z;
-        p.vel.x = 0; p.vel.z = 0;
+        const arg = QA[A]?.[id], b = G.bot(sim, arg === undefined ? 0.12 : arg);
+        if (G.moves) {
+          toCourt(p.pos.x, p.pos.z, C1, S);
+          const w = toWorld(C1.u + (b.mx || 0) * 4.4 * dt, C1.v + (b.mv || 0) * 4.4 * dt, W1, S);
+          p.pos.x = w.x; p.pos.z = w.z; p.vel.x = 0; p.vel.z = 0;
+          INP.mx = b.mx || 0; INP.mv = b.mv || 0;
+        }
+        INP.kick = !!b.kick; INP.hold = !!b.hold || INP.hold;
+        if (b.aimU !== undefined) { INP.aimU = b.aimU; INP.aimV = b.aimV; }
+        if (b.pick !== undefined) INP.pick = b.pick;
+        if (b.dir) INP.dir = b.dir;
       }
-      toCourt(p.pos.x, p.pos.z, C1);
-      INP.mx = mx; INP.mv = mv; INP.kick = kick;
+      if (G.moves) toCourt(p.pos.x, p.pos.z, C1, S);
+      else { C1.u = human.u; C1.v = human.v; }
       sim.step(Math.min(dt, 0.05), INP);
-      if (!served && sim.state === 'rally') {
-        served = true;
-        this.hint(taught ? '' : tx('Stand in the ring. Press {act} as the shuttle comes down.'), taught ? 0.01 : 7);
-        taught = true; serveHint = false;
-      } else if (served && sim.state === 'serve' && sim.server === human && !serveHint && !(this.hintLeft > 0)) { serveHint = true; this.hint(tx('Press {act} to serve'), 60); }
-      else if (sim.state === 'rally' && serveHint) { serveHint = false; this.hint('', 0.01); }
-      for (let i = 0; i < bodies.length; i++) if (bodies[i]) this.drive(bodies[i], sim.players[i], sim, dt);
-      // she faces up the court when she stands still
-      if (p.speed < 0.4) p.turnTo(0, dt, 8);
-      this.present(sim, dt, true);
-      this.events(sim, playing, id, true);
-      this.setHud(sim, id, names);
+      // the hint under the HUD: what to press now
+      const h = sim.hint ? sim.hint() : null, hs = h || '';
+      if (hs !== lastHint) { lastHint = hs; if (hs) this.hint(hs, 60); else if (this.hintLeft > 50) this.hint('', 0.01); }
+      if (G.moves) for (let i = 0; i < bodies.length; i++) { if (bodies[i]) this.drive(c, bodies[i], sim.players[i], sim, dt, G, S); }
+      else {
+        for (let i = 0; i < bodies.length; i++) if (bodies[i]) this.drive(c, bodies[i], sim.players[i], sim, dt, G, S);
+        this.driveMika(sim, human, S, G, dt);
+      }
+      if (G.moves && p.speed < 0.4) { const t = (S.rot || 0) * Math.PI / 180; p.turnTo(Math.atan2(-Math.sin(t), Math.cos(t)), dt, 8); }      // she faces the net when she stands still
+      this.present(view, sim, dt, true, S, y0);
+      this.events(c, sim, playing, G, true, S);
+      this.setHud(sim, names);
+      this.padSync(sim);
       if (sim.over) return sim.over;
       return undefined;
     });
     // ---- the end of it
-    this.hideShuttle();
+    this.views.hideAll();
+    this.ring.visible = this.ringOut.visible = false;
     this.el.hud.classList.add('hidden');
     this.el.stop.classList.add('hidden');
+    this.el.cam.classList.add('hidden');
+    this.el.pad.classList.add('hidden'); document.body.classList.remove('yard-pad');
     this.el.hint.classList.add('hidden'); this.hintLeft = 0;
     if (!out || out.quit) return { quit: true };
     this.locks = true;
     p.vel.set(0, 0, 0);
-    const won = id === 'keepup' ? out.stars > 0 : out.won;
+    const won = out.stars > 0;
     for (const it of playing) this.cheer(it);
-    for (const it of this.seated.keys()) this.cheer(it);
+    for (const it of c.seated.keys()) this.cheer(it);
     if (won) { p.anim?.once?.('Cheer', { then: 'Idle' }); d.audio.fanfare?.(); }
-    if (id === 'footnet' && playing.length) this.shoutAny(playing, pick(out.won ? SAY.win : SAY.lose), 3.2);
+    if (playing.length && (id === 'footnet' || id === 'volley' || id === 'tug')) this.shoutAny(c, playing, pick(id === 'tug' ? (out.won ? SAY.tugLose : SAY.tugWin) : out.won ? SAY.win : SAY.lose), 3.2);
+    else if (playing.length && id === 'sack' && out.place === 1) this.shoutAny(c, playing, pick(SAY.sackWin), 3);
     await this.wait(1.5);
     return out;
   }
 
+  /** Mika's body in a game where she does not walk about: put her at her place, facing the game, hopping when the sim says so. */
+  driveMika(sim, human, S, G, dt) {
+    const p = this.g.player, w = toWorld(human.u, human.v, W1, S);
+    p.pos.x = w.x; p.pos.z = w.z; p.vel.set(0, 0, 0);
+    const gy = this.ground(w.x, w.z);
+    p.pos.y = gy;
+    p.root.position.set(w.x, gy + (human.y || 0), w.z);
+    const l = this.lookAt(G, human.team === 0 && G.id === 'rope' ? { ...human, role: 'jump' } : human, sim, S);
+    if (l) p.turnTo(Math.atan2(l.x - w.x, l.z - w.z), dt, 10);
+    p.root.rotation.y = p.facing;
+    if (G.id === 'sack' && p.pivot) p.pivot.rotation.x = (human.lean || 0) * 0.3;
+    else if (p.pivot && !this.poses.busy(this.mikaBody())) p.pivot.rotation.x = 0;
+    if (G.id === 'oanquan' || G.id === 'marbles') p.anim?.play?.('Idle');
+  }
+
+  /** Keyboard play of the oan quan board: left / right moves along her squares, E sows counter-clockwise (right), Space the other way, W asks for a hint. */
+  boardKeys(sim, inp, out) {
+    if (sim.state !== 'think' || !sim.cur.human) return;
+    const mine = [1, 2, 3, 4, 5].filter(i => sim.board.dan[i] > 0);
+    if (!mine.length) return;
+    // (a gamepad's stick counts as left / right when it is pushed past a threshold, once per push)
+    const sx = inp.move.x, sd = sx > 0.6 ? 1 : sx < -0.6 ? -1 : 0, pad = sd !== (this.stickDir || 0) ? sd : 0;
+    this.stickDir = sd;
+    const step = inp.pressed('right') || pad > 0 ? 1 : inp.pressed('left') || pad < 0 ? -1 : 0;
+    if (step) { let i = mine.indexOf(sim.sel); i = i < 0 ? (step > 0 ? 0 : mine.length - 1) : (i + step + mine.length) % mine.length; out.pick = mine[i]; }
+    if (inp.pressed('up')) out.hint = true;
+    if (sim.sel !== null) { if (inp.pressed('act')) out.dir = 1; else if (inp.pressed('jump')) out.dir = -1; }
+    // the pad
+    if (this.pad.pick !== null) { out.pick = this.pad.pick; this.pad.pick = null; }
+    if (this.pad.dir) { out.dir = this.pad.dir; this.pad.dir = 0; }
+    if (this.pad.hint) { out.hint = true; this.pad.hint = false; }
+    if (out.dir && sim.sel === null && out.pick === null) out.pick = mine[0];
+  }
+
+  padSync(sim) {
+    if (!this.el || this.el.pad.classList.contains('hidden')) return;
+    const turn = sim.state === 'think' || sim.state === 'aim';
+    this.el.pad.style.opacity = turn ? '1' : '0.55';
+  }
+
   /** Give the camera, the kids and the screen back. */
-  endRound(keep) {
+  endRound(c, keep) {
     const g = this.g, town = this.d.town;
-    this.hideShuttle();
+    this.views.hideAll();
+    this.ring.visible = this.ringOut.visible = false;
     if (this.el) {
-      this.el.hud.classList.add('hidden'); this.el.stop.classList.add('hidden'); this.el.hint.classList.add('hidden'); this.el.card.classList.add('hidden');
-      document.body.classList.remove('trick-round', 'yard-round');
+      for (const k of ['hud', 'stop', 'cam', 'hint', 'pad', 'card']) this.el[k].classList.add('hidden');
+      document.body.classList.remove('trick-round', 'yard-round', 'yard-pad');
     }
     this.hintLeft = 0;
     g.follow.fovBase = keep.fov;
     g.follow.yaw = keep.yaw;
     g.follow.clearCutscene(true);
-    for (const it of [...this.seated.keys()]) this.unseat(it);
-    for (const it of this.held) {
-      it.yardHold = false;
+    const p = g.player; if (p.pivot) p.pivot.rotation.x = 0;
+    for (const it of [...c.seated.keys()]) this.unseat(c, it);
+    for (const it of c.held) {
+      it.yardHold = false; it.yPath = null;
       it.n.anim?.cancelOneShot?.();
       it.n.setIdle('Idle'); it.n.anim?.play('Idle');
       // kids called over from somewhere else go back to their day (the ones whose plan is the yard just carry on)
       if (!it.wasHere) town?.release(it.p.id);
     }
-    this.held = [];
+    c.held = [];
     this.kickT = 9;
-    this.showBoard();
+    this.showBoard(c);
   }
 
   quit() {
@@ -686,22 +883,20 @@ export class Yard {
   results(G, res, rec, newBest) {
     const ui = this.d.ui, el = this.el.card, id = G.id, R = this.round;
     this.locks = true;
+    const card = G.card(res, rec, R.names, newBest);
     el.querySelector('.box').innerHTML = `<h2></h2><div class="verdict"></div>
       <div class="stars">${[0, 1, 2].map(i => `<i style="animation-delay:${0.2 + i * 0.25}s">${i < res.stars ? '★' : '☆'}</i>`).join('')}</div>
       <div class="score"></div><div class="best"></div>
+      <div class="fact"><b></b><span class="note"></span></div>
       <div class="btns"><button class="again"></button><button class="main done"></button></div>`;
     const q = s => el.querySelector(s);
     q('h2').textContent = tx(G.name);
-    if (id === 'keepup') {
-      q('.verdict').textContent = res.stars >= 3 ? tx('Nobody in Kawabe keeps it up like that!') : res.stars ? tx('Well kept up!') : tx('Good try!');
-      q('.score').textContent = tx('{n} touches in a row', { n: res.score });
-      q('.best').textContent = newBest && rec.plays > 1 ? tx('New best!') : tx('Best: {n}', { n: rec.best });
-    } else {
-      q('.verdict').textContent = res.won ? tx('You win!') : tx('The kids win this one');
-      if (!res.won) q('.verdict').style.color = '#a2441c';
-      q('.score').textContent = `${R.names.mine} ${res.mine} : ${res.theirs} ${R.names.theirs}`;
-      q('.best').textContent = tx('Wins: {n} · Longest rally: {m}', { n: rec.wins, m: rec.rally });
-    }
+    q('.verdict').textContent = card.verdict;
+    if (!card.good) q('.verdict').style.color = '#a2441c';
+    q('.score').textContent = card.score;
+    q('.best').textContent = card.best;
+    q('.fact b').textContent = tx('Where it comes from');
+    q('.note').textContent = tx(YARD_NOTES[id]);
     const touch = ui.touch;
     q('.again').innerHTML = `${tx('Play again')}${touch ? '' : '<kbd>Space</kbd>'}`;
     q('.done').innerHTML = `${tx('Done')}${touch ? '' : '<kbd>E</kbd>'}`;
@@ -744,29 +939,17 @@ export class Yard {
       this.hintLeft -= dt;
       if (this.hintLeft <= 0) h.classList.add('hidden');
     }
-    // the kids' own game, while Mika is not in one
-    if (!this.round) {
-      const frozen = this.d.townFrozen?.() || this.d.busy > 0 || !!this.d.scenes.active;
-      if (!frozen) this.stepAmbient(dt);
+    // the kids' own game at each yard, while Mika is not in one
+    const frozen = this.d.townFrozen?.() || this.d.busy > 0 || !!this.d.scenes.active;
+    for (const c of Object.values(this.ctl)) {
+      if (c.dbg) { for (const it of c.dbg.kids) if (!c.here.includes(it)) c.here.push(it); c.hereGame = c.dbg.game; }
+      if (!this.round && !frozen) this.stepAmbient(c, dt);
+      c.here.length = 0;
+      c.hereGame = null;
     }
-    this.here.length = 0;
-    this.hereGame = null;
-    this.swing(dt);
-    // after dark: the net's unlit strings dim, and the shuttle keeps a little glow of its own so it can be followed
-    const night = g.night || 0;
-    g.structures?.yard?.setNight(night);
-    if (this.shuttle.visible) this.shuttle.material.emissiveIntensity = 0.45 * night;
-  }
-
-  /** Mika has no kick clip: her right leg swings from the hip for a third of a second (after the mixer, before drawing). */
-  swing(dt) {
-    if (this.kickT > 0.4) return;
-    this.kickT += dt;
-    const p = this.g.player;
-    const B = this.bones ??= { thigh: p.model?.getObjectByName('thigh_R') || null, shin: p.model?.getObjectByName('shin_R') || null, hips: p.model?.getObjectByName('hips') || null };
-    if (!B.thigh) return;
-    const k = Math.min(1, this.kickT / 0.34), s = Math.sin(k * Math.PI);
-    B.thigh.rotateX(-1.25 * s);
-    B.shin?.rotateX(0.7 * Math.sin(Math.min(1, k * 1.6) * Math.PI) * (1 - k));
+    this.poses.update(dt);
+    // after dark the balls keep a little glow of their own so they can be followed
+    this.views.setNight(g.night || 0);
+    g.structures?.yards && Object.values(g.structures.yards).forEach(y => y.setNight(g.night || 0));
   }
 }

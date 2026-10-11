@@ -10,7 +10,8 @@ import { WATER_Y } from '../../world/layout.js';
 import { FISH } from '../story.js';
 import { tx, N_ } from '../../i18n/i18n.js';
 import { FishingSim, CAST, BIG, PILE, makeFish, planCast, sizeFraction, pileSlot, pileAdd } from './sim.js';
-import { FishPond, SPOT, STAND, WATERS, fishingShot } from './pond.js';
+import { FishPond, fishingShot } from './pond.js';
+import { SPOTS, areaFor, allowed } from './places.js';
 
 const HINTS = {
   aimMouse: N_('Click the water to cast'),
@@ -93,8 +94,11 @@ function addCss() {
 }
 
 export class FishingSession {
-  constructor(director, { rand = Math.random } = {}) {
+  /** spot: a place from places.js (the dock by default). */
+  constructor(director, { rand = Math.random, spot = SPOTS.dock } = {}) {
     const d = this.d = director, g = this.g = d.game;
+    this.spot = spot;
+    this.P = spot.pile;
     this.player = g.player;
     this.rand = rand;
     this.done = false;
@@ -107,9 +111,9 @@ export class FishingSession {
     const hour = g.shownHour?.() ?? g.time.hour;
     this.dusk = g.time.hour > 17.6 && g.time.hour < 20.5 || hour > 17.6 && hour < 20.5;
     const aspect = innerWidth / innerHeight;
-    const shot = this.shotDef = fishingShot(aspect, this.frozen);
-    this.area = this.frozen ? WATERS.ice : shot.tall > 0.5 ? WATERS.tall : WATERS.wide;
-    this.pond = new FishPond(g, { area: this.area, dusk: this.dusk, rand, wildlife: d.wildlife });
+    const shot = this.shotDef = fishingShot(spot, aspect, this.frozen);
+    this.area = areaFor(spot, shot.tall, this.frozen);
+    this.pond = new FishPond(g, { spot, area: this.area, dusk: this.dusk, rand, wildlife: d.wildlife });
     // camera: ease up over Mika's shoulder
     this.fovBefore = g.follow.fovBase;
     g.follow.fovBase = shot.fov;
@@ -119,9 +123,10 @@ export class FishingSession {
     const a = this.area;
     this.home = { x: a.cx, z: a.cz };
     this.ok = this.frozen
-      ? (x, z) => Math.hypot(x - a.cx, z - a.cz) <= a.hole - 0.55
-      : (x, z) => z < 28.3 && x > 6.3 && g.world.heightAt(x, z) < WATER_Y - 0.7 && this.pond.school.inside(x, z, 1.18);
-    this.aim = this.plan(d.fishAim || { x: a.cx - a.rx * 0.2, z: a.cz + a.rz * 0.3 });
+      ? (x, z) => allowed(spot, x, z, true)
+      : (x, z) => allowed(spot, x, z) && g.world.heightAt(x, z) < WATER_Y - 0.7 && this.pond.school.inside(x, z, 1.18);
+    const last = d.fishAim?.spot === spot.id ? d.fishAim : null;          // where she last cast here
+    this.aim = this.plan(last || { x: a.cx - a.rx * 0.2, z: a.cz + a.rz * 0.3 });
     this.float = { x: this.aim.x, z: this.aim.z, cx: this.aim.x, cz: this.aim.z };
     // the catch: landed fish lie in a row on the dock; older ones go into the creel (drawn with the school's own batches)
     this.pile = []; this.outgoing = []; this.creelCount = 0; this.pileId = 0;
@@ -130,11 +135,15 @@ export class FishingSession {
     this.bind();
     this.poseBefore = this.player.pose;
     // reached "Fish" from the water beside the dock: she climbs up to cast
-    if (this.player.swimming || this.player.pos.y < 0.45) this.player.teleport(STAND.x, STAND.z, undefined, this.player.facing);
+    const st = spot.stand;
+    if (this.player.swimming || (st.y !== null && this.player.pos.y < st.y - 0.27)) this.player.teleport(st.x, st.z, undefined, this.player.facing);
     // the press that started this must not count as a held reel (the phone's action button is hidden under the finger)
     g.input.release('act'); g.input.release('jump');
     this.hud();
   }
+
+  /** The ground the catch lies on: the planks of a dock, else the terrain. */
+  groundY(x, z) { return this.P.y ?? this.g.world.heightAt(x, z); }
 
   plan(p) { return planCast(p, { origin: this.player.pos, home: this.home, ok: this.ok, min: CAST.min, max: this.frozen ? 9 : CAST.max }); }
 
@@ -188,12 +197,12 @@ export class FishingSession {
     const creel = this.creel = keep(new THREE.Group());
     const wick = new THREE.MeshBasicMaterial({ color: '#b78748', side: THREE.DoubleSide }), dark = new THREE.MeshBasicMaterial({ color: '#6a4720' }), rim = new THREE.MeshBasicMaterial({ color: '#ddb06a' });
     this.creelMats = [[wick, '#b78748'], [dark, '#6a4720'], [rim, '#ddb06a']];
-    const cr = PILE.creel.r;
+    const cr = this.P.creel.r;
     creel.add(new THREE.Mesh(new THREE.CylinderGeometry(cr, cr * 0.8, 0.3, 12, 1, true).translate(0, 0.15, 0), wick));
     creel.add(new THREE.Mesh(new THREE.CircleGeometry(cr * 0.95, 12).rotateX(-Math.PI / 2).translate(0, 0.2, 0), dark));
     creel.add(new THREE.Mesh(new THREE.TorusGeometry(cr, 0.026, 6, 14).rotateX(Math.PI / 2).translate(0, 0.3, 0), rim));
     creel.add(new THREE.Mesh(new THREE.TorusGeometry(cr * 0.9, 0.018, 5, 14).rotateX(Math.PI / 2).translate(0, 0.14, 0), dark));
-    creel.position.set(PILE.creel.x, PILE.dock.y, PILE.creel.z);
+    creel.position.set(this.P.creel.x, this.groundY(this.P.creel.x, this.P.creel.z), this.P.creel.z);
     const cc = this.countCanvas = document.createElement('canvas');
     cc.width = 96; cc.height = 48;
     this.countTex = new THREE.CanvasTexture(cc);
@@ -274,7 +283,7 @@ export class FishingSession {
     if (this.done) return;
     const d = this.d, g = this.g, inp = g.input, p = this.player;
     // the story takes the screen (a dialogue, a scene), or Mika is no longer at the spot: reel in and step back
-    if (d.busy > 0 || d.ui.dialogueOpen || d.scenes?.active || Math.hypot(p.pos.x - SPOT.x, p.pos.z - SPOT.z) > 4.5) { this.done = true; return; }
+    if (d.busy > 0 || d.ui.dialogueOpen || d.scenes?.active || Math.hypot(p.pos.x - this.spot.interact.x, p.pos.z - this.spot.interact.z) > this.spot.leave) { this.done = true; return; }
     this.t += dt;
     this.msgT = Math.max(0, this.msgT - dt);
     // (the input module reports pad buttons as presses only, so a held pad button is read here: A or X reels)
@@ -296,7 +305,7 @@ export class FishingSession {
     if (this.phase === 'intro') {
       // she steps to the end of the dock while the camera lifts
       const k = Math.min(1, dt * 7);
-      p.pos.x += (STAND.x - p.pos.x) * k; p.pos.z += (STAND.z - p.pos.z) * k;
+      p.pos.x += (this.spot.stand.x - p.pos.x) * k; p.pos.z += (this.spot.stand.z - p.pos.z) * k;
       if (this.t > 0.7) this.go('aim');
       this.castAt = null; this.castNow = false;
     } else if (this.phase === 'aim') {
@@ -341,14 +350,14 @@ export class FishingSession {
     const p = this.player, d = this.d, st = d.q.state;
     const story = st.step === 'c1.fish';
     this.casts++;
-    d.fishAim = { x: this.aim.x, z: this.aim.z };
+    d.fishAim = { spot: this.spot.id, x: this.aim.x, z: this.aim.z };
     this.float = { x: this.aim.x, z: this.aim.z, cx: this.aim.x, cz: this.aim.z };
     this.suitor = null; this.leap = null;
     this.sim = new FishingSim({
       rand: this.rand, easy: !!this.g.easy, gentle: !!this.g.easy && story,
       choose: () => {
         // the story's three fish are trout; a starfin only comes at dusk
-        const fish = makeFish(FISH, this.rand, { dusk: this.dusk, forced: story ? 'trout' : null, easy: !!this.g.easy });
+        const fish = makeFish(FISH, this.rand, { dusk: this.dusk, forced: story ? 'trout' : null, easy: !!this.g.easy, mult: this.spot.stock.mult });
         const s = this.suitor = this.pond.school.suitorFor(fish.species, this.float);
         s.size = 0.8 + sizeFraction(fish.species, fish.cm) * 0.75;
         fish.dist = s.r;
@@ -415,7 +424,7 @@ export class FishingSession {
       d.fx.splash(_a.set(f.x, 0.05, f.z));
       this.pond.ripple(f.x, f.z, 1.3, 1);
       f.state = 'held';
-      this.leap = { f, t: 0, x0: f.x, z0: f.z, x: f.x, y: -0.2, z: f.z, yaw: f.heading, pitch: 0, roll: 0, slot: pileSlot(this.pile.length), species: fish.species };
+      this.leap = { f, t: 0, x0: f.x, z0: f.z, x: f.x, y: -0.2, z: f.z, yaw: f.heading, pitch: 0, roll: 0, slot: pileSlot(this.pile.length, this.P), species: fish.species };
     } else this.tell();
     p.pose = null;
   }
@@ -427,9 +436,9 @@ export class FishingSession {
     // out of the water, over the edge of the dock, and down on the planks in its place in the row
     const s = L.slot;
     L.x = L.x0 + (s.x - L.x0) * k; L.z = L.z0 + (s.z - L.z0) * k;
-    L.y = -0.2 + (PILE.dock.y + 0.3) * k + Math.sin(k * Math.PI) * 2.1;
+    L.y = -0.2 + (this.groundY(s.x, s.z) + 0.3) * k + Math.sin(k * Math.PI) * 2.1;
     L.yaw += dt * 9; L.pitch = Math.sin(k * Math.PI) * 0.9; L.roll += dt * 5;
-    L.k = 1 - (1 - PILE.scale) * k;
+    L.k = 1 - (1 - this.P.scale) * k;
     void p;
     if (k >= 1) {
       this.pond.school.take(L.f, 3);
@@ -442,7 +451,7 @@ export class FishingSession {
   /** A landed fish takes its place in the row; when the row is full the oldest hops into the creel. */
   lay(species, size, at) {
     const item = { id: ++this.pileId, species, size, x: at.x, z: at.z, yaw: at.yaw, t: 0, n: -1 };
-    const r = pileAdd(this.pile, item);
+    const r = pileAdd(this.pile, item, this.P.cap);
     for (const it of this.pile) if (r.creel.includes(it.id)) this.send(it, 0);
     this.pile = r.pile;
   }
@@ -453,7 +462,7 @@ export class FishingSession {
   updatePile(dt) {
     const d = this.d, drops = !this.pond.light;
     for (let i = 0; i < this.pile.length; i++) {
-      const it = this.pile[i], s = pileSlot(i), k = Math.min(1, dt * 6);
+      const it = this.pile[i], s = pileSlot(i, this.P), k = Math.min(1, dt * 6);
       it.x += (s.x - it.x) * k; it.z += (s.z - it.z) * k; it.yaw += (s.yaw - it.yaw) * k;
       it.t += dt;
       // each time it comes down on the wood: a slap, a few drops
@@ -461,7 +470,7 @@ export class FishingSession {
       if (n !== it.n && n < 3) {
         it.n = n;
         d.audio.plop?.(0.45 - n * 0.12);
-        if (drops) d.fx.burst(_a.set(it.x, PILE.dock.y + 0.08, it.z), { n: 5 - n, color: [0.85, 0.95, 1], speed: 1.3, size: 0.09, life: 0.4, gravity: 6 });
+        if (drops) d.fx.burst(_a.set(it.x, this.groundY(it.x, it.z) + 0.08, it.z), { n: 5 - n, color: [0.85, 0.95, 1], speed: 1.3, size: 0.09, life: 0.4, gravity: 6 });
       } else it.n = n;
     }
     if (!this.outgoing.length) return;
@@ -475,10 +484,11 @@ export class FishingSession {
 
   /** The catch, drawn with the school's batches (called by the pond just before it sends them to the GPU). */
   drawPile(pond) {
-    const Y = PILE.dock.y, t = this.t;
+    const t = this.t, PILE = this.P;
     for (let i = 0; i < this.pile.length; i++) {
       const it = this.pile[i];
       if (it.ot !== undefined) continue;
+      const Y = this.groundY(it.x, it.z);
       let y = Y + 0.05 + 0.055 * it.size, roll = Math.PI / 2, tail = 0;
       if (it.t < 1.5) {
         const a = 1 - it.t / 1.5, ph = it.t / 0.5;
@@ -490,7 +500,7 @@ export class FishingSession {
       pond.put(it.species, it.size, it.x, y, it.z, it.yaw, 0, roll, tail, PILE.scale);
     }
     for (const it of this.outgoing) {
-      const k = Math.max(0, it.ot / 0.34), c = PILE.creel;
+      const k = Math.max(0, it.ot / 0.34), c = PILE.creel, Y = this.groundY(it.sx, it.sz);
       if (k <= 0) { pond.put(it.species, it.size, it.x, Y + 0.05 + 0.055 * it.size, it.z, it.yaw, 0, Math.PI / 2, 0, PILE.scale); continue; }
       pond.put(it.species, it.size, it.sx + (c.x - it.sx) * k, Y + 0.12 + k * 0.2 + Math.sin(k * Math.PI) * 0.55, it.sz + (c.z - it.sz) * k, it.yaw + k * 5, k * 1.2, Math.PI / 2, Math.sin(t * 30), PILE.scale * (1 - 0.55 * k));
     }
@@ -691,7 +701,7 @@ export class FishingSession {
       phase: this.phase, title: this.title, bite: sim ? r(sim.biteLeft) : 0,
       tension: sim ? r(sim.tension) : 0, progress: sim ? r(sim.progress) : 0, surging: !!sim?.surging, species: sim?.fish?.species || null, cm: sim?.fish?.cm || null,
       casts: this.casts, caught: this.caught, lost: this.lost, last: this.lastCatch || null,
-      pile: this.pile.map(it => [it.species, r(it.x), r(it.z), r(it.size)]), creel: this.creelCount, creelScreen: this.screenOf(PILE.creel.x, PILE.creel.z),
+      pile: this.pile.map(it => [it.species, r(it.x), r(it.z), r(it.size)]), creel: this.creelCount, creelScreen: this.screenOf(this.P.creel.x, this.P.creel.z), place: this.spot.id,
       aim: [r(this.aim.x), r(this.aim.z)], aimScreen: this.screenOf(this.aim.x, this.aim.z), float: [r(this.float.x), r(this.float.z)],
       fish: this.pond.school.fish.filter(f => f.state !== 'gone').map(f => [f.species, r(f.x), r(f.z), f.state, f.deep ? 1 : 0]),
       frozen: this.frozen, dusk: this.dusk,

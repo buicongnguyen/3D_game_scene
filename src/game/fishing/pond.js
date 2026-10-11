@@ -8,26 +8,14 @@
 import * as THREE from 'three';
 import { WATER_Y } from '../../world/layout.js';
 import { School } from './sim.js';
+import { SPOTS, areaFor } from './places.js';
 
-/** Where Mika stands, the open water north of the dock (clear of the moored ferry), and the winter ice hole. */
-export const SPOT = { x: 4.2, z: 30 };
-export const STAND = { x: 3.8, z: 30.1 };     // where she plants her feet to cast (the end of the dock, in frame)
-export const WATERS = {
-  wide: { cx: 9.4, cz: 23.6, rx: 4.6, rz: 4.9, clear: 9.5 },
-  tall: { cx: 8.7, cz: 23.4, rx: 2.7, rz: 5.0, clear: 8.6 },
-  ice: { cx: 8.3, cz: 25.6, rx: 1.75, rz: 1.75, clear: 3.3, hole: 2.1 },
-};
-
-/** The fishing camera: high over Mika's shoulder, looking down into the water. aspect = width / height. */
-export function fishingShot(aspect = 16 / 9, frozen = false) {
+/** The fishing camera: high over Mika's shoulder, looking down into the water. aspect = width / height. A place's shots are data (places.js). */
+export function fishingShot(spot = SPOTS.dock, aspect = 16 / 9, frozen = false) {
   const tall = THREE.MathUtils.clamp((1.25 - aspect) / (1.25 - 0.5), 0, 1);
-  const V = (x, y, z) => new THREE.Vector3(x, y, z);
-  if (frozen) return { pos: V(2.9 - tall * 1.2, 7.0 + tall * 2.8, 34.7 + tall * 0.6), look: V(7.1, 0, 26.6), fov: 55 + tall * 13, tall };
-  return {
-    pos: V(3.2, 8.0, 35.9).lerp(V(1.5, 10.0, 35.0), tall),
-    look: V(7.8, -0.2, 25.5).lerp(V(7.7, -0.2, 24.7), tall),
-    fov: 55 + tall * 8, tall,
-  };
+  const s = spot.shot, a = frozen ? s.iceLand : s.land, b = frozen ? s.icePort : s.port;
+  const V = v => new THREE.Vector3(...v);
+  return { pos: V(a.pos).lerp(V(b.pos), tall), look: V(a.look).lerp(V(b.look), tall), fov: a.fov + (b.fov - a.fov) * tall, tall };
 }
 
 export const FISH_LOOK = {
@@ -147,23 +135,25 @@ class Batch {
  *   pond.update(dt);                                                    // every frame
  *   pond.dispose();                                                     // the water eases back by itself
  *
- * Options: area (WATERS.wide by default, WATERS.ice on a frozen river), count (fish; fewer on the Low tier), dusk
- * (a starfin joins and glows), rand (seeded), wildlife (the ambient shoal by the dock steps aside meanwhile).
+ * Options: spot (a place from places.js: the dock by default), area (the spot's wide / ice area by default), count (fish;
+ * fewer on the Low tier), dusk (a starfin joins and glows), rand (seeded), wildlife (the ambient shoal by the spot steps
+ * aside meanwhile).
  */
 export class FishPond {
-  constructor(game, { area, count, dusk = false, rand = Math.random, wildlife = null, clear = 1 } = {}) {
+  constructor(game, { spot = SPOTS.dock, area, count, dusk = false, rand = Math.random, wildlife = null, clear = 1 } = {}) {
     const g = this.game = game;
     this.scene = g.scene;
+    this.spot = spot;
     this.frozen = !!g.world.frozen;
-    this.area = area || (this.frozen ? WATERS.ice : WATERS.wide);
+    this.area = area || areaFor(spot, 0, this.frozen);
     const q = g.world.quality || {};
     this.light = q.name === 'Low' || q.fishLight === true;      // the phone tier: fewer fish, no ripples
     const n = count ?? q.fish ?? (this.frozen ? 4 : this.light ? 6 : 10);
-    const mix = [];
-    for (let i = 0; i < n; i++) mix.push(i % 5 === 3 ? 'koi' : i % 5 === 1 ? 'char' : 'trout');
+    const mix = [], pat = spot.stock.pattern;
+    for (let i = 0; i < n; i++) mix.push(pat[i % pat.length]);
     if (dusk) mix[Math.min(2, n - 1)] = 'starfin';
     const deep = this.frozen ? 0 : this.light ? 1 : 2;
-    for (let i = 0; i < deep; i++) mix.push(i ? 'trout' : 'koi');
+    for (let i = 0; i < deep; i++) mix.push(spot.stock.deep[i % spot.stock.deep.length]);
     this.dusk = dusk;
     this.school = new School({ rand, area: this.area, mix, deep });
     this.rand = rand;
@@ -206,10 +196,11 @@ export class FishPond {
     this.lightPos = new THREE.Vector3(this.area.cx, 1.6, this.area.cz);
     this.I = 0;
     this.lamp = g.lights?.add({ pos: this.lightPos, intensity: () => this.I * (g.night || 0) * 3.5, range: 9, color: '#ffd9a0' });
-    // the ambient shoal by the dock steps aside: these are its fish now
+    // the ambient shoal by this spot steps aside: these are its fish now
     this.hidden = [];
+    const hc = spot.hide || { x: this.area.cx, z: this.area.cz, r: 9 };
     for (const f of wildlife?.fish || []) {
-      if (Math.hypot(f.center.x - this.area.cx, f.center.z - this.area.cz) < 9 && f.storyVisible !== false) { f.setVisible(false); this.hidden.push(f); }
+      if (Math.hypot(f.center.x - hc.x, f.center.z - hc.z) < hc.r && f.storyVisible !== false) { f.setVisible(false); this.hidden.push(f); }
     }
     this.rippleT = 1;
     this.t = 0;

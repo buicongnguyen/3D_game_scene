@@ -9,6 +9,25 @@ from PIL import Image, ImageChops, ImageFilter, ImageDraw, ImageFont
 job = json.load(open(sys.argv[1]))
 size = job['size']
 OUTLINE = (29, 36, 48)
+
+
+def save_small(icon, out, limit):
+    """Lossless WebP; when it is over `limit` bytes, a dithered palette of 256 colours and then fewer until it fits.
+    The icon that is returned is what was saved, so the review sheets show exactly the shipped pixels."""
+    icon.save(out, 'WEBP', lossless=True, quality=100, method=6)
+    if os.path.getsize(out) <= limit:
+        return icon
+    best = icon
+    rgb, alpha = icon.convert('RGB'), icon.getchannel('A').point(lambda v: min(255, int(round(v / 51.0)) * 51))
+    for n in (256, 192, 144, 112, 88, 64):
+        pal = rgb.quantize(colors=n, method=Image.Quantize.FASTOCTREE)
+        q = rgb.quantize(palette=pal, dither=Image.Dither.FLOYDSTEINBERG).convert('RGB')
+        q.putalpha(alpha)
+        q.save(out, 'WEBP', lossless=True, quality=100, method=6)
+        best = q
+        if os.path.getsize(out) <= limit:
+            break
+    return best
 done = []
 for name, path in job['raw'].items():
     im = Image.open(path).convert('RGBA')
@@ -30,7 +49,7 @@ for name, path in job['raw'].items():
     base.putalpha(ring)
     icon = Image.alpha_composite(base, small)
     out = os.path.join(job['out'], name + '.webp')
-    icon.save(out, 'WEBP', lossless=True, quality=100, method=6)
+    icon = save_small(icon, out, job.get('limit', 12000))
     done.append((name, icon))
     print('ICON', out, os.path.getsize(out) // 1024, 'KB')
 

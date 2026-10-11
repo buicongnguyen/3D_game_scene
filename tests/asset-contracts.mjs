@@ -7,6 +7,7 @@ const HUMAN_BONES = ['root', 'hips', 'spine', 'chest', 'neck', 'head', 'upperarm
 const VILLAGER_MATS = ['Villager shirt', 'Villager trousers', 'Villager hair'];
 // Town Life adds chores and play: Run, Jump (in-place hop), Bow, Interact, Hammer, Sweep, Carry, Sit, Throw, Kick.
 const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Run', 'Jump', 'Bow', 'Interact', 'Hammer', 'Sweep', 'Carry', 'Sit', 'Throw', 'Kick'];
+const KID_CLIPS = [...VILLAGER_CLIPS, 'RideCow', 'RideCowTrot', 'RideCowLean'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
   'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
@@ -18,7 +19,7 @@ const HOME_NODES = ['Spawn', 'Exit', 'Light_1', 'Light_2', 'Light_3', 'Spot_npc_
 export const CONTRACTS = {
   // ---------------------------------------------------------------- characters
   mika: { family: 'characters', tris: 16000, nodes: [...HUMAN_BONES, 'scarf_1'],
-    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang', 'Sit', 'SitFloor', 'Pet'] },
+    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang', 'Sit', 'SitFloor', 'Pet', 'RideCow', 'RideCowTrot', 'RideCowLean'] },
   genzo: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Sad', 'ArmsCrossed', 'Bow'] },
   rin: { family: 'characters', tris: 12000, nodes: [...HUMAN_BONES, 'hat'], clips: ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cast', 'Reel', 'Pole', 'Cheer'] },
   ota: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Bow', 'Sad'] },
@@ -27,7 +28,7 @@ export const CONTRACTS = {
   sora: { family: 'characters', tris: 11000, nodes: [...HUMAN_BONES, 'stick'], clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Bow', 'Sit', 'Hug'] },
   'villager-man': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
   'villager-woman': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
-  'villager-kid': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
+  'villager-kid': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: KID_CLIPS },
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
 
   // ---------------------------------------------------------------- animals
@@ -44,12 +45,22 @@ export const CONTRACTS = {
   cat: { family: 'animals', tris: 4000, clips: ['Idle', 'Walk', 'Sit', 'Sleep'] },
   duck: { family: 'animals', tris: 2000, clips: ['Swim', 'Idle'] },
   deer: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Graze'] },
-  cow: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Graze', 'Sleep', 'Moo'], icon: true },
+  cow: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Trot', 'Gallop', 'Graze', 'Sleep', 'Moo'], icon: true },
   pig: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Snuffle', 'Sleep', 'Oink'], icon: true },
   goat: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Graze', 'Sleep', 'Bleat'], icon: true },
   dog: { family: 'animals', tris: 6000, clips: ['Idle', 'Walk', 'Run', 'Sit', 'Wag', 'Bark', 'Sleep'], icon: true },
   // Critters (build_critters.py): real-size bugs at scatter-scale budgets (<= 300 tris, <= 3 materials, colour in COLOR_0).
-  cricket: { family: 'critters', tris: 300, clips: ['Idle', 'Chirp', 'Hop'], icon: true },
+  // The cricket of the bug-catching games: six legs with knees (leg1/2 and shin1/2 for the front and middle pair, the hind pair keeps thigh_/shin_),
+  // Chirp (0.8 s, three bursts: what critters.js plays), Sing (0.267 s loop), Walk (claws planted) and Hop.
+  cricket: { family: 'critters', tris: 340, clips: ['Idle', 'Chirp', 'Hop', 'Walk', 'Sing'], icon: true,
+    nodes: ['body', 'wings', 'wing_L', 'wing_R', 'antenna_L', 'antenna_R', 'thigh_L', 'shin_L', 'thigh_R', 'shin_R', 'leg1_L', 'shin1_L', 'leg2_L', 'shin2_L', 'leg1_R', 'shin1_R', 'leg2_R', 'shin2_R'],
+    mats: ['Cricket body', 'Cricket wing', 'Cricket eye'] },
+  // Bug-catching games (build_bugs.py): bugs with two-bone legs (leg = hip, shin = knee) posed by IK so the claws stay planted.
+  grasshopper: { family: 'critters', tris: 350, icon: true, clips: ['Idle', 'Walk', 'Hop', 'Struggle'],
+    nodes: ['body', 'head', 'antenna_L', 'antenna_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R', 'shin1_L', 'shin2_L', 'shin3_L', 'shin1_R', 'shin2_R', 'shin3_R'], mats: ['Hopper body', 'Hopper stripe', 'Hopper eye'] },
+  mantis: { family: 'critters', tris: 400, icon: true, clips: ['Idle', 'Walk', 'Look', 'LookR', 'Strike', 'Threat', 'Struggle'],
+    nodes: ['body', 'head', 'antenna_L', 'antenna_R', 'wing_L', 'wing_R', 'hind_L', 'hind_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R', 'shin1_L', 'shin2_L', 'shin3_L', 'shin1_R', 'shin2_R', 'shin3_R'], mats: ['Mantis body', 'Mantis wing', 'Mantis eye'] },
+  'bug-cage': { family: 'tricks', tris: 300, icon: true, nodes: ['lid'], mats: ['Cage bamboo', 'Cage wood', 'Cage leaf'] },
   spider: { family: 'critters', tris: 300, clips: ['Idle', 'Walk'], icon: true },
   // The dew drops are the child node 'dew' (material 'Web dew') so the Dew Webs trick can sparkle or hide them.
   'spider-web': { family: 'critters', tris: 400, nodes: ['dew'], mats: ['Web silk', 'Web dew'] },
@@ -248,7 +259,9 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // own grand lamp tower (star-lamp-grand.glb, 512 KB raw, 10.7k triangles).
 // +0.057 MB: tricks phase 2 art audit. The beetles' legs gained a knee bone each for a Walk with planted feet
 // (beetle-rhino 59 -> 86 KB, beetle-stag 64 -> 91 KB: twelve more animated bones); the other five changed by < 1.1 KB each.
-export const TOTAL_RAW_BYTES = 39_348_000;
+// +0.327 MB: the bug-catching games (grasshopper 114 KB, mantis 184 KB, bug-cage 15 KB; the cricket 61 -> 128 KB with six
+// knees and two new clips). Almost all of it is the clips: every leg is two animated bones.
+export const TOTAL_RAW_BYTES = 39_900_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -256,7 +269,8 @@ export const TOTAL_RAW_BYTES = 39_348_000;
 // 14.4 -> 14.52 MB: rural tricks phase 2 (two beetles, moth, kite, sweet potato, straw pile: 0.117 MB packed together).
 // +0.331 MB: the great shrine hall (163 -> 338 KB packed) and the grand Forest Lamp (156 KB packed).
 // +0.046 MB: tricks phase 2 art audit (the beetles' knee bones: 36 -> 57 KB and 41 -> 63 KB packed).
-export const TOTAL_PACKED_BYTES = 14_897_000;
+// +0.279 MB: the bug-catching games (grasshopper 84 KB, mantis 140 KB, bug-cage 11 KB packed; the cricket 44 -> 103 KB).
+export const TOTAL_PACKED_BYTES = 15_380_000;
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

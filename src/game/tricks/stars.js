@@ -7,6 +7,7 @@
 // eight named stars (their glow is written each frame), one line set for the figure, one line for the shooting star.
 import * as THREE from 'three';
 import { N_ } from '../../i18n/i18n.js';
+import { dipperPatch } from '../../content/constellations.js';
 
 const R = 600;                         // dome radius around the camera (well inside the far plane)
 const AZ = Math.PI;                    // Mika looks toward -z, out over the valley
@@ -15,10 +16,8 @@ const CENTRE = [-8, 6.5];               // the view centre in the figure's own d
 // the Big Dipper and the North Star, in degrees on a small patch of sky (u right, v up). Merak -> Dubhe, five times
 // over, reaches Polaris: the "pointer stars" rule.
 // (drawn at 0.8 of the real spread so the whole figure and the North Star fit a phone held upright)
-export const NAMED = {
-  alkaid: [-17.6, -2], mizar: [-13.2, 0.8], alioth: [-9.6, -0.4], megrez: [-5.2, -1.2],
-  phecda: [-4.8, -5.2], merak: [1.6, -4.3], dubhe: [1.6, 0], polaris: [1.6, 21.5],
-};
+// (real star positions: content/constellations.js, drawn here at 0.75 of the real spread with the North Star straight above Dubhe)
+export const NAMED = dipperPatch();
 export const DIPPER = ['alkaid', 'mizar', 'alioth', 'megrez', 'phecda', 'merak', 'dubhe'];
 const NAMES = Object.keys(NAMED);
 const REVERSED = [...DIPPER].reverse(), ENDS = [DIPPER[0], DIPPER[DIPPER.length - 1]], NONE = [], ONLY_POLARIS = ['polaris'];

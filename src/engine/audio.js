@@ -142,6 +142,23 @@ export class Audio {
     }
   }
   /**
+   * The cricket trick's song, placed in the stereo field: a trill of 3 or 4 bright two-note pulses. pan: -1 (left) ..
+   * 1 (right), where it comes from; vol (0..1): how near it is; pitch tells one cricket from another.
+   */
+  chirpAt(vol = 1, pitch = 1, pan = 0, pulses = 3) {
+    const v = 0.05 * vol;
+    if (!this.ctx || v < 0.002) return;
+    const c = this.ctx;
+    let bus = this.ambBus;
+    if (c.createStereoPanner) { bus = c.createStereoPanner(); bus.pan.value = Math.max(-1, Math.min(1, pan)); bus.connect(this.ambBus); }
+    const f = 4000 * pitch;
+    for (let i = 0; i < pulses; i++) {
+      const g = i % 2 ? f * 1.06 : f;
+      this.tone(g, { type: 'sine', dur: 0.04, vol: v, attack: 0.004, when: i * 0.058, bus, rev: 0.1 });
+      this.tone(g * 2.01, { type: 'sine', dur: 0.025, vol: v * 0.25, attack: 0.003, when: i * 0.058, bus, rev: 0 });
+    }
+  }
+  /**
    * A frog's croak: a burst of throaty pulses through a resonant band (the throat pouch). `vol` (0..1) is how near it
    * is; `pitch` tells one frog from another; kind 'tree' is the bright "kero-kero" of a tree frog, 'pond' a deep "gwa".
    */

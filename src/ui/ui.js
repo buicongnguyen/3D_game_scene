@@ -2,6 +2,7 @@ import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRI
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 import { JournalMap } from './map.js';
+import { starGroupsHtml } from './stargroups.js';
 import { STORIES, DEFAULT_STORY, storyId } from '../game/stories/index.js';
 
 /** The story a new game starts with (Settings → Story for new games). */
@@ -108,7 +109,10 @@ export class UI {
       };
       const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot) done({ mode: 'continue', slot }); };
       const onExplore = async () => { const v = await this.pickExplore(); if (v) done({ mode: 'explore', slot: 'explore', ...v }); };
-      const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); };
+      // Mini games: pick a game and play it at once (an Explore session: the game starts when the world is ready, see game/minigame-menu.js)
+      const onMini = async () => { const r = await this.pickMinigame(); if (r) { this.pendingLaunch = { id: r.e.id }; done({ mode: 'explore', slot: 'explore', season: r.plan.season, hour: r.plan.hour, fresh: false }); } };
+      const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); $('btnTitleMini')?.removeEventListener('click', onMini); };
+      $('btnTitleMini')?.addEventListener('click', onMini);
       $('btnNew').addEventListener('click', onNew);
       $('btnContinue').addEventListener('click', onCont);
       $('btnExplore').addEventListener('click', onExplore);
@@ -590,6 +594,7 @@ export class UI {
     $('btnPauseControls').addEventListener('click', () => this.openControls());
     $('btnControls').addEventListener('click', () => this.openControls());
     this.bindTour();
+    this.bindMinigames();
     $('btnSaveQuit').addEventListener('click', () => this.game.saveAndQuit?.());
     // Esc and J work on the menus themselves: game input is switched off while paused
     addEventListener('keydown', e => {
@@ -671,10 +676,52 @@ export class UI {
     $('btnExplore').after(make('btnTitleTour', ''));
   }
 
+  /** The Mini games menu's doors, built from JS like the tour's: a button on the title menu and one in the pause menu. */
+  bindMinigames() {
+    const make = (id, cls, click) => {
+      const b = document.createElement('button');
+      b.id = id; b.type = 'button'; b.className = cls;
+      b.dataset.i18n = '';   // re-told by applyDom() on a language change (the icon is a CSS background, so the text swap keeps it)
+      b.dataset.i18nSrc = 'Mini games'; b.textContent = tx('Mini games');
+      b.addEventListener('click', click);
+      return b;
+    };
+    if (!document.getElementById('mgTitleCss')) {
+      const st = document.createElement('style'); st.id = 'mgTitleCss';
+      // the title menu is a two-column grid (see "The title menu always fits the screen"): Mini games takes a row of its own, above the pairs
+      st.textContent = '#title .menu > #btnTitleMini{grid-column:1/-1;padding:clamp(8px,1.5vh,13px) 16px;font-size:clamp(15px,2.3vh,18px);background:#ffe9a8;font-weight:700}' +
+        `#btnTitleMini,#btnPauseMini{background-image:url("${this.icon('minigames')}") !important;background-repeat:no-repeat !important;background-position:14px center !important;background-size:24px 24px !important;padding-left:44px !important}` +
+        '@media (max-height:480px) and (orientation:landscape){#btnContinue.hidden ~ #btnTitleMini{grid-column:auto}}' +
+        // a phone on its side with a save: one more row (Mini games) must still fit, so the title block tightens a little
+        '@media (max-height:420px) and (orientation:landscape){#title{gap:5px;padding-top:calc(6px + var(--safe-t))}#title .logo h1{font-size:46px}#title .logo p{font-size:12px}}';
+      document.head.appendChild(st);
+    }
+    $('btnExplore').before(make('btnTitleMini', '', () => {}));
+    $('btnPauseControls').after(make('btnPauseMini', '', () => this.game.director?.minigameMenu?.open()));
+    this.refreshMinigames();
+  }
+
+  /** The pause menu's entry shows only when nothing owns the game (not inside a dialogue, a scene, a round or the tour). */
+  refreshMinigames() {
+    const b = $('btnPauseMini');
+    if (b) b.classList.toggle('hidden', !this.game.director?.minigameMenu?.canOpen());
+  }
+
+  /** The title's picker: resolves { e, plan } for the chosen game, or null. The records come from the Explore save. */
+  async pickMinigame() {
+    const [{ MinigamePicker }, { launchPlan }] = await Promise.all([import('./minigames-ui.js'), import('../content/minigames.js')]);
+    const picker = this.mgPicker ??= new MinigamePicker(this);
+    const save = this.game.director?.constructor?.loadSave?.('explore');
+    const e = await picker.open({ st: save?.quest || null });
+    $('btnTitleMini')?.focus({ preventScroll: true });
+    return e ? { e, plan: launchPlan(e) } : null;
+  }
+
   /** Show a panel on top of the stack. The one underneath (the pause menu too) hides until this one closes. */
   open(id) {
     if (this.overlay && this.overlay !== id) $(this.overlay).classList.add('hidden');
     $(id).classList.remove('hidden');
+    if (id === 'pause') this.refreshMinigames?.();
     this.overlayStack = [...(this.overlayStack || []).filter(x => x !== id), id];
     this.overlay = id;
   }
@@ -732,7 +779,7 @@ export class UI {
         KEEPSAKES.map(k => this.cardHTML(keep.includes(k.id), k.model, tx(k.name), keep.includes(k.id) ? tx(k.text) : tx('Still in {place}.', { place: tx(k.where) }))).join('') + '</div>';
     } else if (tab === 'stars') {
       body.innerHTML = `<p>${esc(tx('{n} / 12 found.', { n: q.stars.length }))} ${esc(q.stars.length === 12 ? (storyId() === 'grandma' ? tx('Grandma will want to hear every detail…') : tx('Sora left one more letter…')) : tx('Each star holds a line of Sora\'s poem.'))}</p><div class="grid">` +
-        FALLEN_STARS.map((s, i) => q.stars.includes(s.id) ? `<div class="star">★ ${esc(tx(STAR_POEM[i]))}</div>` : `<div class="star locked">☆ ${esc(tx(s.hint))}</div>`).join('') + '</div>';
+        FALLEN_STARS.map((s, i) => q.stars.includes(s.id) ? `<div class="star">★ ${esc(tx(STAR_POEM[i]))}</div>` : `<div class="star locked">☆ ${esc(tx(s.hint))}</div>`).join('') + '</div>' + starGroupsHtml(q.starGroups, getLang(), tx, esc);
     } else if (tab === 'fish') {
       const kinds = Object.entries(FISH), caught = kinds.filter(([k]) => q.fishLog[k]).length;
       body.innerHTML = `<p>${esc(tx('{n} of {total} kinds caught', { n: caught, total: kinds.length }))}</p><div class="cards">` + kinds.map(([k, f]) => {

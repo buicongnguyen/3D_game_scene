@@ -8,6 +8,9 @@ import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
 import { Signs } from './signs.js';
 import { YardBuild } from './yard.js';
+import { ArcheryBuild } from './archery.js';
+import { paintCowTrack } from '../content/cowtrack.js';
+import { YARD_LIST } from '../content/yard.js';
 import { makeBulb, bulbGlow } from './bulb.js';
 
 // Wall footprints (w, d, h) from art/CONTRACTS.md; colliders use these, not roof overhangs.
@@ -118,7 +121,12 @@ export class Structures {
     this.placeStones();
     this.placeDressing();
     this.placeLandslide();
-    this.yard = new YardBuild(this);   // the Kawabe playground (content/yard.js)
+    // the playground yards (content/yard.js): Kawabe Playground and Takamori Green
+    this.yards = {};
+    for (const Y of YARD_LIST) this.yards[Y.id] = new YardBuild(this, Y);
+    this.yard = this.yards.kawabe;
+    this.archery = new ArcheryBuild(this);   // the village archery range (content/archery.js)
+    paintCowTrack(this.world);               // the cow-race track on the Takamori pasture: no trees on it (content/cowtrack.js)
     // a name board at every building (content/signs.js); needs a canvas, so not in Node tests
     if (typeof document !== 'undefined') this.signs = new Signs(this);
   }

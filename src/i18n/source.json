@@ -2325,6 +2325,24 @@
   ]
  },
  {
+  "s": "Mika, you are SITTING on a cow. The cow is allowing it. I have so many questions.",
+  "ctx": [
+   "dialogue friend_cowpal, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The cow flicks an ear, as if this is entirely normal. Her bell rings once for every happy step.",
+  "ctx": [
+   "dialogue friend_cowpal, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika pats her cow, who leans into it with a long, pleased breath. Tomorrow they will go somewhere much further than the next patch of grass.",
+  "ctx": [
+   "dialogue friend_cowpal_solo, spoken by narrator"
+  ]
+ },
+ {
   "s": "The pig leans into the scratching with a grunt of pure joy, then flops over, completely finished with the day.",
   "ctx": [
    "dialogue friend_pig, spoken by narrator"
@@ -2547,6 +2565,42 @@
   ]
  },
  {
+  "s": "It looked at me with BOTH eyes and neither one blinked. Is that a thing? That has to be a thing.",
+  "ctx": [
+   "dialogue friend_grasshopper, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The grasshopper scrapes a back leg along its wing, plays one scratchy little note, and springs onto a taller stalk to wait for an answer.",
+  "ctx": [
+   "dialogue friend_grasshopper, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Mika holds very still. The grasshopper climbs onto her sleeve, tests the wool with every foot, and decides it is a perfectly good meadow.",
+  "ctx": [
+   "dialogue friend_grasshopper_solo, spoken by narrator"
+  ]
+ },
+ {
+  "s": "Its head turned ALL the way round to look at me! Mika, that's not allowed. Is that allowed?",
+  "ctx": [
+   "dialogue friend_mantis, spoken by Tamo"
+  ]
+ },
+ {
+  "s": "The mantis folds its front legs like a tiny, polite professor, and bobs once.",
+  "ctx": [
+   "dialogue friend_mantis, spoken by narrator"
+  ]
+ },
+ {
+  "s": "The mantis turns its head to look at Mika, folds its front legs like a tiny, polite professor, and bobs once. Mika bobs back.",
+  "ctx": [
+   "dialogue friend_mantis_solo, spoken by narrator"
+  ]
+ },
+ {
   "s": "That's everyone! Every creature in the valley knows your name now.",
   "ctx": [
    "dialogue friends_all, spoken by Tamo"
@@ -2737,6 +2791,102 @@
   "s": "The chestnut grove on the shrine trail. Lift one gently, then put it back on its tree.",
   "ctx": [
    "dialogue trick_beetles_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "In the valley you ride a cow, city girl. Tomorrow's the cow race, up on the pasture at Takamori. Four cows, four lanes!",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "A race. On cows. Who thought of that?",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Farmers, ages ago. In An Giang, in Vietnam, oxen race through flooded rice fields every year, and the whole village cheers.",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Tap Giddy-up on the beat of her hooves. Mash it and she gets puffed. Cows get cheered and fed, never hit.",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Below the paddies there's a meadow that hops. Grasshoppers and mantises, thick as the grass. Take my net.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Grasshoppers. They jump, right? Straight at your face?",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Away from it, mostly. Creep up: they crouch just before they jump. A mantis watches you, so go slow while it stares.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Have a good look, then let them go. Catch and release, city girl.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "At dusk the crickets tune up on the hill above Takamori. Walk toward the song, and when it stops, you stop.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Follow a noise. Across a field. In the dark. I love it.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Stand still like a fence post and he starts again. Then tap along with his beat, gently, and he hops in the cage.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Count his chirps for fourteen seconds: it's a thermometer. Don't ask me how. Then let him go home.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "There's an archery range behind the Kawabe houses. Bamboo bow, straw targets, practice arrows with soft rubber tips.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Archery. Me. With a pointy thing.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "A rubber tip, and only ever at the targets. Hold to draw, let go to shoot. The wind sock shows which way it will drift.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Ten, fifteen, twenty metres. Aim a little upwind, city girl.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Rin"
   ]
  },
  {
@@ -3490,6 +3640,30 @@
   ]
  },
  {
+  "s": "Your riding cow",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Pat the cow",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Fed on hay, now a friend. Carries Mika anywhere there is grass, trots when asked, and stops for a snack whenever she likes.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "Take hay from the haystack by a pasture, feed a cow, then hop on and take a ride.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
   "s": "Takamori pig",
   "ctx": [
    "animal friend name"
@@ -3745,6 +3919,54 @@
  },
  {
   "s": "Shares the sap with the rhinoceros beetles. Bait a chestnut well at dusk and look again at dawn.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Meadow grasshopper",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Say hello to the grasshopper",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Hears with ears on its belly and plays tunes with its back legs. Hops three times, then needs a little rest.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "In the long grass of the meadows, on summer and autumn days. Creep up on one, or catch and release one at the Grasshopper and mantis trick.",
+  "ctx": [
+   "animal friend: where to find it"
+  ]
+ },
+ {
+  "s": "Praying mantis",
+  "ctx": [
+   "animal friend name"
+  ]
+ },
+ {
+  "s": "Greet the mantis politely",
+  "ctx": [
+   "interaction prompt shown next to the E key"
+  ]
+ },
+ {
+  "s": "Turns its head almost right round to watch you, and keeps perfectly still while you creep. A friend of every garden.",
+  "ctx": [
+   "animal friend: description"
+  ]
+ },
+ {
+  "s": "On a stalk in the long grass, on summer and autumn days. Go slowly while it watches you.",
   "ctx": [
    "animal friend: where to find it"
   ]
@@ -5807,6 +6029,126 @@
   "s": "A rhinoceros beetle if we're lucky. Lift him gently, say hello, and put him back on his tree.",
   "ctx": [
    "dialogue trick_beetles_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "In the city you take a taxi, Mi-chan. In the valley you take a cow. Come, the cow race is up on the Takamori pasture.",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "A race. On cows. Grandma, are cows fast?",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "They are determined, which is better. In Vietnam they race oxen through flooded rice fields, and the whole village cheers.",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Tap Giddy-up on the beat of her hooves. Mash it and she gets puffed. We feed our cows and cheer them, never hit them.",
+  "ctx": [
+   "dialogue trick_cowrace_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Hoppers today, Mi-chan! The meadow below the paddies is full of them. In my day we caught them for dinner.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Grandma. For DINNER.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "With a little salt. Don't look at me like that. Today we only catch them to say hello.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Creep up: they crouch just before they jump. And the mantis watches you, so go slowly while it stares.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Mantises eat the bugs in my garden, so they are friends. Have a look, then let them go.",
+  "ctx": [
+   "dialogue trick_hoppers_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Warm dusk, Mi-chan. The crickets are tuning up on the hill above Takamori.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "At home we'd call that a noise problem.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Here it's a concert. Walk toward the song. When he goes quiet, you stand still, and he starts again.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Then tap along with his beat, very gently, and he'll hop into the cage. Count his chirps for fourteen seconds.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "A cricket thermometer. Grandma, you're making this up.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Ask your science club. Chirps plus forty is the temperature in Fahrenheit. And then he goes home to bed.",
+  "ctx": [
+   "dialogue trick_cricket_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "A bow, Mi-chan! I won the village archery cup in my day. Once. The target was very large.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "How large?",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Roughly the size of the barn. And the barn was very polite: it never moved.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Today it's straw targets and practice arrows with soft rubber tips. Hold to draw, breathe, let go.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Watch the wind sock. The wind pushes a light arrow sideways, so aim a little upwind. The range is behind the houses.",
+  "ctx": [
+   "dialogue trick_archery_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -13823,6 +14165,144 @@
   ]
  },
  {
+  "s": "Grasshopper and mantis",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the sunny long-grass meadow north of the mill, by the river and the west forest trail",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Summer and autumn, on a sunny day",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "Creep through long grass with a soft net. Sweep it low over a sitting grasshopper, take a good look, then let it go.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "A grasshopper hears with ears on its belly. A mantis can turn its head almost right round, so it sees you coming. Move slowly when it watches.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Look, then let them go where you found them. Mantises are friends of the garden.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Cricket by its song",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the hillside meadow west of Takamori, above the bakery lane",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Summer and autumn, from dusk",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "At dusk, stand still in a quiet meadow and listen. Walk toward the song, stop when it stops, and look low in the grass.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Only male crickets chirp, by rubbing their wings. The warmer the night, the faster they chirp: chirps in 14 seconds plus 40 is the temperature in °F.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Keep your torch low, and put the cricket back in the grass before bed.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Bow and arrow",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the archery range, west of Kawabe behind the houses",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Spring to autumn, in the daytime",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "Stand side-on to the target, feet apart. Nock the arrow, draw to your cheek, breathe out slowly, then let go smoothly.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "A bent bow stores energy like a spring and hands it to the arrow. Wind pushes a light arrow sideways, so aim a little upwind.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Only at the target, with a grown-up and practice arrows.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "Cow race",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the Takamori north pasture, past the pasture road",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "In An Giang, Vietnam, oxen race at harvest festivals, pulling a driver across a flooded paddy. Here we race on grass, with a grown-up.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Cows have a steady walking rhythm, so a rider moves with it. Racing oxen are fed, cheered and rested, never hit: a happy cow runs best.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Never ride a real cow without a grown-up who knows her.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Pressed bellflower",
   "ctx": [
    "house memory: a small found object (journal)"
@@ -14081,6 +14561,1275 @@
   ]
  },
  {
+  "s": "Ride on, city girl!",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Nice cow! Mind my cabbages, though.",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Is that Mika on a COW? Wonderful!",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Moo yourself, Mika!",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Giddy-up, cow-girl!",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Take some hay",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Feed the cow",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Ride the cow",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "A big armful of hay. Find a cow and feed her.",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "She munches happily. Now she is your friend: she will carry you!",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Stick steers. Hold Gallop to trot, then run. Jump hops off.",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Move to steer. Hold E or Shift to trot, hold on to gallop. M moos. Space hops off.",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Puff, puff! The cow needs a rest. Walk, or stand and let her graze.",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Her hooves do not like deep water or steep rocks.",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Hop off",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Moo!",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Gallop",
+  "ctx": [
+   "UI (src/actors/cow-ride.js)"
+  ]
+ },
+ {
+  "s": "Dubhe",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Merak",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Phecda",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Alioth",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Mizar",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Alkaid",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Polaris, the North Star",
+  "ctx": [
+   "UI (src/content/constellations.js)",
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Kochab",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Caph",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Schedar",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Betelgeuse, the red shoulder",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Rigel, the blue foot",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Bellatrix",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Alnitak",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Alnilam",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Mintaka",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Sirius, the brightest star",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Adhara",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Castor",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Pollux",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Aldebaran, the bull's eye",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Elnath",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Pleiades (Subaru)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Capella",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Mirfak",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Algol, the winking star",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Regulus",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Denebola",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Spica",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Arcturus",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Antares, the red heart",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Shaula, the stinger",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Vega (Orihime)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Altair (Hikoboshi)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Deneb",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Sadr",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Albireo, the beak",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Kaus Australis",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Nunki",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Markab",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Scheat",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Alpheratz",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Mirach",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Almach",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Andromeda Galaxy",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Acrux",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Mimosa",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Gacrux",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Alpha Centauri",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Hadar (Beta Centauri)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Big Dipper (Hokuto-shichisei)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Hokuto-shichisei, the seven stars of the north, make a big spoon in the sky. Grandma says it stirs the night soup.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Look north. Follow the two end stars of the cup, Dubhe and Merak, up to the North Star.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Big Dipper",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Little Dipper and the North Star",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "A small spoon that hangs from the North Star. Polaris hardly moves, so travellers always knew which way was north.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Find the Big Dipper first, then follow the line from its cup edge to the North Star at the end of the little handle.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Little Dipper",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Cassiopeia (the W)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Five stars in a letter W, or an M if you stand on your head. A queen on her throne, waving at the valley all night.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "On the other side of the North Star from the Big Dipper, look for a big W or M low in the north.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Cassiopeia",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Orion (Orion-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Orion the hunter strides across the winter night. His three belt stars are called Mitsuboshi, the Three Stars, in Japan.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Find three stars in a row: the belt. Red Betelgeuse is his shoulder and blue-white Rigel his foot.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Orion",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Canis Major and Sirius (Oinu-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "The Great Dog trots after Orion and carries Sirius, the brightest star in the whole night sky. It twinkles in every colour.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Follow Orion's belt down and to the left: the very bright blue-white star is Sirius.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Canis Major",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Gemini, the Twins (Futago-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Castor and Pollux are two friends who go everywhere together. Their bright heads shine side by side.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Above and to the left of Orion, look for two bright stars side by side: Castor and Pollux.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Gemini",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Taurus and the Pleiades (Subaru)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Taurus the Bull has a glowing orange eye, Aldebaran. On his shoulder twinkle the Pleiades, called Subaru in Japan: a little bunch of blue stars.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Follow Orion's belt up and to the right to orange Aldebaran, then keep going to the tiny sparkly cluster.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Taurus",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Leo, the Lion (Shishi-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "A great lion lies on the spring sky with a backwards question mark for a mane. Its bright heart is Regulus.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Spot the backwards question mark, the Sickle. The dot at the bottom is the bright star Regulus.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Leo",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Virgo and Spica (Otome-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "The Maiden holds an ear of wheat. Its bright tip is Spica, which sailors in Japan called the Pearl Star, Shinju-boshi.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Follow the curve of the Big Dipper's handle down past orange Arcturus to blue-white Spica.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Virgo",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Spring Triangle (Haru no Daisankaku)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Three bright stars make a big triangle: orange Arcturus, blue-white Spica and Denebola, the lion's tail. A spring signpost.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Find orange Arcturus and Spica first, then Denebola, the lion's tail, to finish the triangle.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Spring Triangle",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Scorpius, the Scorpion (Sasori-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "A scorpion curled up low in the summer south, with red Antares for its heart. In Japan its curly tail is the Fishhook.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Look low in the south for a reddish star, Antares, then follow the curly tail like a fishhook.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Scorpius",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Summer Triangle (Tanabata: Orihime and Hikoboshi)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Orihime the weaver (Vega) and Hikoboshi the cowherd (Altair) live on two sides of the Milky Way river. On Tanabata they wave across it, and everybody makes a wish.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "High in the east in summer, the brightest star is Vega. Altair is below it and Deneb to the side: join the three.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Summer Triangle",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Lyra, the Harp (Koto-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "A tiny harp, with Vega, Orihime the weaver, shining like a diamond at one corner.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Find brilliant Vega, then look for the small tilted square of four stars right beside it.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Lyra",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Cygnus, the Swan (Hakucho-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "A swan flies down the Milky Way with its wings wide. Some people see a cross. Deneb is its tail, and Albireo, its beak, is a golden-and-blue double star.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "From Deneb, follow the long body to Albireo. The crosswise stars are the wings.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Cygnus",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Aquila, the Eagle (Washi-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "An eagle soars along the Milky Way. Altair, called Hikoboshi in Japan, shines in its chest with a smaller star on each side.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Look for a bright star with a fainter one on each side in a short line: that is Altair and its two friends.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Aquila",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Sagittarius, the Teapot (Ite-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "The Archer looks like a teapot, and its steam is the Milky Way. Grandma says that is the tea of the stars.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Look low in the south, left of Scorpius, for eight stars like a teapot with its spout on the right.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Sagittarius",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Pegasus and the Autumn Square (Aki no Shikaku)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Pegasus the flying horse carries a giant square across the autumn sky: four stars, four corners and lots of empty space inside.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Look high in the south-east for a big square of four stars with hardly anything inside it.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Pegasus",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Andromeda and her Galaxy",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "A princess of the stars reaches out from a corner of the Autumn Square. Near her glows a faint smudge: the Andromeda Galaxy, a whole island of stars.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "From the corner of the Autumn Square, follow a gentle line of stars. On a dark night the faint blur is the galaxy.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Andromeda",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Auriga and Capella (Gosha-za)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Capella, the \"little goat\" star, is the brightest of five stars that make a big pentagon.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "High in the winter sky, north of Orion, look for a yellow star as bright as Vega: Capella.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Auriga",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Perseus and the Winking Star",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "A hero strides between Cassiopeia and Auriga. His star Algol winks: every three days it dims, then brightens, as if blinking at you.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Between Cassiopeia's W and the Pleiades, find a long curve of stars. Algol is near the bottom of it.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Perseus",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Southern Cross (Minami-jujisei)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Four bright stars make a little cross in the far south. Sailors used it to find south. You can only see it from places near the equator.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "On spring evenings look low in the south from an open place like the viaduct. The two bright Pointers, Alpha and Beta Centauri, aim at the cross.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Southern Cross",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "The Pointers (Alpha and Beta Centauri)",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Two bright stars like two pointing fingers. Alpha Centauri is the nearest star neighbour of our Sun.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Right beside the Southern Cross, look for two bright stars standing close together.",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "The Pointers",
+  "ctx": [
+   "UI (src/content/constellations.js)"
+  ]
+ },
+ {
+  "s": "Countryside tricks",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Playground games",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Fishing",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Sky & stars",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Animals & riding",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Scoop glowing fireflies into a jar.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Wade the shallows with a torch and spot the sleepy fish.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Join the dots of the Big Dipper and find the North Star.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Walk while the frogs sing and freeze when they stop.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Tie a bamboo kite and fly it high in the wind.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Find the dew-covered spider webs before the sun dries them.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Bury sweet potatoes in the ash and take them out just right.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Paint sap on the bark and welcome the night visitors.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Catch grasshoppers in the tall summer grass.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Follow the chirp and find the singing cricket.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Draw a bamboo bow and hit the straw target.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Ride a friendly cow around the meadow.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Kick the shuttle over the net with the kids. First to 5.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Keep the shuttle up together and count the touches.",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Bump, set and spike on the sand court.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Jump in when the long rope reaches the ground.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Pull on the beat and drag the flag over your line.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Sow your pebbles round the board and capture.",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Hop in a steady rhythm to the finish line.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Flick the shooter and knock the marbles out of the ring.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Cast from Rin's dock for trout, char and koi.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Fish the still pool by the mill, where the koi hide.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Lie back on the hill and name the star groups.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "the stargazing hill",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Watch the sky over the forest from the top of the shrine steps.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "the shrine steps",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Watch the sky over the open sheep pasture.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "the sheep pasture",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Build a motor kite in the cottage workshop.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Spring",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/content/tour.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Summer",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/content/tour.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Autumn",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/content/tour.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Winter",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/content/tour.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Play with the kids at the playground.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Any day, when the kids are about",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Fishing at the dock",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Fishing at the mill",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Cast a line and see what bites.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Rin's dock, Kawabe",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "the mill pool",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "the water",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Any season: in winter you fish through the ice",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Look up at the sky",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Look up and name the star groups.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Best on a clear night",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Kite workshop",
+  "ctx": [
+   "UI (src/content/minigames.js)",
+   "UI (src/game/workshop/index.js)",
+   "UI (src/game/workshop/text.js)"
+  ]
+ },
+ {
+  "s": "Build a motor kite.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "the cottage workshop",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Any day",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
   "s": "Hoshi Station",
   "ctx": [
    "UI (src/content/signs.js)",
@@ -14187,6 +15936,20 @@
  {
   "s": "Kawabe Playground",
   "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Takamori Green",
+  "ctx": [
+   "UI (src/content/signs.js)",
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Archery range",
+  "ctx": [
    "UI (src/content/signs.js)"
   ]
  },
@@ -14232,14 +15995,6 @@
   "s": "Stargazing hill",
   "ctx": [
    "UI (src/content/tour.js)"
-  ]
- },
- {
-  "s": "Spring",
-  "ctx": [
-   "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
   ]
  },
  {
@@ -14297,14 +16052,6 @@
   ]
  },
  {
-  "s": "Summer",
-  "ctx": [
-   "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
-  ]
- },
- {
   "s": "Long green afternoon",
   "ctx": [
    "UI (src/content/tour.js)"
@@ -14359,14 +16106,6 @@
   ]
  },
  {
-  "s": "Autumn",
-  "ctx": [
-   "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
-  ]
- },
- {
   "s": "Golden harvest",
   "ctx": [
    "UI (src/content/tour.js)"
@@ -14418,14 +16157,6 @@
   "s": "The evening train rolls home through the sunset.",
   "ctx": [
    "UI (src/content/tour.js)"
-  ]
- },
- {
-  "s": "Winter",
-  "ctx": [
-   "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
   ]
  },
  {
@@ -14659,6 +16390,132 @@
   ]
  },
  {
+  "s": "Volleyball",
+  "ctx": [
+   "UI (src/content/yard.js)",
+   "UI (src/game/yard/volley.js)"
+  ]
+ },
+ {
+  "s": "Rope jumping",
+  "ctx": [
+   "UI (src/content/yard.js)",
+   "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
+  "s": "Tug of war",
+  "ctx": [
+   "UI (src/content/yard.js)",
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "Ô ăn quan",
+  "ctx": [
+   "UI (src/content/yard.js)",
+   "UI (src/game/yard/oanquan.js)"
+  ]
+ },
+ {
+  "s": "Sack race",
+  "ctx": [
+   "UI (src/content/yard.js)",
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "Marbles",
+  "ctx": [
+   "UI (src/content/yard.js)",
+   "UI (src/game/yard/marbles.js)"
+  ]
+ },
+ {
+  "s": "Kick the shuttle back over the net. First to 5.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Bump, set, spike. Press {act} as the ball comes down.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Jump in when the rope reaches the ground. Beat your streak.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Pull on the beat. Drag the flag over your line.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Hop in a steady rhythm. Do not rush.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Flick the shooter. Knock marbles out of the ring.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Đá cầu, shuttlecock kicking, is played in Vietnamese streets and parks: feet only, over a net or in a ring.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Keeping a shuttle in the air with your feet is the heart of đá cầu, and every Vietnamese street has a ring of friends doing it.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Volleyball was invented in 1895 by William Morgan in Massachusetts, as a gentler game than basketball. Bump, set, spike is still how every rally goes.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Nhảy dây, rope jumping, is in every Vietnamese schoolyard, and in Japan it is nawatobi. Two friends turn the long rope and everyone chants.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Kéo co, tug of war, is played at village festivals in Vietnam. It joined the UNESCO heritage list in 2015, and winning is said to bring a good harvest.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Ô ăn quan is a traditional Vietnamese game, drawn on the ground with chalk or a stick and played with pebbles. The big squares are the mandarins, the quan.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Đua bao bố, the sack race, is a favourite at Vietnamese village fairs and school sports days. It is harder than it looks.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
+  "s": "Bắn bi, shooting marbles, is a street game across Vietnam. In Japan the glass marbles are bīdama, from biidoro, an old word for glass.",
+  "ctx": [
+   "UI (src/content/yard.js)"
+  ]
+ },
+ {
   "s": "Talk to the villager",
   "ctx": [
    "UI (src/game/director.js)"
@@ -14675,13 +16532,6 @@
   "s": "Open Sora's chest",
   "ctx": [
    "UI (src/game/director.js)"
-  ]
- },
- {
-  "s": "Fish",
-  "ctx": [
-   "UI (src/game/director.js)",
-   "menu / screen text"
   ]
  },
  {
@@ -15075,6 +16925,13 @@
   ]
  },
  {
+  "s": "Fish",
+  "ctx": [
+   "UI (src/game/fishing/places.js)",
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "Click the water to cast",
   "ctx": [
    "UI (src/game/fishing/session.js)"
@@ -15186,6 +17043,7 @@
   "s": "Leave",
   "ctx": [
    "UI (src/game/fishing/session.js)",
+   "UI (src/game/tricks/archery.js)",
    "UI (src/game/workshop/text.js)"
   ]
  },
@@ -15262,6 +17120,25 @@
   ]
  },
  {
+  "s": "{name} is not ready yet",
+  "ctx": [
+   "UI (src/game/minigame-menu.js)",
+   "UI (src/game/tricks.js)"
+  ]
+ },
+ {
+  "s": "Menu → Mini games to pick another",
+  "ctx": [
+   "UI (src/game/minigame-menu.js)"
+  ]
+ },
+ {
+  "s": "Mini games ☰",
+  "ctx": [
+   "UI (src/game/minigame-menu.js)"
+  ]
+ },
+ {
   "s": "Light the trackside lantern",
   "ctx": [
    "UI (src/game/scenes.js)"
@@ -15328,6 +17205,18 @@
   ]
  },
  {
+  "s": "Press Tab or [ and ] to pick a star group and learn its name.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Tap the arrows to pick a star group and learn its name.",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
   "s": "Almost dark. The first stars are coming out.",
   "ctx": [
    "UI (src/game/skygaze.js)"
@@ -15376,19 +17265,56 @@
   ]
  },
  {
-  "s": "Look up at the sky",
-  "ctx": [
-   "UI (src/game/skygaze.js)"
-  ]
- },
- {
   "s": "Look down",
   "ctx": [
    "UI (src/game/skygaze.js)"
   ]
  },
  {
+  "s": "Auto tour",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Previous star group",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Next star group",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
   "s": "Wishes: {n}",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Star groups",
+  "ctx": [
+   "UI (src/game/skygaze.js)",
+   "UI (src/ui/stargroups.js)"
+  ]
+ },
+ {
+  "s": "Star groups: {n} of {total}",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "New star group: {name}",
+  "ctx": [
+   "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Tonight, look for {a}, {b} and {c}.",
   "ctx": [
    "UI (src/game/skygaze.js)"
   ]
@@ -15511,6 +17437,170 @@
   "s": "Hm, not today.",
   "ctx": [
    "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Nice shot!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Very close!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "The range is not ready yet.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Wind",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Draw",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Breathe",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Bonus end · sliding target",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "End {n} of {total} · {d} m",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Hold Draw and drag to aim. Let go to shoot. Watch the wind sock!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Aim with the mouse. Hold {act} (or the mouse button) to draw, let go to shoot. Space steadies you.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Miss",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Perfect!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)",
+   "UI (src/game/tricks/kite.js)",
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "That was another target!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Bullseye! The village will hear about this.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Not on the target yet. Arrows drop as they fly: aim a little higher.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "That one fell short. A longer draw makes a faster, flatter arrow.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "See the wind sock? It points where the wind blows. Aim a little the other way.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Bonus end: {n} points.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "End {n}: {pts} points.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Draw a little longer, then let go.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Steady... press Space or Breathe to calm the bow.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Time is up! Well shot.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Bonus end! The target slides: aim a little ahead of it.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Farther away, so the wind has longer to push. Check the sock.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "That is the end of the round. Put the bow down and have a drink of water.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "a bullseye!",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "every arrow found the target",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
   ]
  },
  {
@@ -15733,6 +17823,364 @@
   "s": "Beetles: {b}, moths: {m}",
   "ctx": [
    "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "1st place",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "2nd place",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "3rd place",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "4th place",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Giddy-up!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Tap Giddy-up when the ring closes: on the beat of her hooves!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Press E or Space when the ring closes: on the beat of her hooves!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Go!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)",
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Come on, cow! Come ON!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Slow and steady, Moo-moo!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Look at her go!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Mud ahead! Mind your socks!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Yeah, Mika! Yeah!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Good!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Nice",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Puff!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Off the beat",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)",
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Yum! Fresh grass!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Mud! Everyone slows down. Keep the beat, do not mash.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Puff, puff! She is out of breath. Ease off and tap on the beat.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Mika is first!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Mika crosses the line!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "{name} is across!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Steer between the lanes. Fresh grass makes her run faster!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Nearly there! Keep the beat to the ribbon.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Mika wins the ribbon!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "{name} wins the ribbon!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Cricket",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Skip",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)",
+   "UI (src/game/video.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Follow the song",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Listen! Turn toward the song and walk. It gets louder as you get close.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Shh! It heard you. Stand perfectly still and it will start again.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "It is right here. Take a tiny step closer, then stand still again.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Stand still…",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "It is very close. Shh!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Tap with the beat",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Three taps on its beat: tap {act} when the orange ring reaches the circle. Gently!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Three taps on its beat: press {act} or Space when the orange ring reaches the circle. Gently!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Tap with its beat, three times.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Too rough! It hopped away. Tap softly, right on the beat.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Chirp thermometer",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "chirps in 14 seconds",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Count the chirps",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Count the chirps for 14 seconds. They tell how warm the night is!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "How warm is the night?",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Make a guess",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "{n} chirps in 14 seconds. Add 40 for °F. Tap how warm you think it is!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "{n} chirps in 14 seconds. Add 40 for °F. Pick how warm you think it is: 1, 2 or 3.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Spot on! A cricket is a very good thermometer.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Never mind. Now every cricket goes home.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Close! Now every cricket goes home.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Close your eyes and listen: a cricket is singing. Walk toward the song. When it goes quiet, stand still.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Follow the cricket's song. Quiet means stand still.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Off you go, little singers. Goodnight!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "1 cricket",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "{n} crickets",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "The song got away",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "{n} chirps in 14 seconds: {n} + 40 = {f} °F, about {c} °C. You guessed it!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "{n} chirps in 14 seconds: {n} + 40 = {f} °F, about {c} °C.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
   ]
  },
  {
@@ -15964,6 +18412,138 @@
   ]
  },
  {
+  "s": "1 grasshopper",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "{n} grasshoppers",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "1 mantis",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "{n} mantises",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "{a} and {b}",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "nothing this time",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Grasshoppers",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Mantises",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Walk softly",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "A mantis! When it stares, creep. When it looks away, you can walk.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "It crouched! That means it is about to jump. Swing now, or creep closer next time.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "It is only bluffing, rearing up to look big. A quieter walk next time!",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Got one! Into the cage it goes. Now find a mantis: they are worth more.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "A mantis! Very fine hands, Mika.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Wait for the ring to sit on it, and creep.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Hold {act} and let go for a gentle sweep: wider, and quiet.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Push the stick gently to creep up on a grasshopper, then tap {act} to swing the net at the ring.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Creep up on a grasshopper (hold Shift), then press {act} to swing the net at the ring.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Creep up, then swing the net at the ring. Mantises are worth more.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Time! Look them over, then let them go.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Off you go, little ones. Come back tomorrow!",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "a clean round, no misses",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
   "s": "Tie the bamboo cross",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
@@ -15991,13 +18571,6 @@
   "s": "Good and tight!",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
-  ]
- },
- {
-  "s": "Perfect!",
-  "ctx": [
-   "UI (src/game/tricks/kite.js)",
-   "UI (src/game/yard/round.js)"
   ]
  },
  {
@@ -16313,12 +18886,6 @@
   ]
  },
  {
-  "s": "Polaris, the North Star",
-  "ctx": [
-   "UI (src/game/tricks/stars.js)"
-  ]
- },
- {
   "s": "See the pale band across the sky? The Milky Way: billions of stars, too far away to see one by one.",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
@@ -16421,25 +18988,19 @@
   ]
  },
  {
-  "s": "{name} is not ready yet",
-  "ctx": [
-   "UI (src/game/tricks.js)"
-  ]
- },
- {
   "s": "New best!",
   "ctx": [
    "UI (src/game/tricks.js)",
    "UI (src/game/workshop/index.js)",
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/keepup.js)"
   ]
  },
  {
   "s": "Best: {n}",
   "ctx": [
    "UI (src/game/tricks.js)",
-   "UI (src/game/yard/round.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/game/yard/keepup.js)",
+   "UI (src/game/yard/rope.js)"
   ]
  },
  {
@@ -16468,20 +19029,6 @@
   "ctx": [
    "UI (src/game/tricks.js)",
    "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Skip",
-  "ctx": [
-   "UI (src/game/video.js)",
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Kite workshop",
-  "ctx": [
-   "UI (src/game/workshop/index.js)",
-   "UI (src/game/workshop/text.js)"
   ]
  },
  {
@@ -16882,253 +19429,208 @@
   ]
  },
  {
-  "s": "Mika! Come and play!",
+  "s": "Three in a row: a point",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/footnet.js)",
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
-  "s": "We need one more! Mika!",
+  "s": "First to {n}",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/footnet.js)",
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
-  "s": "Mika's playing! Mika's playing!",
+  "s": "Press {act} to serve",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/footnet.js)",
+   "UI (src/game/yard/keepup.js)",
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
-  "s": "City girl on the court!",
+  "s": "You win!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/footnet.js)",
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
-  "s": "Whoa, nice one!",
+  "s": "The kids win this one",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/footnet.js)",
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
-  "s": "Did you see that?",
+  "s": "Wins: {n} · Longest rally: {m}",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/footnet.js)",
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
-  "s": "Good kick, Mika!",
+  "s": "Touches",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/keepup.js)"
   ]
  },
  {
-  "s": "Yes! Our point!",
+  "s": "Nobody in Kawabe keeps it up like that!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/keepup.js)"
   ]
  },
  {
-  "s": "That one was ours!",
+  "s": "Well kept up!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/keepup.js)"
   ]
  },
  {
-  "s": "Aww!",
+  "s": "Good try!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/keepup.js)",
+   "UI (src/game/yard/rope.js)"
   ]
  },
  {
-  "s": "Hey! No fair!",
+  "s": "{n} touches in a row",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/keepup.js)"
   ]
  },
  {
-  "s": "Got you!",
+  "s": "Shot {n} of {m}",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/marbles.js)"
   ]
  },
  {
-  "s": "Too slow!",
+  "s": "Let go to flick!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/marbles.js)"
   ]
  },
  {
-  "s": "Point for us!",
+  "s": "Aim at a marble, then hold {act} and let go to flick",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/marbles.js)"
   ]
  },
  {
-  "s": "The net moved!",
+  "s": "You win the marbles!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/marbles.js)"
   ]
  },
  {
-  "s": "Oops. Into the net.",
+  "s": "A draw: you keep your own",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/marbles.js)"
   ]
  },
  {
-  "s": "That was in! …It was out.",
+  "s": "The kid wins this one",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/marbles.js)",
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Out! Way out!",
+  "s": "Marbles won: {n} · Collected: {m}",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/marbles.js)"
   ]
  },
  {
-  "s": "That's my power kick!",
+  "s": "Your turn",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Captain scores!",
+  "s": "Turn {n}",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Didn't see that coming, did you?",
+  "s": "Left or right picks a square, then {act} sows ▶ or Space sows ◀. W shows a hint",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Over there! No, there!",
+  "s": "Now: {act} sows ▶, Space sows ◀",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Oops. That was the wind.",
+  "s": "Tap one of your squares, then ◀ or ▶ to sow. Tap ? for a hint",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "I meant to do that!",
+  "s": "Now choose the way round: ◀ or ▶",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Dropped it!",
+  "s": "You win the board!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Again! From one!",
+  "s": "A draw: well played",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Ten! Keep going!",
+  "s": "Wins: {n} · Quan captured: {m}",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Twenty! Nobody breathe!",
+  "s": "Streak",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/rope.js)"
   ]
  },
  {
-  "s": "Thirty! That's a record!",
+  "s": "Press {act} just before the rope reaches the ground",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/rope.js)"
   ]
  },
  {
-  "s": "You beat us! Again tomorrow?",
+  "s": "Nobody in the village jumps like that!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/rope.js)"
   ]
  },
  {
-  "s": "Mika wins! She kicks like a Kawabe kid!",
+  "s": "Well jumped!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/rope.js)"
   ]
  },
  {
-  "s": "We win! Rematch any time, city girl.",
+  "s": "{n} jumps in a row",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/rope.js)"
   ]
  },
  {
-  "s": "Kawabe wins! You were close, though.",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Go on! Go on!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "I'm next!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Point!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Mine!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Over the net!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Got it!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Keep it up!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Foot-tennis! I'll take this side!",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "Keep it up! Everybody in a ring!",
+  "s": "Hold to flick",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -17152,18 +19654,6 @@
   ]
  },
  {
-  "s": "Three in a row: a point",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
-  "s": "First to {n}",
-  "ctx": [
-   "UI (src/game/yard/round.js)"
-  ]
- },
- {
   "s": "Next game: {name}",
   "ctx": [
    "UI (src/game/yard/round.js)"
@@ -17182,7 +19672,104 @@
   ]
  },
  {
+  "s": "{n}!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "{n} in a row!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Tripped! Streak {n}",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Perfect heave!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Good heave",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Wobbling! Slow down",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "You tumbled! Get up and go",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "You finished!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Marble out! It is yours",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "You captured a quan!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "You captured {n}",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Your side is empty: you borrow {n}",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Your side is empty: you refill it",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "Dropped it! Lives left: {n}",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Dropped it!",
+  "ctx": [
+   "UI (src/game/yard/round.js)",
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "You pulled the flag over the line!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "They pulled the flag over",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -17212,7 +19799,13 @@
   ]
  },
  {
-  "s": "Touches",
+  "s": "Behind view",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Side view",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -17230,57 +19823,609 @@
   ]
  },
  {
-  "s": "Press {act} to serve",
+  "s": "Where it comes from",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
  },
  {
-  "s": "Stand in the ring. Press {act} as the shuttle comes down.",
+  "s": "Place {n}",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
   ]
  },
  {
-  "s": "Nobody in Kawabe keeps it up like that!",
+  "s": "Wobbling!",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
   ]
  },
  {
-  "s": "Well kept up!",
+  "s": "Press {act} once for every hop, in a steady beat",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
   ]
  },
  {
-  "s": "Good try!",
+  "s": "1st",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
   ]
  },
  {
-  "s": "{n} touches in a row",
+  "s": "2nd",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
   ]
  },
  {
-  "s": "You win!",
+  "s": "3rd",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
   ]
  },
  {
-  "s": "The kids win this one",
+  "s": "4th",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
   ]
  },
  {
-  "s": "Wins: {n} · Longest rally: {m}",
+  "s": "5th",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "You win the race!",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "You came {place}",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "{n} s across the green",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "Did not finish",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "Mika! Come and play!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "We need one more! Mika!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Mika's playing! Mika's playing!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "City girl on the court!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Whoa, nice one!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Did you see that?",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Good kick, Mika!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Yes! Our point!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "That one was ours!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Aww!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Hey! No fair!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Got you!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Too slow!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Point for us!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "The net moved!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Oops. Into the net.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "That was in! …It was out.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Out! Way out!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "That's my power kick!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Captain scores!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Didn't see that coming, did you?",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Over there! No, there!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Oops. That was the wind.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "I meant to do that!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Spike! Nobody stops the captain!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Smash! Hiro does it again!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Nothing gets past me.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Got it. Always got it.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Oh! Was that the ball?",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Sorry, I was watching a cloud.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Again! From one!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Ten! Keep going!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Twenty! Nobody breathe!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Thirty! That's a record!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "You beat us! Again tomorrow?",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Mika wins! She kicks like a Kawabe kid!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "We win! Rematch any time, city girl.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Kawabe wins! You were close, though.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Go on! Go on!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "I'm next!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Point!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Mine!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Over the net!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Got it!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Keep it up!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Foot-tennis! I'll take this side!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Keep it up! Everybody in a ring!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Volleyball! Bump, set, spike!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Set!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Here you go!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Nice set!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Spike!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Smash!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Rope! Jump in, Mika!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Oops! Again!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Tangled! Start again!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Tug of war! Grab the rope!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Heave!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Ho!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Pull!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "We pulled them over!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Good pull, Mika!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "We got pulled over! Again!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "They are strong! Next time!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Sack race! On your marks!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Whoa!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Ha ha, I fell over!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "First across the green!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Mika is quick in a sack!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Marbles! Mind the ring!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Nice flick!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Mine now!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Too soft!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Not even close!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Ô ăn quan! Your turn first!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "I take them!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Mine! Mine!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Ô ăn quan!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Careful, careful...",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Let me think.",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Strain",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "Press {act} as the ring closes on you",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "Too tired: wait for the beat",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "You win the pull!",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "The other side wins the pull",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "Wins: {n} · Perfect heaves: {m}",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "Spike! Press {act} just as it comes down",
+  "ctx": [
+   "UI (src/game/yard/volley.js)"
+  ]
+ },
+ {
+  "s": "Set it up: press {act} as it comes down",
+  "ctx": [
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
@@ -17402,6 +20547,74 @@
   "ctx": [
    "UI (src/ui/map.js)",
    "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Mini games",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Pick any game and play right away. No story needed.",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "Close",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Arrows to move · Enter to play · Esc to close",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "Where",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "When",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "{n} of 3 stars",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "New",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "Try me",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "Look for it on {when} evenings.",
+  "ctx": [
+   "UI (src/ui/stargroups.js)"
+  ]
+ },
+ {
+  "s": "Look up at the sky at night, pick a star group and read about it to learn it.",
+  "ctx": [
+   "UI (src/ui/stargroups.js)"
   ]
  },
  {
@@ -17556,12 +20769,6 @@
  },
  {
   "s": "Lamps {n}/4 · Stars {s}/12 · {time}",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
-  "s": "Close",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -17837,12 +21044,6 @@
  },
  {
   "s": "With motors: boost while the battery lasts (hold)",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
-  "s": "Countryside tricks",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
