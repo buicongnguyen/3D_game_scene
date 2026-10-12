@@ -98,8 +98,8 @@ const pole = (x, y, z, h, color, r = 0.05) => paint(new THREE.CylinderGeometry(r
 const slab = (x, y, z, w, h, d, color, ry = 0) => paint(new THREE.BoxGeometry(w, h, d), color, tf(x, y, z, 0, ry, 0));
 
 /** A strip of ground following the terrain: s0..s1 along the track, `rows` lanes across, painted by colorOf(s, lane). */
-function ribbon(world, s0, s1, lift, colorOf, step = 1) {
-  const n = Math.max(1, Math.round((s1 - s0) / step)), rows = TRACK.lanes, pos = [], col = [], idx = [];
+function ribbon(world, s0, s1, lift, colorOf, step = 1, bandsPerLane = 1) {
+  const n = Math.max(1, Math.round((s1 - s0) / step)), rows = TRACK.lanes * bandsPerLane, pos = [], col = [], idx = [];
   const half = TRACK.lanes * TRACK.laneW / 2, wm = 0.25;
   const cols = rows + 1;
   for (let i = 0; i <= n; i++) {
@@ -112,7 +112,7 @@ function ribbon(world, s0, s1, lift, colorOf, step = 1) {
   for (let i = 0; i < n; i++) for (let j = 0; j < rows; j++) {
     const a = i * cols + j, b = a + 1, c = a + cols, d = c + 1;
     idx.push(a, b, c, b, d, c);
-    _c.set(colorOf(s0 + (s1 - s0) * (i + 0.5) / n, j));
+    _c.set(colorOf(s0 + (s1 - s0) * (i + 0.5) / n, j / bandsPerLane));
     for (let k = 0; k < 6; k++) col.push(_c.r, _c.g, _c.b);
   }
   // flat-shaded: expand to unindexed triangles so every cell keeps its own colour
@@ -134,10 +134,17 @@ function buildSite(world) {
   const half = TRACK.lanes * TRACK.laneW / 2, zAt = lane => SITE.z - half + (lane + 0.5) * TRACK.laneW;
   const addMesh = (geo, material = mat, shadow = false) => { const m = new THREE.Mesh(geo, material); m.castShadow = shadow; m.receiveShadow = true; m.frustumCulled = false; group.add(m); own.push(geo); return m; };
 
-  // the track: trampled earth with a lighter lane in turn, run-in before the start and run-out after the ribbon
+  // A mown pasture, with narrow worn hoof paths through each grassy lane. Keep
+  // the whole surface in one mesh; only the gameplay mud patch is dark earth.
   const earthMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
   own.push(earthMat);
-  addMesh(ribbon(world, -SITE.margin, TRACK.len + SITE.margin + 2, 0.045, (s, l) => (s < 0 || s > TRACK.len ? '#a5895a' : (l % 2 ? '#b08a5c' : '#a6805a'))), earthMat);
+  const pasture = addMesh(ribbon(world, -SITE.margin, TRACK.len + SITE.margin + 2, 0.045, (s, band) => {
+    const lane = Math.floor(band), across = Math.round((band - lane) * 6);
+    const worn = across === 2 || across === 3;
+    if (worn) return Math.sin(s * 0.75 + lane * 2) > 0 ? '#aa9b68' : '#a29364';
+    return (Math.floor(s / 5) + lane) % 2 ? '#7ea653' : '#719b4e';
+  }, 1, 6), earthMat);
+  pasture.name = 'cowrace-pasture';
   // the lane lines painted on it, and the start and finish lines
   const lines = [];
   for (let l = 0; l <= TRACK.lanes; l++) {
@@ -150,7 +157,8 @@ function buildSite(world) {
   // the mud patch: dark and wet, with lighter puddles
   const mudMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   own.push(mudMat);
-  addMesh(ribbon(world, TRACK.mud[0], TRACK.mud[1], 0.06, (s, l) => (((Math.floor(s * 1.3) + l * 2) % 5 === 0) ? '#6e5238' : '#4b3220'), 0.5), mudMat);
+  const mud = addMesh(ribbon(world, TRACK.mud[0], TRACK.mud[1], 0.06, (s, l) => (((Math.floor(s * 1.3) + l * 2) % 5 === 0) ? '#94714d' : '#795638'), 0.5), mudMat);
+  mud.name = 'cowrace-mud';
 
   // lane ropes between poles, with a pennant on each span (the lane's colour)
   const parts = [];

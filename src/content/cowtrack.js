@@ -13,7 +13,8 @@ export const SITE_RECT = {
 
 /**
  * Keep trees, rocks, bushes and tall grass off the track (called while the world is built, before the forest is
- * planted): the lanes are trampled earth, the stands and the run-out are mown short.
+ * planted): the lanes, stands and run-out are mown short. The race's own surface
+ * draws green turf and narrow hoof paths; its mud obstacle remains distinct.
  */
 export function paintCowTrack(world) {
   const sp = world?.splat;
@@ -21,6 +22,6 @@ export function paintCowTrack(world) {
   const half = SITE.lanes * SITE.laneW / 2;
   const cx = SITE.x0 + SITE.len / 2, R = SITE_RECT;
   sp.paintRect((R.x0 + R.x1) / 2, (R.z0 + R.z1) / 2, (R.x1 - R.x0) / 2, (R.z1 - R.z0) / 2, 0, 3, 0.07, 1.6);       // mown: no trees, little grass
-  sp.paintRect(cx, SITE.z, SITE.len / 2 + SITE.margin, half + 0.3, 0, 0, 0.55, 1.0);                                   // trampled earth
+  sp.paintRect(cx, SITE.z, SITE.len / 2 + SITE.margin, half + 0.3, 0, 0, 0.1, 1.0);                                    // lightly worn turf
   sp.paintRect(cx, SITE.z, SITE.len / 2 + SITE.margin, half + 0.3, 0, 3, 0, 1.0);
 }
