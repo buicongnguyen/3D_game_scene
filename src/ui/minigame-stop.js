@@ -67,7 +67,8 @@ export class MinigameStop {
   update() {
     this.target = stoppableGame(this.d);
     if (!this.button) return;
-    const text = tx('Stop playing'); this.label.textContent = text; this.button.setAttribute('aria-label', text);
+    const text = tx('Stop playing');
+    if (this.text !== text) { this.text = text; this.label.textContent = text; this.button.setAttribute('aria-label', text); }
     this.button.classList.toggle('hidden', !this.target);
     document.body.classList.toggle('minigame-stoppable', !!this.target);
   }
