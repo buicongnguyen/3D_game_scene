@@ -1,7 +1,10 @@
 # Starline: remaining issues and next tasks
 
 Status: **handover for Codex**, written 2026-10-12 against live commit `d6e5c06`
-(https://buicongnguyen.github.io/3D_game_scene/). Everything below is **not done yet**. Items are ordered by priority:
+(https://buicongnguyen.github.io/3D_game_scene/). This is the original handover; see
+**[Codex verification and implementation](CODEX-VERIFICATION.md)** for completed work, test evidence and owner decisions.
+The first two P1 items, the hard electric-lamp prompt, lantern update order and sack-race rules have since been fixed.
+Items are ordered by priority:
 **P1** = player-visible defect or promised feature, **P2** = quality / consistency, **P3** = cleanup, **D** = needs a product
 decision from the owner before coding (do not guess, ask), **X** = work in other repositories.
 

@@ -150,7 +150,7 @@ async function run(device, quality) {
       window.__STARLINE_QA__.teleport(-66, 10);
       d.q.state.tricks.firefly = { learned: true, intro: true, plays: 1, best: 0, stars: 0 };
       const previous = t.makeCtx;
-      t.makeCtx = function(...args) { const ctx = previous.apply(this, args); ctx.roundTime = 3; return ctx; };
+      t.makeCtx = function(...args) { const ctx = previous.apply(this, args); ctx.roundTime = 6; return ctx; };
       void t.play('firefly').finally(() => { t.makeCtx = previous; });
     });
     await waitClip('SitGrass');
