@@ -39,8 +39,10 @@ const CSS = `
 #minigameStop.hidden{display:none}#minigameStop:focus-visible{outline:3px solid #f28b35;outline-offset:3px}#minigameStop:hover{background:#fff}
 #minigameStop .stop-icon{width:12px;height:12px;background:currentColor;border-radius:2px}
 body.touch #minigameStop{left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(196px + env(safe-area-inset-bottom,0px));font-size:15px}
+body #minigameStop[data-kind="workshop"]{top:calc(112px + env(safe-area-inset-top,0px));bottom:auto}
+body #minigameStop[data-kind="sky"]{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto}
 body.minigame-stoppable #yardStop,body.minigame-stoppable #archLeave,body.minigame-stoppable #fishLeave,
-body.minigame-stoppable #wsLeave,body.minigame-stoppable #swimLesson .leave{display:none}
+body.minigame-stoppable #wsLeave,body.minigame-stoppable #swimLesson .leave,body.minigame-stoppable #skyGaze .down{display:none}
 `;
 
 export class MinigameStop {
@@ -69,6 +71,8 @@ export class MinigameStop {
     if (!this.button) return;
     const text = tx('Stop playing');
     if (this.text !== text) { this.text = text; this.label.textContent = text; this.button.setAttribute('aria-label', text); }
+    const kind = this.target?.kind || '';
+    if (this.button.dataset.kind !== kind) this.button.dataset.kind = kind;
     this.button.classList.toggle('hidden', !this.target);
     document.body.classList.toggle('minigame-stoppable', !!this.target);
   }
