@@ -159,12 +159,12 @@ export function makePool(game) {
   for (let i = 0; i < 36; i++) { matrix.makeTranslation(i % 2 ? -2.3 : 2.3, POOL.water + 0.03, -6.3 + Math.floor(i / 2) * 0.73); floats.setMatrixAt(i,matrix); }
   group.add(floats);
   const ringGeo = keep(new THREE.TorusGeometry(0.55,0.07,5,24)), exitMat = keep(new THREE.MeshBasicMaterial({ color: '#eea137' }));
-  const exit = new THREE.Mesh(ringGeo,exitMat); exit.rotation.x = -Math.PI/2; exit.position.set(0,POOL.deck + .035,8); group.add(exit);
+  const exit = new THREE.Mesh(ringGeo,exitMat); exit.name='swim-exit'; exit.rotation.x = -Math.PI/2; exit.position.set(0,POOL.deck + .035,8); group.add(exit);
   // An arrow points onto dry land, so the exit remains recognizable without relying on colour.
   const arrowGeo = keep(new THREE.ConeGeometry(.26,.65,3)), arrow = new THREE.Mesh(arrowGeo,exitMat);
   arrow.rotation.x = Math.PI/2; arrow.position.set(0,POOL.water+.06,6.5); group.add(arrow);
   const targetMat = keep(new THREE.MeshBasicMaterial({ color: '#a83b52' })), target = new THREE.Mesh(ringGeo,targetMat);
-  target.rotation.x = -Math.PI/2; target.position.set(0,POOL.water+.05,-6); group.add(target);
+  target.name='swim-target'; target.rotation.x = -Math.PI/2; target.position.set(0,POOL.water+.05,-6); group.add(target);
   const bubbleGeo = keep(new THREE.SphereGeometry(.045,6,4)), bubbleMat = keep(new THREE.MeshBasicMaterial({ color:'#edffff',transparent:true,opacity:.8 }));
   const bubbles = new THREE.InstancedMesh(bubbleGeo,bubbleMat,12); bubbles.visible = false; group.add(bubbles);
   const poolWorld = { heightAt: () => POOL.deck, quality: game.world.quality };
@@ -181,8 +181,9 @@ export function makePool(game) {
       bubbles.visible = !!snap.bubbles;
       if (snap.bubbles) for(let i=0;i<12;i++) {
         const age = (time*1.4+i*.19)%1;
-        matrix.makeTranslation(snap.position.x+Math.sin(snap.heading)*.55+Math.sin(i*4.1)*.12,
-          POOL.water-.05+age*.26,snap.position.z+Math.cos(snap.heading)*.55+Math.cos(i*3.7)*.12);
+        const front=snap.floatSide==='front';
+        matrix.makeTranslation(snap.position.x+Math.sin(snap.heading)*.27+Math.sin(i*4.1)*.06,
+          POOL.water-(front ? 0.14 : 0.035)+age*(front ? 0.16 : 0.05),snap.position.z+Math.cos(snap.heading)*.27+Math.cos(i*3.7)*.06);
         bubbles.setMatrixAt(i,matrix);
       }
       bubbles.instanceMatrix.needsUpdate = !!snap.bubbles;
@@ -226,7 +227,7 @@ export default { id:'swimming', async play(ctx) {
   const signVisible=savedSign?.obj?.visible,signHidden=savedSign?.hidden;
   let phase='check', phaseTime=0,total=0,exitCheck=false,entry=false,climbed=false,oldAct=false;
   const local={x:-3,z:8}, deckSnap={position:local,heading:Math.PI,pitch:0,clip:'Idle',bubbles:false,progress:0};
-  const lesson=new SwimLesson({level:g.easy ? 'easy' : 'normal',first:ctx.first});
+  const lesson=new SwimLesson({level:g.easy ? 'easy' : g.hard ? 'hard' : 'normal',first:ctx.first});
   let snap=deckSnap,exitWalk=0;
   const cameraPos=new THREE.Vector3(),cameraLook=new THREE.Vector3();
   const hidden=[];
@@ -281,7 +282,9 @@ export default { id:'swimming', async play(ctx) {
       }
       const wet=phase==='lesson'||phase==='out';
       const ramp=pool.floor+.15+THREE.MathUtils.clamp((local.z-5)/3,0,1)*(POOL.deck-.15);
-      p.pos.set(POOL.x+local.x,wet?pool.waterY-(snap.floatSide==='front'?1.16:snap.floatSide==='back'?1.0:1.03):phase==='check'?pool.deckY:ramp,POOL.z+local.z);
+      // Gentle bubbles dip the mouth slightly; air cues and travel keep it above the surface.
+      const depth=snap.floatSide==='front'?1.16:snap.floatSide==='back'?1.0:snap.bubbles?1.10:snap.clip==='Swim'?1.0:1.03;
+      p.pos.set(POOL.x+local.x,wet?pool.waterY-depth:phase==='check'?pool.deckY:ramp,POOL.z+local.z);
       p.facing=snap.heading;p.pitch=wet?snap.pitch:0;p.pose=snap.clip;
       p.poseSpeed=wet?((snap.floatSide==='front'||snap.floatSide==='back')?0.22:snap.clip==='Swim'?0.65:1):1;
       p.speed=wet?lesson.speed:snap.clip==='Walk'?1.6:0;p.root.position.copy(p.pos);p.root.rotation.y=p.facing;p.pivot.rotation.x=p.pitch;
@@ -290,11 +293,21 @@ export default { id:'swimming', async play(ctx) {
       pool.update(dt,{...snap,position:{...local}},total);hideNearby();
       const portrait=innerHeight>innerWidth;
       const stationary=phase==='lesson'&&['bubbles','float','tread'].includes(snap.stage);
-      const overview=phase!=='lesson' || phase==='lesson'&&snap.stage==='turn';
+      const travel=phase==='lesson'&&['glide','turn','swim'].includes(snap.stage)||['out','climbing','done'].includes(phase);
+      const overview=phase==='check'||phase==='entry';
       follow.fovBase=portrait?(overview?68:stationary?57:60):52;
-      const camZ=portrait&&overview?14:stationary?local.z+5.8:Math.min(10.5,local.z+9);
-      cameraPos.set(POOL.x+(stationary?3.4:0),pool.waterY+(portrait?overview?17:stationary?6.4:10.8:stationary?4.4:7.2),POOL.z+camZ);
-      cameraLook.set(POOL.x,pool.waterY+(wet?0.1:0.6),POOL.z+(portrait&&overview?2:stationary?local.z:local.z-2.6));
+      if(travel) {
+        // Keep the camera at the exit end so pool-relative controls never reverse. Fit BOTH ends of the active leg,
+        // biased toward its far end so neither the destination nor Mika is covered by the top instructions.
+        const marker=snap.stage==='glide'&&phase==='lesson'?SWIM.glide:POOL.exit;
+        const span=Math.abs(marker.z-local.z),far=Math.min(local.z,marker.z);
+        cameraPos.set(POOL.x,pool.waterY+(portrait?10.8+Math.min(6.2,span*.6):7.2+Math.min(4.3,span*.45)),POOL.z+Math.max(local.z,marker.z)+9.5);
+        cameraLook.set(POOL.x,pool.waterY+(wet?0.1:0.6),POOL.z+far+span*.25);
+      } else {
+        const camZ=portrait&&overview?14:stationary?local.z+4.5:Math.min(10.5,local.z+9);
+        cameraPos.set(POOL.x+(stationary?3:0),pool.waterY+(portrait?overview?17:stationary?5.7:10.8:stationary?3.7:7.2),POOL.z+camZ);
+        cameraLook.set(POOL.x,pool.waterY+(wet?0.1:0.6),POOL.z+(portrait&&overview?2:stationary?local.z:local.z-2.6));
+      }
       const inst=instructions(phase==='lesson'?snap.stage:phase,lesson,snap);
       setText(ui.nodes.title,tx('{step} · {name}',{step:phase==='lesson'?`${snap.stageIndex+2}/8`:phase==='check'?'1/8':phase==='entry'?'1/8':'8/8',name:tx(STAGE[phase==='lesson'?snap.stage:phase]||STAGE.out)}));
       setText(ui.nodes.instruction,inst.text);setText(ui.nodes.cue,inst.cue);setText(ui.nodes.act,inst.button);
