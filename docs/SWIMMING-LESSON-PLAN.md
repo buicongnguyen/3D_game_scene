@@ -10,7 +10,7 @@ The [American Red Cross water-safety guidance](https://www.redcross.org/get-help
 
 [Swim England Learn to Swim Stage 2](https://www.swimming.org/learntoswim/learn-to-swim-stage-2-award/) adds rhythmic bubbles, float recovery, front and back glides, leg action, rotation and exit. The game therefore alternates gentle virtual exhalation with an above-water breath cue, shows both float orientations and ends by finding the exit. It does not reward prolonged submersion.
 
-[Swim England's core aquatic skills](https://www.swimming.org/learntoswim/the-core-skills-of-swimming/1000/) describe breathing, balance, rotation, streamlining and coordinated travel as foundations, alongside safety and entry/exit. The mini game revisits these foundations with clear cues and forgiving retries. The exact inputs, short distances and game timings below are design choices, not instructions for a real swimming class.
+[Swim England's core aquatic skills](https://www.swimming.org/learntoswim/the-core-skills-of-swimming/) describe breathing, balance, rotation, streamlining and coordinated travel as foundations, alongside safety and entry/exit. The mini game revisits these foundations with clear cues and forgiving retries. The exact inputs, short distances and game timings below are design choices, not instructions for a real swimming class.
 
 ## Learning goals
 

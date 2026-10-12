@@ -2620,6 +2620,30 @@
   ]
  },
  {
+  "s": "Let's practise at the calm pool, city girl. A grown-up is watching, and we find the exit before we get in.",
+  "ctx": [
+   "dialogue trick_swimming_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Bubbles, floating, then back to the exit. Slowly. I can practise that.",
+  "ctx": [
+   "dialogue trick_swimming_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "This is a game lesson. In real water, learn with a qualified swimming teacher and a grown-up watching.",
+  "ctx": [
+   "dialogue trick_swimming_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "No breath-holding contest. Gentle bubbles, normal breaths, and time to try again.",
+  "ctx": [
+   "dialogue trick_swimming_intro, spoken by Rin"
+  ]
+ },
+ {
   "s": "Summer night, city girl. Know what lives by the paddies after dark? Fireflies. Hundreds of them.",
   "ctx": [
    "dialogue trick_firefly_intro, spoken by Rin"
@@ -13859,6 +13883,48 @@
   ]
  },
  {
+  "s": "Learn to swim",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the supervised practice pool south of Kawabe",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Spring to autumn, in daylight",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "points",
+  "ctx": [
+   "what a trick score counts (after the number)"
+  ]
+ },
+ {
+  "s": "Learn in a supervised pool with a qualified swimming teacher. Practise gentle bubbles, floating, turning and returning to a safe exit at your own pace.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Calm breathing, balance and finding the exit are swimming foundations. Game practice does not prove that you can swim safely in real water.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "In real water, learn with a qualified swimming teacher and a grown-up watching.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Firefly jar",
   "ctx": [
    "countryside trick name (journal, sign prompt, results card)"
@@ -13958,12 +14024,6 @@
   "s": "Any clear night",
   "ctx": [
    "when a countryside trick can be played (journal, sign)"
-  ]
- },
- {
-  "s": "points",
-  "ctx": [
-   "what a trick score counts (after the number)"
   ]
  },
  {
@@ -15607,6 +15667,12 @@
   ]
  },
  {
+  "s": "Practise bubbles, floating and a gentle swim back to the exit.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
   "s": "Scoop glowing fireflies into a jar.",
   "ctx": [
    "UI (src/content/minigames.js)"
@@ -17183,7 +17249,7 @@
   "ctx": [
    "UI (src/game/fishing/session.js)",
    "UI (src/game/tricks/archery.js)",
-   "UI (src/game/workshop/text.js)"
+   "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
@@ -19605,6 +19671,396 @@
   "s": "a wish made",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Find the safe exit",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Enter slowly",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Gentle bubbles",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Float and recover",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Gentle treading",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Glide, kick and paddle",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Turn toward the exit",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Swim back to the exit",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Climb out",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Practice complete",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Game practice only. In real water, learn with a qualified swimming teacher and a grown-up watching.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Release the button before the next drill.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Bring Mika upright, release, and let her breathe normally before trying again.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "A gentle bubble cue, then release for air. No breath-holding contest.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Keep the stick near the centre. Small, calm adjustments help Mika float.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Steer toward the marker while you tap a gentle stroke.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Release between strokes. Tap with the slow pulse.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Slower, gentle taps. Let the pulse arrive before the next stroke.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Follow the slow pulse. You can try the rhythm again.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Stay inside the lane and steer back toward the marker.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Try the instruction above. Take your time; Rin is here.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "A grown-up is watching. Move to the gold exit ring on the dry deck, then press Action to check it.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Move to the exit ring",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Check exit",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Walk slowly down the shallow ramp to the water marker. Press Action when you are ready.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Move up the lane into the shallow entry",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Begin practice",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "You found the exit. Press Action to stand and walk up the shallow ramp.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Return to the dry deck",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Mika is back on the dry deck. You practised all six game skills. Real swimming still needs a qualified teacher and supervision.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Practice complete — safely out",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Well done",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Control Mika, not your breathing: hold Action for gentle bubbles, then release so she takes a normal breath. Repeat three times.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Release — normal breath",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Normal breath — wait a moment",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Gentle bubbles…",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Hold for gentle bubbles",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Release for air",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Hold Action to relax Mika on her back. Keep movement small. When the bar reaches halfway, release to recover upright.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Release — recover upright",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Back float — relax Mika",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Relax Mika",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Now practise short front floats: hold for gentle bubbles, release for a normal breath, and repeat. Keep the stick near the centre.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Short front float, then air",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Front float",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Mika is upright again. Press Action to finish the recovery and move to treading.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Upright recovery",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Recover upright",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Tap Action with the slow pulse for eight gentle sculls. Release between taps. Mika stays with her head above water.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Tap gently now",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Wait for the pulse",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Gentle scull",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Turn Mika toward the gold exit at the starting end. Move the stick down the lane until she faces it.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Face the starting exit",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Look for exit",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Steer back toward the gold exit. Tap gentle strokes with the pulse, and keep inside the lane.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Steer toward the far ring. Tap gentle strokes with the slow pulse; Mika glides between strokes.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Steer and wait for the pulse",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Gentle stroke",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "You returned to the dry deck after all six game drills. Stars are game rewards.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "You practised {skills}/6 game skills. Replay and take your time with Rin's cues.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "{step} · {name}",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Left stick moves · X is Action · B leaves",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Left thumb moves · hold or tap the Action button",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "WASD / arrows move · E is Action · Backspace leaves",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
   ]
  },
  {

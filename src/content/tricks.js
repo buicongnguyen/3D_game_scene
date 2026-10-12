@@ -11,7 +11,7 @@ import { ARCHERY } from './archery.js';
 export const TRICKS = [
   {
     id: 'swimming', name: 'Learn to swim', icon: 'trick-river',
-    place: { x: -16, z: 57, face: Math.PI }, where: 'the supervised practice pool south of Kawabe',
+    place: { x: -14, z: 75, face: Math.PI }, where: 'the supervised practice pool south of Kawabe',
     seasons: ['spring', 'summer', 'autumn'], hours: [9, 18], night: false, when: 'Spring to autumn, in daylight',
     teacher: { grandma: 'rin', classic: 'rin' }, intro: 'trick_swimming_intro',
     howReal: 'Learn in a supervised pool with a qualified swimming teacher. Practise gentle bubbles, floating, turning and returning to a safe exit at your own pace.',
