@@ -27,7 +27,8 @@ export const TRICKS = [
     howReal: 'On a warm, still summer night, go with a grown-up to a clean stream far from street lights. Wait quietly, then scoop gently with a soft net.',
     why: 'Fireflies flash to talk to each other, and each kind has its own blink pattern. They need clean water and real darkness.',
     safety: 'Always let them go before bed, right where you found them.',
-    stars: [6, 10, 14], length: 60, firstLength: 35, unit: 'fireflies',
+    // points: Heike 1, Genji 2, Hime 3, and a bonus for a sweep of several (tricks/rules-firefly.js)
+    stars: [8, 20, 36], length: 75, firstLength: 45, unit: 'points',
   },
   {
     id: 'river', name: 'Night river lantern', icon: 'trick-river',
