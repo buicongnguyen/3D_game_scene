@@ -359,7 +359,7 @@ export class SkyGaze {
   mode(spot) {
     const g = this.g, lampLit = !!(spot.lamp && this.st?.lamps?.[spot.lamp]);
     const season = g.shownSeason || g.time.season;
-    return { look: skyLook(g.shownHour(), { lampLit, raining: g.fx?.weather === 'rain' }), lampLit, snow: season === 'winter' && !g.weatherOff };
+    return { look: skyLook(g.shownHour(), { lampLit, raining: g.fx?.weatherKind === 'rain' }), lampLit, snow: season === 'winter' && !g.weatherOff };
   }
 
   // ------------------------------------------------------------------ looking up

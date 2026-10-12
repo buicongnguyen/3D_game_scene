@@ -100,7 +100,7 @@ export class Tricks {
     const g = this.g, o = g.timeOverride, a = this.openArg;
     // the story clock stands still (a fixed Settings hour too): the round brings its own night. A day cycle must reach the hours.
     a.frozen = !g.time.speed && o !== 'cycle-slow' && o !== 'cycle-fast';
-    a.season = this.season(); a.hour = g.shownHour(); a.raining = g.fx?.weather === 'rain';
+    a.season = this.season(); a.hour = g.shownHour(); a.raining = g.fx?.weatherKind === 'rain';
     return trickOpen(t, a);
   }
   /** Tricks are part of the valley from chapter one on (not in the prologue). */
