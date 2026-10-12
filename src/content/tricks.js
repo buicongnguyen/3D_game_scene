@@ -88,7 +88,9 @@ export const TRICKS = [
     howReal: 'A grown-up burns a pile of dry straw down to glowing ash. Bury the sweet potatoes in the ash and wait about forty minutes.',
     why: 'Ash keeps an even, gentle heat, like an oven. Slow heat turns the potato\'s starch into sugar.',
     safety: 'Fires are for grown-ups: a grown-up lights the straw.',
-    stars: [30, 60, 90], length: 70, firstLength: 40, unit: 'points',
+    // 20 a perfect potato, 10 a good one, 3 a raw one: two good ones and a bit are a star, three perfect ones two, and three stars want
+    // four perfect ones (turned in time, the ash kept warm, no flare) and the fifth at least good
+    stars: [25, 60, 90], length: 50, firstLength: 55, unit: 'points',
   },
   {
     id: 'beetles', name: 'Beetle sap trap', icon: 'trick-beetles',
