@@ -114,3 +114,48 @@ disposal, including rebuilt star fields, without assuming that unrelated ambient
 in `src/engine/governor.js`, correcting the handover's path.
 
 Real iPhone/Safari, Low Power Mode video behavior, physical gamepads and native-speaker language review are still unverified. Existing build warnings about the large main chunk and ineffective static/dynamic UI splitting remain.
+
+## Scenery, stopping games and Ô ăn quan help, 13 October 2026
+
+The tropical setting now changes ambient trees throughout the valley and distant hills, and most eligible bushes become
+ferns or banana plants. Orchard/story trees, important seasonal scenes and insect landing bushes retain their original
+models. The setting remains independent of language and remembers the player's choice. See
+[TROPICAL-TREES.md](TROPICAL-TREES.md) for measured coverage, asset provenance, performance and production evidence.
+
+The cow-racing track is green pasture with narrow worn paths through each lane. Its mud patch is lighter but remains a
+visible slowing obstacle. The track dimensions, lanes, mud limits and race rules are unchanged. Matched production
+desktop/phone overview and riding views were inspected; all 35 existing cow-race/help checks pass.
+
+A shared **Stop playing** button routes active mini-games through their own cleanup. Explicit cancellation prevents a
+partial-score rural game from awarding a round or stars, and yard cancellation remains effective during entrance/replay
+fades and the end-of-round celebration. Keyboard activation and touch hit areas are checked alongside camera, mounted
+state, held input and score restoration.
+
+Ô ăn quan has a persistent **How to play** button and a scrollable guide. Four interactive examples replay the real pure
+sowing/capture rules on their own board, with direction choice, step controls and restart. The guide explains the actual
+quick-game ending (first quan captured or 24 turns), replenishment, borrowing and final counting. Opening it freezes the
+live board and opponent; closing resumes the same round, and stopping closes both. New text is translated into Vietnamese,
+Korean and Japanese; these remain AI translations without native-speaker review.
+
+The combined full suite passes **715/715** tests. The production build succeeds with 192 packed models; all three language
+packs contain **3,872/3,872** keys with no missing/stale entries or placeholder mismatches. The isolated guide's seven
+browser cases pass, including all four languages, 320 × 568 portrait and 844 × 390 landscape. Production Stop checks pass
+for actual swimming, drawn archery, sowing Ô ăn quan and mounted cow racing on desktop and portrait phone, with no new
+rounds, stars or best scores from cancellation and no retained input, camera or player locks.
+
+The combined production build also passes **1,010 tropical scenery checks** (505 desktop Medium and 505 phone Low) and all
+seven real-game guide cases. The guide checks compare the exact live board, displayed pebbles, state, timers, selection and
+score while help is open, exercise all four examples and both directions, then stop the actual round. Local evidence is
+kept in the task worktrees' ignored `.tools` directories; browser suites use `GAME_URL` and do not load source modules.
+
+The full production catalogue sweep passes in 333 seconds: all 28 entries launch and return, both desktop/phone pickers
+work, and launching from the story pause menu restores the exact quest, storage, player, season and hour. Additional
+phone checks exercise the visible Stop control during fishing, at the kite workshop bench and in the sky viewer; context
+positions keep it clear of the workshop's parts tray and the sky viewer's Tour control.
+
+A final keyboard review found that closing help could leave focus on its button, swallowing gameplay keys or reopening
+help when Space should sow left. Closing now focuses the game canvas, and the closed Help button consumes only its native
+Space/Enter activation. The focused fixture verifies deliberate Help activation, forwarding ordinary gameplay keys and
+returning Space to the game. No protected input or entry-point files were edited.
+The final production regression additionally opens help during the real opponent's turn and confirms an exact pause;
+after closing, E and Space both sow in their intended directions with focus on the game canvas.
