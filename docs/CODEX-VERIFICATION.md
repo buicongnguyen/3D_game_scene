@@ -97,6 +97,10 @@ cow feeding and sitting, with clean final pose/items/camera/locks. An extra real
 0.016 seconds keeps its armful visible. The production phone Medium swimming course passes all six drills, dry exit, saved
 record/reload and cancelled replay; outdoor and cottage story-return cases also pass (125 seconds for the combined suite,
 zero runtime errors). These are new checks against this review's build, not reused results from the earlier release.
+All eight production tour cases also pass for both stories, desktop/phone and title/current-progress pause tours (56 seconds).
+The focused sky production run passes day, dusk and actual rain, flight/return restoration, rebuilt star-field disposal and an
+unrelated ambient object streaming in. The formerly flaky sky assertion now checks owned resource disposal and detachment,
+instead of requiring the whole valley's object count to stay fixed.
 
 Sack finish requirements, solo timing cutoffs, timeout, trailing grace and the completed loss to one kid still match the approved
 rules. No additional tour/video runtime defect was confirmed. This review does not claim to resolve every older handover item.
