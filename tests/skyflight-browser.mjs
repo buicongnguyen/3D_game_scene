@@ -1,7 +1,7 @@
 // "Fly up" in the sky viewer, in a real browser: at three spots (the stargazing hill, the mill lamp, the viaduct deck) in every
 // season, look up, press Fly up, check the low groups are above the rim WITHOUT the lift cheat, turn the sky's clock through the
 // night, come down; interrupt the climb in every way (Esc, Backspace, Space, the stick, Look down, pause, a talk, a cutscene, the
-// kite losing her) and check that everything is back as it was (position, lock, camera, kite, lantern, classes, scene counts).
+// kite losing her) and check restoration and disposal/detachment of sky-owned objects, materials, geometry and UI.
 //   node tests/skyflight-browser.mjs [--only=desktop-low,desktop-medium,phone-low,phone-medium] [--seasons=spring,summer,autumn,winter]
 //        [--spots=star-hill,mill-lamp,viaduct-lamp] [--parts=matrix,interrupts,nokite,daydusk,vn,time] [--out=.tools/review/skyflight]
 // Uses GAME_URL if set (a built site: vite preview); otherwise starts vite on port 5846. Needs Playwright.
@@ -40,7 +40,7 @@ const DEVICES = {
 const CONFIGS = (args.only || 'desktop-low,desktop-medium,phone-low,phone-medium').split(',').map(c => { const [dev, q] = c.split('-'); return { dev, q, name: c }; });
 const SEASONS = (args.seasons || 'spring,summer,autumn,winter').split(',');
 const SPOTS = (args.spots || 'star-hill,mill-lamp,viaduct-lamp').split(',');
-const PARTS = (args.parts || 'matrix,time,interrupts,nokite,daydusk,vn').split(',');
+const PARTS = (args.parts || 'matrix,time,interrupts,nokite,daydusk,ownership,vn').split(',');
 // the low group of each season (jp sky; the vn sky adds the Southern Cross in the spring)
 const LOW = { spring: ['virgo', 'crux'], summer: ['scorpius', 'scorpius'], autumn: ['pegasus', 'pegasus'], winter: ['orion', 'orion'] };
 const INT = args.int ? args.int.split(',') : null, wantInt = n => !INT || INT.includes(n);
@@ -78,16 +78,40 @@ async function boot(browser, cfg, SAVE, query = '') {
 /** Runs in the page: window.__SF, the helpers every step uses. */
 function installHelpers() {
   const g = window.__STARLINE__, d = g.director, V = v => (v ? [+v.x.toFixed(2), +v.y.toFixed(2), +v.z.toFixed(2)] : null);
+  // The valley streams unrelated creatures/tiles while flying. Observe only resources actually created by SkyGaze.
+  const resources = new Map(), roots = new Set(), views = new Set();
+  const watch = () => {
+    const s = d.sky;
+    if (s.group) roots.add(s.group);
+    if (s.skySt?.group) roots.add(s.skySt.group);
+    if (s.el) views.add(s.el);
+    s.group?.traverse(o => {
+      for (const r of [o.geometry, ...(Array.isArray(o.material) ? o.material : [o.material])]) if (r && !resources.has(r)) {
+        const rec = { type: r.isBufferGeometry ? 'geometry' : 'material', disposed: 0 };
+        resources.set(r, rec); r.addEventListener('dispose', () => rec.disposed++);
+      }
+    });
+  };
+  for (const name of ['build', 'buildSky', 'ui']) {
+    const original = d.sky[name];
+    d.sky[name] = function (...args) { const result = original.apply(this, args); watch(); return result; };
+  }
   const SF = window.__SF = {
     fast(on) {
       if (!g.__r0) { g.__r0 = g.renderer.render; g.__d0 = g.clock.getDelta; }
       if (on) { g.renderer.render = () => {}; g.clock.getDelta = () => 0.05; } else { g.renderer.render = g.__r0; g.clock.getDelta = g.__d0; }
     },
-    look([s, h, weather]) { g.seasonOverride = s; g.timeOverride = h; g.weatherOff = !weather; g.applyLook(); },
+    look([s, h, weather]) { g.seasonOverride = s; g.timeOverride = h; g.weatherOff = !weather; g.applyLook(); if (typeof weather === 'string') g.fx.setWeather(weather); },
     counts() {
       let n = 0; g.scene.traverse(() => { n++; });
       const m = g.renderer.renderer.info.memory;
-      return { objects: n, geometries: m.geometries, textures: m.textures, bodyKids: document.body.children.length, cls: document.body.className };
+      return { objects: n, geometries: m.geometries, textures: m.textures, bodyKids: document.body.children.length, cls: document.body.className, skyOwned: SF.owned() };
+    },
+    owned() {
+      const attached = o => { for (let p = o.parent; p; p = p.parent) if (p === g.scene) return true; return false; };
+      const records = [...resources.values()];
+      return { made: records.length, live: records.filter(r => !r.disposed).length, repeated: records.filter(r => r.disposed > 1).length,
+        attached: [...roots].filter(attached).length, views: [...views].filter(e => e.isConnected).length };
     },
     state() {
       const p = g.player, k = g.kite, f = g.follow;
@@ -188,13 +212,12 @@ async function main() {
       check(now.carry === base.carry, `${label}: lantern ${base.carry} -> ${now.carry}`);
       check(Math.abs(now.fovBase - base.fovBase) < 1e-6, `${label}: fovBase ${base.fovBase} -> ${now.fovBase}`);
       check(now.skyEl === !closed, `${label}: viewer element ${now.skyEl}`);
-      // (the GPU counts also grow a little the first times the valley is seen from up high: far tiles are uploaded once and kept, see the plateau check)
-      check(now.objects <= base.objects && now.bodyKids === base.bodyKids && now.geometries - base.geometries < 220 && now.textures - base.textures < 70,
-        `${label}: scene ${base.objects}/${base.geometries}/${base.textures}/${base.bodyKids} -> ${now.objects}/${now.geometries}/${now.textures}/${now.bodyKids}`);
-      (POST[label.split('/')[0]] ||= []).push(now.geometries);
+      // Disposal events prove ownership/cleanup; ambient streaming and cached terrain are deliberately outside this assertion.
+      const owned = now.skyOwned;
+      check(owned.made > 0 && owned.live === 0 && owned.repeated === 0 && owned.attached === 0 && owned.views === 0,
+        `${label}: sky-owned resources ${JSON.stringify(owned)}`);
       return now;
     };
-    const POST = {};
     const baseline = async () => { await fast(true); await W(6000); await fast(false); await W(600); return ev(() => ({ ...window.__SF.state(), ...window.__SF.counts() })); };
 
     // ================================================================== matrix: spots x seasons, up, groups visible, down
@@ -462,11 +485,11 @@ async function main() {
 
     // ================================================================== by day and at dusk: the valley panorama
     if (PARTS.includes('daydusk') && full) await part('daydusk', async () => {
-      for (const [name, look, spot] of [['day', ['autumn', 14], 'mill-lamp'], ['dusk', ['spring', 18.7], 'star-hill'], ['rain', ['summer', 21, true], 'star-hill']]) {
+      for (const [name, look, spot] of [['day', ['autumn', 14], 'mill-lamp'], ['dusk', ['spring', 18.7], 'star-hill'], ['rain', ['summer', 21, 'rain'], 'star-hill']]) {
         const base = await (async () => { await ev(l => window.__SF.look(l), look); await ev(id => window.__SF.place(id), spot); await W(900); return baseline(); })();
-        if (name === 'rain') await ev(() => { window.__STARLINE__.fx.setWeather?.('rain'); });
         if (!await startAt(spot, look)) continue;
         const dbg = await ev(() => window.__SF.dbg());
+        check(dbg.look === name, `${name}: actual sky mode is ${dbg.look}`);
         log(name, 'look', dbg.look, 'clock', dbg.clock);
         await S(`${name}-1-ground`);
         await climb();
@@ -512,8 +535,25 @@ async function main() {
       }
     });
 
-    // the GPU counts must level off: after the first visit a spot's later flights add next to nothing (no leak per flight)
-    for (const [k, v] of Object.entries(POST)) if (v.length > 2) check(v.at(-1) - v[1] < 60, `plateau ${k}: geometries ${v.join(', ')}`);
+    if (PARTS.includes('ownership') && full) await part('ownership', async () => {
+      const base = await (async () => { await ev(l => window.__SF.look(l), ['summer', 21]); await ev(id => window.__SF.place(id), 'star-hill'); await W(900); return baseline(); })();
+      if (!await startAt('star-hill', ['summer', 21])) return;
+      const live = await ev(() => window.__SF.owned());
+      check(live.live > 0 && live.attached > 0 && live.views > 0, `ownership: observer sees live resources ${JSON.stringify(live)}`);
+      // Model one unrelated ambient object streaming in after the baseline. The old whole-scene comparison rejects this.
+      await ev(() => {
+        const g = window.__STARLINE__; let source;
+        g.scene.traverse(o => { if (!source && o.isMesh && !o.isSkinnedMesh && !o.isInstancedMesh && o.geometry) source = o; });
+        const probe = source.clone(false); probe.name = 'qa:ambient-stream-probe'; probe.visible = false;
+        g.scene.add(probe); window.__SFProbe = probe;
+      });
+      await ev(() => { const s = window.__STARLINE__.director.sky; s.stepSky(1); s.stepSky(-1); });
+      await ev(() => { window.__STARLINE__.director.sky.wantLeave = true; });
+      const after = await restored(base, 'ownership');
+      check(after.objects > base.objects, `ownership: ambient growth remains visible (${base.objects} -> ${after.objects})`);
+      check(await ev(() => window.__SFProbe.parent === window.__STARLINE__.scene), 'ownership: sky cleanup leaves the unrelated ambient object intact');
+      await ev(() => { window.__SFProbe.removeFromParent(); delete window.__SFProbe; });
+    });
     log(fails.length ? `${fails.length} failures` : 'all good', errors.length ? `errors: ${errors.slice(0, 3).join(' | ')}` : '');
     for (const f of fails) failures.push(`[${tag}] ${f}`);
     for (const e of errors) failures.push(`[${tag}] ${e}`);
