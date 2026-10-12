@@ -71,10 +71,42 @@ the deployed game is [Starline](https://buicongnguyen.github.io/3D_game_scene/).
 
 The yard camera, Normal playground difficulty, Vietnamese-village project and further video compression remain product decisions. No changes were made to other repositories.
 
+## Code and logic review, 12 October 2026
+
+Reviewed the released ground interactions, sack rules, tour/video state ownership and swimming lesson, including cancellation,
+replay, exact timing boundaries and borrowed story sessions. Each runtime correction below has a regression that failed before the fix.
+
+| Priority | Reproduced issue | Correction |
+| --- | --- | --- |
+| P1 | Starting a mini game inside a story building restored Mika's elevated room coordinates without restoring the room. | Re-enter the saved interior before restoring exact position, and restore both indoor and outdoor camera zoom. |
+| P2 | Every Low-quality swimming replay retained two temporary character palette materials. | Dispose per-actor palettes and fallback resources while preserving library materials and cached merged geometry. |
+| P2 | Mathematically exact breathing/float timing boundaries sometimes earned retry penalties because frame sums rounded above or below the threshold. | Use a one-microsecond rounding tolerance; genuinely short/overlong holds still fail. |
+| P2 | Leaving a net trick during a swing could retain its procedural arm bend. | Remove the owned overlay during disposal while preserving a newer scene pose. |
+| P2 | Interrupting hay pickup before its grab frame left instantly owned hay invisible. | Finalize its held appearance on interruption, with a guard against recreating consumed hay. |
+| P2 | Rain appeared as clear night to sky viewing and clear-sky trick availability. | Read `fx.weatherKind`; `fx.weather` is the particle pool. |
+| P3 | Inherited object keys used as difficulty names created incomplete swimming rules. | Accept only own configuration keys; unknown names fall back to Normal. |
+
+The full unit suite now passes **618/618**. Vietnamese, Korean and Japanese remain **3,727/3,727**, with no missing/stale keys or
+placeholder mismatches. The production build and packed-model checks pass. Existing bundle-size warnings remain.
+The exact-boundary regressions exercise all four lesson levels at 60, 20 and 10 fps. Resource tests verify repeat cleanup and
+preservation of shared assets. A real browser has verified outdoor and cottage story-return cases, including unchanged save,
+quest, room visibility, player position and both camera zoom values.
+
+Production acceptance for this review passes on desktop Low and portrait phone Medium for ground poses, catch, hay pickup,
+cow feeding and sitting, with clean final pose/items/camera/locks. An extra real-input hay pickup interrupted by dialogue at
+0.016 seconds keeps its armful visible. The production phone Medium swimming course passes all six drills, dry exit, saved
+record/reload and cancelled replay; outdoor and cottage story-return cases also pass (125 seconds for the combined suite,
+zero runtime errors). These are new checks against this review's build, not reused results from the earlier release.
+
+Sack finish requirements, solo timing cutoffs, timeout, trailing grace and the completed loss to one kid still match the approved
+rules. No additional tour/video runtime defect was confirmed. This review does not claim to resolve every older handover item.
+
 ## Confirmed work still remaining
 
 Archery hands/portrait camera/ambient kids, cow-rider leg art and mount/dismount/gallop polish, fishing camera and yard issues remain as described in the handover. This pass does not claim to complete every item in that document.
 
-Two sky leftovers have a concrete cause: `skygaze.js` and `tricks.js` compare `fx.weather` to the string `rain`, but that field is a particle pool; `fx.weatherKind` is the weather identifier. The skyflight browser test also compares whole-scene counts while ambient creatures can stream in, making the assertion flaky. Follow-up should compare sky-owned resources. The governor lives in `src/engine/governor.js`, correcting the handover's path.
+The sky weather identifier issue is fixed in the code review above. Sky resource tests now verify actual owned geometry/material
+disposal, including rebuilt star fields, without assuming that unrelated ambient creatures stop streaming. The governor lives
+in `src/engine/governor.js`, correcting the handover's path.
 
 Real iPhone/Safari, Low Power Mode video behavior, physical gamepads and native-speaker language review are still unverified. Existing build warnings about the large main chunk and ineffective static/dynamic UI splitting remain.
