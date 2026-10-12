@@ -3724,5 +3724,6 @@
  "{step} · {name}": "{step} · {name}",
  "Left stick moves · X is Action · B leaves": "왼쪽 스틱으로 이동 · X는 행동 · B로 나가기",
  "Left thumb moves · hold or tap the Action button": "왼쪽 엄지로 이동 · 행동 버튼을 누르거나 길게 누르기",
- "WASD / arrows move · E is Action · Backspace leaves": "WASD / 방향키로 이동 · E는 행동 · Backspace로 나가기"
+ "WASD / arrows move · E is Action · Backspace leaves": "WASD / 방향키로 이동 · E는 행동 · Backspace로 나가기",
+ "Tap once to restart the pulse": "한 번 눌러 박자를 다시 시작해요"
 }

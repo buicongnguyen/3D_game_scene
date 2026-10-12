@@ -16,7 +16,7 @@ The [American Red Cross water-safety guidance](https://www.redcross.org/get-help
 
 After the game, a player should remember to ask permission, have an attentive adult and qualified instructor for real practice, identify a safe exit, use calm breathing rather than a breath-holding contest, recover upright from a float, coordinate gentle movement and return to the exit. Mika's animated progress is the practice task. There is no drowning, oxygen meter, punishment for needing air, or encouragement to swim in the village river.
 
-Rin is the game's friendly coach, not a claimed qualified swimming teacher. A separate adult stays visibly on the deck throughout. The opening and results explain: **In real water, learn with a qualified swimming teacher and a grown-up watching.** The pool is calm and bounded. Its temporary water is independent of the existing river physics and current.
+Rin is the game's friendly coach, not a claimed qualified swimming teacher. A separate adult stays on the deck throughout and is visible in the wider pool shots. The opening and results explain: **In real water, learn with a qualified swimming teacher and a grown-up watching.** The pool is calm and bounded. Its temporary water is independent of the existing river physics and current.
 
 ## Course, cues and timing
 
@@ -60,6 +60,10 @@ The course camera looks down the lane from the exit end so controls stay consist
 - Remove all transient objects and event listeners; dispose owned procedural geometries/materials and cloned skeletons without disposing model-library resources. Restore grass changes, hidden nearby actors, lantern requests, world state, camera FOV and button holds. No extra persistent water, colliders or cloned people may remain.
 - All player text uses `tx()`/`N_()` source keys. The integration owner translates Vietnamese, Korean and Japanese packs and runs extraction/checking. The lesson introduces no protected main/input/game/index edits or new dependency.
 
+Scores persist in the existing Explore save when launched from the title or Explore. Practice borrowed from a story
+pause menu preserves that story save exactly; its temporary scores are discarded, following the existing Mini games
+menu contract. Save/reload reward checks therefore use an Explore session, while story checks require unchanged storage.
+
 ## Acceptance and tests
 
 1. Pure rule tests: all six stages require appropriate interaction; idle input never wins; sustained bubbling cannot bypass recovery; float has both orientations and upright recovery; cadence tolerates timing variation and rejects mashing; motion stays inside the pool; turning alone requires correct orientation; returning requires reaching the exit; score/stars distinguish partial from completed practice; small/large dt produce stable bounded behavior.
@@ -79,6 +83,10 @@ The course camera looks down the lane from the exit end so controls stay consist
 - [x] Build temporary pool, visible coach/adult, poses and responsive camera.
 - [x] Add keyboard/touch/gamepad controls, cues and helpful retries.
 - [x] Restore all runtime state/resources in `finally` and test cancellation/errors.
-- [ ] Translate all new keys; check catalogue/save compatibility.
-- [ ] Complete rendered desktop/phone acceptance in development and production preview.
-- [ ] Build, commit, integrate, deploy and verify.
+- [x] Translate all new keys; check catalogue/save compatibility.
+- [x] Complete rendered desktop/phone acceptance in development and production preview.
+- [x] Build, test and integrate the release for publication.
+
+Publication uses the existing GitHub Pages workflow. Its [build/deployment receipts](https://github.com/buicongnguyen/3D_game_scene/actions)
+and live smoke checks establish which release is published. See [CODEX-VERIFICATION.md](CODEX-VERIFICATION.md) for recorded
+test results and the [live game](https://buicongnguyen.github.io/3D_game_scene/).

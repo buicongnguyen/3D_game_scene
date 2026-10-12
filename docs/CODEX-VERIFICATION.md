@@ -25,6 +25,42 @@ Work happened in isolated task checkouts. The original `3D_game_scene` working f
 
 Reproduce browser checks against an isolated server using `GAME_URL`, as described in the handover. Added suites are `tests/ground-poses-browser.mjs` and `tests/tour-production-browser.mjs`; neither needs browser-side source imports. Local screenshots and logs live under the ignored `.tools` directories of the task checkouts.
 
+The first update deployed as `4474ebf`: [Pages build/deploy receipt](https://github.com/buicongnguyen/3D_game_scene/actions/runs/38189693367).
+Live real-Edge checks confirmed the published bundle, all sixteen clip sizes/metadata, phone playback, the picker and partial-save tour restoration.
+
+## Swimming follow-up
+
+The owner's subsequent request adds **Mini games → Countryside tricks → Learn to swim**. See
+[SWIMMING-LESSON-PLAN.md](SWIMMING-LESSON-PLAN.md) for the primary research, detailed teaching sequence, timings, controls,
+implementation and acceptance criteria. Rin and an attentive adult supervise a temporary calm pool on dry land; this is
+virtual game practice and does not certify real swimming ability.
+
+The course requires identifying the exit and entering slowly, gentle bubble/air cycles, back/front floats with upright
+recovery, paced treading, a steered outward swim, turning toward the original exit, swimming back and walking onto the dry
+deck. Holding, mashing, steering alone or standing idle cannot complete it. Success requires the dry exit. Retry guidance
+clears when corrected; a missed pulse explicitly offers a restart. Front three-quarter close-ups show breathing/float
+poses, and the travel camera keeps the real destination visible below the instructions.
+
+- Latest full unit suite: **609/609 pass**, including rules, all difficulty levels, runtime restoration, pointer cancellation,
+  errors, old-save compatibility and resolved-feedback regressions. A differential check preserved gameplay, events,
+  penalties and scores across 109,939 guided/random frames when clearing stale visible guidance.
+- Final production build passes. Swimming adds no model assets or dependencies and leaves all protected files untouched; the earlier ground clips remain within their documented budgets.
+- Full real-input development matrix passes on desktop/phone at Low and Medium. Final production desktop Low and phone
+  Medium courses pass in 113/112 seconds, reach the actual dry deck, save/reload 96 points, and clean up a cancelled replay.
+  Desktop production also verifies unchanged borrowed story state/storage and original player/controller restoration.
+- The production catalogue sweep passes in 310 seconds with swimming included. Existing games still launch and return.
+- Vietnamese, Korean and Japanese each contain **3,727/3,727** keys, with zero missing/stale entries or placeholder mismatches.
+  Rendered production checks pass for all three at 390 × 844 and Vietnamese at 360 × 640, through bubbles and both floats.
+  The narrow Vietnamese check is repeated after four dry-deck wording corrections. These remain AI translations.
+- A real-input production missed-pulse check verifies neutral late styling, the translated restart instruction, no extra
+  earned scull on restart, and a successful subsequent paced tap. No browser source-module imports or runtime errors.
+
+`tests/swimming-browser.mjs` completes the course with keys or two real CDP touch contacts, verifies pause/awards/reload,
+then checks quit and story restoration. Use `GAME_URL` and `--only=desktop-low` or `--only=phone-medium`. Local final evidence
+is in `.tools/swim-prod-desktop`, `.tools/swim-prod-phone`, `.tools/swim-minigames` and the video audit's layout/pulse folders.
+Publication receipts are available in the repository's [Pages workflow runs](https://github.com/buicongnguyen/3D_game_scene/actions);
+the deployed game is [Starline](https://buicongnguyen.github.io/3D_game_scene/).
+
 ## Owner decisions
 
 - Keep Isamu alive and away building boats in Grandma; keep Classic's existing remembrance.

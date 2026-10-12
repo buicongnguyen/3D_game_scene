@@ -3,6 +3,11 @@
 A "Mini games" button on the title menu (and in the pause menu) opens a picker of every game in the valley. Choose one and
 you play it straight away: no story progress, no Grandma or Rin teaching it first.
 
+**Learn to swim** is in Countryside tricks. Rin guides a supervised virtual pool lesson through bubbles, front/back
+floating and recovery, treading, travel, turning toward the exit, swimming back and climbing onto the deck.
+Use movement plus hold/release/tap Action as each cue asks. The lesson has a four-minute budget and rewards completion
+only after the dry exit. See [the researched lesson plan](SWIMMING-LESSON-PLAN.md) for the controls and design.
+
 ## Where the list comes from
 
 `src/content/minigames.js` builds the catalogue at run time from the sources of truth, so a game that lands later appears

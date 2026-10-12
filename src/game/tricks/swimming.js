@@ -31,6 +31,7 @@ const FEEDBACK = {
 
 const CSS = `
 body.swim-round #tAct,body.swim-round #tJump,body.swim-round #tDive,body.swim-round #tKite,body.swim-round #tAim,body.swim-round #tFire{display:none!important}
+body.swim-round #toasts{visibility:hidden}
 #swimLesson{position:fixed;inset:0;z-index:17;pointer-events:none;font:700 15px Nunito,system-ui,sans-serif;color:#234a56;user-select:none;-webkit-user-select:none}
 #swimLesson .lesson{position:absolute;top:calc(70px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);width:min(500px,calc(100vw - 28px));box-sizing:border-box;padding:12px 16px;border-radius:20px;background:rgba(245,255,253,.96);box-shadow:0 5px 18px #1234;text-align:center}
 #swimLesson h2{font:600 21px Fredoka,Nunito,sans-serif;margin:0 0 5px;color:#236b79}
@@ -41,6 +42,7 @@ body.swim-round #tAct,body.swim-round #tJump,body.swim-round #tDive,body.swim-ro
 #swimLesson .rhythm{height:19px;position:relative;background:#dceee6;border-radius:20px;margin:6px 5px;overflow:hidden}
 #swimLesson .zone{position:absolute;right:0;width:24%;height:100%;background:#87cba8}
 #swimLesson .pulse{position:absolute;left:0;top:2px;width:15px;height:15px;border-radius:50%;background:#bb602b;transform:translateX(-50%)}
+#swimLesson .rhythm.late .zone{background:#bdd1ce}#swimLesson .rhythm.late .pulse{background:#778d8b}
 #swimLesson .feedback{font-size:13px;min-height:1.3em;color:#a34920}
 #swimLesson .controls{font-size:12px;color:#5b787a;margin-top:4px}
 #swimLesson .safe{position:absolute;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:min(650px,calc(100vw - 32px));width:max-content;padding:5px 10px;border-radius:12px;background:#eefbf7e8;text-align:center;font-size:11px;line-height:1.3}
@@ -193,6 +195,9 @@ export function makePool(game) {
   };
 }
 
+const latePulse = lesson => lesson.lastStroke !== null && lesson.time - lesson.lastStroke > lesson.rules.beat + lesson.rules.window;
+const pulseCue = (lesson, snap) => latePulse(lesson) ? N_('Tap once to restart the pulse') : snap.beatPhase >= .85 ? N_('Tap gently now') : N_('Wait for the pulse');
+
 function instructions(phase, lesson, snap) {
   if (phase === 'check') return { text:N_('A grown-up is watching. Move to the gold exit ring on the dry deck, then press Action to check it.'),cue:N_('Move to the exit ring'),button:N_('Check exit') };
   if (phase === 'entry') return { text:N_('Walk slowly down the shallow ramp to the water marker. Press Action when you are ready.'),cue:N_('Move up the lane into the shallow entry'),button:N_('Begin practice') };
@@ -208,10 +213,10 @@ function instructions(phase, lesson, snap) {
     if(lesson.floatMode === 'front') return {text:N_('Now practise short front floats: hold for gentle bubbles, release for a normal breath, and repeat. Keep the stick near the centre.'),cue:lesson.held && lesson.holdTime >= 1.9 ? N_('Release — normal breath') : lesson.airTime < lesson.rules.air ? N_('Normal breath — wait a moment') : N_('Short front float, then air'),button:N_('Front float')};
     return {text:N_('Mika is upright again. Press Action to finish the recovery and move to treading.'),cue:N_('Upright recovery'),button:N_('Recover upright')};
   }
-  if(snap.stage === 'tread') return {text:N_('Tap Action with the slow pulse for eight gentle sculls. Release between taps. Mika stays with her head above water.'),cue:snap.beatPhase>=.85 ? N_('Tap gently now') : N_('Wait for the pulse'),button:N_('Gentle scull')};
+  if(snap.stage === 'tread') return {text:N_('Tap Action with the slow pulse for eight gentle sculls. Release between taps. Mika stays with her head above water.'),cue:pulseCue(lesson,snap),button:N_('Gentle scull')};
   if(snap.stage === 'turn') return {text:N_('Turn Mika toward the gold exit at the starting end. Move the stick down the lane until she faces it.'),cue:N_('Face the starting exit'),button:N_('Look for exit')};
   const returning = snap.stage === 'swim';
-  return {text:returning ? N_('Steer back toward the gold exit. Tap gentle strokes with the pulse, and keep inside the lane.') : N_('Steer toward the far ring. Tap gentle strokes with the slow pulse; Mika glides between strokes.'),cue:snap.beatPhase>=.85 ? N_('Tap gently now') : N_('Steer and wait for the pulse'),button:N_('Gentle stroke')};
+  return {text:returning ? N_('Steer back toward the gold exit. Tap gentle strokes with the pulse, and keep inside the lane.') : N_('Steer toward the far ring. Tap gentle strokes with the slow pulse; Mika glides between strokes.'),cue:latePulse(lesson) ? N_('Tap once to restart the pulse') : snap.beatPhase>=.85 ? N_('Tap gently now') : N_('Steer and wait for the pulse'),button:N_('Gentle stroke')};
 }
 
 const setText = (node,text) => { text=tx(text); if(node.textContent!==text)node.textContent=text; };
@@ -304,7 +309,8 @@ export default { id:'swimming', async play(ctx) {
         cameraPos.set(POOL.x,pool.waterY+(portrait?10.8+Math.min(6.2,span*.6):7.2+Math.min(4.3,span*.45)),POOL.z+Math.max(local.z,marker.z)+9.5);
         cameraLook.set(POOL.x,pool.waterY+(wet?0.1:0.6),POOL.z+far+span*.25);
       } else {
-        const camZ=portrait&&overview?14:stationary?local.z+4.5:Math.min(10.5,local.z+9);
+        // Face the swimmer during stationary drills so her mouth, bubbles and upright recovery can be seen.
+        const camZ=portrait&&overview?14:stationary?local.z-4.5:Math.min(10.5,local.z+9);
         cameraPos.set(POOL.x+(stationary?3:0),pool.waterY+(portrait?overview?17:stationary?5.7:10.8:stationary?3.7:7.2),POOL.z+camZ);
         cameraLook.set(POOL.x,pool.waterY+(wet?0.1:0.6),POOL.z+(portrait&&overview?2:stationary?local.z:local.z-2.6));
       }
@@ -315,6 +321,7 @@ export default { id:'swimming', async play(ctx) {
       setText(ui.nodes.controls,input.lastDevice==='gamepad'?N_('Left stick moves · X is Action · B leaves'):ctx.ui.touch?N_('Left thumb moves · hold or tap the Action button'):N_('WASD / arrows move · E is Action · Backspace leaves'));
       ui.nodes.progress.style.width=`${Math.round((phase==='lesson'?snap.progress:phase==='check'?exitCheck?1:0:phase==='entry'?Math.max(0,(8-local.z)/3):exitWalk)*100)}%`;
       const rhythm=phase==='lesson'&&['tread','glide','swim'].includes(snap.stage);ui.nodes.rhythm.hidden=!rhythm;ui.nodes.pulse.style.left=`${Math.min(98,(snap.beatPhase||0)*98)}%`;
+      ui.nodes.rhythm.classList[rhythm&&latePulse(lesson)?'add':'remove']('late');
       ctx.hud(lesson.result().score,Math.max(0,ctx.roundTime-total));
       if(total>=ctx.roundTime)return result();
     };

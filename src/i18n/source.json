@@ -19800,6 +19800,24 @@
   ]
  },
  {
+  "s": "Tap once to restart the pulse",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Tap gently now",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Wait for the pulse",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
   "s": "A grown-up is watching. Move to the gold exit ring on the dry deck, then press Action to check it.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
@@ -19963,18 +19981,6 @@
  },
  {
   "s": "Tap Action with the slow pulse for eight gentle sculls. Release between taps. Mika stays with her head above water.",
-  "ctx": [
-   "UI (src/game/tricks/swimming.js)"
-  ]
- },
- {
-  "s": "Tap gently now",
-  "ctx": [
-   "UI (src/game/tricks/swimming.js)"
-  ]
- },
- {
-  "s": "Wait for the pulse",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]

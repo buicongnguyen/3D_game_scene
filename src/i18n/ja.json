@@ -3724,5 +3724,6 @@
   "{step} · {name}": "{step} · {name}",
   "Left stick moves · X is Action · B leaves": "左スティックで移動 · Xでアクション · Bで退出",
   "Left thumb moves · hold or tap the Action button": "左親指で移動 · アクションを押す・長押し",
-  "WASD / arrows move · E is Action · Backspace leaves": "WASD / 矢印キーで移動 · Eでアクション · Backspaceで退出"
+  "WASD / arrows move · E is Action · Backspace leaves": "WASD / 矢印キーで移動 · Eでアクション · Backspaceで退出",
+  "Tap once to restart the pulse": "一度押してリズムを始め直そう"
 }
