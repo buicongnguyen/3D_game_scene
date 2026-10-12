@@ -165,7 +165,7 @@ export function createOanQuanGuide({ input = null, touch = false, onOpen = null,
   </section>`;
   document.body.append(button, modal);
   const q = s => modal.querySelector(s), demo = new OanQuanDemo();
-  let visible = false, opened = false, destroyed = false, previousFocus = null;
+  let visible = false, opened = false, destroyed = false;
   const set = (s, text) => { q(s).textContent = text; };
 
   // Each button remains in place while drawing, so keyboard focus is never lost on a demo step.
@@ -235,7 +235,8 @@ export function createOanQuanGuide({ input = null, touch = false, onOpen = null,
   button.addEventListener('pointerdown', consume);
   // The game's window key handler prevents Space's default. Keep native focused-button activation
   // without forwarding that Space/Enter to the game when the help panel is still closed.
-  button.addEventListener('keydown', consume); button.addEventListener('keyup', consume);
+  const activation = e => { if (e.key === ' ' || e.key === 'Enter') e.stopPropagation(); };
+  button.addEventListener('keydown', activation); button.addEventListener('keyup', activation);
   button.addEventListener('click', e => { e.stopPropagation(); open(); });
   for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'click']) modal.addEventListener(type, consume);
   q('.og-close').addEventListener('click', close); q('.og-resume').addEventListener('click', close);
@@ -261,7 +262,7 @@ export function createOanQuanGuide({ input = null, touch = false, onOpen = null,
   }
   function open() {
     if (!visible || opened || destroyed) return;
-    previousFocus = document.activeElement; input?.releaseAll?.();
+    input?.releaseAll?.();
     opened = true; draw(); modal.hidden = false; button.setAttribute('aria-expanded', 'true');
     onOpen?.();
     document.addEventListener('keydown', key, true); document.addEventListener('keyup', key, true);
@@ -272,8 +273,13 @@ export function createOanQuanGuide({ input = null, touch = false, onOpen = null,
     opened = false; modal.hidden = true; button.setAttribute('aria-expanded', 'false');
     document.removeEventListener('keydown', key, true); document.removeEventListener('keyup', key, true);
     input?.releaseAll?.(); onClose?.();
-    if (previousFocus?.isConnected) previousFocus.focus();
-    previousFocus = null;
+    // Resume keyboard play in the canvas. Restoring the Help button would turn the next Space
+    // (sow left) into reopening help. Users can still deliberately Tab back to the Help control.
+    const canvas = input?.canvas;
+    if (canvas?.isConnected) {
+      if (!canvas.hasAttribute('tabindex')) canvas.setAttribute('tabindex', '-1');
+      canvas.focus({ preventScroll: true });
+    } else if (modal.contains(document.activeElement) || document.activeElement === button) document.activeElement.blur?.();
   }
   function show() { if (destroyed) return; visible = true; button.hidden = false; draw(); }
   function hide() { close(); visible = false; button.hidden = true; }
