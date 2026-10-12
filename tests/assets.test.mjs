@@ -7,6 +7,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CONTRACTS, PORTRAITS, TOTAL_RAW_BYTES } from './asset-contracts.mjs';
+import { checkImportedModel } from './model-import-check.mjs';
 
 const MODELS = new URL('../public/models/', import.meta.url);
 const only = process.env.ASSETS?.split(',').map(s => s.trim()).filter(Boolean);
@@ -35,6 +36,10 @@ for (const name of names) {
   test(`${name} meets its contract`, async () => {
     const file = new URL(`${name}.glb`, MODELS);
     assert.ok(existsSync(file), `${name}.glb missing`);
+    if (c.family === 'vietnam-import') {
+      await checkImportedModel(readFileSync(file), c);
+      return;
+    }
     const gltf = await load(name);
     const root = gltf.scene;
     const tris = triangles(root);

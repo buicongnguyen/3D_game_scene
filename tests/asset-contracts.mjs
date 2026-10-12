@@ -115,6 +115,10 @@ export const CONTRACTS = {
   landslide: { family: 'railway', tris: 8000 },
 
   // ---------------------------------------------------------------- nature
+  // Documented imported trees: embedded MASK atlas, real vertex AO, 8 m height.
+  'tree-vn-bamboo': { family: 'vietnam-import', tris: 950, mats: ['VN bamboo dry', 'VN bamboo node', 'VN bamboo culm', 'VN leaves bamboo'] },
+  'tree-vn-coconut': { family: 'vietnam-import', tris: 600, mats: ['VN coconut bark', 'VN leaves coconut core', 'VN leaves coconut fronds'] },
+  'tree-vn-mango': { family: 'vietnam-import', tris: 200, mats: ['VN mango bark', 'VN leaves mango core', 'VN leaves mango cards'] },
   'tree-broadleaf-a': { family: 'nature', tris: 3500, mats: ['Bark', 'Leaves'] },
   'tree-broadleaf-b': { family: 'nature', tris: 3500, mats: ['Bark', 'Leaves'] },
   'tree-cedar': { family: 'nature', tris: 3000, mats: ['Bark', 'Needles'] },
@@ -265,7 +269,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // +0.225 MB: riding the cow (RideCow clips on mika +76 KB and villager-kid +66 KB; the cow's Trot and Gallop +50 KB). The raw
 // library is 39.867 MB, so this ceiling has only ~33 KB left: the next model raises it again, with its reason, here.
 // +0.31 MB: seven 30fps ground clips on each existing Mika/kid rig (40,183,428 B measured).
-export const TOTAL_RAW_BYTES = 40_210_000;
+// +0.767 MB: three self-contained tropical tree imports (40,946,596 B measured).
+export const TOTAL_RAW_BYTES = 40_970_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -275,7 +280,8 @@ export const TOTAL_RAW_BYTES = 40_210_000;
 // +0.046 MB: tricks phase 2 art audit (the beetles' knee bones: 36 -> 57 KB and 41 -> 63 KB packed).
 // +0.279 MB: the bug-catching games (grasshopper 84 KB, mantis 140 KB, bug-cage 11 KB packed; the cricket 44 -> 103 KB).
 // +0.20 MB: packed ground clips; measured 15,552,652 B for the unchanged 184-model library.
-export const TOTAL_PACKED_BYTES = 15_580_000;
+// +0.714 MB: tropical imports retain their embedded PNG atlases (16,258,968 B measured).
+export const TOTAL_PACKED_BYTES = 16_320_000;
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

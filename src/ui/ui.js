@@ -4,6 +4,7 @@ import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from 
 import { JournalMap } from './map.js';
 import { starGroupsHtml } from './stargroups.js';
 import { STORIES, DEFAULT_STORY, storyId } from '../game/stories/index.js';
+import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
 
 /** The story a new game starts with (Settings → Story for new games). */
 export function defaultStory() {
@@ -614,6 +615,16 @@ export class UI {
     const q = $('optQuality');
     q.value = g.renderer.qualityName;
     q.addEventListener('change', () => { g.renderer.setQuality(q.value); this.toast(tx('Graphics setting saved — reload to apply fully')); });
+    // Build the scenery option here, like the tour controls, so it works from either Settings door.
+    const tropicalRow = document.createElement('label'); tropicalRow.className = 'check';
+    const tropical = document.createElement('input'); tropical.id = 'optTropicalTrees'; tropical.type = 'checkbox';
+    tropical.checked = getTropicalTrees();
+    const tropicalLabel = document.createElement('span');
+    tropicalLabel.dataset.i18n = ''; tropicalLabel.dataset.i18nSrc = 'Enable tropical trees';
+    tropicalLabel.textContent = tx('Enable tropical trees');
+    tropicalRow.append(tropical, tropicalLabel); q.closest('label').after(tropicalRow);
+    tropical.addEventListener('change', () => setTropicalTrees(tropical.checked));
+    onTreeThemeChange(enabled => { tropical.checked = enabled; });
     const load = (k, d) => { try { return JSON.parse(localStorage.getItem(`starline-opt-${k}`)) ?? d; } catch { return d; } };
     const save = (k, v) => { try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify(v)); } catch { /* ignore */ } };
     const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps'), diff = $('optDifficulty');

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { TOTAL_PACKED_BYTES, CONTRACTS } from './asset-contracts.mjs';
+import { checkImportedModel } from './model-import-check.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -24,8 +25,19 @@ test('packed model library fits the download budget and every model still loads 
     loader.setMeshoptDecoder(MeshoptDecoder);
     for (const f of files) {
       const b = readFileSync(path.join(dir, f));
-      const gltf = await new Promise((res, rej) => loader.parse(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), '', res, rej));
       const c = CONTRACTS[f.replace('.glb', '')];
+      if (c?.family === 'vietnam-import') {
+        const packed = await checkImportedModel(b, c);
+        const raw = await checkImportedModel(readFileSync(path.join(ROOT, 'public/models', f)), c);
+        assert.equal(packed.tris, raw.tris, `${f} preserved triangles`);
+        assert.deepEqual(packed.materials, raw.materials, `${f} preserved material names and alpha settings`);
+        assert.deepEqual(packed.imageHashes, raw.imageHashes, `${f} preserved embedded atlas bytes`);
+        for (const edge of ['min', 'max']) for (let i = 0; i < 3; i++) {
+          assert.ok(Math.abs(packed.bounds[edge][i] - raw.bounds[edge][i]) < .002, `${f} preserved bounds`);
+        }
+        continue;
+      }
+      const gltf = await new Promise((res, rej) => loader.parse(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), '', res, rej));
       for (const clip of c?.clips ?? []) assert.ok(gltf.animations.some(a => a.name === clip), `${f} lost clip ${clip}`);
       for (const n of c?.nodes ?? []) assert.ok(gltf.scene.getObjectByName(n), `${f} lost node ${n}`);
     }

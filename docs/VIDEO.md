@@ -11,6 +11,11 @@ On a phone the three things a player only *watches* are shown as recorded video 
 Everything that is words or buttons stays HTML on top of the video (so it is translated and tappable); only the
 picture is video. Videos are muted, inline (`playsinline`) and fetched only when they are about to play.
 
+**Tropical trees:** when **Settings → Enable tropical trees** is on, the title, arrival and tours use
+live 3D so they show the imported bamboo, coconut and mango trees. Turning it off restores the original-tree
+recordings. This setting works independently of language. See [Tropical tree setting](TROPICAL-TREES.md)
+for the swap and verification rules.
+
 "Phone" means the Low graphics tier (`renderer.qualityName === 'low'`: mobile browsers, and software renderers).
 Desktop keeps live 3D. The tour picker has a **Live 3D instead of video** box: a phone can tick it for the real
 flight, a desktop can untick it for the video; the choice is remembered (`starline-opt-tourLive`). `?live=1` in

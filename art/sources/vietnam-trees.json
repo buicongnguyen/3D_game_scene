@@ -1,0 +1,15 @@
+{
+  "origin": "https://nongtrai.jackle.dev",
+  "retrievedAt": "2026-10-12T10:49:18.900Z",
+  "provenance": "Local xom_nong_trai/reference/assets-manifest.json records these mirrored compiled-build assets. The source README attributes artwork/reference to Xom Nong Trai. No separate art license or reuse grant is present locally; no CC0 claim is made.",
+  "files": [
+    {"path":"public/assets/flora-68d4505b45.glb","sha256":"68d4505b45edff19a50c67757a8ef615f1c8a29bcb96dc04326078cdf3e726fb"},
+    {"path":"public/assets/trees_fruit-5a05951eff.glb","sha256":"5a05951effa8e26d1355084a6fa4ca23e78adc10d3896554b28ee591ec609114"},
+    {"path":"public/assets/kit-tex-0f139f272e840f5c.png","sha256":"0f139f272e840f5cf00b7ce4a8b02647e88acca51086fe7ba93928616f3cfccd"}
+  ],
+  "models": [
+    {"name":"tree-vn-bamboo","source":"public/assets/flora-68d4505b45.glb","node":"flora__tre__lon","materials":{"bamboo_dry":"VN bamboo dry","bamboo_node":"VN bamboo node","bamboo":"VN bamboo culm","fl_tre_leaf":"VN leaves bamboo"}},
+    {"name":"tree-vn-coconut","source":"public/assets/trees_fruit-5a05951eff.glb","node":"tree__cay_dua__trong_qua","materials":{"bark_grey":"VN coconut bark","leaf_dark":"VN leaves coconut core","card_frond":"VN leaves coconut fronds"}},
+    {"name":"tree-vn-mango","source":"public/assets/flora-68d4505b45.glb","node":"flora__xoai_hoang__lon","materials":{"bark":"VN mango bark","leaf_dark":"VN leaves mango core","fl_thong_branch":"VN leaves mango cards"}}
+  ]
+}

@@ -22476,6 +22476,12 @@
   ]
  },
  {
+  "s": "Enable tropical trees",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Page {n}",
   "ctx": [
    "UI (src/ui/ui.js)"

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { patchMaterial } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
+import { getTropicalTrees, onTreeThemeChange, treeForTheme } from './tree-theme.js';
 
 const FOLIAGE = { Leaves: 'leaves', Needles: 'needles', 'Maple leaves': 'maple', Blossom: 'blossom' };
 const BARE_IN_WINTER = new Set(['Leaves', 'Maple leaves', 'Blossom']);
@@ -53,7 +54,7 @@ class InstanceSet {
   build(parent, parts, n, castShadow, wind) {
     return parts.map(part => {
       const mat = part.material;
-      const isFoliage = FOLIAGE[mat.name] !== undefined;
+      const isFoliage = FOLIAGE[mat.name] !== undefined || mat.name.startsWith('VN leaves');
       patchMaterial(mat, { wind: isFoliage ? wind : 0 });
       const mesh = new THREE.InstancedMesh(part.geometry, mat, n);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -71,7 +72,9 @@ class InstanceSet {
 
   buildShadow(parent, parts, n) {
     return parts.map(part => {
-      const mat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, depthTest: false });
+      const source = part.material;
+      const mat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, depthTest: false,
+        map: source.map, alphaMap: source.alphaMap, alphaTest: source.alphaTest, side: source.side });
       const mesh = new THREE.InstancedMesh(part.geometry, mat, n);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0;
@@ -148,6 +151,14 @@ class InstanceSet {
 
   meshes() { return [...this.near, ...(this.far ?? [])]; }
   shadowMeshes() { return this.shadow ?? []; }
+
+  dispose() {
+    for (const mesh of [...this.meshes(), ...this.shadowMeshes()]) {
+      mesh.removeFromParent();
+      mesh.dispose(); // instance buffers belong to this set; asset geometry/materials are shared
+    }
+    for (const mesh of this.shadowMeshes()) mesh.material.dispose();
+  }
 }
 
 export class Foliage {
@@ -155,20 +166,14 @@ export class Foliage {
     this.group = new THREE.Group();
     this.group.name = 'foliage';
     scene.add(this.group);
+    this.assets = assets;
+    this.trees = placed.trees;
+    this.treeSets = [];
     this.sets = [];
     this.nearDist = quality.trees >= 1 ? 120 : quality.trees >= 0.85 ? 95 : 55;
     const k = quality.trees >= 0.85 ? 1 : 0.7;   // Low: small scatter is drawn out to 70 % of the usual distance
     this.maxDist = 1400;
-    const byModel = (list, opts) => {
-      const groups = new Map();
-      for (const r of list) {
-        if (!assets.has(r.model)) continue;
-        if (!groups.has(r.model)) groups.set(r.model, []);
-        groups.get(r.model).push(r);
-      }
-      for (const [model, records] of groups) this.sets.push(new InstanceSet(this.group, assets, model, records, typeof opts === 'function' ? opts(model) : opts));
-    };
-    byModel(placed.trees, model => ({ lod: `${model}-lod`, castShadow: true, wind: 1 }));
+    const byModel = (list, opts) => this.sets.push(...this.buildSets(list, opts));
     byModel(placed.bushes, { castShadow: true, wind: 1, maxDist: 160 * k });
     byModel(placed.rocks, { castShadow: true, wind: 0, maxDist: 320 * k });
     byModel(placed.flowers, { castShadow: false, wind: 2, maxDist: 90 * k });
@@ -182,6 +187,47 @@ export class Foliage {
     this.lastPos = new THREE.Vector3(1e9, 0, 0);
     this.lastQuat = new THREE.Quaternion();
     this.season = null;
+    this.theme = null;
+    this.setTheme(getTropicalTrees());
+    this.unsubscribeTheme = onTreeThemeChange(enabled => this.setTheme(enabled));
+  }
+
+  buildSets(list, opts) {
+    const groups = new Map();
+    for (const r of list) {
+      if (!this.assets.has(r.model)) continue;
+      if (!groups.has(r.model)) groups.set(r.model, []);
+      groups.get(r.model).push(r);
+    }
+    return [...groups].map(([model, records]) => new InstanceSet(this.group, this.assets, model,
+      records, typeof opts === 'function' ? opts(model) : opts));
+  }
+
+  setTheme(enabled) {
+    const theme = enabled ? 'tropical' : 'default';
+    if (this.theme === theme) return;
+    const records = this.trees.map(r => {
+      const themed = treeForTheme(r, enabled);
+      return this.assets.has(themed.model) ? themed : r;
+    });
+    const next = this.buildSets(records, model => ({ lod: `${model}-lod`, castShadow: true, wind: 1 }));
+    const old = new Set(this.treeSets);
+    for (const set of old) set.dispose();
+    this.sets = [...next, ...this.sets.filter(set => !old.has(set))];
+    this.treeSets = next;
+    this.theme = theme;
+    if (this.season) this.setSeason(this.season);
+    // Even a stationary, paused camera must populate the new instance and shadow buffers.
+    this.lastPos.set(1e9, 0, 0);
+    this.shadowFocus.set(1e9, 0, 0);
+  }
+
+  dispose() {
+    this.unsubscribeTheme?.();
+    for (const set of this.sets) set.dispose();
+    this.sets = [];
+    this.treeSets = [];
+    this.group.removeFromParent();
   }
 
   /** Rebuild the shadow-caster lists when the shadow box has moved or turned noticeably. */
