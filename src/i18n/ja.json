@@ -3836,7 +3836,6 @@
   "4. Capture a quan": "4. クアンを取る",
   "You can capture a quan across an empty small pit too. A quan is worth 10 points; a pebble is worth 1.": "空の小さなマスをはさんでクアンも取れるよ。クアンは10点、小石は1点だよ。",
   "Your five small pits are the lower row. Choose a non-empty one, then choose ◀ or ▶. Keep that direction for the whole turn.": "下の列にある小さなマス五つが自分のマスだよ。石のあるマスを選び、◀か▶を選ぼう。番が終わるまで同じ向きに進むよ。",
-  "After your last pebble: a full small pit means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.": "最後の石を置いたら次のマスを見るよ。石のある小さなマスならまき続け、空の小さなマスなら石を取れることがあるよ。クアンのマスなら空でも番が終わるよ。",
   "This quick round ends when the first quan is captured, or after 24 turns. Your captured points plus pebbles left in your small pits decide the winner. Stones still in quan pits do not count.": "この短いゲームはクアンを一つ取るか、24回の手番で終わるよ。取った点数と自分の小さなマスに残った小石を足して勝者を決めるよ。クアンのマスに残った石やクアンは数えないよ。",
   "Tap the glowing pit, or Next step, to pick up its pebbles. Try either direction.": "光るマスか「次のステップ」を押して石を取ろう。両方の向きを試してみてね。",
   "Pick up all {n} pebbles. Keep sowing in your chosen direction.": "小石{n}個を全部取ろう。選んだ向きにまき続けるよ。",
@@ -3870,5 +3869,6 @@
   "The round is paused. This example changes no scores or pebbles in your game.": "ゲームは一時停止中。この例では本番の点数や石は変わらないよ。",
   "Back to the round": "ゲームに戻る",
   "An empty side refills with one captured pebble per pit. Missing pebbles are borrowed and repaid when counting. If there are fewer than five captured pebbles between both players when refilling, the round ends.": "自分の列が空になったら、取った小石を各マスに一つずつ置くよ。足りなければ相手から借り、点数を数えるときに返すよ。補充するときに二人が取った小石を合わせても五つ未満ならゲームが終わるよ。",
-  "In the real round: left/right chooses a pit. X sows ▶; A sows ◀. Use the on-screen ? for a hint.": "本番では、左右でマスを選ぶよ。Xで▶、Aで◀にまくよ。画面の?でヒントが見られるよ。"
+  "In the real round: left/right chooses a pit. X sows ▶; A sows ◀. Use the on-screen ? for a hint.": "本番では、左右でマスを選ぶよ。Xで▶、Aで◀にまくよ。画面の?でヒントが見られるよ。",
+  "After your last pebble, look at the NEXT pit: a small pit with pebbles means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.": "最後の石を置いたら次のマスを見るよ。石のある小さなマスならまき続け、空の小さなマスなら石を取れることがあるよ。クアンのマスなら空でも番が終わるよ。"
 }

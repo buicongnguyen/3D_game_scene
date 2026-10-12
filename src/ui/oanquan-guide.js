@@ -12,7 +12,7 @@ export const OAN_LESSONS = [
 
 export const OAN_RULES = [
   N_('Your five small pits are the lower row. Choose a non-empty one, then choose ◀ or ▶. Keep that direction for the whole turn.'),
-  N_('After your last pebble: a full small pit means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.'),
+  N_('After your last pebble, look at the NEXT pit: a small pit with pebbles means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.'),
   N_('An empty side refills with one captured pebble per pit. Missing pebbles are borrowed and repaid when counting. If there are fewer than five captured pebbles between both players when refilling, the round ends.'),
   N_('This quick round ends when the first quan is captured, or after 24 turns. Your captured points plus pebbles left in your small pits decide the winner. Stones still in quan pits do not count.'),
 ];

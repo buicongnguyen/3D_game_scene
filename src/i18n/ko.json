@@ -3836,7 +3836,6 @@
  "4. Capture a quan": "4. 관 따기",
  "You can capture a quan across an empty small pit too. A quan is worth 10 points; a pebble is worth 1.": "빈 작은 칸을 건너 관도 가져올 수 있어요. 관은 10점, 작은 돌은 1점이에요.",
  "Your five small pits are the lower row. Choose a non-empty one, then choose ◀ or ▶. Keep that direction for the whole turn.": "아래쪽 작은 칸 다섯 개가 내 칸이에요. 돌이 있는 칸을 고른 뒤 ◀ 또는 ▶를 골라요. 차례가 끝날 때까지 같은 방향을 유지해요.",
- "After your last pebble: a full small pit means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.": "마지막 돌을 놓고 다음 칸을 봐요. 돌이 있는 작은 칸이면 계속 놓고, 빈 작은 칸이면 돌을 딸 수 있어요. 관 칸이면 비어 있어도 차례가 끝나요.",
  "This quick round ends when the first quan is captured, or after 24 turns. Your captured points plus pebbles left in your small pits decide the winner. Stones still in quan pits do not count.": "이 짧은 판은 관 하나를 따거나 24차례가 지나면 끝나요. 딴 점수와 내 작은 칸에 남은 돌을 더해 승자를 정해요. 관 칸에 남은 돌과 관은 세지 않아요.",
  "Tap the glowing pit, or Next step, to pick up its pebbles. Try either direction.": "빛나는 칸이나 다음 단계를 눌러 돌을 집어요. 두 방향을 모두 해 봐요.",
  "Pick up all {n} pebbles. Keep sowing in your chosen direction.": "돌 {n}개를 모두 집어요. 고른 방향으로 계속 놓아요.",
@@ -3870,5 +3869,6 @@
  "The round is paused. This example changes no scores or pebbles in your game.": "판은 잠시 멈춰 있어요. 이 예시는 실제 판의 점수나 돌을 바꾸지 않아요.",
  "Back to the round": "판으로 돌아가기",
  "An empty side refills with one captured pebble per pit. Missing pebbles are borrowed and repaid when counting. If there are fewer than five captured pebbles between both players when refilling, the round ends.": "내 줄이 비면 가져온 돌을 칸마다 하나씩 채워요. 부족하면 상대에게 빌리고 점수를 셀 때 갚아요. 다시 채울 때 두 사람이 가져온 작은 돌을 합쳐도 다섯 개가 안 되면 판이 끝나요.",
- "In the real round: left/right chooses a pit. X sows ▶; A sows ◀. Use the on-screen ? for a hint.": "실제 판에서는 좌우로 칸을 골라요. X는 ▶, A는 ◀ 방향으로 놓아요. 화면의 ?로 힌트를 봐요."
+ "In the real round: left/right chooses a pit. X sows ▶; A sows ◀. Use the on-screen ? for a hint.": "실제 판에서는 좌우로 칸을 골라요. X는 ▶, A는 ◀ 방향으로 놓아요. 화면의 ?로 힌트를 봐요.",
+ "After your last pebble, look at the NEXT pit: a small pit with pebbles means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.": "마지막 돌을 놓고 다음 칸을 봐요. 돌이 있는 작은 칸이면 계속 놓고, 빈 작은 칸이면 돌을 딸 수 있어요. 관 칸이면 비어 있어도 차례가 끝나요."
 }

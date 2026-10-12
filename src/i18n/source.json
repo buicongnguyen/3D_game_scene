@@ -22358,7 +22358,7 @@
   ]
  },
  {
-  "s": "After your last pebble: a full small pit means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.",
+  "s": "After your last pebble, look at the NEXT pit: a small pit with pebbles means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.",
   "ctx": [
    "UI (src/ui/oanquan-guide.js)"
   ]
