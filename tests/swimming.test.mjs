@@ -205,3 +205,42 @@ test('bad dt and nonfinite input cannot skip teaching, corrupt movement or award
   assert.ok(Number.isFinite(swim.position.x) && Number.isFinite(swim.position.z));
   assert.equal(new SwimLesson({ first: true, level: 'hard' }).level, 'first');
 });
+
+test('exact breathing boundaries work across frame rates without admitting short or overlong holds', () => {
+  const exact = (s, seconds, dt, input) => {
+    const whole = Math.floor(seconds / dt + 1e-9);
+    for (let i = 0; i < whole; i++) s.step(dt, input);
+    const rest = seconds - whole * dt;
+    if (rest > 1e-9) s.step(rest, input);
+  };
+  for (const level of Object.keys(SWIM_LEVELS)) for (const dt of [1 / 60, 0.05, 0.1]) {
+    const rules = SWIM_LEVELS[level];
+    for (const seconds of [rules.bubbleMin, rules.bubbleMax]) {
+      const s = new SwimLesson({ level }); exact(s, seconds, dt, { act: true }); s.step(dt, {});
+      assert.equal(s.cycles, 1, `${level}, dt=${dt}, exact hold=${seconds}`);
+      assert.equal(s.retries, 0);
+      exact(s, rules.air, dt, {}); s.step(dt, { act: true });
+      assert.equal(s.bubbles, true, `${level}, dt=${dt}, exact air=${rules.air}`);
+      assert.equal(s.retries, 0);
+
+      const front = lessonTo('float', level); ticks(front, 8.1, { act: true }); front.step(dt, {});
+      exact(front, seconds, dt, { act: true }); front.step(dt, {});
+      assert.ok(Math.abs(front.floatFront - seconds) < 1e-6, `${level}, dt=${dt}, front hold=${seconds}`);
+      assert.equal(front.retries, 0);
+    }
+    for (const seconds of [rules.bubbleMin - dt, rules.bubbleMax + dt]) {
+      const s = new SwimLesson({ level }); exact(s, seconds, dt, { act: true }); s.step(dt, {});
+      assert.equal(s.cycles, 0, `${level}, dt=${dt}, invalid hold=${seconds}`);
+      assert.ok(s.retries > 0);
+    }
+  }
+});
+
+test('unknown difficulty names including inherited object keys safely use normal rules', () => {
+  for (const level of ['unknown', 'toString', 'constructor', '__proto__', null]) {
+    const s = new SwimLesson({ level });
+    assert.equal(s.level, 'normal'); assert.equal(s.rules, SWIM_LEVELS.normal);
+    ticks(s, 1.6, { act: true }); s.step(DT, {});
+    assert.equal(s.cycles, 1); assert.equal(s.retries, 0);
+  }
+});

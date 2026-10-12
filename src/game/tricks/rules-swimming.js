@@ -4,6 +4,8 @@
 const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
 const finite = (n, fallback = 0) => Number.isFinite(n) ? n : fallback;
 const angle = n => Math.atan2(Math.sin(n), Math.cos(n));
+// Frame sums can round just below/above an exact cue boundary; tolerate only floating-point noise.
+const TIME_EPS = 1e-6;
 export const SWIM_STAGES = Object.freeze(['bubbles', 'float', 'tread', 'glide', 'turn', 'swim']);
 export const SWIM_LEVELS = Object.freeze({
   first: { bubbleMin: 0.6, bubbleMax: 2.8, air: 0.5, beat: 1.25, window: 0.5, turn: 0.6 },
@@ -19,7 +21,7 @@ export const SWIM = Object.freeze({ stages: SWIM_STAGES, bubbles: 3, floatSecond
 
 export class SwimLesson {
   constructor({ level = 'normal', first = false } = {}) {
-    this.level = first ? 'first' : SWIM_LEVELS[level] ? level : 'normal';
+    this.level = first ? 'first' : Object.hasOwn(SWIM_LEVELS, level) ? level : 'normal';
     this.rules = SWIM_LEVELS[this.level];
     this.stageIndex = 0; this.stage = SWIM_STAGES[0]; this.phaseTime = 0; this.time = 0;
     this.progress = 0; this.complete = false; this.skills = 0; this.retries = 0;
@@ -86,20 +88,20 @@ export class SwimLesson {
     if (this.stage === 'bubbles') {
       if (!act) this.airTime += dt;
       if (pressed) {
-        this.holdTime = 0; this.validHold = this.airTime >= this.rules.air;
+        this.holdTime = 0; this.validHold = this.airTime >= this.rules.air - TIME_EPS;
         if (!this.validHold) this.hint('normal_breath', true);
       }
       if (act) {
         this.holdTime += dt;
-        this.bubbles = this.validHold && this.holdTime <= this.rules.bubbleMax;
+        this.bubbles = this.validHold && this.holdTime <= this.rules.bubbleMax + TIME_EPS;
         if (this.bubbles) this.clearFeedback('normal_breath', 'gentle_bubbles');
-        if (this.holdTime > this.rules.bubbleMax && this.validHold) {
+        if (this.holdTime > this.rules.bubbleMax + TIME_EPS && this.validHold) {
           this.validHold = false; this.hint('normal_breath', true);
         }
         this.pitch = this.bubbles ? 0.35 : 0.1;
       }
       if (released) {
-        if (this.validHold && this.holdTime >= this.rules.bubbleMin) {
+        if (this.validHold && this.holdTime >= this.rules.bubbleMin - TIME_EPS) {
           this.cycles++; this.emit('good', { kind: 'bubbles' });
         } else if (this.validHold) this.hint('gentle_bubbles', true);
         this.airTime = 0; this.holdTime = 0; this.validHold = false;
@@ -118,20 +120,20 @@ export class SwimLesson {
         }
       } else if (this.floatMode === 'front') {
         if (pressed) {
-          this.holdTime = 0; this.validHold = this.airTime >= this.rules.air;
+          this.holdTime = 0; this.validHold = this.airTime >= this.rules.air - TIME_EPS;
           if (!this.validHold) this.hint('normal_breath', true);
         }
         if (act) {
           this.holdTime += dt;
-          if (this.validHold && this.holdTime <= this.rules.bubbleMax && quiet) {
+          if (this.validHold && this.holdTime <= this.rules.bubbleMax + TIME_EPS && quiet) {
             this.clearFeedback('normal_breath', 'gentle_bubbles');
             this.floatSide = 'front'; this.clip = 'Swim'; this.pitch = 1.15; this.bubbles = true;
-          } else if (this.holdTime > this.rules.bubbleMax && this.validHold) {
+          } else if (this.holdTime > this.rules.bubbleMax + TIME_EPS && this.validHold) {
             this.validHold = false; this.hint('normal_breath', true);
           } else if (!quiet) { this.validHold = false; this.hint('small_adjustments', true); }
         }
         if (released) {
-          if (this.validHold && this.holdTime >= this.rules.bubbleMin) {
+          if (this.validHold && this.holdTime >= this.rules.bubbleMin - TIME_EPS) {
             this.floatFront = Math.min(SWIM.floatSeconds, this.floatFront + this.holdTime);
             this.emit('good', { kind: 'front_float' });
           } else if (this.validHold) this.hint('gentle_bubbles', true);
