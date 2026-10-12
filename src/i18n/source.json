@@ -2842,6 +2842,30 @@
   ]
  },
  {
+  "s": "Sora's hens lay up on the henhouse roof. Don't ask. The eggs roll down four bamboo gutters, and somebody has to catch them.",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Somebody. With what, exactly?",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Your hat! The gutters are joined by little seesaws. An egg takes every one it meets, so watch where it is going.",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "A hen clucks and puffs before she lays. Stand under the right spout, and tip a full hat into the basket.",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Rin"
+  ]
+ },
+ {
   "s": "Below the paddies there's a meadow that hops. Grasshoppers and mantises, thick as the grass. Take my net.",
   "ctx": [
    "dialogue trick_hoppers_intro, spoken by Rin"
@@ -6077,6 +6101,30 @@
   "s": "Tap Giddy-up on the beat of her hooves. Mash it and she gets puffed. We feed our cows and cheer them, never hit them.",
   "ctx": [
    "dialogue trick_cowrace_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "My hens will not lay in the nest box, Mi-chan. Up on the roof they go, and the eggs roll down the bamboo gutters.",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Grandma, that is a marble run. For eggs.",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "It is! The gutters are joined by little seesaws, and an egg takes every one it meets. Read where it will come out.",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "A hen clucks and puffs before she lays. Hold your hat under the right spout, and tip it into the basket when it is full.",
+  "ctx": [
+   "dialogue trick_eggs_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -14357,6 +14405,42 @@
   ]
  },
  {
+  "s": "Eggs down the gutters",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the henhouse behind the signal cottage",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "eggs",
+  "ctx": [
+   "what a trick score counts (after the number)"
+  ]
+ },
+ {
+  "s": "Collect the eggs every morning. Slide a hand gently under the hen, hold each egg in your whole hand, and lay it in a basket lined with straw.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "This is Amidakuji, the ladder lottery from Japan. Every rung swaps two neighbours, so four eggs always come out of four different spouts.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Wash your hands after you touch hens or eggs.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Pressed bellflower",
   "ctx": [
    "house memory: a small found object (journal)"
@@ -15734,6 +15818,12 @@
  },
  {
   "s": "Race four cows down the track: steer, and tap on the beat.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Read the bamboo gutters and catch the hens' eggs in your hat.",
   "ctx": [
    "UI (src/content/minigames.js)"
   ]
@@ -18744,6 +18834,66 @@
   "s": "every web found",
   "ctx": [
    "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "A hen clucks and puffs before she lays. Stand under her gutter!",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Follow each egg down the gutters and catch it in your hat!",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "A golden egg is coming! It counts for three.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Caught it! Every egg in your hat counts.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Oops, a broken egg. Watch where the gutters lead it.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Oops! Read the rungs before the egg gets there.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "The hat is full! Run to the basket on the right.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "A rung! The egg takes every rung it meets. Follow it with your eyes.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Time is up! Catch the last eggs.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "{caught} caught · {golden} golden · {broken} broken",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
   ]
  },
  {
@@ -21860,6 +22010,24 @@
  },
  {
   "s": "Tap on its beat, three times.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Catch each egg in your hat.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "An egg takes every rung it meets.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hat full? Run to the basket.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
