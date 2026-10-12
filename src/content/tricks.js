@@ -144,6 +144,20 @@ export const TRICKS = [
     safety: 'Never ride a real cow without a grown-up who knows her.',
     stars: [30, 60, 80], length: 60, firstLength: 60, unit: 'points',
   },
+  {
+    // the henhouse itself is built by tricks/eggs.js (HOUSE): the sign stands at its right corner, beside the egg basket
+    // (the left corner is too near the Stargazing sign). scenery: from how far away (m) the henhouse is drawn, in every
+    // season and at every hour
+    id: 'eggs', name: 'Eggs down the gutters', icon: 'trick-eggs',
+    place: { x: -49.7, z: 147.9, face: 0 }, where: 'the henhouse behind the signal cottage',
+    seasons: ['spring', 'summer', 'autumn'], hours: [7, 18], night: false, when: 'Spring to autumn, in the daytime',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_eggs_intro', scenery: 130,
+    howReal: 'Collect the eggs every morning. Slide a hand gently under the hen, hold each egg in your whole hand, and lay it in a basket lined with straw.',
+    why: 'This is Amidakuji, the ladder lottery from Japan. Every rung swaps two neighbours, so four eggs always come out of four different spouts.',
+    safety: 'Wash your hands after you touch hens or eggs.',
+    // one point an egg, three for a golden one: a perfect round is 20 to 30 (tricks/rules-eggs.js replay), three broken eggs end it
+    stars: [5, 12, 18], length: 90, firstLength: 50, unit: 'eggs',
+  },
 ];
 
 export const TRICK =Object.fromEntries(TRICKS.map(t => [t.id, t]));

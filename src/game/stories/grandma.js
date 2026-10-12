@@ -79,6 +79,12 @@ export const STORY = {
       ['sora', "They are determined, which is better. In Vietnam they race oxen through flooded rice fields, and the whole village cheers."],
       ['sora', "Tap Giddy-up on the beat of her hooves. Mash it and she gets puffed. We feed our cows and cheer them, never hit them."],
     ],
+    trick_eggs_intro: [
+      ['sora', "My hens will not lay in the nest box, Mi-chan. Up on the roof they go, and the eggs roll down the bamboo gutters.", 'Talk'],
+      ['mika', "Grandma, that is a marble run. For eggs."],
+      ['sora', "It is! The gutters are joined by little seesaws, and an egg takes every one it meets. Read where it will come out."],
+      ['sora', "A hen clucks and puffs before she lays. Hold your hat under the right spout, and tip it into the basket when it is full."],
+    ],
     trick_hoppers_intro: [
       ['sora', "Hoppers today, Mi-chan! The meadow below the paddies is full of them. In my day we caught them for dinner.", 'Talk'],
       ['mika', "Grandma. For DINNER."],

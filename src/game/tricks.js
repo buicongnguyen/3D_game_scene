@@ -2,7 +2,7 @@
 // trick shares: the sign at its place, the teaching (the teacher's first talk in season plays the intro once), the
 // round (a small HUD with timer and score, hint bubbles, a temporary night look), the results card with the real-world
 // fact, the rewards in quest.state.tricks and the ambient look of each place. Each trick's game is a module in
-// ./tricks/<id>.js exporting { id, play(ctx), ambient?(dt, ctx) }; they load on demand and may be missing.
+// ./tricks/<id>.js exporting { id, play(ctx), ambient?(dt, ctx), scenery?(dt, ctx) }; they load on demand and may be missing.
 import * as THREE from 'three';
 import { TRICKS, TRICK, trickOpen, inHours, recordRound } from '../content/tricks.js';
 import { CAST, DIALOGUE } from './story.js';
@@ -81,6 +81,7 @@ export class Tricks {
     this.round = null;          // the round running now { id, ctx }
     this.locks = false;         // true while a round holds Mika still (read by director.update)
     this.ambientOn = new Set();
+    this.sceneryOn = new Set(); // tricks whose own building is standing now (a module's scenery(dt, ctx))
     this.loops = new Set();     // per-frame callbacks of the running round (ctx.loop)
     this.moveHooks = new Set(); // callbacks run before Mika moves each frame (ctx.beforeMove); dropped when the round ends
     this.hookOn = false;
@@ -467,8 +468,16 @@ export class Tricks {
       }
       if (mod === undefined) {
         // not fetched yet: ask for it as Mika comes near, so its sign answers at once and its place can come alive
-        if (d2 < LOAD_R * LOAD_R && !inside && !this.loading[t.id] && this.ready()) this.module(t.id);
+        // (a trick with a building of its own, `scenery` metres in the registry, is fetched from that far away)
+        const load = Math.max(LOAD_R, t.scenery || 0);
+        if (d2 < load * load && !inside && !this.loading[t.id] && this.ready()) this.module(t.id);
         continue;
+      }
+      if (mod?.scenery) {
+        // a place's own building (the henhouse) stands there in every season and at every hour, a round included
+        const R = t.scenery || AMBIENT_R, show = d2 < (this.sceneryOn.has(t.id) ? (R + 8) * (R + 8) : R * R) && !inside;
+        if (show) { this.sceneryOn.add(t.id); mod.scenery(dt, this.ambientCtx(t)); }
+        else if (this.sceneryOn.has(t.id) && this.round?.id !== t.id) { this.sceneryOn.delete(t.id); mod.scenery(0, { ...this.ambientCtx(t), off: true }); }
       }
       if (!mod?.ambient) continue;
       const near = d2 < AMBIENT_R * AMBIENT_R && !inside;

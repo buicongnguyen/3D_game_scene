@@ -45,6 +45,7 @@ export const META = {
   'trick:cricket': { cat: 'country', desc: N_('Follow the chirp and find the singing cricket.'), season: 'autumn', hour: 19, isNew: true },
   'trick:archery': { cat: 'yard', desc: N_('Draw a bamboo bow and hit the straw target.'), season: 'spring', hour: 11, isNew: true },
   'trick:cowrace': { cat: 'animals', desc: N_('Race four cows down the track: steer, and tap on the beat.'), season: 'spring', hour: 11, isNew: true },
+  'trick:eggs': { cat: 'animals', desc: N_('Read the bamboo gutters and catch the hens\' eggs in your hat.'), season: 'spring', hour: 10, isNew: true },
   'yard:footnet': { cat: 'yard', desc: N_('Kick the shuttle over the net with the kids. First to 5.'), season: 'spring', hour: 15 },
   'yard:keepup': { cat: 'yard', desc: N_('Keep the shuttle up together and count the touches.'), season: 'spring', hour: 15 },
   'yard:volley': { cat: 'yard', desc: N_('Bump, set and spike on the sand court.'), season: 'summer', hour: 15, isNew: true },

@@ -63,6 +63,11 @@ export const HOWTO = {
     { in: null, pic: 'stop', text: N_('Stand still when it goes quiet.') },
     { in: 'act', pic: 'ring', text: N_('Tap on its beat, three times.') },
   ],
+  'trick:eggs': [
+    { in: 'lr', pic: 'hat', text: N_('Catch each egg in your hat.'), touchTap: true },
+    { in: null, pic: 'ladder', text: N_('An egg takes every rung it meets.') },
+    { in: null, pic: 'fill', text: N_('Hat full? Run to the basket.') },
+  ],
   'yard:footnet': [
     { in: 'move', pic: 'walk', text: N_('Run under the shuttle.') },
     { in: 'act', pic: 'ball', text: N_('Kick just as it comes down.') },
@@ -131,6 +136,10 @@ export const PICS = {
   trio: `<circle class="hp-b1" cx="9" cy="26" r="4" fill="${BLUE}"/><circle class="hp-b2" cx="20" cy="20" r="6" fill="${GREEN}"/><path class="hp-b3" d="M32 5l2.4 5 5.4.6-4 3.8 1.1 5.4-4.9-2.7-4.9 2.7 1.1-5.4-4-3.8 5.4-.6z" fill="${SUN}" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round" transform="translate(-3 3)"/>`,
   ember: `<path d="M6 30q14-14 28 0z" fill="#8d8078"/><path class="hp-warm" d="M6 30q14-14 28 0z" fill="${HOT}"/><g class="hp-steam" fill="none" stroke="#9bb7c4" stroke-width="2.2" stroke-linecap="round"><path d="M15 14q-3-3 0-6"/><path d="M21 12q-3-3 0-6"/><path d="M27 14q-3-3 0-6"/></g>`,
   fan: `<path class="hp-fan" d="M20 30L8 14q12-9 24 0z" fill="#fff" stroke="${INK}" stroke-width="1.8" stroke-linejoin="round"/><path d="M20 36v-8" stroke="${INK}" stroke-width="3" stroke-linecap="round"/>`,
+  // an egg rolling down a gutter, over a rung and down the next gutter (the Amidakuji rule of the egg game)
+  ladder: `<path d="M12 4v32M28 4v32" fill="none" stroke="${GREEN}" stroke-width="5" stroke-linecap="round"/><path d="M12 20h16" stroke="${SUN}" stroke-width="5" stroke-linecap="round"/><ellipse class="hp-egg" cx="12" cy="7" rx="4" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.5"/>`,
+  // an egg dropping into a straw hat held upside-down
+  hat: `<path d="M5 24h30l-2.5 4h-25z" fill="${SUN}" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 28h16l-2 8H14z" fill="${SUN}" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.6 30.5h14.8" stroke="${HOT}" stroke-width="2.4"/><ellipse class="hp-drop" cx="20" cy="6" rx="4" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.5"/>`,
   turn: `<ellipse cx="20" cy="22" rx="11" ry="7" fill="#a8436e" stroke="${INK}" stroke-width="1.4"/><path class="hp-spin" d="M8 12a13 9 0 0 1 24 0m0 0-5-1m5 1 1-5" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 
@@ -208,6 +217,7 @@ const CSS = `
 #howTo .hp-steam{animation:hpSteam 3s ease-in-out infinite}
 #howTo .hp-fan{animation:hpFan .7s ease-in-out infinite alternate;transform-origin:50% 100%}
 #howTo .hp-spin{animation:hpSpin 1.8s ease-in-out infinite}
+#howTo .hp-egg{animation:hpEgg 2.6s linear infinite}
 @keyframes hpStepA{0%{opacity:1}50%{opacity:.25}}
 @keyframes hpSoft{0%,100%{opacity:.15}35%,60%{opacity:1}}
 @keyframes hpBlink{0%{opacity:1}50%{opacity:.2}}
@@ -236,6 +246,7 @@ const CSS = `
 @keyframes hpSteam{0%,55%{opacity:0;transform:translateY(3px)}75%,100%{opacity:1;transform:none}}
 @keyframes hpFan{from{transform:rotate(-16deg)}to{transform:rotate(16deg)}}
 @keyframes hpSpin{0%,100%{opacity:.3}50%{opacity:1}}
+@keyframes hpEgg{0%{transform:none}30%{transform:translateY(13px)}62%{transform:translate(16px,13px)}90%,100%{transform:translate(16px,26px)}}
 @keyframes hpNudge{0%{box-shadow:0 0 0 0 rgba(240,138,60,.8)}100%{box-shadow:0 0 0 14px rgba(240,138,60,0)}}
 @media (prefers-reduced-motion:reduce){#howTo svg *{animation:none!important}}
 `;

@@ -689,6 +689,12 @@ export const DIALOGUE = {
     ['rin', "Farmers, ages ago. In An Giang, in Vietnam, oxen race through flooded rice fields every year, and the whole village cheers."],
     ['rin', "Tap Giddy-up on the beat of her hooves. Mash it and she gets puffed. Cows get cheered and fed, never hit."],
   ],
+  trick_eggs_intro: [
+    ['rin', "Sora's hens lay up on the henhouse roof. Don't ask. The eggs roll down four bamboo gutters, and somebody has to catch them.", 'Talk'],
+    ['mika', "Somebody. With what, exactly?"],
+    ['rin', "Your hat! The gutters are joined by little seesaws. An egg takes every one it meets, so watch where it is going."],
+    ['rin', "A hen clucks and puffs before she lays. Stand under the right spout, and tip a full hat into the basket."],
+  ],
   trick_hoppers_intro: [
     ['rin', "Below the paddies there's a meadow that hops. Grasshoppers and mantises, thick as the grass. Take my net.", 'Talk'],
     ['mika', "Grasshoppers. They jump, right? Straight at your face?"],

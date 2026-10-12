@@ -221,6 +221,9 @@ export const PLAY_GROUNDS = [
   [-59, 159, 12, 11],
   [106.4, -22.6, 3.2, 15],         // Takamori Green: the tug-of-war strip and the ground the phone camera looks along it from
   [92, -103, 1.6, 1.6],            // the Beetle sap trap sign: on Medium a cedar grew half a metre from it (the sign stood inside the tree)
+  // The henhouse behind the cottage (tricks/eggs.js HOUSE) and the lawn its round is watched across: the phone camera
+  // stands up to 16 m south of the board. (Most of it lies inside the stargazing hill's rect and the cottage clearing.)
+  [-52.6, 155.5, 3.8, 10],
 ];
 
 // Keep-out zones for scattering (trees, rocks, flowers): circles [x, z, r].
