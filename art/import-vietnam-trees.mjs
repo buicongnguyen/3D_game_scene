@@ -1,5 +1,5 @@
-// Extract the three documented Xom Nong Trai assets; the source repository is read-only.
-// node art/import-vietnam-trees.mjs <source-repo> <blender.exe>
+// Extract documented Xom Nong Trai foliage; the source repository is read-only.
+// node art/import-vietnam-trees.mjs <source-repo> <blender.exe> [model...]
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
 import { dequantize, prune, getBounds } from '@gltf-transform/functions';
@@ -11,9 +11,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const [source, blender] = process.argv.slice(2);
+const [source, blender, ...only] = process.argv.slice(2);
 if (!source || !blender) throw Error('Usage: node art/import-vietnam-trees.mjs <source-repo> <blender.exe>');
 const manifest = JSON.parse(readFileSync(path.join(root, 'art/sources/vietnam-trees.json'), 'utf8'));
+const assets = manifest.models.filter(a => !only.length || only.includes(a.name));
+if (!assets.length || only.some(n => !assets.some(a => a.name === n))) throw Error('Unknown model selection');
 for (const file of manifest.files) {
   const bytes = readFileSync(path.join(source, file.path));
   const hash = createHash('sha256').update(bytes).digest('hex');
@@ -23,7 +25,7 @@ await MeshoptDecoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder });
 const staging = path.join(root, '.tools/vietnam/staging');
 mkdirSync(staging, { recursive: true });
-for (const asset of manifest.models) {
+for (const asset of assets) {
   const doc = await io.read(path.join(source, asset.source)), r = doc.getRoot();
   const target = r.listNodes().find(n => n.getName() === asset.node);
   if (!target) throw Error(`Missing source node ${asset.node}`);
@@ -34,11 +36,11 @@ for (const asset of manifest.models) {
     if (!asset.materials[mat.getName()]) throw Error(`Unexpected material ${mat.getName()}`);
     mat.setName(asset.materials[mat.getName()]);
   }
-  const bounds = getBounds(target), scale = 8 / (bounds.max[1] - bounds.min[1]);
+  const bounds = getBounds(target), scale = (asset.height ?? 8) / (bounds.max[1] - bounds.min[1]);
   const scene = r.getDefaultScene();
   scene.removeChild(target);
   const parent = doc.createNode('Root').setScale([scale, scale, scale]).setTranslation([0, -bounds.min[1] * scale, 0]);
   target.setName(asset.name); parent.addChild(target); scene.addChild(parent);
   await io.write(path.join(staging, `${asset.name}.glb`), doc);
 }
-execFileSync(blender, ['-b', '--factory-startup', '--python', path.join(root, 'art/blender/import_vietnam_trees.py'), '--', staging, path.join(root, 'public/models')], { stdio: 'inherit' });
+execFileSync(blender, ['-b', '--factory-startup', '--python', path.join(root, 'art/blender/import_vietnam_trees.py'), '--', staging, path.join(root, 'public/models'), ...assets.map(a => a.name)], { stdio: 'inherit' });

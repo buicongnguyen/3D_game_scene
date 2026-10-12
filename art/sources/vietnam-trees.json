@@ -10,6 +10,8 @@
   "models": [
     {"name":"tree-vn-bamboo","source":"public/assets/flora-68d4505b45.glb","node":"flora__tre__lon","materials":{"bamboo_dry":"VN bamboo dry","bamboo_node":"VN bamboo node","bamboo":"VN bamboo culm","fl_tre_leaf":"VN leaves bamboo"}},
     {"name":"tree-vn-coconut","source":"public/assets/trees_fruit-5a05951eff.glb","node":"tree__cay_dua__trong_qua","materials":{"bark_grey":"VN coconut bark","leaf_dark":"VN leaves coconut core","card_frond":"VN leaves coconut fronds"}},
-    {"name":"tree-vn-mango","source":"public/assets/flora-68d4505b45.glb","node":"flora__xoai_hoang__lon","materials":{"bark":"VN mango bark","leaf_dark":"VN leaves mango core","fl_thong_branch":"VN leaves mango cards"}}
+    {"name":"tree-vn-mango","source":"public/assets/flora-68d4505b45.glb","node":"flora__xoai_hoang__lon","materials":{"bark":"VN mango bark","leaf_dark":"VN leaves mango core","fl_thong_branch":"VN leaves mango cards"}},
+    {"name":"bush-vn-fern","height":1.2,"source":"public/assets/flora-68d4505b45.glb","node":"flora__duong_xi__mac_dinh","materials":{"fl_tre_leaf":"VN leaves fern"}},
+    {"name":"bush-vn-banana","height":1.2,"source":"public/assets/flora-68d4505b45.glb","node":"flora__chuoi__nho","materials":{"banana_stem":"VN banana stem","fl_chuoi_leaf":"VN leaves banana"}}
   ]
 }

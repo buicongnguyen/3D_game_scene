@@ -119,6 +119,11 @@ export const CONTRACTS = {
   'tree-vn-bamboo': { family: 'vietnam-import', tris: 950, mats: ['VN bamboo dry', 'VN bamboo node', 'VN bamboo culm', 'VN leaves bamboo'] },
   'tree-vn-coconut': { family: 'vietnam-import', tris: 600, mats: ['VN coconut bark', 'VN leaves coconut core', 'VN leaves coconut fronds'] },
   'tree-vn-mango': { family: 'vietnam-import', tris: 200, mats: ['VN mango bark', 'VN leaves mango core', 'VN leaves mango cards'] },
+  'tree-vn-bamboo-lod': { family: 'vietnam-import', lodOf: 'tree-vn-bamboo', tris: 700, mats: ['VN bamboo dry', 'VN bamboo node', 'VN bamboo culm', 'VN leaves bamboo'] },
+  'tree-vn-coconut-lod': { family: 'vietnam-import', lodOf: 'tree-vn-coconut', tris: 150, mats: ['VN coconut bark', 'VN leaves coconut core', 'VN leaves coconut fronds'] },
+  'tree-vn-mango-lod': { family: 'vietnam-import', lodOf: 'tree-vn-mango', tris: 130, mats: ['VN mango bark', 'VN leaves mango core', 'VN leaves mango cards'] },
+  'bush-vn-fern': { family: 'vietnam-import', tris: 30, height: 1.2, radius: 1.25, mats: ['VN leaves fern'] },
+  'bush-vn-banana': { family: 'vietnam-import', tris: 110, height: 1.2, radius: 1.25, mats: ['VN banana stem', 'VN leaves banana'] },
   'tree-broadleaf-a': { family: 'nature', tris: 3500, mats: ['Bark', 'Leaves'] },
   'tree-broadleaf-b': { family: 'nature', tris: 3500, mats: ['Bark', 'Leaves'] },
   'tree-cedar': { family: 'nature', tris: 3000, mats: ['Bark', 'Needles'] },
@@ -270,7 +275,9 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // library is 39.867 MB, so this ceiling has only ~33 KB left: the next model raises it again, with its reason, here.
 // +0.31 MB: seven 30fps ground clips on each existing Mika/kid rig (40,183,428 B measured).
 // +0.767 MB: three self-contained tropical tree imports (40,946,596 B measured).
-export const TOTAL_RAW_BYTES = 40_970_000;
+// +0.454 MB: fern and young banana shrubs (41,400,548 B measured).
+// +0.731 MB: three tropical tree LODs (42,131,652 B measured, 192 models).
+export const TOTAL_RAW_BYTES = 42_160_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -281,7 +288,9 @@ export const TOTAL_RAW_BYTES = 40_970_000;
 // +0.279 MB: the bug-catching games (grasshopper 84 KB, mantis 140 KB, bug-cage 11 KB packed; the cricket 44 -> 103 KB).
 // +0.20 MB: packed ground clips; measured 15,552,652 B for the unchanged 184-model library.
 // +0.714 MB: tropical imports retain their embedded PNG atlases (16,258,968 B measured).
-export const TOTAL_PACKED_BYTES = 16_320_000;
+// +0.451 MB: shrubs preserve their embedded atlas (16,710,464 B measured).
+// +0.703 MB: tropical LODs retain the exact source atlases (17,413,544 B measured).
+export const TOTAL_PACKED_BYTES = 17_450_000;
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

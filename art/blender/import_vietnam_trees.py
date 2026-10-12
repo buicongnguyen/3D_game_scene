@@ -4,13 +4,15 @@ import sys
 import math
 import bpy
 import bmesh
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 sys.path.insert(0, os.path.dirname(__file__))
-from kit import bake_ao, export, clear_scene_objects
+from kit import bake_ao, export, clear_scene_objects, rod, join
 
-staging, output = sys.argv[sys.argv.index('--') + 1:]
-names = ['tree-vn-bamboo', 'tree-vn-coconut', 'tree-vn-mango']
+args = sys.argv[sys.argv.index('--') + 1:]
+staging, output = args[:2]
+names = args[2:] or ['tree-vn-bamboo', 'tree-vn-coconut', 'tree-vn-mango']
 for name in names:
+    is_tree = name.startswith('tree-vn-')
     clear_scene_objects()
     bpy.ops.import_scene.gltf(filepath=os.path.join(staging, name + '.glb'))
     bpy.context.view_layer.update()
@@ -23,18 +25,19 @@ for name in names:
         obj.matrix_world = Matrix.Identity(4)
         # Long source triangles span the entire shaft. Introduce the collider
         # boundary explicitly so fitting vertices also fits the complete surface.
-        bm = bmesh.new()
-        bm.from_mesh(obj.data)
-        bmesh.ops.bisect_plane(bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces),
-                              plane_co=(0., 0., 5.), plane_no=(0., 0., 1.), dist=1e-6)
-        bm.to_mesh(obj.data)
-        bm.free()
-        obj.data.update()
+        if is_tree:
+            bm = bmesh.new()
+            bm.from_mesh(obj.data)
+            bmesh.ops.bisect_plane(bm, geom=list(bm.verts) + list(bm.edges) + list(bm.faces),
+                                  plane_co=(0., 0., 5.), plane_no=(0., 0., 1.), dist=1e-6)
+            bm.to_mesh(obj.data)
+            bm.free()
+            obj.data.update()
     radius = max(math.hypot(v.co.x, v.co.y) for o in meshes for v in o.data.vertices)
-    crown_scale = min(1., 3.25 / radius)
+    crown_scale = min(1., 3.25 / radius) if is_tree else 1.
     lower_radius = max(math.hypot(v.co.x, v.co.y) * crown_scale
                        for o in meshes for v in o.data.vertices if v.co.z <= 5.)
-    lower_scale = min(1., .34 / lower_radius)
+    lower_scale = min(1., .34 / lower_radius) if is_tree else 1.
     for obj in meshes:
         for vertex in obj.data.vertices:
             p = vertex.co
@@ -79,6 +82,44 @@ for name in names:
         bm.to_mesh(obj.data)
         bm.free()
         obj.data.update()
+    if name == 'bush-vn-banana':
+        # Source banana cards begin with a transparent atlas margin, making four
+        # upper leaves appear detached. Connect the visible midrib bases with
+        # thin petioles in the existing stem material; keep the source silhouette.
+        petioles = []
+        for obj in meshes:
+            mesh = obj.data
+            leaf_faces = {p.index for p in mesh.polygons
+                          if obj.material_slots[p.material_index].material.name == 'VN leaves banana'}
+            while leaf_faces:
+                group = [leaf_faces.pop()]
+                vertices = set(mesh.polygons[group[0]].vertices)
+                changed = True
+                while changed:
+                    changed = False
+                    for i in list(leaf_faces):
+                        if vertices.intersection(mesh.polygons[i].vertices):
+                            group.append(i)
+                            vertices.update(mesh.polygons[i].vertices)
+                            leaf_faces.remove(i)
+                            changed = True
+                if max(mesh.vertices[i].co.z for i in vertices) < .4:
+                    continue  # retain the tiny basal shoots
+                uv = {mesh.loops[li].vertex_index: mesh.uv_layers.active.data[li].uv.x
+                      for i in group for li in mesh.polygons[i].loop_indices}
+                lo, hi = min(uv.values()), max(uv.values())
+                inner = [mesh.vertices[i].co for i in vertices if abs(uv[i] - lo) < 1e-5]
+                outer = [mesh.vertices[i].co for i in vertices if abs(uv[i] - hi) < 1e-5]
+                a = sum(inner, Vector()) / len(inner)
+                b = sum(outer, Vector()) / len(outer)
+                # The atlas's first opaque midrib pixel is ~24% along this card.
+                tip = a.lerp(b, .26)
+                stem = bpy.data.materials['VN banana stem']
+                petioles.append(rod('Banana petiole', (0., 0., .67), tip, .015,
+                                    material=stem, verts=4, r2=.008))
+        if len(petioles) != 4:
+            raise RuntimeError('Expected four upper banana leaves')
+        meshes = [join(meshes + petioles, name)]
     # This is actual geometric AO. Cards are conservative opaque occluders in
     # this vertex bake; low strength keeps that approximation from darkening
     # the atlas excessively. Runtime alpha-tested shadows retain leaf cutouts.

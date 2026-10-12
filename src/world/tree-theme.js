@@ -1,7 +1,21 @@
 // A cosmetic scenery option. Keep the original scatter records for collisions, quests,
 // wildlife and saves; only the foliage renderer receives these substitute records.
+import { river } from './layout.js';
+
 export const TROPICAL_TREES = ['tree-vn-mango', 'tree-vn-bamboo', 'tree-vn-coconut'];
+export const TROPICAL_BUSHES = ['bush-vn-fern', 'bush-vn-banana'];
 const SPECIES = ['tree-vn-mango', 'tree-vn-bamboo', 'tree-vn-mango', 'tree-vn-coconut'];
+// Gameplay canopy heights (actors/kite.js). Taller donors stretch vertically only,
+// keeping the imported lower trunks inside the original collision cylinders.
+const TREE_HEIGHTS = { 'tree-broadleaf-a': 8, 'tree-broadleaf-b': 8.5, 'tree-cedar': 12,
+  'tree-pine': 7, 'tree-maple': 5.5, 'tree-sakura': 6, 'tree-peach': 3.8, 'tree-chestnut': 7 };
+// The web support candidates in actors/critters.js and beetle grove in game/tricks/beetles.js.
+const WEB_TRAILS = [[-44, -92], [-30, -106], [-48, -62], [62, -122], [53, -121], [100, -96], [-50, -140]];
+// Same river arc as scenes.party1 / Celebrate.blossomWave; these sakura supply the petals.
+const blossomStart = river.nearest(1.2, -45.6).s, blossomEnd = river.nearest(8, 60).s;
+const inside = (r, x, z, radius) => Math.hypot(r.x - x, r.z - z) <= radius;
+const hashAt = r => (Math.imul(Math.round(r.x * 16), 73856093)
+  ^ Math.imul(Math.round(r.z * 16), 19349663)) >>> 0;
 const KEY = 'starline-opt-tropicalTrees';
 const listeners = new Set();
 let tropical;
@@ -24,19 +38,30 @@ export function setTropicalTrees(enabled) {
 }
 
 export function treeForTheme(record, enabled) {
-  if (!enabled || record.far || record.orchard || record.story) return record;
-  if (record.model !== 'tree-broadleaf-a' && record.model !== 'tree-broadleaf-b') return record;
-  // The southern lowlands leave the northern beetle grove, forest spider trails,
-  // orchard, shrine and mountain silhouettes in their original scenery.
-  if (record.z < -35 || record.z > 125 || record.y < 0.9 || record.y > 35) return record;
-  const hash = (Math.imul(Math.round(record.x * 16), 73856093)
-    ^ Math.imul(Math.round(record.z * 16), 19349663)) >>> 0;
-  if (hash & 1) return record;
+  if (!enabled || record.orchard || record.story || !TREE_HEIGHTS[record.model]) return record;
+  if (!record.far) {
+    if (inside(record, 92, -103, 28) || WEB_TRAILS.some(([x, z]) => inside(record, x, z, 22))) return record;
+    // Shrine scenery and the maple butterfly scene at (61, -121).
+    if ((record.model === 'tree-cedar' || record.model === 'tree-maple') && inside(record, 62, -157, 55)) return record;
+    if (record.model === 'tree-maple' && inside(record, 61, -121, 26)) return record;
+    if (record.model === 'tree-sakura') {
+      const bank = river.nearest(record.x, record.z, 90);
+      if (bank && bank.s > Math.min(blossomStart, blossomEnd) - 12
+        && bank.s < Math.max(blossomStart, blossomEnd) + 12) return record;
+    }
+  }
+  const heightRatio = TREE_HEIGHTS[record.model] / 8;
+  const widthRatio = Math.min(1, heightRatio);
   return {
     ...record,
     sourceModel: record.model,
-    model: SPECIES[(hash >>> 1) % SPECIES.length],
-    // Imports are 8 m tall; retain the 8 / 8.5 m donor heights used by kite collisions.
-    s: record.s * (record.model === 'tree-broadleaf-b' ? 8.5 / 8 : 1),
+    model: SPECIES[(hashAt(record) >>> 1) % SPECIES.length],
+    s: record.s * widthRatio,
+    sy: (record.sy ?? 1) * heightRatio / widthRatio,
   };
+}
+
+export function bushForTheme(record, enabled) {
+  if (!enabled || record.orchard || record.story || !['bush-a', 'bush-b'].includes(record.model)) return record;
+  return { ...record, sourceModel: record.model, model: TROPICAL_BUSHES[(hashAt(record) >>> 1) % TROPICAL_BUSHES.length] };
 }
