@@ -20,6 +20,7 @@ import { SAY, CSS } from './say.js';
 import { COURT } from './rules.js';
 import { BARK_RANGE } from '../barks.js';
 import { tx, getLang } from '../../i18n/i18n.js';
+import { createOanQuanGuide } from '../../ui/oanquan-guide.js';
 
 const HEAR = 30;              // the yard's sounds carry this far
 const INVITE_R = 11;          // a kid calls Mika over when she comes this close to a game
@@ -113,6 +114,8 @@ export class Yard {
     const h = this.el.hud;
     h._l = h.querySelector('.l'); h._big = h.querySelector('.big'); h._r = h.querySelector('.r'); h._sub = h.querySelector('.sub');
     this.el.stop.addEventListener('click', () => this.quit());
+    this.guide = createOanQuanGuide({ input: this.g.input, touch: this.d.ui.touch,
+      onOpen: () => this.clearPadInput(), onClose: () => this.clearPadInput(), onStop: () => this.quit() });
     this.el.cam.addEventListener('click', () => this.toggleCam());
     // the pad: on-screen buttons for the games that are not one-button (oan quan: hint and the two ways round; marbles: hold to flick)
     const pad = this.el.pad, btn = (cls, label, down, up) => {
@@ -669,12 +672,14 @@ export class Yard {
       g.player.vel.set(0, 0, 0);
       g.player.carry?.want('worn', 'yard');         // hands free: the lantern rides on her belt
       await d.ui.fade(true, 280);
+      if (this.round.cancelled) return { quit: true };
       let again = true, first = true;
       while (again) {
+        if (this.round?.cancelled) { result = { quit: true }; break; }
         const st = this.save, level = levelFor(st[id], g.easy);
         const res = await this.runRound(c, G, level, first);
         first = false;
-        result = res || { quit: true };
+        result = this.round?.cancelled ? { quit: true } : res || { quit: true };
         if (result.quit) break;
         const { rec, newBest } = recordYard(st[id], result);
         st[id] = rec;
@@ -729,8 +734,7 @@ export class Yard {
     const sim = G.create({ seed: this.debug.seed ?? Math.floor(Math.random() * 1e9), players, level, target: G.target(level), wall: !!T.wall });
     sim.touchUi = d.ui.touch;
     // nothing is left over from the last round: a pad button held when it ended, a queued sow, the gamepad's half-made flick
-    this.gpHold = false; this.stickDir = 0;
-    this.pad.dir = 0; this.pad.hint = false; this.pad.hold = false; this.pad.aim = null; this.pad.pick = null;
+    this.clearPadInput();
     const view = this.views.get(G.look, Y.id);
     view?.attach(S, y0);
     const R = this.round = { id, G, sim, S, y0, kids: playing, level, fresh: true, c, yaw: 0 };
@@ -758,7 +762,8 @@ export class Yard {
     this.el.cam.classList.toggle('hidden', !G.sideOk || !!(this.tall() && G.tall?.mode));
     this.el.stop.innerHTML = `${tx('Stop playing')}<kbd>⌫</kbd>`;
     document.body.classList.add('trick-round', 'yard-round');
-    showHowTo(`yard:${id}`, { input: this.g.input, touch: this.d.ui.touch, first: !this.save?.[id]?.plays });
+    if (id === 'oanquan') { hideHowTo(); this.guide?.show(); }
+    else { this.guide?.hide(); showHowTo(`yard:${id}`, { input: this.g.input, touch: this.d.ui.touch, first: !this.save?.[id]?.plays }); }
     this.hintLeft = 0; this.el.hint.classList.add('hidden');
     await d.ui.fade(false, 280);
     this.locks = !G.moves;
@@ -829,6 +834,7 @@ export class Yard {
     this.el.pad.classList.add('hidden'); document.body.classList.remove('yard-pad');
     this.el.hint.classList.add('hidden'); this.hintLeft = 0;
     hideHowTo();
+    this.guide?.hide();
     if (!out || out.quit) return { quit: true };
     this.locks = true;
     p.vel.set(0, 0, 0);
@@ -882,8 +888,16 @@ export class Yard {
     this.el.pad.style.opacity = turn ? '1' : '0.55';
   }
 
+  /** Help and a new round must not replay a button or board pick queued beforehand. */
+  clearPadInput() {
+    this.gpHold = false; this.stickDir = 0;
+    Object.assign(this.pad, { dir: 0, hint: false, hold: false, aim: null, pick: null });
+    for (const b of Object.values(this.padBtns || {})) b.classList.remove('down');
+  }
+
   /** Give the camera, the kids and the screen back. */
   endRound(c, keep) {
+    this.guide?.hide();
     const g = this.g, town = this.d.town;
     this.views.hideAll(c.Y.id);
     this.ring.visible = this.ringOut.visible = false;
@@ -924,12 +938,14 @@ export class Yard {
   }
 
   quit() {
-    if (!this.round || !this.loops.size || !this.el.card.classList.contains('hidden')) return;
+    if (!this.round || !this.el.card.classList.contains('hidden')) return;
+    this.guide?.hide();
+    this.round.cancelled = true;
     for (const l of [...this.loops]) { this.loops.delete(l); l.res({ quit: true }); }
   }
 
   /** Run fn(dt) every frame until it returns a value. */
-  loop(fn) { return new Promise(res => this.loops.add({ fn, res })); }
+  loop(fn) { return new Promise(res => { if (this.round?.cancelled) res({ quit: true }); else this.loops.add({ fn, res }); }); }
   wait(sec) { let t = 0; return this.loop(dt => ((t += dt) >= sec ? true : undefined)); }
 
   /** Save now, although a round owns the screen (director.save refuses during one: the card is a safe moment). */
@@ -986,7 +1002,7 @@ export class Yard {
     if (this.loops.size) {
       const cardUp = !this.el.card.classList.contains('hidden');
       if (g.input.pressed('back') && this.round?.sim && !cardUp) this.quit();
-      else for (const l of [...this.loops]) {
+      else if (!this.guide?.isOpen) for (const l of [...this.loops]) {
         let r;
         // a bug inside a round must not freeze the game: end that round as if she stopped, and say so in the console
         try { r = l.fn(dt); } catch (e) { console.error('[yard] round failed', e); r = { quit: true }; }
