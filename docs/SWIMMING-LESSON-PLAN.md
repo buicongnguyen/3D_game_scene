@@ -90,3 +90,35 @@ menu contract. Save/reload reward checks therefore use an Explore session, while
 Publication uses the existing GitHub Pages workflow. Its [build/deployment receipts](https://github.com/buicongnguyen/3D_game_scene/actions)
 and live smoke checks establish which release is published. See [CODEX-VERIFICATION.md](CODEX-VERIFICATION.md) for recorded
 test results and the [live game](https://buicongnguyen.github.io/3D_game_scene/).
+
+## Review pass, 12 October 2026 (what differs from the plan above)
+
+The lesson was played, reviewed and reworked after release. The structure and the safety intent are unchanged; these
+details replace the ones above (not yet published: it is in the working tree of the review branch).
+
+- **Pool.** The flat tinted rectangle became a tiled pool: one merged vertex-coloured shell (pale floor with a dark lane
+  line, blue walls with a waterline band, stone coping, a solid timber deck with plank seams and steps up from the
+  meadow), a patterned water surface in two drifting layers (one 128 px data texture, no canvas), red-and-cream lane
+  ropes, foam ripples, droplets and mouth bubbles as instanced meshes. Nine draw calls plus the two watchers. The pool
+  floor stands 0.75 m above the highest ground under it, so meadow flowers no longer grow through the water.
+- **Entry and exit are steps**, not a ramp: six gold-edged treads with two handrails. Mika walks down until she is
+  hip-deep (`POOL.entry`, z = 6.2), then pushes off to the practice spot (`SWIM.start`, z = 4) instead of walking under
+  water to her chin. At the end she stands on the steps and walks up to the gold ring on the deck (`POOL.exit`).
+- **Mika's body.** Depth and pitch are eased, never snapped. The floats are the Idle clip laid flat with the arms and
+  legs opened by hand after the mixer (`makeSwimPose`: star float on her back, arms-ahead float on her front, a small
+  chin dip for bubbles); the swims keep the Swim clip, sped up on each stroke. Works on Low's merged skin.
+- **Watchers.** Rin waits at the corner of the steps for the standing drills and walks the east deck beside Mika on the
+  swims; the grown-up stands by the exit. Both turn to face her, and cheer after each finished drill.
+- **Camera.** Standing drills: a close three-quarter shot with Mika, her face, both watchers and the exit. Swims: a
+  steep look down the lane holding Mika and the next 8.5 m (the whole 12 m made her a speck), so the red ring or the
+  gold steps enter the picture after the first few strokes. The camera stays on the exit side: controls never reverse.
+- **Panel.** One big cue line, one short instruction, one bar per task (the back float and the front float each fill
+  their own bar), and a dot bar that shows the tap window on the swims and the hold window on bubbles and front floats.
+  On phones the panel sits below the Journal and Menu buttons (it used to cover them). The countdown only appears for
+  the last 30 seconds of the four-minute budget.
+- **Rules.** Back float 6 s, front floats 4 s in total (were 8 + 8); a stroke pushes 0.9 m/s up to 1.1 m/s (was 0.6 up
+  to 0.7), so a guided round takes about a minute of water time instead of 85 s. The swimmer stays between the lane
+  ropes (|x| ≤ 1.9) and 0.9 m off the far wall; a rope slows her, only an end wall stops her. The tap that restarts a
+  lapsed pulse is no longer a penalty. "Try the instruction above" waits for six seconds without any input (it used to
+  fire every six seconds of a drill), and "release the button" waits 0.35 s. Finishing all six drills but running out
+  of time before climbing out scores the practised skills (48), not 0.

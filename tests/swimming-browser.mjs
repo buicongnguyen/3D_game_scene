@@ -33,9 +33,11 @@ if(!(await fetch(BASE).then(r=>r.ok,()=>false))) {
 const STATE=()=>{
   const g=window.__STARLINE__,d=g?.director,r=d?.tricks?.round,dbg=r?.ctx?.debug,L=dbg?.lesson,p=g?.player;
   const snap=dbg?.snapshot;
-  const pool=g?.scene.getObjectByName('swimming-practice'),marker=pool?.getObjectByName(L?.stage==='glide'?'swim-target':'swim-exit');
+  // Where the swimmer is heading on this leg: the red ring going out, the gold-edged exit steps (the rules' exit) coming back.
+  const pool=g?.scene.getObjectByName('swimming-practice'),marker=L?.stage==='glide'?pool?.getObjectByName('swim-target'):pool?.getObjectByName('swim-exit');
   let destination=null;
-  if(marker){const v=marker.getWorldPosition(g.camera.position.clone()).project(g.camera),panel=document.querySelector('#swimLesson .lesson')?.getBoundingClientRect();
+  if(marker){const at=marker.getWorldPosition(g.camera.position.clone());if(L?.stage!=='glide')at.set(dbg.pool.x+L.exit.x,dbg.pool.waterY,dbg.pool.z+L.exit.z);
+    const v=at.project(g.camera),panel=document.querySelector('#swimLesson .lesson')?.getBoundingClientRect();
     destination={x:(v.x+1)*innerWidth/2,y:(1-v.y)*innerHeight/2,z:v.z,panelBottom:panel?.bottom,width:innerWidth,height:innerHeight};}
   return {ready:!!window.__STARLINE_READY__,playing:!!window.__STARLINE_PLAYING__,busy:d?.busy||0,dialogue:!!g?.ui.dialogueOpen,
     round:r?.id,phase:dbg?.phase,exitCheck:dbg?.exitCheck,entered:dbg?.entered,climbed:dbg?.climbed,local:dbg?.local,pool:dbg?.pool,
@@ -123,7 +125,7 @@ class Session {
       if(s.stage==='glide'&&s.snap.phaseTime>15&&s.lastStroke===null)throw new Error(`No travel stroke after real movement/action input ${JSON.stringify({move:s.inputMove,touch:s.touchMove,act:s.pointerHeld,feedback:s.snap.feedback,position:s.position})}`);
       let action={};
       if(s.phase==='check')action={mx:s.local.x<-.15?1:0,act:Math.abs(s.local.x)<.2};
-      else if(s.phase==='entry')action={mv:s.local.z>5.15?-1:0,act:s.local.z<=5.2};
+      else if(s.phase==='entry')action={mv:s.local.z>s.pool.entryZ+.15?-1:0,act:s.local.z<=s.pool.entryZ+.2};
       else if(s.phase==='out'){
         if(!exitReleased){
           await this.release();
@@ -144,13 +146,13 @@ class Session {
           }
           action={act:s.held?s.holdTime<1.6:s.airTime>=s.rules.air};
         }else if(s.stage==='float'){
-          action={act:s.floatMode==='back'?s.floatBack<8-1e-6:s.floatMode==='front'?s.held?s.holdTime<2:s.airTime>=s.rules.air:!s.held};
+          action={act:s.floatMode==='back'?s.floatBack<s.pool.floatSeconds-1e-6:s.floatMode==='front'?s.held?s.holdTime<2:s.airTime>=s.rules.air:!s.held};
         }else if(s.stage==='turn'){
           const dx=s.exit.x-s.position.x,dz=s.exit.z-s.position.z,d=Math.hypot(dx,dz);action={mx:dx/d,mv:dz/d};
         }else{
           const act=!s.held&&(s.lastStroke===null||s.time-s.lastStroke>=s.rules.beat-.05);
           if(s.stage==='tread')action={act};
-          else{const target=s.stage==='glide'?{x:0,z:-6}:s.exit,dx=target.x-s.position.x,dz=target.z-s.position.z,d=Math.hypot(dx,dz);action={act,mx:dx/d,mv:dz/d};}
+          else{const target=s.stage==='glide'?s.pool.glide:s.exit,dx=target.x-s.position.x,dz=target.z-s.position.z,d=Math.hypot(dx,dz);action={act,mx:dx/d,mv:dz/d};}
         }
       }
       await this.input(action);
@@ -165,7 +167,7 @@ class Session {
         :s.phase==='done'?'dry-exit':null;
       if(capture&&!captured.has(capture)){
         await this.shot(capture);captured.add(capture);this.samples.push({name:capture,state:s});
-        if(['glide','return'].includes(capture)){const m=s.destination;check(m&&m.z>-1&&m.z<1&&m.x>0&&m.x<m.width&&m.y>m.panelBottom+5&&m.y<m.height-65,`${this.name}: actual ${capture} ring is visible below instructions`);}
+        if(['glide','return'].includes(capture)){const m=s.destination;check(m&&m.z>-1&&m.z<1&&m.x>0&&m.x<m.width&&m.y>m.panelBottom+5&&m.y<m.height-65,`${this.name}: the ${capture} destination (red ring / gold exit steps) is on screen below the instructions`);}
       }
       if(s.phase==='done')check(s.climbed&&s.playerY>=s.pool.deckY-.02,`${this.name}: final exit is on the dry deck`);
       await this.page.waitForTimeout(85);

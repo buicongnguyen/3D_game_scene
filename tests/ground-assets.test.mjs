@@ -28,7 +28,16 @@ for (const name of ['mika', 'villager-kid']) test(`${name} ground actions preser
   assert.ok(grab.y < 0.15 * k, `grab reaches low object at documented frame 12: ${grab.y}`);
   assert.ok(grab.z > 0.37 * k, `grab is in front of the feet: ${grab.z}`);
   const reach = at('CrouchReach', 0.4);
-  assert.ok(reach.z > 0.46 * k && reach.y < 0.24 * k, `actual wrist reaches forward/down: ${reach.toArray()}`);
+  // The back folds less than in the first version so that her face stays visible while she watches her hand.
+  assert.ok(reach.z > 0.43 * k && reach.y < 0.28 * k, `actual wrist reaches forward/down: ${reach.toArray()}`);
+  const head = g.scene.getObjectByName('head'), face = new THREE.Vector3();
+  for (const [clip, seconds, least] of [['CrouchReach', 0.4, -0.5], ['CrouchReachHold', 0.5, -0.5], ['Pickup', 0.4, -0.85], ['Crouch', 1, -0.2], ['Kneel', 1, -0.45]]) {
+    const mixer = new THREE.AnimationMixer(g.scene), action = mixer.clipAction(g.animations.find(c => c.name === clip));
+    action.play(); mixer.setTime(seconds); g.scene.updateMatrixWorld(true);
+    face.set(0, 0, 1).transformDirection(head.matrixWorld);
+    action.stop(); mixer.stopAllAction();
+    assert.ok(face.y > least, `${clip}: her face is not buried in her knees (forward.y ${face.y.toFixed(2)})`);
+  }
   const chest = at('Pickup', 0.88);
   assert.ok(chest.y > grab.y + 0.45 * k, 'pickup lifts the object toward the chest');
 });

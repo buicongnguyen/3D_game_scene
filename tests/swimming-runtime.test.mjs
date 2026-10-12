@@ -134,9 +134,9 @@ test('actual round requires exit check/entry, all six played skills and dry clim
       const d=ctx.debug,local=d.local,phase=d.phase;seen.add(phase);
       let act=false,mx=0,mv=0;
       if(phase==='check'){mx=local.x<-.1?1:0;act=Math.abs(local.x)<.15;}
-      else if(phase==='entry'){mv=local.z>5.1?-1:0;act=local.z<=5.1;}
+      else if(phase==='entry'){mv=local.z>POOL.entry.z+.1?-1:0;act=local.z<=POOL.entry.z+.1;}
       else if(phase==='lesson'){const a=guided(d.lesson);act=!!a.act;mx=a.mx||0;mv=a.mv||0;}
-      else if(phase==='out')act=true;
+      else if(phase==='out')act=!ctx.input.action;   // a real press: the stroke that reached the exit may still be held
       else if(phase==='done'){dryExit=true;assert.ok(ctx.player.pos.y>=d.pool.deckY-.01);assert.equal(ctx.player.pose,'Idle');}
       ctx.input.action=act;ctx.input.move.x=mx;ctx.input.move.y=-mv;ctx.player.update(.05);
       const value=fn(.05);frames++;if(value!==undefined)return value;
@@ -146,7 +146,7 @@ test('actual round requires exit check/entry, all six played skills and dry clim
   const before=playerState(f.p),cameraBefore=vector(f.follow.camera.position),children=f.scene.children.slice();
   try {
     const result=await swimming.play(f.ctx);
-    assert.equal(result.score,100);assert.equal(result.detail.complete,true);assert.equal(result.detail.skills,6);assert.ok(dryExit&&frames>1400);
+    assert.equal(result.score,100);assert.equal(result.detail.complete,true);assert.equal(result.detail.skills,6);assert.ok(dryExit&&frames>1000,'about a minute of guided play at 20 fps, never a skipped course');
     assert.deepEqual([...seen],['check','entry','lesson','out','climbing','done']);assert.equal(f.ctx.debug.exitCheck,true);assert.equal(f.ctx.debug.entered,true);assert.equal(f.ctx.debug.climbed,true);
     assert.deepEqual(playerState(f.p),before);assert.deepEqual(vector(f.follow.camera.position),cameraBefore);assert.deepEqual(f.scene.children,children);
     assert.equal(f.visitor.visible,true);assert.equal(f.sign.hidden,false);assert.equal(f.ctx.locked,false);assert.equal(env.document.getElementById('swimLesson'),null);

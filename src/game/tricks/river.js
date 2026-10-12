@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { river, riverHalfWidth, WATER_Y } from '../../world/layout.js';
 import { FISH } from '../story.js';
 import { tx, N_ } from '../../i18n/i18n.js';
-import { disposeRigs } from './util.js';
+import { disposeRigs, keepShallow } from './util.js';
 
 /** Fish the lantern can find. model + tint/scale reuse the existing fish art; night: only at night (not on the rod). */
 export const NIGHT_FISH = {
@@ -120,6 +120,8 @@ class RiverRound {
   build() {
     const g = this.g, p = this.player.pos, heightAt = (x, z) => g.world.heightAt(x, z);
     // stand Mika ankle-to-knee deep in the shallows nearest her
+    // the shallows have an edge: she wades to her knees, not out into the channel (it used to end in a swim and a scolding)
+    this.ctx?.beforeMove?.(keepShallow(this.player, heightAt, WATER_Y - 0.9));
     const start = shallowSpots(heightAt, p.x, p.z, 1, { lo: 0.25, hi: 0.5, along: 6 })[0];
     if (start) {
       const w = river.nearest(start.x, start.z, 40), q = river.at(w.s);

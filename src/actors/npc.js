@@ -7,6 +7,7 @@ const SHIRTS = ['#e0567a', '#3a8fd8', '#f2b53a', '#5fae3e', '#8a5ad8', '#e2702a'
 const TROUSERS = ['#2d3a5a', '#5a3a2a', '#3a4a3a', '#6a6a7a', '#2a2a3a'];
 const RUN_SPEED = 4.2;       // m/s a Run clip is authored for at 1.0x (art/CONTRACTS.md)
 const HAIR = ['#2a1d16', '#4a3020', '#1a1a1a', '#6a4a2a', '#d8d0c0', '#8a8a8a'];
+const KID_HAIR = 4;          // the first four are a child's colours; white and grey are for the grown-ups
 
 /**
  * A character standing in the world: plays clips, turns toward the player when talked to,
@@ -18,6 +19,8 @@ export class NPC {
     this.world = world;
     this.name = name || id;
     const m = assets.clone(model);
+    // children are never grey: the shared villager palette gave Nao, Sumi and two Kawabe kids an old woman's white hair
+    if (tint && model === 'villager-kid') tint = NPC.kidTint(tint, id);
     this.model = m || placeholder(model, [0.7, 1.6, 0.5], '#6b7aa8');
     this.anim = m ? new Animator(m) : null;
     this.model.traverse(o => {
@@ -56,6 +59,14 @@ export class NPC {
   static villagerTint(seed) {
     const r = n => SHIRTS[(seed * 7 + n) % SHIRTS.length];
     return { 'Villager shirt': r(0), 'Villager trousers': TROUSERS[(seed * 3) % TROUSERS.length], 'Villager hair': HAIR[(seed * 5) % HAIR.length] };
+  }
+
+  /** A villager tint for a child: the same shirt and trousers, hair from the dark half of the palette. */
+  static kidTint(tint, id = '') {
+    const i = HAIR.indexOf(tint['Villager hair']);
+    if (i < KID_HAIR) return tint;
+    let h = 0; for (const c of String(id)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+    return { ...tint, 'Villager hair': HAIR[h % KID_HAIR] };
   }
 
   place(x, z, facing, y) {

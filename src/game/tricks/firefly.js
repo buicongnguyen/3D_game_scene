@@ -22,6 +22,8 @@ export function blink(t, period, phase, lit = 0.32) {
   const f = ((t / period + phase) % 1 + 1) % 1;
   return f < lit ? Math.sin(Math.PI * f / lit) : 0;
 }
+/** The jar's light never gets brighter than this, however many are in it (at 9 it burnt Mika's coat and face to white). */
+export const JAR_LIGHT = 2.6;
 /** A firefly can be caught while it glows at least this much. */
 export const CATCHABLE = 0.3;
 
@@ -89,6 +91,8 @@ class Swarm {
   update(dt, t, jar, lit, scale) {
     const P = this.pos, H = this.home, ph = this.ph;
     this.mat.uniforms.uScale.value = scale;
+    let jarred = 0;
+    this.jarDim ??= 1;
     for (let i = 0; i < this.n; i++) {
       const s = this.state[i], j = i * 3, q = i * 4;
       this.st[i] += dt;
@@ -113,8 +117,10 @@ class Swarm {
         P[j] = jar.x + Math.sin(t * 3.1 + ph[q]) * 0.05;
         P[j + 1] = jar.y + 0.1 + Math.sin(t * 2.3 + ph[q + 1]) * 0.06;
         P[j + 2] = jar.z + Math.cos(t * 2.7 + ph[q + 2]) * 0.05;
-        this.glow[i] = 0.55 + 0.45 * Math.sin(t * 4 + ph[q + 3] * 6.28);
-        this.size[i] = 0.3;
+        // (additive dots on one spot add up: the more there are in the jar, the dimmer each one, so the jar glows and
+        // Mika beside it is never washed out to a yellow blob)
+        this.glow[i] = (0.55 + 0.45 * Math.sin(t * 4 + ph[q + 3] * 6.28)) * this.jarDim;
+        this.size[i] = 0.17; jarred++;
       } else if (s === 4) {
         // released: up out of the jar, spiralling apart, fading over a few seconds
         const a = Math.max(0, this.st[i]);    // a little wait in the jar first (negative time)
@@ -125,6 +131,7 @@ class Swarm {
         this.size[i] = a > 6 ? 0 : 0.5;
       }
     }
+    this.jarDim = jarred > 2 ? 2 / jarred : 1;
     this.geo.attributes.position.needsUpdate = true;
     this.geo.attributes.aGlow.needsUpdate = true;
     this.geo.attributes.aSize.needsUpdate = true;
@@ -223,6 +230,8 @@ export default {
     scene.add(jar);
     const jarAt = new THREE.Vector3();
     const jarLight = g.lights.add({ pos: jarAt, color: '#d8ff6a', intensity: 0, range: 7 });
+    const tamo = ctx.director?.tamo || null;
+    if (tamo) tamo.calm = 0.3;                         // the fireflies are the lights of this round
 
     const sw = new Swarm(scene, MAX);
     // everything the round put in the valley goes back, however it ends (a quit, or an error half-way)
@@ -231,6 +240,7 @@ export default {
       if (cleaned) return;
       cleaned = true;
       g.lights.remove(jarLight);
+      if (tamo) tamo.calm = 1;
       sw.dispose();
       jar.removeFromParent();
       net.removeFromParent();
@@ -270,7 +280,7 @@ export default {
       ctx.groundPose?.({ waiting: swing <= 0 && !ctx.pressed() && !g.input.pressed('tap') });
       const t = ctx.t;
       jarPoint(jar, jarAt);
-      jarLight.intensity = Math.min(9, caught * 0.7);
+      jarLight.intensity = caught ? Math.min(JAR_LIGHT, 0.5 + caught * 0.22) : 0;
       sw.update(dt, t, jarAt, lit, sizeScale(g));
       // swing the net: a quick sweep of the hand
       if (swing > 0) {
@@ -350,7 +360,7 @@ export default {
     r = await ctx.loop(dt => {
       t0 += dt;
       jarPoint(jar, jarAt);
-      jarLight.intensity = 7 + Math.sin(ctx.t * 5) * 0.6;
+      jarLight.intensity = JAR_LIGHT + 1 + Math.sin(ctx.t * 5) * 0.4;
       sw.update(dt, ctx.t, jarAt, 0.4, sizeScale(g));
       disc.position.set(p.pos.x, world.heightAt(p.pos.x, p.pos.z) + 0.06, p.pos.z);
       const dn = Math.hypot(note.position.x - p.pos.x, note.position.z - p.pos.z);
@@ -402,7 +412,7 @@ export default {
     await ctx.loop(dt => {
       t0 += dt;
       ctx.groundPose?.({ waiting: true });
-      jarLight.intensity = Math.max(0, 6 - t0 * 1.4);
+      jarLight.intensity = Math.max(0, JAR_LIGHT + 1 - t0 * 1.4);
       sw.update(dt, ctx.t, jarAt, 0.5, sizeScale(g));
       return t0 > 5 ? true : undefined;
     });

@@ -1,6 +1,6 @@
 // Deterministic vegetation & rock placement (pure; Node-testable). Returns plain records.
 import { rng, fbm, smoothstep } from '../engine/spline.js';
-import { river, riverHalfWidth, rail, BUILDINGS, CLEARINGS, ORCHARD, TERRAIN, PLACES } from './layout.js';
+import { river, riverHalfWidth, rail, BUILDINGS, CLEARINGS, PLAY_GROUNDS, ORCHARD, TERRAIN, PLACES } from './layout.js';
 
 export const DECIDUOUS = new Set(['tree-broadleaf-a', 'tree-broadleaf-b', 'tree-maple', 'tree-sakura', 'tree-peach', 'tree-chestnut']);
 
@@ -126,5 +126,7 @@ export function scatter(heightAt, isFree, density = 1) {
     if (Math.abs(z + 112) < 5 || Math.abs(z - 30) < 6) continue;
     lilies.push({ model: 'lilypads', x, y: 0.02, z, rot: R() * 360, s: 0.7 + R() * 0.6 });
   }
-  return { trees, rocks, bushes, flowers, reeds, lilies };
+  // play grounds stay open: taken out after the fact, so nothing else in the valley moves (layout.js PLAY_GROUNDS)
+  const open = o => !PLAY_GROUNDS.some(([cx, cz, hw, hd]) => Math.abs(o.x - cx) < hw && Math.abs(o.z - cz) < hd);
+  return { trees: trees.filter(t => t.far || open(t)), rocks: rocks.filter(open), bushes: bushes.filter(open), flowers, reeds, lilies };
 }

@@ -504,7 +504,10 @@ export default {
       };
       frame();
       const finishView = { pos: new V3(SITE.x0 + TRACK.len - 14, world.heightAt(SITE.x0 + TRACK.len, SITE.z) + 5.5, SITE.z - 11), look: new V3(SITE.x0 + 4, 1.0, SITE.z) };
-      g.follow.cutscene({ pos: new V3(finishView.pos.x, finishView.pos.y, finishView.pos.z), look: new V3(SITE.x0 + 40, finishView.pos.y - 3.5, SITE.z) }, 0.001);
+      // The opening shot cranes down from high behind the start to the chase view. (It used to fly in from the finish line:
+      // the camera passed just over the start gate, whose chequered beam filled the frame and hid the riders.)
+      const crane = { pos: new V3(camPos.x - 9, camPos.y + 11, camPos.z), look: new V3(SITE.x0 + TRACK.len * 0.45, camLook.y, SITE.z) };
+      g.follow.cutscene(crane, 0.001);
       await ctx.wait(0.1);
       await ctx.fade(false, 450);
       if (ctx.quit) return { score: 0, quit: true };

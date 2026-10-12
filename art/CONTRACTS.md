@@ -619,22 +619,26 @@ All clips are 30 fps, root at the ground origin, in place:
 
 | Clip | Duration | Playback / pose |
 |---|---|---|
-| `Crouch` | 3 s | Loop; deep squat, torso about 30 degrees forward, hands at knees, head raised, breathing. |
+| `Crouch` | 3 s | Loop; deep squat, torso about 30 degrees forward, palms resting on the knees, head raised, breathing. |
 | `CrouchWalk` | 0.9 s | Loop; low shuffle authored for **0.6 m/s**. Set timeScale = speed / 0.6. |
-| `CrouchReach` | 0.8 s | Once; starts and ends crouched; right hand reaches forward/down with torso leaning over it. |
+| `CrouchReach` | 0.8 s | Once; starts and ends crouched; right hand reaches forward/down palm down, head lifted to watch the hand (face about 20 degrees below level, never hidden in the knees). |
 | `CrouchReachHold` | 1.5 s | Loop; holds the extended reach, gentle breathing. |
-| `Kneel` | 3 s | Loop; right knee down, left foot in front, hands and gaze toward the grass. |
-| `Pickup` | 1 s | Once; **grab at frame 12 (0.4 s)**, rise with the right hand toward the chest. |
+| `Kneel` | 3 s | Loop; right knee down, left foot in front, left palm on the raised knee, right arm relaxed beside the thigh, gaze toward the grass. The runtime swings the right upper arm forward for a tap (`GroundPoseSystem.bendArm`). |
+| `Pickup` | 1 s | Once; **grab at frame 12 (0.4 s)**, rise with the right hand toward the chest; she looks at the object (face about 45 degrees down at the grab). |
 | `SitGrass` | 4 s | Loop; relaxed crossed legs on the ground, upright chest and slow sway; differs from cushion SitFloor. |
 
 Reach targets are world points in the rig frame rather than chest-relative points: actual Mika wrist at
-peak is ~0.476 m forward and 0.228 m high (the mitten/grip extends farther); kid scales to ~0.390 m forward
-and 0.192 m high. Pickup wrist at frame 12 is 0.388 m forward / 0.143 m high for Mika and 0.323 / 0.116 m
+peak is ~0.447 m forward and 0.262 m high (the mitten/grip extends farther); kid scales to ~0.366 m forward
+and 0.221 m high (3 cm shorter than the first version: the back folds 14 degrees less so the face stays visible). Pickup wrist at frame 12 is 0.388 m forward / 0.143 m high for Mika and 0.323 / 0.116 m
 for the kid. They have mitten/thumb hands, with no finger bones.
 
 The pure `GroundPose` controller feature-detects clips, applies speed hysteresis, sits after >2.5 s idle,
 and limits pickup movement locking to 0.55 s. Game rewards remain instantaneous; visible held pickup
-props attach at the authored grab frame. Camera target drops 0.35 m for crouch/kneel and 0.55 m sitting.
+props attach at the authored grab frame (a hovering story pickup sinks into the hand from 0.1 s). One-shots hold
+their last frame and the system blends to the next pose itself (never through Idle). A tap (`reach()`) is one
+reach; only a held `want(key, { reach: true })` uses `CrouchReachHold`. Cows are fed with the standing
+`Interact` (their head is above her knees). Camera target drops 0.35 m for crouch/kneel and 0.55 m sitting and
+eases back over about 0.4 s when a round ends. No villager uses the kid's seven clips yet (see below).
 The runtime's lantern carry keeps the hands free and supplies pose-specific placement.
 
 Validation: all fourteen new clips pass `node art/blender/validate_glb.mjs --clips-only

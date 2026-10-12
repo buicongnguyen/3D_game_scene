@@ -44,9 +44,10 @@ export function creepFilter(input, state = { creeping: false }) {
   return () => {
     const m = input.move, len = Math.hypot(m.x, m.y);
     const held = input.keys.has('sprint');
-    state.creeping = held;
-    if (len < 0.05) return;
     const analog = input.lastDevice === 'touch' || input.lastDevice === 'gamepad';
+    // A stick has no Shift to hold: letting it go after a creep leaves her crouched by the bug she crept up on
+    // (she used to stand up every time she stopped). Walking or running off stands her up again.
+    if (len < 0.05) { state.creeping = held || (analog && !!state.creeping); return; }
     const s = Math.min(1, len);
     let want;
     if (analog) want = held ? Math.min(s, 0.5) * 0.68 : s <= 0.5 ? s * 0.68 : s <= 0.85 ? 0.34 + (s - 0.5) / 0.35 * 0.25 : s;

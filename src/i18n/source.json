@@ -16841,6 +16841,12 @@
   ]
  },
  {
+  "s": "Aim, then fit the new bulb: {lamp}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Light the porch lamp",
   "ctx": [
    "UI (src/game/director.js)"
@@ -17067,12 +17073,6 @@
  },
  {
   "s": "Knock down the beehive",
-  "ctx": [
-   "UI (src/game/director.js)"
-  ]
- },
- {
-  "s": "Aim, then {what}",
   "ctx": [
    "UI (src/game/director.js)"
   ]
@@ -19800,19 +19800,13 @@
   ]
  },
  {
-  "s": "Tap once to restart the pulse",
-  "ctx": [
-   "UI (src/game/tricks/swimming.js)"
-  ]
- },
- {
   "s": "Tap gently now",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
-  "s": "Wait for the pulse",
+  "s": "Tap once to restart the pulse",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19836,13 +19830,13 @@
   ]
  },
  {
-  "s": "Walk slowly down the shallow ramp to the water marker. Press Action when you are ready.",
+  "s": "Walk slowly down the steps into the water. Press Action when you are ready.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
-  "s": "Move up the lane into the shallow entry",
+  "s": "Walk down the steps",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19854,7 +19848,7 @@
   ]
  },
  {
-  "s": "You found the exit. Press Action to stand and walk up the shallow ramp.",
+  "s": "You found the exit. Press Action to walk up the steps.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19884,7 +19878,7 @@
   ]
  },
  {
-  "s": "Control Mika, not your breathing: hold Action for gentle bubbles, then release so she takes a normal breath. Repeat three times.",
+  "s": "Hold Action: Mika blows gentle bubbles. Let go: she breathes. Three times. You just breathe normally.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19920,7 +19914,7 @@
   ]
  },
  {
-  "s": "Hold Action to relax Mika on her back. Keep movement small. When the bar reaches halfway, release to recover upright.",
+  "s": "Hold Action and Mika floats on her back. Keep still. Let go when the bar is full.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19944,7 +19938,7 @@
   ]
  },
  {
-  "s": "Now practise short front floats: hold for gentle bubbles, release for a normal breath, and repeat. Keep the stick near the centre.",
+  "s": "Now the front float: hold to float with gentle bubbles, let go for a breath. Fill the bar.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19962,7 +19956,7 @@
   ]
  },
  {
-  "s": "Mika is upright again. Press Action to finish the recovery and move to treading.",
+  "s": "Mika stands up again. Press Action to go on.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19980,7 +19974,13 @@
   ]
  },
  {
-  "s": "Tap Action with the slow pulse for eight gentle sculls. Release between taps. Mika stays with her head above water.",
+  "s": "Tap Action each time the dot reaches the green. Eight slow taps keep her head up.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Wait for the pulse",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -19992,7 +19992,7 @@
   ]
  },
  {
-  "s": "Turn Mika toward the gold exit at the starting end. Move the stick down the lane until she faces it.",
+  "s": "Turn Mika round to face the gold exit ring where she got in.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -20010,13 +20010,13 @@
   ]
  },
  {
-  "s": "Steer back toward the gold exit. Tap gentle strokes with the pulse, and keep inside the lane.",
+  "s": "Steer back to the gold exit. Tap Action each time the dot reaches the green.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
-  "s": "Steer toward the far ring. Tap gentle strokes with the slow pulse; Mika glides between strokes.",
+  "s": "Steer toward the red ring. Tap Action each time the dot reaches the green.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -20983,6 +20983,18 @@
  },
  {
   "s": "{n} s across the green",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "You hopped {n} m of {m} m",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "Best: {n} s",
   "ctx": [
    "UI (src/game/yard/sack.js)"
   ]

@@ -97,8 +97,9 @@ async function run(device, quality) {
     await page.evaluate(c => { const Q = window.__STARLINE_QA__; Q.teleport(c.x - 2, c.z); Q.faceToward(c.x, c.z); }, cow);
     await page.waitForFunction(() => window.__STARLINE__.director.focus?.id === 'feedCow', null, { timeout: 10000 });
     await page.keyboard.press('KeyE');
-    await waitClip('CrouchReach');
-    await page.waitForFunction(() => window.__STARLINE__.director.ground.debug().age >= 0.3, null, { timeout: 5000, polling: 20 });
+    // A cow eats at head height: the standing gesture, never the squatting reach to the grass.
+    await waitClip('Interact');
+    await page.waitForTimeout(350);
     check(await page.evaluate(id => window.__STARLINE__.director.q.state.flags[`cowBond:${id}`], cow.id), 'Feeding still bonds the cow immediately');
     await shot('cow-feed', ['front', 'side', 'chase']);
     await page.waitForTimeout(1200);
@@ -133,15 +134,27 @@ async function run(device, quality) {
       b.st = 'sit'; b.t = 20;
       window.__groundCaughtBefore = r.tally.caught;
     });
+    // Every frame from the swing until well after the reach: she must stay low (she used to bob 15 cm up toward
+    // standing for a moment after each catch) and never flash the hold pose.
+    await page.evaluate(() => {
+      const g = window.__STARLINE__, p = g.player, hips = p.model.getObjectByName('hips'), T = window.__groundCatch = { top: 0, clips: new Set(), on: true };
+      const tick = () => { if (!T.on) return; T.top = Math.max(T.top, hips.matrixWorld.elements[13] - p.root.position.y); T.clips.add(p.anim.currentName); requestAnimationFrame(tick); };
+      requestAnimationFrame(tick);
+    });
     await page.keyboard.press('KeyE');
     await page.waitForFunction(() => window.__STARLINE_QA__.trickRound.tally.caught > window.__groundCaughtBefore, null, { timeout: 10000 });
     await waitClip('CrouchReach');
     await page.waitForFunction(() => window.__STARLINE__.director.ground.debug().age >= 0.3, null, { timeout: 5000, polling: 20 });
     await shot('catch', ['side', 'chase']);
+    await page.waitForTimeout(1300);
+    const caught = await page.evaluate(() => { const T = window.__groundCatch; T.on = false; return { top: T.top, clips: [...T.clips] }; });
+    check(caught.top < 0.42 && !caught.clips.includes('CrouchReachHold') && !caught.clips.includes('Idle'), `The catch ends back in the crouch without bobbing up: ${JSON.stringify(caught)}`);
     await page.keyboard.up('Shift');
     await page.keyboard.press('Backspace');
     await page.waitForFunction(() => !window.__STARLINE__.director.tricks.round, null, { timeout: 20000 });
     check(await page.evaluate(() => !window.__STARLINE__.player.pose), 'Leaving the meadow releases pose ownership');
+    await page.waitForTimeout(900);
+    check((await read()).lowered < 0.02, 'The camera is level again shortly after the round');
 
     // A short real firefly round reaches its waiting/release phase quickly.
     await page.evaluate(() => {

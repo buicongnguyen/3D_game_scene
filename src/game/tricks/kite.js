@@ -374,7 +374,7 @@ export default {
       disposables.push(sGeo, string.material, tGeo, tail.material, wGeo, streaks.material, cTex, cMat);
 
       // camera: far back and low, looking halfway between Mika and the kite so both stay in the picture
-      const camPos = origin.clone().addScaledVector(d, portrait ? -21 : -18).addScaledVector(r, 2.4).add(new V3(0, 0.85, 0));
+      const camPos = origin.clone().addScaledVector(d, portrait ? -14 : -12.5).addScaledVector(r, 2.2).add(new V3(0, 1.6, 0));
       const hand = new V3(), kp = new V3(), look = new V3(), a1 = new V3(), a2 = new V3(), tmp = new V3(), up2 = new V3();
       const head = origin.clone().add(new V3(0, 1.1, 0));
       let xV = 0, hV = 0.02, roll = 0, lastX = 0, sc = FLY_SCALE;

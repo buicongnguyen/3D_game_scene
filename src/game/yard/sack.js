@@ -12,6 +12,8 @@ const HOP_T = 0.34;                // a hop takes this long in the air
 const FALL_T = 1.2;                // lying in the sack, laughing
 const COUNT = 3.0;
 const TIMEOUT = 40;
+const GRACE = 3.5;                 // the race waits this long for a racer who has stopped trying
+const WATCH = 5;                   // and this long for the kids once Mika herself has finished
 // Owner-approved solo rule: steady ~11 s gets 3 stars (<=13 s); <=18 s gets 2; any finish by 40 s gets 1.
 // Countdown is excluded. Completing the course is required for every reward, including races against kids.
 export const SOLO_TIMES = Object.freeze({ three: 13, two: 18, limit: TIMEOUT });
@@ -32,7 +34,7 @@ export class SackSim {
     this.players = players.map((p, i) => ({
       id: p.id, team: 0, human: !!p.human, style: p.style || 'steady', pace: PACE[p.style] || PACE.steady,
       d: 0, u: (i - (n - 1) / 2) * 1.5, v: START_V, y: 0, lean: 0, moving: false, kickT: 9,
-      last: -9, hopT: 9, wobble: 0, rhythm: 0, fallT: 0, falls: 0, finish: null, place: 0, nextHop: 0.3 + this.rand() * 0.3, hops: 0, fast: 0,
+      last: -9, hopT: 9, wobble: 0, rhythm: 0, fallT: 0, falls: 0, finish: null, place: 0, nextHop: 0.3 + this.rand() * 0.3, hops: 0, fast: 0, act: -9,
     }));
     this.human = this.players.find(p => p.human) || null;
     this.state = 'count';
@@ -61,7 +63,14 @@ export class SackSim {
       this.run += raceDt;
       for (const p of this.players) if (p.finish === null) this.stepPlayer(p, raceDt, input);
       const fin = this.players.filter(p => p.finish !== null), last = Math.max(0, ...fin.map(p => p.finish));
-      if (fin.length === this.players.length || this.run >= TIMEOUT || (fin.length > 0 && fin.length >= this.players.length - 1 && this.run - last > 3.5)) this.finishRace();
+      // The trailing racer is cut off only once they stop trying: a child who is still hopping (or getting up) always gets
+      // to cross the line before the deadline. Otherwise the "must finish" rule turns every slow race against kids into
+      // "Did not finish" with no star, where the same pace alone earns one or two.
+      const h = this.human, since = h && h.finish === null ? Math.max(last, h.act) : last;
+      // Once Mika is over the line her place is settled: she watches the others for a few seconds, not for the half
+      // minute a dreamy kid can take (measured: an 11 s win waited until 19.7 s for its card).
+      const settled = !!h && h.finish !== null && this.run - h.finish > WATCH;
+      if (fin.length === this.players.length || this.run >= TIMEOUT || settled || (fin.length > 0 && fin.length >= this.players.length - 1 && this.run - since > GRACE)) this.finishRace();
     } else if (this.state === 'done') {
       this.timer -= dt;
       if (this.timer <= 0) { this.state = 'over'; this.over = this.result(); this.emit('over', this.over); }
@@ -79,7 +88,7 @@ export class SackSim {
 
   stepPlayer(p, dt, input) {
     if (p.fallT > 0) {
-      p.fallT -= dt;
+      p.fallT -= dt; p.act = this.run;                   // getting up is still trying
       if (p.fallT <= 0) { p.wobble = 0; p.last = -9; this.emit('up', { who: p.id }); }
       return;
     }
@@ -95,6 +104,7 @@ export class SackSim {
   /** One press. The gap since the last decides: steady builds rhythm, a quick one wobbles, a long one loses the beat. */
   hop(p) {
     if (p.hopT < 0.16 && p.human) return;               // (a bounce of the same press)
+    p.act = this.run;
     const e = this.run - p.last, wide = this.level === 'first' ? 0.07 : this.level === 'easy' ? 0.03 : 0;
     p.last = this.run;
     let len = 0.34;
@@ -139,9 +149,9 @@ export class SackSim {
     const racer = h || winner, finished = racer?.finish !== null && racer?.finish !== undefined;
     const place = h ? h.place : winner ? 1 : 0, time = finished ? racer.finish : null;
     const stars = !finished ? 0 : n === 1 ? (time <= SOLO_TIMES.three ? 3 : time <= SOLO_TIMES.two ? 2 : time <= TIMEOUT ? 1 : 0)
-      : place === 1 ? 3 : place === 2 ? (n === 2 ? 1 : 2) : place === 3 ? 1 : 0;
+      : place === 1 ? 3 : place === 2 ? (n === 2 ? 1 : 2) : 1;       // a finish is never worth the same as not finishing
     const score = h && finished ? Math.max(1, Math.round((22 - time) * 10)) : 0;
-    return { won: finished && place === 1, finished, place, n, time, score, rally: finished ? place : 0, stars, touches: h?.hops || 0, falls: h?.falls || 0 };
+    return { won: finished && place === 1, finished, place, n, time, dist: h ? h.d : 0, score, rally: finished ? place : 0, stars, touches: h?.hops || 0, falls: h?.falls || 0 };
   }
 
   hud(names) {
@@ -154,6 +164,9 @@ export class SackSim {
     return null;
   }
 }
+
+/** The finishing time a saved sack-race score stands for (SackSim.result: score = (22 - time) x 10). */
+export const bestSeconds = score => 22 - score / 10;
 
 /** A stand-in for the player: hops every `gap` seconds (gap may be a function); null never. */
 export function sackBot(sim, gap = 0.5) {
@@ -176,6 +189,10 @@ export default {
   create: opts => new SackSim({ ...opts, players: opts.players.map(p => ({ id: p.id, style: p.style, human: p.human })) }),
   bot: sackBot,
   focus: { u: 0, v: 0, w: 6.5, l: COURSE + 3 },
+  cam: 'side',                      // wide screens: from the side the banners frame the race (from behind, the start banner hung across it)
+  // a phone held upright: the whole 13 m course makes the racers a dozen pixels tall, so the camera shows seven metres of
+  // it and travels with Mika (the HUD still says her place)
+  tall: { mode: 'end', pitch: 50, w: 5.4, l: 7, h: 1.3, top: 0.8, follow: { ahead: 1.7, l: 7 } },
   roles(ids) {
     if (ids.length < 2) return { game: 'keepup', play: ids.slice(), watch: [] };
     return { game: 'sack', play: ids.slice(0, 4), watch: ids.slice(4) };
@@ -185,8 +202,9 @@ export default {
     const ord = [tx('1st'), tx('2nd'), tx('3rd'), tx('4th'), tx('5th')][Math.min(4, res.place - 1)];
     return {
       verdict: !res.finished ? tx('Did not finish') : res.place === 1 ? tx('You win the race!') : tx('You came {place}', { place: ord }), good: res.finished && res.place <= 2,
-      score: res.finished ? tx('{n} s across the green', { n: res.time.toFixed(1) }) : tx('Did not finish'),
-      best: newBest && rec.plays > 1 ? tx('New best!') : tx('Best: {n}', { n: rec.best }),
+      score: res.finished ? tx('{n} s across the green', { n: res.time.toFixed(1) }) : tx('You hopped {n} m of {m} m', { n: Math.floor(res.dist || 0), m: COURSE }),
+      // (the record keeps a score, (22 - seconds) x 10: shown as the time it stands for, not as a bare "103")
+      best: newBest && rec.plays > 1 ? tx('New best!') : rec.best > 1 ? tx('Best: {n} s', { n: bestSeconds(rec.best).toFixed(1) }) : '',
     };
   },
 };

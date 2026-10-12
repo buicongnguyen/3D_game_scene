@@ -11,6 +11,7 @@ import { CARRY, SWAY, Reasons, darkLatch, resolveCarry, clipKind, makeSway, step
 
 const HIP = new THREE.Vector3(-0.2, 0.04, -0.1);     // the belt hook, from the hips bone, in her own frame (-x: her right, -z: behind)
 const LAP_FWD = 0.19, LAP_UP = 0.075;                    // seated, it stands on her lap: ahead of the hips, on top of her thighs
+const LAP_FWD_GRASS = 0.2, LAP_UP_GRASS = -0.045;         // cross-legged in the grass her lap is her crossed ankles, below the hips
 const WORN_SCALE = 0.86;                                // on the belt it is strapped short
 const ARM_UP = new THREE.Vector3(-0.3, -0.9, 0.32).normalize();      // upper arm, carrying: down, a little out and forward
 const ARM_FORE = new THREE.Vector3(-0.12, 0.3, 1).normalize();       // forearm: forward and a little up
@@ -50,6 +51,9 @@ export class LanternCarry {
     this.sway = makeSway();
     this.armW = 0;
     this.lapW = 0;                // 1 while she sits: it stands on her lap
+    this.lapGrass = false;        // …on her crossed ankles in the grass (remembered while it leaves her lap)
+    this.lowW = 0;                // 1 in a crouch, kneel or pickup bend: the strap swings clear of her thigh
+    this.lowKneel = false;
     this.prev = new THREE.Vector3();
     this.vel = new THREE.Vector3();
     this.world = new THREE.Vector3();          // where the flame is (for sparks)
@@ -154,13 +158,22 @@ export class LanternCarry {
     const lap = ease(this.lapW) * (1 - e);
     if (lap > 0) {
       _v.setFromMatrixPosition(this.hips.matrixWorld);
-      _v.x += sf * LAP_FWD; _v.z += cf * LAP_FWD; _v.y += LAP_UP + this.len * WORN_SCALE;
+      if (seated) this.lapGrass = clip === 'SitGrass';      // remembered while it leaves her lap again
+      const fwd = this.lapGrass ? LAP_FWD_GRASS : LAP_FWD, up = this.lapGrass ? LAP_UP_GRASS : LAP_UP;
+      _v.x += sf * fwd; _v.z += cf * fwd; _v.y += up + this.len * WORN_SCALE;
       _at.lerp(_v, lap);
     }
     // Deep ground poses need the short belt strap outside the bent thigh and above the turf.
-    if (/^(Crouch|Kneel|Pickup)/.test(clip || '') && e < 1) {
-      _at.x -= cf * 0.075 * (1 - e); _at.z += sf * 0.075 * (1 - e);
-      _at.y = Math.max(_at.y, p.root.position.y + this.len * WORN_SCALE + 0.055);
+    // (eased in and out: it used to jump 7.5 cm sideways on the frame the clip changed)
+    const deep = /^(Crouch|Kneel|Pickup)/.test(clip || '') ? 1 : 0;
+    if (deep) this.lowKneel = clip === 'Kneel';
+    this.lowW = this.first ? deep : this.lowW + (deep - this.lowW) * (1 - Math.exp(-dt * 10));
+    if (this.lowW < 0.002) this.lowW = 0;
+    if (this.lowW > 0 && e < 1) {
+      // (kneeling, her right boot trails behind exactly where it would stand: further out and ahead of that shin)
+      const w = this.lowW * (1 - e), out = (this.lowKneel ? 0.13 : 0.075) * w, ahead = (this.lowKneel ? 0.12 : 0) * w;
+      _at.x += -cf * out + sf * ahead; _at.z += sf * out + cf * ahead;
+      _at.y += (Math.max(_at.y, p.root.position.y + this.len * WORN_SCALE + 0.055) - _at.y) * this.lowW;
     }
 
     // sway: pushed by how the hanging point speeds up, in her own frame (x: her left, z: ahead)

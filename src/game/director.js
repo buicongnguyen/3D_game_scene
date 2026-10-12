@@ -356,7 +356,9 @@ export class Director {
     this.workshop = new Workshop(this);
     // spark targets. In the Grandma story the four Star Lamps are electric: the same aim and press, but Tamo carries a new
     // bulb up and screws it in, and the lamp is switched on (structures.setLampStyle, sparkAt)
-    const lampLabel = (name, light) => () => (this.electric() ? tx('Fit the new bulb: {lamp}', { lamp: tx(name) }) : tx(light));
+    // (.aim: the same job as the hard-mode prompt words it, a sentence of its own: "Aim, then Fit the new bulb" had a capital in the middle)
+    const lampLabel = (name, light) => Object.assign(() => (this.electric() ? tx('Fit the new bulb: {lamp}', { lamp: tx(name) }) : tx(light)),
+      { aim: () => tx('Aim, then fit the new bulb: {lamp}', { lamp: tx(name) }) });
     this.target('porchLamp', at(S.nodes.porchFlame, V(-55.8, 18.5, 141.4)), N_('Light the porch lamp'), () => this.step('p.porch'), p => this.lightPorch(p), { r: 5.5, vy: 5 });
     this.target('millLamp', L.get('mill')?.flame, lampLabel('Mill Lamp', N_('Light the Mill Lamp')), () => this.step('c1.lamp'), () => this.event({ type: 'spark', target: 'millLamp' }), { r: 7.5, vy: 10, bulb: true });
     // the Orchard Lamp works from the gallery or from the foot of the tower
@@ -621,7 +623,9 @@ export class Director {
     this.removePickup(pk.id);
     this.fx.burst(pk.obj.position, { n: 24, speed: 2.5, size: 0.25 });
     const groundItem = ['cog', 'chestnut', 'mushroom', 'honeycomb'].includes(pk.item);
-    if (groundItem && this.ground.pickup({ object: pk.obj, target: pk.pos })) this.game.scene.add(pk.obj);
+    // Bending to the grass for something that sits on a crate top would look wrong: those keep the standing gesture.
+    const lowItem = groundItem && pk.pos.y - this.game.player.pos.y < 1.05;
+    if (lowItem && this.ground.pickup({ object: pk.obj, target: pk.pos })) this.game.scene.add(pk.obj);
     else this.game.player.gesture('Interact', { lock: false });
     if (pk.keepsake) { this.foundKeepsake(pk.keepsake); return; }
     if (pk.treasure) { this.foundTreasure(pk.treasure); return; }
@@ -1406,8 +1410,10 @@ export class Director {
     this.actCooldown = Math.max(0, (this.actCooldown || 0) - dt);
     // the Star Kite: G (or the Kite button) launches and lands once Mika has it
     const kite = g.kite, hasKite = this.q.count('kite') > 0;
-    if (kite && hasKite && inp.pressed('kite') && !this.busy && !this.minigame && !this.ui.overlay && !this.scenes.active && !this.game.interiors?.active) kite.toggle();
-    this.ui.kiteButton(!!kite && hasKite && !this.game.interiors?.active && (kite.active || kite.canLaunch()));
+    // (not inside a trick or yard round: G or the Kite button carried her out of a firefly hunt or a keep-it-up rally)
+    const inRound = !!this.tricks?.round || !!this.yard?.round;
+    if (kite && hasKite && inp.pressed('kite') && !this.busy && !this.minigame && !this.ui.overlay && !this.scenes.active && !this.game.interiors?.active && (!inRound || kite.active)) kite.toggle();
+    this.ui.kiteButton(!!kite && hasKite && !this.game.interiors?.active && (kite.active || (!inRound && kite.canLaunch())));
     const canAct = !this.busy && !this.minigame && !this.tricks?.round && !this.yard?.round && !p.locked && !this.ui.overlay && this.actCooldown <= 0 && !kite?.active && !p.aiming;
     const hard = !!this.game.hard;
     let best = null, bd = 1e9, aimHint = null, ad = 1e9;
@@ -1431,7 +1437,7 @@ export class Director {
     const labelOf = it => (typeof it.label === 'function' ? it.label() : tx(it.label));
     if (!best && aimHint) {
       const fit = aimHint.bulb && this.electric();
-      this.ui.prompt(tx(fit ? N_('Aim, then {what}') : N_('Aim and spark: {what}'), { what: labelOf(aimHint) }), this.ui.touch ? tx('Aim') : tx('Right mouse'));
+      this.ui.prompt(fit && aimHint.label?.aim ? aimHint.label.aim() : tx('Aim and spark: {what}', { what: labelOf(aimHint) }), this.ui.touch ? tx('Aim') : tx('Right mouse'));
       // the first time in a session: how aiming works on this device
       if (!this.aimTaught) {
         this.aimTaught = true;

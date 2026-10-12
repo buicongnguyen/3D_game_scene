@@ -81,8 +81,11 @@ export class Tamo {
     const glow = (1.1 + Math.sin(this.t * 3) * 0.15 + this.power * 0.2) * (0.45 + 0.55 * near);
     for (const m of this.mats) m.emissiveIntensity = glow;
     this.light.position.copy(this.pos);
-    this.light.intensity = (0.6 + night * 3.5) * (0.9 + this.power * 0.15) * (0.5 + 0.5 * near);
-    this.halo.material.opacity = (0.35 + night * 0.4) * (0.3 + 0.7 * near);
+    // `calm` (0..1, default 1): a round that brings its own small lights asks him to glow less (the firefly jar: his night
+    // light and halo beside Mika's head washed her out to a yellow blob)
+    const calm = this.calm ?? 1;
+    this.light.intensity = (0.6 + night * 3.5) * (0.9 + this.power * 0.15) * (0.5 + 0.5 * near) * calm;
+    this.halo.material.opacity = (0.35 + night * 0.4) * (0.3 + 0.7 * near) * (0.4 + 0.6 * calm);
     this.updateMotes(dt);
     this.anim?.update(dt);
     this.updateSparks(dt);

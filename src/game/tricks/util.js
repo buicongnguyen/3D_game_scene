@@ -19,6 +19,22 @@ export function disposeRigs(root) {
   root?.traverse?.(o => { if (o.isSkinnedMesh) o.skeleton?.dispose?.(); });
 }
 
+/**
+ * A soft edge for a round played beside the river: a function for ctx.beforeMove that walks Mika back to the last place
+ * where the ground was at least `floor` metres high (heightAt) whenever a step has taken her below it. She can still walk
+ * along the edge; she just cannot wade on into deep water in the middle of a round.
+ */
+export function keepShallow(player, heightAt, floor) {
+  let ox = player.pos.x, oz = player.pos.z, has = heightAt(ox, oz) >= floor;
+  return () => {
+    const p = player.pos;
+    if (heightAt(p.x, p.z) >= floor) { ox = p.x; oz = p.z; has = true; return; }
+    if (!has) return;                                  // (she started out too deep: the round's own placing decides)
+    p.x = ox; p.z = oz;
+    if (player.vel) { player.vel.x = 0; player.vel.z = 0; }
+  };
+}
+
 /** Add a trick's stylesheet to the page once. */
 export function addCss(id, css) {
   if (typeof document === 'undefined' || document.getElementById(id)) return;

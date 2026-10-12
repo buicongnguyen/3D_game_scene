@@ -49,6 +49,9 @@ export const CSS = `
  padding:7px 16px;border-radius:999px;background:rgba(255,247,232,.94);box-shadow:0 6px 20px rgba(40,20,0,.25);font:700 16px Nunito,system-ui,sans-serif;color:#5a3a22;zoom:var(--ui-scale,1)}
 #yardHud .big{font:600 22px Fredoka,Nunito,sans-serif;color:#c2541c;min-width:56px;text-align:center}
 #yardHud .sub{font:700 13px Nunito,sans-serif;color:#8a6a4a}
+#yardHud .pips{display:inline-flex;gap:3px;vertical-align:-1px}
+#yardHud .pips i{width:7px;height:13px;border-radius:2px;background:#e6d6b8;box-shadow:inset 0 0 0 1px #c9b48e}
+#yardHud .pips i.on{background:#e2703a;box-shadow:none}
 #yardHud .l,#yardHud .r{max-width:28vw;overflow:hidden;text-overflow:ellipsis}
 #yardHud.hidden,#yardHint.hidden,#yardCard.hidden,#yardStop.hidden,#yardCam.hidden,#yardPad.hidden{display:none}
 #yardHint{position:fixed;left:50%;top:calc(66px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:16;max-width:min(520px,90vw);

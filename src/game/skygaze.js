@@ -112,6 +112,10 @@ body.sky-gaze .bark{display:none}
 #skyGaze .sg-card .tip{color:#cfe1ff}
 #skyGaze .sg-card .tip::before{content:"\\1F50D  "}
 #skyGaze .sg-card.min p{display:none}
+body.touch #skyGaze .sg-card.min{left:12px;right:auto;width:auto;max-width:calc(100vw - 24px);padding:7px 14px;border-radius:999px;box-sizing:border-box}
+body.touch #skyGaze .sg-card.min .pic,body.touch #skyGaze .sg-card.min .cnt{display:none}
+body.touch #skyGaze .sg-card.min .nm{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 80px)}
+body.touch #skyGaze .sg-card.min .nm::after{content:"  …";opacity:.75}
 #skyGaze .sg-strip{position:absolute;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);gap:6px;align-items:center;pointer-events:auto;
  padding:5px;border-radius:999px;background:rgba(14,20,48,.78);box-shadow:0 4px 14px rgba(0,0,0,.35)}
 #skyGaze .sg-strip button{min-width:44px;min-height:44px;border:0;border-radius:999px;background:rgba(255,253,246,.94);color:#4a3020;font:700 17px Nunito,system-ui,sans-serif;cursor:pointer;padding:0 14px}
@@ -500,6 +504,9 @@ export class SkyGaze {
     el.querySelector('.tnext').addEventListener('click', () => this.stepSky(1));
     el.querySelector('.tnow').addEventListener('click', () => this.stepSky(0));
     el.querySelector('.sg-card').addEventListener('click', e => e.currentTarget.classList.toggle('min'));
+    // a phone held upright: the open card covered two fifths of the sky and the chosen group with it. It starts as a
+    // one-line pill with the group's name; a tap opens the story, another folds it again.
+    if (this.d.ui.touch && innerHeight > innerWidth) el.querySelector('.sg-card').classList.add('min');
     const host = el.querySelector('.sg-labels');
     this.labPool = [];
     for (let i = 0; i < 12; i++) { const d = document.createElement('div'); d.className = 'sgl'; d.style.display = 'none'; host.appendChild(d); this.labPool.push(d); }
@@ -942,8 +949,13 @@ export class SkyGaze {
       if (dir.dot(this.F) < 0.25) return;
       v.copy(dir).multiplyScalar(R).add(cam.position).project(cam);
       if (Math.abs(v.x) > 0.94) return;
-      const x = (v.x * 0.5 + 0.5) * W + dx, y = (-v.y * 0.5 + 0.5) * H + dy, w = text.length * (kind === 'g' ? 8.4 : 6.6) + 12, h = 20;
-      if (y < (this.d.ui.touch && W < H ? 128 : 78) || y > H - (z < 1.2 && W < H ? 330 : 150)) return;          // keep clear of the chip and pills at the top and the strip at the bottom
+      const y = (-v.y * 0.5 + 0.5) * H + dy, w = text.length * (kind === 'g' ? 8.4 : 6.6) + 12, h = 20;
+      // a name that would run off the right edge (a phone: "Rigel, the blue foot", "Summer Triangle") is written to the
+      // left of its star, or pulled back inside for a group's name
+      let x = (v.x * 0.5 + 0.5) * W + dx;
+      const wide = kind === 'g sel' ? text.length * 9.4 + 12 : kind === 'g dim' ? w + 14 : w;   // (the selected group's name is set in 17 px; a dim one has a tap margin)
+      if (x + wide > W - 4) x = Math.max(4, kind === 's' ? x - 2 * dx - w + 12 : W - 4 - wide);
+      if (y <(this.d.ui.touch && W < H ? 128 : 78) || y > H - (z < 1.2 && W < H ? 330 : 150)) return;          // keep clear of the chip and pills at the top and the strip at the bottom
       const left = kind === 'g' ? x - w / 2 : x;
       for (const r of placed) if (left < r[0] + r[2] && left + w > r[0] && y - h / 2 < r[1] + r[3] && y + h / 2 > r[1]) return;
       placed.push([left, y - h / 2, w, h]);

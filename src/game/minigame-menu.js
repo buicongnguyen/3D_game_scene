@@ -43,7 +43,7 @@ export class MinigameMenu {
   canOpen() {
     const d = this.d;
     return !!d.quest && !this.running && !d.busy && !d.minigame && !d.scenes?.active && !d.tricks?.round && !d.yard?.round && !d.workshop?.active
-      && !d.tourLock && !this.g.sky?.active && !d.sky?.active && !this.g.player.mounted;
+      && !d.tourLock && !this.g.sky?.active && !d.sky?.active && !this.g.player.mounted && !this.g.kite?.active;   // (the kite's swoop-in comes before she is mounted)
   }
 
   // ------------------------------------------------------------------ the picker

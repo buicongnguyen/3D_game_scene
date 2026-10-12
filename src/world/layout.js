@@ -208,6 +208,21 @@ export const FALLEN_STARS = [
   { id: 'fs12', x: 34, z: 142, hint: 'Under the viaduct, east bank' },
 ];
 
+// Play grounds added after the valley was planted: trees, rocks and bushes that the seeded scatter put there are taken out
+// AFTER the scatter (rects [x, z, halfWidth, halfDepth]). A new circle in CLEARINGS would shift the random stream and
+// replant the whole valley; this does not move anything else. (The sack-race lanes: a hydrangea stood on the lane line.)
+export const PLAY_GROUNDS = [
+  [114, -36.2, 8.6, 4.4],          // Takamori Green: the sack-race lanes (content/yard.js stages.sack + a banner's width)
+  // The kite meadow (tricks/kite.js): the camera stands 18-21 m upwind of Mika, 0.85 m above the grass. Each graphics tier
+  // plants its own scatter there: a mossy rock 1.6 m from the lens on Low, two trees over her head on Medium.
+  [-29, 79, 9, 17],
+  // The stargazing hill (the Stargazing sign and the star-hill sky spot): she lies back and looks up from 0.55 m. On Low
+  // a maple grew one metre from the sign and its crown covered the Big Dipper; Medium and High had their own within 6 m.
+  [-59, 159, 12, 11],
+  [106.4, -22.6, 3.2, 15],         // Takamori Green: the tug-of-war strip and the ground the phone camera looks along it from
+  [92, -103, 1.6, 1.6],            // the Beetle sap trap sign: on Medium a cedar grew half a metre from it (the sign stood inside the tree)
+];
+
 // Keep-out zones for scattering (trees, rocks, flowers): circles [x, z, r].
 export const CLEARINGS = [
   [-98, 114, 22], [-60, 140, 12], [-45, 20, 50], [-18, -44, 14], [0, -45, 6], [-12, -6, 9],

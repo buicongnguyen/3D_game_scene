@@ -67,6 +67,7 @@ const CSS = GUIDE_CSS + `
 #archUi .pip.left{background:#d9c49a}
 #archUi .pip.s0{background:#b6aca0}
 #archUi .wind{right:calc(10px + env(safe-area-inset-right,0px));top:calc(62px + env(safe-area-inset-top,0px));text-align:center;min-width:64px}
+body.arch-round #inventory{visibility:hidden}
 #archUi .wind .lab{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#8a6a4a}
 #archUi .wind .dir{font:800 30px/1 Nunito,sans-serif;color:#2a6fb0;letter-spacing:-3px;white-space:nowrap;height:30px}
 #archUi .wind .n{font:600 13px Fredoka,Nunito,sans-serif}
@@ -87,7 +88,7 @@ const CSS = GUIDE_CSS + `
 #archBreathe{position:absolute;right:calc(142px + env(safe-area-inset-right,0px));bottom:calc(40px + env(safe-area-inset-bottom,0px));width:78px;height:78px;border-radius:50%;background:#4aa3df;box-shadow:0 5px 0 #2a72a8,0 8px 16px rgba(0,0,0,.28);zoom:var(--ui-scale,1)}
 #archBreathe.cool{opacity:.55}
 #archBreathe.on{background:#7cc4f2}
-#archLeave{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(62px + env(safe-area-inset-top,0px));padding:7px 12px;border-radius:12px;background:rgba(90,58,34,.82);zoom:var(--ui-scale,1)}
+#archLeave{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(62px + env(safe-area-inset-top,0px));padding:7px 12px;min-height:40px;border-radius:12px;background:rgba(90,58,34,.82);zoom:var(--ui-scale,1)}
 #archUi .halo{position:absolute;left:-17px;top:-17px;width:34px;height:34px;border-radius:50%;box-sizing:border-box;border:3px solid rgba(255,255,255,.8);box-shadow:0 0 0 1px #0004;transition:border-color .12s,box-shadow .12s,transform .12s}
 #archUi .halo.on{border-color:#4fe03d;box-shadow:0 0 0 1px #0004,0 0 10px 2px #4fe03d99;transform:scale(1.15)}
 #archUi .sight.on .dot{background:#d8ffd0;box-shadow:0 0 0 1.5px #2f9a22,0 0 6px #4fe03d}

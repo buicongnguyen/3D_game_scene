@@ -152,3 +152,45 @@ test('yards: each yard lists games the registry knows, and the board setting cyc
   assert.deepEqual(YARDS.takamori.games, ['volley', 'tug', 'sack', 'rope']);
   void POST_SHAPES; void SHAPES; void CLEARINGS;
 });
+
+test('review: no scattered tree, rock or bush stands on the sack-race lanes (the seeded scatter is filtered, not reseeded)', async () => {
+  const { scatter } = await import('../src/world/scatter.js');
+  const { PLAY_GROUNDS } = await import('../src/world/layout.js');
+  const g = sharedGrid(), S = stageOf(YARDS.takamori, 'sack');
+  for (const density of [0.6, 0.85, 1]) {
+    const placed = scatter((x, z) => g.heightAt(x, z), () => true, density);
+    for (const kind of ['trees', 'rocks', 'bushes']) for (const o of placed[kind]) {
+      const c = toCourt(o.x, o.z, {}, S);
+      assert.ok(Math.abs(c.u) > 4 || Math.abs(c.v) > 8, `${kind} ${o.model} at (${o.x.toFixed(1)}, ${o.z.toFixed(1)}) is on the sack course (density ${density})`);
+    }
+    assert.ok(placed.bushes.length > 150 && placed.rocks.length > 100, 'the rest of the valley keeps its scenery');
+  }
+  assert.ok(PLAY_GROUNDS.some(([x, z]) => Math.hypot(x - S.x, z - S.z) < 1));
+});
+
+test('review: the kite picture is open from the low camera to Mika and behind her (every scatter density)', async () => {
+  const { scatter } = await import('../src/world/scatter.js');
+  const { TRICKS } = await import('../src/content/tricks.js');
+  const g = sharedGrid(), k = TRICKS.find(t => t.id === 'kite');
+  const d = [Math.sin(0.3), Math.cos(0.3)], r = [-d[1], d[0]], o = [k.place.x + d[0] * 7, k.place.z + d[1] * 7];   // kite.js: WIND_HEADING, STAND
+  for (const density of [0.6, 0.85, 1]) {
+    const placed = scatter((x, z) => g.heightAt(x, z), () => true, density);
+    for (const kind of ['trees', 'rocks', 'bushes']) for (const it of placed[kind]) {
+      const dx = it.x - o[0], dz = it.z - o[1], along = dx * d[0] + dz * d[1], side = dx * r[0] + dz * r[1];
+      assert.ok(!(along > -22 && along < 6 && Math.abs(side) < 4.5), `${kind} ${it.model} at (${it.x.toFixed(1)}, ${it.z.toFixed(1)}) stands in the kite picture (density ${density})`);
+    }
+  }
+});
+
+test('review: the stargazing hill has open sky (no tree within 9 m of the sign or the star-hill spot, every density)', async () => {
+  const { scatter } = await import('../src/world/scatter.js');
+  const { TRICKS } = await import('../src/content/tricks.js');
+  const { SKY_SPOT } = await import('../src/content/skyspots.js');
+  const g = sharedGrid(), sign = TRICKS.find(t => t.id === 'stars').place, hill = SKY_SPOT['star-hill'];
+  for (const density of [0.6, 0.85, 1]) {
+    const placed = scatter((x, z) => g.heightAt(x, z), () => true, density);
+    for (const t of placed.trees) for (const [name, p] of [['sign', sign], ['sky spot', hill]]) {
+      assert.ok(Math.hypot(t.x - p.x, t.z - p.z) > 9, `${t.model} at (${t.x.toFixed(1)}, ${t.z.toFixed(1)}) stands over the stargazing ${name} (density ${density})`);
+    }
+  }
+});

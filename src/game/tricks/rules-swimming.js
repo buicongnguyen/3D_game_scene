@@ -13,11 +13,15 @@ export const SWIM_LEVELS = Object.freeze({
   normal: { bubbleMin: 0.8, bubbleMax: 2.5, air: 0.65, beat: 1.2, window: 0.3, turn: 0.4 },
   hard: { bubbleMin: 0.9, bubbleMax: 2.3, air: 0.7, beat: 1.1, window: 0.22, turn: 0.3 },
 });
-export const SWIM = Object.freeze({ stages: SWIM_STAGES, bubbles: 3, floatSeconds: 8, sculls: 8,
-  start: Object.freeze({ x: 0, z: 5 }), exit: Object.freeze({ x: 0, z: 6 }),
-  glide: Object.freeze({ x: 0, z: -6 }), bounds: Object.freeze({ x: 3.6, near: 6.5, far: -6.5 }),
-  maxDt: 0.1, maxSpeed: 0.7, turnSpeed: 2.2, reach: 0.55, idleHelp: 6,
+// floatSeconds: the back float (one calm hold, may be resumed); frontSeconds: the total of the short front floats.
+// bounds.x keeps the swimmer between the two lane ropes (drawn at +-2.3); bounds.far keeps her head off the end wall.
+export const SWIM = Object.freeze({ stages: SWIM_STAGES, bubbles: 3, floatSeconds: 6, frontSeconds: 4, sculls: 8,
+  start: Object.freeze({ x: 0, z: 4 }), exit: Object.freeze({ x: 0, z: 6 }),
+  glide: Object.freeze({ x: 0, z: -5.5 }), bounds: Object.freeze({ x: 1.9, near: 6.5, far: -6.1 }),
+  maxDt: 0.1, maxSpeed: 1.1, push: 0.9, turnSpeed: 2.2, reach: 0.55, idleHelp: 6, releaseGrace: 0.35,
 });
+const GLIDE_LENGTH = Math.hypot(SWIM.glide.x - SWIM.start.x, SWIM.glide.z - SWIM.start.z);
+const RETURN_LENGTH = Math.hypot(SWIM.exit.x - SWIM.glide.x, SWIM.exit.z - SWIM.glide.z);
 
 export class SwimLesson {
   constructor({ level = 'normal', first = false } = {}) {
@@ -27,7 +31,7 @@ export class SwimLesson {
     this.progress = 0; this.complete = false; this.skills = 0; this.retries = 0;
     this.position = { ...SWIM.start }; this.exit = { ...SWIM.exit }; this.heading = Math.PI;
     this.speed = 0; this.pitch = 0.1; this.clip = 'Tread'; this.bubbles = false;
-    this.feedback = ''; this.feedbackLeft = 0; this.helpAt = SWIM.idleHelp;
+    this.feedback = ''; this.feedbackLeft = 0; this.idle = 0; this.releaseWait = 0;
     this.feedbackCode = ''; this.feedbackCooldown = 0;
     this.events = []; this.held = false; this.needsRelease = false;
     this.holdTime = 0; this.airTime = this.rules.air; this.validHold = false; this.cycles = 0;
@@ -60,7 +64,7 @@ export class SwimLesson {
       this.bubbles = false; this.emit('complete', { result: this.result() }); return;
     }
     this.stage = SWIM_STAGES[++this.stageIndex]; this.phaseTime = 0; this.progress = 0;
-    this.helpAt = SWIM.idleHelp; this.feedback = ''; this.feedbackLeft = 0;
+    this.idle = 0; this.releaseWait = 0; this.feedback = ''; this.feedbackLeft = 0;
     this.feedbackCode = ''; this.feedbackCooldown = 0;
     this.needsRelease = this.held; this.holdTime = 0; this.validHold = false;
     this.airTime = this.rules.air; this.lastStroke = this.lastGood = null;
@@ -81,8 +85,9 @@ export class SwimLesson {
     this.strokePulse = Math.max(0, this.strokePulse - dt);
     this.bubbles = false; this.clip = 'Tread'; this.pitch = 0.1; this.floatSide = 'upright';
     if (this.needsRelease) {
-      if (!act) { this.needsRelease = false; this.clearFeedback('release_to_continue'); }
-      else { this.hint('release_to_continue'); return this.snapshot(); }
+      // The press that finished a drill is still down for a moment: say "release" only to a finger that stays there.
+      if (!act) { this.needsRelease = false; this.releaseWait = 0; this.clearFeedback('release_to_continue'); }
+      else { if ((this.releaseWait += dt) >= SWIM.releaseGrace) this.hint('release_to_continue'); return this.snapshot(); }
     }
 
     if (this.stage === 'bubbles') {
@@ -134,16 +139,16 @@ export class SwimLesson {
         }
         if (released) {
           if (this.validHold && this.holdTime >= this.rules.bubbleMin - TIME_EPS) {
-            this.floatFront = Math.min(SWIM.floatSeconds, this.floatFront + this.holdTime);
+            this.floatFront = Math.min(SWIM.frontSeconds, this.floatFront + this.holdTime);
             this.emit('good', { kind: 'front_float' });
           } else if (this.validHold) this.hint('gentle_bubbles', true);
           this.holdTime = 0; this.validHold = false; this.airTime = 0;
-          if (this.floatFront >= SWIM.floatSeconds - 1e-6) this.floatMode = 'recover';
+          if (this.floatFront >= SWIM.frontSeconds - 1e-6) this.floatMode = 'recover';
         }
       } else if (pressed && quiet) {
         this.emit('good', { kind: 'upright' }); this.advance();
       }
-      if (this.stage === 'float') this.progress = Math.min(0.98, (this.floatBack + this.floatFront) / (SWIM.floatSeconds * 2));
+      if (this.stage === 'float') this.progress = Math.min(0.98, (this.floatBack + this.floatFront) / (SWIM.floatSeconds + SWIM.frontSeconds));
     } else if (this.stage === 'tread') {
       if (pressed && this.stroke()) this.sculls++;
       this.progress = this.sculls / SWIM.sculls;
@@ -154,7 +159,7 @@ export class SwimLesson {
       if (pressed) {
         if (!moving) this.hint('aim_marker', true);
         else if (this.stroke()) {
-          this.speed = Math.min(SWIM.maxSpeed, this.speed + 0.6);
+          this.speed = Math.min(SWIM.maxSpeed, this.speed + SWIM.push);
           if (this.stage === 'glide') this.glideStrokes++; else this.swimStrokes++;
         }
       }
@@ -168,11 +173,13 @@ export class SwimLesson {
         this.position.z += Math.cos(this.heading) * this.speed * dt;
         const x = clamp(this.position.x, -SWIM.bounds.x, SWIM.bounds.x);
         const z = clamp(this.position.z, SWIM.bounds.far, SWIM.bounds.near);
-        if (x !== this.position.x || z !== this.position.z) { this.speed = 0; this.hint('inside_pool'); }
+        // The end walls stop her; a lane rope only slows her, so brushing it while steering is not a dead stop.
+        if (z !== this.position.z) { this.speed = 0; this.hint('inside_pool'); }
+        else if (x !== this.position.x) { this.speed *= Math.exp(-dt * 4); this.hint('inside_pool'); }
         this.position.x = x; this.position.z = z;
       }
       const distance = Math.hypot(target.x - this.position.x, target.z - this.position.z);
-      this.progress = clamp(1 - distance / (this.stage === 'glide' ? 11 : 12), 0, 0.99);
+      this.progress = clamp(1 - distance / (this.stage === 'glide' ? GLIDE_LENGTH : RETURN_LENGTH), 0, 0.99);
       const strokes = this.stage === 'glide' ? this.glideStrokes : this.swimStrokes;
       if (distance <= SWIM.reach && strokes >= 3) {
         this.position = { ...target }; this.advance();
@@ -188,10 +195,10 @@ export class SwimLesson {
         if (this.turned >= 0.7) this.advance();
       } else this.turned = 0;
     }
-    if (this.phaseTime >= this.helpAt && !this.complete) {
-      this.helpAt += SWIM.idleHelp;
-      if (!act && !moving) this.hint('try_cue');
-    }
+    // "Try the instruction above" is for a child who has stopped: any press or steer starts the wait again
+    // (it used to fire every six seconds of a drill, also between two well-timed taps).
+    this.idle = act || moving ? 0 : this.idle + dt;
+    if (this.idle >= SWIM.idleHelp && !this.complete) { this.idle = 0; this.hint('try_cue'); }
     return this.snapshot();
   }
 
@@ -202,7 +209,9 @@ export class SwimLesson {
       this.speed *= 0.35; this.hint('slow_scull', true); return false;
     }
     if (gap !== null && gap > this.rules.beat + this.rules.window + 1e-6) {
-      this.hint('follow_rhythm', true); return false;
+      // The screen says "tap once to restart the pulse": that tap restarts the rhythm. It earns nothing, and it is not
+      // a mistake either (a child who stopped to read must not lose a star for doing what the cue asked).
+      this.hint('follow_rhythm'); return false;
     }
     this.clearFeedback('slow_scull', 'follow_rhythm', 'aim_marker', 'release_and_rhythm', 'try_cue');
     this.lastGood = this.time; this.strokePulse = 0.35; this.emit('good', { kind: 'stroke' }); return true;
@@ -218,7 +227,9 @@ export class SwimLesson {
       stars: this.complete ? score >= 95 ? 3 : score >= 80 ? 2 : 1 : 0, seconds: this.time };
   }
 
+  /** A fresh object each call; `events` is the lesson's own growing list (read it, never change it). */
   snapshot() {
+    const result = this.result();
     const cue = this.stage === 'bubbles' ? this.bubbles ? 'bubbles' : 'breathe'
       : this.stage === 'float' ? this.floatMode === 'recover' ? 'stand' : this.floatSide === 'upright' ? this.floatMode === 'front' ? 'breathe' : 'float' : this.floatSide
         : this.stage === 'turn' || this.complete ? 'exit' : 'gentle';
@@ -226,10 +237,10 @@ export class SwimLesson {
     const age = this.lastStroke === null ? this.rules.beat : this.time - this.lastStroke;
     return { stage: this.stage, stageIndex: this.stageIndex, id: this.stage, progress: this.progress,
       cue, phaseTime: this.phaseTime, feedback: this.feedback, complete: this.complete,
-      score: this.result().score, stars: this.result().stars, result: this.result(),
+      score: result.score, stars: result.stars, result,
       position: { ...this.position }, heading: this.heading, pitch: this.pitch, clip: this.clip,
       bubbles: this.bubbles, floatSide: this.floatSide, target, exit: { ...this.exit },
       beatPhase: clamp(age / this.rules.beat, 0, 1), beat: this.rules.beat,
-      strokePulse: this.strokePulse, events: this.events.slice() };
+      strokePulse: this.strokePulse, events: this.events };
   }
 }

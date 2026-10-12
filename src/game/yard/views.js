@@ -14,6 +14,9 @@ import { HANDS } from './rope.js';
 const W = { x: 0, z: 0 }, W2 = { x: 0, z: 0 }, R3 = { u: 0, v: 0, y: 0 }, M = new THREE.Matrix4(), Q = new THREE.Quaternion(), P = new THREE.Vector3(), S1 = new THREE.Vector3(1, 1, 1), SC = new THREE.Vector3(), E = new THREE.Euler();
 const V = new THREE.Vector3(), V2 = new THREE.Vector3(), DOWN = new THREE.Vector3(0, -1, 0);
 
+/** Where the tug-of-war rope runs: hand height of a child leaning back, just in front of the pullers (stage v, metres up). */
+export const TUG_ROPE = { v: 0.2, y: 0.72 };
+
 const mat = (color, o = {}) => new THREE.MeshStandardMaterial({ color, roughness: 0.75, metalness: 0, ...o });
 const flatMesh = (g, color, opacity) => {
   const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false, side: THREE.DoubleSide }));
@@ -88,27 +91,71 @@ export class FlierView extends View {
 }
 
 // ------------------------------------------------------------------------------------------------ ropes
-/** A rope drawn as a row of small beads (one InstancedMesh); the two ends are handed to the caller each frame. */
-class BeadRope {
-  constructor(view, n, color, radius) {
-    this.n = n;
-    this.mesh = new THREE.InstancedMesh(new THREE.SphereGeometry(radius, 6, 5), mat(color, { roughness: 0.9 }), n);
+/** A twisted-hemp look for the rope: light and dark strands across the tube, a few turns along it. */
+function ropeTexture(color) {
+  const c = document.createElement('canvas'); c.width = 32; c.height = 32;
+  const g = c.getContext('2d');
+  g.fillStyle = color; g.fillRect(0, 0, 32, 32);
+  g.lineWidth = 5;
+  for (let i = -4; i < 8; i++) { g.strokeStyle = i % 2 ? 'rgba(70,40,10,.42)' : 'rgba(255,245,215,.3)'; g.beginPath(); g.moveTo(i * 8, 0); g.lineTo(i * 8 + 32, 32); g.stroke(); }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return t;
+}
+
+/**
+ * A rope drawn as one thin tube (one mesh, one draw call): n rings of SIDES vertices whose positions are rewritten in place
+ * every frame from the curve the caller hands over. Nothing is allocated while a game runs. (It used to be a row of beads:
+ * it read as a dotted line.)
+ */
+const SIDES = 6, RC = Array.from({ length: SIDES + 1 }, (_, k) => Math.cos(k / SIDES * Math.PI * 2)), RS = Array.from({ length: SIDES + 1 }, (_, k) => Math.sin(k / SIDES * Math.PI * 2));
+export class TubeRope {
+  constructor(view, n, color, radius, turns = 14) {
+    this.n = n; this.r = radius;
+    const ring = SIDES + 1, pos = new Float32Array(n * ring * 3), nor = new Float32Array(n * ring * 3), uv = new Float32Array(n * ring * 2), idx = [];
+    for (let i = 0; i < n; i++) for (let k = 0; k < ring; k++) { uv[(i * ring + k) * 2] = i / (n - 1) * turns; uv[(i * ring + k) * 2 + 1] = k / SIDES; }
+    for (let i = 0; i + 1 < n; i++) for (let k = 0; k < SIDES; k++) { const a = i * ring + k, b = a + ring; idx.push(a, b, a + 1, a + 1, b, b + 1); }
+    const g = this.geometry = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('normal', new THREE.BufferAttribute(nor, 3).setUsage(THREE.DynamicDrawUsage));
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    g.setIndex(idx);
+    this.pts = new Float32Array(n * 3);
+    this.tex = typeof document !== 'undefined' ? ropeTexture(color) : null;
+    this.mesh = new THREE.Mesh(g, mat(this.tex ? '#ffffff' : color, { roughness: 0.9, map: this.tex }));
     this.mesh.frustumCulled = false;
     this.mesh.castShadow = view.shadows;
     this.mesh.name = 'yard:rope';
+    this.mesh.dispose = () => this.tex?.dispose();
     view.add(this.mesh);
   }
-  /** set(i, u, y, v) for every bead through fn(s, out) where s = 0 .. 1. */
+  /** The curve through fn(s, out) (stage space u, y, v) where s = 0 .. 1. */
   fill(view, fn) {
-    for (let i = 0; i < this.n; i++) { fn(i / (this.n - 1), R3); view.at(R3.u, R3.y, R3.v, P); M.compose(P, Q.identity(), S1); this.mesh.setMatrixAt(i, M); }
-    this.mesh.instanceMatrix.needsUpdate = true;
+    const n = this.n, pts = this.pts, r = this.r, ring = SIDES + 1, pos = this.geometry.attributes.position.array, nor = this.geometry.attributes.normal.array;
+    for (let i = 0; i < n; i++) { fn(i / (n - 1), R3); view.at(R3.u, R3.y, R3.v, P); pts[i * 3] = P.x; pts[i * 3 + 1] = P.y; pts[i * 3 + 2] = P.z; }
+    for (let i = 0; i < n; i++) {
+      const a = Math.max(0, i - 1) * 3, b = Math.min(n - 1, i + 1) * 3;
+      // the tangent, then two directions across it (the first as level as it can be: a rope never stands on end here)
+      let tx = pts[b] - pts[a], ty = pts[b + 1] - pts[a + 1], tz = pts[b + 2] - pts[a + 2];
+      const tl = Math.hypot(tx, ty, tz) || 1; tx /= tl; ty /= tl; tz /= tl;
+      let ax = -tz, az = tx; const al = Math.hypot(ax, az);
+      if (al < 1e-4) { ax = 1; az = 0; } else { ax /= al; az /= al; }
+      const bx = ty * az, by = tz * ax - tx * az, bz = -ty * ax;
+      const px = pts[i * 3], py = pts[i * 3 + 1], pz = pts[i * 3 + 2];
+      for (let k = 0; k < ring; k++) {
+        const o = (i * ring + k) * 3, c = RC[k], s = RS[k], nx = ax * c + bx * s, ny = by * s, nz = az * c + bz * s;
+        nor[o] = nx; nor[o + 1] = ny; nor[o + 2] = nz;
+        pos[o] = px + nx * r; pos[o + 1] = py + ny * r; pos[o + 2] = pz + nz * r;
+      }
+    }
+    this.geometry.attributes.position.needsUpdate = true;
+    this.geometry.attributes.normal.needsUpdate = true;
   }
 }
 
 export class RopeView extends View {
   constructor(scene, quality) {
     super(scene, quality);
-    this.rope = new BeadRope(this, 34, '#f0cf8c', 0.05);
+    this.rope = new TubeRope(this, 34, '#f0cf8c', 0.03, 22);
     this.poles = [0, 1].map(() => new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 1.1, 7), mat('#6b4a2c')));
     for (const p of this.poles) { p.castShadow = this.shadows; this.add(p); }
     this.hide();
@@ -128,7 +175,7 @@ export class RopeView extends View {
 export class TugView extends View {
   constructor(scene, quality) {
     super(scene, quality);
-    this.rope = new BeadRope(this, 40, '#c9a46a', 0.05);
+    this.rope = new TubeRope(this, 24, '#c9a46a', 0.045, 30);
     this.flag = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.34, 0.24), mat('#e2543a'));
     this.flag.castShadow = this.shadows;
     this.knot = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), mat('#ffd34a'));
@@ -142,9 +189,9 @@ export class TugView extends View {
     a -= 0.45; b += 0.45;
     const mid2 = (a + b) / 2;                    // the flag hangs on the middle of the rope, which slides with the pull
     this.rope.mesh.visible = true;
-    this.rope.fill(this, s => { const u = a + (b - a) * s; R3.u = u; R3.v = 0; R3.y = 0.86 - 0.05 * Math.sin(Math.PI * s); });
-    this.at(mid2, 0.62, 0, this.flag.position);
-    this.at(mid2, 0.86, 0, this.knot.position);
+    this.rope.fill(this, s => { const u = a + (b - a) * s; R3.u = u; R3.v = TUG_ROPE.v; R3.y = TUG_ROPE.y - 0.04 * Math.sin(Math.PI * s); });
+    this.at(mid2, TUG_ROPE.y - 0.24, TUG_ROPE.v, this.flag.position);
+    this.at(mid2, TUG_ROPE.y, TUG_ROPE.v, this.knot.position);
     this.flag.visible = this.knot.visible = true;
   }
 }

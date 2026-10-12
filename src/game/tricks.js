@@ -49,7 +49,7 @@ const CSS = `
 #trickHint.top{bottom:auto;top:calc(76px + env(safe-area-inset-top,0px))}
 #trickHint b{color:#c2541c;margin-right:6px}
 body.trick-round #objective{visibility:hidden}
-@media (max-width:560px){body.trick-round #clock{visibility:hidden}}
+@media (max-width:560px){body.trick-round #clock,body.trick-round #inventory{visibility:hidden}}
 @media (max-width:520px){#trickHud .n{display:none}#trickHud{white-space:nowrap}}
 #trickCard{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,14,30,.35)}
 #trickCard .box{width:min(440px,92vw);max-height:88vh;overflow:auto;padding:20px 22px 16px;border-radius:24px;background:#fff8ea;box-shadow:0 14px 40px rgba(0,0,0,.35);

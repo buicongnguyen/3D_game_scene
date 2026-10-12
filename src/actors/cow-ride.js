@@ -44,6 +44,7 @@ const CSS = `
 #cowUi .bar.out i{background:#e4584a}
 #cowUi .help{pointer-events:auto;width:36px;height:36px;padding:0;border:0;border-radius:50%;background:#f08a3c;color:#fff;font:700 20px/36px Fredoka,Nunito,sans-serif;box-shadow:0 3px 0 #b8581c,0 4px 10px rgba(40,20,0,.3);touch-action:manipulation}
 #cowUi .tip{padding:5px 12px;border-radius:12px;background:#fff7e8e6;box-shadow:0 3px 12px rgba(40,20,0,.2);max-width:min(440px,90vw);text-align:center}
+#cowUi .tip:empty{display:none}
 #cowUi .legend{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 12px;padding:5px 12px;border-radius:14px;background:#fff7e8e6;box-shadow:0 3px 12px rgba(40,20,0,.2);font:700 12px Nunito,sans-serif}
 #cowUi .legend span{display:inline-flex;align-items:center;gap:4px;border-radius:8px;padding:1px 3px}
 #cowUi .legend .ch-kc{min-width:18px;padding:1px 5px;font-size:11px;border-bottom-width:3px}
@@ -62,7 +63,9 @@ const CSS = `
  font:700 14px Nunito,system-ui,sans-serif;color:#4a3020;white-space:nowrap;will-change:transform}
 #cowHint::after{content:"";position:absolute;left:50%;bottom:-9px;margin-left:-7px;border:7px solid transparent;border-top-color:#f08a3c;border-bottom:0}
 @media (max-width:700px){#cowUi.touch{bottom:calc(150px + env(safe-area-inset-bottom,0px));left:auto;right:calc(12px + env(safe-area-inset-right,0px));transform:none;align-items:flex-end}#cowUi.touch .btns{flex-direction:column-reverse}#cowUi.touch .bar{width:84px}
- #cowUi.touch .en .lb{min-width:0;font-size:11px}
+ #cowUi.touch .en .lb{min-width:0;font-size:11px;display:none}
+ #cowUi.touch .en.low .lb,#cowUi.touch .en.out .lb{display:inline}
+ #cowUi.touch .bar{width:64px}
  #cowUi.touch .tip{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));right:calc(130px + env(safe-area-inset-right,0px));top:calc(176px + env(safe-area-inset-top,0px));max-width:none;text-align:left}}
 `;
 
@@ -170,7 +173,8 @@ export class CowRide {
     a.hold?.();
     a.lookAt(p.pos.x, p.pos.z);
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
-    if (!d.ground?.reach()) p.gesture('Interact', { lock: false });
+    // A cow takes the hay at head height: the squatting reach would put Mika's hand at her hooves.
+    p.gesture('Interact', { lock: false });
     a.farm.t = 4; a.farm.state = 'graze';
     if (a.anim?.has('Graze')) a.setIdle('Graze');
     d.audio.animal('cow', 0.8);
@@ -194,6 +198,7 @@ export class CowRide {
     a.setIdle('Idle');
     this.rig = makeRig(a.root);
     a.root.add(this.rig);
+    this.rig.userData.update();                      // (measured once more now that it hangs on the cow: the reins were laid out in world space and stretched off across the meadow until the ride began)
     this.seat.position.set(SEAT.x, SEAT.y, SEAT.z);
     a.root.add(this.seat);
     this.v = 0; this.stamina = 1; this.hold = 0; this.graze = 0; this.warn = 0;
@@ -257,9 +262,8 @@ export class CowRide {
     this.phase = 'dismount';
     this.t = 0;
     p.mounted = null;
-    p.pose = null;
     p.poseSpeed = 1;
-    p.anim?.once('Jump', { hold: true, fade: 0.08 });
+    this.leapt = false;                              // she leaves the saddle seated and only straightens once she is clear of the cow (update)
     this.g.follow.zoomTarget = this.prevZoom || 6.2;
     this.d.audio.click();
     this.stopCoach(false);
@@ -322,7 +326,8 @@ export class CowRide {
       this.place(p);
       this.keepCow(dt, 0);
       // the hop ends already sitting: she lands in the saddle on a ride clip, never a frame standing on the cow's back
-      if (k >= 0.8 && !this.landed) { this.landed = true; p.anim?.cancelOneShot(); p.pose = riderPose(p.anim); p.poseSpeed = 1; seatRider(p.anim, 'RideCow'); }
+      // (from the top of the arc on: at 0.8 she still stood upright on the cow's back for a third of the hop)
+      if (k >= 0.42 && !this.landed) { this.landed = true; p.anim?.cancelOneShot(); p.pose = riderPose(p.anim); p.poseSpeed = 1; seatRider(p.anim, 'RideCow'); }
       if (k >= 1) this.finishMount();
       return;
     }
@@ -331,6 +336,7 @@ export class CowRide {
       this.seatWorld(this.from);
       p.pos.lerpVectors(this.from, this.to, e);
       p.pos.y += Math.sin(Math.PI * k) * 0.55;
+      if (k >= 0.38 && !this.leapt) { this.leapt = true; p.pose = null; p.anim?.once('Jump', { hold: true, fade: 0.1 }); }
       this.place(p);
       this.keepCow(dt, 0);
       if (k >= 1) {
@@ -354,6 +360,7 @@ export class CowRide {
     playGait(a.anim, speed, false, 0.25);
     a.root.position.copy(a.pos);
     a.root.rotation.y = a.facing;
+    this.rig?.userData.update();                     // the reins stay on her halter while Mika hops on and off
   }
 
   ride(dt) {

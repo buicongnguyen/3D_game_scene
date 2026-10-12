@@ -200,7 +200,7 @@ export class OanSim {
     this.level = level;
     this.quick = quick;
     const ordered = [...players].sort((a, b) => (b.human ? 1 : 0) - (a.human ? 1 : 0)).slice(0, 2);
-    this.players = ordered.map((p, i) => ({ id: p.id, team: i, human: !!p.human, style: p.style || 'steady', u: i ? 2.9 : -2.9, v: i ? -0.9 : 0.9, moving: false, kickT: 9, lean: 0 }));
+    this.players = ordered.map((p, i) => ({ id: p.id, team: i, human: !!p.human, style: p.style || 'steady', u: i ? 0.55 : -0.55, v: i ? -1.35 : 1.35, moving: false, kickT: 9, lean: 0 }));
     this.human = this.players.find(p => p.human) || null;
     this.board = newBoard();
     this.shown = { dan: this.board.dan.slice(), quan: this.board.quan.slice() };    // what the animation has laid out so far
@@ -364,7 +364,7 @@ export default {
   target: () => 0,
   create: opts => new OanSim({ ...opts, players: opts.players }),
   bot: oanBot,
-  focus: { u: 0, v: 0, w: 4.5, l: 1.8, pitch: 62 },
+  focus: { u: -0.35, v: 0, w: 4.4, l: 2.9, pitch: 62, h: 1.2, top: 0.74 },      // the board and the two players at its long sides, nothing else
   roles(ids) {
     if (ids.length < 2) return { game: 'keepup', play: ids.slice(), watch: [] };
     return { game: 'oanquan', play: ids.slice(0, 2), watch: ids.slice(2) };

@@ -16,7 +16,7 @@ function actor(has = () => true) {
     cancelOneShot() { this.busy = false; this.oneShotLocks = false; }, update() {},
   };
   const model = new THREE.Group(), grip = new THREE.Group(); model.add(grip);
-  return { anim, model, grip, pos: new THREE.Vector3(), speed: 0, grounded: true };
+  return { anim, model, grip, pos: new THREE.Vector3(), speed: 0, grounded: true, pose: null };
 }
 
 test('pickup attaches at the grab frame and releases movement before the clip ends', () => {
@@ -57,14 +57,19 @@ test('a scene interrupts only this system\'s pose and removes its temporary pick
   assert.equal(system.items.length, 0);
 });
 
-test('leaving a ground trick immediately releases its reach action, camera and carry props', () => {
+test('leaving a ground trick immediately releases its reach action and pose; the camera eases back without a jump', () => {
   const p = actor(), system = new GroundPoseSystem(p);
-  system.want('trick', { kneel: true }); system.reach(); system.update(0.016);
+  system.want('trick', { creeping: true }); system.update(1);
+  assert.ok(p.groundCameraLower > 0.34);
+  system.reach(); system.update(0.016);
   assert.equal(p.anim.currentName, 'CrouchReach'); assert.equal(p.anim.busy, true);
   system.release('trick', true);
-  assert.equal(p.pose, null); assert.equal(p.anim.busy, false); assert.equal(system.reachLeft, 0);
-  assert.equal(p.groundCameraLower, 0);
-  system.update(0.016); assert.equal(p.pose, null);
+  assert.equal(p.pose, null); assert.equal(p.anim.busy, false); assert.equal(system.reachAsk, false);
+  assert.ok(p.groundCameraLower > 0.34, 'no one-frame camera pop when a round ends in a crouch');
+  let worst = 0;
+  for (let i = 0; i < 60; i++) { const was = p.groundCameraLower; system.update(1 / 60); worst = Math.max(worst, was - p.groundCameraLower); }
+  assert.ok(worst < 0.05, `eased: ${worst}`); assert.ok(p.groundCameraLower < 0.01); assert.equal(p.pose, null);
+  p.groundCameraLower = 0.3; system.reset(); assert.equal(p.groundCameraLower, 0, 'a loaded save starts level');
 });
 
 test('old models keep their existing gestures and held poses', () => {

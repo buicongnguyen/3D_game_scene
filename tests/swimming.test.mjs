@@ -49,12 +49,24 @@ test('all difficulty levels teach every skill through actual input in a bounded 
     assert.deepEqual([...stages], SWIM_STAGES); assert.ok(back && front && upright);
     assert.equal(s.skills, 6); assert.equal(s.result().score, 100); assert.equal(s.result().stars, 3);
     assert.deepEqual(s.position, s.exit); assert.equal(s.clip, 'Idle');
-    assert.ok(s.time >= 70 && s.time <= 120, `${level} successful virtual practice ${s.time.toFixed(1)} s`);
+    assert.ok(s.time >= 50 && s.time <= 120, `${level} successful virtual practice ${s.time.toFixed(1)} s`);
     // Recorded held/released inputs reproduce the whole lesson, poses, movement, corrections and final score.
     const replay = new SwimLesson({ level });
     for (const input of inputLog) replay.step(DT, input);
     assert.deepEqual(replay.snapshot(), s.snapshot());
   }
+});
+
+test('the idle reminder waits for a child who has stopped: steady, well-timed play never sees it', () => {
+  for (const level of Object.keys(SWIM_LEVELS)) {
+    const s = new SwimLesson({ level });
+    for (let i = 0; i < 8000 && !s.complete; i++) s.step(DT, guidedInput(s));
+    assert.equal(s.complete, true);
+    assert.deepEqual(s.events.filter(e => e.feedback === 'try_cue' || e.feedback === 'release_to_continue'), [], level);
+  }
+  const waiting = new SwimLesson(); ticks(waiting, SWIM.idleHelp - 0.5); waiting.step(DT, { act: true }); waiting.step(DT, {}); ticks(waiting, SWIM.idleHelp - 0.5);
+  assert.ok(!waiting.events.some(e => e.feedback === 'try_cue'), 'an attempt restarts the wait');
+  ticks(waiting, 1); assert.ok(waiting.events.some(e => e.feedback === 'try_cue'));
 });
 
 test('idle never awards any stage, and helpful cues repeat without danger or a timeout loss', () => {
@@ -87,14 +99,14 @@ test('bubbles need gentle exhale/release cycles with a normal breath between; ho
 test('float shows back and front balance and requires upright recovery; face-down hold cannot farm progress', () => {
   const s = lessonTo('float');
   ticks(s, 10, { act: true, mx: 1 }); assert.equal(s.floatBack, 0, 'large restless inputs do not teach relaxation');
-  s.step(DT, { act: false }); ticks(s, 8.1, { act: true });
+  s.step(DT, { act: false }); ticks(s, SWIM.floatSeconds + 0.1, { act: true });
   assert.equal(s.snapshot().floatSide, 'back'); assert.ok(s.pitch < 0);
   assert.equal(s.stage, 'float', 'holding a completed back float still needs upright release');
   s.step(DT, { act: false }); assert.equal(s.floatMode, 'front');
   ticks(s, 12, { act: true }); assert.equal(s.floatFront, 0);
   assert.equal(s.snapshot().floatSide, 'upright', 'long face-down input comes upright with a breathing correction');
   s.step(DT, { act: false }); ticks(s, 1);
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < SWIM.frontSeconds / 2; i++) {
     ticks(s, 2, { act: true }); assert.equal(s.snapshot().floatSide, 'front'); assert.equal(s.bubbles, true);
     s.step(DT, { act: false }); ticks(s, 1);
   }
@@ -112,6 +124,7 @@ test('eight paced sculls teach treading; held button, frantic taps and very late
   const late = lessonTo('tread');
   for (let i = 0; i < 9; i++) { late.step(DT, { act: true }); ticks(late, 3, { act: false }); }
   assert.equal(late.sculls, 1); assert.ok(late.events.some(e => e.feedback === 'follow_rhythm'));
+  assert.equal(late.retries, 0, 'the tap the screen asks for ("tap once to restart the pulse") is never a penalty');
   for (let i = 0; i < 1000 && late.stage === 'tread'; i++) late.step(DT, guidedInput(late));
   assert.equal(late.stage, 'glide', 'pace corrections allow the player to recover');
 });
@@ -121,6 +134,8 @@ test('a required drill release clears its resolved instruction without earning a
   for (let i = 0; i < 8000 && s.stage !== 'tread'; i++) s.step(DT, guidedInput(s));
   assert.equal(s.stage, 'tread'); assert.equal(s.needsRelease, true);
   s.step(DT, { act: true });
+  assert.equal(s.feedback, '', 'the tap that finished the last drill is not told off while it is still coming up');
+  ticks(s, SWIM.releaseGrace + DT, { act: true });
   assert.equal(s.feedback, 'release_to_continue'); assert.equal(s.sculls, 0);
   const retries = s.retries;
   s.step(DT, { act: false });
@@ -149,7 +164,7 @@ test('new valid bubble and front-float holds clear resolved air guidance but kee
   assert.equal(short.feedback, 'gentle_bubbles', 'a fresh active correction can reappear after resolved guidance clears');
   assert.equal(short.retries, shortRetries, 'the original duplicate-penalty cooldown is preserved');
 
-  const front = lessonTo('float'); ticks(front, 8.1, { act: true }); front.step(DT, { act: false });
+  const front = lessonTo('float'); ticks(front, SWIM.floatSeconds + 0.1, { act: true }); front.step(DT, { act: false });
   ticks(front, 2.6, { act: true }); assert.equal(front.feedback, 'normal_breath');
   front.step(DT, { act: false }); ticks(front, 0.7); const frontRetries = front.retries;
   front.step(DT, { act: true });
@@ -192,6 +207,7 @@ test('pool limits remain solid when inputs aim away from the lesson marker', () 
   const s = lessonTo('glide');
   ticks(s, 80, q => ({ mx: 1, act: !q.held && (q.lastStroke === null || q.time - q.lastStroke >= q.rules.beat - DT / 2) }));
   assert.equal(s.position.x, SWIM.bounds.x); assert.equal(s.stage, 'glide');
+  assert.ok(SWIM.bounds.x < 2.3, 'the swimmer stays between the lane ropes drawn at x = +-2.3');
   assert.ok(s.events.some(e => e.feedback === 'inside_pool'));
 });
 
@@ -223,7 +239,7 @@ test('exact breathing boundaries work across frame rates without admitting short
       assert.equal(s.bubbles, true, `${level}, dt=${dt}, exact air=${rules.air}`);
       assert.equal(s.retries, 0);
 
-      const front = lessonTo('float', level); ticks(front, 8.1, { act: true }); front.step(dt, {});
+      const front = lessonTo('float', level); ticks(front, SWIM.floatSeconds + 0.1, { act: true }); front.step(dt, {});
       exact(front, seconds, dt, { act: true }); front.step(dt, {});
       assert.ok(Math.abs(front.floatFront - seconds) < 1e-6, `${level}, dt=${dt}, front hold=${seconds}`);
       assert.equal(front.retries, 0);

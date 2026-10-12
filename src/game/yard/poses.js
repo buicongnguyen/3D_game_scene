@@ -10,6 +10,7 @@ const POSES = {
   set: { dur: 0.5 },
   spike: { dur: 0.55 },
   pull: { dur: 0.5 },
+  grip: { dur: 0.6 },            // tug of war between heaves: both hands on the rope, leaning back (held: ./round.js restarts it)
   jump: { dur: 0.55 },
   hop: { dur: 0.34 },
   flick: { dur: 0.6 },
@@ -45,6 +46,14 @@ export class Poses {
     this.active.push({ body, kind, t: 0, dur });
   }
 
+  /** Keep a pose held: start it when the body is free, and never let a held one run out (its ramp-in is not replayed). */
+  hold(body, kind) {
+    if (!body?.model) return;
+    const have = this.active.find(p => p.body === body);
+    if (!have) { this.active.push({ body, kind, t: 0, dur: POSES[kind]?.dur ?? 0.4 }); return; }
+    if (have.kind === kind && have.t > have.dur * 0.5) have.t = have.dur * 0.5;
+  }
+
   /** Is this body posing now? */
   busy(body) { return this.active.some(p => p.body === body); }
 
@@ -75,6 +84,7 @@ export class Poses {
         bob = 0.28 * bell(k * 1.2);
         break;
       }
+      case 'grip': { const g = Math.min(1, k * 4); rot(B.uaL, -0.95 * g, 0, 0.28 * g); rot(B.uaR, -0.95 * g, 0, -0.28 * g); rot(B.faL, -0.45 * g); rot(B.faR, -0.45 * g); rot(B.spine, -0.14 * g); break; }
       case 'pull': rot(B.uaL, -1.3 * h); rot(B.uaR, -1.3 * h); rot(B.faL, -0.3 * h); rot(B.faR, -0.3 * h); rot(B.spine, -0.32 * h); rot(B.thR, 0.25 * h); break;
       case 'jump': rot(B.uaL, 0, 0, 0.9 * s); rot(B.uaR, 0, 0, -0.9 * s); bob = 0; break;
       case 'hop': rot(B.uaL, 0, 0, 1.0 * s); rot(B.uaR, 0, 0, -1.0 * s); rot(B.spine, 0.18 * s); break;

@@ -5,6 +5,8 @@ from anims import sn, cs, smooth, clamp, bump
 from human_lib import eul
 
 V = Vector
+# Wrists sit on top of the squatting knees with the palms down (fingers forward and down over the kneecap).
+HAND_X, HAND_Y, HAND_Z, HAND_PITCH = 0.125, -0.30, 0.345, -45
 GROUND_CLIPS = ['Crouch', 'CrouchWalk', 'CrouchReach', 'CrouchReachHold', 'Kneel', 'Pickup', 'SitGrass']
 
 
@@ -22,8 +24,8 @@ def squat(A, p, breathe=True):
     for S in 'LR':
         sx = A.sx(S)
         A.plant(s, S, (sx * 0.045 * k, -0.045 * k, 0), pole=(sx * 0.25, -1, 0.1))
-        A.arm_ik(s, S, V((sx * 0.18 * k, -0.28 * k, (0.37 * k + br))),
-                 pole=(sx, 0.4, -0.4), end=(25, 0, sx * -12), frame='world')
+        A.arm_ik(s, S, V((sx * HAND_X * k, HAND_Y * k, (HAND_Z * k + br))),
+                 pole=(sx, 0.4, -0.4), end=(HAND_PITCH, 0, sx * 8), frame='world')
     A.secondary(s, p if breathe else 0, drag=12, k=2, amp=0.15 if breathe else 0)
     return s
 
@@ -42,7 +44,7 @@ def crouch_walk(A):
             at.x += A.sx(S) * 0.045 * A.k
             s.setdefault('ik', {})['leg_' + S] = dict(target=at, end=eul((0, 0, 0)), pole=(A.sx(S) * 0.25, -1, 0.1))
             A.arm_ik(s, S, V((A.sx(S) * 0.2 * A.k, -0.34 * A.k, 0.42 * A.k)),
-                     pole=(A.sx(S), 0.4, -0.4), end=(20, 0, 0), frame='world')
+                     pole=(A.sx(S), 0.4, -0.4), end=(-35, 0, A.sx(S) * 8), frame='world')
         A.secondary(s, p, drag=14, k=2, amp=0.2)
         return s
     return 'CrouchWalk', 27, pose, True
@@ -56,13 +58,16 @@ def reach(A, hold=False):
         # exceed the short rig's arm length and the IK solver would clamp at the knee.
         x, y, z = s['hips@loc']
         s['hips@loc'] = (x, y, z - 0.02 * A.k * g)
-        s['hips'] = (18 + 18 * g, 0, 0)
-        s['spine'] = (8 + 20 * g, 0, 0)
-        s['chest'] = (4 + 6 * g, 0, 0)
-        rest = V((-0.18 * A.k, -0.28 * A.k, 0.37 * A.k))
+        s['hips'] = (18 + 14 * g, 0, 0)
+        s['spine'] = (8 + 15 * g, 0, 0)
+        s['chest'] = (4 + 5 * g, 0, 0)
+        # She watches her hand: the neck and head lift as the back folds, so her face never hides in her knees.
+        s['neck'] = (-12 - 12 * g, 0, 0)
+        rest = V((-HAND_X * A.k, HAND_Y * A.k, HAND_Z * A.k))
         target = V((-0.055 * A.k, -0.5 * A.k, 0.20 * A.k + (0.003 * A.k * sn(p) if hold else 0)))
-        A.arm_ik(s, 'R', rest.lerp(target, g), pole=(-1, 0.5, -0.4), end=(35 * g, 0, 0), frame='world')
-        s['head'] = (-6 + 1.5 * g, 0, -3 * g)
+        A.arm_ik(s, 'R', rest.lerp(target, g), pole=(-1, 0.5, -0.4),
+                 end=(HAND_PITCH - 15 * g, 0, -8 * (1 - g)), frame='world')
+        s['head'] = (-17 - 3 * g, 0, -4 * g)
         return s
     return ('CrouchReachHold', 45, pose, True) if hold else ('CrouchReach', 24, pose, False)
 
@@ -74,9 +79,11 @@ def kneel(A):
         s['hips@loc'] = (-0.02 * k, 0.015 * k, 0.35 * k - (A.hip['L'].z + A.hip['R'].z) / 2)
         A.plant(s, 'L', (0.025 * k, -0.20 * k, 0), pole=(0.1, -1, 0.4))
         A.plant(s, 'R', (-0.015 * k, 0.34 * k, 0.015 * k), pole=(-0.1, -0.35, -1))
-        for S in 'LR':
-            A.arm_ik(s, S, V((A.sx(S) * 0.15 * k, -0.30 * k, 0.35 * k)),
-                     pole=(A.sx(S), 0.4, -0.3), end=(15, 0, 0), frame='world')
+        # Left palm on the raised left knee; the right arm hangs relaxed beside the kneeling thigh.
+        A.arm_ik(s, 'L', V((A.sx('L') * 0.105 * k, -0.295 * k, 0.385 * k)),
+                 pole=(A.sx('L'), 0.4, -0.3), end=(HAND_PITCH, 0, A.sx('L') * 8), frame='world')
+        A.arm_ik(s, 'R', V((A.sx('R') * 0.19 * k, -0.10 * k, 0.30 * k)),
+                 pole=(A.sx('R'), 0.6, -0.2), end=(-10, 0, 0), frame='world')
         s['head'] = (0, 0, 0)
         return s
     return 'Kneel', 90, pose, True
@@ -92,7 +99,8 @@ def pickup(A):
         s['hips'] = (44 * bend, 0, -3 * bend)
         s['spine'] = (26 * bend, 0, 0)
         s['chest'] = (10 * bend, 0, 0)
-        s['head'] = (8 * bend, 0, 0)
+        s['neck'] = (-14 * bend, 0, 0)
+        s['head'] = (-20 * bend, 0, 0)
         A.plant(s, 'L', (0.015 * k, -0.04 * k, 0))
         A.plant(s, 'R', (-0.015 * k, 0.04 * k, 0))
         grab = V((-0.055 * k, -0.39 * k, 0.14 * k))

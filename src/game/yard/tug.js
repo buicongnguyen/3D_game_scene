@@ -148,7 +148,7 @@ export class TugSim {
 
   hud(names) {
     const n = Math.round(this.fatigue * 5);
-    return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: `${tx('Strain')} ${'▮'.repeat(n)}${'▯'.repeat(5 - n)}` };
+    return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: `${tx('Strain')} ${n}/5`, pips: { label: tx('Strain'), n, of: 5 } };
   }
   hint() {
     if (this.state === 'ready' && this.human) return tx('Press {act} as the ring closes on you');
@@ -181,6 +181,8 @@ export default {
   create: opts => new TugSim(opts),
   bot: tugBot,
   focus: { u: 0, v: 0, w: 9.5, l: 5 },
+  // a phone held upright: look along the rope from Mika's end, so the pull runs up the screen and the players are not 30 px
+  tall: { mode: 'side', pitch: 48, w: 9.4, l: 2.4, h: 1.4, top: 0.82, bottom: -0.78 },
   roles(ids, round = 0) {
     if (ids.length < 3) return { game: 'keepup', play: ids.slice(), watch: [] };
     const r = round % 3;

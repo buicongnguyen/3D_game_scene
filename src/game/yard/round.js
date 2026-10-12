@@ -47,7 +47,8 @@ export class Yard {
     this.kickT = 9;
     this.debug = { auto: null, seed: null };   // QA: auto = 'win' | 'lose' plays Mika's part (window.__STARLINE_QA__.director.yard)
     this.cam = 'end';
-    try { const c = localStorage.getItem(CAM_KEY); if (c === 'side' || c === 'end') this.cam = c; } catch { /* no storage */ }
+    this.camSet = false;          // has the player chosen a view? (until then a game may bring its own: sack race from the side)
+    try { const c = localStorage.getItem(CAM_KEY); if (c === 'side' || c === 'end') { this.cam = c; this.camSet = true; } } catch { /* no storage */ }
     this.pad = { dir: 0, hint: false, hold: false, aim: null, pick: null };
     this.ctl = {};
     for (const Y of YARD_LIST) this.ctl[Y.id] = { Y, y0: this.g.world.heightAt(Y.x, Y.z), here: [], hereGame: null, amb: null, override: null, held: [], seated: new Map(), inviteCool: 0 };
@@ -526,16 +527,33 @@ export class Yard {
     if (h._kl !== o.l) { h._kl = o.l; h._l.textContent = o.l; }
     if (h._kb !== o.big) { h._kb = o.big; h._big.textContent = o.big; }
     if (h._kr !== o.r) { h._kr = o.r; h._r.textContent = o.r; }
-    if (h._ks !== (o.sub || '')) { h._ks = o.sub || ''; h._sub.textContent = o.sub || ''; }
+    const ks = o.pips ? `${o.pips.label}|${o.pips.n}|${o.pips.of}` : o.sub || '';
+    if (h._ks !== ks) {
+      h._ks = ks;
+      if (!o.pips) h._sub.textContent = o.sub || '';
+      else {
+        // (drawn, not typed: the block glyphs fell back to hollow boxes that read as a missing font)
+        h._sub.textContent = `${o.pips.label} `;
+        const box = document.createElement('span'); box.className = 'pips';
+        for (let i = 0; i < o.pips.of; i++) { const s = document.createElement('i'); if (i < o.pips.n) s.className = 'on'; box.appendChild(s); }
+        h._sub.appendChild(box);
+      }
+    }
   }
 
+  /** A phone held upright (the games with a `tall` framing of their own use it there). */
+  tall() { return innerHeight > innerWidth * 1.15; }
+  /** The view a game is shown from: the player's own choice once made, else the game's (sack race: side), else from behind. */
+  camOf(G) { return !G?.sideOk ? 'end' : this.camSet ? this.cam : G.cam || this.cam; }
+
   toggleCam() {
-    this.cam = this.cam === 'side' ? 'end' : 'side';
+    this.cam = this.camOf(this.round?.G) === 'side' ? 'end' : 'side';
+    this.camSet = true;
     try { localStorage.setItem(CAM_KEY, this.cam); } catch { /* no storage */ }
     if (this.round?.sim) this.frame(this.round);
     this.labelCam();
   }
-  labelCam() { if (this.el) this.el.cam.textContent = this.cam === 'side' ? tx('Behind view') : tx('Side view'); }
+  labelCam() { if (this.el) this.el.cam.textContent = this.camOf(this.round?.G) === 'side' ? tx('Behind view') : tx('Side view'); }
 
   // ------------------------------------------------------------------ the camera
   /**
@@ -545,15 +563,15 @@ export class Yard {
   cameraFor(S, focus, mode = 'end', y0 = this.ground(S.x, S.z)) {
     const portrait = innerHeight > innerWidth * 1.15, th = (S.rot || 0) * Math.PI / 180;
     const cam = this.tmpCam, fov = portrait ? 66 : 50;
-    const pitch = (focus.pitch ? focus.pitch + (portrait ? 6 : 0) : mode === 'side' ? (portrait ? 50 : 24) : portrait ? 56 : 27) * Math.PI / 180;
+    const pitch = (focus.mode ? focus.pitch : focus.pitch ? focus.pitch + (portrait ? 6 : 0) : mode === 'side' ? (portrait ? 50 : 24) : portrait ? 56 : 27) * Math.PI / 180;
     cam.fov = fov; cam.aspect = innerWidth / innerHeight; cam.near = 1; cam.far = 500; cam.updateProjectionMatrix();
     const c = toWorld(focus.u, focus.v, {}, S), look = new THREE.Vector3(c.x, y0 + 0.6, c.z), pos = new THREE.Vector3();
     const dir = mode === 'side' ? [Math.cos(th), Math.sin(th)] : [Math.sin(th), -Math.cos(th)];
-    const top = portrait ? 0.74 : 0.6, bottom = portrait ? -0.56 : -0.86, side = 0.9;
+    const top = focus.top ?? (portrait ? 0.74 : 0.6), bottom = focus.bottom ?? (portrait ? -0.56 : -0.86), side = 0.9, hi = focus.h ?? 2.4, mid = Math.min(1.5, hi);
     const pts = [];
     for (const su of [-1, 1]) for (const sv of [-1, 1]) pts.push([focus.u + su * focus.w / 2, 0, focus.v + sv * focus.l / 2]);
-    pts.push([focus.u, 2.4, focus.v - focus.l / 2], [focus.u, 2.4, focus.v + focus.l / 2], [focus.u - focus.w / 2, 1.5, focus.v], [focus.u + focus.w / 2, 1.5, focus.v]);
-    for (let dist = 6; dist <= 48; dist += 0.5) {
+    pts.push([focus.u, hi, focus.v - focus.l / 2], [focus.u, hi, focus.v + focus.l / 2], [focus.u - focus.w / 2, mid, focus.v], [focus.u + focus.w / 2, mid, focus.v]);
+    for (let dist = focus.h ? 3.5 : 6; dist <= 48; dist += 0.5) {
       pos.set(look.x + dir[0] * Math.cos(pitch) * dist, look.y + Math.sin(pitch) * dist, look.z + dir[1] * Math.cos(pitch) * dist);
       cam.position.copy(pos); cam.lookAt(look); cam.updateMatrixWorld(true);
       let ok = true;
@@ -569,13 +587,32 @@ export class Yard {
 
   /** Put the round's camera where it belongs (also when the player changes the view). */
   frame(R) {
-    const follow = this.g.follow, shot = this.cameraFor(R.S, R.G.focus, R.G.sideOk ? this.cam : 'end', R.y0);
+    const follow = this.g.follow, tall = this.tall() ? R.G.tall : null, focus = tall ? { ...R.G.focus, ...tall } : R.G.focus;
+    const fol = tall?.follow && R.sim?.human ? tall.follow : null;
+    if (fol) focus.v = this.followV(R, fol);
+    const shot = this.cameraFor(R.S, focus, tall?.mode || this.camOf(R.G), R.y0);
     follow.fovBase = shot.fov;
     follow.cutscene({ pos: shot.pos, look: shot.look }, R.fresh ? 0.01 : 0.5);
+    // a travelling shot (the sack race on a phone): the same framing, slid along the stage with Mika (see trackStage)
+    R.trk = fol ? { pos: shot.pos, look: shot.look, v: focus.v, fol } : null;
+    if (fol) { if (R.fresh) { follow.camera.position.copy(shot.pos); follow.look?.copy(shot.look); } follow.track(() => R.trk.pos, () => R.trk.look, 6); }
     follow.yaw = shot.yaw;
     R.yaw = shot.yaw;
     R.aspect = innerWidth / innerHeight;
     R.fresh = false;
+  }
+
+  /** The middle (stage v) of a travelling shot: a little ahead of Mika, never past the ends of the game's own focus. */
+  followV(R, fol) {
+    const F = R.G.focus, half = Math.max(0, (F.l - fol.l) / 2);
+    return clamp(R.sim.human.v - fol.ahead, F.v - half, F.v + half);
+  }
+  /** Slide a travelling shot to where Mika is now (two vectors moved in place: nothing is made per frame). */
+  trackStage(R) {
+    const t = R.trk, v = this.followV(R, t.fol);
+    if (Math.abs(v - t.v) < 1e-4) return;
+    const a = toWorld(0, t.v, W1, R.S), ax = a.x, az = a.z, b = toWorld(0, v, W1, R.S), dx = b.x - ax, dz = b.z - az;
+    t.pos.x += dx; t.pos.z += dz; t.look.x += dx; t.look.z += dz; t.v = v;
   }
 
   /** The stick in stage space: +u right, +v toward the near side, for a camera heading `yaw` and a stage S. */
@@ -704,6 +741,7 @@ export class Yard {
     for (const it of kids) { const e = enterPoint(Y, it.n.pos.x, it.n.pos.z); if (e && (G.look === 'shuttle' || G.look === 'ball')) it.n.place(e[0], e[1], it.n.facing); }
     sim.players.forEach((pl, i) => { const it = bodies[i]; if (it) { const w = toWorld(pl.u, pl.v, W1, S); it.n.place(w.x, w.z, pl.team === 0 ? 0 : Math.PI); it.n.setIdle('Idle'); it.n.anim?.play('Idle'); } });
     // ---- camera and HUD
+    this.garlands(G.look !== 'board' && G.look !== 'marbles');
     this.frame(R);
     this.labelCam();
     const names = {
@@ -716,7 +754,7 @@ export class Yard {
     this.showPad(G.look);
     this.el.hud.classList.remove('hidden');
     this.el.stop.classList.remove('hidden');
-    this.el.cam.classList.toggle('hidden', !G.sideOk);
+    this.el.cam.classList.toggle('hidden', !G.sideOk || !!(this.tall() && G.tall?.mode));
     this.el.stop.innerHTML = `${tx('Stop playing')}<kbd>⌫</kbd>`;
     document.body.classList.add('trick-round', 'yard-round');
     this.hintLeft = 0; this.el.hint.classList.add('hidden');
@@ -771,6 +809,8 @@ export class Yard {
         this.driveMika(sim, human, S, G, dt);
       }
       if (G.moves && p.speed < 0.4) { const t = (S.rot || 0) * Math.PI / 180; p.turnTo(Math.atan2(-Math.sin(t), Math.cos(t)), dt, 8); }      // she faces the net when she stands still
+      if (R.trk) this.trackStage(R);
+      if (id === 'tug') { this.poses.hold(this.mikaBody(), 'grip'); for (const it of playing) if (!it.n.far) this.poses.hold(this.kidBody(it), 'grip'); }
       this.present(view, sim, dt, true, S, y0);
       this.events(c, sim, playing, G, true, S);
       this.setHud(sim, names);
@@ -852,6 +892,7 @@ export class Yard {
     g.follow.fovBase = keep.fov;
     g.follow.yaw = keep.yaw;
     g.follow.clearCutscene(true);
+    this.garlands(true);
     const p = g.player; if (p.pivot) p.pivot.rotation.x = 0;
     for (const it of [...c.seated.keys()]) this.unseat(c, it);
     for (const it of c.held) {
@@ -864,6 +905,18 @@ export class Yard {
     c.held = [];
     this.kickT = 9;
     this.showBoard(c);
+  }
+
+  /**
+   * The board games look straight down from a few metres up, through the festival garlands of a finished valley: a lantern
+   * string crossed the ô ăn quan board and paper lanterns the size of Mika hung in front of the marble ring. They are put
+   * away while such a round owns the camera (false) and hung again as they were (true).
+   */
+  garlands(show) {
+    const group = this.g.celebrate?.decor?.group;
+    if (!group) return;
+    if (!show) { if (this.garlandsWere === undefined) this.garlandsWere = group.visible; group.visible = false; }
+    else if (this.garlandsWere !== undefined) { group.visible = this.garlandsWere; this.garlandsWere = undefined; }
   }
 
   quit() {

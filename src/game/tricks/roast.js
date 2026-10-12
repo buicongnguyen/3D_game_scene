@@ -10,7 +10,8 @@ import * as THREE from 'three';
 import { tx, N_ } from '../../i18n/i18n.js';
 import { rng } from '../../engine/spline.js';
 import { Animator } from '../../actors/animator.js';
-import { fit, disposeRigs } from './util.js';
+import { fit, disposeRigs, keepShallow } from './util.js';
+import { WATER_Y } from '../../world/layout.js';
 
 // ---------------------------------------------------------------------------------------------------- pure rules
 export const POINTS = { perfect: 20, okay: 10, raw: 3, burnt: 0 };
@@ -285,6 +286,7 @@ class RoastRound {
   build() {
     const g = this.g, ctx = this.ctx, heightAt = (x, z) => g.world.heightAt(x, z);
     const L = this.lay = layout(heightAt, ctx.place, this.rand);
+    ctx.beforeMove?.(keepShallow(this.g.player, heightAt, WATER_Y + 0.1));       // the roast is a dry-land game: the river bank stops her
     this.clearGrass(L.x, L.z, 2.9);
     this.geo = {
       cone: this.keep(new THREE.ConeGeometry(1, 1, 9)),
