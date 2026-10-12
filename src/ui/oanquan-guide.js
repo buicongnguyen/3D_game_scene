@@ -13,7 +13,7 @@ export const OAN_LESSONS = [
 export const OAN_RULES = [
   N_('Your five small pits are the lower row. Choose a non-empty one, then choose ◀ or ▶. Keep that direction for the whole turn.'),
   N_('After your last pebble: a full small pit means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.'),
-  N_('An empty side refills with one captured pebble per pit. Missing pebbles are borrowed and repaid when counting. If both players together have fewer than five captured pebbles, the round ends.'),
+  N_('An empty side refills with one captured pebble per pit. Missing pebbles are borrowed and repaid when counting. If there are fewer than five captured pebbles between both players when refilling, the round ends.'),
   N_('This quick round ends when the first quan is captured, or after 24 turns. Your captured points plus pebbles left in your small pits decide the winner. Stones still in quan pits do not count.'),
 ];
 
@@ -95,9 +95,10 @@ export function oanDemoCaption(demo) {
 const CSS = `
 #oanHelpBtn{position:fixed;z-index:25;top:calc(66px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));min-height:44px;padding:8px 14px;border:2px solid #c9b48c;border-radius:999px;background:#fff7e8;color:#65452d;font:800 15px Nunito,system-ui,sans-serif;box-shadow:0 3px 8px #39271525;touch-action:manipulation;cursor:pointer}
 #oanGuide[hidden],#oanHelpBtn[hidden]{display:none!important}
+#oanHelpBtn[aria-expanded=true]{visibility:hidden}
 #oanGuide{position:fixed;z-index:32;inset:0;background:#24181055;display:flex;align-items:center;justify-content:center;padding:72px 12px 16px;box-sizing:border-box;color:#543a26;font:700 14px/1.4 Nunito,system-ui,sans-serif}
-#oanGuide .og-panel{width:830px;max-width:100%;max-height:100%;box-sizing:border-box;border:2px solid #d7bc8c;border-radius:22px;background:#fff7e8;box-shadow:0 12px 45px #27180766;overflow:auto;overscroll-behavior:contain;padding:16px;touch-action:pan-y}
-#oanGuide .og-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+#oanGuide .og-panel{width:960px;max-width:100%;max-height:100%;box-sizing:border-box;border:2px solid #d7bc8c;border-radius:22px;background:#fff7e8;box-shadow:0 12px 45px #27180766;overflow:auto;overscroll-behavior:contain;padding:16px;touch-action:pan-y}
+#oanGuide .og-head{position:sticky;top:-16px;z-index:2;background:#fff7e8;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-16px -16px 8px;padding:14px 16px 6px;border-radius:20px 20px 0 0}
 #oanGuide h2{font:600 24px/1.2 Fredoka,Nunito,system-ui,sans-serif;margin:0;color:#b34d23}
 #oanGuide h3{font-size:16px;line-height:1.3;margin:0 0 8px}
 #oanGuide button{min-height:44px;border:1.5px solid #c9b48c;border-radius:12px;padding:7px 11px;background:#fff;color:#543a26;font:800 14px/1.2 Nunito,system-ui,sans-serif;cursor:pointer;touch-action:manipulation}
@@ -111,15 +112,15 @@ const CSS = `
 #oanGuide .og-value{margin:0 0 10px;color:#a7401c;font-size:13px}
 #oanGuide .og-rules li{padding-left:2px;margin-bottom:10px}
 #oanGuide .og-controls{background:#f4e5cb;border-radius:12px;padding:10px;margin:12px 0 0}
-#oanGuide .og-demo{min-width:0;padding:12px;background:#f5e6cd;border-radius:16px}
-#oanGuide .og-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+#oanGuide .og-demo{min-width:0;padding:10px;background:#f5e6cd;border-radius:16px}
+#oanGuide .og-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
 #oanGuide .og-tabs button{font-size:13px;padding:6px}
-#oanGuide .og-lesson{min-height:78px;margin:0 0 10px}
+#oanGuide .og-lesson{margin:0 0 8px}
 #oanGuide .og-direction{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
 #oanGuide .og-direction b{flex:1}
-#oanGuide .og-rowname{text-align:center;font-size:12px;line-height:1.25;margin:3px 0}
-#oanGuide .og-board{display:grid;grid-template-columns:.9fr repeat(5,1fr) .9fr;grid-template-rows:repeat(2,minmax(58px,auto));gap:4px;position:relative}
-#oanGuide button.og-pit{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:58px;border:2px solid #bda478;background:#fcf4e7;border-radius:8px;padding:3px;opacity:1;cursor:default;font-size:14px}
+#oanGuide .og-rowname{text-align:center;font-size:12px;line-height:1.25;margin:2px 0}
+#oanGuide .og-board{display:grid;grid-template-columns:.9fr repeat(5,1fr) .9fr;grid-template-rows:repeat(2,minmax(50px,auto));gap:4px;position:relative}
+#oanGuide button.og-pit{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;min-height:50px;border:2px solid #bda478;background:#fcf4e7;border-radius:8px;padding:3px;opacity:1;cursor:default;font-size:14px}
 #oanGuide button.og-pit.mine{background:#e6f0d5}
 #oanGuide button.og-pit.quan{border-radius:30px;background:#f2ddad}
 #oanGuide button.og-pit.focus{border-color:#d65b26;box-shadow:inset 0 0 0 2px #ef936b}
@@ -130,15 +131,15 @@ const CSS = `
 #oanGuide .og-quan{width:14px;height:17px;border-radius:7px 7px 5px 5px;background:#d48629;border:1px solid #885126}
 #oanGuide .og-pit small{font-size:10px;line-height:1.1}
 #oanGuide .og-number{position:absolute;left:3px;top:1px;font-size:9px;font-weight:700;color:#806e56}
-#oanGuide .og-arrow{height:20px;text-align:center;color:#a7401c;font-size:13px;margin:4px 0}
-#oanGuide .og-counts{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;margin:6px 0}
-#oanGuide .og-caption{min-height:58px;background:#fffaf1;border-radius:10px;padding:9px;margin:8px 0;font-size:14px}
+#oanGuide .og-arrow{height:18px;text-align:center;color:#a7401c;font-size:13px;margin:2px 0}
+#oanGuide .og-counts{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:13px;margin:4px 0}
+#oanGuide .og-caption{background:#fffaf1;border-radius:10px;padding:8px;margin:8px 0;font-size:14px}
 #oanGuide .og-actions{display:flex;gap:8px;flex-wrap:wrap}
 #oanGuide .og-actions .og-next{flex:1}
-#oanGuide .og-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:14px;border-top:1px solid #d7bc8c;padding-top:12px}
+#oanGuide .og-footer{position:sticky;bottom:-16px;z-index:2;background:#fff7e8;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px -16px -16px;border-top:1px solid #d7bc8c;padding:10px 16px 14px}
 #oanGuide .og-note{margin:0;font-size:12px;color:#735d47}
-@media(max-width:700px){#oanGuide{padding:72px 8px 8px}#oanGuide .og-panel{padding:12px;border-radius:16px}#oanGuide h2{font-size:21px}#oanGuide .og-grid{grid-template-columns:1fr;gap:12px}#oanGuide .og-rules li{margin-bottom:8px}#oanGuide .og-demo{padding:10px}#oanGuide .og-lesson{min-height:0}#oanGuide .og-footer{align-items:flex-start}#oanHelpBtn{font-size:14px;padding:8px 11px}}
-@media(max-height:480px){#oanGuide{padding:60px 8px 6px}#oanGuide .og-panel{padding:10px}#oanGuide .og-head{margin-bottom:6px}#oanHelpBtn{top:12px;left:12px}}
+@media(max-width:700px){#oanGuide{padding:72px 8px 8px}#oanGuide .og-panel{padding:12px;border-radius:16px}#oanGuide .og-head{top:-12px;margin:-12px -12px 8px;padding:10px 12px 6px}#oanGuide h2{font-size:21px}#oanGuide .og-grid{grid-template-columns:1fr;gap:12px}#oanGuide .og-rules li{margin-bottom:8px}#oanGuide .og-demo{padding:10px}#oanGuide .og-tabs{grid-template-columns:1fr 1fr}#oanGuide .og-footer{bottom:-12px;gap:6px;flex-wrap:wrap;margin:10px -12px -12px;padding:8px 12px 10px}#oanGuide .og-note{width:100%}#oanGuide .og-footer button{flex:1}#oanHelpBtn{font-size:14px;padding:8px 11px}}
+@media(max-height:480px){#oanGuide{padding:60px 8px 6px}#oanGuide .og-panel{padding:10px}#oanGuide .og-head{top:-10px;margin:-10px -10px 6px;padding:8px 10px 4px}#oanGuide .og-footer{bottom:-10px;margin:8px -10px -10px;padding:6px 10px 8px}#oanHelpBtn{top:12px;left:12px}}
 `;
 
 /** The host freezes its round while isOpen, and restores any previous pause in onClose. */
@@ -217,7 +218,7 @@ export function createOanQuanGuide({ input = null, touch = false, onOpen = null,
     set('.og-value', tx('Pebble = 1 point · Quan = 10 points'));
     q('.og-rules ol').replaceChildren(...OAN_RULES.map(rule => { const li = document.createElement('li'); li.textContent = tx(rule); return li; }));
     set('.og-controls', touch ? tx('In the real round: tap one of your lower pits, then ◀ or ▶. Tap ? for a move hint.')
-      : input?.lastDevice === 'gamepad' ? tx('In the real round: left/right chooses a pit. X sows ▶; A sows ◀. Up shows a hint.')
+      : input?.lastDevice === 'gamepad' ? tx('In the real round: left/right chooses a pit. X sows ▶; A sows ◀. Use the on-screen ? for a hint.')
         : tx('In the real round: A/D or ←/→ chooses a pit. E sows ▶; Space sows ◀. W shows a hint.'));
     set('.og-demo h3', tx('Try a small example'));
     set('.og-direction b', tx('Sowing direction'));
@@ -232,6 +233,9 @@ export function createOanQuanGuide({ input = null, touch = false, onOpen = null,
   }
   const consume = e => { e.stopPropagation(); };
   button.addEventListener('pointerdown', consume);
+  // The game's window key handler prevents Space's default. Keep native focused-button activation
+  // without forwarding that Space/Enter to the game when the help panel is still closed.
+  button.addEventListener('keydown', consume); button.addEventListener('keyup', consume);
   button.addEventListener('click', e => { e.stopPropagation(); open(); });
   for (const type of ['pointerdown', 'pointerup', 'pointercancel', 'click']) modal.addEventListener(type, consume);
   q('.og-close').addEventListener('click', close); q('.og-resume').addEventListener('click', close);
