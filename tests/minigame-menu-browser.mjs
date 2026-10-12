@@ -354,6 +354,7 @@ async function everyGame(browser, name, dev) {
     log(`  ${id}: ${r.started ? 'started' : 'DID NOT START'}${r.started && !r.back ? ', DID NOT COME BACK' : ''}`);
     if (!r.started) bad.push(`${id}: did not start (${JSON.stringify(r.seen)})`);
     else if (!r.back) bad.push(`${id}: did not return to free roam`);
+    else if (await page.evaluate(() => { const c = document.getElementById('howTo'); return !!c && !c.classList.contains('hidden'); })) bad.push(`${id}: the How to play card stayed on screen after the game`);
     door = '#mgChip';
     if (!(await page.evaluate(() => !document.getElementById('mgChip').classList.contains('hidden')))) {
       // stuck: reload the page state is not possible; stop the sweep

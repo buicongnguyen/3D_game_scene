@@ -8,6 +8,7 @@ import { TRICKS, TRICK, trickOpen, inHours, recordRound } from '../content/trick
 import { CAST, DIALOGUE } from './story.js';
 import { tx, getLang } from '../i18n/i18n.js';
 import { storyId } from './stories/index.js';
+import { showHowTo, hideHowTo } from '../ui/howto.js';
 
 const AMBIENT_R = 60;          // the place's ambient life runs while Mika is this close
 const LOAD_R = 75;             // a trick's game is fetched when Mika comes this close to its sign (or opens it)
@@ -212,6 +213,7 @@ export class Tricks {
       this.dropMoveHooks();
       d.ground?.release('trick', true);
       this.el?.card.classList.add('hidden');
+      hideHowTo();
       this.round = null;
       this.locks = false;
       g.player.carry?.release('trick');
@@ -299,6 +301,7 @@ export class Tricks {
     this.el.hint.style.top = '';
     document.body.classList.remove('trick-round');
     this.el.hud.classList.add('hidden');
+    hideHowTo();
     g.follow.clearCutscene(true);
     this.locks = false;
     ctx.quit = true;
@@ -405,6 +408,7 @@ export class Tricks {
     this.setHud(0, ctx.roundTime, t);
     h.classList.remove('hidden');
     document.body.classList.add('trick-round');
+    showHowTo(`trick:${t.id}`, { input: this.g.input, touch: this.d.ui.touch, first: ctx.first });
   }
 
   setHud(score, timeLeft, t) {

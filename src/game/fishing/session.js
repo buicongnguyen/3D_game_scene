@@ -12,6 +12,7 @@ import { tx, N_ } from '../../i18n/i18n.js';
 import { FishingSim, CAST, BIG, PILE, makeFish, planCast, sizeFraction, pileSlot, pileAdd } from './sim.js';
 import { FishPond, fishingShot } from './pond.js';
 import { SPOTS, areaFor, allowed } from './places.js';
+import { showHowTo, hideHowTo } from '../../ui/howto.js';
 
 const HINTS = {
   aimMouse: N_('Click the water to cast'),
@@ -222,6 +223,7 @@ export class FishingSession {
     ui.innerHTML = '<div id="fishHint" class="off" role="status"><span></span><i></i></div><div id="fishKeys"></div>' +
       '<button id="fishLeave" type="button"></button><button id="fishReel" type="button" class="cast"><b></b></button>';
     document.body.append(pad, ui);
+    showHowTo('fish', { input: this.g.input, touch: this.d.ui.touch, first: !Object.keys(this.d.q?.state?.fishLog || {}).length });
     this.el = { hint: ui.querySelector('#fishHint'), text: ui.querySelector('#fishHint span'), bar: ui.querySelector('#fishHint i'),
       keys: ui.querySelector('#fishKeys'), reel: ui.querySelector('#fishReel'), reelText: ui.querySelector('#fishReel b'), leave: ui.querySelector('#fishLeave') };
     this.el.leave.textContent = `✕ ${tx(BTN.leave)}`;
@@ -718,6 +720,7 @@ export class FishingSession {
     for (const f of this.off) f();
     this.off = [];
     this.pad.remove(); this.ui.remove();
+    hideHowTo();
     g.input.release('act'); g.input.release('jump');
     document.body.classList.remove('fishing');
     for (const o of this.own) {

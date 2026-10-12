@@ -13943,12 +13943,6 @@
   ]
  },
  {
-  "s": "fireflies",
-  "ctx": [
-   "what a trick score counts (after the number)"
-  ]
- },
- {
   "s": "On a warm, still summer night, go with a grown-up to a clean stream far from street lights. Wait quietly, then scoop gently with a soft net.",
   "ctx": [
    "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
@@ -17235,13 +17229,15 @@
  {
   "s": "Hook!",
   "ctx": [
-   "UI (src/game/fishing/session.js)"
+   "UI (src/game/fishing/session.js)",
+   "UI (src/ui/howto.js)"
   ]
  },
  {
   "s": "Reel",
   "ctx": [
-   "UI (src/game/fishing/session.js)"
+   "UI (src/game/fishing/session.js)",
+   "UI (src/ui/howto.js)"
   ]
  },
  {
@@ -17746,7 +17742,8 @@
  {
   "s": "Hold",
   "ctx": [
-   "UI (src/game/tricks/archery-guide.js)"
+   "UI (src/game/tricks/archery-guide.js)",
+   "UI (src/ui/howto.js)"
   ]
  },
  {
@@ -18378,7 +18375,8 @@
  {
   "s": "How to play",
   "ctx": [
-   "UI (src/game/tricks/cowrace.js)"
+   "UI (src/game/tricks/cowrace.js)",
+   "UI (src/ui/howto.js)"
   ]
  },
  {
@@ -18749,13 +18747,74 @@
   ]
  },
  {
-  "s": "Sweep the net when a firefly glows: press {act} right next to one.",
+  "s": "Heike",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
   ]
  },
  {
-  "s": "Catch them while they glow!",
+  "s": "Genji",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Hime",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Walk softly",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)",
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Push the stick gently to walk softly up to a firefly. When its ring shines, tap {act}.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Walk softly up to a firefly. When its ring shines, press {act}.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Walk softly, and sweep when the rings shine!",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Ten! The jar is a real lantern now.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "A Hime firefly, tiny and golden! A rare one: 3 points.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "A Genji firefly! Big, with a slow blink. Worth 2 points.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "More than one in a sweep! Fireflies caught together are worth more.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Got one! A little Heike firefly, with a quick blink.",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
   ]
@@ -18773,13 +18832,19 @@
   ]
  },
  {
-  "s": "Ten! The jar is a real lantern now.",
+  "s": "Too early: it went dark. Wait for the glow, then sweep!",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
   ]
  },
  {
-  "s": "Too early: it went dark. Wait for the glow, then sweep!",
+  "s": "Too fast! They flew off. Push the stick gently and they come back.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Too fast! They flew off. Hold Shift to tiptoe and they come back.",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
   ]
@@ -18791,7 +18856,13 @@
   ]
  },
  {
-  "s": "Look for a cluster of blinks. Low ones are easier.",
+  "s": "Look for a few blinking together. The big Genji ones fly over the water.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "The jar is full!",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
   ]
@@ -18948,12 +19019,6 @@
  },
  {
   "s": "Mantises",
-  "ctx": [
-   "UI (src/game/tricks/hoppers.js)"
-  ]
- },
- {
-  "s": "Walk softly",
   "ctx": [
    "UI (src/game/tricks/hoppers.js)"
   ]
@@ -19235,6 +19300,31 @@
   ]
  },
  {
+  "s": "Thank you, Mika! Mmm, so sweet.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Ooh, hot! Thank you!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "The best potato ever!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Fan",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)",
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
   "s": "Good. Carry it to the fire spot.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
@@ -19265,25 +19355,43 @@
   ]
  },
  {
-  "s": "The ash is ready. Stand by a hollow and press {act} to bury a sweet potato.",
+  "s": "The ash is ready. Big potatoes take the longest! Stand by one and press {act} to cover it with ash.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
  },
  {
-  "s": "Bury the potatoes, then watch the ash over each one.",
+  "s": "Cover the potatoes with ash. Big ones take the longest: start with them.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
  },
  {
-  "s": "Now watch. Grey ash is still raw. An amber glow and white steam: dig it out with {act}. Black smoke is too late!",
+  "s": "Now watch. When a mound rocks and glows on one side, turn the potato with {act}.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
  },
  {
-  "s": "Amber glow and white steam: dig! Black smoke: too late.",
+  "s": "A rocking mound wants turning. Amber glow and white steam: dig!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Not yet: it is still hard. Wait for the amber glow.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Not yet. Wait until the mound rocks.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Well turned! Now wait: grey ash is still raw. An amber glow and white steam: dig it out with {act}. Black smoke is too late!",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
@@ -19301,7 +19409,19 @@
   ]
  },
  {
-  "s": "A bit dark on one side, still tasty.",
+  "s": "Dark on one side: this one wanted turning. Still tasty.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "A bit singed by the flare, still tasty.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "A little dry, still tasty.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
@@ -19314,6 +19434,36 @@
  },
  {
   "s": "Oh no, charcoal! That one stayed too long.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Good, it glows again. Not too much, or it flares up!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Too much! The flare singed the nearest potato. Fan gently.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Whoa, a flare! Fan gently: one wave at a time.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "The ash is going grey! Wave the fan with {fan}.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Mmm, thank you! Warm and sweet.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
@@ -20719,7 +20869,8 @@
  {
   "s": "Hold to flick",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/round.js)",
+   "UI (src/ui/howto.js)"
   ]
  },
  {
@@ -21552,6 +21703,297 @@
   ]
  },
  {
+  "s": "Walk softly. Running scares them away.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Sweep the net while they glow.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Big slow blinkers are worth more.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Cover a potato. Big ones take longest.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Rocking: turn it. Steam: dig it out!",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Fan the ash when it goes grey.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Wade slowly through the shallows.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Keep the light on a fish to name it.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Point at a bright star.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Pick the seven stars in order.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "A star falls? Press to make a wish.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Walk while the frogs sing.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Stand still when they go quiet.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Then copy the order they sang in.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Press when the marker is in the green.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Steer to stay in the wind.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Tug the line to climb.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Walk round until the sun is behind you.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "The web shines? Take a photo.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Walk up to a tree and read its name.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Lift slowly: hold, let go, hold again.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Creep up. Fast steps scare them.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Swing the net at the ring.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hold and let go: a wide, quiet sweep.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Walk toward the song.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Stand still when it goes quiet.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Tap on its beat, three times.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Run under the shuttle.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Kick just as it comes down.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Run under the ball.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hit just as it comes down.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Bump, set, then spike!",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Jump just before the rope touches the ground.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Keep the beat. It gets quicker.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Pull when the ring closes on you.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Off the beat tires you out.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "One press for every hop.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Steady wins. Too fast and you wobble.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Pick one of your squares.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Sow the pebbles left or right.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "An empty square, then a full one: yours!",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Aim at a marble.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hold, then let go to flick.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Cast where the fish swim.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hook it when the float sinks.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hold to reel. Let go when the line strains.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Do it",
+  "ctx": [
+   "UI (src/ui/howto.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Jump",
+  "ctx": [
+   "UI (src/ui/howto.js)",
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "Landslide scar",
   "ctx": [
    "UI (src/ui/map.js)"
@@ -21701,12 +22143,6 @@
   "s": "Look up at the sky at night, pick a star group and read about it to learn it.",
   "ctx": [
    "UI (src/ui/stargroups.js)"
-  ]
- },
- {
-  "s": "Do it",
-  "ctx": [
-   "UI (src/ui/ui.js)"
   ]
  },
  {
@@ -22037,13 +22473,6 @@
   "s": "Left thumb: move. Drag the right side: look.",
   "ctx": [
    "UI (src/ui/ui.js)"
-  ]
- },
- {
-  "s": "Jump",
-  "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
   ]
  },
  {

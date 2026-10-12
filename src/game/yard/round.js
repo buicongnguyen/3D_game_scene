@@ -12,6 +12,7 @@
 import * as THREE from 'three';
 import { YARD_LIST, stageOf, toWorld, toCourt, pathBetween, enterPoint, KID_STYLE, YARD_NAMES, YARD_RULES, YARD_NOTES, recordYard, cleanYard, gameOn, setGameOn, yardAt } from '../../content/yard.js';
 import { YARD_GAME, nextGame, levelFor, ambientRoles } from './index.js';
+import { showHowTo, hideHowTo } from '../../ui/howto.js';
 import { Views } from './views.js';
 import { squareAt } from './views.js';
 import { Poses } from './poses.js';
@@ -757,6 +758,7 @@ export class Yard {
     this.el.cam.classList.toggle('hidden', !G.sideOk || !!(this.tall() && G.tall?.mode));
     this.el.stop.innerHTML = `${tx('Stop playing')}<kbd>⌫</kbd>`;
     document.body.classList.add('trick-round', 'yard-round');
+    showHowTo(`yard:${id}`, { input: this.g.input, touch: this.d.ui.touch, first: !this.save?.[id]?.plays });
     this.hintLeft = 0; this.el.hint.classList.add('hidden');
     await d.ui.fade(false, 280);
     this.locks = !G.moves;
@@ -826,6 +828,7 @@ export class Yard {
     this.el.cam.classList.add('hidden');
     this.el.pad.classList.add('hidden'); document.body.classList.remove('yard-pad');
     this.el.hint.classList.add('hidden'); this.hintLeft = 0;
+    hideHowTo();
     if (!out || out.quit) return { quit: true };
     this.locks = true;
     p.vel.set(0, 0, 0);
@@ -888,6 +891,7 @@ export class Yard {
       for (const k of ['hud', 'stop', 'cam', 'hint', 'pad', 'card']) this.el[k].classList.add('hidden');
       document.body.classList.remove('trick-round', 'yard-round', 'yard-pad');
     }
+    hideHowTo();
     this.hintLeft = 0;
     g.follow.fovBase = keep.fov;
     g.follow.yaw = keep.yaw;
