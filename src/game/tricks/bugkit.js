@@ -251,6 +251,7 @@ export class NetRig {
   }
 
   dispose() {
+    this.pose(0); // Release only our last arm overlay, including a quit in the middle of a swing.
     this.net.removeFromParent();
     for (const x of this.net.userData.own || []) x.dispose();
   }

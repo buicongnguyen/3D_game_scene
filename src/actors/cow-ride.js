@@ -155,7 +155,8 @@ export class CowRide {
       (p.grip || p.model).add(this.hayBundle);
       p.carry?.want('worn', 'cow-hay');
     };
-    if (!d.ground?.pickup({ target, onGrab: show })) { show(); p.gesture('Interact', { lock: false }); }
+    // Hay is owned instantly. An interrupted cosmetic bend still leaves the armful in her hands.
+    if (!d.ground?.pickup({ target, onGrab: show, onDone: show })) { show(); p.gesture('Interact', { lock: false }); }
     d.audio.click();
     d.ui.toast(tx('A big armful of hay. Find a cow and feed her.'), 'cow-ride');
   }
