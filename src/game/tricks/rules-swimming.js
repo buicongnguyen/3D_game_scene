@@ -26,6 +26,7 @@ export class SwimLesson {
     this.position = { ...SWIM.start }; this.exit = { ...SWIM.exit }; this.heading = Math.PI;
     this.speed = 0; this.pitch = 0.1; this.clip = 'Tread'; this.bubbles = false;
     this.feedback = ''; this.feedbackLeft = 0; this.helpAt = SWIM.idleHelp;
+    this.feedbackCode = ''; this.feedbackCooldown = 0;
     this.events = []; this.held = false; this.needsRelease = false;
     this.holdTime = 0; this.airTime = this.rules.air; this.validHold = false; this.cycles = 0;
     this.floatMode = 'back'; this.floatBack = 0; this.floatFront = 0; this.floatSide = 'upright';
@@ -36,10 +37,18 @@ export class SwimLesson {
   emit(type, extra = {}) { this.events.push({ type, stage: this.stage, ...extra }); }
   hint(code, retry = false) {
     // Holding a wrong input gives one useful correction, not a penalty on every rendered frame.
-    if (this.feedback === code && this.feedbackLeft > 0) return;
-    this.feedback = code; this.feedbackLeft = 2.8;
+    this.feedback = code;
+    if (this.feedbackCode === code && this.feedbackCooldown > 0) {
+      this.feedbackLeft = this.feedbackCooldown; return;
+    }
+    this.feedbackCode = code; this.feedbackLeft = this.feedbackCooldown = 2.8;
     if (retry) { this.retries++; this.emit('retry', { feedback: code }); }
     else this.emit('hint', { feedback: code });
+  }
+
+  clearFeedback(...codes) {
+    if (codes.includes(this.feedback)) { this.feedback = ''; this.feedbackLeft = 0; }
+    // Keep the original penalty cooldown even when its resolved instruction is no longer visible.
   }
 
   advance() {
@@ -50,6 +59,7 @@ export class SwimLesson {
     }
     this.stage = SWIM_STAGES[++this.stageIndex]; this.phaseTime = 0; this.progress = 0;
     this.helpAt = SWIM.idleHelp; this.feedback = ''; this.feedbackLeft = 0;
+    this.feedbackCode = ''; this.feedbackCooldown = 0;
     this.needsRelease = this.held; this.holdTime = 0; this.validHold = false;
     this.airTime = this.rules.air; this.lastStroke = this.lastGood = null;
     this.speed = 0; this.emit('stage', { index: this.stageIndex });
@@ -64,11 +74,12 @@ export class SwimLesson {
     const mx = clamp(finite(input.mx), -1, 1), mv = clamp(finite(input.mv), -1, 1);
     const moving = Math.hypot(mx, mv) > 0.15, quiet = Math.hypot(mx, mv) <= 0.45;
     this.feedbackLeft = Math.max(0, this.feedbackLeft - dt);
+    this.feedbackCooldown = Math.max(0, this.feedbackCooldown - dt);
     if (!this.feedbackLeft) this.feedback = '';
     this.strokePulse = Math.max(0, this.strokePulse - dt);
     this.bubbles = false; this.clip = 'Tread'; this.pitch = 0.1; this.floatSide = 'upright';
     if (this.needsRelease) {
-      if (!act) this.needsRelease = false;
+      if (!act) { this.needsRelease = false; this.clearFeedback('release_to_continue'); }
       else { this.hint('release_to_continue'); return this.snapshot(); }
     }
 
@@ -81,6 +92,7 @@ export class SwimLesson {
       if (act) {
         this.holdTime += dt;
         this.bubbles = this.validHold && this.holdTime <= this.rules.bubbleMax;
+        if (this.bubbles) this.clearFeedback('normal_breath', 'gentle_bubbles');
         if (this.holdTime > this.rules.bubbleMax && this.validHold) {
           this.validHold = false; this.hint('normal_breath', true);
         }
@@ -112,6 +124,7 @@ export class SwimLesson {
         if (act) {
           this.holdTime += dt;
           if (this.validHold && this.holdTime <= this.rules.bubbleMax && quiet) {
+            this.clearFeedback('normal_breath', 'gentle_bubbles');
             this.floatSide = 'front'; this.clip = 'Swim'; this.pitch = 1.15; this.bubbles = true;
           } else if (this.holdTime > this.rules.bubbleMax && this.validHold) {
             this.validHold = false; this.hint('normal_breath', true);
@@ -189,6 +202,7 @@ export class SwimLesson {
     if (gap !== null && gap > this.rules.beat + this.rules.window + 1e-6) {
       this.hint('follow_rhythm', true); return false;
     }
+    this.clearFeedback('slow_scull', 'follow_rhythm', 'aim_marker', 'release_and_rhythm', 'try_cue');
     this.lastGood = this.time; this.strokePulse = 0.35; this.emit('good', { kind: 'stroke' }); return true;
   }
 

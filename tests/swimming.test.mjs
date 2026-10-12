@@ -116,6 +116,66 @@ test('eight paced sculls teach treading; held button, frantic taps and very late
   assert.equal(late.stage, 'glide', 'pace corrections allow the player to recover');
 });
 
+test('a required drill release clears its resolved instruction without earning a scull', () => {
+  const s = new SwimLesson();
+  for (let i = 0; i < 8000 && s.stage !== 'tread'; i++) s.step(DT, guidedInput(s));
+  assert.equal(s.stage, 'tread'); assert.equal(s.needsRelease, true);
+  s.step(DT, { act: true });
+  assert.equal(s.feedback, 'release_to_continue'); assert.equal(s.sculls, 0);
+  const retries = s.retries;
+  s.step(DT, { act: false });
+  assert.equal(s.feedback, ''); assert.equal(s.feedbackLeft, 0);
+  assert.equal(s.needsRelease, false); assert.equal(s.sculls, 0); assert.equal(s.retries, retries);
+});
+
+test('new valid bubble and front-float holds clear resolved air guidance but keep active corrections', () => {
+  const bubbles = new SwimLesson();
+  ticks(bubbles, 2.6, { act: true });
+  assert.equal(bubbles.feedback, 'normal_breath'); assert.equal(bubbles.bubbles, false);
+  bubbles.step(DT, { act: false }); bubbles.step(DT, { act: true });
+  assert.equal(bubbles.feedback, 'normal_breath', 'insufficient air still needs its correction');
+  bubbles.step(DT, { act: false }); ticks(bubbles, 0.7);
+  const retries = bubbles.retries;
+  bubbles.step(DT, { act: true });
+  assert.equal(bubbles.bubbles, true); assert.equal(bubbles.feedback, ''); assert.equal(bubbles.retries, retries);
+  ticks(bubbles, 2.6, { act: true });
+  assert.equal(bubbles.feedback, 'normal_breath', 'a newly overlong hold remains an active warning');
+
+  const short = new SwimLesson(); short.step(DT, { act: true }); short.step(DT, { act: false });
+  assert.equal(short.feedback, 'gentle_bubbles'); assert.equal(short.cycles, 0);
+  ticks(short, 0.7); const shortRetries = short.retries; short.step(DT, { act: true });
+  assert.equal(short.feedback, ''); assert.equal(short.cycles, 0); assert.equal(short.retries, shortRetries);
+  short.step(DT, { act: false });
+  assert.equal(short.feedback, 'gentle_bubbles', 'a fresh active correction can reappear after resolved guidance clears');
+  assert.equal(short.retries, shortRetries, 'the original duplicate-penalty cooldown is preserved');
+
+  const front = lessonTo('float'); ticks(front, 8.1, { act: true }); front.step(DT, { act: false });
+  ticks(front, 2.6, { act: true }); assert.equal(front.feedback, 'normal_breath');
+  front.step(DT, { act: false }); ticks(front, 0.7); const frontRetries = front.retries;
+  front.step(DT, { act: true });
+  assert.equal(front.snapshot().floatSide, 'front'); assert.equal(front.feedback, '');
+  assert.equal(front.retries, frontRetries); assert.equal(front.floatFront, 0);
+});
+
+test('earned sculls and aimed strokes clear old retry advice while preserving penalties and cadence', () => {
+  const s = lessonTo('tread'); s.step(DT, { act: true }); s.step(DT, { act: false }); s.step(DT, { act: true });
+  assert.equal(s.feedback, 'slow_scull'); assert.equal(s.sculls, 1);
+  const retries = s.retries;
+  ticks(s, s.rules.beat - DT); s.step(DT, { act: true });
+  assert.equal(s.sculls, 2); assert.equal(s.feedback, ''); assert.equal(s.retries, retries);
+  ticks(s, 3); s.step(DT, { act: true });
+  assert.equal(s.feedback, 'follow_rhythm'); assert.equal(s.sculls, 2);
+  const lateRetries = s.retries;
+  ticks(s, s.rules.beat - DT); s.step(DT, { act: true });
+  assert.equal(s.sculls, 3); assert.equal(s.feedback, ''); assert.equal(s.retries, lateRetries);
+
+  const glide = lessonTo('glide'); glide.step(DT, { act: true });
+  assert.equal(glide.feedback, 'aim_marker'); assert.equal(glide.glideStrokes, 0);
+  const aimRetries = glide.retries; glide.step(DT, { act: false }); glide.step(DT, { act: true, mv: -1 });
+  assert.equal(glide.glideStrokes, 1); assert.equal(glide.feedback, ''); assert.equal(glide.retries, aimRetries);
+  assert.ok(glide.speed > 0);
+});
+
 test('glide and swimming need propulsion plus direction, and the exit must be found and faced', () => {
   const glide = lessonTo('glide'); ticks(glide, 30, { mv: -1 });
   assert.deepEqual(glide.position, SWIM.start, 'stick movement alone is not swimming propulsion');
