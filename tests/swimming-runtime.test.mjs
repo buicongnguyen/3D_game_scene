@@ -58,6 +58,35 @@ test('pool disposal removes transient actors and geometry without disposing libr
   libraryGeo.dispose();libraryMat.dispose();
 });
 
+test('Low-quality pool replay releases each coach palette while preserving cached rig geometry and library materials',()=>{
+  const geometry=new THREE.BoxGeometry(),material=new THREE.MeshStandardMaterial();
+  const count=geometry.attributes.position.count;
+  geometry.setAttribute('skinIndex',new THREE.Uint16BufferAttribute(new Uint16Array(count*4),4));
+  const weights=new Float32Array(count*4);for(let i=0;i<count;i++)weights[i*4]=1;
+  geometry.setAttribute('skinWeight',new THREE.Float32BufferAttribute(weights,4));
+  let sharedDisposals=0,paletteDisposals=0;
+  geometry.addEventListener('dispose',()=>sharedDisposals++);material.addEventListener('dispose',()=>sharedDisposals++);
+  const assets={clone(){
+    const root=new THREE.Group(),bone=new THREE.Bone(),skeleton=new THREE.Skeleton([bone]);root.add(bone);
+    for(let i=0;i<2;i++){const mesh=new THREE.SkinnedMesh(geometry,material);mesh.bind(skeleton);root.add(mesh);}
+    return root;
+  }};
+  const scene=new THREE.Scene(),world={heightAt:()=>3,quality:{mergeChars:true}};
+  for(let round=0;round<3;round++){
+    const pool=makePool({scene,assets,world});
+    for(const npc of [pool.coach,pool.adult])npc.model.traverse(o=>{
+      if(!o.isMesh)return;
+      assert.notEqual(o.material,material,'Low tier creates a per-clone character palette');
+      o.material.addEventListener('dispose',()=>paletteDisposals++);
+      o.geometry.addEventListener('dispose',()=>sharedDisposals++);
+    });
+    pool.dispose();pool.dispose();
+    assert.equal(paletteDisposals,(round+1)*2,'both temporary palettes are disposed once per round');
+    assert.equal(sharedDisposals,0,'library and cached merged resources remain reusable');
+  }
+  geometry.dispose();material.dispose();
+});
+
 // Lightweight DOM exercises the actual round and button listeners without a GPU or source-text assertions.
 class Element extends EventTarget {
   constructor(){super();this.style={};this.textContent='';this.children=[];this.nodes=new Map();this.classes=new Set();

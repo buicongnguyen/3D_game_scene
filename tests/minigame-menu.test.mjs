@@ -4,6 +4,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import * as THREE from 'three';
+import { MinigameMenu } from '../src/game/minigame-menu.js';
+import { Quest } from '../src/game/quest.js';
 import { buildCatalogue, CATEGORIES, CATEGORY, META, SEASON_NAME, launchPlan, recordOf, badgeOf, inCategory } from '../src/content/minigames.js';
 import { TRICKS, trickOpen } from '../src/content/tricks.js';
 import { YARD_GAMES } from '../src/game/yard/index.js';
@@ -115,5 +118,34 @@ test('a game hosted by two yards names both places', () => {
   for (const e of list.filter(x => x.kind === 'yard')) {
     const hosts = YARD_LIST.filter(Y => Y.games.includes(e.ref));
     for (const Y of hosts) assert.ok(e.where.includes(Y.name), `${e.id} where shows ${Y.name}`);
+  }
+});
+
+test('borrowed story mini games restore the room before player position and preserve indoor/outdoor zoom', async () => {
+  for (const originalRoom of ['cottage', null]) {
+    const calls = [], pos = new THREE.Vector3(1200, 200, 900), original = pos.clone();
+    const p = { pos, facing: .6, teleport(x,z,y,facing) { calls.push(['teleport',x,y,z]); this.pos.set(x,y,z); this.facing=facing; } };
+    const interiors = { active:originalRoom, savedZoom:originalRoom ? 8 : undefined,
+      async exit() { calls.push(['exit',this.active]); this.active=null; g.follow.zoomTarget=this.savedZoom ?? g.follow.zoomTarget; this.savedZoom=undefined; },
+      async enter(id) { calls.push(['enter',id]); this.savedZoom=g.follow.zoomTarget; this.active=id; p.teleport(1100,800,200,0); g.follow.zoomTarget=4.6; },
+    };
+    const g = { player:p, interiors, follow:{yaw:.4,pitch:.3,zoomTarget:originalRoom ? 3.7 : 8}, applyLook() {} };
+    const quest = new Quest(null,{story:'grandma'}), state = JSON.stringify(quest.state);
+    const d = { game:g, quest, tourLock:false, explore:false, ui:{applyStory(){}}, tamo:{hide(){}}, refreshObjective(){} };
+    const menu = Object.assign(Object.create(MinigameMenu.prototype),{d,g});
+    menu.borrow();
+    assert.notEqual(d.quest,quest); assert.equal(d.tourLock,true);
+    if (interiors.active) await interiors.exit();
+    await interiors.enter('mill'); // a game can also leave an interior of its own open
+    g.follow.zoomTarget=10; p.pos.set(-22,4,65); calls.length=0;
+    await menu.giveBack();
+    assert.equal(interiors.active,originalRoom,'the saved room is visible and owns collisions again');
+    assert.equal(g.follow.zoomTarget,originalRoom ? 3.7 : 8);
+    assert.equal(interiors.savedZoom,originalRoom ? 8 : undefined);
+    assert.deepEqual(p.pos,original); assert.equal(p.facing,.6);
+    assert.equal(d.quest,quest); assert.equal(g.quest,quest); assert.equal(JSON.stringify(quest.state),state);
+    assert.equal(d.tourLock,false); assert.equal(menu.session,null);
+    assert.deepEqual(calls[0],['exit','mill']);
+    if(originalRoom)assert.ok(calls.findIndex(c=>c[0]==='enter')<calls.length-1,'enter precedes exact saved placement');
   }
 });

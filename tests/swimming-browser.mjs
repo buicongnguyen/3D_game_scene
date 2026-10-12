@@ -1,6 +1,6 @@
 // Complete the lesson through real keyboard/CDP touch input. No browser /src imports or forced lesson state.
 // BASE=http://127.0.0.1:5851 node tests/swimming-browser.mjs --quality=low,medium --out=.tools/swimming-prod
-// Without BASE/GAME_URL, starts an isolated Vite dev server on 5856. --only=desktop|phone; --shots=0; --story=0.
+// Without BASE/GAME_URL, starts an isolated Vite dev server on 5856. --only=desktop|phone|story; --shots=0; --story=0.
 import { chromium } from 'playwright';
 import assert from 'node:assert/strict';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -14,7 +14,7 @@ const args=Object.fromEntries(process.argv.slice(2).map(a=>a.replace(/^--/,'').s
 const BASE=process.env.BASE||process.env.GAME_URL||'http://127.0.0.1:5856/';
 const OUT=path.resolve(ROOT,args.out||'.tools/swimming-dev');mkdirSync(OUT,{recursive:true});
 const only=args.only?.split('-');
-const shots=args.shots!=='0',qualities=only?.[1]?[only[1]]:(args.quality||'low,medium').split(','),devices=only?[only[0]]:['desktop','phone'];
+const shots=args.shots!=='0',qualities=only?.[1]?[only[1]]:(args.quality||'low,medium').split(','),devices=only?.[0]==='story'?[]:only?[only[0]]:['desktop','phone'];
 const results=[],failures=[],t0=Date.now();
 const log=(...s)=>console.log(`[${Math.round((Date.now()-t0)/1000)}s]`,...s);
 const check=(ok,message)=>{if(!ok){failures.push(message);log('FAIL',message);}};
@@ -214,11 +214,16 @@ async function storyCase(){
     await s.boot('start=continue',save);await s.page.waitForFunction(()=>window.__STARLINE_PLAYING__,null,{timeout:120000});
     for(let i=0;i<80;i++){const a=await s.read();if(!a.busy&&!a.dialogue)break;if(a.dialogue)await s.page.keyboard.press('KeyE');await s.page.waitForTimeout(150);}
     await s.page.waitForTimeout(600);
-    const snapshot=()=>s.page.evaluate(()=>{const g=window.__STARLINE__,d=g.director,p=g.player;return{save:localStorage.getItem('starline-save-1'),step:d.q.state.step,story:d.q.state.story,pos:[p.pos.x,p.pos.y,p.pos.z,p.facing].map(v=>+v.toFixed(3)),season:g.seasonOverride??null,hour:g.timeOverride??null,tourLock:!!d.tourLock,explore:!!d.explore};});
-    const before=await snapshot();await s.page.keyboard.press('Escape');await s.page.waitForSelector('#btnPauseMini');await s.choose('#btnPauseMini');await s.shot('borrowed-pool');await s.leave();const after=await snapshot();
-    check(JSON.stringify(before)===JSON.stringify(after),'story-return: pause-menu lesson leaves story save/progress/player/look unchanged');
+    const snapshot=()=>s.page.evaluate(()=>{const g=window.__STARLINE__,d=g.director,p=g.player;return{save:localStorage.getItem('starline-save-1'),step:d.q.state.step,story:d.q.state.story,pos:[p.pos.x,p.pos.y,p.pos.z,p.facing].map(v=>+v.toFixed(3)),season:g.seasonOverride??null,hour:g.timeOverride??null,tourLock:!!d.tourLock,explore:!!d.explore,interior:g.interiors.active,roomVisible:g.interiors.active?g.interiors.rooms.get(g.interiors.active).root.visible:false,zoom:g.follow.zoomTarget,outdoorZoom:g.interiors.savedZoom??null};});
+    const cases=[];
+    for(const room of [null,'cottage']){
+      if(room){await s.page.evaluate(async id=>{const g=window.__STARLINE__;g.follow.zoomTarget=8;await g.interiors.enter(id);g.follow.zoomTarget=3.7;},room);await s.page.waitForTimeout(500);}
+      const before=await snapshot();await s.page.keyboard.press('Escape');await s.page.waitForSelector('#btnPauseMini');await s.choose('#btnPauseMini');await s.shot(`borrowed-pool-${room||'outside'}`);await s.leave();const after=await snapshot();
+      check(JSON.stringify(before)===JSON.stringify(after),`story-return (${room||'outside'}): pause-menu lesson leaves story save/progress/player/room/camera unchanged`);
+      await s.shot(`restored-${room||'outside'}`);cases.push({room,before,after});
+    }
     const restored=await s.page.evaluate(RESTORE);check(!restored.left&&!restored.ui&&!restored.ownUpdate,'story-return: no practice resources/controller remain');
-    check(!s.errors.length,`story-return: no runtime errors ${s.errors.join('; ')}`);results.push({name:'story-return',before,after,restored,errors:s.errors});log('story-return','passed');
+    check(!s.errors.length,`story-return: no runtime errors ${s.errors.join('; ')}`);results.push({name:'story-return',cases,restored,errors:s.errors});log('story-return','passed');
   }catch(e){failures.push(`story-return: ${e.stack||e}`);await s.shot('failure').catch(()=>{});results.push({name:'story-return',failed:String(e),state:await s.read().catch(()=>null),errors:s.errors});}
   finally{await s.close().catch(()=>{});}
 }

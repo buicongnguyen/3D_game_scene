@@ -170,8 +170,26 @@ export function makePool(game) {
   const bubbleGeo = keep(new THREE.SphereGeometry(.045,6,4)), bubbleMat = keep(new THREE.MeshBasicMaterial({ color:'#edffff',transparent:true,opacity:.8 }));
   const bubbles = new THREE.InstancedMesh(bubbleGeo,bubbleMat,12); bubbles.visible = false; group.add(bubbles);
   const poolWorld = { heightAt: () => POOL.deck, quality: game.world.quality };
-  const coach = new NPC(group,game.assets,poolWorld,'swim-coach','rin',{x:5.1,z:4,facing:-Math.PI/2});
-  const adult = new NPC(group,game.assets,poolWorld,'swim-watcher','villager-woman',{x:-5.1,z:1,facing:Math.PI/2});
+  const actor = (id, model, placement) => {
+    const shared = new Set(), local = new Set();
+    const assets = { clone(name) {
+      const clone = game.assets.clone(name);
+      clone?.traverse(o => { if (o.isMesh) for (const m of [o.material].flat()) shared.add(m); });
+      return clone;
+    } };
+    const npc = new NPC(group, assets, poolWorld, id, model, placement);
+    // Low-tier merging creates a palette per actor, but its merged geometry is cached across actors/rounds.
+    // Skeleton cleanup alone leaks these materials on every replay. Missing-model placeholders are also local.
+    npc.model.traverse(o => {
+      if (!o.isMesh) return;
+      for (const m of [o.material].flat()) if (!shared.has(m)) local.add(m);
+      if (!npc.anim) local.add(o.geometry);
+    });
+    local.forEach(keep);
+    return npc;
+  };
+  const coach = actor('swim-coach','rin',{x:5.1,z:4,facing:-Math.PI/2});
+  const adult = actor('swim-watcher','villager-woman',{x:-5.1,z:1,facing:Math.PI/2});
   const grass = trampleGrass(game.world, POOL.x, POOL.z, 11);
   game.scene.add(group);
   let disposed = false;

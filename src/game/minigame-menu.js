@@ -82,6 +82,7 @@ export class MinigameMenu {
       pos: p.pos.clone(), facing: p.facing, tourLock: d.tourLock, explore: d.explore, actCooldown: d.actCooldown,
       timetable: d.timetable, drawbridgeAngle: d.drawbridgeAngle, saveClock: d.saveClock, stepClock: d.stepClock, lastHour: d.lastHour, bees: d.bees,
       story: storyId(), interior: g.interiors?.active || null, yaw: g.follow.yaw, pitch: g.follow.pitch,
+      zoom: g.follow.zoomTarget, interiorZoom: g.interiors?.savedZoom,
     };
     d.quest = q; g.quest = q;
     d.tourLock = true;                       // canSave() is false: nothing a launched game does reaches a save file
@@ -101,9 +102,13 @@ export class MinigameMenu {
     this.setLook(s.seasonOverride, s.timeOverride, s.cycleHour);
     g.weatherOff = s.weatherOff;
     g.applyLook();
+    // Rooms live away from the outdoor valley. Restore visibility/collisions before the exact saved placement.
+    if (s.interior) await g.interiors?.enter(s.interior);
     p.teleport(s.pos.x, s.pos.z, s.pos.y, s.facing);
     g.follow.first = true;
     g.follow.yaw = s.yaw ?? s.facing; g.follow.pitch = s.pitch ?? g.follow.pitch;
+    g.follow.zoomTarget = s.zoom;
+    if (g.interiors) g.interiors.savedZoom = s.interiorZoom;
     if (d.tamoAround?.()) d.tamo.show(p.pos.clone().add(new THREE.Vector3(0, 1.6, 0)));
     else d.tamo.hide?.();                       // (a save before Tamo hatched: she was borrowed for the games)
     this.d.ui.applyStory?.();
