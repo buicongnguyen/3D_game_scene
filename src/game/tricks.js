@@ -136,7 +136,7 @@ export class Tricks {
       if (lang !== textLang) { textLang = lang; text[0] = text[1] = null; }
       return text[o] ??= o ? tx('Try: {name}', { name: tx(t.name) }) : tx('{name}: back in {when}', { name: tx(t.name), when: tx(t.when) });
     };
-    this.d.interact(`trick:${t.id}`, at.clone().setY(y + 1), label, () => this.ready() && !this.round,
+    this.d.interact(`trick:${t.id}`, at.clone().setY(y + 1), label, () => this.ready() && !this.round && !this.d.minigameMenu?.running,
       () => (this.open(t) ? this.play(t.id) : this.d.ui.toast(tx('{name}: back in {when}', { name: tx(t.name), when: tx(t.when) }), t.icon)), SIGN_R, null, 0.4);
   }
 

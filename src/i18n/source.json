@@ -2914,6 +2914,30 @@
   ]
  },
  {
+  "s": "Sora kept a box of nature cards. Eggs, caterpillars, tadpoles: every little animal's life, drawn by hand.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Cards. I thought the countryside was all running about and falling in rivers.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "This one is for your head, city girl. Put a life in order, find the missing card, spot the one that doesn't belong.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "On the green by the river, at the north end of Kawabe. No hurry: nobody is timing you.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Rin"
+  ]
+ },
+ {
   "s": "There's an archery range behind the Kawabe houses. Bamboo bow, straw targets, practice arrows with soft rubber tips.",
   "ctx": [
    "dialogue trick_archery_intro, spoken by Rin"
@@ -6191,6 +6215,30 @@
   "s": "Ask your science club. Chirps plus forty is the temperature in Fahrenheit. And then he goes home to bed.",
   "ctx": [
    "dialogue trick_cricket_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "I drew these cards when your mother was small, Mi-chan. Eggs, caterpillars, tadpoles: how little animals grow up.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Grandma, a caterpillar and a butterfly are the same animal? They look nothing alike.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "That is the puzzle! Put a life in order, find the missing card, spot the one that does not belong.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Come to the green by the river, at the north end of Kawabe. No hurry, no clock. Thinking is the whole game.",
+  "ctx": [
+   "dialogue trick_lifecycle_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -14339,6 +14387,36 @@
   ]
  },
  {
+  "s": "From egg to wings",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the green by the river, at the north end of Kawabe",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Look under leaves for eggs and caterpillars, and in still water for tadpoles and wrigglers. Come back every few days and draw what has changed.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Butterflies and mosquitoes change shape completely and rest as a pupa. Grasshoppers and dragonflies have no pupa: the young moult and grow wings.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Never touch a chrysalis. Tip standing water out of pots so mosquitoes cannot breed.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Bow and arrow",
   "ctx": [
    "countryside trick name (journal, sign prompt, results card)"
@@ -14429,7 +14507,7 @@
   ]
  },
  {
-  "s": "This is Amidakuji, the ladder lottery from Japan. Every rung swaps two neighbours, so four eggs always come out of four different spouts.",
+  "s": "This is Amidakuji, the ladder lottery from Japan. Every plain rung swaps two neighbours, so four eggs laid together come out of four different spouts.",
   "ctx": [
    "countryside trick: why it works, a true fun fact for kids"
   ]
@@ -14728,6 +14806,7 @@
   "s": "Next",
   "ctx": [
    "UI (src/actors/cow-help.js)",
+   "UI (src/game/tricks/lifecycle.js)",
    "UI (src/ui/ui.js)"
   ]
  },
@@ -15843,6 +15922,12 @@
   ]
  },
  {
+  "s": "Put the lives of small animals in order: a card game for thinkers.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
   "s": "Draw a bamboo bow and hit the straw target.",
   "ctx": [
    "UI (src/content/minigames.js)"
@@ -16741,7 +16826,7 @@
   ]
  },
  {
-  "s": "Kick the shuttle back over the net. First to 5.",
+  "s": "Kick the shuttle back over the net. Win the most points.",
   "ctx": [
    "UI (src/content/yard.js)"
   ]
@@ -17368,7 +17453,7 @@
   "ctx": [
    "UI (src/game/fishing/session.js)",
    "UI (src/game/tricks/archery.js)",
-   "UI (src/game/tricks/swimming.js)"
+   "UI (src/game/tricks/lifecycle.js)"
   ]
  },
  {
@@ -18085,7 +18170,8 @@
  {
   "s": "Wind",
   "ctx": [
-   "UI (src/game/tricks/archery.js)"
+   "UI (src/game/tricks/archery.js)",
+   "UI (src/game/yard/footnet.js)"
   ]
  },
  {
@@ -18096,6 +18182,12 @@
  },
  {
   "s": "Bonus end · sliding target",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Last end · swinging gong",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
   ]
@@ -18163,7 +18255,25 @@
   ]
  },
  {
+  "s": "The gong: {n} points.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
   "s": "End {n}: {pts} points.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "No wind today. Follow the dotted line: arrows drop as they fly.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "Strong gusts today, and no dotted line. Watch the sock before every arrow.",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
   ]
@@ -18188,6 +18298,12 @@
  },
  {
   "s": "Bonus end! The target slides: aim a little ahead of it.",
+  "ctx": [
+   "UI (src/game/tricks/archery.js)"
+  ]
+ },
+ {
+  "s": "The gong! It is small and it swings. Let go just before it reaches your circle.",
   "ctx": [
    "UI (src/game/tricks/archery.js)"
   ]
@@ -18331,6 +18447,12 @@
   ]
  },
  {
+  "s": "Hornet",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
   "s": "{clue} Press {act} to set the trap here.",
   "ctx": [
    "UI (src/game/tricks/beetles.js)"
@@ -18338,6 +18460,18 @@
  },
  {
   "s": "No trap set",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Another good tree. Rub the bait in well: press {act} in the green.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Let's see what this one brings. Rub the bait in: press {act} in the green.",
   "ctx": [
    "UI (src/game/tricks/beetles.js)"
   ]
@@ -18397,6 +18531,30 @@
   ]
  },
  {
+  "s": "One trap is set! Now a second tree: find another one with sweet sap.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Dawn! Beetles, and a hornet with yellow stripes. Never touch a hornet: lift only the beetles.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "The second tree. A hornet here too: leave it be, and lift the beetles gently.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Now the second tree. Slow hands again!",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
   "s": "Dawn! Look who came for breakfast. Lift one gently to look: slow hands, or it flies.",
   "ctx": [
    "UI (src/game/tricks/beetles.js)"
@@ -18427,13 +18585,37 @@
   ]
  },
  {
+  "s": "It wriggles! Let go and wait…",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "It wriggles! When the bar turns red, let go and wait a moment.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
   "s": "Too fast! It opened its wings and flew. Slow hands next time.",
   "ctx": [
    "UI (src/game/tricks/beetles.js)"
   ]
  },
  {
+  "s": "No, no! Never touch a hornet. It has buzzed off: leave the next one alone.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
   "s": "Choose a tree for the trap. Beetles drink sweet sap, so an oak or a chestnut is best. Walk up to one and read its name.",
+  "ctx": [
+   "UI (src/game/tricks/beetles.js)"
+  ]
+ },
+ {
+  "s": "Two traps tonight, on two trees. Oak and chestnut have the sweetest sap.",
   "ctx": [
    "UI (src/game/tricks/beetles.js)"
   ]
@@ -18515,6 +18697,48 @@
   ]
  },
  {
+  "s": "Now with the mud patch. Everyone slows there: keep the beat.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "The final! Fresh grass lies in two lanes only: steer for it.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "The champions' final. The other cows are quicker now!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Near the ribbon the others sprint. Keep your streak for the end!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Puddles! A splash slows her down. Steer round them.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "The grand final: puddles, grass and a sprint. Plan your lanes!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Heat {n} of {total}",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
   "s": "Go!",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)",
@@ -18558,6 +18782,18 @@
   ]
  },
  {
+  "s": "Splash!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Splash! A puddle slows her. Steer round the next one.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
   "s": "Mud! Everyone slows down. Keep the beat, do not mash.",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
@@ -18588,6 +18824,12 @@
   ]
  },
  {
+  "s": "Here they come! Sprint for the ribbon!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
   "s": "Steer between the lanes. Fresh grass makes her run faster!",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
@@ -18595,6 +18837,12 @@
  },
  {
   "s": "Nearly there! Keep the beat to the ribbon.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Heat {n}: {place}",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
   ]
@@ -18624,6 +18872,12 @@
   ]
  },
  {
+  "s": "This one sings more softly. Listen hard!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
   "s": "Listen! Turn toward the song and walk. It gets louder as you get close.",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
@@ -18637,6 +18891,12 @@
  },
  {
   "s": "It is right here. Take a tiny step closer, then stand still again.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "That was the bell cricket: a long, high trill. Ours sings in short chirps!",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
   ]
@@ -18672,6 +18932,12 @@
   ]
  },
  {
+  "s": "Tap with its beat, four times. Softly!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
   "s": "Tap with its beat, three times.",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
@@ -18690,6 +18956,12 @@
   ]
  },
  {
+  "s": "Count them yourself!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
   "s": "chirps in 14 seconds",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
@@ -18702,7 +18974,19 @@
   ]
  },
  {
+  "s": "Count the chirps yourself for 14 seconds. No number on the screen this time!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
   "s": "Count the chirps for 14 seconds. They tell how warm the night is!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "How many chirps was that?",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
   ]
@@ -18715,6 +18999,18 @@
  },
  {
   "s": "Make a guess",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "How many chirps did you count? Tap your answer!",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "How many chirps did you count? Pick 1, 2 or 3.",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
   ]
@@ -18751,6 +19047,12 @@
  },
  {
   "s": "Close your eyes and listen: a cricket is singing. Walk toward the song. When it goes quiet, stand still.",
+  "ctx": [
+   "UI (src/game/tricks/cricket.js)"
+  ]
+ },
+ {
+  "s": "Two songs tonight! Follow the short chirps, not the long high trill.",
   "ctx": [
    "UI (src/game/tricks/cricket.js)"
   ]
@@ -18810,13 +19112,49 @@
   ]
  },
  {
+  "s": "Perfect spot! {act}",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
   "s": "Six webs hide between the dry stems. Keep the sun behind you and they light up. Then press {act} for a photo.",
   "ctx": [
    "UI (src/game/tricks/dew.js)"
   ]
  },
  {
-  "s": "Find the six dew webs. Sun behind you, then {act} for a photo.",
+  "s": "{n} dew webs, and old ones with no dew: leave those! In line with the sun, a photo is perfect.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Find the {n} dew webs. Sun behind you, then {act} for a photo.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Part 2: the sun is climbing! The webs on the sunny side dry first.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "A web has dried away. Hurry to the ones still in the shade!",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "An old web: no dew",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "No dew on that one: an old, empty web. Look for the sparkle first!",
   "ctx": [
    "UI (src/game/tricks/dew.js)"
   ]
@@ -18835,6 +19173,18 @@
  },
  {
   "s": "All six! By noon the dew is gone and they vanish again.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "Every web found! By noon the dew is gone and they vanish again.",
+  "ctx": [
+   "UI (src/game/tricks/dew.js)"
+  ]
+ },
+ {
+  "s": "A perfect photo! Right in line with the sun.",
   "ctx": [
    "UI (src/game/tricks/dew.js)"
   ]
@@ -18870,6 +19220,24 @@
   ]
  },
  {
+  "s": "Morning eggs",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Busy hens",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Feeding time!",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
   "s": "A hen clucks and puffs before she lays. Stand under her gutter!",
   "ctx": [
    "UI (src/game/tricks/eggs.js)"
@@ -18882,13 +19250,91 @@
   ]
  },
  {
+  "s": "The hens are busy now. More rungs to read!",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Busy hens! Three eggs roll at once now.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Busy hens! Two eggs roll at once now.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Feeding time! Sometimes every hen lays at once.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Stage {n} of {of}",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Order: {n} eggs",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Clean stage! +{n}",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Every hen lays! Which egg comes down first?",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
   "s": "A golden egg is coming! It counts for three.",
   "ctx": [
    "UI (src/game/tricks/eggs.js)"
   ]
  },
  {
+  "s": "A chick! Step aside and let it land on the straw.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "A little brown egg! It rolls fast and counts for two.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
   "s": "Caught it! Every egg in your hat counts.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "{n} in a row! +{p}",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Order filled! +{n}",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Peep! Not in the hat. Chicks land on the straw.",
   "ctx": [
    "UI (src/game/tricks/eggs.js)"
   ]
@@ -18913,6 +19359,18 @@
  },
  {
   "s": "A rung! The egg takes every rung it meets. Follow it with your eyes.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "A red slide only carries eggs downhill.",
+  "ctx": [
+   "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "A board hides one spot. Remember what is behind it!",
   "ctx": [
    "UI (src/game/tricks/eggs.js)"
   ]
@@ -18948,10 +19406,34 @@
   ]
  },
  {
+  "s": "Part 2: the Genji hour! The big ones come out over the water.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Part 2: a breeze! The fireflies drift. Wait where they are going.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Part 3: the Genji hour! The breeze is dropping.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
   "s": "Walk softly",
   "ctx": [
    "UI (src/game/tricks/firefly.js)",
    "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Catch now:",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
   ]
  },
  {
@@ -18967,6 +19449,12 @@
   ]
  },
  {
+  "s": "Catch the kind the card asks for. The others fly off again!",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
   "s": "Walk softly, and sweep when the rings shine!",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
@@ -18974,6 +19462,12 @@
  },
  {
   "s": "Ten! The jar is a real lantern now.",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "That is the set! Now the next kind on the card.",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
   ]
@@ -19010,6 +19504,12 @@
  },
  {
   "s": "Halfway to a lantern. Keep going!",
+  "ctx": [
+   "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Not the kind on the card. Off it goes again!",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
   ]
@@ -19087,6 +19587,12 @@
   ]
  },
  {
+  "s": "Plop! Too close to that frog. Give the others a wide berth.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
   "s": "Oh! The singer hopped away. Find it by its voice.",
   "ctx": [
    "UI (src/game/tricks/frogs.js)"
@@ -19105,7 +19611,19 @@
   ]
  },
  {
+  "s": "Part 2: another singer, on a bund further off. Follow its voice!",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
   "s": "Listen to the order they sing in, then copy it: choose with left/right and press E, or tap the frogs.",
+  "ctx": [
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "No ring this time: watch their throats and listen. Then copy the song!",
   "ctx": [
    "UI (src/game/tricks/frogs.js)"
   ]
@@ -19159,6 +19677,54 @@
   ]
  },
  {
+  "s": "a green one",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "a brown one",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "a golden one",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "a mantis",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Part 2: two mantises are out. Creep when one stares!",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Part 3: three mantises! Slow and steady.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Part 2: a windy spell! The glow is gone. Look for the bugs themselves.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Part 3: the wind drops. Three mantises are out!",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
   "s": "1 grasshopper",
   "ctx": [
    "UI (src/game/tricks/hoppers.js)"
@@ -19195,6 +19761,12 @@
   ]
  },
  {
+  "s": "Catch next:",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
   "s": "Grasshoppers",
   "ctx": [
    "UI (src/game/tricks/hoppers.js)"
@@ -19220,6 +19792,12 @@
  },
  {
   "s": "It is only bluffing, rearing up to look big. A quieter walk next time!",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Just the one on the card! Now the next.",
   "ctx": [
    "UI (src/game/tricks/hoppers.js)"
   ]
@@ -19256,6 +19834,12 @@
  },
  {
   "s": "Creep up on a grasshopper (hold Shift), then press {act} to swing the net at the ring.",
+  "ctx": [
+   "UI (src/game/tricks/hoppers.js)"
+  ]
+ },
+ {
+  "s": "Creep up and swing at the ring. The bug on the card is worth 10 more!",
   "ctx": [
    "UI (src/game/tricks/hoppers.js)"
   ]
@@ -19345,7 +19929,55 @@
   ]
  },
  {
+  "s": "Every ring! What a flight.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Through the ring!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Today the wind turns: the green slides. And keep high near the tree on the right!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Caught in the tree! Fly high when the kite is on that side.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
   "s": "Down on the grass. Wind it in and up again! A tug helps.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "A ring up high! Keep the kite in the green and it climbs to it.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "A ring out to the side! Dash out to it, then back into the wind.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "A ring! Fly through it. Too high? Slide out of the green and the kite sinks.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "The wind is turning! Follow the green.",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
   ]
@@ -19381,6 +20013,12 @@
   ]
  },
  {
+  "s": "rings: {n} of {m}",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
   "s": "never touched the grass",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
@@ -19390,6 +20028,97 @@
   "s": "reached the top of the line",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Sit down by me, Mi-chan. These are my nature cards: every little animal's life, from egg to grown-up.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Sit down, city girl. These are Sora's old nature cards: every little animal's life, from egg to grown-up.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Nobody is counting the seconds. Look at the pictures, think, and then choose.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A butterfly has four shapes in its life. Pick the cards one by one, from first to last. The eggs come first!",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Now one card is missing from the row. Pick the card that fills the gap, then press Check.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "You have got it! The next ones are all yours. A wrong answer is fine: just think and try again.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Pick a card to lay it in the row. Pick it again to take it back.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Pick a card, then press Check.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Check",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)",
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Finish",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Yes!",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Let me show you.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Not quite.",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "{n} of {total} right at the first try",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "steady thinking +{n}",
+  "ctx": [
+   "UI (src/game/tricks/lifecycle.js)"
   ]
  },
  {
@@ -19417,6 +20146,24 @@
   ]
  },
  {
+  "s": "Find:",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Splash! It darted off. Push the stick gently near a fish.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Splash! It darted off. Hold Shift to wade softly near a fish.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
   "s": "A {fish}! It only comes out at night.",
   "ctx": [
    "UI (src/game/tricks/river.js)"
@@ -19429,13 +20176,31 @@
   ]
  },
  {
+  "s": "All three on the list! Well spotted.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
   "s": "Too deep! Stay in the shallows, where the water is below your knees.",
   "ctx": [
    "UI (src/game/tricks/river.js)"
   ]
  },
  {
+  "s": "Part 2: the night deepens. More fish come out to feed!",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
   "s": "Walk slowly through the shallows. Hold the lantern's light over a fish for a moment to name it.",
+  "ctx": [
+   "UI (src/game/tricks/river.js)"
+  ]
+ },
+ {
+  "s": "Wade softly near a fish, or it darts off. Find the three kinds on the list!",
   "ctx": [
    "UI (src/game/tricks/river.js)"
   ]
@@ -19550,6 +20315,12 @@
   ]
  },
  {
+  "s": "A chestnut! It cooks fast and wants no turning. Dig it at the amber glow, or it pops!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
   "s": "Now watch. When a mound rocks and glows on one side, turn the potato with {act}.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
@@ -19575,6 +20346,12 @@
  },
  {
   "s": "Well turned! Now wait: grey ash is still raw. An amber glow and white steam: dig it out with {act}. Black smoke is too late!",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "A perfect chestnut! Warm and floury.",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
@@ -19635,6 +20412,30 @@
  },
  {
   "s": "Whoa, a flare! Fan gently: one wave at a time.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Pop! That chestnut stayed too long. Next time dig it sooner.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Rain spots! They cool the ash. Wave the fan with {fan}, gently.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "More potatoes! Cover them while the others cook, and keep an eye on every mound.",
+  "ctx": [
+   "UI (src/game/tricks/roast.js)"
+  ]
+ },
+ {
+  "s": "Here is the next batch. In they go!",
   "ctx": [
    "UI (src/game/tricks/roast.js)"
   ]
@@ -19875,6 +20676,12 @@
   ]
  },
  {
+  "s": "Stars: the points of all heats add up. Win every heat for 3 stars.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
   "s": "Press {act} to ride",
   "ctx": [
    "UI (src/game/tricks/rules-cowhelp.js)"
@@ -19896,6 +20703,408 @@
   "s": "Walk up to her, then press {act} to feed her",
   "ctx": [
    "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "In the water",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "On a plant",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "In the soil",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "In the air",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Butterfly",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Egg, caterpillar, chrysalis, butterfly: four very different shapes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Butterfly eggs",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A butterfly lays her tiny eggs on a leaf that her babies can eat.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Caterpillar",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A caterpillar hatches from a butterfly egg and munches leaves all day.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Chrysalis",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Inside the chrysalis the caterpillar rests and slowly becomes a butterfly.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "The butterfly comes out, dries its new wings and flies from flower to flower.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Mosquito",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Egg raft, wriggler, tumbler, mosquito: the first three live in water.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Egg raft",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A mosquito lays her eggs in a tiny raft that floats on still water.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Wriggler",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A wriggler is a baby mosquito. It hangs under the water and breathes through a tube.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Tumbler",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A tumbler is a mosquito pupa. It tumbles down in the water when a shadow passes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "The grown mosquito climbs out of the water, dries its wings and flies away.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Grasshopper",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Eggs, small nymph, big nymph, grasshopper: it only grows bigger. No pupa!",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Grasshopper eggs",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A grasshopper pushes her eggs into the soil, where they wait for spring.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Small nymph",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A young grasshopper is called a nymph. It looks like its parents, with no wings yet.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Big nymph",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "The nymph sheds its skin again and again. Little wing buds show on its back.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "After its last moult the grasshopper has long wings. It never was a pupa!",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Frog",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Frogspawn, tadpole, legs, froglet, frog: from the water to the land.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Frogspawn",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Frogspawn is a cloud of jelly eggs that floats in a pond.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Tadpole",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A tadpole is a baby frog. It swims with its tail and breathes under water.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Tadpole with legs",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "The back legs grow first, then the front legs. The tadpole still lives in water.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Froglet",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A froglet has four legs, and its tail gets shorter every day.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "The grown frog has no tail. It breathes air and hops on land.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Dragonfly",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Eggs, nymph, dragonfly: the young live under water, and there is no pupa.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Dragonfly eggs",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A dragonfly dips her tail into the pond and lays her eggs on a water plant.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Dragonfly nymph",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A dragonfly nymph lives under water for a long time and hunts there.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "The nymph climbs up a stem, its skin splits, and a dragonfly flies away. No pupa!",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Put the cards in order, from first to last.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Two lives got mixed up. Fill the row with one life, in order.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Which card fills the gap?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Which card does not belong with the others?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Who will this little one grow up to be?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Which little one grows into this animal?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Where does it live?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Each row is one animal growing up. Which card is missing?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Which one rests as a pupa before it gets its wings?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Which one never has a pupa stage?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Which one grows up under water and then flies away?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Whose young look like a small copy of the grown-up?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Butterflies and mosquitoes rest as a pupa. Grasshoppers, dragonflies and frogs never do.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Young mosquitoes and dragonflies live in water. Then they climb out and fly.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "A grasshopper nymph already looks like its parents. It only has to grow its wings.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Not there. Look at the picture once more.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "The green cards are right. Try the others again.",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Think again: which one comes first of all?",
+  "ctx": [
+   "UI (src/game/tricks/rules-lifecycle.js)"
   ]
  },
  {
@@ -19923,6 +21132,66 @@
   ]
  },
  {
+  "s": "Now look higher: five stars in a zigzag, like a W on its side. That is Cassiopeia. Join them from either end.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "The Big Dipper! Now follow the two stars at the end of the bowl, about five times their gap, to the North Star.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "The North Star sits between the two. Follow the Dipper's pointer stars, or go straight out from the middle of the W.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Now the North Star: between the Big Dipper and the W. No lines to help tonight!",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "The North Star is the tip of the Little Dipper's handle. Join its faint stars, down to the little bowl.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Not that one. The next star along the ladle.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Not that one. The next star along the W.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Not that one. The next star down the little handle.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "Cassiopeia! She sits across the North Star from the Big Dipper, all year round.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
+  "s": "The Little Dipper! It swings round the North Star all night.",
+  "ctx": [
+   "UI (src/game/tricks/stars.js)"
+  ]
+ },
+ {
   "s": "See the pale band across the sky? The Milky Way: billions of stars, too far away to see one by one.",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
@@ -19941,13 +21210,13 @@
   ]
  },
  {
-  "s": "The Big Dipper! Now follow the two stars at the end of the bowl, about five times their gap, to the North Star.",
+  "s": "Polaris, the North Star. It hardly moves all night, so travellers always knew where north was.",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
   ]
  },
  {
-  "s": "Polaris, the North Star. It hardly moves all night, so travellers always knew where north was.",
+  "s": "A cloud is in the way. Wait for it to drift past.",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
   ]
@@ -19959,13 +21228,13 @@
   ]
  },
  {
-  "s": "Not that one. The next star along the ladle.",
+  "s": "Start at either end: the tip of the handle or the edge of the bowl.",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
   ]
  },
  {
-  "s": "Start at either end: the tip of the handle or the edge of the bowl.",
+  "s": "Start at either end of the W.",
   "ctx": [
    "UI (src/game/tricks/stars.js)"
   ]
@@ -20307,7 +21576,7 @@
   ]
  },
  {
-  "s": "Tap Action each time the dot reaches the green. Eight slow taps keep her head up.",
+  "s": "Tap Action each time the dot reaches the green. Slow, steady taps keep her head up.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -20338,6 +21607,12 @@
  },
  {
   "s": "Look for exit",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Swim through the two red rings, then to the gold exit. Tap Action when the dot reaches the green.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -20876,11 +22151,23 @@
   ]
  },
  {
+  "s": "The wind carries the shuttle: aim into it.",
+  "ctx": [
+   "UI (src/game/yard/footnet.js)"
+  ]
+ },
+ {
   "s": "Press {act} to serve",
   "ctx": [
    "UI (src/game/yard/footnet.js)",
    "UI (src/game/yard/keepup.js)",
    "UI (src/game/yard/volley.js)"
+  ]
+ },
+ {
+  "s": "The shuttle may bounce once on your side.",
+  "ctx": [
+   "UI (src/game/yard/footnet.js)"
   ]
  },
  {
@@ -20906,6 +22193,18 @@
  },
  {
   "s": "Touches",
+  "ctx": [
+   "UI (src/game/yard/keepup.js)"
+  ]
+ },
+ {
+  "s": "When a friend calls, pass to them or the count starts again.",
+  "ctx": [
+   "UI (src/game/yard/keepup.js)"
+  ]
+ },
+ {
+  "s": "When a friend calls, pass to them: it counts double.",
   "ctx": [
    "UI (src/game/yard/keepup.js)"
   ]
@@ -20948,6 +22247,18 @@
   ]
  },
  {
+  "s": "The red marbles are yours, the blue ones are your friend's. The big one counts two.",
+  "ctx": [
+   "UI (src/game/yard/marbles.js)"
+  ]
+ },
+ {
+  "s": "The big marble in the middle counts two.",
+  "ctx": [
+   "UI (src/game/yard/marbles.js)"
+  ]
+ },
+ {
   "s": "Aim at a marble, then hold {act} and let go to flick",
   "ctx": [
    "UI (src/game/yard/marbles.js)"
@@ -20985,13 +22296,25 @@
   ]
  },
  {
+  "s": "Turn {n} of {m}",
+  "ctx": [
+   "UI (src/game/yard/oanquan.js)"
+  ]
+ },
+ {
   "s": "Turn {n}",
   "ctx": [
    "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
-  "s": "Left or right picks a square, then {act} sows ▶ or Space sows ◀. W shows a hint",
+  "s": "A quan with fewer than 5 pebbles beside it cannot be captured yet. No hints here!",
+  "ctx": [
+   "UI (src/game/yard/oanquan.js)"
+  ]
+ },
+ {
+  "s": "{n} turns. There are two quan to win: plan ahead.",
   "ctx": [
    "UI (src/game/yard/oanquan.js)"
   ]
@@ -21003,13 +22326,31 @@
   ]
  },
  {
-  "s": "Tap one of your squares, then ◀ or ▶ to sow. Tap ? for a hint",
+  "s": "Left or right picks a square, then {act} sows ▶ or Space sows ◀.",
+  "ctx": [
+   "UI (src/game/yard/oanquan.js)"
+  ]
+ },
+ {
+  "s": "Left or right picks a square, then {act} sows ▶ or Space sows ◀. W shows a hint",
   "ctx": [
    "UI (src/game/yard/oanquan.js)"
   ]
  },
  {
   "s": "Now choose the way round: ◀ or ▶",
+  "ctx": [
+   "UI (src/game/yard/oanquan.js)"
+  ]
+ },
+ {
+  "s": "Tap one of your squares, then ◀ or ▶ to sow.",
+  "ctx": [
+   "UI (src/game/yard/oanquan.js)"
+  ]
+ },
+ {
+  "s": "Tap one of your squares, then ◀ or ▶ to sow. Tap ? for a hint",
   "ctx": [
    "UI (src/game/yard/oanquan.js)"
   ]
@@ -21033,7 +22374,37 @@
   ]
  },
  {
+  "s": "On \"Double!\" the rope comes round twice: jump late and stay up.",
+  "ctx": [
+   "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
+  "s": "The turners call \"Faster!\" or \"Slower!\". Listen, then keep the new beat.",
+  "ctx": [
+   "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
   "s": "Press {act} just before the rope reaches the ground",
+  "ctx": [
+   "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
+  "s": "Double! Twice round: jump late",
+  "ctx": [
+   "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
+  "s": "Faster! After this turn",
+  "ctx": [
+   "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
+  "s": "Slower! After this turn",
   "ctx": [
    "UI (src/game/yard/rope.js)"
   ]
@@ -21054,6 +22425,14 @@
   "s": "{n} jumps in a row",
   "ctx": [
    "UI (src/game/yard/rope.js)"
+  ]
+ },
+ {
+  "s": "Jump",
+  "ctx": [
+   "UI (src/game/yard/round.js)",
+   "UI (src/ui/howto.js)",
+   "UI (src/ui/ui.js)"
   ]
  },
  {
@@ -21094,6 +22473,48 @@
   ]
  },
  {
+  "s": "It bounced! Kick it now",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "A gust! Follow the ring",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Blocked! Aim away from the blocker",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "{name} calls! Aim the kick at them",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Good pass! It counts double",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Wrong friend! The count starts again",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "{name} wanted that one",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "{n}!",
   "ctx": [
    "UI (src/game/yard/round.js)"
@@ -21112,6 +22533,48 @@
   ]
  },
  {
+  "s": "Faster!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Slower!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Faster! Watch the ring",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Slower! Watch the ring",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Double!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Well held!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Slipped! That was a hold",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "Perfect heave!",
   "ctx": [
    "UI (src/game/yard/round.js)"
@@ -21119,6 +22582,12 @@
  },
  {
   "s": "Good heave",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Off the beat: slipped in the mud!",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -21136,7 +22605,25 @@
   ]
  },
  {
+  "s": "Over the log in a heap! Leap with {jump}",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "You tumbled! Get up and go",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Last length!",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Round the banner and back!",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -21148,7 +22635,19 @@
   ]
  },
  {
+  "s": "The big one is out! Two for you",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "Marble out! It is yours",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "Oops! That blue one goes to your friend",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -21161,6 +22660,18 @@
  },
  {
   "s": "You captured {n}",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "That quan is too young: it needs 5 pebbles beside it",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
+  "s": "The quan is too young to be captured",
   "ctx": [
    "UI (src/game/yard/round.js)"
   ]
@@ -21257,6 +22768,12 @@
   ]
  },
  {
+  "s": "Length {n} of {m}",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
   "s": "Place {n}",
   "ctx": [
    "UI (src/game/yard/sack.js)"
@@ -21269,7 +22786,37 @@
   ]
  },
  {
+  "s": "Leap the logs with {jump}. In the mud, hop slower.",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "Hop with {act}. Leap over the logs with {jump}.",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "Hop to the far banner, turn, and hop back.",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
   "s": "Press {act} once for every hop, in a steady beat",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "A log! Leap with {jump}",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "Mud: hop slower",
   "ctx": [
    "UI (src/game/yard/sack.js)"
   ]
@@ -21318,6 +22865,12 @@
  },
  {
   "s": "You came {place}",
+  "ctx": [
+   "UI (src/game/yard/sack.js)"
+  ]
+ },
+ {
+  "s": "{n} s for {m} lengths of the green",
   "ctx": [
    "UI (src/game/yard/sack.js)"
   ]
@@ -21815,13 +23368,97 @@
   ]
  },
  {
+  "s": "To me!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Me! Me!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Over here, Mika!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Change places!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Swap! Swap!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Blocked!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Not past me!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Hold!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Dig in!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Thank you!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
+  "s": "Ha! That one is mine!",
+  "ctx": [
+   "UI (src/game/yard/say.js)"
+  ]
+ },
+ {
   "s": "Strain",
   "ctx": [
    "UI (src/game/yard/tug.js)"
   ]
  },
  {
+  "s": "Muddy ground: a pull off the beat slips. On \"Hold!\" do not pull.",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "When the ring turns red they call \"Hold!\": do not pull on that beat.",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
   "s": "Press {act} as the ring closes on you",
+  "ctx": [
+   "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "Hold! Do not pull",
   "ctx": [
    "UI (src/game/yard/tug.js)"
   ]
@@ -21848,6 +23485,24 @@
   "s": "Wins: {n} · Perfect heaves: {m}",
   "ctx": [
    "UI (src/game/yard/tug.js)"
+  ]
+ },
+ {
+  "s": "They block a spike hit straight at them. Aim it to the side.",
+  "ctx": [
+   "UI (src/game/yard/volley.js)"
+  ]
+ },
+ {
+  "s": "Your third touch is always a spike.",
+  "ctx": [
+   "UI (src/game/yard/volley.js)"
+  ]
+ },
+ {
+  "s": "Spike it away from the blocker!",
+  "ctx": [
+   "UI (src/game/yard/volley.js)"
   ]
  },
  {
@@ -21947,7 +23602,7 @@
   ]
  },
  {
-  "s": "Pick the seven stars in order.",
+  "s": "Join the stars of a figure in order.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
@@ -21983,7 +23638,7 @@
   ]
  },
  {
-  "s": "Steer to stay in the wind.",
+  "s": "Stay in the wind. Fly through the rings.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
@@ -22049,7 +23704,25 @@
   ]
  },
  {
-  "s": "Tap on its beat, three times.",
+  "s": "Tap on its beat, softly.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Pick the cards in the right order.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Press Check when you are sure.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "No hurry. A wrong answer can be tried again.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
@@ -22067,7 +23740,7 @@
   ]
  },
  {
-  "s": "Hat full? Run to the basket.",
+  "s": "A golden egg counts for three.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
@@ -22080,6 +23753,18 @@
  },
  {
   "s": "Kick just as it comes down.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hold a direction to aim your kick.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "A friend calls? Aim the kick at them.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
@@ -22127,6 +23812,12 @@
   ]
  },
  {
+  "s": "A red ring means hold: do not pull.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
   "s": "One press for every hop.",
   "ctx": [
    "UI (src/ui/howto.js)"
@@ -22134,6 +23825,12 @@
  },
  {
   "s": "Steady wins. Too fast and you wobble.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "A log in the way? Leap over it.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
@@ -22191,14 +23888,6 @@
   "ctx": [
    "UI (src/ui/howto.js)",
    "UI (src/ui/ui.js)"
-  ]
- },
- {
-  "s": "Jump",
-  "ctx": [
-   "UI (src/ui/howto.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
   ]
  },
  {

@@ -214,7 +214,7 @@ export const TRICKS = [
     seasons: ['spring', 'summer', 'autumn'], hours: [7, 18], night: false, when: 'Spring to autumn, in the daytime',
     teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_eggs_intro', scenery: 130,
     howReal: 'Collect the eggs every morning. Slide a hand gently under the hen, hold each egg in your whole hand, and lay it in a basket lined with straw.',
-    why: 'This is Amidakuji, the ladder lottery from Japan. Every rung swaps two neighbours, so four eggs always come out of four different spouts.',
+    why: 'This is Amidakuji, the ladder lottery from Japan. Every plain rung swaps two neighbours, so four eggs laid together come out of four different spouts.',
     safety: 'Wash your hands after you touch hens or eggs.',
     // one point an egg (golden 3, little brown 2, a chick safe on the straw 1), +2 for five catches in a row, +3 for a
     // stage's order, +2 for a clean stage. The stars are tuned with the rules' own bot (.tools/eggs-tune.mjs): a perfect
