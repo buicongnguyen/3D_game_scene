@@ -52,7 +52,10 @@ def setup():
         except Exception:
             pass
     else:
-        s.render.engine = 'BLENDER_EEVEE_NEXT'
+        try:
+            s.render.engine = 'BLENDER_EEVEE_NEXT'
+        except TypeError:
+            s.render.engine = 'BLENDER_EEVEE'
         try:
             s.eevee.use_shadows = True
             s.eevee.use_raytracing = True

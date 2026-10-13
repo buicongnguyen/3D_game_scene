@@ -17,7 +17,7 @@
 //   • Blender (headless, its bundled FFmpeg/libx264) turns each frame folder into an H.264 MP4 (yuv420p); this
 //     script then moves the index to the front of the file (fast start) and writes public/video/manifest.json with
 //     each clip's duration and, for tours, the time of every stop, so playback can never drift from the picture.
-// Needs: Playwright (node_modules), a GPU browser, and Blender 4.x (BLENDER=path, or the path below).
+// Needs: Playwright (node_modules), a GPU browser, and Blender 4.5/5.2 (BLENDER or BLENDER_EXE overrides the fallback).
 import { createRequire } from 'module';
 import { spawn, spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -30,7 +30,7 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, '').split('=')));
 const OUT = path.join(ROOT, 'public/video');
 const WORK = path.join(ROOT, '.tools/video-frames');
-const BLENDER = process.env.BLENDER || 'C:/Users/n/source/repos/Petal_cafe/.tools/blender-4.5.9-windows-x64/blender.exe';
+const BLENDER = process.env.BLENDER || process.env.BLENDER_EXE || 'C:/Users/n/source/repos/Petal_cafe/.tools/blender-4.5.9-windows-x64/blender.exe';
 const CRF = args.crf || 'LOW';      // used only when a clip has no bitrate of its own (content/video.js) and --kbps is not given
 const SS = 1.5;                       // the canvas is rendered this much larger than the video and scaled down
 const BLEND = 1.5;                    // seconds of the title loop's end that dissolve into its beginning
@@ -246,6 +246,8 @@ for f in files[1:]:
 s.frame_start, s.frame_end = 1, len(files)
 r = s.render
 r.use_sequencer = True
+if hasattr(r.image_settings, 'media_type'):
+    r.image_settings.media_type = 'VIDEO'
 r.image_settings.file_format = 'FFMPEG'
 r.ffmpeg.format = 'MPEG4'
 r.ffmpeg.codec = 'H264'
