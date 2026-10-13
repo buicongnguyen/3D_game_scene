@@ -17840,7 +17840,8 @@
   "s": "{name} is not ready yet",
   "ctx": [
    "UI (src/game/minigame-menu.js)",
-   "UI (src/game/tricks.js)"
+   "UI (src/game/tricks.js)",
+   "UI (src/quick/runtime.js)"
   ]
  },
  {
@@ -27238,6 +27239,18 @@
  },
  {
   "s": "{n} of 3 stars",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "Quick",
+  "ctx": [
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "Starts right away: no valley to load",
   "ctx": [
    "UI (src/ui/minigames-ui.js)"
   ]
