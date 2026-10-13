@@ -111,6 +111,24 @@ export const TRICKS = [
     levels: { easy: { stars: [50, 110, 160], length: 60 }, normal: { stars: [80, 170, 215], length: 80 }, hard: { stars: [110, 220, 275], length: 100 } },
   },
   {
+    // fold a paper plane (real flat folds, shown on a diagram) and throw it down the open hillside above Takamori Landing
+    // (tricks/rules-planes.js). A point for every whole metre of the best of three throws and a point for every exact
+    // fold; 10 for a plane landed in the ring (Normal), 15 for the day's distance to beat (Difficult), 5 for a loop.
+    // Nothing is timed: `length` is about how long a round takes. Easy: the Dart, wide fold marks, no wind, the flight
+    // drawn ahead. Normal: four planes, a light wind, the elevator, the ring. Difficult: every trim, gusts, a thermal,
+    // and a distance that wants the right plane for the wind. The stars are tuned with the rules' own throwers
+    // (tests/planes.test.mjs): one star for any plane that flies, three for reading the day.
+    id: 'planes', name: 'Breezy paper planes', icon: 'trick-planes',
+    place: { x: 59, z: 52, face: 3.4 }, where: 'the open hillside above Takamori Landing, east of the river',
+    seasons: ['spring', 'summer', 'autumn'], hours: [9, 17], night: false, when: 'Spring to autumn, on a dry day',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_planes_intro',
+    howReal: 'Fold on a table and press each crease with a fingernail. Match left and right. Throw gently and level, not hard and up.',
+    why: 'A paper clip puts the weight ahead of the wings\' lift: a steady nose. Back edges bent up lift the nose. Too much, and it stalls.',
+    safety: 'Never throw at faces or animals, and pick up your planes afterwards.',
+    stars: [12, 24, 34], length: 100, firstLength: 70, unit: 'points',
+    levels: { easy: { stars: [8, 16, 24], length: 70 }, normal: { stars: [12, 24, 34], length: 100 }, hard: { stars: [14, 28, 40], length: 130 } },
+  },
+  {
     id: 'dew', name: 'Dew webs at dawn', icon: 'trick-dew',
     place: { x: -52, z: -97, face: 0 }, where: 'the forest edge on the west trail, north of the mill',
     seasons: ['spring', 'summer', 'autumn'], hours: [5, 7.5], night: false, when: 'Spring to autumn, at dawn',

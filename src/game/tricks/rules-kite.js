@@ -15,6 +15,8 @@
 //   Difficult  the wind also turns (the window itself drifts left and right), the rings hang out to the sides, and a tree
 //              stands at the right edge of the field: a kite that comes low over it is caught.
 
+import { N_ } from '../../i18n/i18n.js';
+
 export const KITE = {
   window: 0.42,        // half-width of the wind window (x units)
   windowFirst: 0.56,   // wider in the guided first try and in easy mode
@@ -38,6 +40,38 @@ export const KITE = {
   treeX: 1.0, treeH: 0.4,   // Difficult: the tree catches a kite right of treeX and lower than treeH
   snag: 1.6,           // extra seconds on the ground after the tree (untangling the line)
 };
+
+/**
+ * The kites Mika can build. Each flies differently: `fly` holds the numbers the flight takes (all 1 / 0 for the plain
+ * diamond, so a flight with no style is the flight it always was):
+ *   rise   how fast it climbs in the wind window          fall   how fast it sinks outside it
+ *   gust   how much the wind shoves it sideways           steer  how fast it answers the hand
+ *   wag    how much a poor tail makes it wag              sway   a wobble of its own, whatever the tail (the flute kite)
+ *   core   the middle share of the window where it climbs (a box kite needs the strong wind in the very middle;
+ *          in the rest of the window it only holds its height)
+ *   relaunch  extra seconds on the grass before it is up again
+ * lift / steady / speed (1..5) are the bars the chooser shows. stars: the stars (over all three levels) that open it.
+ */
+export const KITE_STYLES = [
+  { id: 'diamond', name: N_('Diamond kite'), desc: N_('Two sticks and a tail. Does everything well.'), stars: 0, lift: 3, steady: 3, speed: 3,
+    fly: { rise: 1, fall: 1, gust: 1, steer: 1, wag: 1, sway: 0, core: 1, relaunch: 0 } },
+  { id: 'kaku', name: N_('Kaku-dako'), desc: N_('A painted Japanese square kite with two long tails. Very steady, slow to climb.'), stars: 0, lift: 2, steady: 5, speed: 2,
+    fly: { rise: 0.72, fall: 0.85, gust: 0.5, steer: 0.8, wag: 0.4, sway: 0, core: 1, relaunch: 0 } },
+  { id: 'sao', name: N_('Diều sáo'), desc: N_('The flute kite of Vietnam. It climbs fast and hums up high, but gusts toss it about.'), stars: 1, lift: 5, steady: 2, speed: 3,
+    fly: { rise: 1.42, fall: 1.1, gust: 1.35, steer: 1, wag: 1, sway: 0.1, core: 1, relaunch: 0 } },
+  { id: 'bird', name: N_('Hawk kite'), desc: N_('A tonbi-dako with spread wings. Quick to turn and it glides, but it is twitchy.'), stars: 2, lift: 3, steady: 2, speed: 5,
+    fly: { rise: 1.05, fall: 0.78, gust: 1.15, steer: 1.45, wag: 1.1, sway: 0, core: 1, relaunch: 0 } },
+  { id: 'box', name: N_('Box kite'), desc: N_('Rock steady in a gust, but it only climbs in the strong wind in the very middle.'), stars: 3, lift: 3, steady: 4, speed: 2,
+    fly: { rise: 1.05, fall: 1.6, gust: 0.42, steer: 0.85, wag: 0.3, sway: 0, core: 0.45, relaunch: 0.8 } },
+];
+export const KITE_STYLE = Object.fromEntries(KITE_STYLES.map(k => [k.id, k]));
+const PLAIN = KITE_STYLES[0].fly;
+
+/** Is this kite open to a player with `stars` stars on the kite game (all levels added up)? */
+export function kiteOpen(style, stars = 0) { return (stars || 0) >= (KITE_STYLE[style]?.stars ?? 99); }
+
+/** The sáo kite's flutes sing when it flies this high (0 = silent .. 1 = full voice at the top of the line). */
+export function fluteVoice(s) { return s.aloft && s.style === 'sao' ? Math.max(0, Math.min(1, (s.h - 0.6) / 0.3)) : 0; }
 
 /**
  * What a level's flight is made of: { window, gusts (their strength, times), shift, rings: 'high' | 'height' | 'wide', tree }. The guided first try
@@ -153,10 +187,10 @@ export function windPush(w, t) {
 }
 
 // ----------------------------------------------------------------------------------------------- flying
-/** A fresh flight. quality 0..1 from the build; window: half-width of the wind window. */
-export function newFlight({ quality = 1, tail = quality, window = KITE.window } = {}) {
+/** A fresh flight. quality 0..1 from the build; window: half-width of the wind window; style: a KITE_STYLES id (left out: the diamond). */
+export function newFlight({ quality = 1, tail = quality, window = KITE.window, style = 'diamond' } = {}) {
   return { x: 0, h: KITE.startH, aloft: true, down: 0, tug: 0, pts: 0, air: 0, top: 0, falls: 0, t: 0, inWindow: true, quality, tail, window,
-    c: 0, ring: 0, got: 0, missed: 0, ringPts: 0, hitT: -9, snags: 0, snagT: -9 };
+    c: 0, ring: 0, got: 0, missed: 0, ringPts: 0, hitT: -9, snags: 0, snagT: -9, style: KITE_STYLE[style] ? style : 'diamond', fly: KITE_STYLE[style]?.fly || PLAIN };
 }
 
 /**
@@ -164,7 +198,7 @@ export function newFlight({ quality = 1, tail = quality, window = KITE.window } 
  * Returns the same state object (changed in place, no allocation).
  */
 export function stepFlight(s, w, dt, input) {
-  const K = KITE, steer = Math.max(-1, Math.min(1, input?.steer || 0));
+  const K = KITE, steer = Math.max(-1, Math.min(1, input?.steer || 0)), F = s.fly || PLAIN;
   s.t += dt;
   s.tug = Math.max(0, s.tug - dt);
   const c = s.c = windCentre(w, s.t);        // the middle of the window (it drifts when the wind turns)
@@ -180,20 +214,22 @@ export function stepFlight(s, w, dt, input) {
     s.inWindow = true;
     return s;
   }
-  // a poor tail lets the kite wag from side to side
-  const wag = (1 - s.tail) * 0.34 * Math.sin(s.t * 3.3);
-  s.x += (windPush(w, s.t) + wag + steer * K.steer) * dt;
+  // a poor tail lets the kite wag from side to side (and some kites sway whatever the tail)
+  const wag = ((1 - s.tail) * 0.34 * F.wag + F.sway) * Math.sin(s.t * 3.3);
+  s.x += (windPush(w, s.t) * F.gust + wag + steer * K.steer * F.steer) * dt;
   if (s.x > K.edge) s.x = K.edge; else if (s.x < -K.edge) s.x = -K.edge;
   const a = Math.abs(s.x - c);
   s.inWindow = a <= s.window;
-  if (s.inWindow) s.h += K.rise * (1.4 - 0.8 * a / s.window) * dt;
-  else s.h -= K.fall * (1 + (a - s.window) * 1.6) * dt;
-  if (input?.tug && s.tug <= 0) { s.tug = K.tugCool; s.h += K.tugLift * (s.inWindow ? 1 : 0.45); }
+  // (a kite with a narrow core climbs only in the strong wind in the middle; in the rest of the window it holds its height)
+  if (s.inWindow) s.h += K.rise * F.rise * (a <= s.window * F.core ? 1.4 - 0.8 * a / s.window : 0.1) * dt;
+  else s.h -= K.fall * F.fall * (1 + (a - s.window) * 1.6) * dt;
+  // (a tug lifts a kite as well as it climbs by itself: a heavy kite less, and the box kite only in its strong middle wind)
+  if (input?.tug && s.tug <= 0) { s.tug = K.tugCool; s.h += K.tugLift * F.rise * (s.inWindow && a <= s.window * F.core ? 1 : 0.45); }
   if (s.h > 1) s.h = 1;
-  if (s.h <= 0) { s.h = 0; s.aloft = false; s.down = K.relaunch; s.falls++; s.inWindow = false; return s; }
+  if (s.h <= 0) { s.h = 0; s.aloft = false; s.down = K.relaunch + F.relaunch; s.falls++; s.inWindow = false; return s; }
   // the tree at the right edge of the field catches a kite that comes low over it
   if (w.tree && s.x >= K.treeX && s.h <= K.treeH) {
-    s.h = 0; s.aloft = false; s.down = K.relaunch + K.snag; s.falls++; s.snags++; s.snagT = s.t; s.inWindow = false;
+    s.h = 0; s.aloft = false; s.down = K.relaunch + F.relaunch + K.snag; s.falls++; s.snags++; s.snagT = s.t; s.inWindow = false;
     return s;
   }
   // through the ring that hangs in the sky now
@@ -244,8 +280,8 @@ export function kiteBot(s, w, skill = {}, out = { steer: 0, tug: false }) {
  * Play a whole flight from recorded inputs (tests, and the QA autopilot's expectations).
  * frames: [{ steer, tug }] one per step of dt; or a function (state, wind, t) -> input (a bot).
  */
-export function simulateFlight({ seed = 1, length = 60, dt = 1 / 30, quality = 1, tail = quality, window = KITE.window, frames, plan = null }) {
-  const w = makeWind(seed, length, plan), s = newFlight({ quality, tail, window: plan ? plan.window : window });
+export function simulateFlight({ seed = 1, length = 60, dt = 1 / 30, quality = 1, tail = quality, window = KITE.window, frames, plan = null, style = 'diamond' }) {
+  const w = makeWind(seed, length, plan), s = newFlight({ quality, tail, window: plan ? plan.window : window, style });
   const n = Math.round(length / dt);
   for (let i = 0; i < n; i++) stepFlight(s, w, dt, typeof frames === 'function' ? frames(s, w, i * dt) : frames?.[i]);
   return s;

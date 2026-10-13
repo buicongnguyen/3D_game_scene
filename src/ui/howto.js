@@ -54,6 +54,11 @@ export const HOWTO = {
     { in: 'lr', pic: 'steer', text: N_('Stay in the wind. Fly through the rings.') },
     { in: 'jump', pic: 'up', text: N_('Tug the line to climb.') },
   ],
+  'trick:planes': [
+    { in: 'act', pic: 'fold', text: N_('Fold: press when the dot is in the ring.') },
+    { in: 'hold', pic: 'fill', text: N_('Hold to wind up. Let go to throw!') },
+    { in: null, pic: 'glide', text: N_('Gentle and level flies furthest.') },
+  ],
   'trick:dew': [
     { in: 'move', pic: 'walk', text: N_('Walk round until the sun is behind you.') },
     { in: 'act', pic: 'camera', text: N_('The web shines? Take a photo.') },
@@ -167,6 +172,9 @@ export const PICS = {
   hat: `<path d="M5 24h30l-2.5 4h-25z" fill="${SUN}" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 28h16l-2 8H14z" fill="${SUN}" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.6 30.5h14.8" stroke="${HOT}" stroke-width="2.4"/><ellipse class="hp-drop" cx="20" cy="6" rx="4" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.5"/>`,
   // a picture card dropping into the first of three places (the life-cycle card game), and a tick for its Check button
   cards: `<g fill="#e6d3b0"><rect x="3" y="23" width="10" height="14" rx="2.5"/><rect x="15" y="23" width="10" height="14" rx="2.5"/><rect x="27" y="23" width="10" height="14" rx="2.5"/></g><g class="hp-drop"><rect x="3" y="4" width="10" height="14" rx="2.5" fill="#fff" stroke="${INK}" stroke-width="1.5"/><ellipse cx="8" cy="11" rx="2.6" ry="3.4" fill="${HOT}"/></g>`,
+  // a sheet of paper with its corner folding in to the middle line, and a paper plane on its glide (the paper planes game)
+  fold: `<rect x="9" y="5" width="22" height="30" rx="2" fill="#fff" stroke="${INK}" stroke-width="1.6"/><path d="M20 6v28" stroke="#b89a78" stroke-width="1.4" stroke-dasharray="3 3"/><path class="hp-b2" d="M9 5h11L9 16z" fill="${HOT}" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="20" cy="16" r="3" fill="none" stroke="${GREEN}" stroke-width="2"/>`,
+  glide: `<path d="M4 12q18-4 32 16" fill="none" stroke="${BLUE}" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="1 5"/><path d="M4 34h32" stroke="${GREEN}" stroke-width="3" stroke-linecap="round"/><path class="hp-sway" d="M30 17 12 13l7 5-2 6z" fill="#fff" stroke="${INK}" stroke-width="1.6" stroke-linejoin="round"/>`,
   tick: `<circle cx="20" cy="20" r="14" fill="#e6d3b0"/><path class="hp-b2" d="M12 21l6 6 11-13" fill="none" stroke="${GREEN}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`,
   // the fire drill: a shout, the pin drawn out of the extinguisher, the nozzle's mark sweeping along the foot of a flame
   shout: `<circle cx="13" cy="24" r="8" fill="${SUN}" stroke="${INK}" stroke-width="1.5"/><ellipse cx="14" cy="27" rx="3" ry="3.6" fill="${INK}"/><circle cx="10" cy="21" r="1.2" fill="${INK}"/><circle cx="16.5" cy="21" r="1.2" fill="${INK}"/><g class="hp-blink" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round"><path d="M25 16l5-5M27 24h8M25 32l5 4"/></g>`,

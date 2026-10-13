@@ -227,6 +227,11 @@ export const PLAY_GROUNDS = [
   // The crop cards (tricks/crops.js) at the north edge of the field grid: Mika and her teacher sit with their backs to
   // the paddies, the camera stands 7.4 m north of them and looks back over the rice (nothing may grow in between).
   [-86.5, -14.5, 7, 6.5],
+  // The paper planes hill above Takamori Landing (tricks/planes.js; content/tricks.js `planes`): Mika throws from (57, 44)
+  // toward the north-north-west, the camera over her shoulder. Depending on the graphics tier a sakura or an oak stood
+  // in the first 30 m of the flight; and at the far end of the longest throws four trees of the wood's edge.
+  [56.5, 35, 12, 23],
+  [42, -46, 9, 11],
 ];
 
 // Keep-out zones for scattering (trees, rocks, flowers): circles [x, z, r].

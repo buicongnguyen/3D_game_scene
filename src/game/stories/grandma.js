@@ -55,6 +55,12 @@ export const STORY = {
       ['sora', "Then read the wind in the grass and the clouds, and steer back into it when a gust pushes."],
       ['sora', "The cow meadow south of the village. The cows won't mind. They've seen worse flying."],
     ],
+    trick_planes_intro: [
+      ['sora', "A fine dry day, Mi-chan. Bring a few sheets of paper up the hill above the landing. We'll fold planes.", 'Talk'],
+      ['mika', "Mine always crash, Grandma. Nose first. Every single time."],
+      ['sora', "Then we fold slowly. A corner to the middle line, the left the same as the right, a nail along every crease."],
+      ['sora', "And throw it as if you were handing it to the wind: gently and level. Three throws, and the best one counts."],
+    ],
     trick_dew_intro: [
       ['sora', "Up before the sun tomorrow, Mi-chan. The forest edge on the west trail wears its jewellery at dawn.", 'Talk'],
       ['mika', "Jewellery. In a forest. At five in the morning."],

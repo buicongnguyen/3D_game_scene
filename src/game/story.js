@@ -671,6 +671,12 @@ export const DIALOGUE = {
     ['rin', "Watch the grass and the clouds: they tell you where the wind's going before the kite does."],
     ['rin', "Gusts will shove it about. Steer back into the wind and it climbs. The cow meadow, south of Kawabe."],
   ],
+  trick_planes_intro: [
+    ['rin', "One sheet of paper, a few folds, and it flies. We throw them off the hill above Takamori Landing.", 'Talk'],
+    ['mika', "Paper planes? I've made those. They dive straight into the nearest desk."],
+    ['rin', "Because you fold fast and throw hard. Match the left side to the right, and press every crease flat."],
+    ['rin', "Then throw it gently and level. Three throws, the best one counts. And we pick them all up after."],
+  ],
   trick_dew_intro: [
     ['rin', "Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.", 'Talk'],
     ['mika', "Hundreds of spiders. At sunrise. You keep making this place sound worse."],

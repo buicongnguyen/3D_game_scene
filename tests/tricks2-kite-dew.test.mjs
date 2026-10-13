@@ -380,3 +380,44 @@ test('kite levels: the stars. Easy forgives, Normal wants the rings, Difficult w
   // the levels get longer
   assert.ok(levelSpec(TRICK.kite, 'easy').length < levelSpec(TRICK.kite, 'normal').length && levelSpec(TRICK.kite, 'normal').length < levelSpec(TRICK.kite, 'hard').length);
 });
+
+// ------------------------------------------------------------------------------------------------ kite: the styles
+test('kite styles: five kites that fly differently, two open from the start, the others with stars', async () => {
+  const { KITE_STYLES, KITE_STYLE, kiteOpen, fluteVoice } = await import('../src/game/tricks/rules-kite.js');
+  assert.deepEqual(KITE_STYLES.map(k => k.id), ['diamond', 'kaku', 'sao', 'bird', 'box']);
+  for (const k of KITE_STYLES) { for (const b of [k.lift, k.steady, k.speed]) assert.ok(b >= 1 && b <= 5, k.id); assert.ok(k.name && k.desc.length <= 90, k.id); }
+  assert.deepEqual(KITE_STYLES.map(k => kiteOpen(k.id, 0)), [true, true, false, false, false]);
+  assert.deepEqual(KITE_STYLES.map(k => kiteOpen(k.id, 2)), [true, true, true, true, false]);
+  assert.ok(kiteOpen('box', 3) && !kiteOpen('nope', 9));
+  // the plain diamond is the flight it always was: the same numbers with and without a style
+  const steer = s => ({ steer: Math.abs(s.x) > 0.18 ? -Math.sign(s.x) : 0, tug: s.h < 0.4 });
+  assert.deepEqual(simulateFlight({ seed: 4, frames: steer, style: 'diamond' }), simulateFlight({ seed: 4, frames: steer }));
+  assert.equal(newFlight({ style: 'nope' }).style, 'diamond');
+  // lift: in the middle of a still sky the flute kite climbs fastest, the kaku-dako slowest
+  const calm = { p1: 0, p2: 0, gusts: [], shifts: [], rings: [] }, still = { ...calm, p1: Math.PI, p2: Math.PI };
+  const climb = style => { const s = newFlight({ style }); let t = 0; while (s.h < 0.9 && t < 30) { stepFlight(s, calm, 1 / 30, { steer: -Math.sign(s.x) * Math.min(1, Math.abs(s.x) * 20), tug: false }); t += 1 / 30; } return t; };
+  assert.ok(climb('sao') < climb('diamond') && climb('diamond') < climb('kaku'), `to the top: flute ${climb('sao').toFixed(1)} s, diamond ${climb('diamond').toFixed(1)} s, kaku ${climb('kaku').toFixed(1)} s`);
+  // steadiness: the same gust shoves the kaku-dako and the box kite half as far as the diamond, the flute kite further
+  const gust = { ...still, gusts: [{ t: 1, dur: 2, k: 1 }] };
+  const shove = style => { const s = newFlight({ style }); let m = 0; for (let i = 0; i < 120; i++) { stepFlight(s, gust, 1 / 30, null); m = Math.max(m, Math.abs(s.x)); } return m; };
+  assert.ok(shove('kaku') < shove('diamond') * 0.7 && shove('box') < shove('diamond') * 0.7 && shove('sao') > shove('diamond') * 1.05);
+  // speed: the hawk kite crosses the sky fastest
+  const cross = style => { const s = newFlight({ style, tail: 1 }); for (let i = 0; i < 30; i++) stepFlight(s, still, 1 / 30, { steer: 1 }); return s.x; };
+  assert.ok(cross('bird') > cross('diamond') * 1.3 && cross('kaku') < cross('diamond'));
+  // the box kite climbs only in the strong wind in the very middle; off it (still in the window) it just holds
+  const at = (style, x) => { const s = newFlight({ style }); s.x = x; const h0 = s.h; stepFlight(s, still, 0.01, null); return (s.h - h0) / 0.01; };
+  assert.ok(at('box', 0.05) > 0.1 && at('box', 0.3) < 0.03 && at('box', 0.3) > 0 && at('diamond', 0.3) > 0.08);
+  // the flute kite sings when it is up high, and only it
+  const hi = newFlight({ style: 'sao' }); hi.h = 0.95;
+  const lo = newFlight({ style: 'sao' }); lo.h = 0.5;
+  const other = newFlight({ style: 'kaku' }); other.h = 0.95;
+  assert.ok(fluteVoice(hi) === 1 && fluteVoice(lo) === 0 && fluteVoice(other) === 0);
+  assert.equal(KITE_STYLE.sao.name, 'Diều sáo');
+  // every kite can earn every star: the rules' own flyer who takes the rings gets at least two on each level, with each kite
+  const med = xs => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+  for (const level of LEVELS) for (const k of KITE_STYLES) {
+    const scores = Array.from({ length: 24 }, (_, i) => { const plan = flightPlan(level), out = { steer: 0, tug: false }; return kiteScore(13, simulateFlight({ seed: i + 1, length: levelSpec(TRICK.kite, level).length, plan, quality: 13 / 15, tail: 13 / 15, style: k.id, frames: (st, w) => kiteBot(st, w, { gain: 3, rings: true, noise: 0.08, see: 0.4 }, out) })); });
+    assert.ok(starsFor(med(scores), levelSpec(TRICK.kite, level).stars) >= 2, `${k.id} on ${level}: ${med(scores)}`);
+    assert.ok(Math.max(...scores) >= levelSpec(TRICK.kite, level).stars[2], `${k.id} on ${level}: three stars are within reach (${Math.max(...scores)})`);
+  }
+});
