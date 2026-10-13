@@ -719,6 +719,12 @@ export const DIALOGUE = {
     ['rin', "This one is for your head, city girl. Put a life in order, find the missing card, spot the one that doesn't belong."],
     ['rin', "On the green by the river, at the north end of Kawabe. No hurry: nobody is timing you."],
   ],
+  trick_crops_intro: [
+    ['rin', "Sora kept field cards too. Rice, wheat, potatoes: what a farmer does with each, from the seed to the harvest.", 'Talk'],
+    ['mika', "Rice comes from a shop. In a bag. Doesn't it?"],
+    ['rin', "Five months of work first, city girl. Put the jobs in order, read the year wheel, find what each crop needs."],
+    ['rin', "At the north edge of the rice paddies, west of Kawabe. No hurry: nobody is timing you."],
+  ],
   trick_archery_intro: [
     ['rin', "There's an archery range behind the Kawabe houses. Bamboo bow, straw targets, practice arrows with soft rubber tips.", 'Talk'],
     ['mika', "Archery. Me. With a pointy thing."],

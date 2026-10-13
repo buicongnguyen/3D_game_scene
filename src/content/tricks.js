@@ -197,6 +197,20 @@ export const TRICKS = [
     levels: { easy: { stars: [20, 35, 46], length: 70 }, normal: { stars: [30, 50, 64], length: 100 }, hard: { stars: [40, 66, 84], length: 140 } },
   },
   {
+    // the life-cycle game's sibling about the valley's crops (tricks/rules-crops.js), played on the same card board and
+    // scored the same way: 10 / 6 / 3 points a puzzle, 5 / 7 / 9 puzzles, no clock on screen. The sign stands at the
+    // north edge of the field grid: the round is watched with the rice terraces behind the two of them
+    id: 'crops', name: 'From seed to harvest', icon: 'trick-crops',
+    place: { x: -86.5, z: -8.4, face: Math.PI }, where: 'the north edge of the rice paddies, west of Kawabe',
+    seasons: ['spring', 'summer', 'autumn'], hours: [8, 18], night: false, when: 'Spring to autumn, in daylight',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_crops_intro',
+    howReal: 'Plant a sprouting potato in a deep pot and heap soil round the stems as they grow. Count the weeks until the leaves turn yellow, then dig.',
+    why: 'Rice wants warmth and standing water; winter wheat wants a cold winter. So one field can grow rice in summer and wheat in winter.',
+    safety: 'Never eat a green potato. Keep potatoes in the dark.',
+    stars: [30, 50, 64], length: 100, firstLength: 70, unit: 'points',
+    levels: { easy: { stars: [20, 35, 46], length: 70 }, normal: { stars: [30, 50, 64], length: 100 }, hard: { stars: [40, 66, 84], length: 140 } },
+  },
+  {
     id: 'archery', name: 'Bow and arrow', icon: 'trick-archery',
     place: { x: ARCHERY.sign.x, z: ARCHERY.sign.z, face: ARCHERY.sign.face }, where: 'the archery range, west of Kawabe behind the houses',
     seasons: ['spring', 'summer', 'autumn'], hours: [9, 18], night: false, when: 'Spring to autumn, in the daytime',

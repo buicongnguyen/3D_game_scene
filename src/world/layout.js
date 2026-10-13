@@ -224,6 +224,9 @@ export const PLAY_GROUNDS = [
   // The henhouse behind the cottage (tricks/eggs.js HOUSE) and the lawn its round is watched across: the phone camera
   // stands up to 16 m south of the board. (Most of it lies inside the stargazing hill's rect and the cottage clearing.)
   [-52.6, 155.5, 3.8, 10],
+  // The crop cards (tricks/crops.js) at the north edge of the field grid: Mika and her teacher sit with their backs to
+  // the paddies, the camera stands 7.4 m north of them and looks back over the rice (nothing may grow in between).
+  [-86.5, -14.5, 7, 6.5],
 ];
 
 // Keep-out zones for scattering (trees, rocks, flowers): circles [x, z, r].

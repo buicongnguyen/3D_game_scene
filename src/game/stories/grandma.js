@@ -112,6 +112,12 @@ export const STORY = {
       ['sora', "That is the puzzle! Put a life in order, find the missing card, spot the one that does not belong."],
       ['sora', "Come to the green by the river, at the north end of Kawabe. No hurry, no clock. Thinking is the whole game."],
     ],
+    trick_crops_intro: [
+      ['sora', "Every grain of rice in your bowl took a whole summer, Mi-chan. I drew it all on cards: rice, wheat and potatoes.", 'Talk'],
+      ['mika', "Grandma, do potatoes grow from seeds too?"],
+      ['sora', "From a potato! That is one of the puzzles. Put a crop's year in order, read the year wheel, find what it needs."],
+      ['sora', "Come to the north edge of the rice paddies, west of Kawabe. No hurry, no clock. Thinking is the whole game."],
+    ],
     trick_archery_intro: [
       ['sora', "A bow, Mi-chan! I won the village archery cup in my day. Once. The target was very large.", 'Talk'],
       ['mika', "How large?"],

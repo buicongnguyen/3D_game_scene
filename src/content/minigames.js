@@ -45,6 +45,7 @@ export const META = {
   'trick:hoppers': { cat: 'country', desc: N_('Catch grasshoppers in the tall summer grass.'), season: 'summer', hour: 10, isNew: true },
   'trick:cricket': { cat: 'country', desc: N_('Follow the chirp and find the singing cricket.'), season: 'autumn', hour: 19, isNew: true },
   'trick:lifecycle': { cat: 'country', desc: N_('Put the lives of small animals in order: a card game for thinkers.'), season: 'summer', hour: 10, isNew: true },
+  'trick:crops': { cat: 'country', desc: N_('Rice, wheat and potatoes from seed to harvest: a card game for thinkers.'), season: 'autumn', hour: 10, isNew: true },
   'trick:archery': { cat: 'yard', desc: N_('Draw a bamboo bow and hit the straw target.'), season: 'spring', hour: 11, isNew: true },
   'trick:cowrace': { cat: 'animals', desc: N_('Race four cows down the track: steer, and tap on the beat.'), season: 'spring', hour: 11, isNew: true },
   'trick:eggs': { cat: 'animals', desc: N_('Read the bamboo gutters and catch the hens\' eggs in your hat.'), season: 'spring', hour: 10, isNew: true },

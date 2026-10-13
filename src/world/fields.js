@@ -2,10 +2,33 @@
 // layout.js PADDIES (no three.js): read by paddies.js, checked by tests/signs.test.mjs.
 import { PADDIES } from './layout.js';
 
-/** Plots that are dry vegetable beds (leafy greens and radish in rows); every other plot is a flooded rice paddy. */
-export const VEG_BEDS = new Set(['paddy03', 'paddy12', 'paddy21', 'paddy23']);
-/** Rice paddies already cut in autumn (stubble and drying hay); the others stand golden until winter. */
+/** Plots that are dry vegetable beds (leafy greens and radish in rows). */
+export const VEG_BEDS = new Set(['paddy03', 'paddy12', 'paddy23']);
+/**
+ * The wheat field: two dry plots side by side on the top terrace, where the water is hardest to hold. Winter wheat is
+ * sown in autumn, waits small and green under the snow, shoots up in spring and is golden in early summer, when the
+ * rice beside it is deep green. Every plot that is neither wheat nor a vegetable bed is a flooded rice paddy.
+ */
+export const WHEAT_FIELDS = new Set(['paddy21', 'paddy22']);
+/** Rice paddies already cut in autumn (stubble, with the sheaves drying on racks); the others stand golden until winter. */
 export const CUT_IN_AUTUMN = new Set(['paddy02', 'paddy11', 'paddy20']);
+
+/** What grows in a plot: 'rice' (flooded), 'wheat' or 'veg' (both dry). */
+export const cropOf = id => (VEG_BEDS.has(id) ? 'veg' : WHEAT_FIELDS.has(id) ? 'wheat' : 'rice');
+/** Does the plot hold water? Only the rice paddies do (frogs, dragonflies and the big fireflies keep to them). */
+export const isFlooded = id => cropOf(id) === 'rice';
+
+/**
+ * The farming year of the two grains, season by season: what stands in the field (paddies.js draws exactly this).
+ *   rice   spring: seedlings just transplanted into mirror water; summer: dense deep-green tillers; autumn: golden,
+ *          the heads bending (and some plots cut, their sheaves drying on racks); winter: stubble in drained mud.
+ *   wheat  autumn: just sown, the first green needles in the drill rows; winter: small tufts waiting under the snow;
+ *          spring: tall, green and in ear; summer: golden, ready to cut.
+ */
+export const FIELD_YEAR = {
+  rice: { spring: 'seedling', summer: 'green', autumn: 'golden', winter: 'stubble' },
+  wheat: { spring: 'green', summer: 'golden', autumn: 'sprout', winter: 'sprout' },
+};
 
 /** Festival colours of the paper lanterns and fairy lights: red, amber, green, blue, pink. */
 export const LIGHT_COLOURS = ['#ff4638', '#ffae1f', '#4fd45c', '#3fa2ff', '#ff6fbd'];
@@ -25,7 +48,8 @@ const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
  *   riceEars     false leaves out the grain heads of summer and autumn (a draw call a plot and 16 triangles a plant)
  *   fieldLightGeometry  'full' (104 triangles a light) or 'light' (the small fairy lights in 24); Low takes 'light'
  *   detail       0 .. 1: one dial for a tier that sets none of the above (0 = sparsest, 1 = full)
- * Returns { riceStepX, riceStepZ, vegSpacing, bulbs, lights, ears, lightGeometry }.
+ * Returns { riceStepX, riceStepZ, vegSpacing, wheatStepX, wheatStepZ, broad, bulbs, lights, ears, lightGeometry };
+ * broad: how much wider a plant is drawn where the field is planted wider apart (so the summer rice still closes up).
  */
 export function fieldOptions(quality = {}) {
   const q = quality || {}, detail = Number.isFinite(q.detail) ? clamp(q.detail, 0, 1) : null;
@@ -37,6 +61,7 @@ export function fieldOptions(quality = {}) {
   const share = Number.isFinite(q.fieldLights) ? clamp(q.fieldLights, 0, 1) : detail !== null ? 0.4 + 0.6 * detail : 1;
   return {
     riceStepX: steps[0], riceStepZ: steps[1], vegSpacing: steps[2],
+    wheatStepX: 0.45 * steps[0] / 0.62, wheatStepZ: 0.4 * steps[1] / 0.58, broad: Math.min(1.6, steps[0] / 0.62),
     lights: share > 0, bulbs: share > 0 ? Math.max(1, Math.round(BULBS * share)) : 0,
     ears: q.riceEars !== false,
     lightGeometry: q.fieldLightGeometry === 'full' || q.fieldLightGeometry === 'light' ? q.fieldLightGeometry : (detail !== null ? detail < 0.5 : low) ? 'light' : 'full',
@@ -53,6 +78,33 @@ export function bedRows(p, spacing = 0.62) {
     rows.push({ x, z0: p.z - p.d / 2 + 0.6, z1: p.z + p.d / 2 - 0.6, kind: k % 2 ? 'radish' : 'leafy', plants });
   }
   return rows;
+}
+
+/**
+ * Where the wheat stands: drill rows running north-south, [{ x, plants: [z...] }]. stepX: metres between rows,
+ * stepZ: between the tufts of a row (a quality tier sows wider apart and draws each tuft a little broader).
+ */
+export function wheatRows(p, stepX = 0.45, stepZ = 0.4) {
+  const rows = [], n = Math.max(2, Math.round((p.w - 1.5) / stepX));
+  for (let k = 0; k <= n; k++) {
+    const x = p.x - p.w / 2 + 0.75 + k * (p.w - 1.5) / n, plants = [];
+    for (let z = p.z - p.d / 2 + 0.8; z <= p.z + p.d / 2 - 0.75; z += stepZ) plants.push(z);
+    rows.push({ x, plants });
+  }
+  return rows;
+}
+
+/**
+ * The drying racks of a cut paddy (Japanese hasagake: a pole on crossed legs, the sheaves hung astride it, heads
+ * down) and the bundles stood up on the stubble to dry, as in Vietnam. Pure: { racks: [{ x, z, len, sheaves }], stooks: [[x, z]] }.
+ * Racks run east-west, well inside the bund.
+ */
+export function dryingRacks(p) {
+  const len = Math.min(5.4, p.w - 3.4), sheaves = Math.round(len / 0.38);
+  return {
+    racks: [{ x: p.x - 0.7, z: p.z - p.d * 0.22, len, sheaves }, { x: p.x + 0.8, z: p.z + p.d * 0.2, len, sheaves }],
+    stooks: [[p.x + p.w * 0.36, p.z - p.d * 0.3], [p.x + p.w * 0.31, p.z - p.d * 0.36], [p.x - p.w * 0.37, p.z + p.d * 0.33], [p.x - p.w * 0.3, p.z + p.d * 0.38], [p.x - p.w * 0.36, p.z + p.d * 0.02]],
+  };
 }
 
 /**

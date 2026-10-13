@@ -5,6 +5,9 @@
 //
 // What this file owns: the card board (a DOM overlay over the softly dimmed world), the seated teacher beside Mika and
 // the camera shot of the two of them. Everything is put back in `finally` (the board, the listeners, the teacher's rig).
+//
+// The board and the round are shared: another card game hands makeBoard / playCards its own kit (rules, pictures,
+// words). "From seed to harvest" (crops.js) is played on this board.
 import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { NPC } from '../../actors/npc.js';
@@ -14,8 +17,12 @@ import { cardSvg, creatureOf } from './lifecycle-art.js';
 
 const CSS = `
 body.life-round #trickHud,body.life-round #trickHint,body.life-round #touch,body.life-round #toasts{display:none!important}
+/* the board has its own way out in its header (Leave); the shared Stop button would lie over the cards on a phone */
+body.life-round #minigameStop{display:none!important}
 body.life-round #howTo{z-index:18}
-@media (max-width:700px),(max-height:480px){body.life-round #howTo{display:none!important}}
+@media (max-width:700px),(max-height:480px){body.life-round #howTo{display:none!important}
+ /* a phone: the board fills the screen, so the clock and the two round buttons would only show through it */
+ body.life-round #clock,body.life-round #btnMenu,body.life-round #btnJournal{visibility:hidden}}
 #lifeBoard{position:fixed;inset:0;z-index:17;display:flex;align-items:center;justify-content:center;background:rgba(40,52,24,.16);
  font:700 15px Nunito,system-ui,sans-serif;color:#4a3020;user-select:none;-webkit-user-select:none;touch-action:none;overflow:hidden}
 #lifeBoard .pn{position:relative;box-sizing:border-box;width:min(772px,calc(100vw - 16px));height:min(680px,calc(100dvh - 16px));display:flex;flex-direction:column;overflow:hidden;
@@ -36,7 +43,8 @@ body.life-round #howTo{z-index:18}
 #lifeBoard .area.side{flex-direction:row}
 #lifeBoard .show,#lifeBoard .pick{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:8px}
 #lifeBoard .show.seq{gap:8px 18px}
-#lifeBoard .show:empty{display:none}
+#lifeBoard .show:empty,#lifeBoard .ban:empty{display:none}
+#lifeBoard .ban{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px}
 #lifeBoard .show.grid{display:grid;grid-template-columns:repeat(3,auto);gap:6px;padding:6px;border-radius:16px;background:#f3e3c0}
 #lifeBoard .pick{padding:6px;border-radius:18px;background:#f8ecd2;min-width:calc(var(--c) + 20px);min-height:calc(var(--c) + 8px)}
 #lifeBoard .lc-card{position:relative;box-sizing:border-box;width:calc(var(--c) + 8px);padding:4px 4px 2px;border-radius:calc(var(--c) * .14 + 4px);background:#fff;box-shadow:0 3px 0 #d9bd85,0 0 0 2px #e6cf9f;
@@ -117,6 +125,29 @@ const BTN = { check: N_('Check'), next: N_('Next'), finish: N_('Finish') };
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const nameOf = id => (id.startsWith('home.') ? HOME_NAME[id.slice(5)] : STAGE[id]?.name) || '';
 
+/**
+ * What a card game brings to the board (makeBoard, playCards):
+ *   check, solve, explain, pointsFor, MAX_MISSES   its rules (the shapes of rules-lifecycle.js)
+ *   cardSvg(id), nameOf(id)                        a card's picture and its name
+ *   alwaysLabel(id), labelled(p)                   cards named even on Difficult, and puzzles made of such cards
+ *   prompt(p)                                      the question, translated (default: tx(p.prompt))
+ *   banner(p, done)                                HTML shown over the cards (a chart to read), or ''
+ *   celebrate(p)                                   { svg, hop } that crosses the board after a first-try answer, or null
+ *   guide, hint                                    the teacher's lines of the guided first play; the two how-to hints
+ */
+const LIFE_KIT = {
+  check, solve, explain, pointsFor, MAX_MISSES, cardSvg, nameOf,
+  alwaysLabel: id => id.startsWith('home.'),
+  labelled: p => p.type === 'home',
+  celebrate(p) {
+    const a = ANIMAL[p.animal];
+    // the grown-up of the life just solved crosses the board: the picture without its background
+    return a ? { svg: creatureOf(`${a.id}.adult`), hop: !(a.wings && a.id !== 'grasshopper') } : null;
+  },
+  get guide() { return GUIDE; },
+  get hint() { return HINT; },
+};
+
 /** The largest card size (px) at which `rows` (lists of how many cards sit side by side) fit a w x h box. */
 export function fitCards(w, h, rows, { labels = false, gaps = [], side = false } = {}) {
   for (let c = 132; c >= 48; c -= 2) {
@@ -133,15 +164,15 @@ export function fitCards(w, h, rows, { labels = false, gaps = [], side = false }
   return 48;
 }
 
-function makeBoard(ctx, round, teacherName) {
+export function makeBoard(ctx, round, teacherName, kit = LIFE_KIT) {
   addCss('lifeCss', CSS);
   const touch = !!ctx.ui?.touch, total = round.puzzles.length;
   const root = document.createElement('div');
   root.id = 'lifeBoard';
   root.innerHTML = `<section class="pn" role="dialog"><div class="hd"><img alt=""><span class="nm"></span><div class="dots">${round.puzzles.map(() => '<i></i>').join('')}</div><span class="sc"></span><div class="leave" data-f data-role="leave" data-g="0" role="button"></div></div>
-    <div class="q" aria-live="polite"></div><div class="area"><div class="show"></div><div class="pick"></div></div><div class="say" aria-live="polite"></div><div class="go" data-f data-role="go" data-g="3" role="button"></div></section>`;
+    <div class="q" aria-live="polite"></div><div class="area"><div class="ban"></div><div class="show"></div><div class="pick"></div></div><div class="say" aria-live="polite"></div><div class="go" data-f data-role="go" data-g="3" role="button"></div></section>`;
   const $ = s => root.querySelector(s);
-  const el = { pn: $('.pn'), q: $('.q'), area: $('.area'), show: $('.show'), pick: $('.pick'), say: $('.say'), go: $('.go'), sc: $('.sc'), dots: [...root.querySelectorAll('.dots i')] };
+  const el = { pn: $('.pn'), q: $('.q'), area: $('.area'), ban: $('.ban'), show: $('.show'), pick: $('.pick'), say: $('.say'), go: $('.go'), sc: $('.sc'), dots: [...root.querySelectorAll('.dots i')] };
   const img = $('.hd img');
   img.onerror = () => { img.style.display = 'none'; };
   img.src = ctx.ui.icon(ctx.trick.icon);
@@ -154,7 +185,7 @@ function makeBoard(ctx, round, teacherName) {
   const S = { i: -1, p: null, slots: [], tray: [], locked: [], sel: null, off: new Set(), misses: 0, answered: false, shownAnswer: false,
     score: 0, seconds: 0, firstTry: 0, marks: [], cur: -1, nav: false, finished: false, leave: false, drag: null, flash: null };
   const unit = tx(ctx.trick.unit);
-  const card = (id, cls, attrs = '') => `<div class="lc-card ${cls || ''}" data-card="${id}" ${attrs}>${cardSvg(id)}${S.p.labels || id.startsWith('home.') ? `<span class="lb">${esc(tx(nameOf(id)))}</span>` : ''}</div>`;
+  const card = (id, cls, attrs = '') => `<div class="lc-card ${cls || ''}" data-card="${id}" ${attrs}>${kit.cardSvg(id)}${S.p.labels || kit.alwaysLabel(id) ? `<span class="lb">${esc(tx(kit.nameOf(id)))}</span>` : ''}</div>`;
   const say = (text, cls = '', who = true) => {
     el.say.className = `say ${cls}`;
     el.say.innerHTML = text ? `${who ? `<b>${esc(teacherName)}:</b>` : ''}<span>${esc(text)}</span>` : '';
@@ -163,17 +194,22 @@ function makeBoard(ctx, round, teacherName) {
   function fit() {
     const p = S.p;
     if (!p) return;
-    const labels = p.labels || p.type === 'home';
+    const labels = p.labels || kit.labelled(p), ban = !!el.ban.firstChild;
     const rows = [], gaps = [];
     if (p.type === 'order') { rows.push(p.slots, p.cards.length); gaps.push(18, 8); }
     else if (p.type === 'next') { rows.push(p.row.length, p.choices.length); gaps.push(18, 8); }
     else if (p.type === 'grid') { rows.push({ fixed: 3, lines: 3 }, p.choices.length); gaps.push(6, 8); }
     else if (p.show) rows.push(1, p.choices.length);
     else rows.push(p.choices.length);
-    const w = el.area.clientWidth - 12, h = el.area.clientHeight;
-    const side = p.type === 'grid' && w > h * 1.15;
+    let w = el.area.clientWidth - 12, h = el.area.clientHeight;
+    const side = (p.type === 'grid' || ban) && w > h * 1.15;
     el.area.classList.toggle('side', side);
-    const c = fitCards(w, h, rows, { labels, gaps, side });
+    if (ban) {
+      // a chart over the cards (beside them on a wide screen): it takes its share, the cards fit what is left
+      root.style.setProperty('--wh', `${Math.round(side ? Math.min(h - 34, 250, w * 0.42) : Math.min(220, h * 0.46, w - 24))}px`);
+      if (side) w -= el.ban.offsetWidth + 14; else h -= el.ban.offsetHeight + 14;
+    }
+    const c = fitCards(w, h, rows, { labels, gaps, side: side && !ban });
     root.style.setProperty('--c', `${c}px`);
     root.style.setProperty('--lh', labels ? `${(Math.max(10, Math.min(14, c * 0.125)) * 2.3 + 2).toFixed(1)}px` : '0px');
     // wrapped rows are balanced (3 + 2, never 4 + 1): each row box is only as wide as its share of the cards
@@ -183,13 +219,13 @@ function makeBoard(ctx, round, teacherName) {
       box.style.maxWidth = `${each * (c + 8 + gap) - gap + (box === el.pick ? 12 : 0)}px`;
     };
     balance(el.show, rows.length > 1 ? rows[0] : 0, gaps[0] ?? 8);
-    if (side) el.pick.style.maxWidth = `${2 * (c + 8) + 8 + 12}px`; else balance(el.pick, rows[rows.length - 1], 8);
+    if (side && !ban) el.pick.style.maxWidth = `${2 * (c + 8) + 8 + 12}px`; else balance(el.pick, rows[rows.length - 1], 8);
   }
 
   function render() {
     const p = S.p;
     if (!p) return;
-    el.q.textContent = tx(p.prompt);
+    el.q.textContent = kit.prompt ? kit.prompt(p) : tx(p.prompt);
     el.sc.textContent = `${S.score} ${unit}`;
     el.dots.forEach((d, i) => { d.className = i === S.i && !S.answered ? 'now' : S.marks[i] || ''; });
     const done = S.answered;
@@ -208,6 +244,7 @@ function makeBoard(ctx, round, teacherName) {
       }).join('');
     }
     el.show.className = `show${seq ? ' seq' : ''}${p.type === 'grid' ? ' grid' : ''}`;
+    el.ban.innerHTML = kit.banner?.(p, done) || '';
     el.show.innerHTML = show;
     el.pick.innerHTML = pick;
     const ready = done || (p.type === 'order' ? S.slots.every(Boolean) : !!S.sel);
@@ -290,12 +327,11 @@ function makeBoard(ctx, round, teacherName) {
   }
 
   function celebrate(p) {
-    const a = ANIMAL[p.animal];
+    const a = kit.celebrate?.(p);
     if (!a) return;
     const f = document.createElement('div');
-    f.className = `fly ${a.wings && a.id !== 'grasshopper' ? 'wing' : 'hop'}`;
-    // the grown-up of the life just solved crosses the board: the picture without its background
-    f.innerHTML = `<svg viewBox="0 0 120 120">${creatureOf(`${a.id}.adult`)}</svg>`;
+    f.className = `fly ${a.hop ? 'hop' : 'wing'}`;
+    f.innerHTML = `<svg viewBox="0 0 120 120">${a.svg}</svg>`;
     f.addEventListener('animationend', ev => { if (ev.target === f) f.remove(); });
     el.pn.append(f);                // (it passes behind the cards, the words and the buttons: never over something to read)
   }
@@ -310,22 +346,22 @@ function makeBoard(ctx, round, teacherName) {
     const p = S.p;
     if (S.answered) { next(); return; }
     const answer = p.type === 'order' ? S.slots.slice() : S.sel;
-    const res = check(p, answer);
+    const res = kit.check(p, answer);
     if (res.right) {
-      finishPuzzle(true, pointsFor(S.misses));
+      finishPuzzle(true, kit.pointsFor(S.misses));
       if (p.type === 'order') S.locked = S.slots.map(() => true);
-      say(`${tx('Yes!')} ${explain(p, answer, true).map(s => tx(s)).join(' ')}`, 'yes');
+      say(`${tx('Yes!')} ${kit.explain(p, answer, true).map(s => tx(s)).join(' ')}`, 'yes');
       ctx.audio.good?.();
       if (!S.misses) celebrate(p);
     } else {
       S.misses++;
-      const why = explain(p, answer, false).map(s => tx(s)).join(' ');
+      const why = kit.explain(p, answer, false).map(s => tx(s)).join(' ');
       ctx.audio.miss?.();
-      if (S.misses >= MAX_MISSES) {
+      if (S.misses >= kit.MAX_MISSES) {
         // three misses: the teacher shows the answer and says why (no points, no fuss)
         finishPuzzle(false, 0);
         S.shownAnswer = true;
-        if (p.type === 'order') { S.slots = solve(p); S.tray = p.extra.slice(); S.locked = S.slots.map(() => true); }
+        if (p.type === 'order') { S.slots = kit.solve(p); S.tray = p.extra.slice(); S.locked = S.slots.map(() => true); }
         say(`${tx('Let me show you.')} ${p.why.map(s => tx(s)).join(' ')}`, 'no');
       } else if (p.type === 'order') {
         // the cards in the right place stay (green); the others go back to the tray
@@ -351,8 +387,8 @@ function makeBoard(ctx, round, teacherName) {
     S.slots = p.type === 'order' ? new Array(p.slots).fill(null) : [];
     S.locked = S.slots.map(() => false);
     S.tray = p.type === 'order' ? p.cards.slice() : [];
-    if (ctx.first && GUIDE[i]) say(tx(GUIDE[i]));
-    else if (i === 0 || (ctx.easy && i < 2)) say(tx(p.type === 'order' ? HINT.order : HINT.choice), '', false);
+    if (ctx.first && kit.guide[i]) say(tx(kit.guide[i]));
+    else if (i === 0 || (ctx.easy && i < 2)) say(tx(p.type === 'order' ? kit.hint.order : kit.hint.choice), '', false);
     else say('');
     render();
   }
@@ -449,14 +485,15 @@ function seatTeacher(g, model, x, z, facing) {
   return { npc, sat: !!sit, update(dt) { npc.anim?.update(dt); }, dispose() { npc.root.removeFromParent(); disposeRigs(npc.root); local.forEach(o => o.dispose?.()); } };
 }
 
-export default {
-  id: 'lifecycle',
-  async play(ctx) {
+/**
+ * A round of a card game on the board: Mika and her teacher sit down by the sign, the cards are played, everything is
+ * put back. { round, seed, kit, intro: [what the teacher says on the guided first play], bonusFor: the level's small
+ * bonus, debug: the key under ctx.debug, rise: how high the camera stands over the ground (higher looks down on what
+ * lies behind the two) }. Returns what a trick's play() returns.
+ */
+export async function playCards(ctx, { round, seed, kit = LIFE_KIT, intro = [], bonusFor = quickBonus, debug = 'life', rise = 1.7 }) {
     const g = ctx.game, p = ctx.player, d = ctx.director, follow = g.follow;
     let board = null, teacher = null;
-    // (a QA script may name the seed, so a run can be repeated)
-    const seed = (typeof window !== 'undefined' && window.__STARLINE_QA__?.seed) || Math.floor(Math.random() * 2 ** 31) + 1;
-    const round = makeRound({ level: ctx.level, seed, first: ctx.first });
     try {
       ctx.lock(true);
       ctx.hud(0, null);
@@ -475,19 +512,19 @@ export default {
       const DIST = 7.4, wide = innerWidth >= 1100 && innerWidth > innerHeight * 1.5;
       const aside = wide ? 0.8 * DIST * Math.tan((follow.camera.fov || 50) * Math.PI / 360) * (innerWidth / innerHeight) : 0;
       const cam = new THREE.Vector3(mid.x + fx * DIST, 0, mid.z + fz * DIST);
-      cam.y = Math.max(mid.y, g.world.heightAt(cam.x, cam.z)) + 1.7;
+      cam.y = Math.max(mid.y, g.world.heightAt(cam.x, cam.z)) + rise;
       // (the camera looks back along -f: its right-hand side is (fz, 0, -fx))
       const shot = { pos: cam, look: new THREE.Vector3(mid.x - fz * aside, mid.y + 0.7, mid.z + fx * aside) };
       follow.cutscene(shot, 1.1);
-      ctx.debug.life = { round, seed, get board() { return board?.S || null; }, solve: () => (board?.S.p ? solve(board.S.p) : null) };
+      ctx.debug[debug] = { round, seed, get board() { return board?.S || null; }, solve: () => (board?.S.p ? kit.solve(board.S.p) : null) };
 
       if (ctx.first) {
         // a short talk first: on a phone the How to play card is open over the middle of the screen for these seconds
-        await ctx.say([[ctx.teacher, INTRO[ctx.teacher] || INTRO.sora, 'Talk'], [ctx.teacher, INTRO_2]]);
+        if (intro.length) await ctx.say(intro.map((text, k) => (k ? [ctx.teacher, text] : [ctx.teacher, text, 'Talk'])));
         if (ctx.quit) return { score: 0, quit: true };
         follow.cutscene(shot, 0.8);                 // (the talk framed the speaker and let the camera go)
       }
-      board = makeBoard(ctx, round, d.tricks.teacherName(ctx.trick));
+      board = makeBoard(ctx, round, d.tricks.teacherName(ctx.trick), kit);
       board.start(0);
       const pose = { waiting: true };
       const res = await ctx.loop(dt => {
@@ -497,7 +534,7 @@ export default {
         return board.step(ctx.input, Math.min(0.1, dt)) ? { done: true } : undefined;
       });
       if (res?.quit) return { score: 0, quit: true };
-      const S = board.S, bonus = quickBonus(round.level, S.seconds, ctx.roundTime);
+      const S = board.S, bonus = bonusFor(round.level, S.seconds, ctx.roundTime);
       const note = tx('{n} of {total} right at the first try', { n: S.firstTry, total: round.puzzles.length }) + (bonus ? ` · ${tx('steady thinking +{n}', { n: bonus })}` : '');
       return { score: S.score + bonus, note, detail: { firstTry: S.firstTry, puzzles: round.puzzles.length, seconds: Math.round(S.seconds), bonus, seed } };
     } finally {
@@ -507,5 +544,14 @@ export default {
       ctx.lock(false);
       ctx.input.releaseAll?.();
     }
+}
+
+export default {
+  id: 'lifecycle',
+  async play(ctx) {
+    // (a QA script may name the seed, so a run can be repeated)
+    const seed = (typeof window !== 'undefined' && window.__STARLINE_QA__?.seed) || Math.floor(Math.random() * 2 ** 31) + 1;
+    const round = makeRound({ level: ctx.level, seed, first: ctx.first });
+    return playCards(ctx, { round, seed, intro: [INTRO[ctx.teacher] || INTRO.sora, INTRO_2] });
   },
 };

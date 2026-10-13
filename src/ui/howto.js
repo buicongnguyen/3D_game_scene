@@ -73,6 +73,11 @@ export const HOWTO = {
     { in: 'jump', pic: 'tick', text: N_('Press Check when you are sure.'), touch: N_('Check') },
     { in: null, pic: 'trio', text: N_('No hurry. A wrong answer can be tried again.') },
   ],
+  'trick:crops': [
+    { in: 'tap', pic: 'cards', text: N_('Pick the right card, or lay a row in order.') },
+    { in: 'jump', pic: 'tick', text: N_('Press Check when you are sure.'), touch: N_('Check') },
+    { in: null, pic: 'trio', text: N_('No hurry. A wrong answer can be tried again.') },
+  ],
   'trick:eggs': [
     { in: 'lr', pic: 'hat', text: N_('Catch each egg in your hat.'), touchTap: true },
     { in: null, pic: 'ladder', text: N_('An egg takes every rung it meets.') },
