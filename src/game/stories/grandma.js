@@ -100,6 +100,12 @@ export const STORY = {
       ['mika', "A cricket thermometer. Grandma, you're making this up."],
       ['sora', "Ask your science club. Chirps plus forty is the temperature in Fahrenheit. And then he goes home to bed."],
     ],
+    trick_lifecycle_intro: [
+      ['sora', "I drew these cards when your mother was small, Mi-chan. Eggs, caterpillars, tadpoles: how little animals grow up.", 'Talk'],
+      ['mika', "Grandma, a caterpillar and a butterfly are the same animal? They look nothing alike."],
+      ['sora', "That is the puzzle! Put a life in order, find the missing card, spot the one that does not belong."],
+      ['sora', "Come to the green by the river, at the north end of Kawabe. No hurry, no clock. Thinking is the whole game."],
+    ],
     trick_archery_intro: [
       ['sora', "A bow, Mi-chan! I won the village archery cup in my day. Once. The target was very large.", 'Talk'],
       ['mika', "How large?"],

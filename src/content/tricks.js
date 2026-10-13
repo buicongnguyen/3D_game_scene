@@ -144,6 +144,20 @@ export const TRICKS = [
     levels: { easy: { stars: [20, 45, 70], length: 75 }, normal: { stars: [35, 70, 100], length: 105 }, hard: { stars: [50, 100, 140], length: 130 } },
   },
   {
+    // a thinking game with picture cards (tricks/rules-lifecycle.js): 10 points a puzzle solved at the first try, 6 at the second,
+    // 3 at the third; Easy deals 5 puzzles, Normal 7, Difficult 9. No clock on screen: `length` is how long a thoughtful child
+    // takes, and on Normal and Difficult a round finished inside it earns a few extra points (never needed for the stars)
+    id: 'lifecycle', name: 'From egg to wings', icon: 'trick-lifecycle',
+    place: { x: -23, z: -18, face: -Math.PI / 2 }, where: 'the green by the river, at the north end of Kawabe',
+    seasons: ['spring', 'summer', 'autumn'], hours: [8, 18], night: false, when: 'Spring to autumn, in daylight',
+    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_lifecycle_intro',
+    howReal: 'Look under leaves for eggs and caterpillars, and in still water for tadpoles and wrigglers. Come back every few days and draw what has changed.',
+    why: 'Butterflies and mosquitoes change shape completely and rest as a pupa. Grasshoppers and dragonflies have no pupa: the young moult and grow wings.',
+    safety: 'Never touch a chrysalis. Tip standing water out of pots so mosquitoes cannot breed.',
+    stars: [30, 50, 64], length: 100, firstLength: 70, unit: 'points',
+    levels: { easy: { stars: [20, 35, 46], length: 70 }, normal: { stars: [30, 50, 64], length: 100 }, hard: { stars: [40, 66, 84], length: 140 } },
+  },
+  {
     id: 'archery', name: 'Bow and arrow', icon: 'trick-archery',
     place: { x: ARCHERY.sign.x, z: ARCHERY.sign.z, face: ARCHERY.sign.face }, where: 'the archery range, west of Kawabe behind the houses',
     seasons: ['spring', 'summer', 'autumn'], hours: [9, 18], night: false, when: 'Spring to autumn, in the daytime',

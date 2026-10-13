@@ -63,6 +63,11 @@ export const HOWTO = {
     { in: null, pic: 'stop', text: N_('Stand still when it goes quiet.') },
     { in: 'act', pic: 'ring', text: N_('Tap on its beat, softly.') },
   ],
+  'trick:lifecycle': [
+    { in: 'tap', pic: 'cards', text: N_('Pick the cards in the right order.') },
+    { in: 'jump', pic: 'tick', text: N_('Press Check when you are sure.'), touch: N_('Check') },
+    { in: null, pic: 'trio', text: N_('No hurry. A wrong answer can be tried again.') },
+  ],
   'trick:eggs': [
     { in: 'lr', pic: 'hat', text: N_('Catch each egg in your hat.'), touchTap: true },
     { in: null, pic: 'ladder', text: N_('An egg takes every rung it meets.') },
@@ -140,6 +145,9 @@ export const PICS = {
   ladder: `<path d="M12 4v32M28 4v32" fill="none" stroke="${GREEN}" stroke-width="5" stroke-linecap="round"/><path d="M12 20h16" stroke="${SUN}" stroke-width="5" stroke-linecap="round"/><ellipse class="hp-egg" cx="12" cy="7" rx="4" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.5"/>`,
   // an egg dropping into a straw hat held upside-down
   hat: `<path d="M5 24h30l-2.5 4h-25z" fill="${SUN}" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/><path d="M12 28h16l-2 8H14z" fill="${SUN}" stroke="${INK}" stroke-width="1.5" stroke-linejoin="round"/><path d="M12.6 30.5h14.8" stroke="${HOT}" stroke-width="2.4"/><ellipse class="hp-drop" cx="20" cy="6" rx="4" ry="5" fill="#fff" stroke="${INK}" stroke-width="1.5"/>`,
+  // a picture card dropping into the first of three places (the life-cycle card game), and a tick for its Check button
+  cards: `<g fill="#e6d3b0"><rect x="3" y="23" width="10" height="14" rx="2.5"/><rect x="15" y="23" width="10" height="14" rx="2.5"/><rect x="27" y="23" width="10" height="14" rx="2.5"/></g><g class="hp-drop"><rect x="3" y="4" width="10" height="14" rx="2.5" fill="#fff" stroke="${INK}" stroke-width="1.5"/><ellipse cx="8" cy="11" rx="2.6" ry="3.4" fill="${HOT}"/></g>`,
+  tick: `<circle cx="20" cy="20" r="14" fill="#e6d3b0"/><path class="hp-b2" d="M12 21l6 6 11-13" fill="none" stroke="${GREEN}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`,
   turn: `<ellipse cx="20" cy="22" rx="11" ry="7" fill="#a8436e" stroke="${INK}" stroke-width="1.4"/><path class="hp-spin" d="M8 12a13 9 0 0 1 24 0m0 0-5-1m5 1 1-5" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 

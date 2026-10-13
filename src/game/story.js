@@ -707,6 +707,12 @@ export const DIALOGUE = {
     ['rin', "Stand still like a fence post and he starts again. Then tap along with his beat, gently, and he hops in the cage."],
     ['rin', "Count his chirps for fourteen seconds: it's a thermometer. Don't ask me how. Then let him go home."],
   ],
+  trick_lifecycle_intro: [
+    ['rin', "Sora kept a box of nature cards. Eggs, caterpillars, tadpoles: every little animal's life, drawn by hand.", 'Talk'],
+    ['mika', "Cards. I thought the countryside was all running about and falling in rivers."],
+    ['rin', "This one is for your head, city girl. Put a life in order, find the missing card, spot the one that doesn't belong."],
+    ['rin', "On the green by the river, at the north end of Kawabe. No hurry: nobody is timing you."],
+  ],
   trick_archery_intro: [
     ['rin', "There's an archery range behind the Kawabe houses. Bamboo bow, straw targets, practice arrows with soft rubber tips.", 'Talk'],
     ['mika', "Archery. Me. With a pointy thing."],
