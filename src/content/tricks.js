@@ -59,10 +59,11 @@ export const TRICKS = [
     howReal: 'Find a dark place away from town lights and give your eyes 15 minutes to get used to the dark. Find the Big Dipper, then follow its two end stars.',
     why: 'Without city lights you can see about ten times more stars. The North Star barely moves all night, so travellers used it to find north.',
     safety: 'Wrap up warm, and go with a grown-up.',
-    // 10 a star joined, 20 the North Star, 15 the wish, a speed bonus (tricks/stars.js gazePlan): Easy joins 7 stars (about
-    // 115 at best), Normal 12 with Cassiopeia (about 175), Difficult 18 with the Little Dipper, under drifting clouds (about 245)
-    stars: [80, 120, 150], length: 120, firstLength: 120, unit: 'points',
-    levels: { easy: { stars: [40, 75, 95], length: 90 }, normal: { stars: [80, 120, 150], length: 120 }, hard: { stars: [110, 170, 210], length: 150 } },
+    // 10 a star joined, 20 the North Star, 20 an answer, 15 the wish, a speed bonus (tricks/rules-stars.js gazePlan): Easy joins
+    // 7 stars to find north (105 without the speed bonus); Normal 15 with Cassiopeia and the season's figure, and names its
+    // brightest star (205); Difficult 13 with the Little Dipper, then picks out a satellite and counts a satellite train (205)
+    stars: [90, 150, 190], length: 120, firstLength: 120, unit: 'points',
+    levels: { easy: { stars: [40, 75, 95], length: 90 }, normal: { stars: [90, 150, 190], length: 120 }, hard: { stars: [100, 160, 205], length: 150 } },
   },
   {
     id: 'frogs', name: 'Frog chorus', icon: 'trick-frogs',

@@ -26,6 +26,7 @@ import { tx, N_, getLang, onLangChange } from '../i18n/i18n.js';
 import { buildStarSky, R } from './skystars.js';
 import { SkyFlight, nightAxis, clockOf, stepNight, canStepNight, hhmm, hourIcon } from './skyflight.js';
 import { profileFor, groupsFor, textOf, starName, shapeSvg, cleanStarGroups, learnGroup, tonightGroups } from '../content/constellations.js';
+import { createSkyCompass } from '../ui/sky-compass.js';
 
 const ELEV = 37 * Math.PI / 180;        // how far up the view centre is
 const STREAKS = 4;                      // pooled shooting stars
@@ -477,7 +478,8 @@ export class SkyGaze {
   // ------------------------------------------------------------------ UI
   ui(on) {
     if (typeof document === 'undefined') return;
-    if (!on) { this.el?.remove(); this.el = null; return; }
+    // (the compass lives inside this layer: every way out of the viewer ends here, in stop(), and takes it along)
+    if (!on) { this.compass?.remove(); this.compass = null; this.el?.remove(); this.el = null; return; }
     if (!document.getElementById('skyGazeCss')) {
       const s = document.createElement('style');
       s.id = 'skyGazeCss';
@@ -513,6 +515,9 @@ export class SkyGaze {
     host.addEventListener('click', e => { const t = e.target; if (t.classList?.contains('dim')) this.selectGroup(+t.dataset.gi, true); });
     document.body.appendChild(el);
     this.uiz = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1;
+    // which way is she looking: the letters on the horizon (when it is in the picture) and the compass rose in the corner
+    this.compass = createSkyCompass({ host: el, kind: 'gaze', inside: true });
+    this.compassOpts = { zoom: this.uiz, top: 78, bottom: 150 };
     this.count();
   }
 
@@ -1127,6 +1132,12 @@ export class SkyGaze {
     const look = this.m.look, cam = g.camera;
     this.placeEye();
     this.updateView(dt, inp);
+    if (this.compass) {
+      // (clear of the chip and pills at the top and the strip at the bottom, as the star names are)
+      const o = this.compassOpts, tall = innerWidth < innerHeight;
+      o.top = d.ui.touch && tall ? 128 : 78; o.bottom = this.uiz < 1.2 && tall ? 330 : 150;
+      this.compass.update(cam, o);
+    }
     if (this.skySt) {
       // the low groups stand where they really are once she is up (the lift is scaled by what is left of the climb)
       if (this.skySt.setLift(this.flight.liftK)) this.labelsDirty = true;
@@ -1234,6 +1245,6 @@ export class SkyGaze {
       flight: this.flight ? { phase: this.flight.phase, alt: +this.flight.alt.toFixed(2), lift: this.flight.lift, liftK: +this.flight.liftK.toFixed(3), leaving: this.leaving } : null,
       skyHour: this.skyHour, hour: this.active ? this.curHour() : null, clock: this.el?.querySelector('.sg-clock .tm')?.textContent || null,
       groups: this.infos.map(i => i.id), sel: this.infos[this.sel]?.id || null, learned: [...(this.st?.starGroups?.learned || [])], profile: this.profile?.id || null, tour: !!this.tour,
-      labels: this.labPool.filter(l => l.style.display !== 'none').map(l => l.textContent) };
+      labels: this.labPool.filter(l => l.style.display !== 'none').map(l => l.textContent), compass: this.compass?.state() || null };
   }
 }

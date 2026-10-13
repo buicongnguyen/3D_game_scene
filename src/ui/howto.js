@@ -32,7 +32,7 @@ export const HOWTO = {
   'trick:stars': [
     { in: 'aim', pic: 'aim', text: N_('Point at a bright star.') },
     { in: 'tap', pic: 'stars', text: N_('Join the stars of a figure in order.') },
-    { in: 'act', pic: 'glow', text: N_('A star falls? Press to make a wish.') },
+    { in: null, pic: 'north', text: N_('N on the horizon is north. Look there first.') },
   ],
   'trick:frogs': [
     { in: 'move', pic: 'walk', text: N_('Walk while the frogs sing.') },
@@ -141,6 +141,7 @@ export const PICS = {
   float: `<path d="M3 22q5-4 10 0t10 0 10 0 6-2" fill="none" stroke="${BLUE}" stroke-width="2.6" stroke-linecap="round"/><g class="hp-sink"><circle cx="20" cy="18" r="5" fill="${HOT}" stroke="${INK}" stroke-width="1.4"/><path d="M20 13V7" stroke="${INK}" stroke-width="1.6"/></g><path class="hp-bang" d="M31 5v8m0 4v2" stroke="${GREEN}" stroke-width="3.4" stroke-linecap="round"/>`,
   camera: `<rect x="6" y="13" width="28" height="19" rx="4" fill="${INK}"/><rect x="14" y="8" width="10" height="6" rx="2" fill="${INK}"/><circle cx="20" cy="22.5" r="6" fill="#fff"/><circle cx="20" cy="22.5" r="3" fill="${BLUE}"/><circle class="hp-flash" cx="30" cy="9" r="6" fill="${SUN}"/>`,
   stars: `<path class="hp-draw" d="M6 28l9-8 9 4 10-14" fill="none" stroke="${HOT}" stroke-width="2.2" stroke-linecap="round" stroke-dasharray="44"/><circle cx="6" cy="28" r="3.2" fill="${SUN}" stroke="${INK}" stroke-width="1.2"/><circle cx="15" cy="20" r="3.2" fill="${SUN}" stroke="${INK}" stroke-width="1.2"/><circle cx="24" cy="24" r="3.2" fill="${SUN}" stroke="${INK}" stroke-width="1.2"/><circle cx="34" cy="10" r="3.2" fill="${SUN}" stroke="${INK}" stroke-width="1.2"/>`,
+  north: `<circle cx="20" cy="23" r="13" fill="#fff" stroke="${INK}" stroke-width="2"/><path d="M20 12.5l4 10.5h-8z" fill="${HOT}"/><path d="M20 33.5l4-10.5h-8z" fill="#c9b48e"/><circle cx="20" cy="23" r="1.8" fill="${INK}"/><circle class="hp-b2" cx="20" cy="4.5" r="3" fill="${SUN}" stroke="${INK}" stroke-width="1.2"/>`,
   sow: `<rect x="3" y="14" width="10" height="12" rx="2" fill="#e6d3b0"/><rect x="15" y="14" width="10" height="12" rx="2" fill="#e6d3b0"/><rect x="27" y="14" width="10" height="12" rx="2" fill="#e6d3b0"/><circle class="hp-step" cx="8" cy="20" r="3.4" fill="${INK}"/>`,
   trio: `<circle class="hp-b1" cx="9" cy="26" r="4" fill="${BLUE}"/><circle class="hp-b2" cx="20" cy="20" r="6" fill="${GREEN}"/><path class="hp-b3" d="M32 5l2.4 5 5.4.6-4 3.8 1.1 5.4-4.9-2.7-4.9 2.7 1.1-5.4-4-3.8 5.4-.6z" fill="${SUN}" stroke="${INK}" stroke-width="1.2" stroke-linejoin="round" transform="translate(-3 3)"/>`,
   ember: `<path d="M6 30q14-14 28 0z" fill="#8d8078"/><path class="hp-warm" d="M6 30q14-14 28 0z" fill="${HOT}"/><g class="hp-steam" fill="none" stroke="#9bb7c4" stroke-width="2.2" stroke-linecap="round"><path d="M15 14q-3-3 0-6"/><path d="M21 12q-3-3 0-6"/><path d="M27 14q-3-3 0-6"/></g>`,

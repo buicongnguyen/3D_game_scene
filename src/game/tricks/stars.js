@@ -1,153 +1,58 @@
 // Stargazing (docs/RURAL-TRICKS.md trick 11): any clear night, on the hill behind the signal cottage. Mika lies back
-// (a camera shot from her eyes; no clip needed) under a sky far richer than the city's: a starfield dome with the
-// Milky Way. Join the stars of a figure in order, find the North Star, then catch a shooting star and make a wish.
-// Score: stars joined, the North Star, the wish, speed, minus wrong picks.
+// (a camera shot from high above the hilltop; no clip needed) under a sky far richer than the city's: a starfield dome with the
+// Milky Way. Join the stars of a figure, find the North Star, then catch a shooting star and make a wish.
 //
-// The levels (gazePlan) ask for different things:
-//   Easy       the Big Dipper, then its two pointer stars lead to the North Star (a line shows most of the way).
-//   Normal     the Big Dipper AND Cassiopeia, the W on the other side of the pole: the North Star sits between the two (the
-//              pointer line starts you off, and a short one from the middle of the W). The sky is drawn a little smaller and
-//              the view tilts up to the pole once the Dipper is joined.
-//   Difficult  all of that with no guiding lines at all, then the Little Dipper's faint stars down from the North Star, while
-//              clouds drift over: a star under a cloud cannot be seen or picked until it has passed.
+// The named stars stand where they really are (rules-stars.js: the catalogue positions for the season's night, seen from
+// 35 degrees north), so the sky has true directions, and a compass shows them (ui/sky-compass.js): the letters N, E, S, W
+// on the horizon and a small compass rose in the corner. The hints say which way to look; the view turns there by itself.
+//
+// The levels (rules-stars.js gazePlan):
+//   Easy       find north: the Big Dipper (a faint outline shows it), then its two pointer stars to the North Star, which
+//              the compass confirms ("right over N").
+//   Normal     the Big Dipper, Cassiopeia, the North Star between them; then the view turns to the season's figure (the
+//              Summer Triangle, Orion's belt, the Spring Triangle) and asks for its brightest star.
+//   Difficult  no outlines, no letters on the horizon (the rose only); the Little Dipper's faint stars while a satellite
+//              glides through them; then a satellite to tell from a plane and a shooting star, and a train of satellites
+//              to count.
 //
 // Drawing: the dome is generated once (seeded) and reused: one Points draw call for ~5,000 static stars, one line set for the
-// figures, one line for the shooting star. The named stars of the level (8 to 19) are their own small Points, made for the
-// round (their glow is written each frame), and Difficult adds three cloud sprites; both are freed when the round ends.
+// figures, one line for the shooting star. A round adds the level's named stars (8 to 19, one Points), the faint outline (one
+// line set, Easy and Normal) and, on Difficult, the moving lights (one Points of 10); all are freed when the round ends,
+// with the compass, the ring and the count buttons. The loop allocates nothing.
 import * as THREE from 'three';
-import { N_ } from '../../i18n/i18n.js';
-import { dipperPatch, STARS } from '../../content/constellations.js';
+import { N_, tx, getLang } from '../../i18n/i18n.js';
+import { STARS, profileFor, starName, worldDir } from '../../content/constellations.js';
+import { createSkyCompass, compassName, projectSky, azDiff, COMPASS_LETTER } from '../../ui/sky-compass.js';
+import {
+  DIPPER, CASS, LITTLE, FIGURES, nextStars, nextInChain, nextInSet, gazeSky, gazePlan, planStars, starAt, starDir, starScore, starSize,
+  frameView, middleOf, hardPasses, satAt, trainLag, trainChoices, planeBlink, SAT_FACT,
+} from './rules-stars.js';
+
+export * from './rules-stars.js';
 
 const R = 600;                         // dome radius around the camera (well inside the far plane)
-const AZ = Math.PI;                    // Mika looks toward -z, out over the valley
-const ELEV = 52 * Math.PI / 180;       // the centre of the first view above the horizon
-const CENTRE = [-8, 6.5];              // the first view's centre in the Easy figure's own degrees (see NAMED)
-// the Big Dipper and the North Star, in degrees on a small patch of sky (u right, v up). Merak -> Dubhe, five times
-// over, reaches Polaris: the "pointer stars" rule.
-// (real star positions: content/constellations.js, drawn here at 0.75 of the real spread with the North Star straight above Dubhe)
-export const NAMED = dipperPatch();
-export const DIPPER = ['alkaid', 'mizar', 'alioth', 'megrez', 'phecda', 'merak', 'dubhe'];
-export const CASS = ['caph', 'schedar', 'navi', 'ruchbah', 'segin'];
-/** The Little Dipper is joined on from the North Star (the tip of its handle), down to the little bowl. */
-export const LITTLE = ['polaris', 'yildun', 'epsumi', 'zetumi', 'etaumi', 'pherkad', 'kochab'];
-const REVERSED = [...DIPPER].reverse(), ENDS = [DIPPER[0], DIPPER[DIPPER.length - 1]], NONE = [], ONLY_POLARIS = ['polaris'];
-const NEXT = { fwd: DIPPER.map(k => [k]), back: REVERSED.map(k => [k]) };   // the answers of nextStars, made once
+const EYE_UP = 120;                    // metres above Mika the sky is seen from: over the valley's rim, as the Star Kite lifts her in the sky viewer
+const CLEAR_SKY = -1;                  // the world sky's cloud cover during a round: none (world/sky.js draws no cloud below 0)
+const NONE = [], ONLY_POLARIS = ['polaris'];
+const COLOUR = { w: [1, 1, 0.96], b: [0.8, 0.88, 1], y: [1, 0.95, 0.75], o: [1, 0.84, 0.62], r: [1, 0.68, 0.55] };
 const LABEL = {
   alkaid: N_('Alkaid, the tip of the handle'), mizar: 'Mizar', alioth: 'Alioth', megrez: N_('Megrez, where the handle meets the bowl'),
   phecda: 'Phecda', merak: N_('Merak, a pointer star'), dubhe: N_('Dubhe, a pointer star'), polaris: N_('Polaris, the North Star'),
 };
 
-/**
- * The next star to pick in the Dipper, given those picked so far (either end may start). Returns the allowed ids.
- * Pure: tested in tests/tricks.test.mjs.
- */
-export function nextStars(picked) {
-  if (!picked.length) return ENDS;
-  const order = picked[0] === DIPPER[0] ? NEXT.fwd : NEXT.back;
-  return picked.length < order.length ? order[picked.length] : NONE;      // (shared lists: read, never changed)
-}
-
-/**
- * The next star of any figure joined as a chain: either end may start (both are offered), then it runs on from that end.
- * `out`: a list to fill instead of a new one (the round asks every frame).
- */
-export function nextInChain(chain, picked, out = []) {
-  out.length = 0;
-  if (!picked.length) { out.push(chain[0], chain[chain.length - 1]); return out; }
-  if (picked.length >= chain.length) return out;
-  out.push(picked[0] === chain[0] ? chain[picked.length] : chain[chain.length - 1 - picked.length]);
-  return out;
-}
-
-/** The figures a level joins: { chain, from: picked already (the Little Dipper starts at the North Star, found before) }. */
-export const FIGURES = { dipper: { chain: DIPPER, from: 0 }, cass: { chain: CASS, from: 0 }, little: { chain: LITTLE, from: 1 } };
-
-/**
- * What a level asks for: { steps: ['dipper' | 'cass' | 'polaris' | 'little', …], scale (the sky's spread, times the real
- * one), guide (how far the pointer line is drawn toward the North Star, 0..1), clouds, par (seconds for the speed bonus),
- * stars (how many are joined in all) }. The guided first try is Easy with the pointer line drawn all the way.
- */
-export function gazePlan(level = 'normal', first = false) {
-  const plan = first || level === 'easy' ? { steps: ['dipper', 'polaris'], scale: 0.75, guide: first ? 0.9 : 0.6, clouds: false, par: 45 }
-    : level === 'hard' ? { steps: ['dipper', 'cass', 'polaris', 'little'], scale: 0.6, guide: 0, clouds: true, par: 120 }
-      : { steps: ['dipper', 'cass', 'polaris'], scale: 0.6, guide: 0.35, clouds: false, par: 80 };
-  plan.stars = plan.steps.reduce((n, s) => n + (FIGURES[s] ? FIGURES[s].chain.length - FIGURES[s].from : 0), 0);
-  return plan;
-}
-
-/**
- * Round score: 10 per star joined, 20 for the North Star, 15 for the wish, a speed bonus once everything is found (half a
- * point for every second under the level's par), 4 off per wrong pick. `polaris` alone means "all found" (the Easy round).
- */
-export function starScore({ joined = 0, polaris = false, wish = false, mistakes = 0, seconds = 99, par = 45, done = polaris }) {
-  const speed = done ? Math.max(0, Math.round((par - seconds) / 2)) : 0;
-  return Math.max(0, joined * 10 + (polaris ? 20 : 0) + (wish ? 15 : 0) + speed - mistakes * 4);
-}
-
-/** The most a level can score: every star, the North Star, the wish and the fastest plausible finish (3 s a star). */
-export function gazeMax(plan) {
-  const n = plan.stars + 1;
-  return starScore({ joined: plan.stars, polaris: true, wish: true, seconds: n * 3, par: plan.par, done: true });
-}
-
-/**
- * The level's named stars on the sky patch (degrees, u right and v up, Dubhe at the origin, the North Star straight above
- * it): an azimuthal-equidistant picture around Dubhe from the real positions, drawn at `scale` of the real spread. The same
- * picture as dipperPatch() (which is this at 0.75, moved 1.6 to the right).
- */
-export function skyPatch(ids, scale = 0.75) {
-  const RAD = Math.PI / 180;
-  const unit = (ra, dec) => { const a = ra * 15 * RAD, d = dec * RAD; return [Math.cos(d) * Math.cos(a), Math.cos(d) * Math.sin(a), Math.sin(d)]; };
-  const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-  const cross = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
-  const nrm = a => { const l = Math.hypot(...a); return a.map(v => v / l); };
-  const o = unit(STARS.dubhe.ra, STARS.dubhe.dec), north = unit(STARS.polaris.ra, STARS.polaris.dec);
-  const y = nrm(north.map((v, i) => v - dot(north, o) * o[i])), x = cross(o, y);
-  const out = {};
-  for (const id of ids) {
-    const p = unit(STARS[id].ra, STARS[id].dec), dist = Math.acos(Math.max(-1, Math.min(1, dot(p, o)))) / RAD;
-    const q = p.map((v, i) => v - dot(p, o) * o[i]), ql = Math.hypot(...q) || 1;
-    out[id] = [scale * dist * dot(q, x) / ql, scale * dist * dot(q, y) / ql];
-  }
-  return out;
-}
-
-/** Every named star of a plan, once each, in the order they are met. */
-export function planStars(plan) {
-  const ids = [];
-  for (const s of plan.steps) for (const id of FIGURES[s]?.chain || ['polaris']) if (!ids.includes(id)) ids.push(id);
-  return ids;
-}
-
-/** A cloud covers this much of the patch round its middle (degrees across and up): what its sprite hides. */
-export const CLOUD = { x: 9.5, y: 4.2, wrap: 36 };
-/** Is a star (its patch point [u, v]) under a cloud whose middle is at (cu, cv)? */
-export function cloudCovers(star, cu, cv) { return Math.abs(star[0] - cu) < CLOUD.x && Math.abs(star[1] - cv) < CLOUD.y; }
-
 // --------------------------------------------------------------------- the sky (built once)
 const V3 = THREE.Vector3;
-const basis = () => {
-  const f = new V3(Math.cos(ELEV) * Math.sin(AZ), Math.sin(ELEV), Math.cos(ELEV) * Math.cos(AZ)).normalize();
-  const r = new V3().crossVectors(f, new V3(0, 1, 0)).normalize();
-  const u = new V3().crossVectors(r, f).normalize();
-  return { f, r, u };
-};
-/** Direction of a figure point (degrees on the patch) as a unit vector; centre: the patch point straight ahead of the first view. */
-function dirOf([u, v], B = basis(), centre = CENTRE, out = new V3()) {
-  const du = THREE.MathUtils.degToRad(u - centre[0]), dv = THREE.MathUtils.degToRad(v - centre[1]);
-  return out.copy(B.f).addScaledVector(B.r, Math.tan(du)).addScaledVector(B.u, Math.tan(dv)).normalize();
-}
-
 const STAR_VERT = `
 attribute float aSize;
 attribute vec3 aColor;
 uniform float uScale;
 uniform float uTime;
+uniform float uTw;
 varying vec3 vColor;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   gl_Position = projectionMatrix * mv;
-  float tw = 0.82 + 0.18 * sin(uTime * (1.3 + fract(position.x * 0.13) * 3.0) + position.z);
+  float tw = 1.0 - uTw + uTw * sin(uTime * (1.3 + fract(position.x * 0.13) * 3.0) + position.z);
   gl_PointSize = aSize * uScale;
   vColor = aColor * tw;
 }`;
@@ -158,8 +63,11 @@ void main() {
   float a = smoothstep(0.5, 0.05, d);
   gl_FragColor = vec4(vColor, a * a);
 }`;
-const starMaterial = () => new THREE.ShaderMaterial({ vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, uniforms: { uScale: { value: 300 }, uTime: { value: 0 } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending });
-const LINES = 24;                      // line segments the figures can use (the longest plan joins 16 and draws two guides)
+/** twinkle: how much a point's light wavers (a star twinkles; a satellite's light is steady: 0). */
+const starMaterial = (twinkle = 0.18) => new THREE.ShaderMaterial({ vertexShader: STAR_VERT, fragmentShader: STAR_FRAG, uniforms: { uScale: { value: 300 }, uTime: { value: 0 }, uTw: { value: twinkle } }, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+const LINES = 36;                      // line segments the figures can use (the longest plan draws 21)
+const MOVERS = 10;                     // the moving lights of Difficult: 0 the satellite, 1 the plane, 2.. the train
+const TRAIN_MAX = MOVERS - 2;
 
 let SKY = null;
 function buildSky() {
@@ -209,16 +117,18 @@ function buildSky() {
   const group = new THREE.Group();
   group.add(field, lines, shoot);
   group.name = 'stargazing-dome';
-  SKY = { group, field, lines, shoot, B: basis() };
+  SKY = { group, field, lines, shoot };
   return SKY;
 }
 
-/** The level's named stars as their own small Points (made for a round, freed with it): { points, dirs, names, dispose }. */
-function buildNamed(plan, B) {
-  const names = planStars(plan), patch = skyPatch(names, plan.scale);
-  // the first view looks at the same part of the Dipper at every scale
-  const centre = [(CENTRE[0] - 1.6) * plan.scale / 0.75, CENTRE[1] * plan.scale / 0.75];
-  const dirs = names.map(k => dirOf(patch[k], B, centre));
+/**
+ * What a round adds to the dome (made for the round, freed with it): the level's named stars as their own small Points,
+ * the faint outline of the figures the level shows, and the moving lights of Difficult.
+ * { points, outline, movers, dirs, names, dispose }.
+ */
+function buildRound(plan, sky) {
+  const names = planStars(plan), tmp = [0, 0, 0];
+  const dirs = names.map(k => new V3(...starDir(k, sky, tmp)));
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.Float32BufferAttribute(dirs.flatMap(d => [d.x * R, d.y * R, d.z * R]), 3));
   geo.setAttribute('aSize', new THREE.BufferAttribute(new Float32Array(names.length), 1).setUsage(THREE.DynamicDrawUsage));
@@ -226,37 +136,98 @@ function buildNamed(plan, B) {
   const mat = starMaterial(), points = new THREE.Points(geo, mat);
   points.frustumCulled = false;
   points.renderOrder = 6;
-  return { points, dirs, names, patch, centre, dispose() { points.removeFromParent(); geo.dispose(); mat.dispose(); } };
-}
-
-/** A soft night cloud for the sprites (dark blue-grey, a little moonlit at the top). */
-function cloudTexture() {
-  const c = document.createElement('canvas'); c.width = 128; c.height = 64;
-  const x = c.getContext('2d');
-  for (const [cx, cy, r] of [[36, 38, 22], [60, 30, 27], [88, 36, 23], [64, 42, 25], [104, 42, 15], [22, 44, 13]]) {
-    const gr = x.createRadialGradient(cx, cy - 3, 0, cx, cy, r);
-    gr.addColorStop(0, 'rgba(92,106,150,1)'); gr.addColorStop(0.55, 'rgba(58,70,108,0.96)'); gr.addColorStop(1, 'rgba(40,50,84,0)');
-    x.fillStyle = gr; x.fillRect(0, 0, 128, 64);
+  const own = [geo, mat], objs = [points];
+  // the faint outline: the Dipper as the ladle it is (the chain, and the bowl closed)
+  let outline = null;
+  if (plan.outline.length) {
+    const seg = [];
+    for (const f of plan.outline) {
+      const chain = FIGURES[f].chain;
+      const pairs = chain.slice(1).map((b, i) => [chain[i], b]);
+      if (f === 'dipper') pairs.push(['megrez', 'dubhe']);
+      for (const [a, b] of pairs) for (const k of [a, b]) { const d = dirs[names.indexOf(k)]; seg.push(d.x * R * 0.992, d.y * R * 0.992, d.z * R * 0.992); }
+    }
+    const og = new THREE.BufferGeometry();
+    og.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3));
+    const om = new THREE.LineBasicMaterial({ color: '#a9bcff', transparent: true, opacity: 0.3, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
+    outline = new THREE.LineSegments(og, om);
+    outline.frustumCulled = false;
+    outline.renderOrder = 5;
+    own.push(og, om); objs.push(outline);
   }
-  const t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+  // the moving lights: steady points (no twinkle), parked dark until their pass begins
+  let movers = null;
+  if (plan.steps.includes('satellite') || plan.decoy) {
+    const mg = new THREE.BufferGeometry();
+    const mp = new Float32Array(MOVERS * 3);
+    for (let i = 0; i < MOVERS; i++) mp[i * 3 + 1] = R;
+    mg.setAttribute('position', new THREE.BufferAttribute(mp, 3).setUsage(THREE.DynamicDrawUsage));
+    mg.setAttribute('aSize', new THREE.BufferAttribute(new Float32Array(MOVERS), 1).setUsage(THREE.DynamicDrawUsage));
+    mg.setAttribute('aColor', new THREE.BufferAttribute(new Float32Array(MOVERS * 3), 3).setUsage(THREE.DynamicDrawUsage));
+    const mm = starMaterial(0);
+    movers = new THREE.Points(mg, mm);
+    movers.frustumCulled = false;
+    movers.renderOrder = 7;
+    own.push(mg, mm); objs.push(movers);
+  }
+  return { points, outline, movers, dirs, names, dispose() { for (const o of objs) o.removeFromParent(); for (const x of own) x.dispose(); } };
 }
 
-const STEP_HINT = {
-  cass: N_('Now look higher: five stars in a zigzag, like a W on its side. That is Cassiopeia. Join them from either end.'),
+// --------------------------------------------------------------------- the words
+const HINT = {
+  milky: N_('See the pale band across the sky? The Milky Way: billions of stars, too far away to see one by one.'),
+  compass: N_('See the letters on the horizon? {n} is north. The little compass in the corner turns with your eyes.'),
+  dipper: N_('Look to the {dir}. Find the Big Dipper: seven bright stars like a ladle. Join them from either end.'),
+  dipperHard: N_('The Big Dipper is in the {dir} tonight. No outline to help: join its seven stars.'),
+  cass: N_('Now look to the {dir}: five stars in a zigzag, like a W. That is Cassiopeia. Join them from either end.'),
   polarisGuided: N_('The Big Dipper! Now follow the two stars at the end of the bowl, about five times their gap, to the North Star.'),
   polarisBoth: N_('The North Star sits between the two. Follow the Dipper\'s pointer stars, or go straight out from the middle of the W.'),
-  polarisAlone: N_('Now the North Star: between the Big Dipper and the W. No lines to help tonight!'),
+  polarisAlone: N_('Now the North Star: follow the two stars at the end of the bowl. No line to help tonight!'),
+  north: N_('Yes! The North Star sits right over the {n}. That way is north, all night long.'),
+  northRose: N_('The North Star! Look at the compass in the corner: you are facing north.'),
   little: N_('The North Star is the tip of the Little Dipper\'s handle. Join its faint stars, down to the little bowl.'),
+  decoy: N_('Something is gliding through the Little Dipper. A star stays put: pick only the stars.'),
+  decoyPick: N_('That light is moving: a satellite, not a star. A star stays put and twinkles.'),
+  bright: N_('Which star of the figure is the brightest? Point at it.'),
+  brightWrong: N_('A bright one, but another shines stronger. Look again.'),
+  kinds: N_('Now look to the {dir}. Not every light is a star: a star stays put and twinkles, a planet shines steadily.'),
+  spot: N_('Three lights are moving. A plane blinks red and green. A shooting star is gone in a second. A satellite glides steadily. Pick the satellite!'),
+  spotYes: N_('Yes, a satellite! Steady and slow. Watch: it fades when it slips into the Earth\'s shadow.'),
+  spotPlane: N_('That one blinks red and green: a plane. A satellite does not blink.'),
+  spotGone: N_('The satellite has slipped into the Earth\'s shadow. Never mind: here comes something new.'),
+  train: N_('Look, a line of lights: a satellite train! New satellites, just launched, still travel together. How many are there?'),
+  trainYes: N_('Yes, {n}! In a few weeks they spread out, climb higher and grow fainter.'),
+  trainAgain: N_('Not quite. Count them once more as they pass.'),
+  trainNo: N_('There were {n}. A train is hard to count!'),
+  wrongStart: N_('Start at either end: the tip of the handle or the edge of the bowl.'),
+  wrongW: N_('Start at either end of the W.'),
+  wrongNorth: N_('Further along the pointer line. The North Star sits on its own.'),
 };
 const WRONG = {
   dipper: N_('Not that one. The next star along the ladle.'), cass: N_('Not that one. The next star along the W.'),
-  little: N_('Not that one. The next star down the little handle.'),
+  little: N_('Not that one. The next star down the little handle.'), season: N_('Not that one. Look for the three bright ones.'),
 };
 const DONE = {
   cass: N_('Cassiopeia! She sits across the North Star from the Big Dipper, all year round.'),
   little: N_('The Little Dipper! It swings round the North Star all night.'),
+};
+/** The season's figure: how to find it, what to say when it is joined and when its brightest star is named. */
+const FIGURE_WORDS = {
+  'summer-triangle': {
+    find: N_('Now turn to the {dir} and look high up: three bright stars, far apart. Join them into the Summer Triangle.'),
+    done: N_('The Summer Triangle! Vega, Deneb and Altair, with the Milky Way running through.'),
+    bright: N_('Yes, {star}! One of the brightest stars of the whole sky.'),
+  },
+  'spring-triangle': {
+    find: N_('Now turn to the {dir}: three bright stars, far apart. Join them into the Spring Triangle.'),
+    done: N_('The Spring Triangle! Arcturus, Spica and Denebola.'),
+    bright: N_('Yes, {star}! Follow the curve of the Big Dipper\'s handle and you land on it.'),
+  },
+  orion: {
+    find: N_('Now turn to the {dir}: three stars in a short row. That is Orion\'s Belt. Join them.'),
+    done: N_('Orion the hunter! His belt, his shoulders and his feet.'),
+    bright: N_('Yes, {star}! Blue-white, and brighter than the red shoulder.'),
+  },
 };
 
 export default {
@@ -265,29 +236,39 @@ export default {
   async play(ctx) {
     const { game: g, player: p, audio, fx } = ctx;
     const cam = g.camera, sky = buildSky();
-    const plan = gazePlan(ctx.level, ctx.first);
-    const st = { step: 0, picked: { dipper: [], cass: [], little: ['polaris'] }, joined: 0, polaris: false, wish: false, mistakes: 0, phase: plan.steps[0], tDone: 0, tStep: 0, shots: 0, done: false };
+    const night = gazeSky(g.shownSeason || g.time?.season);
+    const plan = gazePlan(ctx.level, ctx.first, night);
+    const fig = plan.figure, profile = profileFor(getLang());
+    const st = { step: 0, picked: { dipper: [], cass: [], little: ['polaris'], season: [] }, joined: 0, polaris: false, tasks: 0, wish: false, mistakes: 0, phase: plan.steps[0], tDone: 0, tStep: 0, shots: 0, done: false };
     let left = ctx.roundTime;
 
     // lie back on the hill: a fade, the night, and the view from Mika's eyes up into the sky
     const rootWas = p.root.visible, tamo = ctx.director.tamo?.root || null, tamoWas = tamo?.visible;
     const canvas = g.canvas || g.renderer.renderer.domElement;
-    let ring = null, onMove = null, onDown = null, cleaned = false, named = null;
-    const clouds = [], own = [];
+    const fovWas = g.follow.fovBase;
+    let ring = null, onMove = null, onDown = null, cleaned = false, round = null, compass = null, countEl = null;
+    // only stars: the valley's own painted clouds are taken out of the sky while the round runs, and so are its painted
+    // night (a cloudy-looking Milky Way and a glaring moon), which the round's own dome of stars replaces. The sky sets
+    // both every frame, so they are written after it, in the game's afterUpdate slot; when the slot is given back the
+    // sky is its own again on the next frame.
+    const afterWas = g.afterUpdate, cover = g.world?.sky?.uniforms?.uCover, painted = g.world?.sky?.uniforms?.uStars;
+    const clearSky = dt => { afterWas?.(dt); if (cover) cover.value = CLEAR_SKY; if (painted) painted.value = 0; };
     // back to the valley, however the round ends (a quit, or an error half-way)
     const cleanup = () => {
       if (cleaned) return;
       cleaned = true;
       if (onMove) canvas.removeEventListener('pointermove', onMove);
       if (onDown) removeEventListener('pointerdown', onDown);
+      if (g.afterUpdate === clearSky) g.afterUpdate = afterWas;
       ring?.remove();
+      compass?.remove();
+      countEl?.remove();
       sky.shoot.visible = false;
-      named?.dispose();
-      for (const c of clouds) c.sprite.removeFromParent();
-      for (const x of own) x.dispose();
+      round?.dispose();
       sky.group.removeFromParent();
       p.root.visible = rootWas;
       if (tamo && tamoWas !== undefined) tamo.visible = tamoWas;
+      g.follow.fovBase = fovWas;
       ctx.setNight(false);
       g.follow.clearCutscene(true);
       ctx.lock(false);
@@ -295,43 +276,80 @@ export default {
     try {
     ctx.lock(true);
     await ctx.fade(true, 400);
-    ctx.setNight(true, 23);
-    named = buildNamed(plan, sky.B);
-    const NAMES = named.names, dirs = named.dirs, idx = k => NAMES.indexOf(k);
-    sky.group.add(named.points);
-    const eye = p.pos.clone().add(new V3(0, 0.55, 0));
-    const look = eye.clone().addScaledVector(sky.B.f, 10);
+    ctx.setNight(true, night.hour);
+    g.afterUpdate = clearSky;
+    round = buildRound(plan, night);
+    const NAMES = round.names, dirs = round.dirs, idx = k => NAMES.indexOf(k);
+    const at = NAMES.map(k => starAt(k, night));                                // { alt, az } of each named star
+    sky.group.add(round.points);
+    if (round.outline) sky.group.add(round.outline);
+    if (round.movers) sky.group.add(round.movers);
+    // (the picture is taken from high above her: the valley is a bowl, and its rim would hide the low sky all round)
+    const eye = p.pos.clone().add(new V3(0, EYE_UP, 0));
+
+    // ---- the view: it looks at (vAz, vAlt) and eases toward (tAz, tAlt); a step says which stars it wants in the picture
+    const touch = !!ctx.ui.touch;
+    const lay = { w: 0, h: 0, fov: 60, yTop: 0.27, yBot: 0.9, hintTop: 0, avoid: [[0, 0, 0, 0]], bottom: 0 };
+    const layout = () => {
+      const w = innerWidth, h = innerHeight;
+      lay.w = w; lay.h = h;
+      lay.fov = w / h < 0.8 ? 76 : h < 500 ? 66 : 60;                            // a phone held upright sees a narrow sky: look wider
+      // the hint bubble sits under the HUD; on a phone under its two corner buttons, or beside them when it is wide enough
+      lay.hintTop = touch ? (w > h && w >= 800 ? 66 : 112) : 0;
+      lay.yTop = Math.min(0.5, ((lay.hintTop || 76) + 92) / h);
+      lay.yBot = h < 500 ? 0.92 : touch ? 0.8 : 0.9;
+      // the corner buttons: a horizon letter never stands in them
+      const a = lay.avoid[0];
+      a[0] = w - (touch ? 200 : 124); a[1] = h - (touch ? 150 : 72); a[2] = w; a[3] = h;
+      lay.bottom = 6;
+      ctx.hintTop(true, lay.hintTop);
+    };
+    layout();
+    const view = { fov: lay.fov, aspect: 1 }, fit = { x: 0, y: 0, front: false }, aimPts = [];
+    let aimNeed = NONE, aimMore = NONE, aimMode = 'prefer', aimDir = null, aimZoom = 1;
+    let tAz = 0, tAlt = 40, vAz = 0, vAlt = 40, horizonSeen = false;
+    /** Turn the view to some stars: `need` must be in the picture, `more` too if the screen is wide enough for them. */
+    const reaim = () => {
+      view.fov = lay.fov * aimZoom; view.aspect = lay.w / lay.h;
+      g.follow.fovBase = view.fov;
+      // a direction to watch (the satellites' side): it is put in the middle of the sky left free under the hint
+      if (aimDir) { tAz = aimDir.az; tAlt = Math.min(80, aimDir.alt + 6 + Math.atan(lay.yTop * Math.tan(lay.fov * Math.PI / 360)) * 180 / Math.PI); horizonSeen = false; return; }
+      const opts = { yTop: lay.yTop, yBot: lay.yBot, horizon: aimMode };
+      const frame = ids => { aimPts.length = 0; for (const k of ids) aimPts.push(at[idx(k)]); return frameView(aimPts, view, opts); };
+      const cut = v => { const vv = { az: v.az, alt: v.alt, fov: view.fov, aspect: view.aspect }; return aimPts.some(q => { projectSky(q.az, q.alt, vv, fit); return !fit.front || Math.abs(fit.x) > 0.86 || fit.y < -0.86; }); };
+      let v = null;
+      if (aimMore.length) { v = frame([...aimNeed, ...aimMore]); if (cut(v)) v = null; }
+      if (!v) {
+        // the stars that must be seen: a narrow screen looks wider until they all fit side by side (the pointers and the North Star)
+        v = frame(aimNeed);
+        while (cut(v) && view.fov < 100) { view.fov += 4; v = frame(aimNeed); }
+        g.follow.fovBase = view.fov;
+      }
+      tAz = v.az; tAlt = v.alt; horizonSeen = v.horizon;
+    };
+    /** zoom: under 1 looks closer (a small figure: Orion's belt). */
+    const aim = (need, more = NONE, mode = 'prefer', zoom = 1) => { aimNeed = need; aimMore = more; aimMode = mode; aimDir = null; aimZoom = zoom; reaim(); };
+    const aimAt = dir => { aimDir = dir; aimZoom = 1; reaim(); };
+    const F = new V3(), look = new V3(), Rt = new V3(), U = new V3(), wd = [0, 0, 0];
+    const setView = () => {
+      worldDir(vAlt, vAz, wd); F.set(wd[0], wd[1], wd[2]);
+      Rt.crossVectors(F, U.set(0, 1, 0)).normalize(); U.crossVectors(Rt, F).normalize();
+      look.copy(eye).addScaledVector(F, 10);
+    };
+    const firstFigure = plan.steps[0] === 'dipper' ? DIPPER : FIGURES[plan.steps[0]]?.chain || DIPPER;
+    const firstMore = plan.guide >= 0.5 ? ONLY_POLARIS : NONE;
+    aim(firstFigure, firstMore);
+    vAz = tAz; vAlt = tAlt; setView();
     g.follow.cutscene({ pos: eye, look }, 0.001, { pos: eye.clone(), look: look.clone() });
+    const shot = g.follow.shot;
     p.root.visible = false;
     if (tamo) tamo.visible = false;
+    sky.group.position.copy(eye);                        // (the dome rides with the camera: the loop keeps it there)
     g.scene.add(sky.group);
     sky.lines.geometry.setDrawRange(0, 0);
-    // the view of the pole: the North Star a little below the middle, the Dipper's bowl under it and the W above
-    // (a little low in the picture: the HUD and the hint bubble own the top of the screen)
-    const poleStars = NAMES.filter(k => !DIPPER.includes(k) || k === 'dubhe' || k === 'merak').map(k => named.patch[k]);
-    const span = i => { const v = poleStars.map(q => q[i]); return (Math.min(...v) + Math.max(...v)) / 2; };
-    const poleCentre = [span(0), span(1) + 2.6];
-    const poleDir = dirOf(poleCentre, sky.B, named.centre);
-    let viewC = named.centre, north = false;
-    const lookNorth = () => {
-      if (north || plan.steps.length <= 2) return;
-      north = true; viewC = poleCentre;
-      g.follow.cutscene({ pos: eye, look: eye.clone().addScaledVector(poleDir, 10) }, 1.8);
-    };
-    // clouds (Difficult): three soft sprites drifting across the patch, one row each for the Dipper, the pole and the W
-    if (plan.clouds) {
-      const tex = cloudTexture(), mat = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: 0.97, depthWrite: false, fog: false });
-      own.push(tex, mat);
-      const wide = 2 * R * 0.96 * Math.tan((CLOUD.x + 3.5) * Math.PI / 180), tall = 2 * R * 0.96 * Math.tan((CLOUD.y + 2.8) * Math.PI / 180);
-      const top = named.patch.caph[1];
-      [[-2, 2.6, 14], [top * 0.5, -2.2, -20], [top * 0.94, 2.4, -34]].forEach(([v, speed, u0]) => {
-        const s = new THREE.Sprite(mat);
-        s.scale.set(wide, tall, 1);
-        s.renderOrder = 7;
-        sky.group.add(s);
-        clouds.push({ sprite: s, u: u0, v, speed, dir: new V3() });
-      });
-    }
+    compass = createSkyCompass({ kind: 'trick' });
+    compass.horizon(plan.horizon);
+    const compassOpts = { bottom: lay.bottom, avoid: lay.avoid, alt: 0 };
     await ctx.wait(0.2);
     await ctx.fade(false, 700);
 
@@ -341,45 +359,64 @@ export default {
     document.body.appendChild(ring);
     let rx = innerWidth / 2, ry = innerHeight / 2, pick = false, shake = 0;
     onMove = e => { if (e.pointerType === 'mouse') { rx = e.clientX; ry = e.clientY; } };
-    // anywhere on screen except the buttons (pause, journal): the hint and HUD let clicks through
+    // anywhere on screen except the buttons (pause, journal, the count): the hint and HUD let clicks through
     onDown = e => { if (e.target.closest?.('button, a, input, select, .overlay')) return; rx = e.clientX; ry = e.clientY; pick = true; };
-    ctx.hintTop(true, ctx.ui.touch ? 112 : 0);            // (on a phone: under the two corner buttons)
     canvas.addEventListener('pointermove', onMove);
     addEventListener('pointerdown', onDown);
 
     const tmp = new V3();
     const screenOf = (d, out) => { tmp.copy(d).multiplyScalar(R).add(sky.group.position).project(cam); out.x = (tmp.x * 0.5 + 0.5) * innerWidth; out.y = (-tmp.y * 0.5 + 0.5) * innerHeight; out.z = tmp.z; return out; };
     const scr = NAMES.map(() => ({ x: 0, y: 0, z: 0 }));
-    const hidden = new Uint8Array(NAMES.length);          // 1: a cloud is over this star now
-    const patchOf = NAMES.map(k => named.patch[k]);
-    // (the smaller sky of Normal and Difficult has its stars closer together: a tighter reach, so the nearest one is the one meant)
-    const thr = (ctx.ui.touch ? 58 : 44) * (plan.scale < 0.7 ? 0.8 : 1);
-    /** The named star under the ring: its name, or null. A star behind a cloud is not there to be picked (`clouded` says so). */
-    let clouded = false;
+    const thr = touch ? 52 : 42;
+    // the moving lights of Difficult (the satellite, the plane, the train): where they are now
+    const pass = round.movers ? hardPasses(night, middleOf(LITTLE, night),
+      Math.atan(Math.tan(lay.fov * Math.PI / 360) * lay.w / lay.h) * 180 / Math.PI) : null;
+    const mv = { sat: { on: false, x: 0, y: 0, z: 0, alt: 0, az: 0, light: 0 }, plane: { on: false, x: 0, y: 0, z: 0, alt: 0, az: 0, light: 0 }, car: { on: false, x: 0, y: 0, z: 0, alt: 0, az: 0, light: 0 } };
+    const mscr = { sat: { x: 0, y: 0, z: 2 }, plane: { x: 0, y: 0, z: 2 } };
+    const mpos = round.movers?.geometry.attributes.position, msize = round.movers?.geometry.attributes.aSize, mcol = round.movers?.geometry.attributes.aColor;
+    const rgb = [0, 0, 0];
+    let satPass = null, satT0 = 0, satRuns = 0, planeT0 = 0, trainT0 = 0, trainN = 0, trainTries = 0, trainLagS = 0, spotOn = false, decoyTold = false, fadeWatch = false;
+    const TRAIN_GAP = 3;                                                     // degrees between the lights of a train
+    /** A moving light as a point of the dome (i: its slot), and where it is on screen (s, when it can be picked). */
+    const putMover = (i, o, size, r, gr, b, s) => {
+      const lit = o.on && o.light > 0.02;
+      if (lit) { tmp.set(o.x, o.y, o.z); mpos.setXYZ(i, o.x * R * 0.985, o.y * R * 0.985, o.z * R * 0.985); if (s) screenOf(tmp, s); }
+      else if (s) s.z = 2;
+      msize.setX(i, lit ? size : 0);
+      mcol.setXYZ(i, r * o.light, gr * o.light, b * o.light);
+    };
+    /**
+     * What the ring is on: a named star's id, '@sat' or '@plane' (a moving light), or null. Of the stars within reach, one
+     * that may be picked now wins over a nearer one that may not (the three stars of Orion's belt stand very close).
+     */
     const nearest = () => {
-      let best = null, bd = thr;
-      clouded = false;
+      let best = null, bd = thr, want = null, wd2 = thr;
+      const next = nextNow();
       for (let i = 0; i < NAMES.length; i++) {
         const s = scr[i];
-        if (s.z > 1) continue;
+        if (s.z > 1 || hiddenStar(i)) continue;
         const d = Math.hypot(s.x - rx, s.y - ry);
-        if (d >= bd) continue;
-        if (hidden[i]) { clouded = true; continue; }
-        bd = d; best = NAMES[i];
+        if (d < bd) { bd = d; best = NAMES[i]; }
+        if (d < wd2 && next.includes(NAMES[i])) { wd2 = d; want = NAMES[i]; }
       }
-      if (best) clouded = false;
+      if (want) { best = want; bd = wd2; }
+      if (pass) {
+        if (mv.sat.on && mv.sat.light > 0.25 && mscr.sat.z <= 1) { const d = Math.hypot(mscr.sat.x - rx, mscr.sat.y - ry); if (d < bd) { bd = d; best = '@sat'; } }
+        if (mv.plane.on && mscr.plane.z <= 1) { const d = Math.hypot(mscr.plane.x - rx, mscr.plane.y - ry); if (d < bd) { bd = d; best = '@plane'; } }
+      }
       return best;
     };
     const linePos = sky.lines.geometry.attributes.position;
     let lineN = 0;
     const guideAt = {};                                   // the line number of each pointer guide (overwritten by the real line)
-    const segment = (a, b, at = lineN++) => {
+    const segment = (a, b, n = lineN++) => {
+      if (n >= LINES) return n;
       const da = dirs[idx(a)], db = typeof b === 'string' ? dirs[idx(b)] : b;
-      linePos.setXYZ(at * 2, da.x * R * 0.99, da.y * R * 0.99, da.z * R * 0.99);
-      linePos.setXYZ(at * 2 + 1, db.x * R * 0.99, db.y * R * 0.99, db.z * R * 0.99);
+      linePos.setXYZ(n * 2, da.x * R * 0.99, da.y * R * 0.99, da.z * R * 0.99);
+      linePos.setXYZ(n * 2 + 1, db.x * R * 0.99, db.y * R * 0.99, db.z * R * 0.99);
       linePos.needsUpdate = true;
-      sky.lines.geometry.setDrawRange(0, Math.max(sky.lines.geometry.drawRange.count, at * 2 + 2));
-      return at;
+      sky.lines.geometry.setDrawRange(0, Math.max(sky.lines.geometry.drawRange.count, n * 2 + 2));
+      return n;
     };
     /** A pointer line from a star part of the way to the North Star (the level says how far; none on Difficult). */
     const guide = from => {
@@ -387,119 +424,268 @@ export default {
       const d = dirs[idx(from)], pz = dirs[idx('polaris')];
       guideAt[from] = segment(from, d.clone().lerp(pz, from === 'dubhe' ? plan.guide : plan.guide * 0.8).normalize());
     };
+    const say = (text, vars, life) => ctx.hint(vars ? tx(text, vars) : text, life);
+    /** The way the view is turning to, as a word ("north-east"): what the compass rose will say when it gets there. */
+    const facing = () => compassName(tAz);
+    const letterN = () => tx(COMPASS_LETTER[0]);
 
-    if (ctx.first) {
-      ctx.hint(N_('See the pale band across the sky? The Milky Way: billions of stars, too far away to see one by one.'), 5.5);
-      await ctx.wait(5.2);
-    }
-    ctx.hint(ctx.ui.touch ? N_('Find the Big Dipper: seven bright stars like a ladle. Tap them in order, from either end.')
-      : N_('Find the Big Dipper: seven bright stars like a ladle. Point with the mouse or WASD, click or press {act} on each, in order.'), 6);
 
-    const nextBuf = [];
+    const nextBuf = [], BRIGHT = fig ? [fig.bright] : NONE;
+    /** A star of the season's figure that is not drawn yet (it shows once the figure is joined) cannot be pointed at. */
+    const hiddenStar = i => late[i] && st.picked.season.length < fig.join.length;
+    /** Is this star joined already? (Pointing at it again is no mistake.) */
+    const joined = k => st.picked.dipper.includes(k) || st.picked.cass.includes(k) || st.picked.little.includes(k) || st.picked.season.includes(k);
     /** The stars that may be picked now (a shared list: read, never kept). */
     const nextNow = () => {
       const s = plan.steps[st.step];
       if (!s) return NONE;
       if (s === 'polaris') return ONLY_POLARIS;
-      return s === 'dipper' ? nextStars(st.picked.dipper) : nextInChain(FIGURES[s].chain, st.picked[s], nextBuf);
+      if (s === 'dipper') return nextStars(st.picked.dipper);
+      if (FIGURES[s]) return nextInChain(FIGURES[s].chain, st.picked[s], nextBuf);
+      if (s === 'season') return fig.order === 'chain' ? nextInChain(fig.join, st.picked.season, nextBuf) : nextInSet(fig.join, st.picked.season, nextBuf);
+      return s === 'bright' ? BRIGHT : NONE;
     };
-    ctx.debug.named = () => NAMES.map((k, i) => ({ k, x: scr[i].x, y: scr[i].y, hidden: !!hidden[i] }));
+    const sizes = round.points.geometry.attributes.aSize, cols = round.points.geometry.attributes.aColor;
+    const base = NAMES.map(k => starSize(STARS[k].mag)), tint = NAMES.map(k => COLOUR[STARS[k].col] || COLOUR.w);
+    // the stars of the season's figure that only show once it is joined (Orion's shoulders and feet)
+    const late = NAMES.map(k => !!fig && fig.show.includes(k));
+    let shootT = -1, shootWait = 1.2, wishTries = 0, wrongHint = 0, elapsed = 0, played = 0, hold = 0, after = null, answer = 0, outlineFade = 0;
+    const sA = new V3(), sB = new V3(), head = new V3(), tail = new V3();
+    /** Wait a moment (the round's clock stands still, nothing can be picked: time to read and to watch the view turn), then go on. */
+    const pause = (sec, fn) => { hold = sec; after = fn; };
+    // one record for the score: the loop below builds nothing new each frame
+    const tally = { joined: 0, polaris: false, tasks: 0, wish: false, mistakes: 0, seconds: 0, par: plan.par, done: false };
+    const scoreNow = () => { tally.joined = st.joined; tally.polaris = st.polaris; tally.tasks = st.tasks; tally.wish = st.wish; tally.mistakes = st.mistakes; tally.seconds = st.tDone; tally.done = st.done; return starScore(tally); };
+    const wrong = text => { st.mistakes++; wrongHint++; shake = 0.3; audio.bad(); if (text) ctx.hint(text, 3.5); };
+    /** A streak across the picture she has now (the wish, and the "gone in a second" light of the satellite step). */
+    const launchStreak = () => {
+      const tv = Math.tan(cam.fov * Math.PI / 360), th = tv * cam.aspect;
+      sA.copy(F).addScaledVector(Rt, (-0.7 + Math.random() * 0.4) * th).addScaledVector(U, (0.1 + Math.random() * 0.35) * tv).normalize();
+      sB.copy(F).addScaledVector(Rt, (0.15 + Math.random() * 0.5) * th).addScaledVector(U, (-0.45 + Math.random() * 0.25) * tv).normalize();
+      shootT = 0;
+      sky.shoot.visible = true;
+      audio.twinkle(1.5);
+    };
+    const moveStreak = dt => {
+      shootT += dt;
+      const k = Math.min(1, shootT / 1.15);
+      head.copy(sA).lerp(sB, k).normalize().multiplyScalar(R * 0.98);
+      tail.copy(sA).lerp(sB, Math.max(0, k - 0.22)).normalize().multiplyScalar(R * 0.98);
+      const sp2 = sky.shoot.geometry.attributes.position;
+      sp2.setXYZ(0, head.x, head.y, head.z); sp2.setXYZ(1, tail.x, tail.y, tail.z); sp2.needsUpdate = true;
+    };
+    /** The three answers for the train's count: buttons at the bottom (a tap or a click; the ring and the action key work too). */
+    const showCount = () => {
+      countEl?.remove();
+      countEl = document.createElement('div');
+      countEl.className = 'stg-count';
+      const tall = touch && innerHeight > innerWidth;
+      countEl.style.cssText = `position:fixed;left:50%;bottom:calc(${tall ? 184 : 26}px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:15;display:flex;gap:12px;padding:8px;border-radius:999px;background:rgba(14,20,48,.78);box-shadow:0 4px 14px rgba(0,0,0,.35);zoom:var(--ui-scale,1)`;
+      for (const n of trainChoices(trainN, Math.random())) {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'stg-n'; b.dataset.n = n; b.textContent = n;
+        b.style.cssText = 'min-width:56px;min-height:48px;border:0;border-radius:999px;background:rgba(255,253,246,.95);color:#4a3020;font:600 22px Fredoka,Nunito,sans-serif;cursor:pointer';
+        b.addEventListener('click', () => { answer = n; });
+        countEl.appendChild(b);
+      }
+      document.body.appendChild(countEl);
+    };
+    const hideCount = () => { countEl?.remove(); countEl = null; };
+
+    /** Begin a step: turn the view, say what to look for. */
+    const enter = now => {
+      st.phase = now; st.tStep = elapsed; wrongHint = 0;
+      if (now === 'cass') { aim(CASS, ['polaris', 'dubhe', 'merak']); say(HINT.cass, { dir: facing() }, 7); }
+      else if (now === 'polaris') {
+        const both = plan.steps.includes('cass');
+        aim(['dubhe', 'merak', 'polaris'], both ? [...CASS, ...DIPPER] : DIPPER);
+        guide('dubhe');
+        if (both) guide('navi');
+        ctx.hint(both ? plan.guide > 0 ? HINT.polarisBoth : HINT.polarisAlone : plan.guide > 0 ? HINT.polarisGuided : HINT.polarisAlone, 7);
+      } else if (now === 'little') { aim(LITTLE, ['dubhe', 'merak']); ctx.hint(HINT.little, 7); satPass = pass.decoy; satT0 = elapsed + 4; satRuns = 0; }
+      else if (now === 'season') { aim([...fig.join, ...fig.show], NONE, 'prefer', fig.zoom || 1); say(FIGURE_WORDS[fig.id].find, { dir: facing() }, 8); }
+      else if (now === 'bright') ctx.hint(HINT.bright, 7);
+      else if (now === 'satellite') {
+        // the lights begin once the first words are read
+        aimAt(pass.look); satPass = null; mv.sat.on = false;
+        say(HINT.kinds, { dir: facing() }, 6);
+        pause(5.5, () => { ctx.hint(HINT.spot, 14); spotOn = true; satPass = pass.sat; satT0 = elapsed + 0.5; satRuns = 0; planeT0 = elapsed + 2.5; shootWait = 3; });
+      } else if (now === 'train') {
+        spotOn = false; fadeWatch = false; trainN = 5 + Math.floor(Math.random() * (TRAIN_MAX - 4)); trainTries = 0; trainT0 = elapsed + 0.5; trainLagS = trainLag(pass.train, TRAIN_GAP);
+        ctx.hint(HINT.train, 9);
+        showCount();
+      }
+    };
+    /** A step is finished: go to the next one (or the wish, when it was the last). */
+    const nextStep = () => {
+      st.step++;
+      const now = plan.steps[st.step];
+      if (!now) { st.done = true; st.tDone = played; st.phase = 'wish'; shootT = -1; sky.shoot.visible = false; shootWait = 1.5; audio.star(); return; }
+      audio.good();
+      enter(now);
+    };
+
+    // the first words. The guided first try begins with the Milky Way, then the compass: the view turns north to show the
+    // N on the horizon, and back to the Big Dipper, so the letters are seen to slide (the clock waits meanwhile)
+    const find = () => { aim(firstFigure, firstMore); say(plan.outline.includes('dipper') ? HINT.dipper : HINT.dipperHard, { dir: facing() }, 7); };
+    if (ctx.first) { ctx.hint(HINT.milky, 5.5); pause(5.2, () => { aim(ONLY_POLARIS, NONE, 'force'); say(HINT.compass, { n: letterN() }, 6); pause(5.6, find); }); }
+    else find();
+
+    ctx.debug.named = () => NAMES.map((k, i) => ({ k, x: scr[i].x, y: scr[i].y, on: scr[i].z <= 1, alt: +at[i].alt.toFixed(1), az: +at[i].az.toFixed(1) }));
     ctx.debug.phase = () => st.phase;
     ctx.debug.next = () => [...nextNow()];
     ctx.debug.plan = plan;
     ctx.debug.state = st;
-    ctx.debug.shooting = () => shootT >= 0 && shootT < 1.2;
-    const sizes = named.points.geometry.attributes.aSize, cols = named.points.geometry.attributes.aColor;
-    const faint = NAMES.map(k => (STARS[k].mag > 2.9 && k !== 'megrez' ? 0.78 : 1));       // the Little Dipper's handle is dim
-    let shootT = -1, shootWait = 1.2, wishTries = 0, wrongHint = 0, elapsed = 0, cloudHint = 0;
-    const sA = new V3(), sB = new V3(), head = new V3(), tail = new V3(), pt = [0, 0];
-    // one record for the score and two remembered ring looks: the loop below builds nothing new each frame
-    const tally = { joined: 0, polaris: false, wish: false, mistakes: 0, seconds: 0, par: plan.par, done: false };
-    const scoreNow = () => { tally.joined = st.joined; tally.polaris = st.polaris; tally.wish = st.wish; tally.mistakes = st.mistakes; tally.seconds = st.tDone; tally.done = st.done; return starScore(tally); };
-    /** A step is finished: say so, and set the next one up (or the wish, when it was the last). */
-    const nextStep = () => {
-      const was = plan.steps[st.step];
-      st.step++; st.tStep = elapsed; wrongHint = 0;
-      const now = plan.steps[st.step];
-      if (!now) {
-        st.done = true; st.tDone = elapsed; st.phase = 'wish'; shootWait = 3.5;
-        audio.star();
-        ctx.hint(was === 'polaris' ? N_('Polaris, the North Star. It hardly moves all night, so travellers always knew where north was.') : DONE[was], 5.5);
-        return;
-      }
-      st.phase = now;
-      audio.good();
-      if (now === 'cass') { lookNorth(); ctx.hint(STEP_HINT.cass, 7); }
-      else if (now === 'polaris') {
-        lookNorth();
-        guide('dubhe');
-        if (plan.steps.includes('cass')) guide('navi');
-        ctx.hint(plan.steps.includes('cass') ? plan.guide > 0 ? STEP_HINT.polarisBoth : STEP_HINT.polarisAlone : STEP_HINT.polarisGuided, 7);
-      } else if (now === 'little') ctx.hint(STEP_HINT.little, 7);
-    };
+    ctx.debug.sky = night;
+    ctx.debug.shooting = () => st.phase === 'wish' && shootT >= 0 && shootT < 1.2;
+    ctx.debug.hold = () => hold;
+    ctx.debug.compass = () => compass.state();
+    ctx.debug.view = () => ({ az: +vAz.toFixed(1), alt: +vAlt.toFixed(1), horizon: horizonSeen, fov: cam.fov });
+    ctx.debug.movers = () => ({ sat: mv.sat.on && mv.sat.light > 0.25 ? { x: mscr.sat.x, y: mscr.sat.y, light: +mv.sat.light.toFixed(2) } : null, plane: mv.plane.on ? { x: mscr.plane.x, y: mscr.plane.y } : null,
+      train: st.phase === 'train' ? { n: trainN, choices: [...(countEl?.querySelectorAll('button') || [])].map(b => +b.dataset.n) } : null });
+
     let ringX = NaN, ringY = NaN, ringLit = null;
     const res = await ctx.loop(dt => {
       elapsed += dt;
-      if (st.phase !== 'wish') left -= dt;
+      if (hold > 0) { hold -= dt; if (hold <= 0 && after) { const fn = after; after = null; fn(); } }
+      else if (st.phase !== 'wish') { left -= dt; played += dt; }
+      // the view: a new screen shape (a phone turned) is framed again; then it eases to where the step looks
+      if (innerWidth !== lay.w || innerHeight !== lay.h) { layout(); reaim(); }
+      const kv = 1 - Math.exp(-dt * 2.6);
+      vAz = (vAz + azDiff(tAz, vAz) * kv + 360) % 360; vAlt += (tAlt - vAlt) * kv;
+      setView();
+      if (g.follow.shot === shot) shot.to.look.copy(look);
       sky.group.position.copy(cam.position);
       const scale = (g.renderer.renderer.domElement.height || innerHeight) * 0.5 / Math.tan(THREE.MathUtils.degToRad(cam.fov / 2)) / R;
       sky.field.material.uniforms.uScale.value = scale * R * 0.9;
-      named.points.material.uniforms.uScale.value = scale * R * 0.9;
+      round.points.material.uniforms.uScale.value = scale * R * 0.9;
       sky.field.material.uniforms.uTime.value = ctx.t;
-      named.points.material.uniforms.uTime.value = ctx.t;
-      // the clouds drift across; a star under one is hidden
-      if (clouds.length) {
-        hidden.fill(0);
-        for (const c of clouds) {
-          c.u += c.speed * dt;
-          if (c.u > CLOUD.wrap) c.u = -CLOUD.wrap; else if (c.u < -CLOUD.wrap) c.u = CLOUD.wrap;
-          pt[0] = c.u; pt[1] = c.v;
-          dirOf(pt, sky.B, named.centre, c.dir);
-          c.sprite.position.copy(c.dir).multiplyScalar(R * 0.96);
-          for (let i = 0; i < NAMES.length; i++) if (cloudCovers(patchOf[i], c.u, c.v)) hidden[i] = 1;
-        }
-      }
+      round.points.material.uniforms.uTime.value = ctx.t;
+      compass.update(cam, compassOpts);
+      // the faint outline goes once its figure is joined (Normal: the later figures have none)
+      if (round.outline && outlineFade > 0) { outlineFade = Math.max(0, outlineFade - dt); round.outline.material.opacity = 0.3 * outlineFade; if (!outlineFade) round.outline.visible = false; }
       // the ring: stick and keys move it
-      const mv = g.input.move, sp = Math.min(innerWidth, innerHeight) * 0.75;
-      rx = THREE.MathUtils.clamp(rx + mv.x * sp * dt, 10, innerWidth - 10);
-      ry = THREE.MathUtils.clamp(ry - mv.y * sp * dt, 10, innerHeight - 10);
+      const move = g.input.move, sp = Math.min(innerWidth, innerHeight) * 0.75;
+      rx = THREE.MathUtils.clamp(rx + move.x * sp * dt, 10, innerWidth - 10);
+      ry = THREE.MathUtils.clamp(ry - move.y * sp * dt, 10, innerHeight - 10);
       shake = Math.max(0, shake - dt);
       const sx = shake > 0 ? Math.sin(shake * 60) * 8 : 0;
       const px = Math.round(rx + sx), py = Math.round(ry);
       if (px !== ringX || py !== ringY) { ringX = px; ringY = py; ring.style.transform = `translate(${px}px, ${py}px)`; }
       for (let i = 0; i < NAMES.length; i++) screenOf(dirs[i], scr[i]);
-      // the named stars: bright, the picked ones golden, the next one pulsing in the guided try (and after a few wrong picks,
-      // except on Difficult: nothing points the way there)
+      // the named stars: as bright as they really are, the picked ones golden, the next one pulsing in the guided try (and
+      // after a few wrong picks, except on Difficult: nothing points the way there)
       const next = nextNow(), step = plan.steps[st.step];
-      const mayHint = ctx.first || (wrongHint > 2 && !plan.clouds);
+      const mayHint = ctx.first || (plan.nudge > 0 && wrongHint >= plan.nudge);
+      const figDone = !!fig && st.picked.season.length >= fig.join.length;
       for (let i = 0; i < NAMES.length; i++) {
         const k = NAMES[i];
-        const on = (k === 'polaris' && st.polaris) || st.picked.dipper.includes(k) || st.picked.cass.includes(k) || (k !== 'polaris' && st.picked.little.includes(k));
+        // (while the brightest star is asked for, the figure's stars show their own light again, not the gold of a joined star)
+        const on = (k === 'polaris' && st.polaris) || st.picked.dipper.includes(k) || st.picked.cass.includes(k) || (k !== 'polaris' && st.picked.little.includes(k))
+          || (step !== 'bright' && (st.picked.season.includes(k) || (figDone && st.tasks > 0 && k === fig.bright)));
         const hintMe = mayHint && next.includes(k) && !(k === 'polaris' && !ctx.first && elapsed - st.tStep < 10);
         const pulse = hintMe ? 0.5 + 0.5 * Math.sin(ctx.t * 6) : 0;
-        sizes.setX(i, (k === 'polaris' ? 0.026 : 0.024) * faint[i] * (on ? 1.3 : 1) * (1 + pulse * 0.6));
-        if (on) cols.setXYZ(i, 1.4, 1.15, 0.55); else cols.setXYZ(i, 1.05 + pulse * 0.4, 1.05 + pulse * 0.3, 1.1);
+        sizes.setX(i, late[i] && !figDone ? 0 : base[i] * (on ? 1.25 : 1) * (1 + pulse * 0.6));
+        const c = tint[i];
+        if (on) cols.setXYZ(i, 1.4, 1.15, 0.55); else cols.setXYZ(i, c[0] * 1.08 + pulse * 0.4, c[1] * 1.08 + pulse * 0.3, c[2] * 1.1);
       }
       sizes.needsUpdate = true; cols.needsUpdate = true;
+
+      // the moving lights of Difficult
+      if (pass) {
+        round.movers.material.uniforms.uScale.value = scale * R * 0.9;
+        // the satellite: through the Little Dipper while it is joined, then on its own pass (it fades in the Earth's shadow)
+        if (satPass) {
+          satAt(satPass, elapsed - satT0, pass.sun, mv.sat);
+          if (elapsed - satT0 > satPass.dur) {
+            // a pass is over: the next one after a breath (the lone satellite twice at most, then the round goes on)
+            satRuns++; satT0 = elapsed + (satPass === pass.decoy ? 5 : 2.5);
+            if (satPass === pass.sat && !spotOn) satPass = null;                // it was found: it does not come round again
+            else if (step === 'satellite' && satRuns >= 2) { spotOn = false; satPass = null; ctx.hint(HINT.spotGone, 4); pause(3.5, nextStep); }
+          }
+          if (satPass === pass.decoy && !decoyTold && mv.sat.on && mv.sat.light > 0.6 && step === 'little') { decoyTold = true; ctx.hint(HINT.decoy, 5); }
+        } else mv.sat.on = false;
+        if (fadeWatch && hold > 0 && (!mv.sat.on || mv.sat.light < 0.03)) { fadeWatch = false; hold = Math.min(hold, 1.6); }
+        putMover(0, mv.sat, 0.021, 1.15, 1.08, 0.92, mscr.sat);
+        // the plane: only while the three lights are told apart
+        if (spotOn) {
+          satAt(pass.plane, elapsed - planeT0, null, mv.plane);
+          if (elapsed - planeT0 > pass.plane.dur) planeT0 = elapsed + 3;
+        } else mv.plane.on = false;
+        planeBlink(elapsed, rgb);
+        putMover(1, mv.plane, 0.022, rgb[0], rgb[1], rgb[2], mscr.plane);
+        // the train: one pass, its lights one behind the other
+        for (let i = 0; i < TRAIN_MAX; i++) {
+          if (step === 'train' && i < trainN) satAt(pass.train, elapsed - trainT0, pass.sun, mv.car, i * trainLagS); else mv.car.on = false;
+          putMover(2 + i, mv.car, 0.018, 1.12, 1.06, 0.95, null);
+        }
+        if (step === 'train' && elapsed - trainT0 > pass.train.dur + trainN * trainLagS) trainT0 = elapsed + 2;
+        mpos.needsUpdate = true; msize.needsUpdate = true; mcol.needsUpdate = true;
+      }
       const lit = !!nearest();
       if (lit !== ringLit) { ringLit = lit; ring.style.borderColor = lit ? 'rgba(255,240,170,1)' : 'rgba(255,226,140,.6)'; }
 
       const press = pick || ctx.pressed() || g.input.pressed('jump');
       pick = false;
-      cloudHint -= dt;
-      if (step) {
+      if (step && hold > 0) {
+        // reading time: nothing is picked (a streak already falling finishes its fall)
+        answer = 0;
+        if (shootT >= 0) { moveStreak(dt); if (shootT > 1.5) { shootT = -1; sky.shoot.visible = false; } }
+      }
+      else if (step === 'train') {
+        // the count: a button (tapped, clicked, or under the ring when the action key is pressed)
+        if (press && !answer) { const b = document.elementFromPoint(rx, ry)?.closest?.('.stg-n'); if (b) answer = +b.dataset.n; }
+        if (answer) {
+          const ok = answer === trainN;
+          answer = 0;
+          if (ok) { st.tasks++; audio.twinkle(2); audio.star(); hideCount(); say(HINT.trainYes, { n: trainN }, 5); pause(4.5, nextStep); }
+          else if (++trainTries >= 2) { wrong(null); hideCount(); say(HINT.trainNo, { n: trainN }, 4.5); pause(4, nextStep); }
+          else wrong(HINT.trainAgain);
+        }
+      } else if (step === 'satellite') {
+        // a shooting star now and then: the light that is gone in a second
+        if (shootT < 0) { if (spotOn && (shootWait -= dt) <= 0) launchStreak(); }
+        else { moveStreak(dt); if (shootT > 1.5) { shootT = -1; sky.shoot.visible = false; shootWait = 4 + Math.random() * 2; } }
+        if (press && spotOn) {
+          const k = nearest();
+          // found: now it is watched until it fades in the Earth's shadow (ten seconds at most)
+          if (k === '@sat') { st.tasks++; spotOn = false; fadeWatch = true; audio.twinkle(2); audio.star(); ctx.hint(HINT.spotYes, 8); pause(10, nextStep); }
+          else if (k === '@plane') wrong(HINT.spotPlane);
+          else audio.blip(0.7);
+        }
+      } else if (step) {
         if (press) {
           const k = nearest();
           if (k && next.includes(k)) {
             audio.twinkle(2); audio.blip(1 + (st.joined % 7) * 0.12);
-            fx.twinkle?.(dirs[idx(k)].clone().multiplyScalar(30).add(cam.position));
+            fx.twinkle?.(tmp.copy(dirs[idx(k)]).multiplyScalar(30).add(cam.position).clone());
             wrongHint = 0;
             if (step === 'polaris') {
               st.polaris = true;
               // the pointer line is drawn all the way now; from the W too when it helped
               if (guideAt.dubhe !== undefined) segment('dubhe', 'polaris', guideAt.dubhe); else segment('dubhe', 'polaris');
               if (guideAt.navi !== undefined) segment('navi', 'polaris', guideAt.navi);
-              nextStep();
+              audio.star();
+              // the compass agrees: the view drops until the N on the horizon stands under the star
+              if (plan.horizon === 'on') { aim(ONLY_POLARIS, NONE, 'force'); say(HINT.north, { n: letterN() }, 6); }
+              else { aim(ONLY_POLARIS); ctx.hint(HINT.northRose, 5); }
+              pause(4.5, nextStep);
+            } else if (step === 'bright') {
+              st.tasks++;
+              audio.star();
+              say(FIGURE_WORDS[fig.id].bright, { star: starName(fig.bright, profile, tx) || '' }, 5.5);
+              pause(4, nextStep);
+            } else if (step === 'season') {
+              const list = st.picked.season;
+              if (list.length) segment(list[list.length - 1], k);
+              list.push(k);
+              st.joined++;
+              if (list.length === fig.join.length) {
+                // the whole figure shows: the triangle closes, the hunter gets his shoulders and feet
+                for (const [a, b] of fig.lines) segment(a, b);
+                ctx.hint(FIGURE_WORDS[fig.id].done, 5);
+                pause(3.5, nextStep);
+              }
             } else {
               const list = st.picked[step], chain = FIGURES[step].chain;
               if (list.length) segment(list[list.length - 1], k);
@@ -508,43 +694,30 @@ export default {
               if (ctx.first && list.length < chain.length && LABEL[k]) ctx.hint(LABEL[k], 2.5);
               if (list.length === chain.length) {
                 if (step === 'little') segment('kochab', 'zetumi');           // the little bowl closes
-                nextStep();
+                if (step === 'dipper') { segment('megrez', 'dubhe'); if (round.outline) outlineFade = 1; }   // and the ladle's
+                if (DONE[step]) { ctx.hint(DONE[step], 5); pause(3.5, nextStep); }
+                else nextStep();
               }
             }
-          } else if (!k && clouded) {
-            // a cloud is over what she pointed at: not a mistake, just wait
-            if (cloudHint <= 0) { cloudHint = 5; ctx.hint(N_('A cloud is in the way. Wait for it to drift past.'), 3); }
-            audio.blip(0.7);
-          } else if (k || step === 'dipper') {
-            st.mistakes++; wrongHint++; shake = 0.3;
-            audio.bad();
-            if (wrongHint === 1 || wrongHint === 3) ctx.hint(step === 'polaris' ? N_('Further along the pointer line. The North Star sits on its own.')
-              : st.picked[step].length > FIGURES[step].from ? WRONG[step] : step === 'dipper' ? N_('Start at either end: the tip of the handle or the edge of the bowl.') : step === 'cass' ? N_('Start at either end of the W.') : WRONG[step], 3.5);
-          }
+          } else if (k === '@sat') wrong(HINT.decoyPick);
+          else if (k && k[0] !== '@' && joined(k) && step !== 'bright') audio.blip(0.7);
+          else if (k && k[0] !== '@') {
+            wrong(null);
+            if (wrongHint === 1 || wrongHint === 3) ctx.hint(step === 'polaris' ? HINT.wrongNorth : step === 'bright' ? HINT.brightWrong
+              : step === 'season' ? WRONG.season : st.picked[step].length > FIGURES[step].from ? WRONG[step] : step === 'dipper' ? HINT.wrongStart : step === 'cass' ? HINT.wrongW : WRONG[step], 3.5);
+          } else audio.blip(0.7);
         }
       } else if (st.phase === 'wish') {
         // a shooting star crosses the sky; press while it streaks to make a wish (three chances)
         if (shootT < 0) {
           shootWait -= dt;
           if (shootWait <= 0) {
-            shootT = 0; wishTries++;
+            wishTries++;
             if (wishTries === 1) ctx.hint(N_('Look! A shooting star! Quick, press to make a wish!'), 3);
-            // (across the view she has now: the pole's, once she has looked up)
-            const ox = viewC[0] - named.centre[0], oy = viewC[1] - named.centre[1];
-            pt[0] = named.centre[0] - 18 + Math.random() * 10 + ox; pt[1] = named.centre[1] + 11.5 + Math.random() * 8 + oy;
-            dirOf(pt, sky.B, named.centre, sA);
-            pt[0] = named.centre[0] + 6 + Math.random() * 10 + ox; pt[1] = named.centre[1] - 4.5 + Math.random() * 6 + oy;
-            dirOf(pt, sky.B, named.centre, sB);
-            sky.shoot.visible = true;
-            audio.twinkle(1.5);
+            launchStreak();
           }
         } else {
-          shootT += dt;
-          const k = Math.min(1, shootT / 1.15);
-          head.copy(sA).lerp(sB, k).normalize().multiplyScalar(R * 0.98);
-          tail.copy(sA).lerp(sB, Math.max(0, k - 0.22)).normalize().multiplyScalar(R * 0.98);
-          const sp2 = sky.shoot.geometry.attributes.position;
-          sp2.setXYZ(0, head.x, head.y, head.z); sp2.setXYZ(1, tail.x, tail.y, tail.z); sp2.needsUpdate = true;
+          moveStreak(dt);
           if (press && shootT < 1.55) {
             st.wish = true; sky.shoot.visible = false;
             audio.star(); fx.burst?.(head.clone().normalize().multiplyScalar(30).add(cam.position), { n: 30, color: [1, 0.95, 0.6], speed: 2, size: 0.3, gravity: 0 });
@@ -570,7 +743,9 @@ export default {
     cleanup();
     await ctx.fade(false, 500);
     return { score, quit: !!res.quit && !st.joined, extra: st.wish ? N_('a wish made') : undefined,
-      detail: { joined: st.joined, of: plan.stars, polaris: st.polaris, wish: st.wish, mistakes: st.mistakes, seconds: Math.round(st.tDone) } };
+      // the Difficult level's card says a little more about the satellites it showed
+      fact: plan.steps.includes('train') && !res.quit ? { title: tx(SAT_FACT.title), text: tx(SAT_FACT.text) } : undefined,
+      detail: { joined: st.joined, of: plan.stars, polaris: st.polaris, tasks: st.tasks, wish: st.wish, mistakes: st.mistakes, seconds: Math.round(st.tDone) } };
     } finally {
       // an error above left the screen as it was (perhaps black): put the valley back and show it
       if (!cleaned) { cleanup(); ctx.fade(false, 300); }
