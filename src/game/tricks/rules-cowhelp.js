@@ -128,6 +128,10 @@ export function ghostDue(t, lastTap, taps, ghostEnd = -99) {
 /** What the results card says about stars (the race's STARS thresholds are 30 / 60 / 80 points; 1st place is always 3). */
 export const STARS_NOTE = N_('Stars: 1st place = 3 stars. A slower place or time earns fewer.');
 
+/** The same for a race day of several heats (the levels: rules-cowrace.js meetPlan). */
+export const STARS_NOTE_DAY = N_('Stars: the points of all heats add up. Win every heat for 3 stars.');
+export const starsNote = heats => (heats > 1 ? STARS_NOTE_DAY : STARS_NOTE);
+
 /** The floating hint over a cow: what to do next with her, from where Mika stands. */
 export function cowHintText(kind, near) {
   if (kind === 'ride') return near ? N_('Press {act} to ride') : N_('Walk up to her, then press {act} to ride');

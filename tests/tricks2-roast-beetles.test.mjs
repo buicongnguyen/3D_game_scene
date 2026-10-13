@@ -1,7 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { planRoast, cookState, cue, heatRate, Roast, roastScore, replay, layout, POINTS, OKAY, COUNT, STRAW, SIZES, TURN, WARM } from '../src/game/tricks/roast.js';
-import { TREES, isGood, pickTrees, Rub, ZONE, STROKE_GAP, trapOutcome, Lift, V_MAX, replayLift, beetlesScore, SEEN, GENTLE, NAMES } from '../src/game/tricks/beetles.js';
+import { planRoast, cookState, cue, heatRate, Roast, roastScore, replay, layout, POINTS, OKAY, COUNT, STRAW, SIZES, TURN, WARM, roastPlan, roastMax, NUT, NUT_POINTS, RAIN } from '../src/game/tricks/roast.js';
+import { TREES, isGood, pickTrees, Rub, ZONE, STROKE_GAP, trapOutcome, Lift, V_MAX, replayLift, beetlesScore, SEEN, GENTLE, NAMES, trapPlan, WRIGGLE, HORNET } from '../src/game/tricks/beetles.js';
+import { levelSpec } from '../src/content/levels.js';
 import { scatter } from '../src/world/scatter.js';
 import { sharedGrid } from '../src/world/roads.js';
 import { rng } from '../src/engine/spline.js';
@@ -160,7 +161,7 @@ test('roast: the ash cools: unfanned, the big potatoes are not done when the tim
   assert.equal(idle.warm, WARM.start, 'the ash waits for the first potato');
   for (let seed = 1; seed < 40; seed++) {
     const game = new Roast({ rand: rng(seed) });
-    replay(game, game.spots.map((s, i) => [i, 'bury', i]), { until: TRICK.roast.length });
+    replay(game, game.spots.map((s, i) => [i, 'bury', i]), { until: 50 });
     const big = game.spots.reduce((a, s) => (s.cook > a.cook ? s : a)), small = game.spots.reduce((a, s) => (s.cook < a.cook ? s : a));
     assert.ok(game.warm < 0.01, 'stone cold by the end');
     assert.ok(big.heat < big.cook, `seed ${seed}: the biggest one never got done in cold ash (${big.heat.toFixed(1)} of ${big.cook})`);
@@ -279,10 +280,11 @@ test('roast: recorded edge cases: double presses, forgotten potatoes, digging no
 });
 
 test('roast: scoring fits the stars', () => {
-  const [one, two, three] = TRICK.roast.stars;
+  // (one batch of five: the marks a single batch was always held to; the levels' batches are checked further down)
+  const BATCH = [25, 60, 90], [one, two, three] = BATCH;
   const s = (...r) => roastScore(r);
   assert.equal(s(), 0);
-  assert.equal(starsFor(s('raw', 'raw', 'raw', 'raw', 'raw'), TRICK.roast.stars), 0, 'digging everything at once earns nothing');
+  assert.equal(starsFor(s('raw', 'raw', 'raw', 'raw', 'raw'), BATCH), 0, 'digging everything at once earns nothing');
   assert.ok(s('okay', 'okay', 'raw', 'raw', 'burnt') >= one, 'one star is easy: two good potatoes');
   assert.ok(s('okay', 'raw', 'raw', 'raw', 'burnt') < one);
   assert.ok(s('okay', 'okay', 'okay', 'okay', 'okay') < two, 'never turning anything is one star');
@@ -294,9 +296,9 @@ test('roast: scoring fits the stars', () => {
   // the whole cook fits the round, even buried at a walking pace
   for (let seed = 1; seed < 30; seed++) {
     const slow = planRoast({ rand: rng(seed) }).map((p, i) => i * 2.5 + p.cook + p.win);
-    assert.ok(Math.max(...slow) < TRICK.roast.length - 10, `round too short: ${Math.max(...slow)}`);
+    assert.ok(Math.max(...slow) < 50 - 10, `round too short: ${Math.max(...slow)}`);
     const first = planRoast({ gentle: true, rand: rng(seed) }).map((p, i) => i * 2.5 + p.cook + p.win);
-    assert.ok(Math.max(...first) < (TRICK.roast.firstLength ?? TRICK.roast.length) - 20, `first try too short: ${Math.max(...first)}`);
+    assert.ok(Math.max(...first) < 55 - 20, `first try too short: ${Math.max(...first)}`);
   }
 });
 
@@ -420,7 +422,7 @@ test('beetles: a recorded lift: slow, pulsed hands lift it; a long grab makes it
 });
 
 test('beetles: scoring fits the stars: the right tree and gentle hands', () => {
-  const [one, two, three] = TRICK.beetles.stars;
+  const [one, two, three] = levelSpec(TRICK.beetles, 'easy').stars;      // (one trap: Easy)
   assert.equal(beetlesScore({}), 0);
   assert.equal(beetlesScore({ visitors: ['rhino', 'moth'], gentle: 1 }), SEEN.rhino + SEEN.moth + GENTLE);
   // a cedar: moths only
@@ -437,4 +439,220 @@ test('beetles: scoring fits the stars: the right tree and gentle hands', () => {
   assert.ok(beetlesScore({ visitors: ['rhino', 'stag', 'rhino', 'moth', 'moth'], gentle: 2 }) < three);
   // the same visitors, but grabbed: they all fly
   assert.ok(beetlesScore({ visitors: ['rhino', 'stag', 'rhino', 'moth'], gentle: 0 }) < two);
+});
+
+/// ------------------------------------------------------------------ the levels: roast
+/** A model cook: one thing at a time, `pace` seconds each; notices a cue up to `react` seconds late; fans under `fanAt`. */
+function playRoast(level, seed, { pace = 1.5, react = 1.5, fanAt = 0.4, turns = true, first = false }) {
+  const R = rng(seed * 7 + 3), game = new Roast({ plan: roastPlan(level, first), rand: rng(seed) });
+  const dt = 0.05, seen = game.spots.map(() => ({ turn: -1, dig: -1 })), length = first ? TRICK.roast.firstLength : levelSpec(TRICK.roast, level).length;
+  let busy = 0, t = 0, pops = 0;
+  for (; t < length && !game.done; t += dt) {
+    game.update(dt);
+    pops += game.popped.length; game.popped.length = 0;
+    game.spots.forEach((s, i) => {
+      if (s.st !== 'buried') return;
+      if (seen[i].turn < 0 && game.canTurn(i)) seen[i].turn = t + R() * react;
+      if (seen[i].dig < 0 && s.heat >= s.cook - 0.3) seen[i].dig = t + 0.3 + R() * react;
+    });
+    if ((busy -= dt) > 0) continue;
+    let did = false;
+    for (let i = 0; i < game.spots.length && !did; i++) { const s = game.spots[i]; if (s.st === 'buried' && seen[i].dig >= 0 && t >= seen[i].dig) { game.dig(i); did = true; } }
+    for (let i = 0; i < game.spots.length && !did && turns; i++) if (game.canTurn(i) && t >= seen[i].turn) { game.turn(i); did = true; }
+    for (let i = 0; i < game.spots.length && !did; i++) if (game.spots[i].st === 'empty') { game.bury(i); did = true; }
+    if (!did && game.buried && game.warm < fanAt) { game.fan(game.spots.findIndex(s => s.st === 'buried')); did = true; }
+    if (did) busy = pace * (0.8 + R() * 0.4);
+  }
+  game.finish();
+  return { score: game.score, t, pops, game };
+}
+
+test('roast levels: batches. Easy 4 + 2 in gentle ash, Normal 5 + 3, Difficult 7 potatoes and 2 chestnuts in three batches, with rain', () => {
+  const E = roastPlan('easy'), N = roastPlan('normal'), H = roastPlan('hard');
+  assert.deepEqual(roastPlan('hard', true), E, 'the guided first try is Easy');
+  assert.deepEqual([E.count, N.count, H.count], [6, 8, 9]);
+  assert.deepEqual([roastMax(E), roastMax(N), roastMax(H)], [120, 160, 160]);
+  assert.ok(E.gentle && !N.gentle && !H.gentle && H.rain && !N.rain && !E.rain);
+  for (let seed = 1; seed <= 25; seed++) {
+    for (const plan of [E, N, H]) {
+      const g = new Roast({ plan, rand: rng(seed) });
+      assert.equal(g.spots.length, plan.count);
+      assert.deepEqual(g.spots.map(s => s.wave), plan.waves.flatMap((w, k) => Array(w.potatoes + w.nuts).fill(k)), 'the spots are laid batch by batch');
+      assert.ok(g.spots.every(s => (s.wave === 0 ? s.st === 'empty' : s.st === 'wait')), 'only the first batch can go in at once');
+      assert.equal(g.spots.filter(s => s.kind === 'nut').length, plan.waves.reduce((n, w) => n + w.nuts, 0));
+      assert.equal(g.rain.length > 0, !!plan.rain);
+      // a later potato cannot be covered before it arrives
+      const late = g.spots.findIndex(s => s.wave === 1);
+      assert.equal(g.bury(late), false); assert.equal(g.press(late).act, null);
+      // the next batch arrives at its time, once the first potato is in
+      g.update(plan.waves[1].at + 5); assert.equal(g.wave, 0, 'the clock waits for the first potato');
+      g.bury(0);
+      for (let t = 0; t < plan.waves[1].at - 0.2; t += 0.1) g.update(0.1);
+      assert.equal(g.wave, 0);
+      for (let t = 0; t < 0.5; t += 0.1) g.update(0.1);
+      assert.equal(g.wave, 1); assert.equal(g.spots[late].st, 'empty'); assert.equal(g.bury(late), true);
+    }
+    // ...or sooner, when the ash is empty and nothing is left to do
+    const quick = new Roast({ plan: N, rand: rng(seed) });
+    for (const s of quick.spots) if (s.wave === 0) s.st = 'dug';
+    quick.started = true; quick.update(0.05);
+    assert.equal(quick.wave, 1, 'nobody waits by empty ash');
+    assert.ok(!quick.done, 'and the round is not over while a batch is still to come');
+  }
+  // a single batch is what it always was
+  const old = new Roast({ rand: rng(5) });
+  assert.equal(old.spots.length, COUNT); assert.ok(old.spots.every(s => s.wave === 0 && s.kind === 'potato' && s.st === 'empty')); assert.equal(old.rain.length, 0);
+});
+
+test('roast levels: a chestnut cooks fast, wants no turning and pops if left; rain spots cool the ash', () => {
+  const g = new Roast({ plan: roastPlan('hard'), rand: rng(4) });
+  const i = g.spots.findIndex(s => s.kind === 'nut' && s.wave === 0), nut = g.spots[i], potato = g.spots.find(s => s.kind === 'potato' && s.wave === 0);
+  assert.ok(nut.cook >= NUT.lo && nut.cook <= NUT.hi && nut.cook < 9 && nut.win === NUT.win && nut.size === 'nut' && SIZES.nut.k < SIZES.small.k);
+  assert.equal(g.bury(i), true);
+  g.warm = 1;
+  for (let t = 0; t < nut.cook * 0.6; t += 0.05) { g.warm = 1; g.update(0.05); }
+  assert.equal(g.canTurn(i), false, 'a chestnut is never turned');
+  assert.equal(cue(nut.heat, nut).turn, 0);
+  for (let t = 0; nut.heat < nut.cook + 0.4; t += 0.05) { g.warm = 1; g.update(0.05); }
+  assert.equal(cookState(nut.heat, nut), 'perfect'); assert.equal(cue(nut.heat, nut).steam, 1);
+  const dug = new Roast({ plan: roastPlan('hard'), rand: rng(4) });
+  dug.bury(i); dug.spots[i].heat = nut.cook + 0.4;
+  assert.equal(dug.dig(i), 'perfect'); assert.equal(dug.score, NUT_POINTS.perfect);
+  // left: it pops out of the ash by itself, burnt, and the round hears of it once
+  for (let t = 0; t < NUT.win + NUT.okay + 0.3; t += 0.05) { g.warm = 1; g.update(0.05); }
+  assert.equal(nut.st, 'dug'); assert.equal(nut.result, 'burnt'); assert.equal(nut.pop, true); assert.deepEqual(g.popped, [i]);
+  assert.equal(g.score, 0);
+  assert.ok(nut.cook + nut.win + NUT.okay < potato.cook + 14, 'it is gone long before a big potato is done');
+  // rain: each shower takes warmth at once, on a seeded timetable, only on Difficult
+  const r = new Roast({ plan: roastPlan('hard'), rand: rng(9) });
+  assert.ok(r.rain.length >= 3 && r.rain[0] >= RAIN.first[0] && r.rain[0] <= RAIN.first[1]);
+  for (let k = 1; k < r.rain.length; k++) assert.ok(r.rain[k] - r.rain[k - 1] >= RAIN.every[0] - 0.01);
+  r.bury(0);
+  for (let t = 0; t < r.rain[0] - 0.2; t += 0.05) r.update(0.05);
+  r.warm = 0.8;                                             // (fanned warm, so the shower has something to take)
+  const before = r.warm;
+  for (let t = 0; t < 0.4; t += 0.05) r.update(0.05);
+  assert.equal(r.rained, 1); assert.ok(before - r.warm > RAIN.drop * 0.9 && r.warm >= 0);
+  // Difficult's ash cools faster and its perfect window is shorter
+  const n = new Roast({ plan: roastPlan('normal'), rand: rng(2) }), h = new Roast({ plan: roastPlan('hard'), rand: rng(2) });
+  n.bury(0); h.bury(0); n.update(4); h.update(4);
+  assert.ok(h.warm < n.warm);
+  assert.ok(h.spots.filter(s => s.kind === 'potato').every(s => s.win < n.spots[0].win));
+});
+
+test('roast levels: the stars. Easy forgives, Normal takes care, Difficult takes a quick eye; the round fits its clock', () => {
+  const med = xs => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)], N = 60;
+  const run = (level, o) => Array.from({ length: N }, (_, i) => playRoast(level, i + 1, o));
+  const stars = (level, rs) => starsFor(med(rs.map(r => r.score)), levelSpec(TRICK.roast, level).stars);
+  const lazy = { pace: 2, react: 3, fanAt: -1, turns: false }, beginner = { pace: 2.3, react: 3.5, fanAt: 0.2 }, learner = { pace: 1.9, react: 2.5, fanAt: 0.33 };
+  const careful = { pace: 1.55, react: 1.5, fanAt: 0.4 }, good = { pace: 1.25, react: 0.9, fanAt: 0.45 };
+  // never turning and never fanning: a star at best, on every level
+  for (const level of ['easy', 'normal', 'hard']) assert.ok(stars(level, run(level, lazy)) <= 1, level);
+  assert.ok(stars('easy', run('easy', lazy)) >= 1, 'Easy: even so, a star');
+  assert.ok(stars('easy', run('easy', beginner)) >= 2);
+  assert.equal(stars('easy', run('easy', careful)), 3);
+  assert.ok(stars('normal', run('normal', beginner)) >= 1 && stars('normal', run('normal', beginner)) <= 2);
+  assert.ok(stars('normal', run('normal', learner)) >= 2);
+  assert.equal(stars('normal', run('normal', careful)), 3);
+  assert.ok(stars('hard', run('hard', beginner)) <= 1);
+  assert.equal(stars('hard', run('hard', learner)), 2);
+  assert.ok(stars('hard', run('hard', careful)) <= 2, 'Difficult: a careful cook is a little too slow for three');
+  assert.equal(stars('hard', run('hard', good)), 3);
+  // a careful cook has everything out of the ash well before the clock, on every level and on the first try
+  for (const level of ['easy', 'normal', 'hard']) {
+    const rs = run(level, careful), len = levelSpec(TRICK.roast, level).length;
+    assert.ok(rs.every(r => r.t < len - 5), `${level}: ${Math.max(...rs.map(r => r.t)).toFixed(0)} of ${len} s`);
+    assert.ok(med(rs.map(r => r.t)) > 30, `${level}: the cooking is a longer game now (${med(rs.map(r => r.t)).toFixed(0)} s)`);
+  }
+  const first = Array.from({ length: N }, (_, i) => playRoast('easy', i + 1, { ...beginner, first: true }));
+  assert.ok(first.every(r => r.t < TRICK.roast.firstLength - 2));
+});
+
+/// ------------------------------------------------------------------ the levels: beetles
+test('beetle levels: one trap on Easy, two on Normal, and on Difficult a wriggling beetle and a hornet to leave alone', () => {
+  const E = trapPlan('easy'), N = trapPlan('normal'), H = trapPlan('hard');
+  assert.deepEqual(trapPlan('hard', true), E, 'the guided first try is Easy');
+  assert.deepEqual([E.traps, N.traps, H.traps], [1, 2, 2]);
+  assert.ok(E.trees < N.trees && N.trees < H.trees && E.gentle && !N.gentle && !N.wriggle && !N.hornet && H.wriggle && H.hornet && N.dawn > E.dawn && H.dawn >= N.dawn);
+  // two traps: the grove offers two right trees (an oak and a chestnut when it has both), at every graphics setting
+  const p = TRICK.beetles.place;
+  for (const density of [0.6, 0.85, 1]) {
+    const placed = scatter(heightAt, () => true, density);
+    for (const plan of [N, H]) {
+      const t = pickTrees(placed.trees, p.x, p.z, { max: plan.trees, good: plan.traps });
+      assert.equal(t.length, plan.trees, `${t.length} trees at density ${density}`);
+      const right = t.filter(q => isGood(q.model));
+      assert.ok(right.length >= 2, 'two right trees to find');
+      assert.equal(new Set(right.slice(0, 2).map(q => q.model)).size, 2, 'an oak and a chestnut');
+      assert.ok(t.filter(q => !isGood(q.model)).length >= 2, 'and wrong ones to tell them from');
+      for (let i = 0; i < t.length; i++) for (let j = 0; j < i; j++) assert.ok(Math.hypot(t[i].x - t[j].x, t[i].z - t[j].z) >= 2.5, 'trees apart');
+    }
+    assert.deepEqual(pickTrees(placed.trees, p.x, p.z, { good: 1 }), pickTrees(placed.trees, p.x, p.z), 'one trap: the choice is what it always was');
+  }
+  // a hornet comes to every trap on Difficult, and only there
+  for (let seed = 1; seed < 30; seed++) {
+    const a = trapOutcome({ sap: 1, bait: 1, rand: rng(seed) }), b = trapOutcome({ sap: 1, bait: 1, rand: rng(seed), hornet: true });
+    assert.ok(!a.includes('hornet')); assert.deepEqual(b, [...a, 'hornet']);
+  }
+  assert.ok(NAMES.hornet.name);
+});
+
+test('beetle levels: the wriggle. Pulsed hands that stop when it tenses lift it; hands that keep pulsing lose it', () => {
+  const dt = 1 / 60;
+  const play = (seed, policy) => {
+    const lift = new Lift({ wriggle: true, rand: rng(seed) });
+    let held = false;
+    for (let t = 0; t < 30; t += dt) {
+      held = policy(lift, held);
+      const out = lift.update(dt, held);
+      if (out) return out;
+    }
+    return 'slow';
+  };
+  // the old rhythm (hold to 0.72 of the limit, let go to 0.3): blind to the wriggle
+  const blind = (L, held) => L.v < V_MAX * (held ? 0.72 : 0.3);
+  // the new skill: the same pulse, but hands off while it tenses or squirms
+  const watching = (L, held) => L.state === 'calm' && L.v < L.limit * (held ? 0.72 : 0.3);
+  let lost = 0;
+  for (let seed = 1; seed <= 40; seed++) {
+    assert.equal(play(seed, watching), 'lifted', `seed ${seed}: watching hands lift it`);
+    if (play(seed, blind) === 'flew') lost++;
+  }
+  assert.ok(lost >= 30, `blind pulsing loses it nearly every time (${lost} of 40)`);
+  // the warning comes before the squirm, long enough for a fast hand to slow down in time
+  const L = new Lift({ wriggle: true, rand: rng(3) });
+  assert.equal(L.state, 'calm'); assert.equal(L.limit, V_MAX);
+  let warnAt = -1, kickAt = -1;
+  for (let t = 0; t < 4 && kickAt < 0; t += dt) { L.update(dt, L.v < 0.2); if (warnAt < 0 && L.state === 'warn') warnAt = L.t; if (L.state === 'kick') kickAt = L.t; }
+  assert.ok(warnAt > 0 && kickAt - warnAt >= WRIGGLE.warn - 0.03, `warn ${warnAt} kick ${kickAt}`);
+  assert.ok(V_MAX * 0.72 - 1.8 * WRIGGLE.warn < V_MAX * WRIGGLE.limit, 'letting go at the warning is always in time');
+  assert.equal(L.limit, V_MAX * WRIGGLE.limit);
+  // without the wriggle (Easy, Normal) a lift is what it always was
+  const plain = new Lift({});
+  let held = false, out = null;
+  for (let t = 0; t < 30 && !out; t += dt) { held = blind(plain, held); out = plain.update(dt, held); assert.equal(plain.state, 'calm'); assert.equal(plain.limit, V_MAX); }
+  assert.equal(out, 'lifted', 'the old pulse still lifts a beetle that does not wriggle');
+});
+
+test('beetle levels: the stars. Two good trees for Normal, and on Difficult the hornets left in peace', () => {
+  const full = ['rhino', 'stag', 'rhino', 'moth'], poor = ['stag', 'moth', 'moth'];
+  // Normal: one good trap alone is a star, not two; two good traps with gentle hands are three
+  const [n1, n2, n3] = levelSpec(TRICK.beetles, 'normal').stars;
+  const one = beetlesScore({ visitors: full, gentle: 3 });
+  assert.ok(one >= n1 && one < n2, `one good trap: ${one}`);
+  assert.ok(beetlesScore({ visitors: [...full, ...poor], gentle: 4 }) >= n2, 'a good tree and a poor one: two stars');
+  assert.ok(beetlesScore({ visitors: [...full, ...poor], gentle: 4 }) < n3);
+  assert.ok(beetlesScore({ visitors: [...full, ...full], gentle: 6 }) >= n3);
+  assert.ok(beetlesScore({ visitors: [...full, ...full], gentle: 4 }) < n3, 'two beetles rushed: not three stars');
+  // Difficult: the same, and the hornets count
+  const [h1, h2, h3] = levelSpec(TRICK.beetles, 'hard').stars, both = [...full, 'hornet', ...full, 'hornet'];
+  assert.equal(beetlesScore({ visitors: ['hornet'] }), 0, 'a hornet seen is worth nothing by itself');
+  assert.equal(beetlesScore({ visitors: both, gentle: 6, hornetsLeft: 2 }), beetlesScore({ visitors: [...full, ...full], gentle: 6 }) + 2 * HORNET.left);
+  assert.ok(beetlesScore({ visitors: both, gentle: 6, hornetsLeft: 2 }) >= h3);
+  assert.ok(beetlesScore({ visitors: both, gentle: 6, hornetsLeft: 1, hornetsTouched: 1 }) < h3, 'one hornet touched: not three stars');
+  assert.ok(beetlesScore({ visitors: both, gentle: 4, hornetsLeft: 2 }) >= h2 && beetlesScore({ visitors: both, gentle: 4, hornetsLeft: 2 }) < h3, 'two beetles lost to the wriggle: two stars');
+  assert.ok(beetlesScore({ visitors: [...full, 'hornet'], gentle: 3, hornetsLeft: 1 }) >= h1);
+  assert.equal(beetlesScore({ visitors: ['moth'], hornetsTouched: 3 }), 0, 'never below nothing');
+  // the levels get longer
+  assert.ok(levelSpec(TRICK.beetles, 'easy').length < levelSpec(TRICK.beetles, 'normal').length && levelSpec(TRICK.beetles, 'normal').length <= levelSpec(TRICK.beetles, 'hard').length);
 });

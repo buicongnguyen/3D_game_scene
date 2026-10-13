@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { TRICKS, TRICK, inHours, starsFor, trickOpen, recordRound, cleanTricks } from '../src/content/tricks.js';
+import { levelSpec } from '../src/content/levels.js';
 import { placeProblems } from '../src/world/roads.js';
 import { DIALOGUE, CAST } from '../src/game/story.js';
 import { useStory } from '../src/game/stories/index.js';
@@ -132,6 +133,37 @@ test('the trick modules export play (and the firefly an ambient look); rules are
   assert.ok(Math.abs(far / gap - 5) < 0.5);
   assert.equal(stars.starScore({ joined: 7, polaris: true, wish: true, mistakes: 0, seconds: 25 }), 115);
   assert.equal(stars.starScore({ joined: 2, mistakes: 9 }), 0);
-  assert.ok(stars.starScore({ joined: 7, polaris: true, wish: true, seconds: 30 }) >= TRICK.stars.stars[2]);
-  assert.ok(stars.starScore({ joined: 7, mistakes: 2 }) >= TRICK.stars.stars[0]);
+  const easyStars = levelSpec(TRICK.stars, 'easy').stars;
+  assert.ok(stars.starScore({ joined: 7, polaris: true, wish: true, seconds: 30 }) >= easyStars[2]);
+  assert.ok(stars.starScore({ joined: 7, mistakes: 2 }) >= easyStars[0]);
+  // ---- the levels: Easy the Dipper, Normal Cassiopeia too, Difficult the Little Dipper under clouds, with no guide lines
+  const E = stars.gazePlan('easy'), N = stars.gazePlan('normal'), H = stars.gazePlan('hard'), F = stars.gazePlan('hard', true);
+  assert.deepEqual(E.steps, ['dipper', 'polaris']); assert.deepEqual(N.steps, ['dipper', 'cass', 'polaris']); assert.deepEqual(H.steps, ['dipper', 'cass', 'polaris', 'little']);
+  assert.deepEqual(F.steps, E.steps); assert.ok(F.guide > E.guide && E.guide > N.guide && N.guide > 0 && H.guide === 0, 'less and less of the pointer line is drawn');
+  assert.ok(!E.clouds && !N.clouds && H.clouds);
+  assert.deepEqual([E.stars, N.stars, H.stars], [7, 12, 18]);
+  assert.deepEqual(stars.nextInChain(stars.CASS, []), ['caph', 'segin'], 'either end of the W may start');
+  assert.deepEqual(stars.nextInChain(stars.CASS, ['segin', 'ruchbah']), ['navi']);
+  assert.deepEqual(stars.nextInChain(stars.CASS, [...stars.CASS]), []);
+  assert.deepEqual(stars.nextInChain(stars.LITTLE, ['polaris']), ['yildun'], 'the Little Dipper is joined on from the North Star');
+  // the patch is the real sky: the same picture as the Dipper's at 0.75, the W on the far side of the pole, the Little Dipper hanging from it
+  const patch = stars.skyPatch(stars.planStars(H), 0.75), P = stars.NAMED;
+  for (const k of stars.DIPPER) assert.ok(Math.abs(patch[k][0] + 1.6 - P[k][0]) < 1e-9 && Math.abs(patch[k][1] - P[k][1]) < 1e-9, k);
+  assert.equal(stars.planStars(H).length, 19); assert.equal(new Set(stars.planStars(H)).size, 19);
+  for (const k of stars.CASS) assert.ok(patch[k][1] > patch.polaris[1] * 1.5, `${k} lies beyond the North Star`);
+  for (const k of stars.LITTLE) assert.ok(patch[k][1] > patch.dubhe[1] + 10 && patch[k][1] <= patch.polaris[1] + 1 && patch[k][0] <= 0.1, `${k} hangs between the pole and the Big Dipper's handle`);
+  const mid = (a, b) => [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2], between = mid(patch.dubhe, patch.navi);
+  assert.ok(Math.hypot(between[0] - patch.polaris[0], between[1] - patch.polaris[1]) < 8, 'the North Star sits about half-way between the Dipper\'s bowl and the middle of the W');
+  // clouds: a star under one cannot be picked; beside it, it can
+  assert.ok(stars.cloudCovers([3, 10], 5, 11) && !stars.cloudCovers([3, 10], 5 + stars.CLOUD.x + 2, 11) && !stars.cloudCovers([3, 10], 5, 11 + stars.CLOUD.y + 1));
+  // the scores: the speed bonus counts only when everything is found, against the level's own par
+  assert.equal(stars.starScore({ joined: 12, polaris: true, wish: true, seconds: 60, par: N.par, done: true }), 120 + 20 + 15 + 10);
+  assert.equal(stars.starScore({ joined: 12, polaris: true, wish: false, seconds: 60, par: N.par, done: false }), 140, 'not finished: no speed bonus');
+  for (const [level, plan] of [['easy', E], ['normal', N], ['hard', H]]) {
+    const s = levelSpec(TRICK.stars, level).stars, all = plan.stars * 10 + 35;
+    assert.ok(s[2] < stars.gazeMax(plan) && s[2] <= all + 5, `${level}: three stars are within reach of a tidy, unhurried round (${s[2]} of ${all})`);
+    assert.ok(stars.starScore({ joined: plan.stars, polaris: true, wish: false, mistakes: 3, seconds: 999, par: plan.par, done: true }) >= s[1], `${level}: everything found, a few slips, no wish: two stars`);
+    assert.ok(stars.starScore({ joined: Math.ceil(plan.stars * 0.6) }) >= s[0], `${level}: six stars in ten joined is a star`);
+    assert.ok(stars.starScore({ joined: 7, mistakes: 0 }) < s[1] || level === 'easy', `${level}: the Dipper alone is not two stars`);
+  }
 });

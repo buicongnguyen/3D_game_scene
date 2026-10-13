@@ -28,7 +28,9 @@ export const ARCH = {
   gustMax: 5.5,           // no wind is ever stronger than this (m/s)
   ringsN: 10,
   perfect: 10,            // the ring that is a bullseye
-  arrowsFirst: 4, arrows: 6, arrowsMoving: 4,
+  arrowsFirst: 4, arrows: 6, arrowsMoving: 4, arrowsFar: 4,   // arrowsFar: Easy's last end, at the far target
+  fastPeriod: 7,          // Difficult: the sliding target crosses the lane in this many seconds there and back (content: 10)
+  hardWind: 1.25, hardGust: 1.6,   // Difficult: a stronger wind, and gusts that push harder
   easyScale: 1.5,         // the first end of the first try: the target face is this much bigger...
   easyWind: 0.45,         // ...and the wind this much weaker
   guideIdle: 6,           // seconds of doing nothing on the first try before the ghost hand shows how
@@ -44,18 +46,27 @@ export function rng(seed) {
 
 // ----------------------------------------------------------------------------------------------- the plan of a round
 /**
- * The ends of a round: three at 10, 15 and 20 m, and (after the first try) a fourth at a sliding target.
- * easy: Easy mode in the settings. first: the guided first try (fewer arrows, a gentler wind, no sliding target).
- * The very first end of the first try is an "easy end": its target face is half as big again and the wind half as strong
- * as the rest of that try (end.scale, end.wind), and its dotted aim arc is drawn big (end.bigArc).
+ * The ends of a round, by level ('easy' | 'normal' | 'hard'; true / false are read as Easy / Normal):
+ *   Easy       10, 15 and 20 m with no wind at all, the dotted aim arc always drawn (6, 6 and 4 arrows): learn the drop of the arrow.
+ *   Normal     the full round: 10, 15 and 20 m in the wind, then a bonus end at the sliding target (6, 6, 6 and 4 arrows).
+ *   Difficult  15 and 20 m in a stronger, gustier wind, the sliding target twice as lively, and a last end at a small swinging
+ *              gong (6 arrows each); no aim arc, ever: lead a moving target, time the swing, read the gusts.
+ * first: the guided first try (three short ends, a gentle wind, no sliding target). Its very first end is an "easy end": the
+ * target face is half as big again and the wind half as strong as the rest of that try (end.scale, end.wind), and its dotted
+ * aim arc is drawn big (end.bigArc).
+ * Returns { ends: [{ target: 0 | 1 | 2 | 'moving' | 'gong', arrows, scale, wind, bigArc, period? }], windScale, gust, arc, noArc }.
  */
-export function roundPlan(first, easy = false) {
-  const n = first ? ARCH.arrowsFirst : ARCH.arrows;
-  const ends = [{ target: 0, arrows: n }, { target: 1, arrows: n }, { target: 2, arrows: n }];
-  for (const e of ends) { e.scale = 1; e.wind = 1; e.bigArc = false; }
-  if (first) { ends[0].scale = ARCH.easyScale; ends[0].wind = ARCH.easyWind; ends[0].bigArc = true; }
-  if (!first) ends.push({ target: 'moving', arrows: ARCH.arrowsMoving, scale: 1, wind: 1, bigArc: false });
-  return { ends, windScale: first || easy ? 0.5 : 1, arc: first || easy };
+export function roundPlan(first, level = 'normal') {
+  const lv = level === true ? 'easy' : level === 'easy' || level === 'hard' ? level : 'normal';
+  const end = (target, arrows, extra) => ({ target, arrows, scale: 1, wind: 1, bigArc: false, ...extra });
+  if (first) {
+    const n = ARCH.arrowsFirst;
+    return { ends: [end(0, n, { scale: ARCH.easyScale, wind: ARCH.easyWind, bigArc: true }), end(1, n), end(2, n)], windScale: 0.5, gust: 1, arc: true, noArc: false };
+  }
+  const n = ARCH.arrows;
+  if (lv === 'easy') return { ends: [end(0, n), end(1, n), end(2, ARCH.arrowsFar)], windScale: 0, gust: 1, arc: true, noArc: false };
+  if (lv === 'hard') return { ends: [end(1, n), end(2, n), end('moving', n, { period: ARCH.fastPeriod }), end('gong', n)], windScale: ARCH.hardWind, gust: ARCH.hardGust, arc: false, noArc: true };
+  return { ends: [end(0, n), end(1, n), end(2, n), end('moving', ARCH.arrowsMoving)], windScale: 1, gust: 1, arc: false, noArc: false };
 }
 
 /** The most points a plan can give. */
@@ -72,8 +83,8 @@ export function arcAlpha(plays, easy = false) {
  * The wind of a round: one per end, a base crosswind (signed: + pushes toward +v, the shooter's right), a slow swing and a
  * timetable of gusts. Stronger at the far ends. Seeded: the same seed gives the same wind.
  */
-export function makeWind(seed, ends = 4, scale = 1, endMul = null) {
-  const R = rng(seed), out = { scale, ends: [] };
+export function makeWind(seed, ends = 4, scale = 1, endMul = null, gust = 1) {
+  const R = rng(seed), out = { scale, gust, ends: [] };
   const mags = [[0.7, 1.7], [1.4, 2.9], [2.1, 3.9], [1.2, 2.5]];
   let sign = R() < 0.5 ? -1 : 1;
   for (let e = 0; e < ends; e++) {
@@ -93,7 +104,7 @@ export function windAt(wind, end, t) {
   let k = 1 + w.swing * Math.sin(t * 6.283 / w.per + w.ph);
   for (const g of w.gusts) {
     const x = (t - g.t) / g.dur;
-    if (x > 0 && x < 1) k += g.k * Math.sin(x * Math.PI) ** 2;
+    if (x > 0 && x < 1) k += g.k * (wind.gust ?? 1) * Math.sin(x * Math.PI) ** 2;
   }
   const v = w.base * k * wind.scale * (w.mul ?? 1);
   return v > ARCH.gustMax ? ARCH.gustMax : v < -ARCH.gustMax ? -ARCH.gustMax : v;
@@ -131,8 +142,11 @@ export function clampAim(a) {
 }
 
 // ----------------------------------------------------------------------------------------------- the targets
-/** Where the sliding target is (v) at second t. */
-export function movingV(M, t) { return M.vMax * Math.sin(t * 6.283 / M.period); }
+/** Where the sliding target is (v) at second t. period: its own, or a livelier one (Difficult). */
+export function movingV(M, t, period = M.period) { return M.vMax * Math.sin(t * 6.283 / period); }
+
+/** Where the swinging gong's middle is (v) at second t: a slow pendulum about its hanging place. */
+export function gongV(G, t) { return G.v + G.swing * Math.sin(t * 6.283 / G.period); }
 
 /** The ring (1..10) a hit at distance d from the middle of a face of radius r scores; 0 beyond the face. */
 export function ringOf(d, r) {

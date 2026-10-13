@@ -3,13 +3,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
-  ARCH, rng, roundPlan, maxScore, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, ringOf, starsOf,
+  ARCH, rng, roundPlan, maxScore, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, gongV, ringOf, starsOf,
   launch, stepArrow, flyAll, arc, solveAim, missReason, aimOffset, guideStep, ghostWanted, guideDevice, slowMo, SLOWMO,
 } from '../src/game/tricks/rules-archery.js';
 import * as THREE from 'three';
 import { solveArm, handBasis, STANCE, nockAt } from '../src/actors/archer-rig.js';
 import { ARCHERY, toWorld, toLane, laneSamples, archerySolids } from '../src/content/archery.js';
 import { TRICK } from '../src/content/tricks.js';
+import { levelSpec } from '../src/content/levels.js';
 import { SIGNS, signPlace } from '../src/content/signs.js';
 import { BUILDINGS, PATHS, PADDIES, PLACES, river, riverHalfWidth, WORLD } from '../src/world/layout.js';
 import { placeProblems, sharedGrid, buildRoads, inFootprint } from '../src/world/roads.js';
@@ -465,4 +466,86 @@ test("the stance fits Mika: the bow hand and the string hand reach with the meas
   assert.ok(A.eye > 1.0 && A.eye < 1.25, 'the arrow leaves from about the height of her cheek');
   assert.equal(A.eye, ARCH.eye, 'the content and the rules agree on that height');
   assert.ok(A.stand.u > -0.85 && A.stand.u < 0.36, 'she stands on the shooting board');
+});
+
+// ------------------------------------------------------------------------------------------------ the levels
+/** A whole round at a level with a model player (as playRound above), the sliding target and the gong led with an error of `lead` seconds. */
+function playLevel(seed, level, { sigma, belief = 1, windErr = 0, lead = 0, holdT = 1.2 }) {
+  const plan = roundPlan(false, level), wind = makeWind(seed, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind), plan.gust), R = rng(seed * 7 + 1);
+  const gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += R(); return (s - 3) / 0.7071; };
+  let period = A.moving.period;
+  const targets = [...A.targets.map(t => ({ u: t.u, v: t.v, r: t.r, y: A.centreH })), { u: A.moving.u, v: 0, r: A.moving.r, y: A.centreH, moving: true }, { u: A.gong.u, v: A.gong.v, r: A.gong.r, y: A.gong.h, moving: true }];
+  const sc = { targets, active: 0, back: A.back, side: A.side, vAt: (i, t) => (i === 4 ? gongV(A.gong, t) : movingV(A.moving, t, period)) };
+  let total = 0;
+  plan.ends.forEach((e, ei) => {
+    const idx = e.target === 'moving' ? 3 : e.target === 'gong' ? 4 : e.target;
+    period = e.period || A.moving.period;
+    sc.active = idx;
+    sc.targets.forEach((t, i) => { t.off = idx >= 3 ? i !== idx : i >= 3; });
+    let t = 0;
+    for (let n = 0; n < e.arrows; n++) {
+      t += 4.5;
+      const guess = { scale: wind.scale * Math.min(2, Math.max(0, belief + windErr * gauss())), gust: wind.gust, ends: wind.ends };
+      const aim = solveAim(idx, 1, guess, ei, t, sc), sw = swayAt(t * 3.1 + n, swayAmp(holdT));
+      aim.yaw += sw.yaw + gauss() * sigma; aim.pitch += sw.pitch + gauss() * sigma;
+      clampAim(aim);
+      const a = flyAll(aim, 1, wind, ei, t + (idx >= 3 ? gauss() * lead : 0), sc);
+      if (a.state === 'hit') total += a.ring;
+    }
+  });
+  return total;
+}
+
+test('levels: Easy has no wind and the aim arc, Normal is the full round, Difficult has gusts, a lively sliding target and a gong', () => {
+  const E = roundPlan(false, 'easy'), N = roundPlan(false, 'normal'), H = roundPlan(false, 'hard');
+  assert.deepEqual(roundPlan(false, true), E); assert.deepEqual(roundPlan(false, false), N); assert.deepEqual(roundPlan(false), N); assert.deepEqual(roundPlan(false, 'nonsense'), N);
+  assert.deepEqual(E.ends.map(e => [e.target, e.arrows]), [[0, 6], [1, 6], [2, 4]]);
+  assert.deepEqual(H.ends.map(e => [e.target, e.arrows]), [[1, 6], [2, 6], ['moving', 6], ['gong', 6]]);
+  assert.deepEqual([maxScore(E), maxScore(N), maxScore(H)], [160, 220, 240]);
+  assert.ok(E.windScale === 0 && E.arc && !E.noArc && N.windScale === 1 && !N.noArc && H.windScale > 1 && H.gust > 1 && H.noArc);
+  assert.deepEqual(roundPlan(true, 'hard'), roundPlan(true), 'the guided first try is the same whatever the level');
+  // Easy: not a breath of wind, at any second of any end
+  const calmWind = makeWind(5, E.ends.length, E.windScale, E.ends.map(e => e.wind), E.gust);
+  for (let e = 0; e < 3; e++) for (let t = 0; t < 60; t += 1.7) assert.equal(windAt(calmWind, e, t), 0);
+  // Difficult: the same seed blows harder than Normal's, and a gust pushes harder still (never past the limit)
+  let harder = 0, n = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    const wn = makeWind(seed, 4, N.windScale, null, N.gust), wh = makeWind(seed, 4, H.windScale, null, H.gust);
+    for (let t = 0; t < 60; t += 0.5) { n++; if (Math.abs(windAt(wh, 1, t)) > Math.abs(windAt(wn, 1, t)) + 1e-9) harder++; assert.ok(Math.abs(windAt(wh, 1, t)) <= ARCH.gustMax + 1e-9); }
+  }
+  assert.ok(harder > n * 0.9);
+  // the sliding target is livelier on Difficult; the gong is small, swings about its hanging place and stays in the aim cone
+  assert.ok(H.ends[2].period < A.moving.period);
+  assert.ok(Math.abs(movingV(A.moving, 1, H.ends[2].period)) > Math.abs(movingV(A.moving, 1)));
+  const G = A.gong;
+  assert.ok(G.r < A.targets[0].r * 0.7 && G.u > A.targets[0].u && G.u < A.moving.u);
+  for (let t = 0; t < 10; t += 0.1) {
+    const v = gongV(G, t);
+    assert.ok(Math.abs(v - G.v) <= G.swing + 1e-9);
+    assert.ok(Math.abs(Math.atan2(v - ARCH.muzzle.v, G.u - ARCH.muzzle.u)) < ARCH.yawMax - 0.05, 'the gong can always be aimed at');
+  }
+  assert.ok(Math.abs(gongV(G, G.period / 4) - (G.v + G.swing)) < 1e-3 && Math.abs(gongV(G, G.period) - G.v) < 1e-2);
+  // an arrow solved for the swinging gong rings it
+  const sc = { targets: [{ u: G.u, v: G.v, r: G.r, y: G.h, moving: true }], active: 0, back: A.back, side: A.side, vAt: (i, t) => gongV(G, t) };
+  for (const t0 of [0.3, 1.1, 2.4, 3.3]) { const a = flyAll(solveAim(0, 1, calm, 0, t0, sc), 1, calm, 0, t0, sc); assert.equal(a.state, 'hit', `t0 ${t0}`); assert.ok(a.ring >= 8); }
+});
+
+test('levels: the stars. Easy rewards a steady hand, Difficult wants the wind read and the moving targets led', () => {
+  const N = 80, run = (level, o) => Array.from({ length: N }, (_, i) => playLevel(i + 1, level, o));
+  const stars = (level, xs) => starsOf(median(xs), levelSpec(TRICK.archery, level).stars);
+  const careless = { sigma: 0.035, belief: 0, lead: 0.5 }, beginner = { sigma: 0.018, belief: 0, lead: 0.35 }, learner = { sigma: 0.013, belief: 0.4, windErr: 0.5, lead: 0.25 };
+  const reader = { sigma: 0.008, belief: 0.7, windErr: 0.4, lead: 0.15 }, sharp = { sigma: 0.005, belief: 0.9, windErr: 0.2, lead: 0.08 };
+  assert.ok(stars('easy', run('easy', careless)) >= 1, 'Easy: a shaky hand still earns a star');
+  assert.equal(stars('easy', run('easy', beginner)), 2);
+  assert.equal(stars('easy', run('easy', reader)), 3);
+  assert.deepEqual(levelSpec(TRICK.archery, 'normal').stars, ARCH.stars, 'Normal keeps the marks of the rules');
+  assert.equal(stars('normal', run('normal', beginner)), 1);
+  assert.equal(stars('normal', run('normal', learner)), 2);
+  assert.equal(stars('normal', run('normal', reader)), 3);
+  assert.ok(stars('hard', run('hard', careless)) === 0);
+  assert.equal(stars('hard', run('hard', beginner)), 1);
+  assert.equal(stars('hard', run('hard', reader)), 2, 'Difficult: Normal\'s three-star hand is two stars here');
+  assert.equal(stars('hard', run('hard', sharp)), 3);
+  assert.ok(pctl(run('hard', reader), 0.9) < levelSpec(TRICK.archery, 'hard').stars[2], 'and three stars are not luck');
+  assert.ok(levelSpec(TRICK.archery, 'hard').length >= levelSpec(TRICK.archery, 'normal').length);
 });

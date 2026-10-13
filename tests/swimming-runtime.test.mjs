@@ -118,7 +118,7 @@ function guided(lesson) {
   if(lesson.needsRelease)return {};
   if(lesson.stage==='bubbles')return {act:lesson.held?lesson.holdTime<1.6-.025:lesson.airTime>=lesson.rules.air};
   if(lesson.stage==='float') {
-    if(lesson.floatMode==='back')return {act:lesson.floatBack<SWIM.floatSeconds-1e-6};
+    if(lesson.floatMode==='back')return {act:lesson.floatBack<lesson.rules.floatSeconds-1e-6};
     if(lesson.floatMode==='front')return {act:lesson.held?lesson.holdTime<2-.025:lesson.airTime>=lesson.rules.air};
     return {act:!lesson.held};
   }

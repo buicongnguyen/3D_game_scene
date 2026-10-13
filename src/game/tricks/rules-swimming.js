@@ -7,21 +7,29 @@ const angle = n => Math.atan2(Math.sin(n), Math.cos(n));
 // Frame sums can round just below/above an exact cue boundary; tolerate only floating-point noise.
 const TIME_EPS = 1e-6;
 export const SWIM_STAGES = Object.freeze(['bubbles', 'float', 'tread', 'glide', 'turn', 'swim']);
+// What a level asks for, beside the timing: floatSeconds (one calm back float), frontSeconds (the total of the short front
+// floats), sculls (paced taps that tread water), lane (how far from the middle the lane ropes let her drift: Difficult swims a
+// narrower lane) and via (rings to swim through on the way back: Difficult steers a dog-leg, a longer swim with two turns).
+// Never longer holds: bubbleMax only gets SHORTER with the level. This is not a breath-holding game.
+const VIA_HARD = Object.freeze([Object.freeze({ x: 1.05, z: -2.4 }), Object.freeze({ x: -1.05, z: 1.1 })]);
+const NO_VIA = Object.freeze([]);
 export const SWIM_LEVELS = Object.freeze({
-  first: { bubbleMin: 0.6, bubbleMax: 2.8, air: 0.5, beat: 1.25, window: 0.5, turn: 0.6 },
-  easy: { bubbleMin: 0.7, bubbleMax: 2.6, air: 0.55, beat: 1.2, window: 0.4, turn: 0.5 },
-  normal: { bubbleMin: 0.8, bubbleMax: 2.5, air: 0.65, beat: 1.2, window: 0.3, turn: 0.4 },
-  hard: { bubbleMin: 0.9, bubbleMax: 2.3, air: 0.7, beat: 1.1, window: 0.22, turn: 0.3 },
+  first: { bubbleMin: 0.6, bubbleMax: 2.8, air: 0.5, beat: 1.25, window: 0.5, turn: 0.6, floatSeconds: 4, frontSeconds: 3, sculls: 6, lane: 1.9, via: NO_VIA },
+  easy: { bubbleMin: 0.7, bubbleMax: 2.6, air: 0.55, beat: 1.2, window: 0.4, turn: 0.5, floatSeconds: 4, frontSeconds: 3, sculls: 6, lane: 1.9, via: NO_VIA },
+  normal: { bubbleMin: 0.8, bubbleMax: 2.5, air: 0.65, beat: 1.2, window: 0.3, turn: 0.4, floatSeconds: 6, frontSeconds: 4, sculls: 8, lane: 1.9, via: NO_VIA },
+  hard: { bubbleMin: 0.9, bubbleMax: 2.3, air: 0.7, beat: 1.1, window: 0.22, turn: 0.3, floatSeconds: 7, frontSeconds: 4, sculls: 10, lane: 1.45, via: VIA_HARD },
 });
-// floatSeconds: the back float (one calm hold, may be resumed); frontSeconds: the total of the short front floats.
-// bounds.x keeps the swimmer between the two lane ropes (drawn at +-2.3); bounds.far keeps her head off the end wall.
+/** Where the lane ropes are drawn for a level (m from the middle): 0.4 m outside the swimmer's limit. */
+export const ropeFor = level => (Object.hasOwn(SWIM_LEVELS, level) ? SWIM_LEVELS[level] : SWIM_LEVELS.normal).lane + 0.4;
+// floatSeconds / frontSeconds / sculls: the Normal level's numbers (each level has its own: SWIM_LEVELS).
+// bounds.x keeps the swimmer between the two lane ropes (drawn at +-2.3; a level's own `lane` may be narrower); bounds.far
+// keeps her head off the end wall.
 export const SWIM = Object.freeze({ stages: SWIM_STAGES, bubbles: 3, floatSeconds: 6, frontSeconds: 4, sculls: 8,
   start: Object.freeze({ x: 0, z: 4 }), exit: Object.freeze({ x: 0, z: 6 }),
   glide: Object.freeze({ x: 0, z: -5.5 }), bounds: Object.freeze({ x: 1.9, near: 6.5, far: -6.1 }),
   maxDt: 0.1, maxSpeed: 1.1, push: 0.9, turnSpeed: 2.2, reach: 0.55, idleHelp: 6, releaseGrace: 0.35,
 });
 const GLIDE_LENGTH = Math.hypot(SWIM.glide.x - SWIM.start.x, SWIM.glide.z - SWIM.start.z);
-const RETURN_LENGTH = Math.hypot(SWIM.exit.x - SWIM.glide.x, SWIM.exit.z - SWIM.glide.z);
 
 export class SwimLesson {
   constructor({ level = 'normal', first = false } = {}) {
@@ -38,6 +46,19 @@ export class SwimLesson {
     this.floatMode = 'back'; this.floatBack = 0; this.floatFront = 0; this.floatSide = 'upright';
     this.sculls = 0; this.lastStroke = null; this.lastGood = null; this.strokePulse = 0;
     this.turned = 0; this.swimStrokes = 0; this.glideStrokes = 0;
+    this.viaIndex = 0;          // the next ring of the way back (Difficult); rules.via.length = all passed
+  }
+
+  /** Where the swim back is heading now: the next ring of the level's dog-leg, then the exit. */
+  swimTarget() { return this.rules.via[this.viaIndex] || this.exit; }
+  /** Metres of the way back, along the rings: from her (rest = true) or the whole of it. */
+  swimPath(rest = true) {
+    let x = rest ? this.position.x : SWIM.glide.x, z = rest ? this.position.z : SWIM.glide.z, d = 0;
+    for (let i = rest ? this.viaIndex : 0; i <= this.rules.via.length; i++) {
+      const t = this.rules.via[i] || this.exit;
+      d += Math.hypot(t.x - x, t.z - z); x = t.x; z = t.z;
+    }
+    return d;
   }
 
   emit(type, extra = {}) { this.events.push({ type, stage: this.stage, ...extra }); }
@@ -118,9 +139,9 @@ export class SwimLesson {
       if (this.floatMode === 'back') {
         if (act && quiet) {
           this.floatSide = 'back'; this.clip = 'Swim'; this.pitch = -1.25;
-          this.floatBack = Math.min(SWIM.floatSeconds, this.floatBack + dt);
+          this.floatBack = Math.min(this.rules.floatSeconds, this.floatBack + dt);
         } else if (act) this.hint('small_adjustments', true);
-        if (released && this.floatBack >= SWIM.floatSeconds - 1e-6) {
+        if (released && this.floatBack >= this.rules.floatSeconds - 1e-6) {
           this.floatMode = 'front'; this.airTime = this.rules.air; this.emit('good', { kind: 'back_float' });
         }
       } else if (this.floatMode === 'front') {
@@ -139,22 +160,22 @@ export class SwimLesson {
         }
         if (released) {
           if (this.validHold && this.holdTime >= this.rules.bubbleMin - TIME_EPS) {
-            this.floatFront = Math.min(SWIM.frontSeconds, this.floatFront + this.holdTime);
+            this.floatFront = Math.min(this.rules.frontSeconds, this.floatFront + this.holdTime);
             this.emit('good', { kind: 'front_float' });
           } else if (this.validHold) this.hint('gentle_bubbles', true);
           this.holdTime = 0; this.validHold = false; this.airTime = 0;
-          if (this.floatFront >= SWIM.frontSeconds - 1e-6) this.floatMode = 'recover';
+          if (this.floatFront >= this.rules.frontSeconds - 1e-6) this.floatMode = 'recover';
         }
       } else if (pressed && quiet) {
         this.emit('good', { kind: 'upright' }); this.advance();
       }
-      if (this.stage === 'float') this.progress = Math.min(0.98, (this.floatBack + this.floatFront) / (SWIM.floatSeconds + SWIM.frontSeconds));
+      if (this.stage === 'float') this.progress = Math.min(0.98, (this.floatBack + this.floatFront) / (this.rules.floatSeconds + this.rules.frontSeconds));
     } else if (this.stage === 'tread') {
       if (pressed && this.stroke()) this.sculls++;
-      this.progress = this.sculls / SWIM.sculls;
-      if (this.sculls >= SWIM.sculls) this.advance();
+      this.progress = this.sculls / this.rules.sculls;
+      if (this.sculls >= this.rules.sculls) this.advance();
     } else if (this.stage === 'glide' || this.stage === 'swim') {
-      const target = this.stage === 'glide' ? SWIM.glide : this.exit;
+      let target = this.stage === 'glide' ? SWIM.glide : this.swimTarget();
       if (moving) this.face(Math.atan2(mx, mv), dt);
       if (pressed) {
         if (!moving) this.hint('aim_marker', true);
@@ -171,17 +192,22 @@ export class SwimLesson {
         this.clip = 'Swim'; this.pitch = 1.15;
         this.position.x += Math.sin(this.heading) * this.speed * dt;
         this.position.z += Math.cos(this.heading) * this.speed * dt;
-        const x = clamp(this.position.x, -SWIM.bounds.x, SWIM.bounds.x);
+        const x = clamp(this.position.x, -this.rules.lane, this.rules.lane);
         const z = clamp(this.position.z, SWIM.bounds.far, SWIM.bounds.near);
         // The end walls stop her; a lane rope only slows her, so brushing it while steering is not a dead stop.
         if (z !== this.position.z) { this.speed = 0; this.hint('inside_pool'); }
         else if (x !== this.position.x) { this.speed *= Math.exp(-dt * 4); this.hint('inside_pool'); }
         this.position.x = x; this.position.z = z;
       }
-      const distance = Math.hypot(target.x - this.position.x, target.z - this.position.z);
-      this.progress = clamp(1 - distance / (this.stage === 'glide' ? GLIDE_LENGTH : RETURN_LENGTH), 0, 0.99);
+      let distance = Math.hypot(target.x - this.position.x, target.z - this.position.z);
+      if (this.stage === 'swim' && target !== this.exit && distance <= SWIM.reach) {
+        // through a ring of the dog-leg: on to the next one (she keeps her speed; nothing snaps)
+        this.viaIndex++; this.emit('good', { kind: 'ring' });
+        target = this.swimTarget(); distance = Math.hypot(target.x - this.position.x, target.z - this.position.z);
+      }
+      this.progress = this.stage === 'glide' ? clamp(1 - distance / GLIDE_LENGTH, 0, 0.99) : clamp(1 - this.swimPath() / this.swimPath(false), 0, 0.99);
       const strokes = this.stage === 'glide' ? this.glideStrokes : this.swimStrokes;
-      if (distance <= SWIM.reach && strokes >= 3) {
+      if (target === (this.stage === 'glide' ? SWIM.glide : this.exit) && distance <= SWIM.reach && strokes >= 3) {
         this.position = { ...target }; this.advance();
       }
     } else if (this.stage === 'turn') {
@@ -233,13 +259,13 @@ export class SwimLesson {
     const cue = this.stage === 'bubbles' ? this.bubbles ? 'bubbles' : 'breathe'
       : this.stage === 'float' ? this.floatMode === 'recover' ? 'stand' : this.floatSide === 'upright' ? this.floatMode === 'front' ? 'breathe' : 'float' : this.floatSide
         : this.stage === 'turn' || this.complete ? 'exit' : 'gentle';
-    const target = this.stage === 'glide' ? { ...SWIM.glide } : this.stage === 'turn' || this.stage === 'swim' ? { ...this.exit } : null;
+    const target = this.stage === 'glide' ? { ...SWIM.glide } : this.stage === 'swim' ? { ...this.swimTarget() } : this.stage === 'turn' ? { ...this.exit } : null;
     const age = this.lastStroke === null ? this.rules.beat : this.time - this.lastStroke;
     return { stage: this.stage, stageIndex: this.stageIndex, id: this.stage, progress: this.progress,
       cue, phaseTime: this.phaseTime, feedback: this.feedback, complete: this.complete,
       score: result.score, stars: result.stars, result,
       position: { ...this.position }, heading: this.heading, pitch: this.pitch, clip: this.clip,
-      bubbles: this.bubbles, floatSide: this.floatSide, target, exit: { ...this.exit },
+      bubbles: this.bubbles, floatSide: this.floatSide, target, exit: { ...this.exit }, viaIndex: this.viaIndex,
       beatPhase: clamp(age / this.rules.beat, 0, 1), beat: this.rules.beat,
       strokePulse: this.strokePulse, events: this.events };
   }

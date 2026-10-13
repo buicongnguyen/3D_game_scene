@@ -8,9 +8,7 @@ import { placeProblems } from '../src/world/roads.js';
 import { sunDirection } from '../src/world/seasons.js';
 import { PADDIES, BUILDINGS } from '../src/world/layout.js';
 import { FARM } from '../src/content/farm.js';
-import {
-  KITE, rng, sweepAt, buildQuality, buildGrade, buildResult, makeWind, gustAt, windPush, newFlight, stepFlight, kiteScore, simulateFlight,
-} from '../src/game/tricks/rules-kite.js';
+import { KITE, rng, sweepAt, buildQuality, buildGrade, buildResult, makeWind, gustAt, windPush, newFlight, stepFlight, kiteScore, simulateFlight, flightPlan, windCentre, ringAt, kiteBot } from '../src/game/tricks/rules-kite.js';
 import { DEW, sunSide, webVisibility, photoCheck, webSpots, nearestWeb, dewScore, DEW_LEVELS, dewLevel, photoPerfect, dryTimes, dryness } from '../src/game/tricks/rules-dew.js';
 import { LEVELS, levelSpec } from '../src/content/levels.js';
 
@@ -100,15 +98,17 @@ test('kite wind: seeded, gusts on a timetable, never too strong to steer against
 // ------------------------------------------------------------------------------------------------ kite: the flight
 test('kite flight from recorded inputs: steady hands climb, a kite left alone comes down', () => {
   const dt = 1 / 30;
+  // (a plain minute in Normal's wind, no rings: the marks such a flight was always held to)
+  const PLAIN = [40, 70, 100];
   // recorded: hands off for the whole round
   let idleSum = 0;
   for (let seed = 1; seed <= 12; seed++) {
     const idle = simulateFlight({ seed, dt, frames: [] });
     assert.ok(idle.falls >= 3, `seed ${seed}: idle falls ${idle.falls}`);
-    assert.ok(kiteScore(6, idle) < TRICK.kite.stars[1], `seed ${seed}: idle scores ${kiteScore(6, idle)}`);
+    assert.ok(kiteScore(6, idle) < PLAIN[1], `seed ${seed}: idle scores ${kiteScore(6, idle)}`);
     idleSum += kiteScore(6, idle);
   }
-  assert.ok(idleSum / 12 < TRICK.kite.stars[0], `idle average ${idleSum / 12}`);
+  assert.ok(idleSum / 12 < PLAIN[0], `idle average ${idleSum / 12}`);
   // a careful player: steers back to the middle a third of a second late, tugs when low
   const careful = () => { const seen = []; return s => { seen.push(s.x); const x = seen.length > 10 ? seen.shift() : 0; return { steer: Math.abs(x) > 0.18 ? -Math.sign(x) : 0, tug: s.h < 0.4 }; }; };
   let three = 0;
@@ -116,7 +116,7 @@ test('kite flight from recorded inputs: steady hands climb, a kite left alone co
     const s = simulateFlight({ seed, dt, frames: careful() });
     assert.equal(s.falls, 0, `seed ${seed}`);
     assert.ok(s.top >= 0.99 && s.air > 59, `seed ${seed}`);
-    const stars = starsFor(kiteScore(15, s), TRICK.kite.stars);
+    const stars = starsFor(kiteScore(15, s), PLAIN);
     assert.ok(stars >= 2, `seed ${seed}: ${kiteScore(15, s)}`);
     if (stars === 3) three++;
     assert.ok(kiteScore(15, s) <= 15 + KITE.ptsHigh * 60);
@@ -297,4 +297,86 @@ test('kite and dew modules: play() and no rule code in three.js land', async () 
     const rules = fs.readFileSync(new URL(`../src/game/tricks/rules-${id}.js`, import.meta.url), 'utf8');
     assert.ok(!/from 'three'|\bdocument\./.test(rules), `rules-${id}.js is pure`);
   }
+});
+
+// ------------------------------------------------------------------------------------------------ the kite's levels
+test('kite levels: Easy a gentle wind and rings up high, Normal rings at set heights, Difficult a turning wind, side rings and a tree', () => {
+  const E = flightPlan('easy'), N = flightPlan('normal'), H = flightPlan('hard');
+  assert.deepEqual(flightPlan('normal', true), E, 'the guided first try flies Easy\'s sky');
+  assert.ok(E.window > N.window && E.gusts < 1 && N.gusts === 1 && !E.shift && !N.shift && H.shift && H.tree && !N.tree);
+  for (let seed = 1; seed <= 20; seed++) {
+    const plain = makeWind(seed, 80), e = makeWind(seed, 60, E), n = makeWind(seed, 80, N), h = makeWind(seed, 100, H);
+    assert.equal(plain.rings.length, 0); assert.equal(plain.shifts.length, 0);
+    assert.deepEqual(n.gusts, plain.gusts, 'a plan never changes the seed\'s gusts');
+    assert.ok(e.gusts.every((g, i) => Math.abs(g.k) < Math.abs(makeWind(seed, 60).gusts[i].k)), 'Easy: the same gusts, gentler');
+    assert.ok(e.rings.length >= 3 && n.rings.length >= 5 && h.rings.length >= 6, `rings ${e.rings.length} ${n.rings.length} ${h.rings.length}`);
+    assert.ok(e.rings.every(r => r.h >= 1 - KITE.ringH && Math.abs(r.x) <= 0.2), 'Easy: a kite at the top of its line, in the middle, is in every ring');
+    assert.ok(n.rings.some(r => r.h < 0.6) && n.rings.some(r => r.h > 0.7) && n.rings.every(r => Math.abs(r.x) <= N.window), 'Normal: low and high rings, all in the wind');
+    assert.ok(h.shifts.length >= 3 && h.shifts.every(s => Math.abs(s.c) <= KITE.shift + 1e-9));
+    for (const r of h.rings) {
+      assert.ok(Math.abs(r.x - windCentre(h, r.t0 + KITE.ringLife / 2)) > H.window, 'Difficult: every ring hangs outside the wind');
+      assert.ok(!(r.x + KITE.ringX >= KITE.treeX && r.h - KITE.ringH <= KITE.treeH), 'and none of them in the tree');
+    }
+    for (const w of [e, n, h]) for (let i = 1; i < w.rings.length; i++) assert.ok(w.rings[i].t0 >= w.rings[i - 1].t1 + 2, 'one ring at a time, with a breath between');
+    assert.equal(ringAt(n, n.rings[0].t0 + 1), n.rings[0]); assert.equal(ringAt(n, n.rings[0].t0 - 1), null);
+    assert.equal(windCentre(n, 50), 0); assert.equal(windCentre(h, 0), 0);
+    const s0 = h.shifts[0];
+    assert.ok(Math.abs(windCentre(h, s0.t + KITE.shiftTime) - s0.c) < 1e-9 && Math.abs(windCentre(h, s0.t + KITE.shiftTime / 2) - s0.c / 2) < 1e-9, 'the wind turns smoothly');
+  }
+});
+
+test('kite levels: the window follows the turning wind, a ring counts once, the tree catches a low kite', () => {
+  const dt = 1 / 30, H = flightPlan('hard'), w = makeWind(4, 100, H);
+  // steering to the middle of the FIELD is not enough once the wind has turned: the middle of the wind is where the kite climbs
+  const s = newFlight({ window: H.window });
+  const t1 = w.shifts[0].t + KITE.shiftTime + 0.5;
+  while (s.t < t1) stepFlight(s, w, dt, { steer: Math.max(-1, Math.min(1, (windCentre(w, s.t) - s.x) * 4)) });
+  assert.ok(Math.abs(s.c - w.shifts[0].c) < 1e-6 && s.inWindow && Math.abs(s.x - s.c) < 0.2);
+  // a ring: fly at it and it is taken once
+  const r = { t0: 0, t1: 9, x: 0.1, h: 0.5 }, sky = { ...makeWind(1, 60), rings: [r], gusts: [] };
+  const a = newFlight(); a.h = 0.5; a.x = 0.1;
+  stepFlight(a, sky, dt, {}); stepFlight(a, sky, dt, {});
+  assert.equal(a.got, 1); assert.equal(a.ring, 1); assert.equal(a.ringPts, KITE.ringPoints);
+  assert.equal(kiteScore(10, a), Math.floor(10 + a.pts + KITE.ringPoints));
+  const miss = newFlight(); miss.h = 0.5 + KITE.ringH + 0.05; miss.x = 0.1;
+  for (let i = 0; i < 9.2 * 30; i++) { miss.h = 0.5 + KITE.ringH + 0.05; miss.x = 0.1; stepFlight(miss, sky, dt, {}); }
+  assert.equal(miss.got, 0); assert.equal(miss.missed, 1, 'too high: the ring goes by');
+  // the tree: low on the right is caught (longer on the ground), high over it is safe
+  const tree = { ...makeWind(1, 60), gusts: [], tree: true };
+  const low = newFlight(); low.x = KITE.treeX + 0.1; low.h = KITE.treeH - 0.05;
+  stepFlight(low, tree, dt, {});
+  assert.ok(!low.aloft && low.snags === 1 && low.falls === 1 && low.down > KITE.relaunch);
+  const high = newFlight(); high.x = KITE.treeX + 0.1; high.h = 0.9;
+  stepFlight(high, tree, dt, {});
+  assert.ok(high.aloft && high.snags === 0);
+  const noTree = newFlight(); noTree.x = KITE.treeX + 0.1; noTree.h = KITE.treeH - 0.05;
+  stepFlight(noTree, { ...tree, tree: false }, dt, {});
+  assert.ok(noTree.aloft, 'no tree on Easy and Normal');
+});
+
+test('kite levels: the stars. Easy forgives, Normal wants the rings, Difficult wants the side rings and a clean flight', () => {
+  const med = xs => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+  const fly = (level, build, skill, n = 40) => Array.from({ length: n }, (_, i) => {
+    const plan = flightPlan(level), out = { steer: 0, tug: false };
+    const s = simulateFlight({ seed: i + 1, length: levelSpec(TRICK.kite, level).length, plan, quality: build / 15, tail: build / 15, frames: skill ? (st, w) => kiteBot(st, w, skill, out) : () => null });
+    return { score: kiteScore(build, s), got: s.got, snags: s.snags, falls: s.falls };
+  });
+  const idle = null, drifter = { gain: 0.6, rings: false, noise: 0.5, see: 0 }, careful = { gain: 2.5, rings: false, noise: 0.15, see: 0 }, ringer = { gain: 3, rings: true, noise: 0.08, see: 0.4 };
+  const stars = (level, runs) => starsFor(med(runs.map(r => r.score)), levelSpec(TRICK.kite, level).stars);
+  // Easy: letting go still earns a star most days, any steering earns three
+  assert.ok(stars('easy', fly('easy', 8, idle)) >= 1);
+  assert.equal(stars('easy', fly('easy', 9, drifter)), 3);
+  // Normal: hands off earns nothing, staying in the wind two stars, the rings the third
+  assert.equal(stars('normal', fly('normal', 8, idle)), 0);
+  assert.equal(stars('normal', fly('normal', 11, careful)), 2);
+  assert.ok(stars('normal', fly('normal', 13, ringer)) >= 2);
+  assert.ok(med(fly('normal', 13, ringer).map(r => r.got)) >= 4 && fly('normal', 15, { ...ringer, noise: 0 }).filter(r => r.score >= levelSpec(TRICK.kite, 'normal').stars[2]).length >= 20, 'three stars are there for a flyer who takes the rings');
+  // Difficult: staying in the turning wind without the rings is not two stars; the side rings make three
+  const hc = fly('hard', 11, careful), hr = fly('hard', 13, ringer);
+  assert.ok(stars('hard', hc) <= 1, `careful, no rings: ${med(hc.map(r => r.score))}`);
+  assert.equal(stars('hard', hr), 3, `rings: ${med(hr.map(r => r.score))}`);
+  assert.ok(med(hr.map(r => r.got)) >= 6);
+  assert.ok(fly('hard', 8, idle).reduce((a, r) => a + r.snags, 0) > 20, 'a kite left alone ends in the tree again and again');
+  // the levels get longer
+  assert.ok(levelSpec(TRICK.kite, 'easy').length < levelSpec(TRICK.kite, 'normal').length && levelSpec(TRICK.kite, 'normal').length < levelSpec(TRICK.kite, 'hard').length);
 });

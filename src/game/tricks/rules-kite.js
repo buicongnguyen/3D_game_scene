@@ -7,6 +7,13 @@
 // of the "wind window"), h its height (0 on the grass, 1 at the top of the line). The wind pushes x about (a slow
 // swing plus gusts on a seeded timetable); the player steers against it. Inside the window the kite climbs, outside it
 // sinks; on the grass it takes a moment to launch again. Points: every second aloft counts, and counts more higher up.
+//
+// The levels (flightPlan) differ in what the sky asks for:
+//   Easy       a steady wind (only gentle gusts), a wide window, and a few rings high in the middle: fly high.
+//   Normal     gusts, and rings at set heights in the window: a ring below the kite means sliding out of the wind to sink
+//              to it and back in before the kite is down (the height goals).
+//   Difficult  the wind also turns (the window itself drifts left and right), the rings hang out to the sides, and a tree
+//              stands at the right edge of the field: a kite that comes low over it is caught.
 
 export const KITE = {
   window: 0.42,        // half-width of the wind window (x units)
@@ -22,7 +29,25 @@ export const KITE = {
   lead: 1.1,           // grass and clouds show the wind this many seconds before the kite feels it
   ptsLow: 0.3, ptsHigh: 2,  // points per second aloft at h = 0 and h = 1 (rising with the square of h)
   stepPoints: 5,       // points for a perfect build step
+  ringPoints: 15,      // points for a ring flown through
+  gentle: 0.55,        // Easy: the gusts are this much weaker
+  ringX: 0.24, ringH: 0.12,   // how near the kite must be to a ring's middle: across the wind, and in height
+  ringLife: 9,         // seconds a ring stays in the sky
+  shift: 0.5,          // Difficult: the window's middle drifts this far to each side when the wind turns
+  shiftTime: 3.5,      // seconds a turn of the wind takes
+  treeX: 1.0, treeH: 0.4,   // Difficult: the tree catches a kite right of treeX and lower than treeH
+  snag: 1.6,           // extra seconds on the ground after the tree (untangling the line)
 };
+
+/**
+ * What a level's flight is made of: { window, gusts (their strength, times), shift, rings: 'high' | 'height' | 'wide', tree }. The guided first try
+ * flies Easy's sky.
+ */
+export function flightPlan(level = 'normal', first = false) {
+  if (first || level === 'easy') return { window: KITE.windowFirst, gusts: KITE.gentle, shift: false, rings: 'high', tree: false };
+  if (level === 'hard') return { window: KITE.window, gusts: 1, shift: true, rings: 'wide', tree: true };
+  return { window: KITE.window, gusts: 1, shift: false, rings: 'height', tree: false };
+}
 
 /** A small seeded random source (same numbers every run for the same seed). */
 export function rng(seed) {
@@ -54,10 +79,14 @@ export function buildResult(qs) {
 }
 
 // ----------------------------------------------------------------------------------------------- the wind
-/** The round's wind: a slow swing and a timetable of gusts { t, dur, k } (k: push sideways, signed). */
-export function makeWind(seed, length = 60) {
+/**
+ * The round's sky: a slow swing and a timetable of gusts { t, dur, k } (k: push sideways, signed). plan (flightPlan; left
+ * out: Normal's wind as it always was, no rings): gusts scales the timetable's pushes; shift adds the turns of the wind
+ * { t, c } (the window's middle goes to c); rings adds the rings { t0, t1, x, h } to fly through; tree marks the tree.
+ */
+export function makeWind(seed, length = 60, plan = null) {
   const R = rng(seed);
-  const w = { p1: R() * 6.283, p2: R() * 6.283, gusts: [] };
+  const w = { p1: R() * 6.283, p2: R() * 6.283, gusts: [], shifts: [], rings: [], tree: !!plan?.tree };
   let t = 5 + R() * 2, sign = R() < 0.5 ? -1 : 1;
   while (t < length - 2) {
     const strong = t > length * 0.45;
@@ -65,7 +94,49 @@ export function makeWind(seed, length = 60) {
     sign = R() < 0.72 ? -sign : sign;
     t += (strong ? 4.2 : 5.5) + R() * 2.6;
   }
+  if (!plan) return w;
+  if (plan.gusts !== 1) for (const g of w.gusts) g.k *= plan.gusts;      // Easy: the same gusts, gentler
+  // the level's own things come from a second seeded source, so the gusts above stay what the seed always gave
+  const Q = rng(seed * 31 + 17);
+  if (plan.shift) {
+    let c = Q() < 0.5 ? -1 : 1;
+    for (let ts = 13 + Q() * 4; ts < length - 6; ts += 13 + Q() * 6) { w.shifts.push({ t: ts, c: c * KITE.shift * (0.75 + Q() * 0.25) }); c = -c; }
+  }
+  if (plan.rings) {
+    // the first ring waits until the kite has had time to climb; then one after the other, with a breath between
+    let side = Q() < 0.5 ? -1 : 1, low = Q() < 0.5;
+    for (let t0 = 11 + Q() * 2; t0 + 5 < length; t0 += KITE.ringLife + 2.5 + Q() * 1.5) {
+      const c = windCentre(w, t0 + KITE.ringLife * 0.5);
+      let x = c + (Q() - 0.5) * 0.24, h = 0.9 + Q() * 0.08;        // 'high': where a kite at the top of its line already is
+      if (plan.rings === 'height') { h = low ? 0.42 + Q() * 0.14 : 0.72 + Q() * 0.2; low = !low; }
+      else if (plan.rings === 'wide') {
+        const off = plan.window + 0.2 + Q() * 0.22;
+        x = c + side * off; h = 0.5 + Q() * 0.34; side = -side;
+        if (plan.tree && x > KITE.treeX - KITE.ringX - 0.08) x = c - off;      // never a ring in the tree: it hangs on the other side
+      }
+      w.rings.push({ t0, t1: t0 + KITE.ringLife, x: Math.max(-KITE.edge + 0.2, Math.min(KITE.edge - 0.2, x)), h });
+    }
+  }
   return w;
+}
+
+/** The middle of the wind window at time t (0 unless the wind turns: Difficult): eased from one turn to the next. */
+export function windCentre(w, t) {
+  const S = w.shifts;
+  if (!S || !S.length) return 0;
+  let c = 0;
+  for (let i = 0; i < S.length; i++) {
+    if (t < S[i].t) break;
+    const u = Math.min(1, (t - S[i].t) / KITE.shiftTime), e = u * u * (3 - 2 * u), from = i ? S[i - 1].c : 0;
+    c = from + (S[i].c - from) * e;
+  }
+  return c;
+}
+
+/** The ring in the sky at time t (or null), and its number. */
+export function ringAt(w, t) {
+  for (let i = 0; i < w.rings.length; i++) if (t >= w.rings[i].t0 && t < w.rings[i].t1) return w.rings[i];
+  return null;
 }
 
 /** The gust blowing at time t (its strength now, signed), or 0. */
@@ -84,7 +155,8 @@ export function windPush(w, t) {
 // ----------------------------------------------------------------------------------------------- flying
 /** A fresh flight. quality 0..1 from the build; window: half-width of the wind window. */
 export function newFlight({ quality = 1, tail = quality, window = KITE.window } = {}) {
-  return { x: 0, h: KITE.startH, aloft: true, down: 0, tug: 0, pts: 0, air: 0, top: 0, falls: 0, t: 0, inWindow: true, quality, tail, window };
+  return { x: 0, h: KITE.startH, aloft: true, down: 0, tug: 0, pts: 0, air: 0, top: 0, falls: 0, t: 0, inWindow: true, quality, tail, window,
+    c: 0, ring: 0, got: 0, missed: 0, ringPts: 0, hitT: -9, snags: 0, snagT: -9 };
 }
 
 /**
@@ -95,12 +167,16 @@ export function stepFlight(s, w, dt, input) {
   const K = KITE, steer = Math.max(-1, Math.min(1, input?.steer || 0));
   s.t += dt;
   s.tug = Math.max(0, s.tug - dt);
+  const c = s.c = windCentre(w, s.t);        // the middle of the window (it drifts when the wind turns)
+  // a ring nobody flew through goes by
+  const R = w.rings;
+  while (R && s.ring < R.length && s.t >= R[s.ring].t1) { s.ring++; s.missed++; }
   if (!s.aloft) {
     // on the grass: wind it in, walk it back to the middle, and up again (a tug hurries it)
-    s.x += (0 - s.x) * Math.min(1, dt * 3);
+    s.x += (c - s.x) * Math.min(1, dt * 3);
     s.down -= dt;
     if (input?.tug && s.tug <= 0) { s.tug = K.tugCool; s.down -= 0.7; }
-    if (s.down <= 0) { s.aloft = true; s.h = K.startH; s.x = 0; }
+    if (s.down <= 0) { s.aloft = true; s.h = K.startH; s.x = c; }
     s.inWindow = true;
     return s;
   }
@@ -108,28 +184,68 @@ export function stepFlight(s, w, dt, input) {
   const wag = (1 - s.tail) * 0.34 * Math.sin(s.t * 3.3);
   s.x += (windPush(w, s.t) + wag + steer * K.steer) * dt;
   if (s.x > K.edge) s.x = K.edge; else if (s.x < -K.edge) s.x = -K.edge;
-  const a = Math.abs(s.x);
+  const a = Math.abs(s.x - c);
   s.inWindow = a <= s.window;
   if (s.inWindow) s.h += K.rise * (1.4 - 0.8 * a / s.window) * dt;
   else s.h -= K.fall * (1 + (a - s.window) * 1.6) * dt;
   if (input?.tug && s.tug <= 0) { s.tug = K.tugCool; s.h += K.tugLift * (s.inWindow ? 1 : 0.45); }
   if (s.h > 1) s.h = 1;
   if (s.h <= 0) { s.h = 0; s.aloft = false; s.down = K.relaunch; s.falls++; s.inWindow = false; return s; }
+  // the tree at the right edge of the field catches a kite that comes low over it
+  if (w.tree && s.x >= K.treeX && s.h <= K.treeH) {
+    s.h = 0; s.aloft = false; s.down = K.relaunch + K.snag; s.falls++; s.snags++; s.snagT = s.t; s.inWindow = false;
+    return s;
+  }
+  // through the ring that hangs in the sky now
+  if (R && s.ring < R.length) {
+    const r = R[s.ring];
+    if (s.t >= r.t0 && Math.abs(s.x - r.x) <= K.ringX && Math.abs(s.h - r.h) <= K.ringH) { s.ring++; s.got++; s.ringPts += K.ringPoints; s.hitT = s.t; }
+  }
   s.air += dt;
   s.pts += (K.ptsLow + (K.ptsHigh - K.ptsLow) * s.h * s.h) * dt;
   if (s.h > s.top) s.top = s.h;
   return s;
 }
 
-/** The round's score: build points plus flight points. */
-export function kiteScore(buildPoints, s) { return Math.max(0, Math.floor(buildPoints + (s?.pts || 0))); }
+/** The round's score: build points plus flight points plus the rings flown through. */
+export function kiteScore(buildPoints, s) { return Math.max(0, Math.floor(buildPoints + (s?.pts || 0) + (s?.ringPts || 0))); }
+
+/**
+ * A scripted flyer (tests, tuning, the QA autopilot): returns { steer, tug } for this step. skill: { gain: how hard it
+ * steers back (1 = a careful child), rings: goes for the rings, noise: a wobble in the hands, see: seconds it sees the wind
+ * coming (0 = only feels it) }. It keeps the kite in the middle of the window, sinks to a ring by sliding out of the wind on
+ * the ring's side, and gives the tree a wide berth.
+ */
+export function kiteBot(s, w, skill = {}, out = { steer: 0, tug: false }) {
+  const { gain = 3, rings = true, noise = 0, see = 0.5 } = skill, K = KITE;
+  let target = s.c;
+  const r = rings && w.rings && s.ring < w.rings.length ? w.rings[s.ring] : null;
+  if (s.aloft && r && s.t >= r.t0 - 0.5) {
+    const left = r.t1 - s.t, far = Math.abs(r.x - s.c) > s.window - 0.05;
+    if (Math.abs(s.h - r.h) <= K.ringH * 0.85 && Math.abs(r.x - s.c) <= s.window) target = r.x;      // level with it already
+    else if (s.h > r.h + (s.inWindow ? K.ringH * 0.5 : K.ringH * 0.5 + 0.09)) {
+      // too high: slide out of the wind on the ring's side and let it sink (not over the tree)
+      const side = r.x >= s.c ? 1 : -1;
+      target = s.c + side * (s.window + 0.22);
+      if (w.tree && target > K.treeX - 0.12) target = s.c - (s.window + 0.22);
+    } else if (s.h < r.h - K.ringH * 0.6) target = far && left < 2.5 ? r.x : s.c;        // climb first, in the wind
+    else target = r.x;
+  }
+  if (w.tree && s.h < K.treeH + 0.12 && target > K.treeX - 0.15) target = K.treeX - 0.15;
+  const push = windPush(w, s.t + see);
+  let steer = (target - s.x) * gain - push * (see > 0 ? 0.9 : 0);
+  if (noise) steer += Math.sin(s.t * 2.1 + 1) * noise + Math.sin(s.t * 5.3) * noise * 0.5;
+  out.steer = Math.max(-1, Math.min(1, steer));
+  out.tug = s.aloft ? s.inWindow && s.h < 0.9 && !(r && s.h > r.h - 0.02 && s.t >= r.t0 - 2) : true;
+  return out;
+}
 
 /**
  * Play a whole flight from recorded inputs (tests, and the QA autopilot's expectations).
  * frames: [{ steer, tug }] one per step of dt; or a function (state, wind, t) -> input (a bot).
  */
-export function simulateFlight({ seed = 1, length = 60, dt = 1 / 30, quality = 1, tail = quality, window = KITE.window, frames }) {
-  const w = makeWind(seed, length), s = newFlight({ quality, tail, window });
+export function simulateFlight({ seed = 1, length = 60, dt = 1 / 30, quality = 1, tail = quality, window = KITE.window, frames, plan = null }) {
+  const w = makeWind(seed, length, plan), s = newFlight({ quality, tail, window: plan ? plan.window : window });
   const n = Math.round(length / dt);
   for (let i = 0; i < n; i++) stepFlight(s, w, dt, typeof frames === 'function' ? frames(s, w, i * dt) : frames?.[i]);
   return s;

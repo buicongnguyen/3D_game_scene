@@ -2,14 +2,18 @@
 // Build it in three timing presses (bamboo cross, paper, tail), then fly it: the wind swings and gusts, the grass
 // streaks and the clouds show where it is going a moment before the kite feels it, and Mika steers the kite back into
 // the wind window so it climbs. Points for every second aloft, more the higher it flies. Rules: ./rules-kite.js.
+// The level (ctx.level, rules-kite.js flightPlan) decides the sky: Easy a steady wind and rings up high; Normal gusts and
+// rings at set heights (slide out of the wind to sink to one); Difficult a wind that turns, rings out to the sides and a
+// tree at the right edge of the field that catches a low kite.
 //
 // Drawing: the kite (model `kite-paper`, or a procedural diamond), one line for the string, one ribbon mesh for the
-// tail, one LineSegments for the wind streaks and three cloud sprites. Everything is written in place each frame.
+// tail, one LineSegments for the wind streaks and three cloud sprites; one pooled ring (two thin hoops) for the ring in the
+// sky and, on Difficult, one tree from the model library. Everything is written in place each frame.
 import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { FX } from '../../engine/effects.js';
-import { addCss } from './util.js';
-import { KITE, sweepAt, buildQuality, buildGrade, buildResult, makeWind, windPush, newFlight, stepFlight, kiteScore } from './rules-kite.js';
+import { addCss, fit } from './util.js';
+import { KITE, sweepAt, buildQuality, buildGrade, buildResult, makeWind, windPush, newFlight, stepFlight, kiteScore, flightPlan, kiteBot } from './rules-kite.js';
 
 const V3 = THREE.Vector3;
 const WIND_HEADING = 0.3;        // the wind blows toward (sin, cos) of this: south over the meadow, the viaduct behind the kite
@@ -40,6 +44,10 @@ const CSS = `
 #kiteUi .gust.on{opacity:1;animation:kiteGust .35s infinite alternate}
 #kiteUi .alt{margin-top:6px;height:6px;border-radius:3px;background:#ead9b8;overflow:hidden}
 #kiteUi .alt i{display:block;height:100%;width:0;background:#f2a51a;border-radius:3px}
+#kiteUi .alt{position:relative}
+#kiteUi .alt b{position:absolute;top:-1px;bottom:-1px;width:4px;margin-left:-2px;border-radius:2px;background:#c2541c;display:none}
+#kiteUi .rg{position:absolute;top:1px;left:0;width:12px;height:12px;margin-left:-8px;border-radius:50%;border:2px solid #f2a51a;background:#fff8;display:none}
+#kiteUi .tz{position:absolute;top:0;bottom:0;right:0;width:0;background:repeating-linear-gradient(135deg,#3f8f4a 0 4px,#57a85f 4px 8px);border-radius:0 9px 9px 0}
 @media (max-width:520px){#kiteUi{left:calc(14px + env(safe-area-inset-left,0px));transform:none;width:min(236px,60vw)}}
 @keyframes kiteGust{from{transform:translateX(0)}to{transform:translateX(4px)}}
 `;
@@ -255,9 +263,9 @@ export default {
 
       ui = document.createElement('div');
       ui.id = 'kiteUi';
-      ui.innerHTML = '<div class="lab"></div><div class="bar"><div class="zone"></div><span class="gust l">«</span><span class="gust r">»</span><div class="mark"></div></div><div class="alt"><i></i></div>';
+      ui.innerHTML = '<div class="lab"></div><div class="bar"><div class="zone"></div><div class="tz"></div><span class="gust l">«</span><span class="gust r">»</span><i class="rg"></i><div class="mark"></div></div><div class="alt"><i></i><b></b></div>';
       document.body.appendChild(ui);
-      const el = { lab: ui.querySelector('.lab'), bar: ui.querySelector('.bar'), zone: ui.querySelector('.zone'), mark: ui.querySelector('.mark'), gl: ui.querySelector('.gust.l'), gr: ui.querySelector('.gust.r'), alt: ui.querySelector('.alt'), altFill: ui.querySelector('.alt i') };
+      const el = { lab: ui.querySelector('.lab'), bar: ui.querySelector('.bar'), zone: ui.querySelector('.zone'), mark: ui.querySelector('.mark'), gl: ui.querySelector('.gust.l'), gr: ui.querySelector('.gust.r'), alt: ui.querySelector('.alt'), altFill: ui.querySelector('.alt i'), ring: ui.querySelector('.rg'), ringH: ui.querySelector('.alt b'), tree: ui.querySelector('.tz') };
       onPress = e => { e.preventDefault(); tap = true; };
       ui.addEventListener('pointerdown', onPress);
       el.alt.style.display = 'none';
@@ -276,6 +284,7 @@ export default {
         phase: st.phase, step: st.step, marker: st.marker, speed: st.speed, build: st.build,
         x: st.flight?.x ?? 0, h: st.flight?.h ?? 0, aloft: st.flight?.aloft ?? false, window: st.flight?.window ?? 0,
         push: st.push, lead: st.lead, pts: st.flight?.pts ?? 0, falls: st.flight?.falls ?? 0, model: kite.fromModel,
+        c: st.flight?.c ?? 0, ring: st.flight?.ring ?? 0, got: st.flight?.got ?? 0, snags: st.flight?.snags ?? 0, t: st.flight?.t ?? 0,
         pos: [K.position.x, K.position.y, K.position.z],
       });
       ctx.hud(0, null);
@@ -285,7 +294,7 @@ export default {
       for (let i = 0; i < STEPS.length; i++) {
         const step = STEPS[i];
         st.step = i;
-        st.speed = step.speed * (ctx.first || g.easy ? 0.75 : 1);
+        st.speed = step.speed * (ctx.first || ctx.easy ? 0.75 : 1);
         el.lab.textContent = `${i + 1}/3 · ${tx(step.label)}`;
         let t0 = 0, done = null;
         tap = false;
@@ -320,10 +329,14 @@ export default {
       await ctx.fade(true, 300);
       if (ctx.quit) return { score: st.build, quit: true };
       st.phase = 'fly';
-      const wide = ctx.first || g.easy;
-      const wind = makeWind(Math.floor(Math.random() * 1e6) + 1, ctx.roundTime);
-      const fl = st.flight = newFlight({ quality: built.quality, tail: built.tail, window: wide ? KITE.windowFirst : KITE.window });
+      const plan = flightPlan(ctx.level, ctx.first);            // the level's sky: gusts, turns of the wind, rings, the tree
+      const qaSeed = typeof window !== 'undefined' ? window.__STARLINE_QA__?.trickSeed : 0;
+      const wind = makeWind(qaSeed || Math.floor(Math.random() * 1e6) + 1, ctx.roundTime, plan);
+      const fl = st.flight = newFlight({ quality: built.quality, tail: built.tail, window: plan.window });
       ctx.debug.wind = wind;
+      const botOut = { steer: 0, tug: false };
+      /** QA: what a scripted flyer would do now (rules-kite.js kiteBot). */
+      ctx.debug.bot = skill => kiteBot(fl, wind, skill, botOut);
       // the model's own tail stays on the kite in the air and the long ribbon is tied to its end; a kite without one
       // (or the stand-in ribbon of the build) gets the ribbon at its bottom tip
       if (!kite.fromModel) for (const o of kite.parts.tail) o.visible = false;
@@ -372,18 +385,48 @@ export default {
       }
       scene.add(string, tail, streaks); added.push(string, tail, streaks);
       disposables.push(sGeo, string.material, tGeo, tail.material, wGeo, streaks.material, cTex, cMat);
+      // the ring in the sky: one pooled pair of hoops (gold, with a thin red-and-white one round it), moved to each ring in turn
+      const ringGeo = new THREE.TorusGeometry(1, 0.045, 6, 40), ringGeo2 = new THREE.TorusGeometry(1.12, 0.02, 5, 40);
+      const ringMat = new THREE.MeshBasicMaterial({ color: '#ffd23f', transparent: true, opacity: 0, depthWrite: false, fog: false });
+      const ringMat2 = new THREE.MeshBasicMaterial({ color: '#ff6a4a', transparent: true, opacity: 0, depthWrite: false, fog: false });
+      const hoop = new THREE.Group();
+      hoop.add(new THREE.Mesh(ringGeo, ringMat), new THREE.Mesh(ringGeo2, ringMat2));
+      hoop.traverse(o => { o.frustumCulled = false; });
+      hoop.visible = false; hoop.renderOrder = 5;
+      scene.add(hoop); added.push(hoop);
+      disposables.push(ringGeo, ringGeo2, ringMat, ringMat2);
+      const ringAt = new V3();
+      let ringSeen = -1, ringPop = 0, ringK = 0, hitSeen = fl.hitT, snagSeen = fl.snagT, ringShown = null, ringHint = false, turnHint = false;
+      // the tree (Difficult): a tall oak from the model library at the right edge of the field, where the rules catch a low kite
+      if (plan.tree) {
+        const tree = g.assets.clone('tree-broadleaf-a') || g.assets.clone('tree-chestnut');
+        if (tree) {
+          fit(tree, 11);
+          const ta = 0.72, td = 14.5, tx0 = sx + (d.x * Math.cos(ta) + r.x * Math.sin(ta)) * td, tz0 = sz + (d.z * Math.cos(ta) + r.z * Math.sin(ta)) * td;
+          tree.position.set(tx0, world.heightAt(tx0, tz0) - 0.55, tz0);          // (its roots a little in the slope)
+          tree.name = 'trick-kite-tree';
+          tree.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+          scene.add(tree); added.push(tree);
+        }
+        el.tree.style.width = `${(50 - KITE.treeX / KITE.edge * 46).toFixed(1)}%`;
+      }
 
       // camera: far back and low, looking halfway between Mika and the kite so both stay in the picture
       const camPos = origin.clone().addScaledVector(d, portrait ? -14 : -12.5).addScaledVector(r, 2.2).add(new V3(0, 1.6, 0));
       const hand = new V3(), kp = new V3(), look = new V3(), a1 = new V3(), a2 = new V3(), tmp = new V3(), up2 = new V3();
       const head = origin.clone().add(new V3(0, 1.1, 0));
       let xV = 0, hV = 0.02, roll = 0, lastX = 0, sc = FLY_SCALE;
+      /** A place in the sky from the rules' (x across the wind, h up the line), into `out`. */
+      const sky = (x, h, out) => {
+        const az = x * 0.5, elv = 0.3 + 0.5 * h, L = 10 + 20 * h;
+        const ch = Math.cos(elv) * L;
+        out.copy(hand).addScaledVector(d, Math.cos(az) * ch).addScaledVector(r, Math.sin(az) * ch);
+        out.y = hand.y + Math.sin(elv) * L;
+        return out;
+      };
       const place = () => {
         // the kite's place in the sky from (xV, hV)
-        const az = xV * 0.5, elv = 0.3 + 0.5 * hV, L = 10 + 20 * hV;
-        const ch = Math.cos(elv) * L;
-        kp.copy(hand).addScaledVector(d, Math.cos(az) * ch).addScaledVector(r, Math.sin(az) * ch);
-        kp.y = hand.y + Math.sin(elv) * L;
+        sky(xV, hV, kp);
         const gy = world.heightAt(kp.x, kp.z) + 0.25;
         if (kp.y < gy || hV <= 0.021) kp.y = gy;
         return kp;
@@ -406,13 +449,14 @@ export default {
       el.alt.style.display = '';
       const zw = fl.window / KITE.edge * 46;
       el.zone.style.left = `${(50 - zw).toFixed(1)}%`; el.zone.style.width = `${(zw * 2).toFixed(1)}%`;
-      let gustShown = 0, zoneOut = false;
+      let gustShown = 0, zoneOut = false, zoneAt = 0;
 
       await ctx.wait(0.1);
       await ctx.fade(false, 450);
       if (ctx.quit) return { score: st.build, quit: true };
       ctx.hint(ctx.ui.touch ? N_('Steer with the stick to stay in the wind. Jump gives the line a tug to climb.')
         : N_('Steer left and right to stay in the wind. Space gives the line a tug to climb.'), 5.5);
+      let levelHint = plan.tree ? 6.5 : -1;             // Difficult says what is new once the first hint has gone
       audio.whoosh(3);
 
       let left = ctx.roundTime, said = 0, gustHint = false, downHint = false, highHint = false, gustWas = 0;
@@ -464,7 +508,7 @@ export default {
         stepTail(nodes, tPos.array, world, (d.x * 2.2 + r.x * st.push * 2.5) * dt, -2.6 * dt, (d.z * 2.2 + r.z * st.push * 2.5) * dt, ctx.t, sc, r.x, r.z);
         tPos.needsUpdate = true;
         // streaks and clouds drift with the wind that is coming (they lead the kite)
-        stepStreaks(sk, wPos.array, origin.x, ground, origin.z, d.x, d.z, r.x, r.z, st.lead * 0.9, dt);
+        stepStreaks(sk, wPos.array, origin.x, ground, origin.z, d.x, d.z, r.x, r.z, st.lead * 0.9 + fl.c * 0.9, dt);
         wPos.needsUpdate = true;
         for (const c of clouds) {
           c.userData.a += st.lead * 9 * dt + 1.2 * dt;
@@ -472,7 +516,38 @@ export default {
           c.position.set(origin.x + d.x * c.userData.far + r.x * c.userData.a, ground + c.userData.h, origin.z + d.z * c.userData.far + r.z * c.userData.a);
         }
 
+        // ---- the ring in the sky: it fades in a moment before it counts, blinks before it goes, and bursts when flown through
+        const ring = fl.ring < wind.rings.length && fl.t >= wind.rings[fl.ring].t0 - 1.2 ? wind.rings[fl.ring] : null;
+        if (fl.hitT !== hitSeen) {
+          hitSeen = fl.hitT; ringPop = 0.45;
+          audio.star?.(); fx.burst?.(ringAt, { n: 26, color: [1, 0.85, 0.3], speed: 5, size: 0.5, gravity: 0.6 });
+          ctx.hint(fl.got === wind.rings.length ? N_('Every ring! What a flight.') : N_('Through the ring!'), 2.2); said = 4;
+        }
+        if (ring && ringPop <= 0) {
+          if (fl.ring !== ringSeen) { ringSeen = fl.ring; ringK = 0; }
+          ringK = Math.min(1, ringK + dt * 1.2);
+          sky(ring.x, ring.h, ringAt);
+          const left = ring.t1 - fl.t, blink = left < 2.2 ? 0.55 + 0.45 * Math.sin(ctx.t * 14) : 1;
+          hoop.visible = true;
+          hoop.position.copy(ringAt);
+          hoop.lookAt(hand);
+          hoop.scale.setScalar((0.11 * (10 + 20 * ring.h) + 0.5) * (0.6 + 0.4 * ringK) * (1 + Math.sin(ctx.t * 3) * 0.04));
+          ringMat.opacity = 0.95 * ringK * blink; ringMat2.opacity = 0.8 * ringK * blink;
+        } else if (ringPop > 0) {
+          ringPop -= dt;
+          hoop.scale.multiplyScalar(1 + dt * 3.5);
+          ringMat.opacity = ringMat2.opacity = Math.max(0, ringPop / 0.45);
+          if (ringPop <= 0) hoop.visible = false;
+        } else if (hoop.visible) hoop.visible = false;
+        if (ring !== ringShown) {
+          ringShown = ring;
+          el.ring.style.display = el.ringH.style.display = ring ? 'block' : 'none';
+          if (ring) { el.ring.style.left = `${(50 + ring.x / KITE.edge * 46).toFixed(1)}%`; el.ringH.style.left = `${Math.round(ring.h * 100)}%`; }
+        }
+
         // ---- gauge and HUD
+        const za = Math.round(fl.c / KITE.edge * 460);
+        if (za !== zoneAt) { zoneAt = za; el.zone.style.left = `${(50 - zw + za / 10).toFixed(1)}%`; }
         setMark(xV / KITE.edge);
         const rot = Math.round(45 + roll * 40);
         if (rot !== markRot) { markRot = rot; el.mark.style.transform = `rotate(${rot}deg)`; }
@@ -486,10 +561,21 @@ export default {
 
         // ---- the teacher
         said -= dt;
-        if (falls !== fl.falls) {
+        if (levelHint > 0 && (levelHint -= dt) <= 0) { said = 6; ctx.hint(N_('Today the wind turns: the green slides. And keep high near the tree on the right!'), 5.5); }
+        if (fl.snagT !== snagSeen) {
+          snagSeen = fl.snagT; audio.miss(); said = 6;
+          fx.burst?.(K.position, { n: 14, color: [0.35, 0.6, 0.25], speed: 2.2, size: 0.3, gravity: 3 });
+          ctx.hint(N_('Caught in the tree! Fly high when the kite is on that side.'), 4);
+        } else if (falls !== fl.falls) {
           audio.miss();
           if (!downHint || said <= 0) { downHint = true; said = 6; ctx.hint(N_('Down on the grass. Wind it in and up again! A tug helps.'), 3.2); }
         } else if (!wasAloft && fl.aloft) { audio.whoosh(2); }
+        else if (ring && !ringHint && fl.t >= ring.t0 && said <= 0) {
+          ringHint = true; said = 6;
+          ctx.hint(plan.rings === 'high' ? N_('A ring up high! Keep the kite in the green and it climbs to it.')
+            : plan.rings === 'wide' ? N_('A ring out to the side! Dash out to it, then back into the wind.')
+              : N_('A ring! Fly through it. Too high? Slide out of the green and the kite sinks.'), 5.5);
+        } else if (plan.shift && !turnHint && Math.abs(fl.c) > 0.12 && said <= 0) { turnHint = true; said = 5; ctx.hint(N_('The wind is turning! Follow the green.'), 3.5); }
         else if (gs && !gustHint && said <= 0) { gustHint = true; said = 6; ctx.hint(N_('See the grass streak sideways? A gust is coming. Steer against it!'), 4); }
         else if (!highHint && fl.h > 0.97) { highHint = true; said = 5; audio.good(); ctx.hint(N_('Right at the top of the line! The wind is steadier up there.'), 4); }
         else if (ctx.first && said <= 0 && out) { said = 7; ctx.hint(N_('It is sliding out of the wind. Steer it back to the middle.'), 3); }
@@ -502,6 +588,7 @@ export default {
         // wind it in: the kite comes down to her hands
         ctx.hint(N_('Wind it in. That kite will fly again on any windy day.'), 3.5);
         st.phase = 'land';
+        hoop.visible = false; el.ring.style.display = el.ringH.style.display = 'none';
         let t1 = 0;
         const h0 = hV;
         await ctx.loop(dt => {
@@ -522,7 +609,9 @@ export default {
       await ctx.fade(false, 400);
       return {
         score, quit: !!res?.quit && fl.air < 5, built: st.qs, falls: fl.falls,
-        extra: fl.falls === 0 && fl.air > 30 ? N_('never touched the grass') : fl.top >= 0.98 ? N_('reached the top of the line') : undefined,
+        detail: { rings: fl.got, ringsOf: wind.rings.length, snags: fl.snags, falls: fl.falls, air: Math.round(fl.air) },
+        extra: wind.rings.length ? tx('rings: {n} of {m}', { n: fl.got, m: wind.rings.length })
+          : fl.falls === 0 && fl.air > 30 ? N_('never touched the grass') : fl.top >= 0.98 ? N_('reached the top of the line') : undefined,
       };
     } finally {
       // a quit or an error anywhere above: put everything back (the framework un-fades nothing, so do it here)

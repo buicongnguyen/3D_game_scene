@@ -9,6 +9,12 @@
 //     back, but one wave too many makes a flare that singes the potato nearest to her.
 // At the end the good potatoes are handed round: one to the grown-up at the fire, one to each neighbour's kid nearby.
 //
+// The levels (roastPlan) make the round longer and different in kind: the potatoes come in batches (the next one arrives while
+// the first still cooks, or as soon as the ash is empty). Easy: four potatoes and two more, in gentle slow-cooling ash.
+// Normal: five and then three: the second batch has to be fitted in round the first one's turning and digging. Difficult:
+// seven potatoes in three batches, a chestnut in the first two (it cooks fast, wants no turning, and pops out of the ash if
+// left), and rain spots that cool the ash at a bad moment.
+//
 // The rules (the cook plan, the state of a potato, what the ash shows, the warmth, the score) are pure and Node-tested;
 // the round below only draws them. Cheap: one borrowed light from the shared LightPool, smoke and sparks from the shared
 // particle pools (fx.soft / fx.glow), three flame cones, five small mounds, and at most a dozen little models made once.
@@ -21,12 +27,30 @@ import { WATER_Y } from '../../world/layout.js';
 
 /// ---------------------------------------------------------------------------------------------------- pure rules
 export const POINTS = { perfect: 20, okay: 10, raw: 3, burnt: 0 };
+export const NUT_POINTS = { perfect: 10, okay: 5, raw: 1, burnt: 0 };   // a chestnut (burnt: it popped)
 export const OKAY = 1.6;          // seconds either side of the perfect window that still make an "okay" potato
+export const NUT = { okay: 1.0, lo: 5, hi: 8, win: 2.6, k: 0.5 };   // a chestnut: its margin, its cook time (from..to), its window, its size
+export const RAIN = { drop: 0.17, first: [9, 13], every: [11, 15] };   // Difficult: a shower takes this much warmth, at these seconds
+const okayOf = p => (p?.kind === 'nut' ? NUT.okay : OKAY);
+
+/**
+ * What a level's round is made of: { waves: [{ at: seconds after the first potato goes in, potatoes, nuts }], gentle, rain,
+ * count; win: a shorter perfect window, decay: ash that cools faster (Difficult) }. A wave also arrives early, the moment nothing is left in the ash to wait for. The guided first try is Easy's.
+ */
+export function roastPlan(level = 'normal', first = false) {
+  const plan = first || level === 'easy' ? { waves: [{ at: 0, potatoes: 4, nuts: 0 }, { at: 24, potatoes: 2, nuts: 0 }], gentle: true, rain: false }
+    : level === 'hard' ? { waves: [{ at: 0, potatoes: 3, nuts: 1 }, { at: 11, potatoes: 2, nuts: 1 }, { at: 23, potatoes: 2, nuts: 0 }], gentle: false, rain: true, win: 2.5, decay: 0.05 }
+      : { waves: [{ at: 0, potatoes: 5, nuts: 0 }, { at: 17, potatoes: 3, nuts: 0 }], gentle: false, rain: false };
+  plan.count = plan.waves.reduce((n, w) => n + w.potatoes + w.nuts, 0);
+  return plan;
+}
+/** The most a plan can score: every potato and every chestnut perfect. */
+export const roastMax = plan => plan.waves.reduce((n, w) => n + w.potatoes * POINTS.perfect + w.nuts * NUT_POINTS.perfect, 0);
 export const STRAW = 3;           // armfuls of straw the fire needs
 export const COUNT = 5;           // potatoes in a round
 export const TURN = 0.4;          // a potato wants turning once it is this far through its cook (until it is done)
 /** The three sizes: k is how big the potato (and its hollow and mound) is drawn. Bigger always means a longer cook. */
-export const SIZES = { small: { k: 0.76 }, medium: { k: 1 }, big: { k: 1.32 } };
+export const SIZES = { small: { k: 0.76 }, medium: { k: 1 }, big: { k: 1.32 }, nut: { k: NUT.k } };
 const MIXES = [['small', 'small', 'medium', 'medium', 'big'], ['small', 'medium', 'medium', 'big', 'big'], ['small', 'small', 'medium', 'big', 'big']];
 /**
  * The warmth of the ash bed: it starts at `start` and cools by `decay` a second (gentleDecay on the guided first try and
@@ -58,10 +82,11 @@ export function planRoast({ count = COUNT, gentle = false, rand }) {
  * (p.turned === false) or was singed by a flare (p.singed) is dark on one side: okay at best.
  */
 export function cookState(heat, p) {
-  if (heat < p.cook - OKAY) return 'raw';
+  const ok = okayOf(p);
+  if (heat < p.cook - ok) return 'raw';
   if (heat < p.cook) return 'okay';
   if (heat < p.cook + p.win) return p.turned === false || p.singed ? 'okay' : 'perfect';
-  if (heat < p.cook + p.win + OKAY) return 'okay';
+  if (heat < p.cook + p.win + ok) return 'okay';
   return 'burnt';
 }
 
@@ -79,7 +104,7 @@ export function heatRate(warm) { return Math.max(WARM.slow, clamp01(warm / WARM.
  */
 export function cue(heat, p, out = {}) {
   const end = p.cook + p.win, unturned = p.turned === false;
-  const char = clamp01((heat - end) / OKAY);
+  const char = clamp01((heat - end) / okayOf(p));
   out.turn = unturned && heat >= p.turn && heat < p.cook ? 1 : 0;
   out.dark = (unturned && heat >= p.cook) || p.singed ? 1 : 0;
   out.glow = unturned && heat < p.cook ? 0 : smooth(0.55, 1, heat / p.cook) * (1 - char);
@@ -93,9 +118,26 @@ export function cue(heat, p, out = {}) {
  * 'dug' (with a result). A buried potato wants turning once, between `turn` and `cook`.
  */
 export class Roast {
-  constructor({ count = COUNT, gentle = false, rand }) {
-    this.gentle = gentle;
-    this.spots = planRoast({ count, gentle, rand }).map(p => ({ ...p, st: 'empty', heat: 0, result: null, turned: false, singed: false }));
+  /** { count, gentle, rand }: one batch of `count` potatoes (as it always was); or { plan, rand }: a level's batches (roastPlan). */
+  constructor({ count = COUNT, gentle = false, rand, plan = null }) {
+    this.gentle = plan ? plan.gentle : gentle;
+    const waves = plan ? plan.waves : [{ at: 0, potatoes: count, nuts: 0 }];
+    this.waves = waves.map(w => w.at);
+    this.spots = [];
+    waves.forEach((w, k) => {
+      const batch = planRoast({ count: w.potatoes, gentle: this.gentle, rand }).map(p => ({ ...p, win: plan?.win ?? p.win, kind: 'potato', turned: false }));
+      // a chestnut: small, quick, never turned (it is "turned" from the start), a short window before it pops
+      for (let n = 0; n < w.nuts; n++) batch.splice(Math.floor(rand() * (batch.length + 1)), 0, { kind: 'nut', size: 'nut', cook: +(NUT.lo + rand() * (NUT.hi - NUT.lo)).toFixed(2), win: NUT.win, turn: Infinity, turned: true });
+      for (const p of batch) this.spots.push({ ...p, wave: k, st: k ? 'wait' : 'empty', heat: 0, result: null, singed: false });
+    });
+    // Difficult: rain spots on a seeded timetable (seconds after the first potato goes in)
+    this.rain = [];
+    if (plan?.rain) for (let t = RAIN.first[0] + rand() * (RAIN.first[1] - RAIN.first[0]); t < 90; t += RAIN.every[0] + rand() * (RAIN.every[1] - RAIN.every[0])) this.rain.push(+t.toFixed(2));
+    this.decay = plan?.decay;   // the level's own cooling (Difficult), else the usual one
+    this.rained = 0;            // showers so far (the round draws each new one)
+    this.wave = 0;              // the batches that have arrived so far, less one
+    this.clock = 0;             // seconds since the first potato went in
+    this.popped = [];           // chestnuts that popped since the round last looked (it empties the list)
     this.t = 0;
     this.warm = WARM.start;
     this.fans = 0;
@@ -144,10 +186,10 @@ export class Roast {
   press(i, out = {}) {
     const s = this.spots[i];
     out.act = null; out.result = null;
-    if (!s || s.st === 'dug') return out;
+    if (!s || s.st === 'dug' || s.st === 'wait') return out;
     if (s.st === 'empty') { out.act = this.bury(i) ? 'bury' : null; return out; }
     if (!s.turned && s.heat < s.cook) { out.act = this.turn(i) ? 'turn' : 'wait'; return out; }
-    if (this.gentle && s.heat < s.cook - OKAY) { out.act = 'wait'; return out; }
+    if (this.gentle && s.heat < s.cook - okayOf(s)) { out.act = 'wait'; return out; }
     out.act = 'dig';
     out.result = this.dig(i);
     return out;
@@ -172,23 +214,42 @@ export class Roast {
   /** The potatoes cook as fast as the ash is warm; once one is done it dries out at the full pace whatever the ash does. */
   update(dt) {
     this.t += dt;
-    if (this.started) this.warm = Math.max(0, this.warm - (this.gentle ? WARM.gentleDecay : WARM.decay) * dt);
+    if (this.started) {
+      this.clock += dt;
+      this.warm = Math.max(0, this.warm - (this.decay ?? (this.gentle ? WARM.gentleDecay : WARM.decay)) * dt);
+      // a shower: the ash loses warmth at once
+      while (this.rained < this.rain.length && this.clock >= this.rain[this.rained]) { this.rained++; this.warm = Math.max(0, this.warm - RAIN.drop); }
+      // the next batch arrives at its time, or sooner when the ash is empty and nothing is left to do
+      while (this.wave + 1 < this.waves.length && (this.clock >= this.waves[this.wave + 1] || this.idle)) {
+        this.wave++;
+        for (const s of this.spots) if (s.wave === this.wave && s.st === 'wait') s.st = 'empty';
+      }
+    }
     const rate = heatRate(this.warm);
-    for (const s of this.spots) if (s.st === 'buried') s.heat += dt * (s.heat < s.cook ? rate : 1);
+    for (let i = 0; i < this.spots.length; i++) {
+      const s = this.spots[i];
+      if (s.st !== 'buried') continue;
+      s.heat += dt * (s.heat < s.cook ? rate : 1);
+      // a chestnut left too long pops out of the ash by itself
+      if (s.kind === 'nut' && s.heat >= s.cook + s.win + NUT.okay) { s.st = 'dug'; s.result = 'burnt'; s.pop = true; this.popped.push(i); }
+    }
   }
+
+  /** Nothing is in the ash and nothing waits to go in (every arrived one is dug): the next batch may as well come now. */
+  get idle() { for (const s of this.spots) if (s.st === 'empty' || s.st === 'buried') return false; return true; }
 
   /**
    * Time is up: whatever is still in the ash is forgotten there. One that never got warm enough is still raw; the
    * rest are burnt. Potatoes never buried count for nothing.
    */
   finish() {
-    for (const s of this.spots) if (s.st === 'buried') { s.st = 'dug'; s.result = s.heat < s.cook - OKAY ? 'raw' : 'burnt'; s.forgot = true; }
+    for (const s of this.spots) if (s.st === 'buried') { s.st = 'dug'; s.result = s.heat < s.cook - okayOf(s) ? 'raw' : 'burnt'; s.forgot = true; }
   }
 
   get buried() { let n = 0; for (const s of this.spots) if (s.st === 'buried') n++; return n; }
   get left() { let n = 0; for (const s of this.spots) if (s.st === 'empty') n++; return n; }
   get done() { return this.spots.every(s => s.st === 'dug'); }
-  get score() { let n = 0; for (const s of this.spots) n += POINTS[s.result] || 0; return n; }   // = roastScore of the results
+  get score() { let n = 0; for (const s of this.spots) n += (s.kind === 'nut' ? NUT_POINTS : POINTS)[s.result] || 0; return n; }   // = roastScore of the potatoes (+ the chestnuts)
   tally() {
     const t = { perfect: 0, okay: 0, raw: 0, burnt: 0 };
     for (const s of this.spots) if (s.result) t[s.result]++;
@@ -252,6 +313,8 @@ export function layout(heightAt, place, rand, { piles = STRAW + 1, dry = 0.45 } 
 /// ---------------------------------------------------------------------------------------------------- the round
 const V = () => new THREE.Vector3();
 const _v = V(), _w = V(), _c = new THREE.Color(), _cue = { glow: 0, steam: 0, char: 0, turn: 0, dark: 0 }, _press = { act: null, result: null };
+const _m4 = new THREE.Matrix4();
+const RAIN_DROPS = 12;
 const EMBER_GLOW = 20;            // the model's coals are dark in the file (emissive 0.03): this is their glow once the straw has burnt
 const RING_R = 1.0;               // the potatoes lie in a ring this far from the middle of the ash
 const BED_R = 1.5;
@@ -310,7 +373,11 @@ class RoastRound {
     this.own = [];              // geometries, materials and textures made here (disposed at the end)
     this.seed = seed;
     this.rand = rng(seed);
-    this.game = new Roast({ count: COUNT, gentle: !!ctx.first || !!g.easy, rand: this.rand });
+    // the level comes from the picker (ctx.level): its batches, its ash, its rain (roastPlan)
+    this.plan = roastPlan(ctx.level, !!ctx.first);
+    this.game = new Roast({ plan: this.plan, rand: this.rand });
+    this.n = this.game.spots.length;
+    this.ringR = this.n <= 5 ? RING_R : this.n <= 7 ? 1.18 : 1.32;      // more potatoes lie in a wider ring
     this.phase = 'gather';
     this.t = 0;
     this.straw = 0;
@@ -320,8 +387,11 @@ class RoastRound {
     this.I = 0;                 // the firelight
     this.sel = -1;
     this.flick = 1;
-    this.puff = new Float32Array(COUNT);
-    this.hold = new Float32Array(COUNT);     // a moment after a press at a spot in which the next one does nothing (a double press must not dig it raw)
+    this.puff = new Float32Array(this.n);
+    this.hold = new Float32Array(this.n);     // a moment after a press at a spot in which the next one does nothing (a double press must not dig it raw)
+    this.waveSeen = 0;          // the batches whose potatoes have hopped to the ash
+    this.rainSeen = 0;          // the showers drawn so far
+    this.rainT = 0;             // a shower falling now (seconds left)
     this.fades = 0;
     this.wn = 1;                // how warm the bed looks 0..1 (eased towards the rules' warmth)
     this.fanT = 0;              // the wave of the fan that is playing (seconds left)
@@ -419,6 +489,21 @@ class RoastRound {
     return { root, mats, k };
   }
 
+  /** A chestnut: a glossy brown nut with its pale patch underneath and a little point on top (procedural: tiny, and the model budget is full). */
+  nutModel() {
+    const root = new THREE.Group(), mats = [];
+    const shell = this.mat(new THREE.MeshStandardMaterial({ color: '#7a3d1c', roughness: 0.32 })), pale = this.mat(new THREE.MeshStandardMaterial({ color: '#d9b98a', roughness: 0.8 }));
+    const body = new THREE.Mesh(this.geo.nut, shell), patch = new THREE.Mesh(this.geo.nutPatch, pale), tip = new THREE.Mesh(this.geo.nutTip, shell);
+    body.castShadow = true;
+    patch.position.y = -0.062;
+    tip.position.y = 0.088;
+    root.add(body, patch, tip);
+    mats.push(shell, pale);
+    for (const c of mats) c.userData.base = c.color.clone();
+    root.userData.raw = []; root.userData.roasted = [];
+    return { root, mats, k: 1, nut: true };
+  }
+
   /** The paper fan (uchiwa) that comes out for a wave: a round paper leaf with a red sun on a bamboo handle. */
   fanModel() {
     const root = new THREE.Group(), leaf = new THREE.Group();
@@ -454,6 +539,10 @@ class RoastRound {
       cone: this.keep(new THREE.ConeGeometry(1, 1, 9)),
       band: this.keep(new THREE.TorusGeometry(1, 0.22, 5, 10).rotateX(Math.PI / 2)),
       potato: this.keep(new THREE.SphereGeometry(0.075, 10, 7).scale(1, 0.9, 2)),
+      nut: this.keep(new THREE.SphereGeometry(0.1, 12, 8).scale(1, 0.82, 0.9)),
+      nutPatch: this.keep(new THREE.SphereGeometry(0.072, 10, 5, 0, Math.PI * 2, Math.PI * 0.62, Math.PI * 0.38).scale(1, 0.5, 0.9)),
+      nutTip: this.keep(new THREE.ConeGeometry(0.02, 0.05, 6)),
+      drop: this.keep(new THREE.SphereGeometry(0.035, 5, 4).scale(1, 2.4, 1)),
       mound: this.keep(new THREE.SphereGeometry(0.3, 12, 7, 0, Math.PI * 2, 0, Math.PI / 2).scale(1, 0.5, 1)),
       // the half of a mound that faces the embers (a little proud of it): it glows when the potato wants turning
       side: this.keep(new THREE.SphereGeometry(0.31, 8, 6, 0, Math.PI, 0, Math.PI / 2).scale(1, 0.52, 1)),
@@ -479,7 +568,15 @@ class RoastRound {
       fanPaper: this.mat(new THREE.MeshStandardMaterial({ color: '#fff1d0', roughness: 0.9, side: THREE.DoubleSide })),
       fanSun: this.mat(new THREE.MeshStandardMaterial({ color: '#e8452c', roughness: 0.8 })),
       fanWood: this.mat(new THREE.MeshStandardMaterial({ color: '#b98a4a', roughness: 0.8 })),
+      drop: this.mat(new THREE.MeshBasicMaterial({ color: '#cfe6ff', transparent: true, opacity: 0.85, depthWrite: false, fog: false })),
     };
+    // rain spots (Difficult): a dozen pooled drops, one instanced mesh, shown only while a shower falls
+    if (this.plan.rain) {
+      this.drops = this.add(new THREE.InstancedMesh(this.geo.drop, this.mats.drop, RAIN_DROPS));
+      this.drops.frustumCulled = false; this.drops.visible = false; this.drops.renderOrder = 8;
+      this.dropAt = new Float32Array(RAIN_DROPS * 4);          // x, z (hearth-local), height, fall speed
+      this.own.push({ dispose: () => this.drops.dispose() });
+    }
     // the hearth: a group tilted to the ground, so the ash bed and the potatoes lie on the slope
     const h = this.hearth = this.add(new THREE.Group());
     h.name = 'trick:roast-hearth';
@@ -490,6 +587,7 @@ class RoastRound {
     this.bedTex = this.keep(bedTexture());
     this.bed = this.add(new THREE.Mesh(this.geo.bed, this.mat(new THREE.MeshBasicMaterial({ map: this.bedTex, transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }))), h);
     this.bed.renderOrder = 2;
+    this.bed.scale.setScalar(this.ringR / RING_R);
     // the fire's own pile of straw (grows with every armful), and the flames
     this.pile = this.add(this.strawModel(1.5), h);
     this.pile.scale.setScalar(0.001);
@@ -504,11 +602,12 @@ class RoastRound {
     }
     // the spots round the ash: a hollow to lay a potato in (as big as the potato), a mound of ash over a buried one
     this.spots = this.game.spots.map((s, i) => {
-      const a = i / COUNT * Math.PI * 2 + 0.3, lx = Math.sin(a) * RING_R, lz = Math.cos(a) * RING_R, k = SIZES[s.size]?.k || 1;
+      const a = i / this.n * Math.PI * 2 + 0.3, lx = Math.sin(a) * this.ringR, lz = Math.cos(a) * this.ringR, k = SIZES[s.size]?.k || 1;
       const hollow = this.add(new THREE.Mesh(this.geo.hollow, this.mats.hollow), h);
       hollow.position.set(lx, 0.025, lz);
       hollow.scale.setScalar(k);
       hollow.renderOrder = 3;
+      hollow.visible = s.wave === 0;                                // a later batch's hollow is scooped when it arrives
       const mm = this.mat(new THREE.MeshStandardMaterial({ color: ASH.clone(), roughness: 0.95, emissive: '#000000' }));
       const mound = this.add(new THREE.Mesh(this.geo.mound, mm), h);
       mound.position.set(lx, 0, lz);
@@ -553,9 +652,12 @@ class RoastRound {
     const toSign = this.back = V().set(this.ctx.place.x - L.x, 0, this.ctx.place.z - L.z).normalize().applyAxisAngle(_w.set(0, 1, 0), 1.25);
     this.heap = V().set(L.x + toSign.x * 2.1, 0, L.z + toSign.z * 2.1);
     this.side = V().set(-toSign.z, 0, toSign.x);
+    // (every batch waits here from the start, the later ones a step further back: the whole plan can be read off the row)
+    const mid = (this.n - 1) / 2;
     this.potatoes = this.game.spots.map((s, i) => {
-      const p = this.potatoModel(this.spots[i].k);
-      const x = this.heap.x + this.side.x * (i - 2) * 0.3, z = this.heap.z + this.side.z * (i - 2) * 0.3;
+      const p = s.kind === 'nut' ? this.nutModel() : this.potatoModel(this.spots[i].k);
+      const back = s.wave * 0.34;
+      const x = this.heap.x + this.side.x * (i - mid) * 0.3 + toSign.x * back, z = this.heap.z + this.side.z * (i - mid) * 0.3 + toSign.z * back;
       p.home = V().set(x, heightAt(x, z) + 0.07 * p.k, z);
       p.root.position.copy(p.home);
       p.root.rotation.y = Math.atan2(toSign.x, toSign.z) + (this.rand() - 0.5) * 0.5;
@@ -634,7 +736,8 @@ class RoastRound {
       // far enough for the ring and Mika beside it to fit the width; on a low screen (a phone on its side) the ring sits
       // lower and a little smaller, clear of the HUD, the gauge and the hint above it
       const low = clamp01((560 - (typeof innerHeight === 'number' ? innerHeight : 720)) / 170);
-      const d = Math.max(5 + low * 1.6, 2.25 / (0.52 * (f.camera?.aspect || 1.6))), off = 0.45 + low * 0.65;
+      const wide = this.ringR / RING_R;
+      const d = Math.max(5 + low * 1.6, 2.25 / (0.52 * (f.camera?.aspect || 1.6))) * (0.4 + 0.6 * wide), off = 0.45 + low * 0.65;
       look.set(c.x - b.x * off, c.y + 0.2, c.z - b.z * off);
       return pos.set(c.x + b.x * (d * 0.6 - off), c.y + d * 0.8, c.z + b.z * (d * 0.6 - off));
     }, () => look, 3.2);
@@ -793,14 +896,22 @@ class RoastRound {
     this.hearthCamera();
     this.mats.hollow.opacity = 0.75;
     // the potatoes hop into their hollows, one after the other: small ones, middling ones and big ones, plain to see
-    this.spots.forEach((s, n) => {
-      const pt = this.potatoes[s.i];
-      pt.move = { from: pt.root.position.clone(), to: V().copy(s.at).setY(s.at.y + 0.075 * s.k), u: 0, dur: 0.45, arc: 0.7, then: 'lay', delay: 0.1 + n * 0.13 };
-    });
+    this.hopIn(0);
     this.showGauge();
     this.hint(ctx.first
       ? tx('The ash is ready. Big potatoes take the longest! Stand by one and press {act} to cover it with ash.')
       : tx('Cover the potatoes with ash. Big ones take the longest: start with them.'), 7);
+  }
+
+  /** A batch hops from the row into its hollows (wave 0 as the cooking starts, the later ones as they arrive). */
+  hopIn(wave) {
+    let n = 0;
+    for (const s of this.spots) {
+      if (this.game.spots[s.i].wave !== wave) continue;
+      const pt = this.potatoes[s.i];
+      s.hollow.visible = true;
+      pt.move = { from: pt.root.position.clone(), to: V().copy(s.at).setY(s.at.y + (pt.nut ? 0.085 : 0.075 * s.k)), u: 0, dur: 0.45, arc: 0.7, then: 'lay', delay: 0.1 + n++ * 0.13 };
+    }
   }
 
   /** The spot Mika stands at: the nearest to a point half a step ahead of her. */
@@ -808,7 +919,8 @@ class RoastRound {
     const p = this.player, x = p.pos.x + Math.sin(p.facing) * 0.35, z = p.pos.z + Math.cos(p.facing) * 0.35;
     let best = -1, bd = 1.25;
     for (const s of this.spots) {
-      if (this.game.spots[s.i].st === 'dug') continue;
+      const stt = this.game.spots[s.i].st;
+      if (stt === 'dug' || stt === 'wait') continue;
       const d = Math.hypot(s.at.x - x, s.at.z - z);
       if (d < bd) { bd = d; best = s.i; }
     }
@@ -841,7 +953,10 @@ class RoastRound {
       this.player.gesture?.('Interact', { lock: false });
       ctx.audio?.land?.(0.25);
       ctx.fx?.burst?.(_v.copy(s.at).setY(s.at.y + 0.15), { n: 6, color: [0.5, 0.47, 0.45], speed: 0.9, size: 0.1, gravity: 3 });
-      if (game.left === 0) {
+      if (gs.kind === 'nut' && !this.told.nut) {
+        this.told.nut = true;
+        this.hint(tx('A chestnut! It cooks fast and wants no turning. Dig it at the amber glow, or it pops!'), 6);
+      } else if (game.left === 0 && game.wave === 0) {
         this.hint(ctx.first
           ? tx('Now watch. When a mound rocks and glows on one side, turn the potato with {act}.')
           : tx('A rocking mound wants turning. Amber glow and white steam: dig!'), 7);
@@ -882,7 +997,7 @@ class RoastRound {
     this.land(i, res);
     this.player.gesture?.('Interact', { lock: false });
     const text = {
-      perfect: tx('Perfect! Golden, soft and sweet.'),
+      perfect: gs.kind === 'nut' ? tx('A perfect chestnut! Warm and floury.') : tx('Perfect! Golden, soft and sweet.'),
       okay: gs.why === 'early' ? tx('A little firm in the middle, but good.')
         : gs.why === 'side' ? tx('Dark on one side: this one wanted turning. Still tasty.')
           : gs.why === 'singed' ? tx('A bit singed by the flare, still tasty.')
@@ -939,10 +1054,43 @@ class RoastRound {
     pt.steam = res === 'perfect' || res === 'okay' ? 4 : 0;
   }
 
+  /** A chestnut left too long: it jumps out of the ash with a bang, burnt. */
+  pop(i) {
+    const s = this.spots[i], ctx = this.ctx;
+    s.mound.visible = false; s.arrow.visible = false; s.side.visible = false;
+    this.land(i, 'burnt');
+    this.potatoes[i].move.arc = 1.5;
+    ctx.audio?.noise?.({ dur: 0.09, vol: 0.3, freq: 1800, q: 0.7 });
+    ctx.audio?.bad?.();
+    ctx.fx?.burst?.(_v.copy(s.at).setY(s.at.y + 0.2), { n: 16, color: [0.6, 0.55, 0.5], speed: 2.6, size: 0.12, gravity: 4 });
+    this.hint(tx('Pop! That chestnut stayed too long. Next time dig it sooner.'), 3.5);
+  }
+
+  /** A shower of rain spots: drops fall on the ash, it hisses and goes greyer (the rules have cooled it already). */
+  shower() {
+    const ctx = this.ctx;
+    this.rainT = 1.7;
+    if (this.drops) {
+      this.drops.visible = true;
+      for (let k = 0; k < RAIN_DROPS; k++) { const a = Math.random() * 6.283, r = Math.sqrt(Math.random()) * (this.ringR + 0.25); this.dropAt.set([Math.sin(a) * r, Math.cos(a) * r, 1.2 + Math.random() * 2.6, 5 + Math.random() * 2], k * 4); }
+    }
+    ctx.audio?.noise?.({ dur: 0.7, vol: 0.12, freq: 5200, q: 0.5 });
+    for (let k = 0; k < 5; k++) this.smoke(_v.set(this.centre.x + (Math.random() - 0.5) * 1.6, this.centre.y, this.centre.z + (Math.random() - 0.5) * 1.6), false, 0.45, 1.6);
+    if (!this.told.rain) { this.told.rain = true; this.hint(tx('Rain spots! They cool the ash. Wave the fan with {fan}, gently.', { fan: this.fanKey() }), 5); this.coolHint = 8; }
+  }
+
   cook(dt) {
     const ctx = this.ctx, game = this.game;
     this.keepOut(0.5);
     game.update(dt);
+    // what the rules did this frame: the next batch arrived, a chestnut popped, a shower fell
+    while (this.waveSeen < game.wave) {
+      this.hopIn(++this.waveSeen);
+      ctx.audio?.good?.();
+      this.hint(game.buried ? tx('More potatoes! Cover them while the others cook, and keep an eye on every mound.') : tx('Here is the next batch. In they go!'), 5);
+    }
+    while (game.popped.length) this.pop(game.popped.pop());
+    while (this.rainSeen < game.rained) { this.rainSeen++; this.shower(); }
     this.sel = this.pick();
     if (this.sel >= 0 && ctx.pressed()) this.act(this.sel);
     if (this.fanAsk) { this.fanAsk = false; if (this.fanT <= 0.35) this.wave(); }
@@ -1078,6 +1226,20 @@ class RoastRound {
       this.fan.scale.setScalar(Math.min(1, this.fanT * 7, (FAN_TIME - this.fanT) * 9 + 0.25));
       this.fan.userData.leaf.rotation.x = Math.sin((1 - this.fanT / FAN_TIME) * Math.PI * 7) * 0.6;
     }
+    // rain drops fall on the bed and are lifted back to the top while the shower lasts
+    if (this.drops?.visible) {
+      this.rainT -= dt;
+      const D = this.dropAt;
+      for (let k = 0; k < RAIN_DROPS; k++) {
+        const j = k * 4;
+        D[j + 2] -= D[j + 3] * dt;
+        if (D[j + 2] < 0.05) D[j + 2] = this.rainT > 0.3 ? 2.6 + Math.random() : -5;
+        _m4.makeTranslation(this.centre.x + D[j], this.centre.y + D[j + 2], this.centre.z + D[j + 1]);
+        this.drops.setMatrixAt(k, _m4);
+      }
+      this.drops.instanceMatrix.needsUpdate = true;
+      if (this.rainT <= -0.6) this.drops.visible = false;
+    }
     // the ring under the spot Mika can use
     const s = this.sel >= 0 && this.phase === 'cook' ? this.spots[this.sel] : null;
     this.selRing.scale.setScalar(1);
@@ -1121,12 +1283,13 @@ class RoastRound {
     const game = this.game;
     return {
       phase: this.phase, seed: this.seed, straw: this.straw, carrying: this.carrying, sel: this.sel, score: this.score,
+      wave: game.wave, waves: game.waves.length, rained: game.rained, clock: game.clock,
       fire: { x: this.centre.x, z: this.centre.z }, cheered: this.cheered ?? null, shared: this.shared,
       warm: game.warm, fans: game.fans, flares: game.flares, gentle: game.gentle,
       piles: this.piles.map(q => ({ x: q.x, z: q.z, taken: q.taken })),
       spots: this.spots.map(s => {
         const gs = game.spots[s.i];
-        return { i: s.i, x: s.at.x, z: s.at.z, st: gs.st, size: gs.size, laid: this.potatoes[s.i].laid, heat: gs.heat, cook: gs.cook, win: gs.win, turn: gs.turn,
+        return { i: s.i, x: s.at.x, z: s.at.z, st: gs.st, size: gs.size, kind: gs.kind, wave: gs.wave, laid: this.potatoes[s.i].laid, heat: gs.heat, cook: gs.cook, win: gs.win, turn: gs.turn,
           turned: gs.turned, singed: gs.singed, canTurn: game.canTurn(s.i), now: cookState(gs.heat, gs), result: gs.result, why: gs.why ?? null };
       }),
     };
@@ -1188,7 +1351,8 @@ export default {
       const t = r.game.tally();
       return { score: r.score, caught: t.perfect + t.okay, quit: !!res?.quit,
         extra: tx('{p} perfect, {o} good', { p: t.perfect, o: t.okay }),
-        detail: { ...t, results: r.game.spots.map(s => s.result), sizes: r.game.spots.map(s => s.size), turned: r.game.spots.filter(s => s.turned).length,
+        detail: { ...t, results: r.game.spots.map(s => s.result), sizes: r.game.spots.map(s => s.size), turned: r.game.spots.filter(s => s.turned && s.kind !== 'nut').length,
+          waves: r.game.waves.length, rained: r.game.rained, popped: r.game.spots.filter(s => s.pop).length,
           fans: r.game.fans, flares: r.game.flares, shared: r.shared, cheered: r.cheered || 0, seed: r.seed } };
     } finally {
       r.dispose();

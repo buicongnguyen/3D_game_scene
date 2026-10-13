@@ -2,6 +2,10 @@
 // Four cows, four lanes, a 56 m track with a mud patch and fresh grass. Mika rides one (Giddy-up on the beat of her
 // hooves), Kenta, Yui and Daichi ride the others. Rules (pure, tested): ./rules-cowrace.js.
 //
+// A round is a small race day (rules-cowrace.js meetPlan): two heats on Easy (a warm-up without mud, then the classic race),
+// three on Normal (the classic race, then finals with grass in two lanes only) and three on Difficult (rivals that sprint for
+// the ribbon, rows of puddles to steer round, a tighter beat). The points of the heats add up; the podium shows the day's standings.
+//
 // Drawing: the track, the ropes, the pennants, the gate and the stands are a few merged vertex-coloured meshes built once
 // (when Mika comes within sight, or for a round) and freed when she leaves. The spectators are two instanced meshes. The
 // four cows and the three riders are pooled for a round (clones of the cow and kid models) and released at every exit.
@@ -13,8 +17,8 @@ import { makeRig, removeRig, ridingMaterial, SEAT, KID_SEAT, playGait, riderPose
 import { RaceCard, icon } from '../../actors/cow-help.js';
 import { addCss, disposeRigs } from './util.js';
 import { SITE } from '../../content/cowtrack.js';
-import { TRACK, PRACTICE_BEAT, newRace, stepRace, tap, tapKind, beatPhase, placeNow, result, raceScore } from './rules-cowrace.js';
-import { tapLabel, coachLine, COACH_TAPS, ghostDue, GHOST_SHOW, STARS_NOTE } from './rules-cowhelp.js';
+import { TRACK, PRACTICE_BEAT, SURGE_FROM, PLACE_POINTS, meetPlan, newRace, stepRace, tap, tapKind, beatPhase, placeNow, result, raceScore } from './rules-cowrace.js';
+import { tapLabel, coachLine, COACH_TAPS, ghostDue, GHOST_SHOW, starsNote } from './rules-cowhelp.js';
 
 const V3 = THREE.Vector3;
 /** The track: it starts at (x0, z) and runs east (+X). Lane 0 is the north-most (left when you look east is north). */
@@ -150,7 +154,7 @@ function buildSite(world) {
   // the mud patch: dark and wet, with lighter puddles
   const mudMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.62, metalness: 0, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 });
   own.push(mudMat);
-  addMesh(ribbon(world, TRACK.mud[0], TRACK.mud[1], 0.06, (s, l) => (((Math.floor(s * 1.3) + l * 2) % 5 === 0) ? '#6e5238' : '#4b3220'), 0.5), mudMat);
+  const mud = addMesh(ribbon(world, TRACK.mud[0], TRACK.mud[1], 0.06, (s, l) => (((Math.floor(s * 1.3) + l * 2) % 5 === 0) ? '#6e5238' : '#4b3220'), 0.5), mudMat);
 
   // lane ropes between poles, with a pennant on each span (the lane's colour)
   const parts = [];
@@ -264,9 +268,9 @@ function buildSite(world) {
   };
   setSpect(0, false);
   return {
-    group, rib, tail, grass, gpos, setSpect, zAt,
+    group, rib, tail, grass, gpos, setSpect, zAt, mud,
     eat(i) { M4.compose(P4.set(0, -50, 0), Q4.identity(), S4.set(1, 1, 1)); grass.setMatrixAt(i, M4); grass.instanceMatrix.needsUpdate = true; },
-    reset() { gpos.forEach(([x, z], i) => { M4.compose(P4.set(x, world.heightAt(x, z) + 0.05, z), Q4.identity(), S4.set(1, 1, 1)); grass.setMatrixAt(i, M4); }); grass.instanceMatrix.needsUpdate = true; rib.visible = true; tail.visible = false; },
+    reset() { gpos.forEach(([x, z], i) => { M4.compose(P4.set(x, world.heightAt(x, z) + 0.05, z), Q4.identity(), S4.set(1, 1, 1)); grass.setMatrixAt(i, M4); }); grass.instanceMatrix.needsUpdate = true; rib.visible = true; tail.visible = false; mud.visible = true; },
     dispose() {
       group.parent?.remove(group);
       for (const o of own) o.dispose?.();
@@ -358,7 +362,7 @@ export default {
 
     // ---- the pooled actors: four cows, three kid riders, Mika's seat
     const cows = [], kids = [], rigs = [];
-    let S = null, race = null, cleaned = false, fixes = 0;
+    let S = null, race = null, me = null, puddles = null, cleaned = false, fixes = 0;
     const slabs = [];                                  // the podium blocks (made at the end of a race)
     const tmp = { x: 0, y: 0, z: 0 }, v1 = new V3();
     const syncRigs = () => { for (let i = 0; i < rigs.length; i++) { cows[i].root.updateMatrixWorld(true); rigs[i].userData.update(); } };
@@ -376,6 +380,7 @@ export default {
       for (const r of rigs) removeRig(r);
       for (const b of slabs) { scene.remove(b); b.geometry.dispose(); b.material.dispose(); }
       slabs.length = 0;
+      if (puddles) { puddles.removeFromParent(); puddles.geometry.dispose(); puddles.material.dispose(); puddles.dispose(); puddles = null; }
       cows.length = kids.length = rigs.length = 0;
       seatM.removeFromParent();
       card.dispose();
@@ -469,11 +474,46 @@ export default {
       document.body.classList.add('cow-race');
       root.classList.add('on');
 
-      // ---- the race and the line-up
-      const assist = ctx.first ? 1 : (g.easy ? 0.5 : 0);
-      race = newRace({ seed: Math.floor(Math.random() * 1e6) + 1, assist, beat: practice ? PRACTICE_BEAT : undefined });
-      const me = race.racers[0];
-      if (qa) { qa.race = race; qa.site = S; qa.help = { open: () => { helpReq = true; }, isOpen: () => helpOpen, el }; }
+      // ---- the race day: the heats of the level (the picker's choice; the first try is Easy's day with a practice lap first)
+      const plan = meetPlan(ctx.level, ctx.first), heats = plan.heats.length;
+      const points = [0, 0, 0, 0], places = [];            // the day's standings (Mika, Kenta, Yui, Daichi) and Mika's place in each heat
+      let total = 0, raceTime = 0, heat = 0, rs = null, res = null;
+      // puddles (Difficult): one small instanced mesh for the whole day, laid out again for each heat
+      const PUD_MAX = 8;
+      {
+        // a wet brown rim, sky-blue water and a pale glint: three flat discs in one geometry
+        const disc = (r, seg, color, y, dx = 0, dz = 0) => paint(new THREE.CircleGeometry(r, seg).rotateX(-Math.PI / 2).translate(dx, y, dz), color);
+        const parts = [disc(1.05, 14, '#4d3a28', 0), disc(0.86, 14, '#8fc3e0', 0.012), disc(0.28, 8, '#dff2fb', 0.024, -0.28, 0.22)];
+        const geo = mergeGeometries(parts);
+        for (const q of parts) q.dispose();
+        puddles = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.25, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 }), PUD_MAX);
+        puddles.name = 'race-puddles'; puddles.count = 0; puddles.frustumCulled = false; puddles.receiveShadow = true;
+        scene.add(puddles);
+      }
+      const startHeat = h => {
+        const ht = plan.heats[h];
+        race = newRace({ seed: Math.floor(Math.random() * 1e6) + 1, assist: ht.assist, window: plan.window, course: ht.course, beat: ht.practice ? PRACTICE_BEAT : undefined });
+        me = race.racers[0];
+        if (qa) { qa.race = race; qa.dbg.heat = h; qa.dbg.heats = heats; }
+        // the course of this heat on the ground: the mud patch (or none), grass only where it grows, the puddles
+        S.reset();
+        S.mud.visible = race.course.mud;
+        el.m1.style.display = race.course.mud ? '' : 'none';
+        for (let l = 0; l < TRACK.lanes; l++) for (let i = 0; i < 2; i++) if (!race.course.grass[i][l]) S.eat(l * 2 + i);
+        const P = race.course.puddles;
+        puddles.count = Math.min(PUD_MAX, P.length);
+        for (let i = 0; i < puddles.count; i++) {
+          trackPos(world, P[i].s, P[i].lane, tmp);
+          M4.compose(P4.set(tmp.x, tmp.y + 0.075, tmp.z), Q4.setFromEuler(E4.set(0, i * 1.7, 0)), S4.set(1.15, 1, 0.9));
+          puddles.setMatrixAt(i, M4);
+        }
+        puddles.instanceMatrix.needsUpdate = true;
+        race.racers.forEach((r, i) => place(i, -1.8, r.lane));
+        root.classList.remove('fin', 'racing');
+        root.querySelector('.beat').classList.toggle('lg', !!ht.practice);
+        for (let i = 0; i < 4; i++) { cows[i].anim?.play('Idle'); el.dots[i]._q = -1; }
+      };
+      if (qa) { qa.site = S; qa.help = { open: () => { helpReq = true; }, isOpen: () => helpOpen, el }; }
       const place = (i, s, lat) => {
         const a = cows[i];
         trackPos(world, s, lat, tmp);
@@ -482,13 +522,12 @@ export default {
         a.facing = Math.PI / 2;
         a.root.rotation.y = a.facing;
       };
-      race.racers.forEach((r, i) => place(i, -1.8, r.lane));
+      startHeat(0);
       p.mounted = { obj: seatM, offset: new V3(), facingOffset: 0 };
       p.anim?.cancelOneShot();                         // a talk or a gesture still playing from before the round must not leave her standing
       p.pose = riderPose(p.anim);
       p.poseSpeed = 1;
       seatRider(p.anim, 'RideCow');
-      for (let i = 0; i < 4; i++) cows[i].anim?.play('Idle');
       syncRigs();
       poseMika();
 
@@ -529,6 +568,31 @@ export default {
         await ctx.loop(dt => { tick(dt); return pollHelp(dt) ? undefined : true; });
         if (ctx.quit) return { score: 0, quit: true };
       }
+      // what is new in a heat is said once, as the riders line up
+      const HEAT_TIP = {
+        classic: ctx.easy && !ctx.first ? N_('Now with the mud patch. Everyone slows there: keep the beat.') : null,
+        final: N_('The final! Fresh grass lies in two lanes only: steer for it.'),
+        champions: N_('The champions\' final. The other cows are quicker now!'),
+        surge: N_('Near the ribbon the others sprint. Keep your streak for the end!'),
+        puddles: N_('Puddles! A splash slows her down. Steer round them.'),
+        grand: N_('The grand final: puddles, grass and a sprint. Plan your lanes!'),
+      };
+      for (heat = 0; heat < heats; heat++) {
+      const practiceLap = !!plan.heats[heat].practice;
+      if (heat > 0) {
+        // between two heats: a breath, the cows walk back to the gate (a fade), the next course is laid
+        await ctx.fade(true, 350);
+        if (ctx.quit) return { score: 0, quit: true };
+        startHeat(heat);
+        syncRigs(); poseMika(); frame();
+        g.follow.cutscene({ pos: camPos.clone(), look: camLook.clone() }, 0.001);
+        g.follow.track(() => camPos, () => camLook, 4);
+        await ctx.fade(false, 400);
+        if (ctx.quit) return { score: 0, quit: true };
+      }
+      if (heats > 1) say(tx('Heat {n} of {total}', { n: heat + 1, total: heats }), 2.6);
+      { const tip = HEAT_TIP[plan.heats[heat].course]; if (tip) ctx.hint(tip, 4.5); }
+      if (heat > 0) { await waitLive(1.3); if (ctx.quit) return { score: 0, quit: true }; }
       // ---- 3, 2, 1, go
       if (qa) qa.dbg.phase = 'countdown';
       const flash = text => { el.big.textContent = text; el.big.style.transition = 'none'; el.big.style.opacity = '1'; el.big.style.transform = 'translate(-50%,-50%) scale(1.25)'; requestAnimationFrame(() => { el.big.style.transition = 'opacity .7s, transform .7s'; el.big.style.opacity = '0'; el.big.style.transform = 'translate(-50%,-50%) scale(0.9)'; }); };
@@ -544,7 +608,9 @@ export default {
       // ---- the race
       const beat = race.beat;
       let lastBeatN = -1, mudShown = false, tiredShown = false, said = 0, lineAt = 0, popLeft = 0, finishedMe = false, lastPlace = 0, ribbonT = 0, hintLevel = 0;
-      let taps = 0, goodRow = 0, ghostEnd = -99, ghostUntil = -1, ghostOn = false;
+      let taps = 0, goodRow = 0, ghostEnd = -99, ghostUntil = -1, ghostOn = false, puddleSaid = false, surgeSaid = false;
+      const practice = practiceLap;                     // (the first heat of a first try: a word for every tap, the teacher's tips)
+      el.sayLeft = Math.min(el.sayLeft || 0, 0.6);
       const kidSay = [N_('Come on, cow! Come ON!'), N_('Slow and steady, Moo-moo!'), N_('Look at her go!'), N_('Mud ahead! Mind your socks!'), N_('Yeah, Mika! Yeah!')];
       const TONE = { good: '#bff5c2', ok: '#ffe9a0', bad: '#ffb3a8' };
       const pop = (text, color, life = 0.5) => { el.pop.textContent = text; el.pop.style.color = color || '#fff'; el.pop.style.transition = 'none'; el.pop.style.opacity = '1'; el.pop.style.transform = 'translateX(-50%) translateY(0)'; popLeft = life; };
@@ -554,7 +620,7 @@ export default {
       };
       const pressNow = () => { const r = giddyReq || input.pressed('act') || input.pressed('jump') || input.pressed('tap'); giddyReq = false; return r; };
       const setGhost = on => { ghostOn = on; el.ghost.classList.toggle('show', on); el.ghostf.classList.toggle('show', on); if (!on) { el.ghost.classList.remove('press'); el.ghostf.classList.remove('press'); } if (qa) qa.dbg.ghost = on; };
-      const res = await ctx.loop(dt => {
+      res = await ctx.loop(dt => {
         if (pollHelp(dt)) { tick(dt); if (qa) qa.dbg.helpOpen = true; return undefined; }          // the "?" card is up: the race waits
         // ---- input and rules
         if (pressNow() && !me.finished) {
@@ -580,6 +646,12 @@ export default {
             S.eat(Math.max(0, Math.min(7, race.racers[e.who].lane * 2 + e.i)));
             fx.burst(v1.set(a.pos.x, a.pos.y + 1.1, a.pos.z), { n: 12, color: [0.45, 0.85, 0.3], speed: 1.6, size: 0.2, gravity: 1 });
             if (e.who === 0) { audio.good(); popMsg(tx(N_('Yum! Fresh grass!')), '#d5ffa8'); }
+          } else if (e.type === 'puddle') {
+            fx.burst(v1.set(a.pos.x, a.pos.y + 0.3, a.pos.z), { n: 14, color: [0.75, 0.9, 1], speed: 2.6, size: 0.22, gravity: 6 });
+            if (e.who === 0) {
+              audio.miss(); popMsg(tx(N_('Splash!')), '#bfe6ff');
+              if (!puddleSaid) { puddleSaid = true; ctx.hint(N_('Splash! A puddle slows her. Steer round the next one.'), 3.5); }
+            }
           } else if (e.type === 'mud' && e.who === 0 && !mudShown) { mudShown = true; if (ctx.first) ctx.hint(N_('Mud! Everyone slows down. Keep the beat, do not mash.'), 3.5); }
           else if (e.type === 'tired' && e.who === 0 && !tiredShown) { tiredShown = true; audio.miss(); ctx.hint(N_('Puff, puff! She is out of breath. Ease off and tap on the beat.'), 3.5); }
           else if (e.type === 'finish') {
@@ -596,7 +668,7 @@ export default {
               finishedMe = true;
               root.classList.add('fin');
               say(who.place === 1 ? tx(N_('Mika is first!')) : tx(N_('Mika crosses the line!')), 2.4);
-              ctx.hud(raceScore(who.place, who.finished), null);
+              ctx.hud(total + raceScore(who.place, who.finished), null);
               audio.good();
             } else if (!finishedMe) say(tx(N_('{name} is across!'), { name: who.name }), 1.8);
           }
@@ -631,7 +703,8 @@ export default {
         tick(dt);
         frame();
         // ---- the page
-        ctx.hud(raceScore(placeNow(race), null), race.t);
+        ctx.hud(total + raceScore(placeNow(race), null), race.t);
+        if (race.course.surge && !surgeSaid && !finishedMe && me.s > TRACK.len - SURGE_FROM - 5) { surgeSaid = true; said = 4; say(tx(N_('Here they come! Sprint for the ribbon!')), 2.4); }
         drawStrip();
         const pl = placeNow(race);
         if (pl !== lastPlace) { lastPlace = pl; el.place.textContent = tx(ordinal(pl)); }
@@ -678,14 +751,29 @@ export default {
       if (res?.quit || ctx.quit) return { score: 0, quit: true };
       setGhost(false);
       root.classList.remove('racing');
+      // ---- the heat is run: its points join the day's
+      rs = result(race);
+      total += rs.score; raceTime += rs.time ?? TRACK.timeout; places.push(rs.place);
+      race.racers.forEach((r, i) => { points[i] += PLACE_POINTS[Math.max(0, Math.min(3, r.place - 1))]; });
+      ctx.hud(total, null);
+      if (heat + 1 < heats) {
+        if (qa) qa.dbg.phase = 'between';
+        say(tx('Heat {n}: {place}', { n: heat + 1, place: tx(ordinal(rs.place)) }), 3);
+        if (rs.place === 1) audio.star?.(); else audio.good();
+        let tb = 0;
+        await ctx.loop(dt => { tb += dt; S.setSpect(ctx.t, true); tick(dt); if (pollHelp(dt)) return undefined; return tb > 2.4 ? true : undefined; });
+        if (ctx.quit) return { score: 0, quit: true };
+      }
+      }
 
       // ---- the podium: the first three cows stand on blocks in front of the stands, the kids cheer FROM THE STANDS: the riders
       // stay seated on their cows (the sway clip), nobody stands on a cow's back
       if (qa) qa.dbg.phase = 'podium';
-      const rs = result(race);
-      ctx.hud(rs.score, null);
       ctx.hintTop(false);
-      const order = race.order.slice(0, 3);
+      // the day's standings: by the points of all heats, the last heat settling a tie (one heat: simply its order)
+      const standing = [0, 1, 2, 3].sort((a, b) => points[b] - points[a] || race.racers[a].place - race.racers[b].place);
+      const order = standing.slice(0, 3), dayPlace = standing.indexOf(0) + 1;
+      if (puddles) puddles.count = 0;
       const half = TRACK.lanes * TRACK.laneW / 2, pz = SITE.z + half + 5.2, ph = [0.7, 0.45, 0.25], px0 = SITE.x0 + TRACK.len - 12;
       for (let i = 0; i < 4; i++) {                                    // every cow stands, every rider sits (no cow trots on the spot)
         cows[i].anim?.play('Idle', { fade: 0.2 });
@@ -703,16 +791,17 @@ export default {
       const camL = new V3(px0, world.heightAt(px0, pz) + 1.5, pz);
       g.follow.cutscene({ pos: camP, look: camL }, 1.1);
       const winner = race.racers[order[0]];
-      say(rs.place === 1 ? tx(N_('Mika wins the ribbon!')) : tx(N_('{name} wins the ribbon!'), { name: winner.id === 'mika' ? 'Mika' : winner.name }), 3.2);
-      if (rs.place === 1) { audio.star?.(); fx.burst(v1.set(px0, world.heightAt(px0, pz) + 2.8, pz), { n: 60, speed: 5, size: 0.35, gravity: 1 }); }
+      say(dayPlace === 1 ? tx(N_('Mika wins the ribbon!')) : tx(N_('{name} wins the ribbon!'), { name: winner.id === 'mika' ? 'Mika' : winner.name }), 3.2);
+      if (dayPlace === 1) { audio.star?.(); fx.burst(v1.set(px0, world.heightAt(px0, pz) + 2.8, pz), { n: 60, speed: 5, size: 0.35, gravity: 1 }); }
       S.setSpect(0, true);
       let tp = 0;
       await ctx.loop(dt => { tp += dt; S.setSpect(ctx.t, true); tick(dt); return tp > 3.6 ? true : undefined; });
-      if (ctx.quit) return { score: rs.score, quit: false, extra: ordinal(rs.place), detail: { place: rs.place, time: rs.time }, note: tx(STARS_NOTE) };
+      const out = { score: total, quit: false, extra: ordinal(dayPlace), detail: { place: dayPlace, places, time: raceTime, heats }, note: tx(starsNote(heats)) };
+      if (ctx.quit) return out;
       await ctx.fade(true, 350);
       cleanup();
       await ctx.fade(false, 400);
-      return { score: rs.score, quit: false, extra: ordinal(rs.place), detail: { place: rs.place, time: rs.time }, note: tx(STARS_NOTE) };
+      return out;
     } finally {
       if (!cleaned) {
         cleanup();

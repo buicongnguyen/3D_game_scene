@@ -22,6 +22,9 @@ export const ARCHERY = {
   centreH: 1.25,                // the target's middle above the ground
   // the sliding target of the fourth end ("yabusame" practice): it rides a rail across the lane
   moving: { u: 17.5, vMax: 2.4, period: 10, r: 0.85, dist: 17 },
+  // the gong of Difficult's last end: a small bronze disc that swings from a frame near the middle of the lane (the three straw
+  // targets and the sliding one are put away for it). swing: metres to each side, period: seconds there and back.
+  gong: { u: 12, v: 0.5, r: 0.34, h: 1.4, swing: 0.42, period: 3.4, dist: 12 },
   eye: 1.12,                    // release height above the ground at the line
   stand: { u: 0.06, v: 0.3 },    // where Mika stands for the round (on the board, her bow arm reaching the muzzle)
   quiver: { u: -1.3, v: 2.3 },

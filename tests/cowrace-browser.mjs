@@ -244,7 +244,7 @@ async function race(s, { quitAt = null, first = true } = {}) {
         await sleep(800);
         await s.shot('results');
         const note = await s.page.evaluate(() => document.querySelector('#trickCard .starnote')?.textContent || '');
-        check(/1st place = 3 stars/.test(note), `${s.name}: the results card explains the stars ("${note}")`);
+        check(/1st place = 3 stars|Win every heat/.test(note), `${s.name}: the results card explains the stars ("${note}")`);
       }
       await sleep(400); await s.pressE(); await sleep(900);
       continue;

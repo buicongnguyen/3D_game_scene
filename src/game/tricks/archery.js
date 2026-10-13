@@ -22,7 +22,7 @@ import { arrowGeometry, makeBow, makeFingers, dotTexture, BOW } from './archery-
 import { createGuide, GUIDE_CSS, GHOST_LOOP } from './archery-guide.js';
 import { ARCHERY } from '../../content/archery.js';
 import {
-  ARCH, roundPlan, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, launch, stepArrow, arc, solveAim,
+  ARCH, roundPlan, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, gongV, launch, stepArrow, arc, solveAim,
   missReason, aimOffset, guideStep, ghostWanted, guideDevice, SLOWMO, slowMo,
 } from './rules-archery.js';
 
@@ -124,11 +124,13 @@ export default {
     addCss('archCss', CSS);
 
     const rec = ctx.director.tricks.rec('archery');
-    const plays = rec?.plays || 0, easy = !!g.easy;
-    const plan = roundPlan(ctx.first, easy);
+    const plays = rec?.plays || 0, easy = !!ctx.easy;
+    const plan = roundPlan(ctx.first, ctx.level);          // the level comes from the picker: Easy has no wind, Difficult a gong
     const touch = !!ctx.ui.touch;
     const y0 = R.y0, hAt = (x, z) => world.heightAt(x, z);
-    const wind = makeWind(Math.floor(Math.random() * 1e6) + 1, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind));
+    const wind = makeWind(Math.floor(Math.random() * 1e6) + 1, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind), plan.gust);
+    const G = A.gong, MOVING = 3, GONG = 4;                 // the sliding target and the gong, as indices into the scene's targets
+    let period = A.moving.period;                           // the sliding target's pace in the end being shot
 
     // ---- the lane <-> world conversions (no allocation: callers pass the vector to fill)
     const W = (u, v, y, out) => out.set(A.x - u, y0 + y, A.z - v);
@@ -149,9 +151,11 @@ export default {
     const added = [], disposables = [];
     let ui = null, cleaned = false, savedFov = 0, hadLock = false, rig = null, lanternWas = null;
     const cleanups = [];
-    const scenery = { targets: [], active: -1, back: A.back, side: A.side, ground, vAt: (i, t) => movingV(A.moving, t) };
+    const scenery = { targets: [], active: -1, back: A.back, side: A.side, ground, vAt: (i, t) => (i === GONG ? gongV(G, t) : movingV(A.moving, t, period)) };
     for (const t of A.targets) scenery.targets.push({ u: t.u, v: t.v, r: t.r, r0: t.r, y: hAt(A.x - t.u, A.z - t.v) - y0 + A.centreH });
     scenery.targets.push({ u: A.moving.u, v: 0, r: A.moving.r, r0: A.moving.r, y: hAt(A.x - A.moving.u, A.z) - y0 + A.centreH, moving: true, off: true });
+    scenery.targets.push({ u: G.u, v: G.v, r: G.r, r0: G.r, y: hAt(A.x - G.u, A.z - G.v) - y0 + G.h, moving: true, off: true });
+    let gong = null;                                        // the gong's frame and disc (made for a plan that has a gong end)
 
     const cleanup = () => {
       if (cleaned) return;
@@ -167,6 +171,7 @@ export default {
       // the targets and arrows are put back as the world built them
       for (const t of R.targets) { t.group.visible = true; t.group.scale.setScalar(1); t.group.position.y = t.baseY; t.flag.visible = false; }
       R.moving.group.visible = false; R.moving.group.scale.setScalar(1);
+      R.moving.flag.visible = false;
       rig?.leave();
       p.facing = A.heading - st.yaw;                     // she turns square to the lane again (the stance is side-on)
       p.root.rotation.y = p.facing;
@@ -223,6 +228,39 @@ export default {
       const arcPts = new THREE.Points(arcGeo, arcMat);
       arcPts.frustumCulled = false;
       scene.add(arcPts); added.push(arcPts); disposables.push(arcGeo, arcMat, dotTex);
+
+      // ---- the gong (Difficult): a small bronze disc hung from a wooden frame; it swings like a slow pendulum
+      if (plan.ends.some(e => e.target === 'gong')) {
+        const root = new THREE.Group(), swing = new THREE.Group();
+        root.name = 'archery:gong';
+        const gx = A.x - G.u, gz = A.z - G.v, gy = hAt(gx, gz), top = G.h + 1.0, L = 1.0;       // the pivot is a metre above the disc's middle
+        const wood = new THREE.MeshStandardMaterial({ color: '#8a5a30', roughness: 0.85 }), rope = new THREE.MeshStandardMaterial({ color: '#e9dcc0', roughness: 0.9 });
+        // (a deep copper face with a dark rim and a bright boss: it has to stand out against the straw wall behind it)
+        const bronze = new THREE.MeshStandardMaterial({ color: '#c8742a', roughness: 0.4, metalness: 0.45, emissive: '#3a1a06', emissiveIntensity: 0.55 });
+        const dark = new THREE.MeshStandardMaterial({ color: '#4a2a14', roughness: 0.5, metalness: 0.4 });
+        const gold = new THREE.MeshStandardMaterial({ color: '#ffd35a', roughness: 0.3, metalness: 0.5, emissive: '#5a3a00', emissiveIntensity: 0.6 });
+        const postG = new THREE.CylinderGeometry(0.06, 0.075, top + 0.15, 8), barG = new THREE.CylinderGeometry(0.05, 0.05, 2.5, 8).rotateX(Math.PI / 2);
+        const discG = new THREE.CylinderGeometry(G.r, G.r, 0.035, 28).rotateZ(Math.PI / 2), rimG = new THREE.TorusGeometry(G.r - 0.02, 0.04, 8, 28).rotateY(Math.PI / 2);
+        const bossG = new THREE.SphereGeometry(0.11, 14, 8).scale(0.45, 1, 1), ropeG = new THREE.CylinderGeometry(0.012, 0.012, 1, 5);
+        for (const s of [-1, 1]) { const m = new THREE.Mesh(postG, wood); m.position.set(0, (top + 0.15) / 2, s * 1.2); m.castShadow = true; root.add(m); }
+        const bar = new THREE.Mesh(barG, wood); bar.position.set(0, top, 0); root.add(bar);
+        swing.position.set(0, top, 0);
+        const disc = new THREE.Mesh(discG, bronze); disc.position.y = -L; disc.castShadow = true;
+        const rim = new THREE.Mesh(rimG, dark); rim.position.y = -L;
+        const boss = new THREE.Mesh(bossG, gold); boss.position.set(0.03, -L, 0);
+        swing.add(disc, rim, boss);
+        for (const s of [-1, 1]) {
+          // two cords from the bar to the top of the rim
+          const m = new THREE.Mesh(ropeG, rope), len = L - G.r * 0.86;
+          m.scale.y = len; m.position.set(0, -len / 2, s * G.r * 0.5); swing.add(m);
+        }
+        root.add(swing);
+        root.position.set(gx, gy, gz);
+        root.visible = false;
+        scene.add(root); added.push(root);
+        disposables.push(wood, rope, bronze, dark, gold, postG, barG, discG, rimG, bossG, ropeG);
+        gong = { root, swing, L, ring: 0 };
+      }
 
       // ---- the page layer
       ui = document.createElement('div');
@@ -320,12 +358,15 @@ export default {
 
       // ---- the end's targets: the active one carries a red pennant; for the sliding end the others fold down
       const showEnd = e => {
-        const moving = plan.ends[e].target === 'moving';
-        R.targets.forEach((t, i) => { t.flag.visible = !moving && plan.ends[e].target === i; t.group.visible = !moving; t.group.scale.setScalar(1); });
-        R.moving.group.visible = moving;
-        R.moving.flag.visible = moving;
-        scenery.targets.forEach((t, i) => { t.off = moving ? i !== 3 : i === 3; });
-        scenery.active = moving ? 3 : plan.ends[e].target;
+        const kind = plan.ends[e].target, slide = kind === 'moving', isGong = kind === 'gong', moving = slide || isGong;
+        period = plan.ends[e].period || A.moving.period;
+        R.targets.forEach((t, i) => { t.flag.visible = !moving && kind === i; t.group.visible = !moving; t.group.scale.setScalar(1); });
+        R.moving.group.visible = slide;
+        R.moving.flag.visible = slide;
+        if (gong) gong.root.visible = isGong;
+        const special = slide ? MOVING : isGong ? GONG : -1;
+        scenery.targets.forEach((t, i) => { t.off = moving ? i !== special : i >= MOVING; });
+        scenery.active = moving ? special : kind;
         const tg = scenery.targets[scenery.active];
         // the easy end: a bigger face (about its middle: the stand sinks a little into the ground), a big dotted arc
         const big = plan.ends[e].scale;
@@ -333,13 +374,14 @@ export default {
         R.targets.forEach((t, i) => { const on = i === scenery.active && !moving, k = on ? big : 1; t.group.scale.setScalar(k); t.group.position.y = t.baseY + A.centreH * (1 - k); });
         arcMat.size = plan.ends[e].bigArc ? 0.27 : 0.16;
         // the first aim points at the target's middle, a little high for the drop
-        st.yaw = Math.atan2((tg.moving ? 0 : tg.v) - ARCH.muzzle.v, tg.u - ARCH.muzzle.u);
+        st.yaw = Math.atan2((isGong ? G.v : tg.moving ? 0 : tg.v) - ARCH.muzzle.v, tg.u - ARCH.muzzle.u);
         st.pitch = 0.03;
         // the very first aim of the first try starts a little off the target, so the first thing to learn (move the circle onto it) is a real thing to do
         if (ctx.first && e === 0) st.yaw += 0.11;
         st.camYaw = st.yaw; st.camPitch = st.pitch;
       };
-      const endDist = e => (plan.ends[e].target === 'moving' ? A.moving.dist : A.targets[plan.ends[e].target].dist);
+      const endDist = e => (plan.ends[e].target === 'moving' ? A.moving.dist : plan.ends[e].target === 'gong' ? G.dist : A.targets[plan.ends[e].target].dist);
+      const isBonus = e => typeof plan.ends[e].target === 'string';
 
       const pipsFor = () => {
         const e = plan.ends[st.end], n = e.arrows, key = st.end * 1000 + st.scores.length * 10 + st.arrow;
@@ -357,7 +399,8 @@ export default {
         const e = st.end;
         setText(el.endB, 'endLabel', plan.ends[e].target === 'moving'
           ? tx('Bonus end · sliding target')
-          : tx('End {n} of {total} · {d} m', { n: e + 1, total: plan.ends.filter(x => x.target !== 'moving').length, d: endDist(e) }));
+          : plan.ends[e].target === 'gong' ? tx('Last end · swinging gong')
+            : tx('End {n} of {total} · {d} m', { n: e + 1, total: plan.ends.filter(x => typeof x.target === 'number').length, d: endDist(e) }));
       };
 
       // ---- the page's wind gauge (the sock itself shows in the world)
@@ -453,7 +496,9 @@ export default {
         s.mesh.quaternion.copy(s.base);
         s.wob = a.state === 'hit' || a.state === 'other' ? 1 : 0.3;
         s.use = 'stuck'; s.age = 0;
-        if (a.hitIdx === 3 && (a.state === 'hit' || a.state === 'other')) { R.moving.group.attach(s.mesh); s.moving = true; }
+        if (a.hitIdx === MOVING && (a.state === 'hit' || a.state === 'other')) { R.moving.group.attach(s.mesh); s.moving = true; }
+        // a rubber-tipped arrow rings the gong and drops away: it does not stick in bronze
+        if (a.hitIdx === GONG && a.state === 'hit') { release(s); if (gong) gong.ring = 1; }
       };
 
       let lastHold = false, tick = 0;
@@ -492,6 +537,7 @@ export default {
         fx.burst?.(st.hitW, { n: ring >= 9 ? 26 : hit ? 12 : 8, color: col, speed: hit ? 2.3 : 1.4, life: 0.8, size: 0.13, gravity: 1.2 });
         audio.noise({ dur: 0.1, vol: hit ? 0.22 : 0.12, freq: hit ? 320 : 200, q: 0.8, type: 'lowpass' });
         audio.tone(hit ? 96 : 70, { type: 'triangle', dur: 0.14, vol: 0.16, glide: 0.6, rev: 0.05 });
+        if (hit && a.hitIdx === GONG) { audio.tone(196, { type: 'sine', dur: 1.6, vol: 0.2, rev: 0.6 }); audio.tone(293.7, { type: 'triangle', dur: 1.1, vol: 0.08, rev: 0.6 }); }
         if (ring >= ARCH.perfect) { audio.star(); p.gesture?.('Cheer', { lock: false }); fx.burst?.(st.hitW, { n: 40, color: [1, 0.9, 0.4], speed: 4, life: 1.2, size: 0.18, gravity: -0.3 }); }
         else if (ring >= 7) audio.good(); else if (hit) audio.blip(1.2); else audio.miss();
         // the number pops where it landed
@@ -515,7 +561,7 @@ export default {
       const showSummary = () => {
         const e = st.end, sum = st.ends[st.ends.length - 1];
         setMode('aim', 8);
-        ctx.hint(plan.ends[e].target === 'moving' ? tx('Bonus end: {n} points.', { n: sum }) : tx('End {n}: {pts} points.', { n: e + 1, pts: sum }), 2);
+        ctx.hint(plan.ends[e].target === 'moving' ? tx('Bonus end: {n} points.', { n: sum }) : plan.ends[e].target === 'gong' ? tx('The gong: {n} points.', { n: sum }) : tx('End {n}: {pts} points.', { n: e + 1, pts: sum }), 2);
         audio.good();
       };
 
@@ -568,6 +614,9 @@ export default {
           if (st.t > 1.4) {
             st.phase = 'ready'; st.t = 0; st.cur = take();
             if (ctx.first && !st.helpSeen) { st.helpSeen = true; guide.open(dev()); }      // the first try starts with the "How to shoot" card
+            // what the level changes is said once, at the first arrow
+            if (!ctx.first && st.end === 0 && ctx.easy) hint('lvEasy', N_('No wind today. Follow the dotted line: arrows drop as they fly.'), 4.5);
+            else if (!ctx.first && st.end === 0 && ctx.hard) hint('lvHard', N_('Strong gusts today, and no dotted line. Watch the sock before every arrow.'), 4.5);
           }
         } else if (ph === 'ready' || ph === 'draw') {
           if (st.script && ph === 'ready') {
@@ -619,6 +668,7 @@ export default {
               for (const s of pool) release(s);
               st.phase = 'endIntro'; st.t = 0; st.draw = 0; setEndLabel(); pipsFor(); setMode('aim', 8);
               if (plan.ends[st.end].target === 'moving') hint('moving', N_('Bonus end! The target slides: aim a little ahead of it.'), 4.5);
+              else if (plan.ends[st.end].target === 'gong') hint('gong', N_('The gong! It is small and it swings. Let go just before it reaches your circle.'), 5);
               else if (st.end === 1) hint('far', N_('Farther away, so the wind has longer to push. Check the sock.'), 4);
             } else { st.phase = 'done'; st.t = 0; }
           }
@@ -627,9 +677,16 @@ export default {
         } else if (ph === 'done') {
           if (st.t > 0.6) return { done: true };
         }
+        // the gong swings (a pendulum drawn from the rules' sideways place), and shivers when it is rung
+        if (gong && gong.root.visible) {
+          const dv = gongV(G, st.windT) - G.v;
+          gong.ring = Math.max(0, gong.ring - dt * 1.4);
+          gong.swing.rotation.x = Math.asin(Math.max(-0.9, Math.min(0.9, dv / gong.L)));
+          gong.swing.rotation.z = Math.sin(ctx.t * 34) * 0.09 * gong.ring;
+        }
         // the sliding target glides along its rail
         if (R.moving.group.visible) {
-          const mv = movingV(A.moving, st.windT);
+          const mv = movingV(A.moving, st.windT, period);
           R.moving.group.position.set(A.x - A.moving.u, hAt(A.x - A.moving.u, A.z - mv), A.z - mv);
         }
 
@@ -698,7 +755,7 @@ export default {
         }
 
         // ---- the aim arc (faint on later tries), the sight pins, the crosshair and its ring
-        const alpha = plan.arc ? 1 : arcAlpha(plays, easy);
+        const alpha = plan.noArc ? 0 : plan.arc ? 1 : arcAlpha(plays, easy);
         const arcOn = (ph === 'ready' || ph === 'draw') && alpha > 0.02;
         const targetOp = arcOn ? 0.85 * alpha : 0;
         if (Math.abs(arcMat.opacity - targetOp) > 0.01) arcMat.opacity += (targetOp - arcMat.opacity) * Math.min(1, dt * 8);

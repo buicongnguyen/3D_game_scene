@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SwimLesson, SWIM, SWIM_STAGES, SWIM_LEVELS } from '../src/game/tricks/rules-swimming.js';
+import { SwimLesson, SWIM, SWIM_STAGES, SWIM_LEVELS, ropeFor } from '../src/game/tricks/rules-swimming.js';
 
 const DT = 0.05;
 const ticks = (lesson, seconds, input = {}) => {
@@ -10,7 +10,7 @@ function guidedInput(s) {
   if (s.needsRelease) return { act: false };
   if (s.stage === 'bubbles') return { act: s.held ? s.holdTime < 1.6 - DT / 2 : s.airTime >= s.rules.air };
   if (s.stage === 'float') {
-    if (s.floatMode === 'back') return { act: s.floatBack < SWIM.floatSeconds - 1e-6 };
+    if (s.floatMode === 'back') return { act: s.floatBack < s.rules.floatSeconds - 1e-6 };
     if (s.floatMode === 'front') return { act: s.held ? s.holdTime < 2 - DT / 2 : s.airTime >= s.rules.air };
     return { act: !s.held };
   }
@@ -20,7 +20,7 @@ function guidedInput(s) {
   }
   const act = !s.held && (s.lastStroke === null || s.time - s.lastStroke >= s.rules.beat - DT / 2);
   if (s.stage === 'tread') return { act };
-  const target = s.stage === 'glide' ? SWIM.glide : s.exit;
+  const target = s.stage === 'glide' ? SWIM.glide : s.swimTarget();
   const dx = target.x - s.position.x, dz = target.z - s.position.z, d = Math.hypot(dx, dz);
   return { act, mx: dx / d, mv: dz / d };
 }
@@ -40,7 +40,7 @@ test('all difficulty levels teach every skill through actual input in a bounded 
       const input = guidedInput(s); inputLog.push(input); const snap = s.step(DT, input); stages.add(s.stage);
       back ||= snap.floatSide === 'back'; front ||= snap.floatSide === 'front';
       upright ||= s.floatMode === 'recover' && snap.floatSide === 'upright';
-      assert.ok(Math.abs(s.position.x) <= SWIM.bounds.x + 1e-6);
+      assert.ok(Math.abs(s.position.x) <= s.rules.lane + 1e-6 && s.rules.lane <= SWIM.bounds.x);
       assert.ok(s.position.z >= SWIM.bounds.far && s.position.z <= SWIM.bounds.near);
       assert.ok(s.progress >= 0 && s.progress <= 1);
       assert.ok(['Swim', 'Tread', 'Idle'].includes(snap.clip));
@@ -49,7 +49,7 @@ test('all difficulty levels teach every skill through actual input in a bounded 
     assert.deepEqual([...stages], SWIM_STAGES); assert.ok(back && front && upright);
     assert.equal(s.skills, 6); assert.equal(s.result().score, 100); assert.equal(s.result().stars, 3);
     assert.deepEqual(s.position, s.exit); assert.equal(s.clip, 'Idle');
-    assert.ok(s.time >= 50 && s.time <= 120, `${level} successful virtual practice ${s.time.toFixed(1)} s`);
+    assert.ok(s.time >= 40 && s.time <= 130, `${level} successful virtual practice ${s.time.toFixed(1)} s`);
     // Recorded held/released inputs reproduce the whole lesson, poses, movement, corrections and final score.
     const replay = new SwimLesson({ level });
     for (const input of inputLog) replay.step(DT, input);
@@ -112,6 +112,36 @@ test('float shows back and front balance and requires upright recovery; face-dow
   }
   assert.equal(s.floatMode, 'recover'); assert.equal(s.stage, 'float');
   s.step(DT, { act: true }); assert.equal(s.stage, 'tread', 'explicit upright recovery completes float');
+});
+
+test('the levels differ in kind: shorter drills and a wide lane on Easy, a narrow lane and two rings to steer through on Difficult', () => {
+  const E = SWIM_LEVELS.easy, N = SWIM_LEVELS.normal, H = SWIM_LEVELS.hard;
+  assert.ok(E.floatSeconds < N.floatSeconds && N.floatSeconds < H.floatSeconds && E.sculls < N.sculls && N.sculls < H.sculls);
+  assert.ok(E.window > N.window && N.window > H.window && E.turn > N.turn && N.turn > H.turn);
+  assert.ok(H.lane < N.lane && ropeFor('hard') < ropeFor('normal') && ropeFor('hard') === H.lane + 0.4 && ropeFor('nonsense') === ropeFor('normal'));
+  // never a breath-holding contest: the longest allowed hold gets shorter, not longer, and the front float asks for no more
+  assert.ok(E.bubbleMax >= N.bubbleMax && N.bubbleMax >= H.bubbleMax && H.frontSeconds <= N.frontSeconds && H.bubbleMax <= 2.5);
+  assert.equal(N.via.length, 0); assert.equal(E.via.length, 0); assert.equal(H.via.length, 2);
+  for (const v of H.via) assert.ok(Math.abs(v.x) + SWIM.reach < H.lane + 0.2 && v.z > SWIM.glide.z && v.z < SWIM.exit.z, 'the rings float inside the narrow lane, between the far ring and the exit');
+  // Difficult: swimming straight back misses the rings and does not finish; steering through both does, and it is a longer swim
+  const straight = lessonTo('swim', 'hard');
+  for (let i = 0; i < 1600 && !straight.complete; i++) {
+    const act = !straight.held && (straight.lastStroke === null || straight.time - straight.lastStroke >= straight.rules.beat - DT / 2);
+    const dx = straight.exit.x - straight.position.x, dz = straight.exit.z - straight.position.z, d = Math.hypot(dx, dz) || 1;
+    straight.step(DT, { act, mx: dx / d, mv: dz / d });
+  }
+  assert.equal(straight.complete, false, 'the exit does not count until both rings are passed'); assert.equal(straight.viaIndex, 0);
+  const hard = lessonTo('swim', 'hard'), normal = lessonTo('swim', 'normal');
+  assert.ok(hard.swimPath(false) > normal.swimPath(false) + 0.25, 'the dog-leg is a longer way back');
+  assert.deepEqual(hard.snapshot().target, H.via[0]);
+  for (let i = 0; i < 4000 && !hard.complete; i++) hard.step(DT, guidedInput(hard));
+  assert.equal(hard.complete, true); assert.equal(hard.viaIndex, 2);
+  assert.equal(hard.events.filter(e => e.kind === 'ring').length, 2);
+  // the drills are sized by the level
+  for (const level of ['easy', 'normal', 'hard']) {
+    const t = lessonTo('glide', level);
+    assert.equal(t.sculls, SWIM_LEVELS[level].sculls); assert.ok(Math.abs(t.floatBack - SWIM_LEVELS[level].floatSeconds) < 1e-6);
+  }
 });
 
 test('eight paced sculls teach treading; held button, frantic taps and very late taps do not', () => {
@@ -239,7 +269,7 @@ test('exact breathing boundaries work across frame rates without admitting short
       assert.equal(s.bubbles, true, `${level}, dt=${dt}, exact air=${rules.air}`);
       assert.equal(s.retries, 0);
 
-      const front = lessonTo('float', level); ticks(front, SWIM.floatSeconds + 0.1, { act: true }); front.step(dt, {});
+      const front = lessonTo('float', level); ticks(front, front.rules.floatSeconds + 0.1, { act: true }); front.step(dt, {});
       exact(front, seconds, dt, { act: true }); front.step(dt, {});
       assert.ok(Math.abs(front.floatFront - seconds) < 1e-6, `${level}, dt=${dt}, front hold=${seconds}`);
       assert.equal(front.retries, 0);

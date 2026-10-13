@@ -9,7 +9,7 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { N_, tx, getLang } from '../../i18n/i18n.js';
 import { NPC } from '../../actors/npc.js';
-import { SwimLesson, SWIM } from './rules-swimming.js';
+import { SwimLesson, SWIM, ropeFor } from './rules-swimming.js';
 import { addCss, disposeRigs, trampleGrass } from './util.js';
 
 // Local pool coordinates: +z is the exit (south) end, y = 0 is the ground under the pool.
@@ -206,8 +206,9 @@ const COACH = Object.freeze({ x: 2.3, z: 7.6, deckX: 5.05 });   // Rin's corner 
 const LIFT = 0.75;
 const NO_FOAM = new THREE.Color(0, 0, 0), FOAM = new THREE.Color(0.5, 0.56, 0.58);
 
-/** Raised, calm pool on dry land. All geometry/materials here are owned by this round. */
-export function makePool(game) {
+/** Raised, calm pool on dry land. All geometry/materials here are owned by this round. rope: where the two lane ropes float
+ *  (m from the middle; a level may narrow the lane); via: rings on the way back (pool coordinates), drawn while they wait. */
+export function makePool(game, { rope = POOL.rope, via = [] } = {}) {
   const group = new THREE.Group(); group.name = 'swimming-practice';
   const floor = Math.max(...[-7, 0, 7].flatMap(x => [-9, 0, 9].map(z => game.world.heightAt(POOL.x + x, POOL.z + z)))) + LIFT;
   group.position.set(POOL.x, floor, POOL.z);
@@ -268,7 +269,7 @@ export function makePool(game) {
   const PER = 42, floats = new THREE.InstancedMesh(floatGeo, floatMat, PER * 2);
   for (let i = 0; i < PER * 2; i++) {
     const k = i % PER;
-    matrix.makeTranslation(i < PER ? -POOL.rope : POOL.rope, W + 0.02, -6.62 + k * 0.28); floats.setMatrixAt(i, matrix);
+    matrix.makeTranslation(i < PER ? -rope : rope, W + 0.02, -6.62 + k * 0.28); floats.setMatrixAt(i, matrix);
     floats.setColorAt(i, color.set(Math.floor(k / 3) % 2 ? '#d9534a' : '#ebe5d6'));
   }
   group.add(floats);
@@ -276,6 +277,12 @@ export function makePool(game) {
   const exit = new THREE.Mesh(keep(new THREE.TorusGeometry(0.5, 0.07, 6, 28)), exitMat); exit.name = 'swim-exit'; exit.rotation.x = -Math.PI / 2; exit.position.set(POOL.exit.x, D + 0.04, POOL.exit.z); group.add(exit);
   const targetMat = keep(new THREE.MeshBasicMaterial({ color: '#d2434f' })), target = new THREE.Mesh(keep(new THREE.TorusGeometry(0.55, 0.08, 6, 28)), targetMat);
   target.name = 'swim-target'; target.rotation.x = -Math.PI / 2; target.position.set(SWIM.glide.x, W + 0.05, SWIM.glide.z); group.add(target);
+  // the rings of the way back (Difficult): the same red ring, a little smaller, hidden until the swim back
+  const rings = via.map(v => {
+    const m = new THREE.Mesh(target.geometry, targetMat);
+    m.name = 'swim-ring'; m.rotation.x = -Math.PI / 2; m.scale.setScalar(0.9); m.position.set(v.x, W + 0.05, v.z); m.visible = false; group.add(m);
+    return m;
+  });
   // ripples (flat foam rings that grow and fade away), droplets and mouth bubbles: three instanced meshes
   const overlay = { transparent: true, depthWrite: false };
   const ripples = new THREE.InstancedMesh(keep(new THREE.RingGeometry(0.9, 1, 28).rotateX(-Math.PI / 2)), keep(new THREE.MeshBasicMaterial({ color: '#ffffff', blending: THREE.AdditiveBlending, ...overlay })), RIPPLES);
@@ -329,7 +336,7 @@ export function makePool(game) {
     const want = Math.atan2(x - npc.pos.x, z - npc.pos.z), d = Math.atan2(Math.sin(want - npc.root.rotation.y), Math.cos(want - npc.root.rotation.y));
     npc.root.rotation.y += d * Math.min(1, dt * 6);
   };
-  return { group, floor, waterY: floor + W, deckY: floor + D, target, exit, coach, adult, ripple, splash,
+  return { group, floor, waterY: floor + W, deckY: floor + D, target, rings, exit, coach, adult, ripple, splash,
     /** Both watchers cheer (a finished drill, the dry deck). */
     cheer() { if (cheer > 0) return; cheer = 1.6; coach.anim?.once('Cheer', { then: 'Idle' }); adult.anim?.once('Wave', { then: 'Idle' }); coachWalking = false; },
     /** s: { x, z, heading, wet, bubbles, front, speed, travel } in pool coordinates (travel: Mika is on a swim leg). */
@@ -381,6 +388,7 @@ export function makePool(game) {
         bubbles.instanceMatrix.needsUpdate = true;
       }
       target.position.y = W + 0.05 + Math.sin(time * 3) * 0.03;
+      for (let i = 0; i < rings.length; i++) rings[i].position.y = W + 0.05 + Math.sin(time * 3 + 1.3 + i) * 0.03;
     },
     dispose() {
       if (disposed) return; disposed = true;
@@ -409,14 +417,15 @@ function instructions(phase, lesson, snap) {
       cue: release ? N_('Release — normal breath') : lesson.airTime < lesson.rules.air ? N_('Normal breath — wait a moment') : lesson.held ? N_('Gentle bubbles…') : N_('Hold for gentle bubbles'), button: release ? N_('Release for air') : N_('Gentle bubbles') };
   }
   if (snap.stage === 'float') {
-    if (lesson.floatMode === 'back') return { text: N_('Hold Action and Mika floats on her back. Keep still. Let go when the bar is full.'), cue: lesson.floatBack >= SWIM.floatSeconds ? N_('Release — recover upright') : N_('Back float — relax Mika'), button: N_('Relax Mika') };
+    if (lesson.floatMode === 'back') return { text: N_('Hold Action and Mika floats on her back. Keep still. Let go when the bar is full.'), cue: lesson.floatBack >= lesson.rules.floatSeconds ? N_('Release — recover upright') : N_('Back float — relax Mika'), button: N_('Relax Mika') };
     if (lesson.floatMode === 'front') return { text: N_('Now the front float: hold to float with gentle bubbles, let go for a breath. Fill the bar.'), cue: lesson.held && lesson.holdTime >= 1.5 ? N_('Release — normal breath') : lesson.airTime < lesson.rules.air ? N_('Normal breath — wait a moment') : N_('Short front float, then air'), button: N_('Front float') };
     return { text: N_('Mika stands up again. Press Action to go on.'), cue: N_('Upright recovery'), button: N_('Recover upright') };
   }
   const pulse = pulseState(lesson);
-  if (snap.stage === 'tread') return { text: N_('Tap Action each time the dot reaches the green. Eight slow taps keep her head up.'), cue: PULSE_CUE[pulse] || N_('Wait for the pulse'), button: N_('Gentle scull') };
+  if (snap.stage === 'tread') return { text: N_('Tap Action each time the dot reaches the green. Slow, steady taps keep her head up.'), cue: PULSE_CUE[pulse] || N_('Wait for the pulse'), button: N_('Gentle scull') };
   if (snap.stage === 'turn') return { text: N_('Turn Mika round to face the gold exit ring where she got in.'), cue: N_('Face the starting exit'), button: N_('Look for exit') };
-  return { text: snap.stage === 'swim' ? N_('Steer back to the gold exit. Tap Action each time the dot reaches the green.') : N_('Steer toward the red ring. Tap Action each time the dot reaches the green.'),
+  return { text: snap.stage === 'swim' ? lesson.viaIndex < lesson.rules.via.length ? N_('Swim through the two red rings, then to the gold exit. Tap Action when the dot reaches the green.')
+    : N_('Steer back to the gold exit. Tap Action each time the dot reaches the green.') : N_('Steer toward the red ring. Tap Action each time the dot reaches the green.'),
     cue: PULSE_CUE[pulse] || N_('Steer and wait for the pulse'), button: N_('Gentle stroke') };
 }
 
@@ -453,7 +462,8 @@ export default { id:'swimming', async play(ctx) {
   // What is drawn this frame (one object, rewritten in place): the deck phases fill it by hand, the lesson from its rules.
   const view={heading:Math.PI/2,clip:'Idle',clipSpeed:1,wet:false,pitch:0,depth:1.03,side:'upright',bubbles:false,speed:0};
   const body={pitch:0,depth:1.03};          // eased, so a float tips over and a recovery stands up instead of snapping
-  const lesson=new SwimLesson({level:g.easy ? 'easy' : g.hard ? 'hard' : 'normal',first:ctx.first});
+  // the level comes from the picker (ctx.level); the guided first try has its own gentle numbers
+  const lesson=new SwimLesson({level:ctx.level||'normal',first:ctx.first});
   let snap=lesson.snapshot(),exitWalk=0,slideX=0,slideZ=0,lessonEvent=0,sweep=0,score=0;
   const cameraPos=new THREE.Vector3(),cameraLook=new THREE.Vector3();
   const hidden=[],poolState={x:0,z:0,heading:0,wet:false,bubbles:false,front:false,speed:0,travel:false};
@@ -468,7 +478,7 @@ export default { id:'swimming', async play(ctx) {
   try {
     ctx.lock(true); ctx.director.ground?.release('trick',true);
     ctx.setNight(true,11); // The shared round-look override also supports daylight; frozen story clocks bypass hour gates.
-    pool=makePool(g); ui=makeUi(ctx);
+    pool=makePool(g,{rope:ropeFor(lesson.level),via:lesson.rules.via}); ui=makeUi(ctx);
     const pose=makeSwimPose(p);
     restorePlayer=takeSwimmer(p,dt=>pose.apply(dt));
     if(savedSign) { savedSign.hidden=true; if(savedSign.obj)savedSign.obj.visible=false; }
@@ -484,7 +494,7 @@ export default { id:'swimming', async play(ctx) {
     follow.track(()=>cameraPos,()=>cameraLook,5);
     input.releaseAll?.();
     ctx.debug={lesson, get phase(){return phase;}, get exitCheck(){return exitCheck;},get entered(){return entry;},get climbed(){return climbed;},
-      get snapshot(){return snap;}, get local(){return {...local};}, pool:{x:POOL.x,z:POOL.z,floor:pool.floor,waterY:pool.waterY,deckY:pool.deckY,entryZ:POOL.entry.z,exit:POOL.exit,floatSeconds:SWIM.floatSeconds,glide:SWIM.glide},
+      get snapshot(){return snap;}, get local(){return {...local};}, pool:{x:POOL.x,z:POOL.z,floor:pool.floor,waterY:pool.waterY,deckY:pool.deckY,entryZ:POOL.entry.z,exit:POOL.exit,floatSeconds:lesson.rules.floatSeconds,glide:SWIM.glide,rope:ropeFor(lesson.level),via:lesson.rules.via},
       get pointerHeld(){return ui?.held || false;},get body(){return {...body,...pose.now};},pose,stageLabels:STAGE};
     const nodes=ui.nodes;
     const frame=dt=>{
@@ -516,6 +526,7 @@ export default { id:'swimming', async play(ctx) {
           if(ev.type==='skill')cheer=true;
           else if(ev.type==='good'&&ev.kind==='stroke'){ctx.audio.stroke?.();pool.splash(local.x+Math.sin(snap.heading)*.35,local.z+Math.cos(snap.heading)*.35,ev.stage==='tread'?3:5,ev.stage==='tread'?.7:1);}
           else if(ev.type==='good'&&ev.kind==='upright')pool.splash(local.x,local.z,4,.8);
+          else if(ev.type==='good'&&ev.kind==='ring'){ctx.audio.good();pool.splash(local.x,local.z,5,.9);}
           else if(ev.type==='good')pool.ripple(local.x,local.z,1.3,1.4);
         }
         const side=snap.floatSide,travel=snap.clip==='Swim'&&side==='upright';
@@ -553,6 +564,7 @@ export default { id:'swimming', async play(ctx) {
       p.root.position.copy(p.pos);p.root.rotation.y=p.facing;p.pivot.rotation.x=p.pitch;
       const stage=phase==='lesson'?snap.stage:null;
       pool.target.visible=stage==='glide';
+      for(let i=0;i<pool.rings.length;i++)pool.rings[i].visible=(stage==='turn'||stage==='swim')&&i>=lesson.viaIndex;
       poolState.x=local.x;poolState.z=local.z;poolState.heading=view.heading;poolState.wet=wet||(phase!=='check'&&phase!=='done'&&local.z<7.6);
       poolState.travel=stage==='glide'||stage==='turn'||stage==='swim';poolState.bubbles=wet&&view.bubbles;poolState.front=view.side==='front';poolState.speed=wet?view.speed:0;
       pool.update(dt,poolState);
@@ -599,7 +611,7 @@ export default { id:'swimming', async play(ctx) {
       setText(nodes.controls,overview?input.lastDevice==='gamepad'?N_('Left stick moves · X is Action · B leaves'):ctx.ui.touch?N_('Left thumb moves · hold or tap the Action button'):N_('WASD / arrows move · E is Action · Backspace leaves'):'',lang);
       setStyle(nodes.controls,'display',overview?'block':'none');
       // one bar per task: the float fills once on her back and once on her front (never "release at halfway")
-      const done=stage==='float'?lesson.floatMode==='back'?lesson.floatBack/SWIM.floatSeconds:lesson.floatMode==='front'?lesson.floatFront/SWIM.frontSeconds:1
+      const done=stage==='float'?lesson.floatMode==='back'?lesson.floatBack/lesson.rules.floatSeconds:lesson.floatMode==='front'?lesson.floatFront/lesson.rules.frontSeconds:1
         :phase==='lesson'?snap.progress:phase==='check'?0:phase==='entry'?clamp((8-local.z)/(8-POOL.entry.z),0,1):phase==='out'?0:exitWalk;
       setPercent(nodes.progress,'width',done*100);
       // the dot: a beat to tap on (tread and the two swims), or how long this bubble/float hold has lasted

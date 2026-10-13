@@ -31,7 +31,7 @@ export const HOWTO = {
   ],
   'trick:stars': [
     { in: 'aim', pic: 'aim', text: N_('Point at a bright star.') },
-    { in: 'tap', pic: 'stars', text: N_('Pick the seven stars in order.') },
+    { in: 'tap', pic: 'stars', text: N_('Join the stars of a figure in order.') },
     { in: 'act', pic: 'glow', text: N_('A star falls? Press to make a wish.') },
   ],
   'trick:frogs': [
@@ -41,7 +41,7 @@ export const HOWTO = {
   ],
   'trick:kite': [
     { in: 'act', pic: 'mark', text: N_('Press when the marker is in the green.') },
-    { in: 'lr', pic: 'steer', text: N_('Steer to stay in the wind.') },
+    { in: 'lr', pic: 'steer', text: N_('Stay in the wind. Fly through the rings.') },
     { in: 'jump', pic: 'up', text: N_('Tug the line to climb.') },
   ],
   'trick:dew': [

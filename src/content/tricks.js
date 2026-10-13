@@ -18,7 +18,11 @@ export const TRICKS = [
     howReal: 'Learn in a supervised pool with a qualified swimming teacher. Practise gentle bubbles, floating, turning and returning to a safe exit at your own pace.',
     why: 'Calm breathing, balance and finding the exit are swimming foundations. Game practice does not prove that you can swim safely in real water.',
     safety: 'In real water, learn with a qualified swimming teacher and a grown-up watching.',
+    // the lesson is long already, so the levels change what it asks, not how long it runs (rules-swimming.js SWIM_LEVELS):
+    // Easy shorter drills and a wide beat; Difficult a narrow lane, a tight beat and two rings to steer through on the way
+    // back. A finished lesson is 100 less 4 for every retry (never under 60): Difficult's three stars allow one retry.
     stars: [60, 80, 95], length: 240, firstLength: 240, unit: 'points',
+    levels: { easy: { stars: [40, 70, 88], length: 240 }, normal: { stars: [60, 80, 95], length: 240 }, hard: { stars: [60, 84, 96], length: 240 } },
   },
   {
     id: 'firefly', name: 'Firefly jar', icon: 'trick-firefly',
@@ -55,7 +59,10 @@ export const TRICKS = [
     howReal: 'Find a dark place away from town lights and give your eyes 15 minutes to get used to the dark. Find the Big Dipper, then follow its two end stars.',
     why: 'Without city lights you can see about ten times more stars. The North Star barely moves all night, so travellers used it to find north.',
     safety: 'Wrap up warm, and go with a grown-up.',
-    stars: [50, 75, 95], length: 90, firstLength: 120, unit: 'points',
+    // 10 a star joined, 20 the North Star, 15 the wish, a speed bonus (tricks/stars.js gazePlan): Easy joins 7 stars (about
+    // 115 at best), Normal 12 with Cassiopeia (about 175), Difficult 18 with the Little Dipper, under drifting clouds (about 245)
+    stars: [80, 120, 150], length: 120, firstLength: 120, unit: 'points',
+    levels: { easy: { stars: [40, 75, 95], length: 90 }, normal: { stars: [80, 120, 150], length: 120 }, hard: { stars: [110, 170, 210], length: 150 } },
   },
   {
     id: 'frogs', name: 'Frog chorus', icon: 'trick-frogs',
@@ -79,7 +86,11 @@ export const TRICKS = [
     howReal: 'Tie two thin bamboo sticks into a cross, glue on light paper and add a long tail. Stand with your back to the wind in a wide open field.',
     why: 'Wind is steadier higher up, away from trees and roofs. The tail keeps a kite from spinning.',
     safety: 'Fly far from power lines and roads, and never in a storm.',
-    stars: [40, 70, 100], length: 60, firstLength: 60, unit: 'points',
+    // up to 15 for the build, up to 2 a second aloft, 15 a ring (tricks/rules-kite.js flightPlan; length = the flight):
+    // Easy 4 rings up high in a steady wind; Normal 6 rings at set heights in gusts (three stars want five of them and no
+    // fall); Difficult 7 rings out to the sides while the wind turns, and a tree (three stars want six and a clean flight)
+    stars: [80, 170, 215], length: 80, firstLength: 60, unit: 'points',
+    levels: { easy: { stars: [50, 110, 160], length: 60 }, normal: { stars: [80, 170, 215], length: 80 }, hard: { stars: [110, 220, 275], length: 100 } },
   },
   {
     id: 'dew', name: 'Dew webs at dawn', icon: 'trick-dew',
@@ -104,7 +115,11 @@ export const TRICKS = [
     safety: 'Fires are for grown-ups: a grown-up lights the straw.',
     // 20 a perfect potato, 10 a good one, 3 a raw one: two good ones and a bit are a star, three perfect ones two, and three stars want
     // four perfect ones (turned in time, the ash kept warm, no flare) and the fifth at least good
-    stars: [25, 60, 90], length: 50, firstLength: 55, unit: 'points',
+    // (tricks/roast.js roastPlan; length = the cooking, the straw and the lighting are untimed) Easy: 4 + 2 potatoes in
+    // gentle ash (120 at best); Normal: 5 + 3 (160); Difficult: 7 potatoes and 2 chestnuts in three batches, with rain (160)
+    // (20 a perfect potato, 10 a good one, 3 a raw one; a chestnut 10 / 5 / 1)
+    stars: [50, 100, 140], length: 80, firstLength: 65, unit: 'points',
+    levels: { easy: { stars: [30, 70, 110], length: 65 }, normal: { stars: [50, 100, 140], length: 80 }, hard: { stars: [50, 105, 150], length: 90 } },
   },
   {
     id: 'beetles', name: 'Beetle sap trap', icon: 'trick-beetles',
@@ -114,7 +129,12 @@ export const TRICKS = [
     howReal: 'At dusk, rub mashed banana and a little sugar on the bark of an oak or chestnut. Come back at dawn and look, gently.',
     why: 'Beetles drink sweet tree sap at night. Oak and chestnut are their favourite trees.',
     safety: 'Put every beetle back on the tree where you found it.',
-    stars: [30, 60, 90], length: 70, firstLength: 40, unit: 'points',
+    // 12 a beetle seen, 5 a moth, 20 a beetle lifted gently (tricks/beetles.js trapPlan; length = choosing and rubbing).
+    // Easy: one trap (about 105 at best). Normal: two traps on two trees (about 210). Difficult: two traps, a beetle that
+    // wriggles in the hand, and a hornet at each tree to leave well alone (10 for leaving it, 15 off for touching: about 225;
+    // three stars want every beetle lifted and both hornets left)
+    stars: [60, 120, 170], length: 100, firstLength: 60, unit: 'points',
+    levels: { easy: { stars: [30, 60, 90], length: 70 }, normal: { stars: [60, 120, 170], length: 100 }, hard: { stars: [70, 135, 205], length: 110 } },
   },
   // ---- phase 3: the meadow (docs/RURAL-TRICKS.md §3 #5 and the bug catching)
   {
@@ -165,7 +185,11 @@ export const TRICKS = [
     howReal: 'Stand side-on to the target, feet apart. Nock the arrow, draw to your cheek, breathe out slowly, then let go smoothly.',
     why: 'A bent bow stores energy like a spring and hands it to the arrow. Wind pushes a light arrow sideways, so aim a little upwind.',
     safety: 'Only at the target, with a grown-up and practice arrows.',
+    // a ring is 1..10 points (tricks/rules-archery.js roundPlan; length = seconds of lining up shots). Easy: 16 arrows, no
+    // wind, the aim arc drawn (160). Normal: 22 arrows in the wind, the last four at the sliding target (220). Difficult: 24
+    // arrows in gusts with no aim arc, six at a livelier sliding target and six at a small swinging gong (240)
     stars: [60, 100, 140], length: 90, firstLength: 60, unit: 'points',
+    levels: { easy: { stars: [40, 85, 125], length: 90 }, normal: { stars: [60, 100, 140], length: 90 }, hard: { stars: [70, 120, 185], length: 100 } },
   },
   {
     id: 'cowrace', name: 'Cow race', icon: 'trick-cowrace',
@@ -175,7 +199,11 @@ export const TRICKS = [
     howReal: 'In An Giang, Vietnam, oxen race at harvest festivals, pulling a driver across a flooded paddy. Here we race on grass, with a grown-up.',
     why: 'Cows have a steady walking rhythm, so a rider moves with it. Racing oxen are fed, cheered and rested, never hit: a happy cow runs best.',
     safety: 'Never ride a real cow without a grown-up who knows her.',
-    stars: [30, 60, 80], length: 60, firstLength: 60, unit: 'points',
+    // a race day of heats (tricks/rules-cowrace.js meetPlan): a heat is 80 / 50 / 30 / 10 by place plus up to 25 for a
+    // quick time, and the heats add up. Easy: two heats (about 205 at best). Normal: three (about 305): three stars want
+    // two wins and a second. Difficult: three heats with sprints, puddles and a tight beat (length: about a round, not a timer)
+    stars: [100, 200, 270], length: 95, firstLength: 65, unit: 'points',
+    levels: { easy: { stars: [60, 130, 180], length: 65 }, normal: { stars: [100, 200, 270], length: 95 }, hard: { stars: [100, 190, 270], length: 95 } },
   },
   {
     // the henhouse itself is built by tricks/eggs.js (HOUSE): the sign stands at its right corner, beside the egg basket

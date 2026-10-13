@@ -1,7 +1,9 @@
 // Cow race: the rules (game/tricks/rules-cowrace.js), the trick row and the track site.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { TRACK, BEAT, STARS, KIDS, newRace, stepRace, tap, simulate, raceScore, gradeTap, beatOffset, result, placeNow, finish } from '../src/game/tricks/rules-cowrace.js';
+import { TRACK, BEAT, STARS, KIDS, newRace, stepRace, tap, simulate, raceScore, gradeTap, beatOffset, result, placeNow, finish, COURSE, PUDDLE, PUDDLE_S, SURGE_FROM, PLACE_POINTS, meetPlan, meetMax, botSteer, simulateMeet, SPEED } from '../src/game/tricks/rules-cowrace.js';
+import { levelSpec } from '../src/content/levels.js';
+import { starsNote, STARS_NOTE as NOTE_ONE } from '../src/game/tricks/rules-cowhelp.js';
 
 const SEEDS = Array.from({ length: 40 }, (_, i) => i + 1);
 
@@ -167,7 +169,7 @@ test('the trick sign stands on dry ground next to the track, not on it', () => {
   assert.deepEqual(placeProblems(t.place.x, t.place.z), []);
   assert.ok(Math.abs(t.place.z - SITE.z) > half + 1.5 || t.place.x < SITE.x0 - SITE.margin - 1, 'the sign is off the lanes');
   assert.ok(Math.hypot(t.place.x - SITE.x0, t.place.z - SITE.z) < 14, 'and close to the start');
-  assert.ok(t.stars[0] > 0 && STARS.join() === t.stars.join(), 'the stars match the rules');
+  assert.ok(t.stars[0] > 0 && STARS.join() === '30,60,80', 'one race keeps its own marks (the levels\' race days have theirs: see below)');
 });
 
 test('the haystacks stand on dry ground clear of the track, roads and animals own ground', () => {
@@ -190,4 +192,88 @@ test('the dialogue: both stories teach the race, the cow friend exists in the jo
   }
   useStory('classic');
   assert.ok(FRIENDS.some(f => f.id === 'cowpal' && f.icon && f.desc && f.hint && f.verb));
+});
+
+// ------------------------------------------------------------------------------------------------ the levels: a race day
+test('race days: Easy two gentle heats, Normal three with finals, Difficult sprints and puddles; the first try is Easy with a practice lap', () => {
+  const E = meetPlan('easy'), N = meetPlan('normal'), H = meetPlan('hard'), F = meetPlan('hard', true);
+  assert.deepEqual(E.heats.map(h => h.course), ['plain', 'classic']);
+  assert.deepEqual(N.heats.map(h => h.course), ['classic', 'final', 'champions']);
+  assert.deepEqual(H.heats.map(h => h.course), ['surge', 'puddles', 'grand']);
+  assert.deepEqual(F.heats.map(h => h.course), E.heats.map(h => h.course));
+  assert.ok(F.heats[0].practice && F.heats[0].assist === 1 && !F.heats[1].practice && !E.heats[0].practice);
+  assert.ok(E.heats.every(h => h.assist > 0) && N.heats.every(h => h.assist === 0) && H.window < N.window);
+  assert.equal(meetMax(E), 210); assert.equal(meetMax(N), 315);
+  for (const plan of [E, N, H]) for (const h of plan.heats) assert.ok(COURSE[h.course], h.course);
+  assert.equal(starsNote(1), NOTE_ONE); assert.match(starsNote(3), /Win every heat/);
+  // the default race is the classic course, laid out the same for everyone
+  const d = newRace({ seed: 9 });
+  assert.ok(d.course.mud && d.course.puddles.length === 0 && d.course.surge === 0 && d.course.grass.every(g => g.every(Boolean)));
+  assert.ok(!newRace({ seed: 9, course: 'plain' }).course.mud);
+  for (let seed = 1; seed <= 30; seed++) {
+    const f = newRace({ seed, course: 'final' }).course, g = newRace({ seed, course: 'grand' }).course;
+    assert.deepEqual(f, newRace({ seed, course: 'final' }).course, 'a course is seeded');
+    for (const lanes of f.grass) assert.equal(lanes.filter(Boolean).length, 2, 'the final: grass in two lanes at each spot');
+    assert.equal(g.puddles.length, 8);
+    for (const s of PUDDLE_S) {
+      const row = g.puddles.filter(p => p.s === s);
+      assert.equal(row.length, 2, 'two lanes of every row are dry');
+      assert.ok(row.every(p => p.s < TRACK.mud[0] - PUDDLE.half || p.s > TRACK.mud[1] + PUDDLE.half) && row.every(p => TRACK.grass.every(gs => Math.abs(gs - p.s) > 2)), 'puddles lie clear of the mud and the grass');
+    }
+    assert.equal(newRace({ seed, course: 'puddles' }).course.puddles.length, 6);
+  }
+});
+
+test('race days: a puddle slows the cow that runs through it, steering round it does not; the kids sprint for the ribbon', () => {
+  const run = (lane, steerTo) => {
+    const race = newRace({ seed: 5, course: 'puddles', playerLane: lane });
+    const me = race.racers[0];
+    let hit = 0;
+    for (let i = 0; i < 60 * 40 && !race.over; i++) {
+      me.combo = 9; me.lastPush = race.t;                       // (a perfect rhythm, so only the course matters)
+      stepRace(race, 1 / 60, { steer: steerTo ? botSteer(race) : 0 });
+      for (const e of race.events) if (e.type === 'puddle' && e.who === 0) hit++;
+      race.events.length = 0;
+    }
+    return { hit, t: me.finished };
+  };
+  const C = newRace({ seed: 5, course: 'puddles' }).course;
+  const wetLane = [0, 1, 2, 3].sort((a, b) => C.puddles.filter(p => p.lane === b).length - C.puddles.filter(p => p.lane === a).length)[0];
+  const through = run(wetLane, false), round = run(wetLane, true);
+  assert.ok(through.hit >= 1 && round.hit === 0, `through ${through.hit}, round ${round.hit}`);
+  assert.ok(round.t < through.t - 0.3, `steering round is quicker: ${round.t} against ${through.t}`);
+  // each puddle splashes a cow once
+  const one = newRace({ seed: 5, course: 'puddles', playerLane: wetLane }), p0 = one.course.puddles.find(p => p.lane === wetLane);
+  one.racers[0].s = p0.s - 0.2; one.racers[0].v = 1;
+  let n = 0;
+  for (let i = 0; i < 90; i++) { stepRace(one, 1 / 60); n += one.events.filter(e => e.type === 'puddle' && e.who === 0).length; one.events.length = 0; }
+  assert.equal(n, 1);
+  // the sprint: over the last metres a kid on a sprint course is faster than the same kid on the classic one
+  const a = newRace({ seed: 3, course: 'classic' }), b = newRace({ seed: 3, course: 'surge' });
+  for (const r of [a, b]) { r.racers[1].s = TRACK.len - SURGE_FROM + 1; r.racers[0].s = r.racers[1].s; for (let i = 0; i < 120; i++) stepRace(r, 1 / 60); }
+  assert.ok(b.racers[1].v > a.racers[1].v * 1.03, `${b.racers[1].v} against ${a.racers[1].v}`);
+  assert.deepEqual(PLACE_POINTS, [80, 50, 30, 10]);
+});
+
+test('race days: the stars. Easy is easy, Normal wants care and the grass, Difficult wants the beat AND the lanes', () => {
+  const N = 80, med = xs => xs.slice().sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+  const day = (level, bot) => Array.from({ length: N }, (_, i) => simulateMeet(i + 1, level, bot).score);
+  const stars = (level, xs) => levelSpec(TRICK.cowrace, level).stars.filter(s => med(xs) >= s).length;
+  const idle = { idle: true }, beginner = { jitter: 0.2, lazy: 0.25 }, sloppy = { jitter: 0.14, lazy: 0.1 }, noSteer = { jitter: 0.08 }, careful = { jitter: 0.08, steer: true };
+  for (const level of ['easy', 'normal', 'hard']) assert.equal(stars(level, day(level, idle)), 0, `${level}: never tapping earns nothing`);
+  assert.ok(stars('easy', day('easy', beginner)) >= 2, 'Easy: a beginner wins stars');
+  assert.equal(stars('easy', day('easy', sloppy)), 3);
+  assert.equal(stars('normal', day('normal', beginner)), 1);
+  assert.ok(stars('normal', day('normal', sloppy)) >= 2);
+  assert.equal(stars('normal', day('normal', careful)), 3);
+  assert.ok(stars('hard', day('hard', sloppy)) <= 1, 'Difficult: a loose beat is one star at most');
+  assert.ok(stars('hard', day('hard', noSteer)) <= 2, 'a good beat that never changes lane is not three');
+  assert.equal(stars('hard', day('hard', careful)), 3, 'the beat and the lanes together are');
+  for (const level of ['easy', 'normal', 'hard']) {
+    const s = levelSpec(TRICK.cowrace, level).stars;
+    assert.ok(s[2] < meetMax(meetPlan(level)) && s[2] > meetMax(meetPlan(level)) * 0.8, `${level}: three stars are a near-perfect day`);
+  }
+  // a race day is a few heats of about 25 seconds
+  const d = simulateMeet(3, 'hard', careful);
+  assert.equal(d.places.length, 3); assert.ok(d.times.every(t => t > 14 && t < 40));
 });
