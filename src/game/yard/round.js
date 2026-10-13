@@ -1117,7 +1117,7 @@ export class Yard {
     q('.note').textContent = tx(YARD_NOTES[id]);
     const touch = ui.touch;
     q('.again').innerHTML = `${tx('Play again')}${touch ? '' : '<kbd>Space</kbd>'}`;
-    const toList = this.d.minigameMenu?.running && !this.d.minigameMenu.session?.story;      // (played from the Mini games list: Done goes back to it)
+    const toList = !!this.d.minigameMenu?.running;      // (played from the Mini games list: Done goes back to it)
     q('.done').innerHTML = `${toList ? tx('More games') : tx('Done')}${touch ? '' : '<kbd>E</kbd>'}`;
     el.classList.remove('hidden');
     return new Promise(resolve => {

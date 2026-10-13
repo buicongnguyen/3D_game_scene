@@ -184,6 +184,10 @@ export class MinigameMenu {
         await this.giveBack();
         this.current = null;
         await ui.fade(false, 420);
+        // back in the story, the list opens once more: play another, or close it and carry on (a QA run asks with ?autolist=1)
+        const qa = typeof window !== 'undefined' && !!window.__STARLINE_QA__ && g.params?.get?.('autolist') !== '1';
+        clearTimeout(this.hintT);
+        if (!qa && !this.failed) this.hintT = setTimeout(() => { if (!this.running && !this.session && this.canOpen()) this.open(); }, 700);
       } else {
         // an Explore session: Mika stays in the valley. A game that moved her far (the river wade, a kite run) or left her in the
         // cottage puts her back at its place under the fade.

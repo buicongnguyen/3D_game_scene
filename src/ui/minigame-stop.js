@@ -73,7 +73,7 @@ export class MinigameStop {
     if (!this.button) return;
     // from the Mini games list the way out leads back to the list: say so
     const menu = this.d.minigameMenu;
-    const text = menu?.running && menu.session && !menu.session.story ? tx('Back to games') : tx('Stop playing');
+    const text = menu?.running ? tx('Back to games') : tx('Stop playing');
     if (this.text !== text) { this.text = text; this.label.textContent = text; this.button.setAttribute('aria-label', text); }
     const kind = this.target?.kind || '';
     if (this.button.dataset.kind !== kind) this.button.dataset.kind = kind;

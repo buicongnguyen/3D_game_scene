@@ -379,7 +379,7 @@ export class Tricks {
     q('.safe').textContent = t.safety ? tx(t.safety) : '';
     const touch = ui.touch;
     q('.again').innerHTML = `${tx('Play again')}${touch ? '' : '<kbd>Space</kbd>'}`;
-    const toList = this.d.minigameMenu?.running && !this.d.minigameMenu.session?.story;      // (played from the Mini games list: Done goes back to it)
+    const toList = !!this.d.minigameMenu?.running;      // (played from the Mini games list: Done goes back to it)
     q('.done').innerHTML = `${toList ? tx('More games') : tx('Done')}${touch ? '' : '<kbd>E</kbd>'}`;
     if (res?.extra) q('.score').textContent += ` · ${tx(res.extra)}`;
     // a round may explain its stars in one line under the score (the cow race: "1st place = 3 stars"), already translated

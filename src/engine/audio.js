@@ -276,7 +276,7 @@ export class Audio {
   }
 
   startAmbience() {
-    this.amb.river = this.loop(700, 'lowpass', 0.35);
+    this.amb.river = this.loop(700, 'lowpass', 0.14);
     this.amb.wind = this.loop(420, 'lowpass', 0.12);
   }
 
@@ -284,8 +284,17 @@ export class Audio {
   ambience(dt, riverDist, night, season, cozy) {
     if (!this.ctx) return;
     const t = this.ctx.currentTime;
-    this.amb.river.g.gain.setTargetAtTime(this.amb.river.base * Math.max(0, 1 - riverDist / 45) ** 1.6, t, 0.3);
-    this.amb.wind.g.gain.setTargetAtTime(this.amb.wind.base * (0.6 + (season === 'winter' ? 0.8 : 0.2) + Math.sin(t * 0.2) * 0.3), t, 0.5);
+    // The wind bed is off: a steady hiss under everything was heard as white noise whenever nothing else played.
+    // The river is only heard close to its bank, and quietly (it is filtered noise too).
+    this.ambAt = t;
+    this.amb.river.g.gain.setTargetAtTime(this.amb.river.base * Math.max(0, 1 - riverDist / 16) ** 1.6, t, 0.3);
+    this.amb.wind.g.gain.setTargetAtTime(0, t, 0.3);
+    // if the game stops asking (a pause, a title screen, a round that freezes the valley), the bed fades instead of hanging
+    this.ambWatch ??= setInterval(() => {
+      if (!this.ctx || this.ctx.currentTime - this.ambAt < 0.6) return;
+      this.amb.river.g.gain.setTargetAtTime(0, this.ctx.currentTime, 0.2);
+      this.amb.wind.g.gain.setTargetAtTime(0, this.ctx.currentTime, 0.2);
+    }, 500);
     this.birdT = (this.birdT ?? 2) - dt;
     if (this.birdT <= 0) {
       this.birdT = 1.5 + Math.random() * 4;
@@ -296,10 +305,7 @@ export class Audio {
         for (let i = 0; i < 3; i++) this.tone(4200, { type: 'square', dur: 0.03, vol: 0.006, when: i * 0.07, bus: this.ambBus, filter: 5000, rev: 0 });
       }
     }
-    if (season === 'summer' && night < 0.3) {
-      this.cicT = (this.cicT ?? 0) - dt;
-      if (this.cicT <= 0) { this.cicT = 0.12; this.noise({ dur: 0.1, vol: 0.006, freq: 6200, q: 8, bus: this.ambBus }); }
-    }
+    // (the summer cicadas were an unbroken thread of filtered noise: a hiss, not a song. Taken out with the wind bed.)
     this.musicTick(night, cozy);
   }
 
