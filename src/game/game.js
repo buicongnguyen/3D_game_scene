@@ -3,24 +3,10 @@ import { Renderer } from '../engine/renderer.js';
 import { Assets } from '../engine/assets.js';
 import { Input } from '../engine/input.js';
 import { FX } from '../engine/effects.js';
-import { World } from '../world/world.js';
-import { scatter } from '../world/scatter.js';
-import { Foliage } from '../world/foliage.js';
-import { Grass } from '../world/grass.js';
-import { Colliders } from '../world/colliders.js';
-import { Structures } from '../world/structures.js';
-import { Railway } from '../world/railway.js';
 import { PALETTES } from '../world/seasons.js';
-import { Player } from '../actors/player.js';
-import { FollowCamera } from '../actors/camera.js';
-import { ALL_MODELS } from '../content/models.js';
-import { LightPool } from '../engine/lights.js';
-import { Paddies } from '../world/paddies.js';
-import { Underwater } from '../fx/underwater.js';
-import { Riverbed } from '../world/riverbed.js';
-import { StarKite } from '../actors/kite.js';
-import { Interiors } from '../world/interiors.js';
 import { tx } from '../i18n/i18n.js';
+// (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
+//  light: the title menu and the quick-start mini games run on it.)
 
 /** Owns every system and the frame loop. Story and UI plug in through hooks. */
 export class Game {
@@ -49,6 +35,7 @@ export class Game {
 
   async load(onProgress = () => {}) {
     onProgress(0.02, 'Shaping the valley');
+    const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, ALL_MODELS, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
     await nextFrame();
     this.world = new World(this.scene, this.renderer.renderer, this.renderer.q);
     onProgress(0.12, 'Unpacking Blender models');

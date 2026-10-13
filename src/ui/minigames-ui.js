@@ -47,6 +47,7 @@ const CSS = `
 #mgPicker .mg-best{color:#2f8a4a}
 #mgPicker .mg-badge{position:absolute;right:10px;top:10px;padding:2px 9px;border-radius:999px;background:#2f8a4a;color:#fff;font:700 12px Nunito,sans-serif}
 #mgPicker .mg-badge.new{background:#e0457b}
+#mgPicker .mg-quick{flex:none;padding:1px 9px 1px 7px;border-radius:999px;background:#fff1c2;color:#7a4e00;box-shadow:inset 0 0 0 1.5px #f2c14e;font:700 12px Nunito,sans-serif;white-space:nowrap}
 #mgPicker .mg-foot{flex:none;padding:6px 18px 10px;font-size:12.5px;font-weight:700;color:#7a6a58;text-align:center}
 @media (max-width:560px){
  #mgPicker{padding:0}
@@ -84,10 +85,11 @@ export class MinigamePicker {
   }
 
   /** Show the picker. Resolves with the chosen catalogue entry, or null when closed. `st`: the quest state for bests and stars. */
-  open({ st = null, current = null } = {}) {
+  open({ st = null, current = null, quick = false } = {}) {
     this.ensure();
     if (this.resolve) this.close(null);
     this.st = st; this.current = current;
+    this.quick = !!quick;        // the title's list before the valley is loaded: mark the games that start at once
     this.list = buildCatalogue();
     const cats = CATEGORIES.filter(c => this.list.some(e => e.cat === c.id));
     let want = null;
@@ -164,6 +166,11 @@ export class MinigamePicker {
     for (let i = 0; i < 3; i++) { const s = document.createElement('i'); s.textContent = '★'; if (i < rec.stars) s.className = 'on'; stars.appendChild(s); }
     row.appendChild(stars);
     if (rec.best > 0) { const bs = document.createElement('span'); bs.className = 'mg-best'; bs.textContent = tx('Best: {n}', { n: rec.best }); row.appendChild(bs); }
+    if (this.quick && e.quick) {
+      // quick start: this one opens in a moment, with no valley to load (a slow phone's best choice)
+      const qk = document.createElement('span'); qk.className = 'mg-quick'; qk.textContent = `⚡ ${tx('Quick')}`; qk.title = tx('Starts right away: no valley to load');
+      row.appendChild(qk);
+    }
     t.append(h, d, w, w2, row);
     b.append(ic, t);
     if (badge) { const bd = document.createElement('span'); bd.className = `mg-badge ${badge}`; bd.textContent = badge === 'new' ? tx('New') : tx('Try me'); b.appendChild(bd); }

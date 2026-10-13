@@ -5,6 +5,7 @@ import { JournalMap } from './map.js';
 import { starGroupsHtml } from './stargroups.js';
 import { STORIES, DEFAULT_STORY, storyId } from '../game/stories/index.js';
 import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
+import { loadSave } from '../game/saves.js';
 
 /** The story a new game starts with (Settings → Story for new games). */
 export function defaultStory() {
@@ -89,6 +90,8 @@ export class UI {
     $('loadLabel').textContent = tx(label);
   }
   hideLoading() { $('loading').classList.add('hidden'); }
+  /** The loading screen again (quick start: the valley is fetched when a game or the story first needs it). */
+  showLoading() { this.setLoad(0, 'Shaping the valley'); $('loading').classList.remove('hidden'); }
 
   /** Title screen. slots: [{slot, data}] from Director.slots(). Resolves with { mode: 'new'|'continue', slot }. */
   title(slots, last = 1) {
@@ -98,8 +101,7 @@ export class UI {
     const any = slots.some(s => s.data);
     $('btnContinue').classList.toggle('hidden', !any);
     this.setTitleHint();
-    // phones show the valley behind the menu as a short looping clip instead of drawing it (game/video.js)
-    if (this.game.renderer.qualityName === 'low' && !this.game.params.has('live')) import('../game/video.js').then(m => m.TitleLoop.of(this.game).start()).catch(e => console.warn('[video] title', e));
+    this.titleClip();
     return new Promise(resolve => {
       const done = v => { $('title').classList.add('hidden'); this.game.titleLoop?.stop(); cleanup(); this.audio?.click(); resolve(v); };
       const onNew = async () => {
@@ -111,7 +113,7 @@ export class UI {
       const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot) done({ mode: 'continue', slot }); };
       const onExplore = async () => { const v = await this.pickExplore(); if (v) done({ mode: 'explore', slot: 'explore', ...v }); };
       // Mini games: pick a game and play it at once (an Explore session: the game starts when the world is ready, see game/minigame-menu.js)
-      const onMini = async () => { const r = await this.pickMinigame(); if (r) { this.pendingLaunch = { id: r.e.id }; done({ mode: 'explore', slot: 'explore', season: r.plan.season, hour: r.plan.hour, fresh: false }); } };
+      const onMini = async () => { const r = await this.pickMinigame(); if (r) { this.pendingLaunch = { id: r.e.id, quick: !!r.e.quick }; done({ mode: 'explore', slot: 'explore', season: r.plan?.season, hour: r.plan?.hour, fresh: false }); } };
       const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); $('btnTitleMini')?.removeEventListener('click', onMini); };
       $('btnTitleMini')?.addEventListener('click', onMini);
       $('btnNew').addEventListener('click', onNew);
@@ -119,6 +121,14 @@ export class UI {
       $('btnExplore').addEventListener('click', onExplore);
       (any ? $('btnContinue') : $('btnNew')).focus();
     });
+  }
+
+  /**
+   * Phones show the valley behind the menu as a short looping clip instead of drawing it (game/video.js). Before the
+   * valley is loaded (quick start) there is nothing to stand in for: src/quick/title-still.js is the picture then.
+   */
+  titleClip() {
+    if (this.game.world && this.game.renderer.qualityName === 'low' && !this.game.params.has('live')) import('../game/video.js').then(m => m.TitleLoop.of(this.game).start()).catch(e => console.warn('[video] title', e));
   }
 
   /**
@@ -680,7 +690,8 @@ export class UI {
 
   /** The scene tour's two doors: a button in Settings and one on the title menu. The tour itself (game/tour.js) loads on first use. */
   bindTour() {
-    const open = () => import('../game/tour.js').then(m => m.openTour(this.game)).catch(e => console.error('scene tour failed to load', e));
+    // (quick start: the tour shows the valley, so the valley is loaded first)
+    const open = () => Promise.resolve(this.game.needValley?.()).then(() => import('../game/tour.js')).then(m => m.openTour(this.game)).catch(e => console.error('scene tour failed to load', e));
     const make = (id, cls) => {
       const b = document.createElement('button');
       b.id = id; b.type = 'button'; b.className = cls;
@@ -728,10 +739,15 @@ export class UI {
   async pickMinigame() {
     const [{ MinigamePicker }, { launchPlan }] = await Promise.all([import('./minigames-ui.js'), import('../content/minigames.js')]);
     const picker = this.mgPicker ??= new MinigamePicker(this);
-    const save = this.game.director?.constructor?.loadSave?.('explore');
-    const e = await picker.open({ st: save?.quest || null });
+    const save = loadSave('explore');
+    // (quick: the valley is not loaded yet, so the games that need none start at once and are marked)
+    const quick = !!this.game.quickBoot && !this.game.world;
+    const e = await picker.open({ st: save?.quest || null, quick });
     $('btnTitleMini')?.focus({ preventScroll: true });
-    return e ? { e, plan: launchPlan(e) } : null;
+    // (a quick game stands nowhere in the valley: no plan, and no two seconds of a slow phone spent measuring the ground for it;
+    //  for a game that does need the valley the loading screen comes up first, then the ground is measured under it)
+    if (quick && e && !e.quick) { $('title').classList.add('hidden'); this.showLoading(); await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); }
+    return e ? { e, plan: quick && e.quick ? null : launchPlan(e) } : null;
   }
 
   /** Show a panel on top of the stack. The one underneath (the pause menu too) hides until this one closes. */

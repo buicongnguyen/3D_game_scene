@@ -91,7 +91,17 @@ export class Tricks {
     this.signs = [];
     this.t = 0;
     this.buildUi();
-    for (const t of TRICKS) this.spawnSign(t);
+    // (the quick-start runtime, src/quick/runtime.js, runs the rounds with no valley: no signposts to stand anywhere)
+    if (!this.g.quickStart) for (const t of TRICKS) this.spawnSign(t);
+  }
+
+  /** Take the round UI off the page (the quick-start runtime, when the valley takes over and builds its own). */
+  dispose() {
+    for (const l of this.loops) l.res({ quit: true });
+    this.loops.clear();
+    hideHowTo();
+    for (const e of Object.values(this.el || {})) e.remove();
+    this.el = null;
   }
 
   // ------------------------------------------------------------------ state helpers
@@ -200,7 +210,7 @@ export class Tricks {
         this.hud(t, ctx);
         let res = null;
         g.player.carry?.want('worn', 'trick');     // hands free for the net, the frog, the kite line… (the night river asks for it in hand itself)
-        try { res = await mod.play(ctx); } catch (e) { console.error(`[tricks] ${id} failed`, e); res = { score: 0, quit: true }; }
+        try { res = await mod.play(ctx); } catch (e) { console.error(`[tricks] ${id} failed`, e); this.lastError = e; res = { score: 0, quit: true }; }
         // A few adapters keep partial scores when they leave. Explicit Stop/Back
         // cancels the round even when such an adapter returns quit:false.
         result = ctx.cancelled ? { ...(res || {}), quit: true } : res || { score: 0 };
@@ -497,7 +507,7 @@ export class Tricks {
       } else for (const l of this.loops) {          // (a Set may lose its current entry while it is walked)
         let r;
         // a bug inside a round must not freeze the game: end that round as if quit, and say so in the console
-        try { r = l.fn(dt); } catch (e) { console.error('trick round failed', e); r = { quit: true }; }
+        try { r = l.fn(dt); } catch (e) { console.error('trick round failed', e); this.lastError = e; r = { quit: true }; }
         if (r !== undefined) { this.loops.delete(l); l.res(r); }
       }
       if (this.round?.ctx) this.round.ctx.t += dt;

@@ -144,7 +144,24 @@ export class Yard {
       flick: btn('big', tx('Hold to flick'), () => { this.pad.hold = true; }, () => { this.pad.hold = false; }),
     };
     const canvas = this.g.renderer.renderer.domElement;
-    canvas.addEventListener('pointerdown', e => this.onPointer(e));
+    this.onCanvasDown = e => this.onPointer(e);
+    canvas.addEventListener('pointerdown', this.onCanvasDown);
+  }
+
+  /** Take everything this runner made off the page and out of the scene (the quick-start runtime, when the valley takes over and builds its own). */
+  dispose() {
+    for (const l of this.loops) l.res({ quit: true });
+    this.loops.clear();
+    this.g.renderer.renderer.domElement.removeEventListener('pointerdown', this.onCanvasDown);
+    this.guide?.destroy?.();
+    hideHowTo();
+    for (const e of Object.values(this.el || {})) e.remove();
+    this.el = null;
+    document.body.classList.remove('trick-round', 'yard-round', 'yard-pad');
+    for (const v of Object.values(this.views.by)) v?.dispose();
+    this.views.by = {};
+    for (const m of [this.ring, this.ringOut, this.callRing]) { m.removeFromParent(); m.geometry.dispose(); m.material.dispose(); }
+    this.blobs?.dispose();
   }
 
   /** The on-screen buttons that belong to a game (none for the one-button games). */
@@ -743,6 +760,7 @@ export class Yard {
       }
     } catch (e) {
       console.error('[yard] round failed', e);
+      this.lastError = e;
     } finally {
       // whatever happened, the round never keeps the screen, the camera or the kids
       for (const l of this.loops) l.res({ quit: true });
@@ -940,7 +958,7 @@ export class Yard {
     const solo = st.sim === 'all', roots = kids.map(k => k.n.root), foe = solo ? R.kids[0] || null : null;
     // the kid's face for the scoreboard: taken now, under the fade, from their own model standing at ease
     if (foe?.n.anim?.snap && foe.n.anim.has('Idle')) { foe.n.anim.cancelOneShot(); foe.n.anim.snap('Idle'); foe.n.anim.update(0); }
-    const face = foe ? portraitOf(g, foe.n.root) : null;
+    const face = foe ? foe.face || portraitOf(g, foe.n.root) : null;      // (a kid of the quick-start runtime brings a drawn face: no model is loaded there)
     let onFrame = null;
     const keep = [...(view?.items || []), this.ring, this.ringOut, this.callRing];
     if (!solo) {
@@ -955,8 +973,9 @@ export class Yard {
       for (const o of g.structures?.yards?.[R.c.Y.id]?.group?.children || []) if (o.name === 'yard:board') keep.push(o);
     }
     R.still = enterFocus(g, { keep, hide: solo ? [p.root, ...roots] : [], backdrop: st.backdrop, sim: st.sim, actors: solo ? [] : kids.map(k => k.n), onFrame, dim: st.dim, vignette: st.vignette });
-    R.solo = solo && R.still.active;
-    view?.setFlat?.(R.solo && !!st.mat);
+    // (quick start: there is no valley to still, and the round is always the pieces alone on their mat)
+    R.solo = solo && (R.still.active || !!g.quickStart);
+    view?.setFlat?.(R.solo && (!!st.mat || !!g.quickStart));
     // the two faces on the scoreboard: Mika's, and the kid's (so the player still sees who she is playing)
     const h = this.el?.hud;
     if (h) { h.classList.toggle('faces', R.solo && !!foe && !!face); if (face) h._foe.src = face; h._turn = null; }
@@ -1148,7 +1167,7 @@ export class Yard {
       else if (!this.guide?.isOpen) for (const l of [...this.loops]) {
         let r;
         // a bug inside a round must not freeze the game: end that round as if she stopped, and say so in the console
-        try { r = l.fn(dt); } catch (e) { console.error('[yard] round failed', e); r = { quit: true }; }
+        try { r = l.fn(dt); } catch (e) { console.error('[yard] round failed', e); this.lastError = e; r = { quit: true }; }
         if (r !== undefined) { this.loops.delete(l); l.res(r); }
       }
     }

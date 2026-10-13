@@ -32,7 +32,7 @@ const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean)
 import { VILLAGERS, RETURNING, ROUTES } from '../content/villagers.js';
 import { BARK_RANGE, BARK_NEAR, BarkClock, pickBark, zoneAt } from './barks.js';
 
-const SAVE_KEY = 'starline-save-1';
+import { saveKey, loadSave, clearSave, saveSlots, lastSlot } from './saves.js';   // (the title lists the saves before the valley is loaded)
 const FRIEND_BY_KIND = Object.fromEntries(FRIENDS.map(f => [f.id, f]));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 
@@ -685,20 +685,11 @@ export class Director {
   }
 
   /** Three save profiles. Slot 1 keeps the original key, so older saves appear there. */
-  static key(slot = 1) { return slot === 1 ? SAVE_KEY : `starline-save-${slot}`; }
-
-  static loadSave(slot = 1) {
-    try {
-      const d = JSON.parse(localStorage.getItem(Director.key(slot)));
-      return d && typeof d === 'object' && d.quest && typeof d.quest === 'object' ? d : null; // anything else is not a save
-    } catch { return null; }
-  }
-
-  static clearSave(slot = 1) { try { localStorage.removeItem(Director.key(slot)); } catch { /* ignore */ } }
-
-  static slots() { return [1, 2, 3].map(slot => ({ slot, data: Director.loadSave(slot) })); }
-
-  static lastSlot() { try { return +localStorage.getItem('starline-last-slot') || 1; } catch { return 1; } }
+  static key(slot = 1) { return saveKey(slot); }
+  static loadSave(slot = 1) { return loadSave(slot); }
+  static clearSave(slot = 1) { clearSave(slot); }
+  static slots() { return saveSlots(); }
+  static lastSlot() { return lastSlot(); }
 
   // ------------------------------------------------------------------ Hard mode: aim and spark
   /** Hard mode, and Tamo is here to spark: hold Aim (right mouse, Q, LT or the Aim button) and Spark (click, R, RT, Spark). */

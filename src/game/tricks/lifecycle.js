@@ -10,9 +10,9 @@
 // words). "From seed to harvest" (crops.js) is played on this board.
 import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
-import { NPC } from '../../actors/npc.js';
 import { addCss, disposeRigs } from './util.js';
-import { enterFocus } from '../../engine/focus.js';
+// (the seated teacher, actors/npc.js, and the still picture of the valley, engine/focus.js, are fetched in playCards when
+//  there is a valley: the quick-start runtime plays this board with neither, and this file must not pull the valley in)
 import { makeRound, check, solve, explain, STAGE, ANIMAL, HOME_NAME, pointsFor, MAX_MISSES, quickBonus } from './rules-lifecycle.js';
 import { cardSvg, creatureOf } from './lifecycle-art.js';
 
@@ -467,7 +467,7 @@ export function makeBoard(ctx, round, teacherName, kit = LIFE_KIT) {
 }
 
 /** The teacher, seated beside Mika for the round (her own rig and, on the light tiers, her own merged palette). */
-function seatTeacher(g, model, x, z, facing) {
+function seatTeacher(NPC, g, model, x, z, facing) {
   if (!g.assets.has?.(model)) return null;
   const shared = new Set(), local = new Set();
   const assets = { clone(name) {
@@ -495,6 +495,9 @@ function seatTeacher(g, model, x, z, facing) {
 export async function playCards(ctx, { round, seed, kit = LIFE_KIT, intro = [], bonusFor = quickBonus, debug = 'life', rise = 1.7 }) {
     const g = ctx.game, p = ctx.player, d = ctx.director, follow = g.follow;
     let board = null, teacher = null, still = null;
+    // (in the valley both are already loaded; with no valley, src/quick/runtime.js, the board is all there is)
+    const staged = !g.quickStart;
+    const [{ NPC }, { enterFocus }] = staged ? await Promise.all([import('../../actors/npc.js'), import('../../engine/focus.js')]) : [{}, {}];
     try {
       ctx.lock(true);
       ctx.hud(0, null);
@@ -506,7 +509,7 @@ export async function playCards(ctx, { round, seed, kit = LIFE_KIT, intro = [], 
       // the real teacher may be standing right here (the story walked her over): she is not doubled
       const real = d.npcs?.[ctx.teacher];
       const near = real?.visible && Math.hypot(real.pos.x - p.pos.x, real.pos.z - p.pos.z) < 30;
-      if (!near) teacher = seatTeacher(g, ctx.teacher, p.pos.x + sx * 1.15 + fx * 0.1, p.pos.z + sz * 1.15 + fz * 0.1, face - 0.5);
+      if (!near && staged) teacher = seatTeacher(NPC, g, ctx.teacher, p.pos.x + sx * 1.15 + fx * 0.1, p.pos.z + sz * 1.15 + fz * 0.1, face - 0.5);
       // the shot: from in front of the two. On a wide screen the board leaves a margin on the right, and the camera looks
       // past them so that they sit in that margin instead of behind the cards.
       const mid = new THREE.Vector3(p.pos.x + sx * 0.55, p.pos.y, p.pos.z + sz * 0.55);
@@ -531,7 +534,7 @@ export async function playCards(ctx, { round, seed, kit = LIFE_KIT, intro = [], 
       let up = 0;
       const res = await ctx.loop(dt => {
         // the board covers the screen: once the two have sat down the valley behind is one still picture (engine/focus.js)
-        if (!still && (up += dt) > 1.8) still = enterFocus(g, { hold: true });
+        if (!still && staged && (up += dt) > 1.8) still = enterFocus(g, { hold: true });
         ctx.groundPose?.(pose);
         teacher?.update(dt);
         if (board.S.leave) return { quit: true };

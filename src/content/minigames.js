@@ -30,6 +30,7 @@ export const CATEGORY = Object.fromEntries(CATEGORIES.map(c => [c.id, c]));
  *   cat   category id        icon  public/icons/<icon>.webp      desc  one line (a string; tx() on show)
  *   season / hour  the best moment for it (the launch from the menu sets these, like Explore does)
  *   isNew  shown with a "New" badge until it is played once
+ *   quick  needs no valley: from the title's list it starts in the quick-start runtime (src/quick/runtime.js)
  */
 export const META = {
   'trick:swimming': { cat: 'country', desc: N_('Practise bubbles, floating and a gentle swim back to the exit.'), season: 'summer', hour: 11, isNew: true },
@@ -46,8 +47,8 @@ export const META = {
   'trick:beetles': { cat: 'country', desc: N_('Paint sap on the bark and welcome the night visitors.'), season: 'summer', hour: 18.5 },
   'trick:hoppers': { cat: 'country', desc: N_('Catch grasshoppers in the tall summer grass.'), season: 'summer', hour: 10, isNew: true },
   'trick:cricket': { cat: 'country', desc: N_('Follow the chirp and find the singing cricket.'), season: 'autumn', hour: 19, isNew: true },
-  'trick:lifecycle': { cat: 'country', desc: N_('Put the lives of small animals in order: a card game for thinkers.'), season: 'summer', hour: 10, isNew: true },
-  'trick:crops': { cat: 'country', desc: N_('Rice, wheat and potatoes from seed to harvest: a card game for thinkers.'), season: 'autumn', hour: 10, isNew: true },
+  'trick:lifecycle': { cat: 'country', desc: N_('Put the lives of small animals in order: a card game for thinkers.'), season: 'summer', hour: 10, isNew: true, quick: true },
+  'trick:crops': { cat: 'country', desc: N_('Rice, wheat and potatoes from seed to harvest: a card game for thinkers.'), season: 'autumn', hour: 10, isNew: true, quick: true },
   'trick:archery': { cat: 'yard', desc: N_('Draw a bamboo bow and hit the straw target.'), season: 'spring', hour: 11, isNew: true },
   'trick:cowrace': { cat: 'animals', desc: N_('Race four cows down the track: steer, and tap on the beat.'), season: 'spring', hour: 11, isNew: true },
   'trick:eggs': { cat: 'animals', desc: N_('Read the bamboo gutters and catch the hens\' eggs in your hat.'), season: 'spring', hour: 10, isNew: true },
@@ -56,9 +57,9 @@ export const META = {
   'yard:volley': { cat: 'yard', desc: N_('Bump, set and spike on the sand court.'), season: 'summer', hour: 15, isNew: true },
   'yard:rope': { cat: 'yard', desc: N_('Jump in when the long rope reaches the ground.'), season: 'spring', hour: 15, isNew: true },
   'yard:tug': { cat: 'yard', desc: N_('Pull on the beat and drag the flag over your line.'), season: 'autumn', hour: 15, isNew: true },
-  'yard:oanquan': { cat: 'yard', desc: N_('Sow your pebbles round the board and capture.'), season: 'spring', hour: 15, isNew: true },
+  'yard:oanquan': { cat: 'yard', desc: N_('Sow your pebbles round the board and capture.'), season: 'spring', hour: 15, isNew: true, quick: true },
   'yard:sack': { cat: 'yard', desc: N_('Hop in a steady rhythm to the finish line.'), season: 'autumn', hour: 15, isNew: true },
-  'yard:marbles': { cat: 'yard', desc: N_('Flick the shooter and knock the marbles out of the ring.'), season: 'spring', hour: 15, isNew: true },
+  'yard:marbles': { cat: 'yard', desc: N_('Flick the shooter and knock the marbles out of the ring.'), season: 'spring', hour: 15, isNew: true, quick: true },
   'fish:dock': { cat: 'fishing', desc: N_('Cast from Rin\'s dock for trout, char and koi.'), season: 'spring', hour: 9 },
   'fish:mill': { cat: 'fishing', desc: N_('Fish the still pool by the mill, where the koi hide.'), season: 'autumn', hour: 10, isNew: true },
   'sky:star-hill': { cat: 'sky', desc: N_('Lie back on the hill and name the star groups.'), season: 'summer', hour: 22, isNew: true, label: N_('the stargazing hill') },
@@ -93,7 +94,7 @@ export function buildCatalogue({ tricks = TRICKS, yardGames = YARD_GAMES, yards 
   const out = [];
   const add = (e, m) => {
     const cat = m?.cat || e.defaultCat;
-    out.push({ ...e, icon: m?.icon || e.icon, isNew: !!m?.isNew, cat: CATEGORY[cat] ? cat : e.defaultCat, desc: m?.desc || e.desc, season: m?.season || e.season, hour: m?.hour ?? e.hour });
+    out.push({ ...e, icon: m?.icon || e.icon, isNew: !!m?.isNew, quick: !!m?.quick, cat: CATEGORY[cat] ? cat : e.defaultCat, desc: m?.desc || e.desc, season: m?.season || e.season, hour: m?.hour ?? e.hour });
   };
   for (const t of tricks) {
     const m = meta[`trick:${t.id}`], dm = defaultMoment(t);

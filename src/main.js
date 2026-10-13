@@ -4,13 +4,16 @@ import { Game } from './game/game.js';
 import { exploreState } from './game/fastforward.js';
 import { UI } from './ui/ui.js';
 import { Audio } from './engine/audio.js';
-import { FX } from './fx/fx.js';
-import { Director } from './game/director.js';
-import { viewerCamera } from './dev/viewer.js';
 import { PALETTES } from './world/seasons.js';
-import { attachQA } from './dev/qa.js';
 import { detectLang, setLang, tx } from './i18n/i18n.js';
-import { Celebrate } from './fx/celebrate.js';
+import { loadSave, clearSave, saveSlots, lastSlot } from './game/saves.js';
+import { quickStartWanted } from './quick/switch.js';
+import { TitleStill } from './quick/title-still.js';
+// QUICK START. This file must stay light: it is what a phone downloads before the title menu shows. The valley's own
+// code (the Director, the weather, the QA helpers: ./valley.js) and the quick-start runtime (./quick/runtime.js) are
+// fetched with import() when they are first needed. Do NOT import them (or anything under world/, actors/, fx/) here,
+// and do NOT add a top-level await below the two that exist: every chunk fetched on demand depends on this module
+// and would hang until that await is done.
 
 const params = new URLSearchParams(location.search);
 const canvas = document.getElementById('game');
@@ -66,6 +69,12 @@ const game = new Game(canvas, params);
 canvas.addEventListener('webglcontextlost', e => {
   e.preventDefault();
   try { game.director?.save?.(); } catch { /* ignore */ }
+  // quick start: the title menu and the card games are drawn by the page itself. Nothing of theirs was lost; if the
+  // context is still gone when the valley is wanted, loadValley() says so then.
+  if (game.quickBoot && !game.world && (!game.quick || game.quick.dom)) return;
+  glLostNotice();
+});
+function glLostNotice() {
   if (document.getElementById('glLost')) return;
   const el = document.createElement('div');
   el.id = 'glLost';
@@ -75,7 +84,7 @@ canvas.addEventListener('webglcontextlost', e => {
   b.textContent = tx('Reload');
   b.addEventListener('click', () => location.reload());
   document.body.appendChild(el);
-});
+}
 // three.js rebuilds its GPU resources by itself when the browser gives the context back; then the game simply goes on
 canvas.addEventListener('webglcontextrestored', () => document.getElementById('glLost')?.remove());
 const audio = new Audio();
@@ -83,32 +92,37 @@ game.audio = audio;
 const ui = new UI(game, audio);
 game.ui = ui;
 
-await game.load((p, label) => ui.setLoad(p, label));
-game.fx = new FX(game.scene, game.renderer.q);
-ui.applySettings?.(); // the world exists now: apply saved view settings (season, time, shadows, FOV…)
-game.renderer.onResize = (w, h) => { game.camera.aspect = w / h; game.camera.updateProjectionMatrix(); game.fx.resize(game.renderer.pixelRatio); };
-game.fx.resize(game.renderer.pixelRatio); // the first pass ran before the FX existed
-const director = new Director(game, ui, audio, game.fx);
-game.director = director;
-game.celebrate = new Celebrate(game); // chapter celebrations and the valley's lasting decorations
-game.systems.push(director);
 window.__STARLINE__ = game;
-if (params.has('qa')) attachQA(game, director, ui);
+// Which runtime owns the screen now: 'title' (the menu; nothing of the valley is loaded), 'quick' (a quick-start mini
+// game, src/quick/runtime.js), 'loading' (the valley is being fetched and built) or 'valley'.
+window.__STARLINE_RUNTIME__ = 'title';
+// Quick start (src/quick/switch.js): the title comes first and the valley is loaded when something needs it.
+// ?quick=off keeps the old order (the valley, then the title over it), to compare the two.
+const quickBoot = game.quickBoot = quickStartWanted(params);
+if (quickBoot && params.has('qa')) window.__STARLINE_QA__ = { game, ui, errors: [] };   // (the valley's own QA helpers replace this when it loads)
 
-// Look-dev viewer mode (screenshots): ?view=x,y,z,tx,ty,tz
-if (params.has('view')) {
-  game.setSeason(params.get('season') || 'spring');
-  game.time.hour = Number(params.get('hour') ?? 10);
-  game.fx.setWeather(PALETTES[game.time.season].particles);
-  viewerCamera(game.camera, params);
-  const look = new THREE.Vector3(...params.get('view').split(',').slice(3).map(Number));
-  game.follow.cutscene({ pos: game.camera.position.clone(), look }, 0.001);
-  ui.hideLoading();
-  game.player.root.visible = false;
-  game.start();
-  window.__STARLINE_READY__ = true;
-} else {
-  // Title: the valley at golden hour behind the menu, with a slow drifting camera.
+let V = null, director = null, valleyP = null, valleyReady = false;
+/** Fetch the valley's code, then load and build the valley and its Director. Once; before quick start this ran above the title. */
+const loadValley = () => (valleyP ??= (async () => {
+  window.__STARLINE_RUNTIME__ = 'loading';
+  if (game.renderer.renderer.getContext().isContextLost()) glLostNotice();     // (lost while only the title or a card game was up)
+  V = await import('./valley.js');
+  await game.load((p, label) => ui.setLoad(p, label));
+  game.fx = new V.FX(game.scene, game.renderer.q);
+  ui.applySettings?.(); // the world exists now: apply saved view settings (season, time, shadows, FOV…)
+  game.renderer.onResize = (w, h) => { game.camera.aspect = w / h; game.camera.updateProjectionMatrix(); game.fx.resize(game.renderer.pixelRatio); };
+  game.fx.resize(game.renderer.pixelRatio); // the first pass ran before the FX existed
+  director = new V.Director(game, ui, audio, game.fx);
+  game.director = director;
+  game.celebrate = new V.Celebrate(game); // chapter celebrations and the valley's lasting decorations
+  game.systems.push(director);
+  if (params.has('qa')) V.attachQA(game, director, ui);
+  valleyReady = true;
+  window.__STARLINE_RUNTIME__ = 'valley';
+})());
+
+/** Title: the valley at golden hour behind the menu, with a slow drifting camera. */
+function titleLook() {
   game.setSeason('autumn');
   game.time.hour = 17.3;
   game.fx.setWeather('leaves');
@@ -120,18 +134,88 @@ if (params.has('view')) {
     game.follow.cutscene({ pos: new THREE.Vector3(-70 + Math.sin(a) * 30, 34, 180 + Math.cos(a) * 12), look: new THREE.Vector3(5, 14, 110) }, 0.001);
   };
   game.railway.placeAt(game.railway.train.s);
-  ui.hideLoading();
-  game.start();
+}
+
+// Nothing below may be a top-level await: in the built site every chunk imported on demand (the valley, the quick
+// runtime, the title video, the scene tour) depends on this module and would hang until the await is done.
+(async () => {
+  if (!quickBoot) await loadValley();
+
+  // Look-dev viewer mode (screenshots): ?view=x,y,z,tx,ty,tz
+  if (params.has('view')) {
+    game.setSeason(params.get('season') || 'spring');
+    game.time.hour = Number(params.get('hour') ?? 10);
+    game.fx.setWeather(PALETTES[game.time.season].particles);
+    V.viewerCamera(game.camera, params);
+    const look = new THREE.Vector3(...params.get('view').split(',').slice(3).map(Number));
+    game.follow.cutscene({ pos: game.camera.position.clone(), look }, 0.001);
+    ui.hideLoading();
+    game.player.root.visible = false;
+    game.start();
+    window.__STARLINE_READY__ = true;
+    return;
+  }
+
+  let still = null, underTitle = null;
+  if (valleyReady) { titleLook(); ui.hideLoading(); game.start(); }
+  else {
+    // quick start: a filmed still of the valley behind the menu; no 3D yet
+    still = new TitleStill();
+    ui.hideLoading();
+    // the title's Scene tour shows the valley: it is loaded under the title, which then is the usual live one
+    game.needValley = () => (underTitle ??= (async () => {
+      const title = document.getElementById('title'), shown = !title.classList.contains('hidden');
+      title.classList.add('hidden');
+      ui.showLoading();
+      await loadValley();
+      titleLook();
+      still?.remove(); still = null;
+      game.start();
+      if (shown) title.classList.remove('hidden');
+      ui.titleClip();
+      ui.hideLoading();
+    })());
+  }
   window.__STARLINE_READY__ = true;
-  // The wait for the title menu must not be a top-level await: in the built site every chunk imported on demand
-  // (the title video, the scene tour) depends on this module and would hang until the player starts a game.
-  (async () => {
+
+  const unlockAudio = () => { if (!params.has('mute')) { try { audio.unlock(); } catch (e) { console.warn('audio unavailable', e); } } };
   const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
-  const picked = auto ? { mode: auto, slot: +params.get('slot') || 1, story: params.get('story') || undefined } : await ui.title(Director.slots(), Director.lastSlot());
+  let picked = null;
+  while (!picked) {
+    picked = auto ? { mode: auto, slot: +params.get('slot') || 1, story: params.get('story') || undefined } : await ui.title(saveSlots(), lastSlot());
+    const launch = ui.pendingLaunch;
+    if (valleyP || !launch?.quick) break;
+    // A game that needs no valley, picked from the title's Mini games list: the quick-start runtime plays it, and the
+    // ones picked after it. It comes back with null (the list was closed: the title again) or with a game that does
+    // need the valley ({ e, plan }), which then starts the way it always has.
+    unlockAudio();
+    let next = null;
+    try {
+      const { runQuick } = await import('./quick/runtime.js');
+      ui.pendingLaunch = null;
+      next = await runQuick({ game, ui, audio, params, id: launch.id, onPlay: on => still?.rest(on) });
+    } catch (e) { console.error('[quick] not available: the valley plays it', e); if (ui.pendingLaunch) break; }
+    if (next) ui.pendingLaunch = { id: next.e.id };
+    picked = next ? { mode: 'explore', slot: 'explore', season: next.plan.season, hour: next.plan.hour, fresh: false } : null;
+  }
+
+  if (!valleyReady) {
+    // quick start: now the valley is needed. The quick runtime lets go of everything it made, the loading screen
+    // comes back ("Shaping the valley…") and the game starts as soon as the valley stands.
+    document.getElementById('title').classList.add('hidden');
+    game.quick?.dispose();
+    ui.showLoading();
+    await (underTitle || loadValley());
+    still?.remove(); still = null;
+    game.railway.placeAt(game.railway.train.s);
+    game.start();
+    ui.hideLoading();
+  }
+
   const choice = picked.mode;
   director.slot = picked.slot;
   director.newStory = picked.story;      // which story a new game plays (the title's story card)
-  let saved = Director.loadSave(picked.slot);
+  let saved = loadSave(picked.slot);
   if (choice === 'explore') {
     // Explore mode: its own save; the first time (or "start over") it begins in a valley where the story is done
     director.explore = true;
@@ -140,14 +224,13 @@ if (params.has('view')) {
     game.timeOverride = picked.hour ?? null;
     game.cycleHour = undefined;
   }
-  if (!params.has('mute')) { try { audio.unlock(); } catch (e) { console.warn('audio unavailable', e); } }
+  unlockAudio();
   game.beforeUpdate = null;
   game.player.root.visible = true;
   ui.showHud(true);
   game.follow.clearCutscene();
-  if (choice === 'new') { Director.clearSave(picked.slot); try { localStorage.removeItem(`starline-album-${picked.slot}`); } catch { /* ignore */ } }
+  if (choice === 'new') { clearSave(picked.slot); try { localStorage.removeItem(`starline-album-${picked.slot}`); } catch { /* ignore */ } }
   const started = director.begin(choice === 'continue' || choice === 'explore' ? saved : null);
   window.__STARLINE_PLAYING__ = true;
   await started;
-  })().catch(e => console.error('[start]', e));
-}
+})().catch(e => { console.error('[start]', e); showError(e?.message || String(e)); });

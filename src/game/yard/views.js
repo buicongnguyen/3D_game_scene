@@ -209,7 +209,68 @@ export function squareAt(u, v) {
   return 1 + Math.min(4, Math.floor((u + 1.25) / 0.5));
 }
 
+/**
+ * The ô ăn quan board scratched into a mat of swept earth (the quick-start runtime: there is no yard under the game,
+ * so the lines world/yard.js builds into the ground are drawn here instead; same measures: two rows of five 0.5 m
+ * squares and a half-circle quan square at each end). `hu`, `hv`: half the mat's size in metres. One texture, one quad.
+ */
+function boardMatTexture(hu, hv) {
+  const K = 200, W = Math.round(hu * 2 * K), H = Math.round(hv * 2 * K), c = document.createElement('canvas'); c.width = W; c.height = H;
+  const g = c.getContext('2d'), mx = W / 2, my = H / 2;
+  const earth = g.createRadialGradient(mx, my, 0, mx, my, W / 2);
+  earth.addColorStop(0, '#d9b47a'); earth.addColorStop(0.5, '#cfa76c'); earth.addColorStop(1, '#bd935a');
+  g.fillStyle = earth; g.fillRect(0, 0, W, H);
+  let s = 24680; const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < 3600; i++) {
+    const x = rnd() * W, y = rnd() * H, r = 0.5 + rnd() * 1.4, d = rnd();
+    g.fillStyle = d < 0.5 ? `rgba(120,84,44,${0.10 + rnd() * 0.14})` : `rgba(255,236,196,${0.10 + rnd() * 0.16})`;
+    g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  // the board: the earth inside it is rubbed smooth and a little lighter
+  const X = u => mx + u * K, Y = v => my + v * K, R = 0.5 * K;
+  const outline = () => { g.beginPath(); g.moveTo(X(-1.25), Y(-0.5)); g.lineTo(X(1.25), Y(-0.5)); g.arc(X(1.25), my, R, -Math.PI / 2, Math.PI / 2); g.lineTo(X(-1.25), Y(0.5)); g.arc(X(-1.25), my, R, Math.PI / 2, Math.PI * 1.5); g.closePath(); };
+  g.fillStyle = 'rgba(255,240,205,.2)'; outline(); g.fill();
+  // the lines, scratched with a stick: a dark groove with a light lip under it, not quite straight
+  const wob = (a, b, n = 14) => { const pts = []; for (let i = 0; i <= n; i++) { const k = i / n; pts.push([a[0] + (b[0] - a[0]) * k + (rnd() - 0.5) * 2.2, a[1] + (b[1] - a[1]) * k + (rnd() - 0.5) * 2.2]); } return pts; };
+  const lines = [wob([X(-1.25), my], [X(1.25), my], 22)];
+  for (let i = 0; i <= 5; i++) lines.push(wob([X(-1.25 + i * 0.5), Y(-0.5)], [X(-1.25 + i * 0.5), Y(0.5)]));
+  const stroke = (color, w, dy) => {
+    g.strokeStyle = color; g.lineWidth = w; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.save(); g.translate(0, dy);
+    outline(); g.stroke();
+    for (const pts of lines) { g.beginPath(); pts.forEach(([x, y], i) => g[i ? 'lineTo' : 'moveTo'](x, y)); g.stroke(); }
+    g.restore();
+  };
+  stroke('rgba(255,244,214,.5)', 5, 2.4);
+  stroke('rgba(92,62,34,.9)', 6, 0);
+  stroke('rgba(60,38,18,.35)', 2.4, -0.6);
+  // the soft edge (an oval: the mat is wider than it is deep)
+  g.globalCompositeOperation = 'destination-in';
+  g.save(); g.translate(mx, my); g.scale(1, H / W);
+  const edge = g.createRadialGradient(0, 0, W / 2 * 0.7, 0, 0, W / 2 * 0.99);
+  edge.addColorStop(0, 'rgba(0,0,0,1)'); edge.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = edge; g.fillRect(-W / 2, -W / 2, W, W);
+  g.restore();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
+
+const BOARD_MAT = { hu: 2.7, hv: 1.55 };
+
 export class BoardView extends View {
+  /** The quick-start runtime's game: lay the board mat (true; made on first use) or take it away. In the valley the board is part of the yard. */
+  setFlat(on) {
+    this.flat = !!on;
+    if (on && !this.mat && typeof document !== 'undefined') {
+      const tex = boardMatTexture(BOARD_MAT.hu, BOARD_MAT.hv), mg = new THREE.PlaneGeometry(BOARD_MAT.hu * 2, BOARD_MAT.hv * 2); mg.rotateX(-Math.PI / 2);
+      this.mat = new THREE.Mesh(mg, new THREE.MeshBasicMaterial({ color: '#ffffff', map: tex, transparent: true, depthWrite: false }));
+      this.mat.renderOrder = 0; this.mat.name = 'yard:boardMat';
+      this.mat.dispose = () => tex.dispose();
+      this.add(this.mat);
+    }
+    if (this.mat) this.mat.visible = this.flat;
+  }
+  hide() { super.hide(); this.flat = false; }
   constructor(scene, quality) {
     super(scene, quality);
     const stone = new THREE.MeshStandardMaterial({ color: '#d8d2c4', roughness: 0.55 });
@@ -227,6 +288,7 @@ export class BoardView extends View {
   update(sim) {
     const S = sim.shown, key = `${S.dan.join(',')}|${S.quan.join(',')}`;
     this.dan.visible = this.quan.visible = true;
+    if (this.mat) { this.mat.visible = !!this.flat; if (this.flat) { this.at(0, 0.006, 0, this.mat.position); this.mat.rotation.y = -(this.S.rot || 0) * Math.PI / 180; } }
     if (key !== this.key) {
       this.key = key;
       let n = 0, qn = 0;

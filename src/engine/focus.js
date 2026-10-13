@@ -455,6 +455,7 @@ export function focusSupported(game) {
   //  `?focus=on` forces the still picture on a strong machine)
   const ask = game?.params?.get?.('focus');
   if (ask === 'off' || (typeof window !== 'undefined' && window.__STARLINE_QA__?.noFocus)) return false;
+  if (game?.quickStart) return false;           // the quick-start runtime has no valley to still: it draws its own small scene
   if (!(game?.renderer?.renderWorld && game.renderer.renderer?.copyFramebufferToTexture && game.scene)) return false;
   const slow = slowMachine();          // (asked every time, so the sampler is running long before the first round)
   return ask === 'on' || focusWanted(game.renderer.qualityName, slow);
