@@ -308,34 +308,143 @@ const MARBLE_COLOURS = ['#e2543a', '#3f8fd0', '#f2b53a', '#5fae3e', '#e0567a', '
 function swirlTexture() {
   const c = document.createElement('canvas'); c.width = 64; c.height = 32;
   const g = c.getContext('2d');
-  g.fillStyle = '#f2f2f2'; g.fillRect(0, 0, 64, 32);
-  g.strokeStyle = '#7d7d7d'; g.lineWidth = 6;
+  g.fillStyle = '#ffffff'; g.fillRect(0, 0, 64, 32);
+  g.strokeStyle = '#a9a9a9'; g.lineWidth = 5;
   for (let i = -2; i < 6; i++) { g.beginPath(); g.moveTo(i * 14, 0); g.bezierCurveTo(i * 14 + 20, 8, i * 14 - 10, 24, i * 14 + 14, 32); g.stroke(); }
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
 
+/**
+ * Glass without a light: a "matcap" picture of a lit glass ball (the colour comes from the marble itself). A bright
+ * body, a darker rim, the window's reflection up on the left and the glow of the light that went through, low on the right.
+ */
+function glassMatcap() {
+  const c = document.createElement('canvas'); c.width = c.height = 128;
+  const g = c.getContext('2d');
+  // red and green: how bright the marble's own colour is there; blue: white light added on top (the reflections)
+  g.fillStyle = '#6a6a00'; g.fillRect(0, 0, 128, 128);
+  const body = g.createRadialGradient(54, 50, 6, 64, 64, 64);
+  body.addColorStop(0, '#ffff00'); body.addColorStop(0.5, '#f0f000'); body.addColorStop(0.8, '#b4b400'); body.addColorStop(1, '#6e6e00');
+  g.fillStyle = body; g.beginPath(); g.arc(64, 64, 64, 0, 7); g.fill();
+  const glow = g.createRadialGradient(86, 92, 2, 86, 92, 34);                 // light gathered on the far side
+  glow.addColorStop(0, 'rgba(255,255,0,.9)'); glow.addColorStop(1, 'rgba(255,255,0,0)');
+  g.fillStyle = glow; g.beginPath(); g.arc(86, 92, 34, 0, 7); g.fill();
+  g.globalCompositeOperation = 'lighter';
+  const spec = g.createRadialGradient(42, 36, 1, 42, 36, 16);                  // the sky's reflection
+  spec.addColorStop(0, 'rgba(0,0,255,1)'); spec.addColorStop(0.55, 'rgba(0,0,255,.85)'); spec.addColorStop(1, 'rgba(0,0,255,0)');
+  g.fillStyle = spec; g.beginPath(); g.ellipse(42, 36, 16, 11, -0.6, 0, 7); g.fill();
+  const rim = g.createRadialGradient(64, 64, 50, 64, 64, 64);                  // a thin bright edge, as glass has
+  rim.addColorStop(0, 'rgba(0,0,255,0)'); rim.addColorStop(1, 'rgba(0,0,255,.3)');
+  g.fillStyle = rim; g.beginPath(); g.arc(64, 64, 64, 0, 7); g.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** The glass material: the marble's colour shaded by the matcap's red, plus its blue as white light. */
+function glassMaterial(color, map, cap) {
+  const m = new THREE.MeshMatcapMaterial({ color, map, matcap: cap });
+  if (!cap) return m;
+  m.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('vec3 outgoingLight = diffuseColor.rgb * matcapColor.rgb;', 'vec3 outgoingLight = diffuseColor.rgb * matcapColor.rrr + vec3(matcapColor.b);'); };
+  m.customProgramCacheKey = () => 'yardGlass';
+  return m;
+}
+
+/** A soft round shadow, darkest in the middle. */
+function blobTexture() {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d'), r = g.createRadialGradient(32, 32, 2, 32, 32, 32);
+  r.addColorStop(0, 'rgba(0,0,0,.62)'); r.addColorStop(0.55, 'rgba(0,0,0,.32)'); r.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = r; g.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+
+/**
+ * The play mat of Mika's own game (focus mode): swept, packed earth with the chalk ring drawn on it, fading out at
+ * its edge into the still picture of the yard behind. One texture, one quad. `ring`: the ring's radius in metres,
+ * `half`: half the mat's side.
+ */
+function matTexture(ring, half) {
+  const N = 512, c = document.createElement('canvas'); c.width = c.height = N;
+  const g = c.getContext('2d'), k = N / 2 / half, mid = N / 2;
+  const earth = g.createRadialGradient(mid, mid, 0, mid, mid, mid);
+  earth.addColorStop(0, '#d9b47a'); earth.addColorStop(0.5, '#cfa76c'); earth.addColorStop(1, '#bd935a');
+  g.fillStyle = earth; g.fillRect(0, 0, N, N);
+  // grit and a few small stones (a fixed pattern: the same mat every time)
+  let s = 12345; const rnd = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
+  for (let i = 0; i < 2600; i++) {
+    const x = rnd() * N, y = rnd() * N, r = 0.5 + rnd() * 1.4, d = rnd();
+    g.fillStyle = d < 0.5 ? `rgba(120,84,44,${0.10 + rnd() * 0.14})` : `rgba(255,236,196,${0.10 + rnd() * 0.16})`;
+    g.beginPath(); g.arc(x, y, r, 0, 7); g.fill();
+  }
+  for (let i = 0; i < 26; i++) {
+    const a = rnd() * 6.283, d = (ring * 1.12 + rnd() * (half * 0.8 - ring * 1.12)) * k, x = mid + Math.cos(a) * d, y = mid + Math.sin(a) * d, r = 1.6 + rnd() * 2.6;
+    g.fillStyle = 'rgba(96,70,44,.22)'; g.beginPath(); g.ellipse(x + 1, y + 1.5, r, r * 0.8, 0, 0, 7); g.fill();
+    g.fillStyle = ['#c9b79a', '#d6c8ae', '#bfae92'][i % 3]; g.beginPath(); g.ellipse(x, y, r, r * 0.8, rnd() * 3, 0, 7); g.fill();
+  }
+  // the ring: inside it the earth is rubbed smooth and a little lighter; the chalk line is drawn by hand, twice over
+  g.fillStyle = 'rgba(255,240,205,.16)'; g.beginPath(); g.arc(mid, mid, ring * k, 0, 7); g.fill();
+  for (const [w, alpha, wob] of [[7, 0.5, 2.2], [3.6, 0.95, 1.2]]) {
+    g.strokeStyle = `rgba(255,253,244,${alpha})`; g.lineWidth = w; g.lineCap = 'round'; g.beginPath();
+    for (let i = 0; i <= 96; i++) { const a = i / 96 * 6.283, r = ring * k + Math.sin(a * 3 + w) * wob * 0.35 + Math.sin(a * 7) * wob * 0.2; g[i ? 'lineTo' : 'moveTo'](mid + Math.cos(a) * r, mid + Math.sin(a) * r); }
+    g.stroke();
+  }
+  // the soft edge
+  g.globalCompositeOperation = 'destination-in';
+  const edge = g.createRadialGradient(mid, mid, mid * 0.62, mid, mid, mid * 0.98);
+  edge.addColorStop(0, 'rgba(0,0,0,1)'); edge.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = edge; g.fillRect(0, 0, N, N);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4;
+  return t;
+}
+
+const MAT_HALF = 2.5;
+
 export class MarblesView extends View {
   constructor(scene, quality) {
     super(scene, quality);
-    this.tex = typeof document !== 'undefined' ? swirlTexture() : null;
-    const glass = new THREE.MeshStandardMaterial({ color: '#ffffff', map: this.tex, roughness: 0.12, metalness: 0.15 });
-    this.balls = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 9), glass, 10);      // eight marbles, and the tor of the harder levels
+    const dom = typeof document !== 'undefined';
+    this.tex = dom ? swirlTexture() : null;
+    this.cap = dom ? glassMatcap() : null;
+    // glass by matcap: no lights, no shadow pass, and it looks the same in the valley and on the focus mat
+    const glass = glassMaterial('#ffffff', this.tex, this.cap);
+    this.balls = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 20, 14), glass, 10);     // eight marbles, and the tor of the harder levels
     this.cols = [...MARBLE_COLOURS, '#f6c12e'].map(c => new THREE.Color(c));                   // (the last one: the golden tor)
     this.painted = null;
-    this.balls.frustumCulled = false; this.balls.castShadow = this.shadows;
+    this.balls.frustumCulled = false;
     this.balls.name = 'yard:marbles';
-    this.shooter = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshStandardMaterial({ color: '#f4f0e0', map: this.tex, roughness: 0.1, metalness: 0.2 }));
-    this.shooter.castShadow = this.shadows;
+    this.balls.dispose = () => { this.tex?.dispose(); this.cap?.dispose(); };
+    this.shooter = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 14), glassMaterial('#fbf6e4', this.tex, this.cap));
+    // a soft blob under every marble and the shooter (one instanced quad: no real-time shadows)
+    this.blobTex = dom ? blobTexture() : null;
+    const bg = new THREE.PlaneGeometry(2, 2); bg.rotateX(-Math.PI / 2);
+    this.blobs = new THREE.InstancedMesh(bg, new THREE.MeshBasicMaterial({ color: '#2a1a08', map: this.blobTex, transparent: true, depthWrite: false }), 11);
+    this.blobs.frustumCulled = false; this.blobs.renderOrder = 1; this.blobs.name = 'yard:marbleShadows';
+    this.blobs.dispose = () => this.blobTex?.dispose();
     this.arrow = new THREE.Mesh(new THREE.BoxGeometry(1, 0.012, 0.035), new THREE.MeshBasicMaterial({ color: '#59e06a', transparent: true, opacity: 0.9 }));
     this.cross = flatMesh(new THREE.RingGeometry(0.05, 0.07, 20), '#ffffff', 0.9);
-    this.add(this.balls, this.shooter, this.arrow, this.cross);
+    // the mat is laid only for Mika's own game in focus mode (setFlat): the kids' game is played on the yard's own ring
+    this.matTex = dom ? matTexture(MARBLE_RING, MAT_HALF) : null;
+    const mg = new THREE.PlaneGeometry(MAT_HALF * 2, MAT_HALF * 2); mg.rotateX(-Math.PI / 2);
+    this.mat = new THREE.Mesh(mg, new THREE.MeshBasicMaterial({ color: '#ffffff', map: this.matTex, transparent: true, depthWrite: false }));
+    this.mat.renderOrder = 0; this.mat.name = 'yard:marbleMat';
+    this.mat.dispose = () => this.matTex?.dispose();
+    this.flat = false;
+    this.add(this.mat, this.blobs, this.balls, this.shooter, this.arrow, this.cross);
     for (let i = 0; i < 10; i++) this.balls.setColorAt(i, this.cols[i % 6]);
     this.balls.instanceColor.needsUpdate = true;
     this.hide();
   }
+  /** Mika's game in focus mode: lay the mat (true) or take it away. */
+  setFlat(on) { this.flat = !!on; if (!on) this.mat.visible = false; }
+  hide() { super.hide(); this.flat = false; }
   update(sim) {
     let n = 0;
+    // the mat lies just over the yard's own ring; the stage's turn is its own
+    this.mat.visible = this.flat;
+    if (this.flat) { this.at(0, 0.02, 0, this.mat.position); this.mat.rotation.y = -(this.S.rot || 0) * Math.PI / 180; }
+    const lift = this.flat ? 0.02 : 0;
+    const blob = (i, u, v, r) => { this.at(u + r * 0.3, lift + 0.012, v + r * 0.22, P); SC.set(r * 1.5, 1, r * 1.5); M.compose(P, Q.identity(), SC); this.blobs.setMatrixAt(i, M); };
     // each game brings its own colours (Difficult: red for Mika, blue for the kid; the tor is gold): painted once per game
     if (this.painted !== sim.balls) {
       this.painted = sim.balls;
@@ -343,15 +452,20 @@ export class MarblesView extends View {
       this.balls.instanceColor.needsUpdate = true;
     }
     for (const b of sim.balls) {
-      this.at(b.u, b.r, b.v, P);       // (a marble knocked out lies where it stopped)
+      if (n >= 10) break;
+      blob(n, b.u, b.v, b.r);
+      this.at(b.u, lift + b.r, b.v, P);       // (a marble knocked out lies where it stopped)
       SC.set(b.r, b.r, b.r); E.set(b.roll, b.rot, 0); Q.setFromEuler(E);
       M.compose(P, Q, SC); this.balls.setMatrixAt(n++, M);
     }
     this.balls.count = n; this.balls.instanceMatrix.needsUpdate = true;
     this.balls.visible = true;
     const S = sim.shooter;
+    blob(n, S.u, S.v, S.r);
+    this.blobs.count = n + 1; this.blobs.instanceMatrix.needsUpdate = true;
+    this.blobs.visible = true;
     this.shooter.visible = true;
-    this.at(S.u, S.r, S.v, this.shooter.position);
+    this.at(S.u, lift + S.r, S.v, this.shooter.position);
     this.shooter.scale.setScalar(S.r);
     this.shooter.rotation.set(S.roll, 0, 0);
     // the aim arrow while a human is lining up the shot
@@ -359,12 +473,12 @@ export class MarblesView extends View {
     this.arrow.visible = this.cross.visible = aiming;
     if (aiming) {
       const du = sim.aim.u - S.u, dv = sim.aim.v - S.v, d = Math.hypot(du, dv) || 1, len = 0.25 + 0.65 * Math.max(sim.power, 0.18);
-      this.at(S.u + du / d * len / 2, 0.03, S.v + dv / d * len / 2, this.arrow.position);
+      this.at(S.u + du / d * len / 2, lift + 0.03, S.v + dv / d * len / 2, this.arrow.position);
       this.arrow.scale.set(len, 1, 1);
       toWorld(S.u + du, S.v + dv, W, this.S); toWorld(S.u, S.v, W2, this.S);
       this.arrow.rotation.set(0, Math.atan2(-(W.z - W2.z), W.x - W2.x), 0);
       this.arrow.material.color.setHSL(0.33 * (1 - sim.power), 0.85, 0.5);
-      this.at(sim.aim.u, 0.04, sim.aim.v, this.cross.position);
+      this.at(sim.aim.u, lift + 0.04, sim.aim.v, this.cross.position);
     }
   }
 }

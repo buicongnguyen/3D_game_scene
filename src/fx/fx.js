@@ -154,6 +154,7 @@ export class FX {
   setWeather(kind) { this.weatherKind = kind; }
 
   updateWeather(dt, focus, night) {
+    if (this.weatherHold) return;            // a mini game round is on (game/round-light.js): nothing new falls
     const k = this.weatherKind;
     const life = k === 'snow' ? 9 : k === 'petals' ? 12 : 10;
     // never emit faster than the pool recycles: the ring buffer would reuse flakes still in the air, and they

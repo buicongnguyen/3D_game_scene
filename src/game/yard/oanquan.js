@@ -404,7 +404,10 @@ export default {
   target: () => 0,
   create: opts => new OanSim({ ...opts, players: opts.players }),
   bot: oanBot,
-  focus: { u: -0.35, v: 0, w: 4.4, l: 2.9, pitch: 62, h: 1.2, top: 0.74 },      // the board and the two players at its long sides, nothing else
+  focus: { u: 0, v: 0, w: 3.9, l: 1.9, pitch: 62, h: 0.4, top: 0.74 },      // the board, nothing else (nobody is drawn: see `still`)
+  // focus mode (engine/focus.js, round.js enterStill): the yard with the board drawn on it is a still picture, a little
+  // darker toward the edges; only the pebbles, the quan and the highlights are live
+  still: { backdrop: 'frozen', sim: 'all', vignette: 0.45 },
   roles(ids) {
     if (ids.length < 2) return { game: 'keepup', play: ids.slice(), watch: [] };
     return { game: 'oanquan', play: ids.slice(0, 2), watch: ids.slice(2) };

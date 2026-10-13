@@ -168,6 +168,7 @@ export class MinigameMenu {
       this.setLook(plan.season, plan.hour, undefined);
       if (e.kind !== 'workshop') this.place(plan.stand);
       d.refreshObjective?.();
+      g.roundLight?.hold('menu');              // (game/round-light.js: on from here to the end of the launch, and a little after)
       await sleep(60);
       await this.run(e, plan);
     } catch (err) {
@@ -179,6 +180,7 @@ export class MinigameMenu {
       d.actCooldown = Math.max(d.actCooldown || 0, 0.5);
       if (borrowed || this.session?.story) {
         await ui.fade(true, 300);
+        g.roundLight?.release('menu');
         await this.giveBack();
         this.current = null;
         await ui.fade(false, 420);
@@ -192,6 +194,7 @@ export class MinigameMenu {
           this.place(plan.stand);
         }
         await ui.fade(false, 300);
+        g.roundLight?.releaseLater('menu');     // the next game is probably picked in a moment: no switching twice
         this.afterGame(e);
       }
     }

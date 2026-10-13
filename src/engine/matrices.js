@@ -68,3 +68,12 @@ export function updateWorldMatrices(scene) {
   stamp++;
   visit(scene, false);
 }
+
+/**
+ * The same for a few subtrees only (focus mode, engine/focus.js: the rest of the scene is not drawn). Their parents are
+ * taken as they stand. When the whole scene is walked again, everything else is rebuilt once (it missed a stamp).
+ */
+export function updateWorldSubtrees(roots) {
+  stamp++;
+  for (let i = 0, n = roots.length; i < n; i++) visit(roots[i], false);
+}

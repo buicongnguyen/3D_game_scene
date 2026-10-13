@@ -63,6 +63,11 @@ export const CSS = `
 #yardHint{position:fixed;left:50%;top:calc(66px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:16;max-width:min(520px,90vw);
  padding:8px 15px;border-radius:16px;background:rgba(255,253,246,.94);box-shadow:0 6px 18px rgba(40,20,0,.22);font:700 15px Nunito,system-ui,sans-serif;color:#4a3020;
  text-align:center;zoom:var(--ui-scale,1);pointer-events:none}
+#yardHud .face{display:none;flex:none;width:32px;height:32px;margin:-4px 0;border-radius:50%;object-fit:cover;background:#ffe2b0;box-shadow:0 0 0 2px #fff,0 0 0 3.5px #e6d6b8;opacity:.75}
+#yardHud.faces .face{display:block}
+#yardHud.faces{padding-left:9px}
+#yardHud span.turn{color:#c2541c;box-shadow:0 2px 0 #f08a3c}
+#yardHud .face.turn{opacity:1;box-shadow:0 0 0 2px #fff,0 0 0 4.5px #f08a3c}
 #yardHint.good{background:rgba(220,255,214,.96);color:#1f6a34}
 #yardHint.bad{background:rgba(255,232,214,.96);color:#a2441c}
 #yardStop,#yardCam{position:fixed;left:14px;z-index:17;min-height:44px;padding:8px 16px;border:0;border-radius:999px;cursor:pointer;

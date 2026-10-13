@@ -26,6 +26,7 @@ import { SKY_SPOT } from '../content/skyspots.js';
 import { Workshop } from './workshop/index.js';
 import { SHOPS } from '../content/shops.js';
 import { MinigameMenu } from './minigame-menu.js';
+import { RoundLight } from './round-light.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
 import { VILLAGERS, RETURNING, ROUTES } from '../content/villagers.js';
@@ -64,6 +65,7 @@ export class Director {
     // the remarks people call out as Mika walks past (game/barks.js says what, ui/barks-ui.js draws the bubbles)
     this.barks = { clock: new BarkClock(), ui: new BarkBubbles(), recent: new Set(), mine: new Map(), scan: 0, lit: new Set() };
     this.registerStatic();
+    this.game.roundLight = new RoundLight(this.game);   // what every round switches off while it runs (game/round-light.js)
     this.minigameMenu = new MinigameMenu(this);   // the Mini games menu: any game from the title or the pause menu (game/minigame-menu.js)
   }
 
@@ -1359,6 +1361,8 @@ export class Director {
     // the player is locked exactly while something owns the screen (dialogue, cutscene, minigame, transition)
     p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks || !!this.sky?.locks || !!this.yard?.locks || !!this.cows?.riding;
     this.q.state.playtime += dt;
+    // focus mode (engine/focus.js): the valley is a still picture behind a round, so only the round itself runs
+    if (g.focus?.sim) { this.updateFocused(dt, g.focus); return; }
     // a gentle hint the first time Mika gets near the thieving crab
     const crab = this.wildlife.story.crab;
     if (crab && this.step('c1.cogs') && !this.q.has('crabHint') && !this.busy && crab.pos.distanceTo(p.pos) < 16) {
@@ -1369,7 +1373,9 @@ export class Director {
     this.updateDetail(dt);
     for (const n of new Set(Object.values(this.npcs))) n.update(dt, g.colliders);   // a shopkeeper can be listed twice while talking
     this.updateVillagers(dt);
-    this.town?.update(dt);
+    // during a mini game round Town Life plans every few frames only (game/round-light.js); people walk on every frame
+    const rl = g.roundLight, townDt = rl?.on ? rl.frame(dt) : dt;
+    if (townDt > 0) this.town?.update(townDt);
     this.indoor?.update();
     this.tricks?.update(dt);
     this.sky?.update(dt);
@@ -1489,6 +1495,29 @@ export class Director {
     });
     // Ground poses and procedural arms are current before the belt hook and lantern light are sampled.
     p.lateUpdate?.(dt, g);
+  }
+
+  /**
+   * A frame of a round in focus mode: the round runners, the people the round keeps alive (focus.actors), the speech
+   * bubbles and the dialogue. Town life, animals, the train, pickups, zones, prompts, the clock and autosave all wait.
+   */
+  updateFocused(dt, F) {
+    const g = this.game, p = g.player;
+    for (const n of F.actors) n.update(dt, g.colliders);
+    this.tricks?.update(dt);
+    this.sky?.update(dt);
+    this.yard?.update(dt);
+    this.workshop?.update(dt);
+    this.minigameMenu?.update(dt);
+    // nobody is drawn (marbles, ô ăn quan): no bubble may float where somebody stands unseen
+    if (F.sim === 'all') this.barks.ui.update(dt, g.camera, true); else this.updateBarks(dt);
+    this.updateMinigame(dt);
+    this.scenes.update(dt);
+    this.actCooldown = Math.max(0, (this.actCooldown || 0) - dt);
+    if (F.sim !== 'all') {
+      this.ground.update(dt, { blocked: true, moving: false });
+      p.lateUpdate?.(dt, g);
+    }
   }
 
   /** The valley's machinery wakes up with its lamps; the star compass points the way. */

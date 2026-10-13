@@ -225,6 +225,7 @@ export class Tricks {
       hideHowTo();
       this.round = null;
       this.locks = false;
+      g.roundLight?.release('trick');
       g.player.carry?.release('trick');
       if (!d.busy) g.player.locked = false;
       d.actCooldown = 0.5;
@@ -455,6 +456,7 @@ export class Tricks {
     this.setHud(0, ctx.roundTime, t);
     h.classList.remove('hidden');
     document.body.classList.add('trick-round');
+    this.g.roundLight?.hold('trick');          // lighter for as long as the trick is played (game/round-light.js); let go in play()
     showHowTo(`trick:${t.id}`, { input: this.g.input, touch: this.d.ui.touch, first: ctx.first });
   }
 

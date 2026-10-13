@@ -306,7 +306,13 @@ export default {
   target: level => (MARBLES_LEVEL[level] || MARBLES_LEVEL.normal).win,
   create: opts => new MarblesSim({ ...opts, players: [...opts.players].sort((a, b) => (b.human ? 1 : 0) - (a.human ? 1 : 0)).slice(0, 2) }),
   bot: marblesBot,
-  focus: { u: 0, v: 0, w: 2.8, l: 2.4, pitch: 62 },
+  // close on the ring: nobody stands in the picture (see `still`). On a wide screen the ring stays between the hint line
+  // at the top and the "Hold to flick" button at the bottom; a phone held upright has the room of its own framing.
+  focus: { u: 0, v: 0, w: 2.2, l: 2.2, pitch: 62, h: 0.3, top: 0.58, bottom: -0.62 },
+  tall: { top: 0.74, bottom: -0.56 },
+  // focus mode (engine/focus.js, round.js enterStill): the yard is a soft still picture, the ring is a mat on the ground,
+  // nobody is drawn; only the marbles, the shooter and the aim line are live
+  still: { backdrop: 'blur', sim: 'all', mat: true },
   roles(ids) {
     if (ids.length < 2) return { game: 'keepup', play: ids.slice(), watch: [] };
     return { game: 'marbles', play: ids.slice(0, 2), watch: ids.slice(2) };

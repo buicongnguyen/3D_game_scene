@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { NPC } from '../../actors/npc.js';
 import { addCss, disposeRigs } from './util.js';
+import { enterFocus } from '../../engine/focus.js';
 import { makeRound, check, solve, explain, STAGE, ANIMAL, HOME_NAME, pointsFor, MAX_MISSES, quickBonus } from './rules-lifecycle.js';
 import { cardSvg, creatureOf } from './lifecycle-art.js';
 
@@ -493,7 +494,7 @@ function seatTeacher(g, model, x, z, facing) {
  */
 export async function playCards(ctx, { round, seed, kit = LIFE_KIT, intro = [], bonusFor = quickBonus, debug = 'life', rise = 1.7 }) {
     const g = ctx.game, p = ctx.player, d = ctx.director, follow = g.follow;
-    let board = null, teacher = null;
+    let board = null, teacher = null, still = null;
     try {
       ctx.lock(true);
       ctx.hud(0, null);
@@ -527,7 +528,10 @@ export async function playCards(ctx, { round, seed, kit = LIFE_KIT, intro = [], 
       board = makeBoard(ctx, round, d.tricks.teacherName(ctx.trick), kit);
       board.start(0);
       const pose = { waiting: true };
+      let up = 0;
       const res = await ctx.loop(dt => {
+        // the board covers the screen: once the two have sat down the valley behind is one still picture (engine/focus.js)
+        if (!still && (up += dt) > 1.8) still = enterFocus(g, { hold: true });
         ctx.groundPose?.(pose);
         teacher?.update(dt);
         if (board.S.leave) return { quit: true };
@@ -538,6 +542,7 @@ export async function playCards(ctx, { round, seed, kit = LIFE_KIT, intro = [], 
       const note = tx('{n} of {total} right at the first try', { n: S.firstTry, total: round.puzzles.length }) + (bonus ? ` · ${tx('steady thinking +{n}', { n: bonus })}` : '');
       return { score: S.score + bonus, note, detail: { firstTry: S.firstTry, puzzles: round.puzzles.length, seconds: Math.round(S.seconds), bonus, seed } };
     } finally {
+      still?.exit();
       board?.destroy();
       teacher?.dispose();
       follow.clearCutscene(true);

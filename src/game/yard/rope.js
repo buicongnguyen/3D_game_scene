@@ -256,6 +256,8 @@ export default {
   },
   bot: ropeBot,
   focus: { u: 0, v: 0.2, w: 7, l: 4.6 },
+  // focus mode (engine/focus.js, round.js enterStill): the valley is a still picture; the kids, the rope and the scoreboard stay live
+  still: { backdrop: 'frozen', sim: 'actors' },
   roles(ids) {
     if (ids.length < 3) return { game: 'keepup', play: ids.slice(), watch: [] };
     return { game: 'rope', play: ids.slice(0, 3), watch: ids.slice(3) };

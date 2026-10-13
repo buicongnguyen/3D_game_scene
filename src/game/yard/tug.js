@@ -267,6 +267,9 @@ export default {
   create: opts => new TugSim(opts),
   bot: tugBot,
   focus: { u: 0, v: 0, w: 9.5, l: 5 },
+  // focus mode (engine/focus.js, round.js enterStill): the camera stands still, so the valley is a still picture; the
+  // pullers, the watchers, the rope and the scoreboard stay live
+  still: { backdrop: 'frozen', sim: 'actors' },
   // a phone held upright: look along the rope from Mika's end, so the pull runs up the screen and the players are not 30 px
   tall: { mode: 'side', pitch: 48, w: 9.4, l: 2.4, h: 1.4, top: 0.82, bottom: -0.78 },
   roles(ids, round = 0) {

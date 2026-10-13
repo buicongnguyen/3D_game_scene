@@ -23,6 +23,7 @@ import { COURT } from './rules.js';
 import { BARK_RANGE } from '../barks.js';
 import { tx, getLang, setGlobal } from '../../i18n/i18n.js';
 import { createOanQuanGuide } from '../../ui/oanquan-guide.js';
+import { enterFocus, portraitOf, BlobShadows } from '../../engine/focus.js';
 
 const HEAR = 30;              // the yard's sounds carry this far
 const INVITE_R = 11;          // a kid calls Mika over when she comes this close to a game
@@ -111,7 +112,7 @@ export class Yard {
     }
     const mk = (tag, id, html) => { const e = document.createElement(tag); e.id = id; e.className = 'hidden'; e.innerHTML = html; document.body.appendChild(e); return e; };
     this.el = {
-      hud: mk('div', 'yardHud', '<span class="l"></span><span class="big"></span><span class="r"></span><span class="sub"></span>'),
+      hud: mk('div', 'yardHud', '<img class="face me" alt=""><span class="l"></span><span class="big"></span><img class="face foe" alt=""><span class="r"></span><span class="sub"></span>'),
       hint: mk('div', 'yardHint', ''),
       stop: mk('button', 'yardStop', ''),
       cam: mk('button', 'yardCam', ''),
@@ -120,6 +121,8 @@ export class Yard {
     };
     const h = this.el.hud;
     h._l = h.querySelector('.l'); h._big = h.querySelector('.big'); h._r = h.querySelector('.r'); h._sub = h.querySelector('.sub');
+    h._me = h.querySelector('.face.me'); h._foe = h.querySelector('.face.foe');
+    h._me.src = './portraits/mika.webp';
     this.el.stop.addEventListener('click', () => this.quit());
     this.guide = createOanQuanGuide({ input: this.g.input, touch: this.d.ui.touch,
       onOpen: () => this.clearPadInput(), onClose: () => this.clearPadInput(), onStop: () => this.quit() });
@@ -208,6 +211,8 @@ export class Yard {
   // ------------------------------------------------------------------ bodies
   /** A speech bubble over a kid (Town Life person `it`). */
   shout(c, it, text, life = 2.4) {
+    // nobody is drawn in a focus round (marbles, ô ăn quan): what the kid says is shown under the scoreboard, with their name
+    if (this.round?.solo) { if (it && this.round.kids?.includes(it)) this.hint(`${tx(it.p.name || '')}: ${tx(text)}`, life); return; }
     if (!it || !it.n.visible || it.n.far) return;
     const n = it.n;
     this.d.barks.ui.show(`yard:${it.p.id}`, text, out => { n.head(out); out.y += 0.3 - (n.sitting ? 0.35 : 0); return out; }, { name: tx(it.p.name || ''), life });
@@ -745,6 +750,7 @@ export class Yard {
       this.endRound(c, keep);
       this.round = null;
       this.locks = false;
+      g.roundLight?.release('yard');
       g.player.carry?.release('yard');
       if (!d.busy) g.player.locked = false;
       d.actCooldown = 0.5;
@@ -778,6 +784,7 @@ export class Yard {
   async runRound(c, G, level, first) {
     const d = this.d, g = this.g, p = g.player, id = G.id, town = d.town, Y = c.Y;
     const S = stageOf(Y, id), y0 = this.ground(S.x, S.z);
+    g.roundLight?.hold('yard');                // lighter for as long as she plays here (game/round-light.js); let go in play()
     // ---- who plays where
     const kids = this.callKids(c);
     const T = G.teams(kids);
@@ -817,6 +824,7 @@ export class Yard {
     this.garlands(G.look !== 'board' && G.look !== 'marbles');
     this.frame(R);
     this.labelCam();
+    this.enterStill(R, view, kids);
     const names = {
       mine: T.mine.length ? `${tx('Mika')} & ${tx(T.mine[0].p.name)}` : tx('Mika'),
       theirs: T.wall ? tx('Kick-board') : (T.theirs.length ? T.theirs : T.turn || []).map(k => tx(k.p.name)).join(' & '),
@@ -876,7 +884,8 @@ export class Yard {
       else { C1.u = human.u; C1.v = human.v; }
       sim.step(Math.min(dt, 0.05), INP);
       // the hint under the HUD: what to press now
-      const h = sim.hint ? sim.hint() : null, hs = h || '';
+      // (in a focus round nobody is seen waiting: while the kid plays, the line says whose turn it is)
+      const h = (sim.hint ? sim.hint() : null) || (R.solo && R.foeName && sim.cur && !sim.cur.human && !sim.over ? tx('{name} is playing…', { name: R.foeName }) : null), hs = h || '';
       if (hs !== lastHint) { lastHint = hs; if (hs) this.hint(hs, 60); else if (this.hintLeft > 50) this.hint('', 0.01); }
       else if (hs && this.hintLeft <= 0) this.hint(hs, 60);      // a passing line ("Perfect heave!") is gone: what holds now ("Hold! Do not pull") comes back
       if (G.moves) for (let i = 0; i < bodies.length; i++) { if (bodies[i]) this.drive(c, bodies[i], sim.players[i], sim, dt, G, S); }
@@ -891,10 +900,12 @@ export class Yard {
       this.events(c, sim, playing, G, true, S);
       this.setHud(sim, names);
       this.padSync(sim);
+      if (R.solo) this.foeSync(R, sim);
       if (sim.over) return sim.over;
       return undefined;
     });
     // ---- the end of it
+    this.leaveStill(R);
     this.views.hideAll(Y.id);
     this.ring.visible = this.ringOut.visible = this.callRing.visible = false;
     this.el.hud.classList.add('hidden');
@@ -915,6 +926,59 @@ export class Yard {
     else if (playing.length && id === 'sack' && out.place === 1) this.shoutAny(c, playing, pick(SAY.sackWin), 3);
     await this.wait(1.5);
     return out;
+  }
+
+  // ------------------------------------------------------------------ focus mode (engine/focus.js)
+  /**
+   * A game that does not need the valley (its `still`): the valley becomes a still picture and stands still, and only the
+   * game's own things are drawn. sim 'all' (marbles, ô ăn quan): nobody is drawn at all, the other player is a face and a
+   * name under the scoreboard. sim 'actors' (tug of war, rope, sack race): Mika and the yard's kids stay alive.
+   */
+  enterStill(R, view, kids) {
+    const st = R.G.still, g = this.g, p = g.player;
+    if (!st || R.still) return;
+    const solo = st.sim === 'all', roots = kids.map(k => k.n.root), foe = solo ? R.kids[0] || null : null;
+    // the kid's face for the scoreboard: taken now, under the fade, from their own model standing at ease
+    if (foe?.n.anim?.snap && foe.n.anim.has('Idle')) { foe.n.anim.cancelOneShot(); foe.n.anim.snap('Idle'); foe.n.anim.update(0); }
+    const face = foe ? portraitOf(g, foe.n.root) : null;
+    let onFrame = null;
+    const keep = [...(view?.items || []), this.ring, this.ringOut, this.callRing];
+    if (!solo) {
+      // soft round shadows under the players: their real ones are in the still picture's shadow map, which stands still
+      const blobs = this.blobs ??= new BlobShadows(12), who = [{ pos: p.root.position, r: 0.36, root: p.root }, ...kids.map(k => ({ pos: k.n.root.position, r: 0.32, root: k.n.root }))];
+      g.scene.add(blobs.mesh);
+      onFrame = () => { for (const w of who) w.show = w.root.visible; blobs.set(who, (x, z) => this.ground(x, z)); };
+      keep.push(p.root, ...roots, blobs.mesh);
+      // (the people's level of detail waits with the rest of the valley: the kids just called over are shown in full now)
+      for (const k of kids) k.n.setDetail?.(0, false);
+      // the chalk scoreboard keeps the score: its two faces stay live
+      for (const o of g.structures?.yards?.[R.c.Y.id]?.group?.children || []) if (o.name === 'yard:board') keep.push(o);
+    }
+    R.still = enterFocus(g, { keep, hide: solo ? [p.root, ...roots] : [], backdrop: st.backdrop, sim: st.sim, actors: solo ? [] : kids.map(k => k.n), onFrame, dim: st.dim, vignette: st.vignette });
+    R.solo = solo && R.still.active;
+    view?.setFlat?.(R.solo && !!st.mat);
+    // the two faces on the scoreboard: Mika's, and the kid's (so the player still sees who she is playing)
+    const h = this.el?.hud;
+    if (h) { h.classList.toggle('faces', R.solo && !!foe && !!face); if (face) h._foe.src = face; h._turn = null; }
+    R.foeName = foe ? tx(foe.p.name || '') : '';
+  }
+
+  /** Whose turn it is, on the other player's chip and on the names of the scoreboard. */
+  foeSync(R, sim) {
+    const h = this.el?.hud, mine = !!sim.cur?.human && sim.state !== 'over';
+    if (!h || h._turn === mine) return;
+    h._turn = mine;
+    h._l.classList.toggle('turn', mine); h._me.classList.toggle('turn', mine);
+    h._r.classList.toggle('turn', !mine); h._foe.classList.toggle('turn', !mine);
+  }
+
+  /** Give the valley back (called at the end of every round and again by endRound: it is safe twice). */
+  leaveStill(R) {
+    if (this.el) { const h = this.el.hud; h.classList.remove('faces'); for (const e of [h._l, h._r, h._me, h._foe]) e.classList.remove('turn'); }
+    this.blobs?.mesh.removeFromParent();
+    if (!R?.still) return;
+    R.still.exit();
+    R.still = null; R.solo = false;
   }
 
   /** Mika's body in a game where she does not walk about: put her at her place, facing the game, hopping when the sim says so. */
@@ -968,6 +1032,7 @@ export class Yard {
   endRound(c, keep) {
     this.guide?.hide();
     const g = this.g, town = this.d.town;
+    this.leaveStill(this.round);
     this.views.hideAll(c.Y.id);
     this.ring.visible = this.ringOut.visible = this.callRing.visible = false;
     if (this.el) {

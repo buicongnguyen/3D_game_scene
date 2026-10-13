@@ -13,6 +13,7 @@ import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { FX } from '../../engine/effects.js';
 import { addCss, fit } from './util.js';
+import { enterFocus } from '../../engine/focus.js';
 import { KITE, KITE_STYLES, KITE_STYLE, kiteOpen, fluteVoice, sweepAt, buildQuality, buildGrade, buildResult, makeWind, windPush, newFlight, stepFlight, kiteScore, flightPlan, kiteBot } from './rules-kite.js';
 import { KITE_ART, buildKite, kiteThumb } from './kite-art.js';
 import { openPick } from './pick.js';
@@ -236,16 +237,19 @@ export default {
     /** Take the kite out of the picture and free what it made (the chooser swaps kites; the round ends with this). */
     const dropKite = () => {
       if (!kite) return;
+      still?.drop(K);              // (the chooser swaps kites while the valley is a still picture)
       K.removeFromParent();
       for (const x of kite.own) x.dispose();
       kite = K = null;
     };
+    let still = null;              // focus mode for the build (engine/focus.js)
 
     const cleanup = () => {
       if (cleaned) return;
       cleaned = true;
       pick?.close();
       dropKite();
+      still?.exit();
       for (const o of added) o.removeFromParent();
       for (const x of disposables) x.dispose();
       if (ui) { ui.removeEventListener('pointerdown', onPress); ui.remove(); }
@@ -286,6 +290,7 @@ export default {
         K = kite.holder;
         scene.add(K);
         K.add(buildTail);
+        still?.keep(K);
         pose(scale);
       };
       const pose = sc => {
@@ -321,6 +326,7 @@ export default {
       const setMark = v => { const k = Math.round((50 + v * 46) * 10); if (k !== markAt) { markAt = k; el.mark.style.left = `${k / 10}%`; } };
       const pressNow = () => { const on = tap || ctx.pressed() || input.pressed('jump') || input.pressed('tap'); tap = false; return on; };
 
+      still = enterFocus(g, { keep: [K, p.root], sim: 'actors', bakeShadows: true });   // the build: the valley is a still picture, only Mika and her kite are live
       await ctx.wait(0.15);
       await ctx.fade(false, 450);
       if (ctx.quit) return { score: 0, quit: true };
@@ -400,6 +406,7 @@ export default {
 
       // ---- the flight
       await ctx.fade(true, 300);
+      still.exit();                // (the flight needs the whole live sky)
       if (ctx.quit) return { score: st.build, quit: true };
       st.phase = 'fly';
       const plan = flightPlan(ctx.level, ctx.first);            // the level's sky: gusts, turns of the wind, rings, the tree

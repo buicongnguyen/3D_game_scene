@@ -176,13 +176,24 @@ export class Renderer {
   render(scene, camera) {
     // a recorded clip covers the view (game/video.js): the picture is the video's, nothing is drawn
     if (this.hold) { this.held = (this.held || 0) + 1; return; }
+    // focus mode (engine/focus.js): a still picture of the valley and only the round's own objects on top of it
+    if (this.focus) {
+      try { if (this.focus.render(this, scene, camera)) return; }
+      catch (e) { console.error('[focus] drawing failed: back to the usual frame', e); const f = this.focus; this.focus = null; f.exit?.(); }
+    }
+    this.renderWorld(scene, camera);
+  }
+
+  /** The usual frame: shadows, the whole scene, bloom, grade, output. `shadows: false` keeps the shadow map as it is. */
+  renderWorld(scene, camera, shadows = true) {
     this.renderPass.scene = scene;
     this.renderPass.camera = camera;
     // our own matrix pass: hidden and unmoved objects cost nothing (see matrices.js)
     // lighter tiers refresh the shadow map every other frame. The map and its matrix stay a matched pair, so nothing
     // swims; only moving shadows (people, swaying crowns) update at half the frame rate.
     const sm = this.renderer.shadowMap, every = this.shadowEvery ?? this.q.shadowEvery ?? 1;
-    if (every > 1) { sm.autoUpdate = false; if ((this.shadowTick = (this.shadowTick || 0) + 1) % every === 0 || this.shadowDirty) { sm.needsUpdate = true; this.shadowDirty = false; } }
+    if (!shadows) { sm.autoUpdate = false; sm.needsUpdate = false; }
+    else if (every > 1 || this.shadowDirty) { sm.autoUpdate = every <= 1; if ((this.shadowTick = (this.shadowTick || 0) + 1) % every === 0 || this.shadowDirty) { sm.needsUpdate = true; this.shadowDirty = false; } }
     else if (!sm.autoUpdate) { sm.autoUpdate = true; sm.needsUpdate = true; }
     scene.matrixWorldAutoUpdate = this.fastMatrices === false;
     if (this.fastMatrices !== false) updateWorldMatrices(scene);
