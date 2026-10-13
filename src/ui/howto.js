@@ -66,7 +66,7 @@ export const HOWTO = {
   'trick:eggs': [
     { in: 'lr', pic: 'hat', text: N_('Catch each egg in your hat.'), touchTap: true },
     { in: null, pic: 'ladder', text: N_('An egg takes every rung it meets.') },
-    { in: null, pic: 'fill', text: N_('Hat full? Run to the basket.') },
+    { in: null, pic: 'trio', text: N_('A golden egg counts for three.') },
   ],
   'yard:footnet': [
     { in: 'move', pic: 'walk', text: N_('Run under the shuttle.') },

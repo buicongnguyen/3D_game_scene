@@ -7,7 +7,12 @@
 // The henhouse stands in the valley for good (the framework's `scenery` hook shows it while Mika is anywhere near, in
 // every season and at every hour): one merged vertex-coloured mesh (walls, roof, gutters, spouts, nests, the basket on
 // its crate), one instanced mesh for the rungs and four hens from the model library. A round adds its own few things
-// (the eggs, the hat, splats, the "!" over a hen about to lay, a small panel) and takes them away again.
+// (the eggs, the chicks, the hat, splats, straw to land on, the hiding board, the "!" over a hen about to lay, a small
+// panel, the stage's name) and takes them away again.
+//
+// A round is a morning in stages (rules: stagePlan). Easy: two gentle stages, one egg at a time. Normal: three, with two
+// eggs at once, the hat to empty, chicks that must land on the straw, one feeding time. Difficult: a board that hides one
+// cell, red one-way slides, three at once, little quick eggs and feeding time again and again.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { N_, tx } from '../../i18n/i18n.js';
@@ -22,13 +27,17 @@ export const HOUSE = Object.freeze({ x: -53, z: 147.7, halfWidth: 1.95, depth: 1
 const MZ = 0.35, HZ = 0.72, PIPE_Z = 0.21, PIPE_R = 0.15, RUNG_Z = 0.46, RUNG_R = 0.135, EGG_R = 0.125;
 const WALL_H = 3.98, SHELF = 4.02, HEN_Z = 0.3;
 const BASKET = Object.freeze({ x: 2.5, y: 0.5, z: HZ });
-const MAX_RUNGS = EGGS.rows, SIM_EGGS = 4, HAT_EGGS = 8, BASKET_EGGS = 12, EGG_SLOTS = SIM_EGGS + HAT_EGGS + BASKET_EGGS, SPLATS = 4;
+const MAX_RUNGS = EGGS.rows, SIM_EGGS = 6, HAT_EGGS = 8, BASKET_EGGS = 12, EGG_SLOTS = SIM_EGGS + HAT_EGGS + BASKET_EGGS, SPLATS = 4;
+const RUNNERS = 2, CHICK_SLOTS = SIM_EGGS + RUNNERS;          // chicks in the gutters, and the ones scurrying off afterwards
+const SLIDE_TILT = Math.atan2(2 * EGGS.slope, EGGS.dx);       // how steeply a one-way slide hangs
+const COVER = Object.freeze({ w: EGGS.dx + 0.42, h: 0.48, dy: -0.1, z: 0.92 });      // the hiding board over one cell
 const clamp = THREE.MathUtils.clamp, lerp = THREE.MathUtils.lerp;
 const smooth = k => k * k * (3 - 2 * k);
 
 const C = { stone: '#b7ae9f', plaster: '#f1e6cf', frame: '#5b3b27', plank: ['#8f5f3c', '#85573a', '#986742'], shelf: '#b88957', straw: '#e6bd4f', strawDeep: '#c99a36',
   tile: ['#c9472f', '#bb3f2a', '#d4553b'], ridge: '#983323', bamboo: '#b4dc62', bambooDeep: '#39682a', node: '#4f8433', rung: '#f8e391', rungDeep: '#8a6a26',
-  pane: '#9fc4d6', dark: '#3a2a20', crate: '#a8733f', crateDark: '#7d5330', weave: ['#d9a95e', '#c08f47'], egg: '#eadbb9', gold: '#ffc526', hat: '#f2d27e', hatDeep: '#cfa650', ribbon: '#d9483b' };
+  pane: '#9fc4d6', dark: '#3a2a20', crate: '#a8733f', crateDark: '#7d5330', weave: ['#d9a95e', '#c08f47'], egg: '#eadbb9', gold: '#ffc526', hat: '#f2d27e', hatDeep: '#cfa650', ribbon: '#d9483b',
+  speckled: '#cf9560', slide: '#ff6a45', chick: '#ffd640', chickWing: '#f3b62c', beak: '#f08a3c' };
 
 const CSS = `
 body.eggs-round #tAct,body.eggs-round #tJump{display:none!important}
@@ -47,11 +56,30 @@ body.eggs-round .bark{display:none}
 #eggHud .hat.full{animation:eggFull .5s ease-in-out infinite alternate}
 #eggHud .hat svg{width:20px;height:14px;display:block}
 #eggHud.first .hat{display:none}
-#eggPop{position:fixed;z-index:16;left:0;top:0;pointer-events:none;font:600 26px Fredoka,Nunito,sans-serif;color:#fff;text-shadow:0 2px 0 #b8581a,0 0 8px #b8581a;opacity:0;will-change:transform,opacity}
-#eggPop.gold{color:#ffe169;font-size:34px}
-#eggPop.go{animation:eggPop .7s ease-out both}
-@keyframes eggPop{0%{opacity:0;transform:translate(-50%,-10px) scale(.6)}20%{opacity:1;transform:translate(-50%,-34px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-78px) scale(1)}}
+#eggHud .order{padding-left:10px;border-left:2px solid #e6d3b0;gap:5px}
+#eggHud .order.off{display:none}
+#eggHud .order u{display:block;width:11px;height:14px;border-radius:2px;background:#fff;box-shadow:inset 0 0 0 1.5px #c9b48c,inset 0 5px 0 -3px #c9b48c,inset 0 9px 0 -3px #c9b48c}
+#eggHud .order.done{color:#2f7a3a}
+#eggHud .order.done u{background:#57b565;box-shadow:none;position:relative}
+#eggHud .order.done u::after{content:'';position:absolute;left:3px;top:1px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(40deg)}
+#eggHud .order.done b{animation:eggFull .25s ease-in-out 4 alternate}
+.eggPop{position:fixed;z-index:16;left:0;top:0;pointer-events:none;font:600 26px Fredoka,Nunito,sans-serif;color:#fff;text-shadow:0 2px 0 #b8581a,0 0 8px #b8581a;opacity:0;will-change:transform,opacity;white-space:nowrap}
+.eggPop.gold{color:#ffe169;font-size:34px}
+.eggPop.note{font-size:20px;color:#fff6c9;text-shadow:0 2px 0 #2f7a3a,0 0 8px #2f7a3a}
+.eggPop.go{animation:eggPop .7s ease-out both}
+.eggPop.note.go{animation:eggPop 1.5s ease-out both}
+#eggStage{position:fixed;left:50%;top:41%;z-index:16;transform:translate(-50%,-50%) scale(.7);opacity:0;pointer-events:none;text-align:center;white-space:nowrap;
+ padding:10px 26px 12px;border-radius:22px;background:rgba(255,247,232,.96);box-shadow:0 8px 26px rgba(40,20,0,.28),inset 0 0 0 3px #f5d9a6;color:#5a3a22;
+ font:700 14px Nunito,system-ui,sans-serif;zoom:var(--ui-scale,1);transition:opacity .25s ease,transform .3s cubic-bezier(.3,1.5,.5,1)}
+#eggStage.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#eggStage small{display:block;font-size:12px;letter-spacing:.4px;text-transform:uppercase;color:#b0835a}
+#eggStage b{display:block;font:600 30px/1.15 Fredoka,Nunito,sans-serif;color:#c2541c}
+#eggStage span{display:block;margin-top:2px}
+#eggStage small:empty,#eggStage span:empty{display:none}
+@keyframes eggPop{0%{opacity:0;transform:translate(-50%,-10px) scale(.6)}20%{opacity:1;transform:translate(-50%,-34px) scale(1.15)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-78px) scale(1)}}
 @keyframes eggFull{from{transform:scale(1)}to{transform:scale(1.12)}}
+@media (max-height:480px){#eggStage{left:58%;top:46%;padding:6px 20px 8px}#eggStage b{font-size:24px}}
+@media (prefers-reduced-motion:reduce){#eggStage{transition:opacity .2s}#eggHud .order.done b{animation:none}}
 @media (min-aspect-ratio:1/1){body.eggs-round #trickHint{left:auto;right:calc(14px + env(safe-area-inset-right,0px));transform:none;bottom:auto;top:40%;width:auto;max-width:min(250px,24vw)}}
 @media (max-aspect-ratio:1/1){body.eggs-round #trickHint{bottom:calc(58px + env(safe-area-inset-bottom,0px))}}
 @media (max-width:560px){#eggHud{left:calc(8px + env(safe-area-inset-left,0px));transform:none}}
@@ -102,6 +130,52 @@ function eggGeometry() {
   for (let i = 0; i < p.count; i++) { const y = p.getY(i) / EGG_R, k = 1 - 0.14 * Math.max(0, y); p.setXYZ(i, p.getX(i) * k, p.getY(i) * 1.3, p.getZ(i) * k); }
   g.computeVertexNormals();
   return g;
+}
+
+/** A chick, looking at us: a round yellow body, a head, two little wings, a beak and two dark eyes (origin: its middle). */
+function chickGeometry() {
+  const ball = (r, x, y, z, sx, sy, sz, color) => prep(new THREE.SphereGeometry(r, 10, 7).scale(sx, sy, sz).translate(x, y, z), color);
+  const parts = [
+    ball(0.15, 0, -0.01, 0, 1, 0.92, 1, C.chick),
+    ball(0.105, 0, 0.15, 0.05, 1, 1, 1, C.chick),
+    ball(0.07, -0.145, -0.01, 0, 0.5, 1, 1.15, C.chickWing), ball(0.07, 0.145, -0.01, 0, 0.5, 1, 1.15, C.chickWing),
+    ball(0.024, -0.045, 0.175, 0.138, 1, 1.15, 0.7, C.dark), ball(0.024, 0.045, 0.175, 0.138, 1, 1.15, 0.7, C.dark),
+    prep(new THREE.ConeGeometry(0.036, 0.085, 6).rotateX(Math.PI / 2).translate(0, 0.135, 0.185), C.beak),
+  ];
+  const g = mergeGeometries(parts);
+  parts.forEach(q => q.dispose());
+  return g;
+}
+
+/** Straw to land on: a low heap under each spout, like the nests on the shelf. */
+function strawGeometry() {
+  const parts = [];
+  for (let i = 0; i < EGGS.lanes; i++) {
+    parts.push(prep(new THREE.CylinderGeometry(0.33, 0.41, 0.07, 10).translate(laneX(i), 0.035, HZ), C.straw, C.strawDeep, (x, y) => (0.07 - y) / 0.07));
+    parts.push(prep(new THREE.CylinderGeometry(0.24, 0.24, 0.02, 10).translate(laneX(i), 0.075, HZ), C.strawDeep));
+  }
+  const g = mergeGeometries(parts);
+  parts.forEach(q => q.dispose());
+  return g;
+}
+
+/** The face of the hiding board: warm planks in a dark frame, a "?" on a pale disc. */
+function coverTexture() {
+  const c = document.createElement('canvas');
+  c.width = 256; c.height = 96;
+  const x = c.getContext('2d');
+  x.fillStyle = C.frame; x.fillRect(0, 0, 256, 96);
+  const planks = ['#b9824b', '#a8733f', '#c08d55', '#ad7843'];
+  for (let i = 0; i < 4; i++) { x.fillStyle = planks[i]; x.fillRect(8 + i * 60.5, 8, 58, 80); }
+  x.fillStyle = C.crateDark;
+  for (const px of [18, 238]) for (const py of [20, 76]) { x.beginPath(); x.arc(px, py, 4, 0, Math.PI * 2); x.fill(); }
+  x.fillStyle = C.plaster; x.beginPath(); x.arc(128, 48, 31, 0, Math.PI * 2); x.fill();
+  x.lineWidth = 4; x.strokeStyle = C.frame; x.stroke();
+  x.fillStyle = C.frame; x.font = '700 50px Fredoka, Nunito, Arial, sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.fillText('?', 128, 51);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
 }
 
 /** A broken egg on the ground: a wobbly white with the yolk in the middle. */
@@ -231,17 +305,22 @@ function ensureSet(game) {
   rungs.castShadow = false; rungs.frustumCulled = false;
   group.add(rungs);
   // slots: where each rung instance is drawn { on, x, y, z, tilt, spin, scale }
-  const slots = Array.from({ length: MAX_RUNGS }, () => ({ on: false, x: 0, y: 0, z: RUNG_Z, tilt: 0, spin: 0, scale: 0, row: -1, col: -1 }));
+  // (way: 1 | -1 for a one-way slide, which hangs sloped and is painted red; 0 for a seesaw. paint: 0..1, how red it is)
+  const slots = Array.from({ length: MAX_RUNGS }, () => ({ on: false, x: 0, y: 0, z: RUNG_Z, tilt: 0, spin: 0, scale: 0, row: -1, col: -1, way: 0, paint: 0 }));
+  const plain = new THREE.Color('#ffffff'), red = new THREE.Color(C.slide).multiplyScalar(1.05);
+  for (let i = 0; i < MAX_RUNGS; i++) rungs.setColorAt(i, plain);
   const drawRungs = () => {
     for (let i = 0; i < MAX_RUNGS; i++) {
       const s = slots[i];
       if (!s.on || s.scale <= 0.001) { rungs.setMatrixAt(i, ZERO); continue; }
       _m.compose(_p.set(s.x, s.y, s.z), _q.setFromEuler(_e.set(0, 0, s.tilt + s.spin)), _s.setScalar(s.scale));
       rungs.setMatrixAt(i, _m);
+      rungs.setColorAt(i, _c.copy(plain).lerp(red, s.paint));
     }
     rungs.instanceMatrix.needsUpdate = true;
+    rungs.instanceColor.needsUpdate = true;
   };
-  const place = (s, r) => { s.on = true; s.row = r.row; s.col = r.col; s.x = (laneX(r.col) + laneX(r.col + 1)) / 2; s.y = rungY(r.row); s.z = RUNG_Z; s.tilt = 0; s.spin = 0; s.scale = 1; };
+  const place = (s, r) => { s.on = true; s.row = r.row; s.col = r.col; s.x = (laneX(r.col) + laneX(r.col + 1)) / 2; s.y = rungY(r.row); s.z = RUNG_Z; s.tilt = 0; s.spin = 0; s.scale = 1; s.way = 0; s.paint = 0; };
   /** The board the henhouse shows when nobody is playing. */
   const showIdle = () => {
     const b = makeBoard(rng(7), 3);
@@ -338,7 +417,7 @@ const BASKET_PILE = [[0, 0.3, 0], [0.2, 0.3, 0.03], [-0.2, 0.3, 0.03], [0.07, 0.
   [0, 0.62, 0.04], [0.15, 0.6, -0.08], [-0.14, 0.6, -0.08]];
 
 /** The straw hat, the eggs, the splats and the "!" marks: what a round adds to the henhouse. */
-function makeProps(set) {
+function makeProps(set, extras = {}) {
   const owned = [], keep = o => (owned.push(o), o), group = new THREE.Group();
   group.name = 'eggs-round';
   set.group.add(group);
@@ -366,8 +445,26 @@ function makeProps(set) {
   const arrow = new THREE.Mesh(keep(new THREE.ConeGeometry(0.2, 0.36, 4).rotateX(Math.PI)), keep(new THREE.MeshBasicMaterial({ color: '#ff7a1f' })));
   arrow.visible = false;
   group.add(arrow);
-  return { group, hat, eggs, splats, marks, arrow, white, gold, hot,
-    dispose() { group.removeFromParent(); eggs.dispose(); splats.dispose(); marks.dispose(); owned.forEach(o => o.dispose?.()); } };
+  // chicks (Normal and Difficult): the ones in the gutters, the ones scurrying off, and straw under the spouts to land on
+  let chicks = null, straw = null;
+  if (extras.chicks) {
+    chicks = new THREE.InstancedMesh(keep(chickGeometry()), set.mat, CHICK_SLOTS);
+    chicks.frustumCulled = false;
+    for (let i = 0; i < CHICK_SLOTS; i++) { chicks.setMatrixAt(i, ZERO); chicks.setColorAt(i, hot); }
+    group.add(chicks);
+    straw = new THREE.Mesh(keep(strawGeometry()), set.mat);
+    straw.receiveShadow = true;
+    group.add(straw);
+  }
+  // the hiding board (Difficult)
+  let cover = null;
+  if (extras.cover) {
+    cover = new THREE.Mesh(keep(new THREE.BoxGeometry(COVER.w, COVER.h, 0.05)), keep(new THREE.MeshStandardMaterial({ map: keep(coverTexture()), roughness: 0.85 })));
+    cover.visible = false;
+    group.add(cover);
+  }
+  return { group, hat, eggs, splats, marks, arrow, chicks, straw, cover, white, gold, hot, speckled: new THREE.Color(C.speckled),
+    dispose() { group.removeFromParent(); eggs.dispose(); splats.dispose(); marks.dispose(); chicks?.dispose(); owned.forEach(o => o.dispose?.()); } };
 }
 
 function makeUi(first, lives) {
@@ -375,27 +472,46 @@ function makeUi(first, lives) {
   const el = document.createElement('div');
   el.id = 'eggHud';
   if (first) el.className = 'first';
-  el.innerHTML = `<span class="lives">${'<i></i>'.repeat(lives)}</span><span class="hat"><svg viewBox="0 0 20 14" aria-hidden="true"><path d="M1 3h18l-1 2H2z" fill="#e0b85a"/><path d="M5 5h10l-1.2 6.5H6.2z" fill="#f2d27e"/><path d="M5.4 7h9.2l-.3 1.8H5.7z" fill="#d9483b"/></svg>${'<i></i>'.repeat(EGGS.full)}</span>`;
-  const pop = document.createElement('div');
-  pop.id = 'eggPop';
-  document.body.append(el, pop);
+  el.innerHTML = `<span class="lives">${'<i></i>'.repeat(lives)}</span><span class="hat"><svg viewBox="0 0 20 14" aria-hidden="true"><path d="M1 3h18l-1 2H2z" fill="#e0b85a"/><path d="M5 5h10l-1.2 6.5H6.2z" fill="#f2d27e"/><path d="M5.4 7h9.2l-.3 1.8H5.7z" fill="#d9483b"/></svg>${'<i></i>'.repeat(EGGS.full)}</span><span class="order off"><u></u><b></b></span>`;
+  // three floating notes take turns (a catch, a cheer and an order can come in one frame)
+  const pops = Array.from({ length: 3 }, () => { const p = document.createElement('div'); p.className = 'eggPop'; return p; });
+  const stage = document.createElement('div');
+  stage.id = 'eggStage';
+  stage.innerHTML = '<small></small><b></b><span></span>';
+  document.body.append(el, ...pops, stage);
   document.body.classList.add('eggs-round');
   const lifeEls = [...el.querySelectorAll('.lives i')], hatEls = [...el.querySelectorAll('.hat i')], hatEl = el.querySelector('.hat');
-  let broken = -1, hat = -1, full = null;
+  const orderEl = el.querySelector('.order'), orderText = orderEl.querySelector('b');
+  let broken = -1, hat = -1, full = null, nextPop = 0, orderN = -1, orderOf = -1, banner = false;
   return { el,
     set(b, h, isFull) {
       if (b !== broken) { broken = b; lifeEls.forEach((e, i) => e.classList.toggle('x', i >= lifeEls.length - b)); }
       if (h !== hat) { hat = h; hatEls.forEach((e, i) => e.classList.toggle('on', i < h)); }
       if (isFull !== full) { full = isFull; hatEl.classList.toggle('full', isFull); }
     },
-    points(text, x, y, isGold) {
+    /** The stage's order: n caught of `of` (of 0: no order). */
+    order(n, of) {
+      if (n === orderN && of === orderOf) return;
+      orderN = n; orderOf = of;
+      orderEl.classList.toggle('off', !of);
+      orderEl.classList.toggle('done', of > 0 && n >= of);
+      orderText.textContent = of ? `${Math.min(n, of)}/${of}` : '';
+    },
+    /** A note that floats up from (x, y) px. kind: '' | 'gold' | 'note'. */
+    points(text, x, y, kind = '') {
+      const pop = pops[nextPop++ % pops.length];
       pop.textContent = text;
-      pop.style.left = `${Math.round(x)}px`; pop.style.top = `${Math.round(y)}px`;
-      pop.className = isGold ? 'gold' : '';
+      pop.style.left = `${Math.round(Math.max(70, Math.min(innerWidth - 70, x)))}px`; pop.style.top = `${Math.round(y)}px`;
+      pop.className = `eggPop ${kind}`;
       void pop.offsetWidth;                 // restart the animation
       pop.classList.add('go');
     },
-    destroy() { el.remove(); pop.remove(); document.body.classList.remove('eggs-round', 'eggs-direct'); } };
+    /** The stage's name card: shown (true) with its three lines, or put away (false). */
+    stage(show, small = '', title = '', sub = '') {
+      if (show) { stage.children[0].textContent = small; stage.children[1].textContent = title; stage.children[2].textContent = sub; }
+      if (show !== banner) { banner = show; stage.classList.toggle('on', show); }
+    },
+    destroy() { el.remove(); pops.forEach(p => p.remove()); stage.remove(); document.body.classList.remove('eggs-round', 'eggs-direct'); } };
 }
 
 /**
@@ -445,10 +561,13 @@ export default {
       await ctx.fade(true, 180);                // she is put under the spouts and the camera steps back: not a cut to watch
       ctx.setNight(true, 10.5);                 // a bright morning on the board, whatever the story clock says
       set = ensureSet(g);
-      props = makeProps(set);
-      const level = g.easy ? 'easy' : g.hard ? 'hard' : 'normal';
-      const sim = new EggRound({ level, first: ctx.first, length: ctx.roundTime, rand: rng((Date.now() % 2147483000) + 1) });
-      ui = makeUi(ctx.first, sim.lives);
+      // the level the player picked (content/levels.js); the guided first try is a round of its own, gentler than Easy
+      const level = ctx.first ? 'easy' : ['easy', 'normal', 'hard'].includes(ctx.level) ? ctx.level : 'normal';
+      const seed = Number.isFinite(window.__STARLINE_QA__?.eggSeed) ? window.__STARLINE_QA__.eggSeed : (Date.now() % 2147483000) + 1;
+      const sim = new EggRound({ level, first: ctx.first, length: ctx.roundTime, rand: rng(seed) });
+      const planned = sim.stages.flatMap(s => s.waves);
+      props = makeProps(set, { chicks: planned.some(w => w.chick > 0), cover: planned.some(w => w.cover) });
+      ui = makeUi(sim.noBasket, sim.lives);
       const X = HOUSE.x, Y = set.ground, Z = HOUSE.z, slots = set.slots, hens = set.hens;
       for (const s of slots) s.on = false;
       set.drawRungs();
@@ -521,33 +640,83 @@ export default {
 
       // ---- drawing state
       const inp = { mx: 0, lane: null };
-      const pile = new Float32Array(HAT_EGGS);                                         // the drop-in bounce of each egg in the hat
+      const pile = new Float32Array(HAT_EGGS), pileSize = new Float32Array(HAT_EGGS).fill(0.8);                                        // the drop-in bounce of each egg in the hat
       const splat = new Float32Array(SPLATS * 3);                                     // x, age, on
-      let splatNext = 0, time = 0, hatKick = 0, sweep = 0, outro = 0, basketShown = -1, saidGold = false, saidMiss = false, saidCatch = false, saidRung = false;
-      const said = (text, life) => ctx.hint(text, life);
-      if (ctx.first) said(N_('A hen clucks and puffs before she lays. Stand under her gutter!'), 7);
-      else said(N_('Follow each egg down the gutters and catch it in your hat!'), 4.5);
+      const runners = Array.from({ length: RUNNERS }, () => ({ on: false, x: 0, y0: 0, t: 0, dir: 1 }));      // chicks scurrying off
+      let splatNext = 0, runnerNext = 0, time = 0, hatKick = 0, sweep = 0, outro = 0, basketShown = -1, cheer = 0, started = false, opening = 0;
+      const coverAt = { x: 0, y: 0 }, banner = ['', '', ''];
+      // one line each, once a round. A line stays up for a moment before the next one takes its place.
+      const once = new Set(), HINT_MIN = 2.4;
+      let hintAge = 99, waiting = null;
+      const said = (text, life = 4.5) => {
+        if (hintAge < HINT_MIN) { waiting = [text, life]; return; }
+        ctx.hint(text, life); hintAge = 0; waiting = null;
+      };
+      const first = (key, text, life) => { if (once.has(key)) return false; once.add(key); said(text, life); return true; };
+      const STAGE_NAME = { morning: N_('Morning eggs'), busy: N_('Busy hens'), feeding: N_('Feeding time!') };
+      const stageLine = id => {
+        if (id === 'morning') return ctx.first ? N_('A hen clucks and puffs before she lays. Stand under her gutter!') : N_('Follow each egg down the gutters and catch it in your hat!');
+        if (id === 'busy') return level === 'easy' ? N_('The hens are busy now. More rungs to read!') : level === 'hard' ? N_('Busy hens! Three eggs roll at once now.') : N_('Busy hens! Two eggs roll at once now.');
+        return N_('Feeding time! Sometimes every hen lays at once.');
+      };
+      const boardPx = y => { const s = project(0, y, HZ); return [(s.x + 1) / 2 * innerWidth, (1 - s.y) / 2 * innerHeight]; };
+      const hatPx = dy => { const s = project(sim.mika.x, EGGS.hatY + 0.5, HZ); return [(s.x + 1) / 2 * innerWidth, (1 - s.y) / 2 * innerHeight - dy]; };
 
       const setEgg = (i, x, y, z, spin, scale) => {
         _m.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(0, 0, spin)), _s.setScalar(scale));
         props.eggs.setMatrixAt(i, _m);
       };
+      const setChick = (i, x, y, z, yaw, roll, sx, sy) => {
+        _m.compose(_p.set(x, y, z), _q.setFromEuler(_e.set(0, yaw, roll)), _s.set(sx, sy, sx));
+        props.chicks.setMatrixAt(i, _m);
+      };
+      const runOff = (x, y0) => {
+        const r = runners[runnerNext++ % RUNNERS];
+        r.on = true; r.x = x; r.y0 = y0; r.t = 0; r.dir = x < 0 ? -1 : 1;
+      };
+      const eggColor = kind => (kind === 'gold' ? props.gold : kind === 'quick' ? props.speckled : props.white);
 
       const handle = ev => {
         switch (ev.type) {
+          case 'stage': {
+            // a new stage: its name goes up (frame), the broken eggs are swept away, Grandma says what is new
+            if (ev.stage > 0) { audio.chime?.(ev.stage); splat.fill(0); for (let k = 0; k < SPLATS; k++) props.splats.setMatrixAt(k, ZERO); }
+            banner[0] = ev.of > 1 ? tx('Stage {n} of {of}', { n: ev.stage + 1, of: ev.of }) : '';
+            banner[1] = tx(STAGE_NAME[ev.id] || '');
+            banner[2] = ev.order ? tx('Order: {n} eggs', { n: ev.order }) : '';
+            ui.order(0, ev.order);
+            hintAge = 99;
+            said(stageLine(ev.id), ctx.first ? 13 : 5);
+            break;
+          }
+          case 'stageEnd':
+            if (ev.perfect) { const [x, y] = boardPx(1.3); ui.points(tx('Clean stage! +{n}', { n: ev.points }), x, y, 'note'); audio.good?.(); }
+            break;
+          case 'feed': {
+            // feeding time: a crow from the yard, and every hen puffs at once
+            [392, 523, 494, 659].forEach((f, i) => audio.tone?.(f, { type: 'sawtooth', dur: i === 3 ? 0.42 : 0.13, vol: 0.05, filter: 1800, glide: i === 3 ? 0.8 : 1, rev: 0.25, when: i * 0.14 }));
+            first('feed', N_('Every hen lays! Which egg comes down first?'), 4.5);
+            break;
+          }
           case 'warn': {
-            cluck(audio, 0.9 + ev.lane * 0.07);
+            cluck(audio, 0.9 + ev.lane * 0.07, ev.feed ? 0.5 : 1);
             hens[ev.lane]?.anim?.play('Flap', { speed: 1.6, fade: 0.1 });
             if (hens[ev.lane]) hens[ev.lane].flap = true;
             props.marks.setColorAt(ev.lane, ev.gold ? props.gold : props.hot);
             props.marks.instanceColor.needsUpdate = true;
-            if (ev.gold && !saidGold) { saidGold = true; said(N_('A golden egg is coming! It counts for three.'), 4.5); audio.twinkle?.(2); }
+            if (ev.gold && first('gold', N_('A golden egg is coming! It counts for three.'), 4.5)) audio.twinkle?.(2);
             break;
           }
           case 'lay': {
             const h = hens[ev.lane];
             if (h) { h.flap = false; h.hop = 1; h.anim?.play('Idle', { fade: 0.2 }); }
-            audio.plop?.(0.6);
+            if (ev.kind === 'chick') {
+              for (let i = 0; i < 2; i++) audio.tone?.(2300 + i * 260, { type: 'sine', dur: 0.07, vol: 0.05, glide: 1.25, when: i * 0.11 });
+              first('chick', N_('A chick! Step aside and let it land on the straw.'), 5.5);
+            } else {
+              audio.plop?.(0.6);
+              if (ev.kind === 'quick') first('quick', N_('A little brown egg! It rolls fast and counts for two.'), 4.5);
+            }
             break;
           }
           case 'cross': tock(audio, 520 - ev.row * 30); break;
@@ -555,12 +724,42 @@ export default {
             if (ev.gold) { audio.pickup?.(); } else pop(audio, 660 + Math.min(6, ev.hat) * 28);
             hatKick = 1;
             const k = Math.min(HAT_EGGS, ev.hat) - 1;
-            pile[k] = 1;
-            props.eggs.setColorAt(SIM_EGGS + k, ev.gold ? props.gold : props.white);
+            pile[k] = 1; pileSize[k] = ev.kind === 'quick' ? 0.6 : 0.8;
+            props.eggs.setColorAt(SIM_EGGS + k, eggColor(ev.kind));
             props.eggs.instanceColor.needsUpdate = true;
-            const s = project(sim.mika.x, EGGS.hatY + 0.5, HZ);
-            ui.points(`+${ev.points}`, (s.x + 1) / 2 * innerWidth, (1 - s.y) / 2 * innerHeight, ev.gold);
-            if (ctx.first && !saidCatch) { saidCatch = true; said(N_('Caught it! Every egg in your hat counts.'), 4); }
+            const [x, y] = hatPx(0);
+            ui.points(`+${ev.points}`, x, y, ev.gold ? 'gold' : '');
+            if (ctx.first) first('catch', N_('Caught it! Every egg in your hat counts.'), 4);
+            break;
+          }
+          case 'cheer': {
+            // five in a row: every hen flaps and clucks
+            cheer = 1.1;
+            for (const h of hens) h.anim?.play('Flap', { speed: 1.5, fade: 0.1 });
+            cluck(audio, 1.15, 0.8); audio.twinkle?.(2);
+            const [x, y] = hatPx(34);
+            ui.points(tx('{n} in a row! +{p}', { n: ev.streak, p: ev.points }), x, y, 'note');
+            break;
+          }
+          case 'order': {
+            audio.chime?.(3);
+            const [x, y] = boardPx(2.9);
+            ui.points(tx('Order filled! +{n}', { n: ev.points }), x, y, 'note');
+            break;
+          }
+          case 'chick': {
+            // safe on the straw: it shakes itself and scurries off
+            pop(audio, 1180);
+            runOff(ev.x, 0.14);
+            const s = project(ev.x, 0.55, HZ);
+            ui.points(`+${ev.points}`, (s.x + 1) / 2 * innerWidth, (1 - s.y) / 2 * innerHeight, '');
+            break;
+          }
+          case 'peep': {
+            for (let i = 0; i < 3; i++) audio.tone?.(2500 - i * 150, { type: 'sine', dur: 0.08, vol: 0.06, glide: 1.2, when: i * 0.1 });
+            hatKick = 1;
+            runOff(sim.mika.x, EGGS.hatY + 0.1);
+            first('peep', N_('Peep! Not in the hat. Chicks land on the straw.'), 5);
             break;
           }
           case 'break': {
@@ -568,7 +767,7 @@ export default {
             const o = (splatNext++ % SPLATS) * 3;
             splat[o] = ev.x; splat[o + 1] = 0; splat[o + 2] = 1;
             follow.shake = Math.max(follow.shake || 0, 0.12);
-            if (!saidMiss && ev.left > 0) { saidMiss = true; said(ctx.first ? N_('Oops, a broken egg. Watch where the gutters lead it.') : N_('Oops! Read the rungs before the egg gets there.'), 4.5); }
+            if (ev.left > 0) first('miss', ctx.first ? N_('Oops, a broken egg. Watch where the gutters lead it.') : N_('Oops! Read the rungs before the egg gets there.'), 4.5);
             break;
           }
           case 'full': said(N_('The hat is full! Run to the basket on the right.'), 5); audio.chime?.(1); break;
@@ -586,13 +785,23 @@ export default {
               s.fromX = c.from ? (laneX(c.from.col) + laneX(c.from.col + 1)) / 2 : 0; s.fromY = c.from ? rungY(c.from.row) : 0;
               if (c.to) { s.row = c.to.row; s.col = c.to.col; } else { s.row = -1; s.col = -1; }
             }
-            tock(audio, 300);
-            if (ctx.first && !saidRung && sim.board.rungs.length) { saidRung = true; said(N_('A rung! The egg takes every rung it meets. Follow it with your eyes.'), 7.5); }
+            // which of them are one-way slides now (a seesaw that stays may become one, and the other way round)
+            let slides = false;
+            for (const s of slots) {
+              const r = s.on && s.row >= 0 ? sim.board.rungs.find(q => q.row === s.row && q.col === s.col) : null;
+              s.way = r?.way || 0;
+              if (s.way) slides = true;
+            }
+            if (ev.changes) tock(audio, 300);
+            if (ctx.first && sim.board.rungs.length) first('rung', N_('A rung! The egg takes every rung it meets. Follow it with your eyes.'), 7.5);
+            if (slides) first('slide', N_('A red slide only carries eggs downhill.'), 5);
+            else if (sim.board.cover) first('cover', N_('A board hides one spot. Remember what is behind it!'), 5);
             break;
           }
           case 'time': if (sim.busy) said(N_('Time is up! Catch the last eggs.'), 3); break;
           case 'over':
             outro = sim.reason === 'broken' ? 1.5 : 1.3;
+            ui.stage(false);
             if (sim.reason !== 'broken') { for (const h of hens) h.anim?.play('Flap', { speed: 1.3, fade: 0.1 }); cluck(audio, 1.1); }
             break;
           default: break;
@@ -619,21 +828,39 @@ export default {
               if (!c.to) s.on = false; else { s.scale = 1; tock(audio, 640); }
             }
           }
-          let want = 0;
-          for (const e of sim.eggs) {
+          // a seesaw tips under an egg; a one-way slide hangs sloped (and red) all the time
+          let want = -s.way * SLIDE_TILT;
+          if (!s.way) for (const e of sim.eggs) {
             if (!e.on || e.state !== 'roll') continue;
             const leg = e.path.legs[e.leg];
             if (leg.kind === 'cross' && leg.row === s.row) want = leg.to > leg.from ? -0.14 : 0.14;
           }
-          if (Math.abs(want - s.tilt) > 1e-4) { s.tilt += (want - s.tilt) * Math.min(1, dt * 12); moving = true; }
+          if (Math.abs(want - s.tilt) > 1e-4) { s.tilt += (want - s.tilt) * Math.min(1, dt * (s.way ? 6 : 12)); moving = true; }
+          const paint = s.way ? 1 : 0;
+          if (Math.abs(paint - s.paint) > 1e-3) { s.paint += (paint - s.paint) * Math.min(1, dt * 6); moving = true; }
         }
         if (moving) set.drawRungs();
 
+        // ---- the hiding board: it drops over its cell when the eggs start to roll and lifts off while the rungs move
+        if (props.cover) {
+          const c = sim.board.cover, k = smooth(sim.coverK);
+          if (c && sim.phase === 'run') { coverAt.x = (laneX(c.col) + laneX(c.col + 1)) / 2; coverAt.y = rungY(c.row) + COVER.dy; }
+          props.cover.visible = k > 0.01;
+          if (props.cover.visible) {
+            props.cover.position.set(coverAt.x, coverAt.y + (1 - k) * 0.3, COVER.z + (1 - k) * 0.25);
+            props.cover.rotation.x = (1 - k) * -1.1;
+            props.cover.scale.setScalar(0.35 + 0.65 * k);
+          }
+        }
+
         // ---- hens: a wiggle and a puff before she lays, a little hop as the egg drops
+        const cheered = cheer > 0;
+        cheer = Math.max(0, cheer - dt);
         for (let i = 0; i < hens.length; i++) {
           const h = hens[i], w = sim.hens[i].warn;
           h.hop = Math.max(0, h.hop - dt * 3.5);
-          const puff = w > 0 ? 0.1 + 0.16 * w : 0, hop = Math.sin(Math.PI * h.hop) * 0.14;
+          if (cheered && cheer <= 0 && !h.flap && !sim.over) h.anim?.play('Idle', { fade: 0.2 });
+          const puff = w > 0 ? 0.1 + 0.16 * w : 0, hop = Math.sin(Math.PI * h.hop) * 0.14 + (cheer > 0 ? Math.abs(Math.sin(time * 13 + i * 1.3)) * 0.1 : 0);
           h.root.scale.set(h.base * (1 + puff), h.base * (1 + puff * 0.7 - (w > 0 ? 0.04 * Math.sin(time * 26) : 0)), h.base * (1 + puff));
           h.root.rotation.set(0, h.yaw + (w > 0 ? Math.sin(time * 24) * 0.22 : 0), w > 0 ? Math.sin(time * 31) * 0.09 : 0);
           h.root.position.y = SHELF + 0.06 + hop;
@@ -645,14 +872,17 @@ export default {
 
         // ---- eggs in the gutters and in the air
         for (let i = 0; i < SIM_EGGS; i++) {
-          const e = sim.eggs[i];
-          if (!e.on) { props.eggs.setMatrixAt(i, ZERO); continue; }
+          const e = sim.eggs[i], chick = e.kind === 'chick';
+          if (!e.on || chick) props.eggs.setMatrixAt(i, ZERO);
+          if (props.chicks && (!e.on || !chick)) props.chicks.setMatrixAt(i, ZERO);
+          if (!e.on) continue;
           let z = PIPE_Z, y = e.y;
           if (e.state === 'roll') {
             const legs = e.path.legs, leg = legs[e.leg], u = e.s - leg.s0, v = leg.s1 - e.s;
             if (leg.kind === 'cross') {
               z = RUNG_Z;
-              for (const q of slots) if (q.on && q.row === leg.row) y += Math.tan(q.tilt) * (e.x - q.x);
+              // (a seesaw tips under it; a slide's slope is already in the path)
+              for (const q of slots) if (q.on && q.row === leg.row && !q.way) y += Math.tan(q.tilt) * (e.x - q.x);
             } else {
               // off a rung: over its front lip, down past it in full view, then back into the gutter behind
               if (e.leg > 0 && u < 0.42) z = u < 0.07 ? lerp(RUNG_Z, RUNG_FRONT, u / 0.07) : u < 0.3 ? RUNG_FRONT : lerp(RUNG_FRONT, PIPE_Z, smooth((u - 0.3) / 0.12));
@@ -661,8 +891,31 @@ export default {
               else if (v < 0.34) z = lerp(HZ, z, smooth(v / 0.34));
             }
           } else if (e.state === 'fall') z = HZ;
-          props.eggs.setColorAt(i, e.gold ? props.gold : props.white);
-          setEgg(i, e.x, y, z, e.s * 5 + (e.state === 'fall' ? time * 6 : 0), e.gold ? 1.06 + 0.07 * Math.sin(time * 12) : 1);
+          if (chick) {
+            // a chick slides down on its bottom, rocking; out of the spout it flutters
+            if (!props.chicks) continue;
+            const fall = e.state === 'fall', flap = fall ? Math.sin(time * 34) : 0;
+            setChick(i, e.x, y + 0.03 + (fall ? 0 : Math.abs(Math.sin(time * 9 + i)) * 0.03), z + 0.02, Math.sin(time * 5 + i) * 0.25, Math.sin(time * (fall ? 15 : 8) + i) * (fall ? 0.3 : 0.16), 0.92 + flap * 0.1, 0.92 - flap * 0.05);
+            continue;
+          }
+          props.eggs.setColorAt(i, eggColor(e.kind));
+          setEgg(i, e.x, y, z, e.s * 5 + (e.state === 'fall' ? time * 6 : 0), e.gold ? 1.06 + 0.07 * Math.sin(time * 12) : e.kind === 'quick' ? 0.74 : 1);
+        }
+        // chicks that have landed (or hopped out of the hat) scurry off round the corner of the henhouse
+        if (props.chicks) {
+          for (let k = 0; k < RUNNERS; k++) {
+            const r = runners[k], i = SIM_EGGS + k;
+            if (!r.on) { props.chicks.setMatrixAt(i, ZERO); continue; }
+            r.t += dt;
+            const T = 1.7, u = r.t / T;
+            if (u >= 1) { r.on = false; props.chicks.setMatrixAt(i, ZERO); continue; }
+            // a little shake where it landed, then off it goes in quick hops
+            const go = clamp((r.t - 0.3) / (T - 0.3), 0, 1), drop = clamp(r.t / 0.3, 0, 1);
+            const x = r.x + r.dir * go * go * 3.4, y = lerp(r.y0, 0.14, drop) + (r.y0 > 0.2 ? Math.sin(Math.PI * drop) * 0.3 : 0) + Math.abs(Math.sin(r.t * 17)) * 0.07 * (go > 0 ? 1 : 0.4);
+            const sc = 0.92 * (u > 0.82 ? (1 - u) / 0.18 : 1);
+            setChick(i, x, y, HZ + 0.12 + go * 0.4, r.dir * Math.min(1, go * 4) * 1.15, go > 0 ? 0 : Math.sin(r.t * 40) * 0.2, sc, sc);
+          }
+          props.chicks.instanceMatrix.needsUpdate = true;
         }
 
         // ---- Mika, the hat and what is in it
@@ -689,7 +942,7 @@ export default {
             if (u >= 1) { props.eggs.setMatrixAt(i, ZERO); continue; }
             ex = lerp(ex, BASKET.x + b[0] * 0.5, u); ey = lerp(ey, BASKET.y + 0.4, u) + Math.sin(Math.PI * u) * 0.22; ez = lerp(ez, BASKET.z, u);
           }
-          setEgg(i, ex, ey, ez, k * 1.3 + (tipping ? tipK * 5 : 0), 0.8);
+          setEgg(i, ex, ey, ez, k * 1.3 + (tipping ? tipK * 5 : 0), pileSize[k]);
         }
         const inBasket = Math.min(BASKET_EGGS, sim.basket);
         if (inBasket !== basketShown) {
@@ -716,7 +969,16 @@ export default {
           props.splats.setMatrixAt(k, _m);
         }
         props.splats.instanceMatrix.needsUpdate = true;
-        ui.set(sim.broken, Math.min(EGGS.full, sim.hat), sim.full);
+        ui.set(sim.stageBroken, Math.min(EGGS.full, sim.hat), sim.full);
+        ui.order(sim.stageCaught, sim.stageSpec?.order || 0);
+      };
+
+      /** Is the How to play card lying open over the left gutters (an upright phone, on a first go)? */
+      const cardInTheWay = () => {
+        const card = document.getElementById('howTo');
+        if (!card || card.classList.contains('hidden') || card.classList.contains('shut')) return false;
+        const r = card.getBoundingClientRect();
+        return r.width > 0 && r.right > stops[0] - (stops[1] - stops[0]) * 0.4;
       };
 
       const result = () => {
@@ -725,7 +987,7 @@ export default {
       };
 
       // lane: a test may say where she should go (0..3, 4 the basket), as a tap under that spout would
-      ctx.debug = { sim, HOUSE, stops, band, slots, get cam() { return cam; }, get outro() { return outro; }, fail: false, lane: null,
+      ctx.debug = { sim, HOUSE, stops, band, slots, level, seed, props, runners, get cam() { return cam; }, get outro() { return outro; }, fail: false, lane: null,
         /** Screen position (px) under a stop, for a test's tap: 0..3 the spouts, 4 the basket. */
         tapAt(i) { measure(); return { x: stops[i], y: (band.top + band.bottom) / 2 }; } };
 
@@ -746,8 +1008,18 @@ export default {
         inp.mx = direct.on ? 0 : input.move?.x || 0;
         inp.lane = direct.on ? direct.lane : direct.tap >= 0 ? direct.tap : ctx.debug.lane;
         direct.tap = -1;
+        // The first hen waits (and the clock with her) while somebody is still talking, and, at the very start, while the
+        // How to play card lies open over the left gutters of an upright phone (it folds by itself after a few seconds).
+        if (!started) {
+          opening += dt;
+          sim.hold = ctx.director.busy > 0 || (opening < 12 && cardInTheWay());
+          if (sim.phase !== 'beat' && sim.stage >= 0) started = true;
+        } else sim.hold = false;
         const events = sim.step(dt, inp);
         for (let i = 0; i < events.length; i++) handle(events[i]);
+        ui.stage(sim.phase === 'beat' && !sim.hold, banner[0], banner[1], banner[2]);
+        hintAge += dt;
+        if (waiting && hintAge >= HINT_MIN) said(waiting[0], waiting[1]);
         draw(dt);
         ctx.hud(sim.score, sim.left);
         return undefined;

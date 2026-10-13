@@ -156,8 +156,12 @@ export const TRICKS = [
     howReal: 'Collect the eggs every morning. Slide a hand gently under the hen, hold each egg in your whole hand, and lay it in a basket lined with straw.',
     why: 'This is Amidakuji, the ladder lottery from Japan. Every rung swaps two neighbours, so four eggs always come out of four different spouts.',
     safety: 'Wash your hands after you touch hens or eggs.',
-    // one point an egg, three for a golden one: a perfect round is 20 to 30 (tricks/rules-eggs.js replay), three broken eggs end it
-    stars: [5, 12, 18], length: 90, firstLength: 50, unit: 'eggs',
+    // one point an egg (golden 3, little brown 2, a chick safe on the straw 1), +2 for five catches in a row, +3 for a
+    // stage's order, +2 for a clean stage. The stars are tuned with the rules' own bot (.tools/eggs-tune.mjs): a perfect
+    // round is about 33 on Easy, 58 on Normal, 100 on Difficult. The clock waits between stages, so a round lasts
+    // about 85 s, 115 s and 150 s.
+    stars: [12, 28, 44], length: 105, firstLength: 50, unit: 'eggs',
+    levels: { easy: { stars: [5, 14, 24], length: 78 }, normal: { stars: [12, 28, 44], length: 105 }, hard: { stars: [20, 50, 80], length: 140 } },
   },
 ];
 
