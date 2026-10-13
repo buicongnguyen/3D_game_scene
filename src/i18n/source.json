@@ -25888,6 +25888,12 @@
   ]
  },
  {
+  "s": "{name} is playing…",
+  "ctx": [
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "Where it comes from",
   "ctx": [
    "UI (src/game/yard/round.js)"
