@@ -15,6 +15,11 @@ import { N_, tx } from '../i18n/i18n.js';
  *   touch the name of the game's own touch button when it is not "Do it" (English source string)
  */
 export const HOWTO = {
+  'trick:floatsafe': [
+    { in: null, pic: 'starfloat', text: N_('Fell in? Do not thrash. Lie back and float.') },
+    { in: 'hold', pic: 'fill', text: N_('Breathe: hold as the ring grows, then let go.') },
+    { in: null, pic: 'buoy', text: N_('A friend fell in? Shout, and throw a float.') },
+  ],
   'trick:firefly': [
     { in: 'creep', pic: 'soft', text: N_('Walk softly. Running scares them away.') },
     { in: 'act', pic: 'glow', text: N_('Sweep the net while they glow.') },
@@ -167,6 +172,10 @@ export const PICS = {
   shout: `<circle cx="13" cy="24" r="8" fill="${SUN}" stroke="${INK}" stroke-width="1.5"/><ellipse cx="14" cy="27" rx="3" ry="3.6" fill="${INK}"/><circle cx="10" cy="21" r="1.2" fill="${INK}"/><circle cx="16.5" cy="21" r="1.2" fill="${INK}"/><g class="hp-blink" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round"><path d="M25 16l5-5M27 24h8M25 32l5 4"/></g>`,
   pin: `<rect x="6" y="16" width="15" height="20" rx="4" fill="#e23a2c" stroke="${INK}" stroke-width="1.5"/><rect x="10" y="9" width="7" height="7" fill="${INK}"/><path d="M8 8h13" stroke="${INK}" stroke-width="3" stroke-linecap="round"/><g class="hp-sway"><circle cx="29" cy="12.5" r="4.4" fill="none" stroke="${SUN}" stroke-width="2.6"/><path d="M18 12.5h7" stroke="${SUN}" stroke-width="2.6" stroke-linecap="round"/></g>`,
   sweep: `<path d="M20 4c2 6 8 9 8 17a8 8 0 0 1-16 0c0-4 2.6-5.6 3.8-9.4 1.3 1.5 1.5 2.8 2.6 4.2 1.2-3 1.4-6.6 1.6-11.8z" fill="${HOT}"/><path d="M20 15c1 3 4 4.4 4 8a4 4 0 0 1-8 0c0-2 1.4-2.8 2-4.6.8 1 1 1.6 1.4 2.2.3-1.4.5-3 .6-5.6z" fill="${SUN}"/><path d="M4 33h32" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/><circle class="hp-sway" cx="20" cy="30" r="4.5" fill="none" stroke="${GREEN}" stroke-width="2.8"/>`,
+  // a child floating on her back like a star, rocking gently on the water ("Float and wait")
+  starfloat: `<path d="M2 24q5-4 9 0t9 0 9 0 9 0" fill="none" stroke="${BLUE}" stroke-width="2.6" stroke-linecap="round"/><g class="hp-rise" stroke="${INK}" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M20 15v8M20 17 9 11M20 17l11-6M20 23l-7 9M20 23l7 9"/><circle cx="20" cy="10.5" r="4.2" fill="${HOT}" stroke-width="1.6"/></g>`,
+  // a life ring thrown out onto the water
+  buoy: `<path d="M2 31q5-4 9 0t9 0 9 0 9 0" fill="none" stroke="${BLUE}" stroke-width="2.6" stroke-linecap="round"/><g class="hp-plop"><circle cx="24" cy="13" r="7.5" fill="none" stroke="#fff" stroke-width="5.5"/><circle cx="24" cy="13" r="7.5" fill="none" stroke="${HOT}" stroke-width="5.5" stroke-dasharray="5.9 5.9"/><circle cx="24" cy="13" r="10.3" fill="none" stroke="${INK}" stroke-width="1.2"/><circle cx="24" cy="13" r="4.7" fill="none" stroke="${INK}" stroke-width="1.2"/></g>`,
   turn: `<ellipse cx="20" cy="22" rx="11" ry="7" fill="#a8436e" stroke="${INK}" stroke-width="1.4"/><path class="hp-spin" d="M8 12a13 9 0 0 1 24 0m0 0-5-1m5 1 1-5" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 

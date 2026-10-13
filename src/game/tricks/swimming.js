@@ -5,6 +5,8 @@
 // ripples, droplets and bubbles: nine draw calls and one small data texture), Rin and a watching grown-up on the
 // deck, Mika's body in the water (pitch, depth and a few bones bent after the mixer, so she really lies in a star
 // float instead of crawling on the spot), the camera and the lesson panel. Everything is put back in `finally`.
+// The frog stroke (Normal and Difficult) is posed the same way: arms and legs per part of the cycle, after the mixer.
+// "Float and wait" (floatsafe.js) borrows the pool, the swimmer, the poses and the camera hold from here.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { N_, tx, getLang } from '../../i18n/i18n.js';
@@ -26,7 +28,7 @@ export function stepHeight(z) {
 
 const STAGE = {
   check: N_('Find the safe exit'), entry: N_('Enter slowly'), bubbles: N_('Gentle bubbles'),
-  float: N_('Float and recover'), tread: N_('Gentle treading'), glide: N_('Glide, kick and paddle'),
+  float: N_('Float and recover'), tread: N_('Gentle treading'), frog: N_('Frog stroke'), glide: N_('Glide, kick and paddle'),
   turn: N_('Turn toward the exit'), swim: N_('Swim back to the exit'), out: N_('Climb out'), done: N_('Practice complete'),
 };
 const SAFETY = N_('Game practice only. In real water, learn with a qualified swimming teacher and a grown-up watching.');
@@ -41,7 +43,21 @@ const FEEDBACK = {
   follow_rhythm: N_('Follow the slow pulse. You can try the rhythm again.'),
   inside_pool: N_('Stay inside the lane and steer back toward the marker.'),
   try_cue: N_('Try the instruction above. Take your time; Rin is here.'),
+  frog_rush: N_('Too soon! Stretch long and let the glide bar reach the green.'),
+  frog_short: N_('Hold a little longer: sweep the hands round and lift the head.'),
+  frog_kick_now: N_('Let go to kick. Pull, breathe, then kick.'),
 };
+// The four parts of the frog cycle, as the lesson panel draws them (seen from above, swimming to the right).
+const FROG_PARTS = ['pull', 'breathe', 'kick', 'glide'];
+const FROG_NAME = { pull: N_('Pull'), breathe: N_('Breathe'), kick: N_('Kick'), glide: N_('Glide') };
+const FROG_BODY = '<path d="M27 15H16" stroke-width="5"/><circle cx="31.5" cy="15" r="3.7" fill="#234a56" stroke="none"/>';
+const FROG_PIC = {
+  pull: `${FROG_BODY}<path d="M27 13Q37 9 31 3M27 17Q37 21 31 27M16 14 4 13M16 16 4 17"/><path class="go" d="M38 6q3 9 0 18"/>`,
+  breathe: `${FROG_BODY}<path d="M27 13l3-5 5 4M27 17l3 5 5-4M16 14l-6-4-2 3M16 16l-6 4-2-3"/><path class="air" d="M39 11l3-2M40 15h4M39 19l3 2"/>`,
+  kick: `${FROG_BODY}<path d="M27 14 44 13.5M27 16 44 16.5M16 14 9 6 3 5M16 16 9 24 3 25"/><path class="go" d="M2 9Q-1 15 2 21"/>`,
+  glide: `${FROG_BODY}<path d="M27 14 44 13.5M27 16 44 16.5M16 14 4 13.5M16 16 4 16.5"/><path class="go" d="M8 25H36m-4-3 4 3-4 3"/>`,
+};
+const FROG_HTML = FROG_PARTS.map(k => `<div data-part="${k}"><svg viewBox="0 0 48 30" aria-hidden="true">${FROG_PIC[k]}</svg><span></span></div>`).join('');
 
 const CSS = `
 body.swim-round #tAct,body.swim-round #tJump,body.swim-round #tDive,body.swim-round #tKite,body.swim-round #tAim,body.swim-round #tFire{display:none!important}
@@ -58,6 +74,12 @@ body.swim-round #toasts{visibility:hidden}
 #swimLesson .pulse{position:absolute;left:0;top:2px;width:16px;height:16px;border-radius:50%;background:#bb602b;transform:translateX(-50%)}
 #swimLesson .rhythm.late .zone{background:#bdd1ce}#swimLesson .rhythm.late .pulse{background:#778d8b}
 #swimLesson .feedback{font-size:13px;line-height:1.3;color:#a34920;margin-top:5px}
+#swimLesson .frog{display:none;grid-template-columns:repeat(4,1fr);gap:5px;margin:7px 0 2px}
+#swimLesson .frog.on{display:grid}
+#swimLesson .frog div{border-radius:11px;background:#e1f0ec;padding:2px 2px 3px;font-size:11px;line-height:1.1;color:#5b787a}
+#swimLesson .frog div.lit{background:#ffe6b8;color:#a34920;box-shadow:inset 0 0 0 2px #e59a2e}
+#swimLesson .frog svg{display:block;width:100%;height:30px;fill:none;stroke:#234a56;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+#swimLesson .frog .go{stroke:#dd7a22;stroke-width:2;stroke-dasharray:3 3}#swimLesson .frog .air{stroke:#2f9bc4;stroke-width:2}
 #swimLesson .controls{font-size:12px;color:#5b787a;margin-top:5px}
 #swimLesson .safe{position:absolute;left:50%;bottom:calc(12px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);max-width:min(650px,calc(100vw - 32px));width:max-content;padding:5px 10px;border-radius:12px;background:#eefbf7e8;text-align:center;font-size:11px;line-height:1.3}
 #swimLesson button{pointer-events:auto;touch-action:none;user-select:none;-webkit-user-select:none;cursor:pointer;border:0;font:800 16px Nunito,system-ui,sans-serif;min-height:56px;padding:10px 16px;border-radius:18px;box-shadow:0 4px 0 #174e5e;background:#27889b;color:#fff}
@@ -65,7 +87,7 @@ body.swim-round #toasts{visibility:hidden}
 #swimLesson .act.held{background:#bf672b;transform:translateY(3px);box-shadow:0 1px 0 #713d1b}
 #swimLesson .leave{position:absolute;right:calc(24px + env(safe-area-inset-right,0px));bottom:calc(184px + env(safe-area-inset-bottom,0px));min-height:44px;min-width:72px;font-size:13px;background:#edf8f2;color:#325955;box-shadow:0 3px 0 #c1d9d3}
 @media(max-width:560px){#swimLesson .lesson{top:calc(112px + env(safe-area-inset-top,0px));padding:8px 12px 9px}#swimLesson .cue{font-size:19px}#swimLesson .instruction{font-size:13px}#swimLesson .feedback{font-size:12px}#swimLesson .safe{font-size:10px}#swimLesson .leave{bottom:calc(181px + env(safe-area-inset-bottom,0px))}}
-@media(max-height:540px){#swimLesson .lesson{left:18px;transform:none;width:310px;top:70px;font-size:12px}#swimLesson .safe{left:16px;transform:none;max-width:65vw}#swimLesson .instruction{font-size:12px}#swimLesson .cue{font-size:17px}}
+@media(max-height:540px){body.touch.swim-round #minigameStop{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto}#swimLesson .lesson{left:18px;transform:none;width:310px;top:70px;font-size:12px}#swimLesson .safe{left:16px;transform:none;max-width:65vw}#swimLesson .instruction{font-size:12px}#swimLesson .cue{font-size:17px}#swimLesson .frog svg{height:22px}#swimLesson .frog{margin:4px 0 1px}}
 `;
 
 /** Shared input mapping includes the existing pad X hold, which Input stores separately from keyboard keys. */
@@ -121,28 +143,73 @@ export function takeSwimmer(player, afterPose = null) {
  * Mika has Swim and Tread clips but no floats. The floats are the Idle clip laid flat by the hip pivot, with the arms
  * and legs opened by hand after the mixer has run (the mixer writes every bone again next frame, so nothing has to be
  * remembered or put back; it works on Low's merged skin too: the bones are there either way).
- * want: { back, front, dip } weights 0..1; apply(dt) eases toward them and bends the bones.
+ * want: { back, front, dip, frog, wave, hug } weights 0..1; apply(dt) eases toward them and bends the bones.
+ * frog: the frog stroke (she lies prone); its limbs follow pose.frog = { out, in, tuck, wide, head } (frogPose below).
+ * wave / hug: on top of the back float, one arm waves at the sky / both arms hold something to the chest (floatsafe.js).
  */
+const smooth = t => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+/**
+ * Where the arms and legs are in the frog cycle. frog: the rules' snapshot.frog ({ phase, t }); F: the level's numbers.
+ * out: hands swept out to the sides; in: hands tucked under the chin; head: lifted for the breath; tuck: heels drawn up
+ * with the knees apart; wide: legs straight and apart, on the way to snapping together. All 0 = the long glide.
+ */
+export function frogPose(frog, F, into = {}) {
+  let out = 0, inn = 0, tuck = 0, wide = 0, head = 0;
+  if (frog?.phase === 'pull') {
+    const u = clamp(frog.t / (F.pullMin + 0.25), 0, 1);
+    out = u < 0.5 ? smooth(u * 2) : 1 - smooth((u - 0.5) * 2); inn = smooth((u - 0.45) / 0.55);
+    head = smooth((u - 0.2) / 0.6); tuck = smooth((u - 0.5) / 0.5);
+  } else if (frog?.phase === 'kick') {
+    const u = clamp(frog.t / F.kick, 0, 1);
+    inn = 1 - smooth(u / 0.5); head = 1 - smooth(u / 0.6); tuck = 1 - smooth(u / 0.35);
+    wide = u < 0.35 ? smooth(u / 0.35) : 1 - smooth((u - 0.35) / 0.65);
+  }
+  into.out = out; into.in = inn; into.tuck = tuck; into.wide = wide; into.head = head;
+  return into;
+}
 export function makeSwimPose(player) {
   const model = player.model, bone = name => model?.getObjectByName?.(name) || null;
   const B = model ? { uaL: bone('upperarm_L'), uaR: bone('upperarm_R'), faL: bone('forearm_L'), faR: bone('forearm_R'),
     thL: bone('thigh_L'), thR: bone('thigh_R'), shL: bone('shin_L'), shR: bone('shin_R'), head: bone('head'), spine: bone('spine') } : null;
-  const want = { back: 0, front: 0, dip: 0 }, now = { back: 0, front: 0, dip: 0 };
+  const KEYS = ['back', 'front', 'dip', 'frog', 'wave', 'hug'], FROG = ['out', 'in', 'tuck', 'wide', 'head'];
+  const want = Object.fromEntries(KEYS.map(k => [k, 0])), now = { ...want };
+  const frog = Object.fromEntries(FROG.map(k => [k, 0])), limbs = { ...frog };
   let time = 0;
-  return { want, now,
+  return { want, now, frog, limbs,
     apply(dt) {
       time += dt;
-      const k = 1 - Math.exp(-dt * 5);
-      now.back += (want.back - now.back) * k; now.front += (want.front - now.front) * k; now.dip += (want.dip - now.dip) * k;
+      const k = 1 - Math.exp(-dt * 5), quick = 1 - Math.exp(-dt * 16);
+      for (const key of KEYS) now[key] += (want[key] - now[key]) * k;
+      for (const key of FROG) limbs[key] += (frog[key] - limbs[key]) * quick;
       if (!B) return;
       const b = now.back, f = now.front, d = now.dip, sway = Math.sin(time * 1.3);
       if (b > 0.01) {
         // star float on her back: arms out to the sides, legs a little apart, everything loose and slowly drifting
         // (arm and leg bones point down their own -Y with Z to her back: -Z swings a left limb outward, +Z a right one)
-        B.uaL?.rotateZ(-b * (1.05 + 0.07 * sway)); B.uaR?.rotateZ(b * (1.05 - 0.07 * sway));
-        B.faL?.rotateZ(-b * 0.18); B.faR?.rotateZ(b * 0.18);
+        // a hug folds both arms in over the chest; a wave lifts the right arm out of the water, the left stays spread
+        const h = now.hug, w = now.wave * (1 - h), armL = b * (1 - h), armR = b * (1 - h) * (1 - w);
+        B.uaL?.rotateZ(-armL * (1.05 + 0.07 * sway)); B.uaR?.rotateZ(armR * (1.05 - 0.07 * sway));
+        B.faL?.rotateZ(-armL * 0.18); B.faR?.rotateZ(armR * 0.18);
+        if (w > 0.01) { B.uaR?.rotateZ(b * w * 0.25); B.uaR?.rotateX(-b * w * (1.5 + 0.22 * Math.sin(time * 6))); B.faR?.rotateZ(b * w * 0.35 * Math.sin(time * 6)); }
+        if (h > 0.01) {
+          B.uaL?.rotateZ(-b * h * 0.28); B.uaR?.rotateZ(b * h * 0.28); B.uaL?.rotateX(-b * h * 0.5); B.uaR?.rotateX(-b * h * 0.5);
+          B.faL?.rotateX(-b * h * 1.5); B.faR?.rotateX(-b * h * 1.5); B.faL?.rotateZ(b * h * 0.75); B.faR?.rotateZ(-b * h * 0.75);
+        }
         B.thL?.rotateZ(-b * (0.24 + 0.03 * sway)); B.thR?.rotateZ(b * (0.24 - 0.03 * sway));
         B.head?.rotateX(-b * 0.12);
+      }
+      const g = now.frog;
+      if (g > 0.01) {
+        // frog stroke, lying prone. Arms: stretched ahead (glide), swept out to the sides (pull), folded under the chin
+        // (breathe). Legs: together, then heels to the bottom with the knees apart, then wide, then snapped together.
+        const L = limbs, reach = 1 - L.in;
+        const az = 0.16 + 0.95 * L.out - 0.2 * L.in, ax = -(3.0 - 1.15 * L.out - 2.1 * L.in), fx = -(0.35 * L.out + 2.0 * L.in);
+        B.uaL?.rotateZ(g * az * reach + g * L.in * 0.35); B.uaR?.rotateZ(-g * az * reach - g * L.in * 0.35);
+        B.uaL?.rotateX(g * ax); B.uaR?.rotateX(g * ax); B.faL?.rotateX(g * fx); B.faR?.rotateX(g * fx);
+        const tz = 0.05 + 0.5 * L.tuck + 0.55 * L.wide, hip = -0.3 * L.tuck, sx = 1.9 * L.tuck, sz = 0.3 * L.tuck;
+        B.thL?.rotateZ(-g * tz); B.thR?.rotateZ(g * tz); B.thL?.rotateX(g * hip); B.thR?.rotateX(g * hip);
+        B.shL?.rotateX(g * sx); B.shR?.rotateX(g * sx); B.shL?.rotateZ(-g * sz); B.shR?.rotateZ(g * sz);
+        B.head?.rotateX(g * (0.2 - 0.85 * L.head)); B.spine?.rotateX(-g * 0.12 * L.head);
       }
       if (f > 0.01) {
         // front float: arms reach ahead past her ears, legs trail, face down in the water
@@ -158,9 +225,10 @@ export function makeSwimPose(player) {
 function makeUi(ctx) {
   addCss('swimCss', CSS);
   const el = document.createElement('div'); el.id = 'swimLesson';
-  el.innerHTML = '<section class="lesson"><div class="step"></div><div class="cue" aria-live="polite"></div><div class="instruction"></div><div class="track"><div class="progress"></div></div><div class="rhythm"><i class="zone"></i><i class="pulse"></i></div><div class="feedback"></div><div class="controls"></div></section><button class="leave"></button><button class="act"></button><div class="safe"></div>';
+  el.innerHTML = '<section class="lesson"><div class="step"></div><div class="cue" aria-live="polite"></div><div class="instruction"></div><div class="track"><div class="progress"></div></div><div class="frog">' + FROG_HTML + '</div><div class="rhythm"><i class="zone"></i><i class="pulse"></i></div><div class="feedback"></div><div class="controls"></div></section><button class="leave"></button><button class="act"></button><div class="safe"></div>';
   document.body.append(el); document.body.classList.add('swim-round');
-  const nodes = Object.fromEntries(['step', 'instruction', 'cue', 'progress', 'rhythm', 'zone', 'pulse', 'feedback', 'controls', 'safe', 'leave', 'act'].map(c => [c, el.querySelector(`.${c}`)]));
+  const nodes = Object.fromEntries(['step', 'instruction', 'cue', 'progress', 'frog', 'rhythm', 'zone', 'pulse', 'feedback', 'controls', 'safe', 'leave', 'act'].map(c => [c, el.querySelector(`.${c}`)]));
+  nodes.parts = FROG_PARTS.map(k => el.querySelector(`.frog [data-part="${k}"]`) || null);
   nodes.title = nodes.step; nodes.safe.textContent = tx(SAFETY); nodes.leave.textContent = tx('Leave');
   let held = false, pointer = null;
   const listeners = [];
@@ -344,14 +412,16 @@ export function makePool(game, { rope = POOL.rope, via = [] } = {}) {
       time += dt; cheer = Math.max(0, cheer - dt);
       tex.offset.set(time * 0.011, time * 0.017); tex2.offset.set(-time * 0.014, time * 0.009);
       // Rin keeps level with Mika along the deck
+      // (s.coachHeld: the round has put Rin somewhere itself, "Float and wait" when she plays the friend in the water)
       const wantX = s.travel ? COACH.deckX : COACH.x, wantZ = s.travel ? clamp(s.z + 0.9, -6.4, 6.6) : COACH.z;
-      const dx = wantX - coach.pos.x, dz = wantZ - coach.pos.z, gap = Math.hypot(dx, dz), walk = gap > (coachWalking ? 0.06 : 0.5) && cheer <= 0;
-      if (walk) {
+      const dx = wantX - coach.pos.x, dz = wantZ - coach.pos.z, gap = Math.hypot(dx, dz), walk = !s.coachHeld && gap > (coachWalking ? 0.06 : 0.5) && cheer <= 0;
+      if (s.coachHeld) coachWalking = false;
+      else if (walk) {
         const stride = Math.min(gap, 1.35 * dt) / gap;
         coach.pos.x += dx * stride; coach.pos.z += dz * stride; coach.root.position.x = coach.pos.x; coach.root.position.z = coach.pos.z;
         face(coach, coach.pos.x + dx, coach.pos.z + dz, dt);
       } else face(coach, s.x, s.z, dt);
-      if (walk !== coachWalking && cheer <= 0) { coachWalking = walk; coach.anim?.play(walk ? 'Walk' : 'Idle', { speed: walk ? 0.8 : 1 }); }
+      if (!s.coachHeld && walk !== coachWalking && cheer <= 0) { coachWalking = walk; coach.anim?.play(walk ? 'Walk' : 'Idle', { speed: walk ? 0.8 : 1 }); }
       face(adult, s.x, s.z, dt);
       coach.anim?.update(dt); adult.anim?.update(dt);
       // a slow ring where she breaks the surface, a quicker wake while she travels
@@ -410,7 +480,7 @@ function instructions(phase, lesson, snap) {
   if (phase === 'check') return { text: N_('A grown-up is watching. Move to the gold exit ring on the dry deck, then press Action to check it.'), cue: N_('Move to the exit ring'), button: N_('Check exit') };
   if (phase === 'entry') return { text: N_('Walk slowly down the steps into the water. Press Action when you are ready.'), cue: N_('Walk down the steps'), button: N_('Begin practice') };
   if (phase === 'out' || phase === 'climbing') return { text: N_('You found the exit. Press Action to walk up the steps.'), cue: N_('Return to the dry deck'), button: N_('Climb out') };
-  if (phase === 'done') return { text: N_('Mika is back on the dry deck. You practised all six game skills. Real swimming still needs a qualified teacher and supervision.'), cue: N_('Practice complete — safely out'), button: N_('Well done') };
+  if (phase === 'done') return { text: N_('Mika is back on the dry deck. You practised every game skill. Real swimming still needs a qualified teacher and supervision.'), cue: N_('Practice complete — safely out'), button: N_('Well done') };
   if (snap.stage === 'bubbles') {
     const release = lesson.held && lesson.holdTime >= 1.5;
     return { text: N_('Hold Action: Mika blows gentle bubbles. Let go: she breathes. Three times. You just breathe normally.'),
@@ -420,6 +490,15 @@ function instructions(phase, lesson, snap) {
     if (lesson.floatMode === 'back') return { text: N_('Hold Action and Mika floats on her back. Keep still. Let go when the bar is full.'), cue: lesson.floatBack >= lesson.rules.floatSeconds ? N_('Release — recover upright') : N_('Back float — relax Mika'), button: N_('Relax Mika') };
     if (lesson.floatMode === 'front') return { text: N_('Now the front float: hold to float with gentle bubbles, let go for a breath. Fill the bar.'), cue: lesson.held && lesson.holdTime >= 1.5 ? N_('Release — normal breath') : lesson.airTime < lesson.rules.air ? N_('Normal breath — wait a moment') : N_('Short front float, then air'), button: N_('Front float') };
     return { text: N_('Mika stands up again. Press Action to go on.'), cue: N_('Upright recovery'), button: N_('Recover upright') };
+  }
+  if (snap.frog) {
+    const fr = snap.frog, pulling = fr.phase === 'pull', ok = fr.phase === 'ready' || (fr.phase === 'glide' && fr.glide >= fr.ok);
+    return { text: snap.stage === 'frog' ? N_('Frog stroke. Hold Action: pull and breathe. Let go: kick. Then hands off and glide until the bar is green.')
+      : lesson.viaIndex < lesson.rules.via.length ? N_('Frog stroke through the two red rings, then to the gold exit. Steer, pull, kick, then glide.')
+        : N_('Frog stroke back to the gold exit. Steer, pull, kick, then glide.'),
+      cue: fr.part === 'pull' && pulling ? N_('Pull — hands sweep round') : pulling ? N_('Breathe — now let go to kick') : fr.phase === 'kick' ? N_('Kick like a frog!')
+        : ok ? N_('Hold to pull and breathe') : N_('Glide… stretch long and wait'),
+      button: pulling ? N_('Let go: kick') : ok ? N_('Pull and breathe') : N_('Glide… wait') };
   }
   const pulse = pulseState(lesson);
   if (snap.stage === 'tread') return { text: N_('Tap Action each time the dot reaches the green. Slow, steady taps keep her head up.'), cue: PULSE_CUE[pulse] || N_('Wait for the pulse'), button: N_('Gentle scull') };
@@ -434,6 +513,8 @@ const shot=(fov,tilt,up,down,min)=>({fov,min,low:cot(tilt+down),ahead:cot(tilt),
 // Travel shots. tilt: degrees below the horizon; up/down: how far above/below the centre ray the usable picture reaches
 // (the lesson panel hides the top, the safety line the bottom); min: lowest camera, which in portrait keeps both ropes in.
 const SHOT={landscape:shot(50,50,7,22,4.6),portrait:shot(60,55,8,26,10.5)},VIEW_AHEAD=8.5;
+// The frog stroke's four pictures make the panel taller: its travel shot keeps the far end of the leg lower on the screen.
+const FROG_SHOT={landscape:shot(50,50,-1,22,4.6),portrait:shot(60,55,3,26,10.5)};
 
 /** Translate and write a text only when its source (or the language) changed: the panel is touched a few times a drill. */
 const setText = (node, source, lang) => {
@@ -448,15 +529,30 @@ const setPercent = (node, key, value, tenths = 0) => {
   node['_' + key] = n; node.style[key] = `${tenths ? n / 10 : n}%`;
 };
 
+/** Remember the follow camera as it is; the function returned puts every changed field back (once). */
+export function holdCamera(follow) {
+  const fov=follow.fovBase,yaw=follow.yaw,pitch=follow.pitch,shot=follow.shot,tracking=follow.tracking;
+  const look=follow.look.clone(),pos=follow.pos.clone(),cameraPos=follow.camera.position.clone(),cameraRot=follow.camera.quaternion.clone();
+  const cameraFov=follow.camera.fov,cameraNear=follow.camera.near;
+  let done=false;
+  return ()=>{
+    if(done)return; done=true;
+    follow.fovBase=fov;follow.yaw=yaw;follow.pitch=pitch;follow.shot=shot;follow.tracking=tracking;
+    follow.look.copy(look);follow.pos.copy(pos);follow.camera.position.copy(cameraPos);follow.camera.quaternion.copy(cameraRot);
+    follow.camera.fov=cameraFov;follow.camera.near=cameraNear;follow.camera.updateProjectionMatrix();
+  };
+}
+/** The two pool games' signposts stand in the pool's pictures: take them out for a round. Returns the way back. */
+export function hidePoolSigns(ctx) {
+  const saved=(ctx.director.tricks?.signs||[]).filter(s=>s.t.id==='swimming'||s.t.id==='floatsafe').map(s=>[s,s.hidden,s.obj?.visible]);
+  for(const [s] of saved){s.hidden=true;if(s.obj)s.obj.visible=false;}
+  return ()=>{for(const [s,hidden,visible] of saved){s.hidden=hidden;if(s.obj)s.obj.visible=visible;}};
+}
+
 export default { id:'swimming', async play(ctx) {
   const g=ctx.game,p=ctx.player,input=ctx.input;
-  let pool=null,ui=null,restorePlayer=null;
-  const follow=g.follow, savedFov=follow.fovBase, savedYaw=follow.yaw, savedPitch=follow.pitch;
-  const savedShot=follow.shot,savedTracking=follow.tracking;
-  const savedLook=follow.look.clone(),savedPos=follow.pos.clone(),savedCameraPos=follow.camera.position.clone(),savedCameraRot=follow.camera.quaternion.clone();
-  const savedCameraFov=follow.camera.fov,savedCameraNear=follow.camera.near;
-  const savedSign=ctx.director.tricks.signs.find(s=>s.t.id==='swimming');
-  const signVisible=savedSign?.obj?.visible,signHidden=savedSign?.hidden;
+  let pool=null,ui=null,restorePlayer=null,restoreSigns=null;
+  const follow=g.follow,restoreCamera=holdCamera(follow);
   let phase='check', phaseTime=0,total=0,exitCheck=false,entry=false,climbed=false,oldAct=false;
   const local={x:-3,z:8.2};
   // What is drawn this frame (one object, rewritten in place): the deck phases fill it by hand, the lesson from its rules.
@@ -467,12 +563,13 @@ export default { id:'swimming', async play(ctx) {
   let snap=lesson.snapshot(),exitWalk=0,slideX=0,slideZ=0,lessonEvent=0,sweep=0,score=0;
   const cameraPos=new THREE.Vector3(),cameraLook=new THREE.Vector3();
   const hidden=[],poolState={x:0,z:0,heading:0,wet:false,bubbles:false,front:false,speed:0,travel:false};
+  const drills=lesson.stages.length,steps=drills+2;      // the course of this level, and the panel's count with the deck work
   const result=()=>{
-    // all six drills but still in the water when the time ran out: the practised skills count, the dry exit does not
+    // every drill but still in the water when the time ran out: the practised skills count, the dry exit does not
     const r=lesson.result(),points=climbed?r.score:r.skills*8;
     return {score:points,
-      note:climbed?tx('You returned to the dry deck after all six game drills. Stars are game rewards.')
-        :tx("You practised {skills}/6 game skills. Replay and take your time with Rin's cues.",{skills:lesson.skills}),
+      note:climbed?tx('You returned to the dry deck after every game drill. Stars are game rewards.')
+        :tx("You practised {skills}/{total} game skills. Replay and take your time with Rin's cues.",{skills:lesson.skills,total:drills}),
       detail:{complete:climbed,skills:lesson.skills,retries:lesson.retries,seconds:Math.round(total)}};
   };
   try {
@@ -481,7 +578,7 @@ export default { id:'swimming', async play(ctx) {
     pool=makePool(g,{rope:ropeFor(lesson.level),via:lesson.rules.via}); ui=makeUi(ctx);
     const pose=makeSwimPose(p);
     restorePlayer=takeSwimmer(p,dt=>pose.apply(dt));
-    if(savedSign) { savedSign.hidden=true; if(savedSign.obj)savedSign.obj.visible=false; }
+    restoreSigns=hidePoolSigns(ctx);
     // Hide nearby unrelated actors only while they could walk through this temporary pool (looked for twice a second).
     const hideNearby=()=>{
       for(const o of g.scene.children) {
@@ -525,6 +622,7 @@ export default { id:'swimming', async play(ctx) {
           const ev=events[lessonEvent];
           if(ev.type==='skill')cheer=true;
           else if(ev.type==='good'&&ev.kind==='stroke'){ctx.audio.stroke?.();pool.splash(local.x+Math.sin(snap.heading)*.35,local.z+Math.cos(snap.heading)*.35,ev.stage==='tread'?3:5,ev.stage==='tread'?.7:1);}
+          else if(ev.kind==='frog'){ctx.audio.stroke?.();pool.splash(local.x-Math.sin(snap.heading)*.75,local.z-Math.cos(snap.heading)*.75,ev.type==='good'?5:2,ev.type==='good'?.9:.5);}   // the whip of the feet
           else if(ev.type==='good'&&ev.kind==='upright')pool.splash(local.x,local.z,4,.8);
           else if(ev.type==='good'&&ev.kind==='ring'){ctx.audio.good();pool.splash(local.x,local.z,5,.9);}
           else if(ev.type==='good')pool.ripple(local.x,local.z,1.3,1.4);
@@ -535,6 +633,12 @@ export default { id:'swimming', async play(ctx) {
         view.depth=side==='back'?.99:side==='front'?1.01:travel?.92:snap.bubbles?1.17:1.03;
         view.clip=side!=='upright'?'Idle':travel?'Swim':'Tread';
         view.clipSpeed=side!=='upright'?.5:travel?.45+snap.strokePulse*2.4:slideZ>.15?1.3:.85+snap.strokePulse*1.6;
+        if(snap.frog) {
+          // frog stroke: prone and long; the chest comes up a little for the breath. The limbs are posed, not a clip.
+          const P=ctx.debug.frogPose||frogPose(snap.frog,lesson.rules.frog,pose.frog);
+          if(P!==pose.frog)Object.assign(pose.frog,P);
+          view.side='frog';view.pitch=1.44-.3*P.head;view.depth=1-.08*P.head;view.clip='Idle';view.clipSpeed=.4;
+        }
         if(snap.bubbles&&Math.floor(total*3)!==Math.floor((total-dt)*3))ctx.audio.bubble?.();
         if(snap.complete){phase='out';phaseTime=0;ui.release();}
       } else if(phase==='out') {
@@ -559,14 +663,15 @@ export default { id:'swimming', async play(ctx) {
         y=lerp(Math.max(afloat,ground),afloat,flat);
       } else { body.pitch=0;body.depth=POOL.water-stepHeight(local.z); }
       pose.want.back=wet&&view.side==='back'?1:0;pose.want.front=wet&&view.side==='front'?1:0;pose.want.dip=wet&&view.bubbles&&view.side==='upright'?1:0;
+      pose.want.frog=wet&&view.side==='frog'?1:0;
       p.pos.set(POOL.x+local.x,y,POOL.z+local.z);
       p.facing=view.heading;p.pitch=body.pitch;p.pose=view.clip;p.poseSpeed=view.clipSpeed;p.speed=view.speed;
       p.root.position.copy(p.pos);p.root.rotation.y=p.facing;p.pivot.rotation.x=p.pitch;
       const stage=phase==='lesson'?snap.stage:null;
-      pool.target.visible=stage==='glide';
+      pool.target.visible=stage==='glide'||stage==='frog';
       for(let i=0;i<pool.rings.length;i++)pool.rings[i].visible=(stage==='turn'||stage==='swim')&&i>=lesson.viaIndex;
       poolState.x=local.x;poolState.z=local.z;poolState.heading=view.heading;poolState.wet=wet||(phase!=='check'&&phase!=='done'&&local.z<7.6);
-      poolState.travel=stage==='glide'||stage==='turn'||stage==='swim';poolState.bubbles=wet&&view.bubbles;poolState.front=view.side==='front';poolState.speed=wet?view.speed:0;
+      poolState.travel=stage==='frog'||stage==='glide'||stage==='turn'||stage==='swim';poolState.bubbles=wet&&view.bubbles;poolState.front=view.side==='front';poolState.speed=wet?view.speed:0;
       pool.update(dt,poolState);
       if((sweep-=dt)<=0){sweep=.5;hideNearby();}
       // ---- camera: always from the exit side or the open side, so pool-relative controls never reverse
@@ -579,6 +684,12 @@ export default { id:'swimming', async play(ctx) {
         follow.fovBase=portrait?58:50;
         if(portrait){cameraPos.set(POOL.x-1.4,pool.waterY+3.6,POOL.z+local.z-5.2);cameraLook.set(POOL.x+.6,pool.waterY+1.38,POOL.z+local.z);}
         else{cameraPos.set(POOL.x-2.4,pool.waterY+3.4,POOL.z+local.z-4.4);cameraLook.set(POOL.x+.95,pool.waterY+1.5,POOL.z+local.z+.3);}
+      } else if(stage==='frog') {
+        // The frog stroke is about arms and legs: a close shot from behind her shoulder, high enough to see the kick open
+        // and close, with Rin walking the deck beside her.
+        follow.fovBase=portrait?58:46;
+        if(portrait){cameraPos.set(POOL.x+.3,pool.waterY+5.5,POOL.z+local.z+4.3);cameraLook.set(POOL.x-.95,pool.waterY+1,POOL.z+local.z-.7);}
+        else{cameraPos.set(POOL.x+2.9,pool.waterY+3.3,POOL.z+local.z+3.6);cameraLook.set(POOL.x+.5,pool.waterY+.75,POOL.z+local.z-.9);}
       } else if(overview) {
         follow.fovBase=portrait?64:50;
         if(portrait){cameraPos.set(POOL.x,pool.waterY+10.5,POOL.z+17.5);cameraLook.set(POOL.x,pool.waterY+3.2,POOL.z+5.5);}
@@ -588,21 +699,25 @@ export default { id:'swimming', async play(ctx) {
         // steeply down so that a small swimmer far up the lane still reads as a whole body.
         // A whole 12 m leg in one picture makes her a speck, so the shot holds Mika and the next VIEW_AHEAD metres of lane:
         // the ring (out) or the gold steps (back) come into view after the first few strokes and stay there.
-        const markerZ=stage==='glide'?SWIM.glide.z:stage==='turn'||stage==='swim'?POOL.stepsTo-.6:POOL.exit.z;
+        const markerZ=stage==='glide'||stage==='frog'?SWIM.glide.z:stage==='turn'||stage==='swim'?POOL.stepsTo-.6:POOL.exit.z;
         const near=Math.min(Math.max(local.z,markerZ),local.z+VIEW_AHEAD),far=Math.max(Math.min(local.z,markerZ),local.z-VIEW_AHEAD),span=near-far;
         // SHOT: the look-down angle, then the cotangents of the lowest and highest usable rays (above the safety line,
         // below the panel), and how much pool one metre of camera height covers between them.
-        const S=portrait?SHOT.portrait:SHOT.landscape,height=Math.max(S.min,(span+1.2)/S.cover),slack=height*S.cover-span;
+        const shots=phase==='lesson'&&snap.frog?FROG_SHOT:SHOT,S=portrait?shots.portrait:shots.landscape,height=Math.max(S.min,(span+1.2)/S.cover),slack=height*S.cover-span;
         follow.fovBase=S.fov;
         const camZ=near+height*S.low+slack*.5;
         cameraPos.set(POOL.x,pool.waterY+height,POOL.z+camZ);cameraLook.set(POOL.x,pool.waterY,POOL.z+camZ-height*S.ahead);
       }
+      // (a QA script may ask for a picture from the side or from above: ctx.debug.shot = { pos: [x, y, z], look: [x, y, z] },
+      // metres from the swimmer at the water line)
+      const qaShot=ctx.debug.shot;
+      if(qaShot){cameraPos.set(p.pos.x+qaShot.pos[0],pool.waterY+qaShot.pos[1],p.pos.z+qaShot.pos[2]);cameraLook.set(p.pos.x+qaShot.look[0],pool.waterY+qaShot.look[1],p.pos.z+qaShot.look[2]);if(qaShot.fov)follow.fovBase=qaShot.fov;}
       // ---- lesson panel: every write below is skipped while its value stays the same
       const lang=getLang(),inst=instructions(stage||phase,lesson,snap);
-      const stepNo=phase==='lesson'?snap.stageIndex+2:overview?1:8,name=STAGE[stage||phase]||STAGE.out;
+      const stepNo=phase==='lesson'?snap.stageIndex+2:overview?1:steps,name=STAGE[stage||phase]||STAGE.out;
       if(nodes.title._step!==stepNo||nodes.title._name!==name||nodes.title._lang!==lang){
         nodes.title._step=stepNo;nodes.title._name=name;nodes.title._lang=lang;
-        nodes.title.textContent=tx('{step} · {name}',{step:`${stepNo}/8`,name:tx(name)});
+        nodes.title.textContent=tx('{step} · {name}',{step:`${stepNo}/${steps}`,name:tx(name)});
       }
       setText(nodes.instruction,inst.text,lang);setText(nodes.cue,inst.cue,lang);setText(nodes.act,inst.button,lang);
       const feedback=phase==='lesson'?FEEDBACK[snap.feedback]||'':'';
@@ -615,8 +730,23 @@ export default { id:'swimming', async play(ctx) {
         :phase==='lesson'?snap.progress:phase==='check'?0:phase==='entry'?clamp((8-local.z)/(8-POOL.entry.z),0,1):phase==='out'?0:exitWalk;
       setPercent(nodes.progress,'width',done*100);
       // the dot: a beat to tap on (tread and the two swims), or how long this bubble/float hold has lasted
-      const beat=stage==='tread'||stage==='glide'||stage==='swim',holding=stage==='bubbles'||stage==='float'&&lesson.floatMode==='front';
-      setStyle(nodes.rhythm,'display',beat||holding?'block':'none');
+      const frogNow=phase==='lesson'?snap.frog:null;
+      const beat=!frogNow&&(stage==='tread'||stage==='glide'||stage==='swim'),holding=stage==='bubbles'||stage==='float'&&lesson.floatMode==='front';
+      setStyle(nodes.rhythm,'display',beat||holding||frogNow?'block':'none');
+      // the frog stroke: four small pictures, the part she is in lit; the bar below is the glide (green = long enough)
+      if(nodes.frog._on!==!!frogNow){nodes.frog._on=!!frogNow;nodes.frog.classList[frogNow?'add':'remove']('on');}
+      if(frogNow) {
+        const lit=frogNow.phase==='ready'?'':frogNow.part;
+        if(nodes.frog._lit!==lit||nodes.frog._lang!==lang) {
+          nodes.frog._lit=lit;nodes.frog._lang=lang;
+          FROG_PARTS.forEach((k,i)=>{const cell=nodes.parts[i];if(!cell)return;cell.classList[k===lit?'add':'remove']('lit');const label=cell.querySelector('span');if(label)label.textContent=tx(FROG_NAME[k]);});
+        }
+        const gliding=frogNow.phase==='glide',early=gliding&&frogNow.glide<frogNow.ok;
+        setPercent(nodes.zone,'width',(1-frogNow.ok)*100);
+        setPercent(nodes.pulse,'left',(gliding?frogNow.glide:0)*97+1.5,1);
+        if(nodes.rhythm._late!==!gliding){nodes.rhythm._late=!gliding;nodes.rhythm.classList[!gliding?'add':'remove']('late');}
+        if(nodes.act._wait!==early){nodes.act._wait=early;nodes.act.style.opacity=early?'.6':'';}
+      } else if(nodes.act._wait){nodes.act._wait=false;nodes.act.style.opacity='';}
       if(beat) {
         const r=lesson.rules,full=r.beat+r.window,state=pulseState(lesson),age=state==='first'?r.beat:lesson.time-lesson.lastStroke;
         setPercent(nodes.zone,'width',2*r.window/full*100);
@@ -641,10 +771,7 @@ export default { id:'swimming', async play(ctx) {
   } finally {
     ui?.destroy();restorePlayer?.();pool?.dispose();
     for(const [o,visible]of hidden)o.visible=visible;
-    if(savedSign){savedSign.hidden=signHidden;if(savedSign.obj)savedSign.obj.visible=signVisible;}
-    follow.fovBase=savedFov;follow.yaw=savedYaw;follow.pitch=savedPitch;follow.shot=savedShot;follow.tracking=savedTracking;
-    follow.look.copy(savedLook);follow.pos.copy(savedPos);follow.camera.position.copy(savedCameraPos);follow.camera.quaternion.copy(savedCameraRot);
-    follow.camera.fov=savedCameraFov;follow.camera.near=savedCameraNear;follow.camera.updateProjectionMatrix();
+    restoreSigns?.();restoreCamera();
     ctx.setNight(false);
     ctx.lock(false);input.releaseAll?.();
   }

@@ -638,6 +638,12 @@ export const DIALOGUE = {
     ['rin', "This is a game lesson. In real water, learn with a qualified swimming teacher and a grown-up watching."],
     ['rin', "No breath-holding contest. Gentle bubbles, normal breaths, and time to try again."],
   ],
+  trick_floatsafe_intro: [
+    ['rin', "Today we practise falling in with our clothes on, city girl. In the calm pool, with a grown-up right at the edge.", 'Talk'],
+    ['mika', "On purpose? In my shoes?"],
+    ['rin', "Shoes and clothes hold air. If you ever fall in, don't thrash. Lie back, float, breathe slowly. Then call for help."],
+    ['rin', "And if a friend falls in, never jump in after them. Shout for a grown-up and throw something that floats."],
+  ],
   trick_firefly_intro: [
     ['rin', "Summer night, city girl. Know what lives by the paddies after dark? Fireflies. Hundreds of them.", 'Talk'],
     ['mika', "Hundreds of bugs. In the dark. You're really selling it."],

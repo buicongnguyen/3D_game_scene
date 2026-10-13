@@ -19,10 +19,27 @@ export const TRICKS = [
     why: 'Calm breathing, balance and finding the exit are swimming foundations. Game practice does not prove that you can swim safely in real water.',
     safety: 'In real water, learn with a qualified swimming teacher and a grown-up watching.',
     // the lesson is long already, so the levels change what it asks, not how long it runs (rules-swimming.js SWIM_LEVELS):
-    // Easy shorter drills and a wide beat; Difficult a narrow lane, a tight beat and two rings to steer through on the way
-    // back. A finished lesson is 100 less 4 for every retry (never under 60): Difficult's three stars allow one retry.
+    // Easy shorter drills and a wide beat; Normal adds the frog stroke (pull, breathe, kick, glide) as a seventh skill;
+    // Difficult a narrow lane, a tight beat and two rings to steer through on the way back, swum frog stroke.
+    // A finished lesson is 100 less 4 for every retry (never under 60): Difficult's three stars allow two retries.
     stars: [60, 80, 95], length: 240, firstLength: 240, unit: 'points',
-    levels: { easy: { stars: [40, 70, 88], length: 240 }, normal: { stars: [60, 80, 95], length: 240 }, hard: { stars: [60, 84, 96], length: 240 } },
+    levels: { easy: { stars: [40, 70, 88], length: 240 }, normal: { stars: [60, 80, 95], length: 240 }, hard: { stars: [60, 80, 92], length: 240 } },
+  },
+  {
+    // water safety in the same supervised pool (tricks/floatsafe.js, rules-floatsafe.js): a drill in clothes, never a
+    // scare. Points: 10 a step, up to 20 for a steady float, up to 10 for staying calm, 10 a rescuer's choice right at
+    // once (5 at the second try), 3 off for every panic. Best: 70 on Easy, 110 on Normal, 120 on Difficult (floatBest).
+    // No clock on screen: `length` is about how long a calm child takes (the round only ends itself long after it).
+    id: 'floatsafe', name: 'Float and wait', icon: 'trick-floatsafe',
+    // its sign stands by the east deck, where the drill happens (the lesson's sign is at the steps; signs keep 12 m apart)
+    place: { x: -12, z: 62.5, face: -Math.PI / 2 }, where: 'the supervised practice pool south of Kawabe',
+    seasons: ['spring', 'summer', 'autumn'], hours: [9, 18], night: false, when: 'Spring to autumn, in daylight',
+    teacher: { grandma: 'rin', classic: 'rin' }, intro: 'trick_floatsafe_intro',
+    howReal: 'Fell in? Float on your back, breathe slowly, then call for help. A friend fell in? Never jump in: shout for a grown-up and throw something that floats.',
+    why: 'Air in your lungs, clothes and shoes helps you float. Thrashing wastes air and strength. In Japan children learn it as "uite mate": float and wait.',
+    safety: 'Wear a life jacket near water, and only play by water with a grown-up.',
+    stars: [50, 85, 102], length: 100, firstLength: 70, unit: 'points',
+    levels: { easy: { stars: [20, 45, 62], length: 70 }, normal: { stars: [50, 85, 102], length: 100 }, hard: { stars: [60, 95, 112], length: 130 } },
   },
   {
     id: 'firefly', name: 'Firefly jar', icon: 'trick-firefly',

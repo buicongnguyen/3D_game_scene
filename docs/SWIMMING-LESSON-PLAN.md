@@ -122,3 +122,18 @@ details replace the ones above (not yet published: it is in the working tree of 
   lapsed pulse is no longer a penalty. "Try the instruction above" waits for six seconds without any input (it used to
   fire every six seconds of a drill), and "release the button" waits 0.35 s. Finishing all six drills but running out
   of time before climbing out scores the practised skills (48), not 0.
+
+## Added 13 October 2026: the frog stroke, and "Float and wait"
+
+**Frog stroke (breaststroke; bơi ếch, かえる泳ぎ).** Normal and Difficult teach it as a seventh skill, after treading and before the swim to the far ring; Difficult also swims the way back with it, through its two rings. Easy and the guided first lesson keep the six gentle skills. It is one button and four parts, shown as four small pictures in the lesson panel and by Mika's arms and legs (posed after the mixer, like the floats):
+
+| Part | Input | What Mika does |
+| --- | --- | --- |
+| Pull | press and hold Action | the hands sweep out and round |
+| Breathe | keep holding (0.35 s to about 1.5 s) | hands under the chin, head up, heels drawn up with the knees apart |
+| Kick | let go | the legs open wide and whip together |
+| Glide | hands off while the glide bar runs | stretched long |
+
+The glide is the secret. A press before the green part of the bar cuts the glide: she slows, the next kick is weak and does not count, and the panel says so (one retry, never more than one in three seconds). A full glide makes the next kick a little stronger. A tap is not a pull, a held button never kicks. Rules: `frogStroke` in `src/game/tricks/rules-swimming.js`; the patient pupil used by the tests and the QA script is `swimBot`.
+
+**Float and wait** (`floatsafe`, `src/game/tricks/floatsafe.js`, rules `rules-floatsafe.js`) is a second game in the same pool: the "float to live" teaching (Japan: 浮いて待て, uite mate) as a calm drill in clothes, with Rin and a grown-up at the edge. Steps: keep still after the surprise (Difficult: through a cold "gasp" first), lie back as a star and breathe with a slow ring (hold while it grows, let go while it shrinks: a four-second breath, never a hold), wave and shout when the grown-up looks over, hug a thrown float (Normal: an empty bottle, Difficult: a cool-box lid), scull slowly to the edge (Difficult: across a lane that flows like a slow river), hold the reaching pole. Normal and Difficult end with the rescuer's side: Rin plays the friend in the water and the player chooses to shout for a grown-up, to throw something that floats and (Difficult) to reach lying flat. A wrong answer is explained and asked again. Mashing or shoving the stick drains the calm meter, costs three points a panic and never moves the drill on. No clock is shown. Sources for the teaching: the RNLI "Float to Live" advice and the Japanese school programme of clothed-swimming lessons (着衣泳); as with the lesson, the game is a picture of the idea, not training.

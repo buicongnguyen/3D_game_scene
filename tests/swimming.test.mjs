@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SwimLesson, SWIM, SWIM_STAGES, SWIM_LEVELS, ropeFor } from '../src/game/tricks/rules-swimming.js';
+import { SwimLesson, SWIM, SWIM_STAGES, FROG_STAGES, SWIM_LEVELS, ropeFor, stagesFor, swimBot } from '../src/game/tricks/rules-swimming.js';
 
 const DT = 0.05;
 const ticks = (lesson, seconds, input = {}) => {
@@ -8,6 +8,7 @@ const ticks = (lesson, seconds, input = {}) => {
 };
 function guidedInput(s) {
   if (s.needsRelease) return { act: false };
+  if (s.stage === 'frog' || (s.stage === 'swim' && s.rules.frog?.back)) return swimBot(s, DT);
   if (s.stage === 'bubbles') return { act: s.held ? s.holdTime < 1.6 - DT / 2 : s.airTime >= s.rules.air };
   if (s.stage === 'float') {
     if (s.floatMode === 'back') return { act: s.floatBack < s.rules.floatSeconds - 1e-6 };
@@ -46,8 +47,8 @@ test('all difficulty levels teach every skill through actual input in a bounded 
       assert.ok(['Swim', 'Tread', 'Idle'].includes(snap.clip));
     }
     assert.equal(s.complete, true, `${level} completes, last stage ${s.stage}, progress ${s.progress}`);
-    assert.deepEqual([...stages], SWIM_STAGES); assert.ok(back && front && upright);
-    assert.equal(s.skills, 6); assert.equal(s.result().score, 100); assert.equal(s.result().stars, 3);
+    assert.deepEqual([...stages], stagesFor(level)); assert.ok(back && front && upright);
+    assert.equal(s.skills, stagesFor(level).length); assert.equal(s.result().score, 100); assert.equal(s.result().stars, 3);
     assert.deepEqual(s.position, s.exit); assert.equal(s.clip, 'Idle');
     assert.ok(s.time >= 40 && s.time <= 130, `${level} successful virtual practice ${s.time.toFixed(1)} s`);
     // Recorded held/released inputs reproduce the whole lesson, poses, movement, corrections and final score.
@@ -70,7 +71,7 @@ test('the idle reminder waits for a child who has stopped: steady, well-timed pl
 });
 
 test('idle never awards any stage, and helpful cues repeat without danger or a timeout loss', () => {
-  for (const stage of SWIM_STAGES) {
+  for (const stage of FROG_STAGES) {
     const s = lessonTo(stage), skills = s.skills, score = s.result().score;
     ticks(s, 90);
     assert.equal(s.stage, stage); assert.equal(s.complete, false);
@@ -126,10 +127,10 @@ test('the levels differ in kind: shorter drills and a wide lane on Easy, a narro
   // Difficult: swimming straight back misses the rings and does not finish; steering through both does, and it is a longer swim
   const straight = lessonTo('swim', 'hard');
   for (let i = 0; i < 1600 && !straight.complete; i++) {
-    const act = !straight.held && (straight.lastStroke === null || straight.time - straight.lastStroke >= straight.rules.beat - DT / 2);
     const dx = straight.exit.x - straight.position.x, dz = straight.exit.z - straight.position.z, d = Math.hypot(dx, dz) || 1;
-    straight.step(DT, { act, mx: dx / d, mv: dz / d });
+    straight.step(DT, { act: swimBot(straight, DT).act, mx: dx / d, mv: dz / d });
   }
+  assert.ok(straight.position.z > SWIM.exit.z - 1, 'she did swim to the exit');
   assert.equal(straight.complete, false, 'the exit does not count until both rings are passed'); assert.equal(straight.viaIndex, 0);
   const hard = lessonTo('swim', 'hard'), normal = lessonTo('swim', 'normal');
   assert.ok(hard.swimPath(false) > normal.swimPath(false) + 0.25, 'the dog-leg is a longer way back');
@@ -144,6 +145,76 @@ test('the levels differ in kind: shorter drills and a wide lane on Easy, a narro
   }
 });
 
+test('the frog stroke is a skill of its own on Normal and Difficult, and the way back on Difficult; Easy keeps the gentle course', () => {
+  assert.deepEqual(stagesFor('easy'), SWIM_STAGES); assert.deepEqual(stagesFor('first'), SWIM_STAGES);
+  assert.deepEqual(stagesFor('normal'), FROG_STAGES); assert.deepEqual(stagesFor('hard'), FROG_STAGES); assert.deepEqual(stagesFor('nonsense'), FROG_STAGES);
+  assert.equal(FROG_STAGES.indexOf('frog'), FROG_STAGES.indexOf('glide') - 1, 'taught before the swim to the far ring');
+  const N = SWIM_LEVELS.normal.frog, H = SWIM_LEVELS.hard.frog;
+  assert.equal(SWIM_LEVELS.easy.frog, null); assert.equal(SWIM_LEVELS.first.frog, null);
+  assert.ok(!N.back && H.back && H.cycles > N.cycles && H.wait > N.wait && H.pullMax <= N.pullMax);
+  for (const F of [N, H]) assert.ok(F.pullMin < 0.5 && F.pullMax <= 1.6 && F.glide <= 1.5, 'a pull is a short press and a glide a short wait: never a breath-holding task');
+  // a patient cycle: pull, breathe, kick, glide, in that order, and she travels up the lane without steering
+  const s = lessonTo('frog'), z0 = s.position.z, parts = [];
+  assert.equal(s.snapshot().frog.part, 'glide'); assert.equal(s.snapshot().frog.need, N.cycles);
+  for (let i = 0; i < 2000 && s.stage === 'frog'; i++) { const snap = s.step(DT, guidedInput(s)); if (snap.frog && parts.at(-1) !== snap.frog.part) parts.push(snap.frog.part); assert.ok(['Swim', 'Tread', 'Idle'].includes(snap.clip)); }
+  assert.equal(s.stage, 'glide'); assert.equal(s.frogCycles, N.cycles); assert.equal(s.frogRushed, 0); assert.equal(s.retries, 0);
+  assert.deepEqual(parts.slice(0, 4), ['pull', 'breathe', 'kick', 'glide']);
+  assert.ok(s.position.z < z0 - 2 && s.position.z > SWIM.glide.z + 1 && Math.abs(s.position.x) < 1e-9, `frog stroke carried her up the lane (${s.position.z.toFixed(2)})`);
+  assert.equal(s.snapshot().frog, null, 'the frog picture belongs to the frog stroke only');
+  assert.ok(lessonTo('swim', 'hard').snapshot().frog && !lessonTo('swim', 'normal').snapshot().frog);
+});
+
+test('frog stroke: the glide is the secret. Waiting goes further; a rushed pull cuts the glide, kicks weakly and does not count', () => {
+  const F = SWIM_LEVELS.normal.frog;
+  const cycle = (s, glide, pull = 0.5) => { ticks(s, pull, { act: true }); s.step(DT, {}); ticks(s, F.kick + glide - DT); };
+  // the same number of presses: one child waits for the whole glide, the other presses as soon as the kick is over
+  const patient = lessonTo('frog'), hasty = lessonTo('frog'), z0 = patient.position.z;
+  for (let i = 0; i < 4; i++) { cycle(patient, F.glide); cycle(hasty, 0.15); }
+  assert.equal(patient.frogCycles, 4); assert.equal(patient.frogRushed, 0); assert.ok(patient.frogLong >= 3, 'full glides are noticed');
+  assert.ok(hasty.frogRushed >= 3 && hasty.frogCycles <= 1, `rushed pulls do not count (${hasty.frogCycles})`);
+  assert.ok(z0 - patient.position.z > (z0 - hasty.position.z) * 1.5, `patient ${(z0 - patient.position.z).toFixed(2)} m, hasty ${(z0 - hasty.position.z).toFixed(2)} m`);
+  assert.ok(hasty.retries >= 1 && hasty.events.some(e => e.feedback === 'frog_rush'));
+  assert.equal(hasty.stage, 'frog'); assert.ok(patient.result().score > hasty.result().score || patient.stage !== 'frog');
+  // a full glide gives a stronger kick than one cut at the first allowed moment
+  const long = lessonTo('frog'), short = lessonTo('frog');
+  cycle(long, F.glide); cycle(short, F.glide * F.wait + DT);
+  ticks(long, 0.5, { act: true }); long.step(DT, {}); ticks(short, 0.5, { act: true }); short.step(DT, {});
+  assert.ok(long.speed > short.speed && short.frogCycles === 2 && long.frogCycles === 2);
+  // she recovers: after a rush, one waited glide and the next cycle counts again
+  const again = lessonTo('frog'); cycle(again, 0.1); cycle(again, F.glide); const had = again.frogCycles; cycle(again, F.glide);
+  assert.equal(again.frogCycles, had + 1);
+});
+
+test('frog stroke: a tap is not a pull, a held button never kicks, and mashing goes nowhere', () => {
+  const F = SWIM_LEVELS.normal.frog;
+  const tap = lessonTo('frog'); tap.step(DT, { act: true }); tap.step(DT, {});
+  assert.equal(tap.frogCycles, 0); assert.equal(tap.feedback, 'frog_short'); assert.equal(tap.snapshot().frog.phase, 'ready');
+  const held = lessonTo('frog'), z0 = held.position.z; ticks(held, 30, { act: true });
+  assert.equal(held.frogCycles, 0); assert.equal(held.stage, 'frog'); assert.equal(held.position.z, z0);
+  assert.ok(held.events.some(e => e.feedback === 'frog_kick_now'));
+  held.step(DT, {}); assert.equal(held.frogCycles, 0, 'letting go after far too long is not a kick');
+  const mash = lessonTo('frog'); ticks(mash, 20, s => ({ act: Math.floor(s.time / DT + 1e-6) % 2 === 0 }));
+  assert.equal(mash.frogCycles, 0); assert.equal(mash.stage, 'frog'); assert.ok(Math.abs(mash.position.z - z0) < 0.05);
+  // the pull has exact edges at every frame rate
+  for (const dt of [1 / 60, 0.05, 0.1]) for (const [seconds, ok] of [[F.pullMin, true], [F.pullMax, true], [F.pullMin - dt, false], [F.pullMax + dt, false]]) {
+    const s = lessonTo('frog'), whole = Math.floor(seconds / dt + 1e-9);
+    for (let i = 0; i < whole; i++) s.step(dt, { act: true });
+    if (seconds - whole * dt > 1e-9) s.step(seconds - whole * dt, { act: true });
+    s.step(dt, {});
+    assert.equal(s.frogCycles, ok ? 1 : 0, `dt=${dt}, pull=${seconds}`);
+  }
+});
+
+test('Difficult swims the way back frog stroke: steering through both rings, and taps alone do not carry her', () => {
+  const taps = lessonTo('swim', 'hard'), z0 = taps.position.z;
+  ticks(taps, 30, q => ({ act: Math.floor(q.time / 0.3) % 2 === 0 && q.time % 0.3 < 0.1, mv: 1 }));
+  assert.ok(taps.position.z - z0 < 0.5 && !taps.complete, 'quick taps are not frog stroke');
+  const s = lessonTo('swim', 'hard');
+  for (let i = 0; i < 4000 && !s.complete; i++) s.step(DT, guidedInput(s));
+  assert.equal(s.complete, true); assert.equal(s.viaIndex, 2); assert.ok(s.swimStrokes >= 6 && s.frogRushed === 0);
+  assert.equal(s.result().score, 100);
+});
+
 test('eight paced sculls teach treading; held button, frantic taps and very late taps do not', () => {
   const held = lessonTo('tread'); ticks(held, 30, { act: true });
   assert.equal(held.sculls, 1); assert.equal(held.stage, 'tread');
@@ -156,7 +227,8 @@ test('eight paced sculls teach treading; held button, frantic taps and very late
   assert.equal(late.sculls, 1); assert.ok(late.events.some(e => e.feedback === 'follow_rhythm'));
   assert.equal(late.retries, 0, 'the tap the screen asks for ("tap once to restart the pulse") is never a penalty');
   for (let i = 0; i < 1000 && late.stage === 'tread'; i++) late.step(DT, guidedInput(late));
-  assert.equal(late.stage, 'glide', 'pace corrections allow the player to recover');
+  assert.equal(lessonTo('glide', 'easy').stageIndex, 3, 'on Easy the far ring follows the treading directly');
+  assert.equal(late.stage, 'frog', 'pace corrections allow the player to recover');
 });
 
 test('a required drill release clears its resolved instruction without earning a scull', () => {
@@ -222,8 +294,9 @@ test('earned sculls and aimed strokes clear old retry advice while preserving pe
 });
 
 test('glide and swimming need propulsion plus direction, and the exit must be found and faced', () => {
-  const glide = lessonTo('glide'); ticks(glide, 30, { mv: -1 });
-  assert.deepEqual(glide.position, SWIM.start, 'stick movement alone is not swimming propulsion');
+  const glide = lessonTo('glide'), from = { ...glide.position }; ticks(glide, 30, { mv: -1 });
+  assert.deepEqual(glide.position, from, 'stick movement alone is not swimming propulsion');
+  assert.deepEqual(lessonTo('glide', 'easy').position, SWIM.start);
   ticks(glide, 30, { act: true, mv: -1 });
   assert.equal(glide.stage, 'glide'); assert.ok(glide.progress < 0.2, 'one held push is only a short glide');
   const turn = lessonTo('turn');
