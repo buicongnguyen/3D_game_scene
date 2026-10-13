@@ -1370,11 +1370,13 @@ def _sora_hug(A, frames=60):
 
 
 def build_villager(kind):
-    """kind: 'man' (1.72 m), 'woman' (1.62 m) or 'kid' (1.20 m). Uses the contract recolour materials
+    """kind: 'man' (1.72 m), 'woman' (1.62 m), 'kid' (a boy, 1.20 m) or 'girl' (the child's body with a bob, two
+    bunches and a skirt, 1.20 m; made for Hollowbrook's mirror). Uses the contract recolour materials
     'Villager shirt', 'Villager trousers', 'Villager hair' for everything the runtime tints."""
     reset()
-    H = {'man': 1.72, 'woman': 1.62, 'kid': 1.2}[kind]
-    skin_c = {'man': '#e9ae82', 'woman': '#f3c29e', 'kid': '#f0b88f'}[kind]
+    child = kind in ('kid', 'girl')
+    H = {'man': 1.72, 'woman': 1.62, 'kid': 1.2, 'girl': 1.2}[kind]
+    skin_c = {'man': '#e9ae82', 'woman': '#f3c29e', 'kid': '#f0b88f', 'girl': '#f3bd97'}[kind]
     M = dict(skin=mat('Skin', skin_c, .55), hair=mat('Villager hair', '#3a2419', .45),
              eye=mat('Eye white', '#f6f3ec', .18), iris=mat('Iris', '#5a3a24', .25), dark=mat('Dark', '#272129', .45),
              shirt=mat('Villager shirt', '#d8823a', .65), trousers=mat('Villager trousers', '#3e5c8c', .7),
@@ -1428,7 +1430,7 @@ def build_villager(kind):
 
     # ---- hair
     lk = MB('locks')
-    rnd = random.Random({'man': 1, 'woman': 2, 'kid': 3}[kind])
+    rnd = random.Random({'man': 1, 'woman': 2, 'kid': 3, 'girl': 4}[kind])
     if kind == 'man':
         hl = lambda az: interp([(0, 40), (45, 34), (80, 14), (110, -2), (150, -14), (180, -16)], abs(((az + 180) % 360) - 180))
         parts.append(weigh(hair_cap(hd, M['hair'], hl, off=0.008, seg=20, rows=6), 'head'))
@@ -1457,6 +1459,26 @@ def build_villager(kind):
         for sx in (1, -1):
             lock(lk, lock_path(hd, [(sx * 30, 60, 0.012), (sx * 60, 20, 0.022), (sx * 66, -12, 0.018),
                                     (sx * 60, -28, 0.01)]), M['hair'], 0.04, 0.018, hd.c, n=6, samples=6)
+    elif kind == 'girl':
+        hl = lambda az: interp([(0, 24), (45, 18), (80, -8), (110, -24), (150, -32), (180, -34)], abs(((az + 180) % 360) - 180))
+        parts.append(weigh(hair_cap(hd, M['hair'], hl, off=0.008, seg=20, rows=6), 'head'))
+        for az in range(-165, 181, 26):                       # the bob (as few locks as still close the head)
+            el_end = hl(az) - 5 + rnd.uniform(-2, 2)
+            keys = [(az * 0.3, 86, 0.01), (az, 50, 0.026), (az + rnd.uniform(-5, 5), el_end + 12, 0.028), (az, el_end, 0.016)]
+            lock(lk, lock_path(hd, keys), M['hair'], 0.088, 0.026, hd.c, n=6, samples=5, flat_in=0.6,
+                 wfn=lambda t: 0.8 + 0.2 * math.sin(math.pi * t) - 0.5 * max(0, t - 0.7) / 0.3)
+        for az in (-30, -11, 9, 28):                           # the fringe
+            lock(lk, lock_path(hd, [(az * 0.4, 82, 0.012), (az, 60, 0.026), (az + 3, 41, 0.02)]), M['hair'], 0.062, 0.024, hd.c, n=6, samples=6)
+        ties = MB('ties')
+        for sx in (1, -1):                                     # two bunches, out and down from above the ears
+            base = hd.pt(sx * 100, 22, 0.012)
+            d = base - hd.c
+            d.z = 0
+            d.normalize()
+            lock(lk, [base, base + d * 0.035 + V((0, 0, -0.012)), base + d * 0.052 + V((0, 0.006, -0.07)),
+                      base + d * 0.044 + V((0, 0.01, -0.14))], M['hair'], 0.06, 0.036, hd.c + d * 0.2, n=6, samples=7, flat_in=0.75)
+            ellipsoid(ties, base + d * 0.02 + V((0, 0, -0.004)), (0.02, 0.02, 0.014), M['shirt'], 8, 5)
+        parts.append(weigh(ties.build('ties'), 'head'))
     else:
         hl = lambda az: interp([(0, 26), (45, 22), (80, 0), (110, -14), (150, -22), (180, -24)], abs(((az + 180) % 360) - 180))
         parts.append(weigh(hair_cap(hd, M['hair'], hl, off=0.008, seg=20, rows=6), 'head'))
@@ -1557,6 +1579,23 @@ def build_villager(kind):
             sweep(tw_, catmull(loc_pts, 3), M['eye'], rfn=lambda t: (0.03, 0.007), n=6,
                   up_fn=lambda q, T: (q - V((0, 0, 1.1))), e=3, cap0='flat', cap1='flat')
             parts.append(weigh(tw_.build('towel'), torso_weights(b, chest_top=1.3)))
+    if kind == 'girl':
+        sk = MB('skirt')
+        z0, z1, rs, cz = b.hip_z + 0.07, b.knee_z + 0.075, [], []
+        for i in range(5):
+            t = i / 4
+            z = lerp(z0, z1, t)
+            rx, ry = tk[0][1] * lerp(0.98, 1.62, t ** 0.75), tk[0][2] * lerp(1.0, 1.72, t ** 0.75)
+            rs.append([V((rx * math.cos(TAU * j / 16) * (1 + 0.035 * t * math.sin(TAU * j / 16 * 8)), 0.004 + ry * math.sin(TAU * j / 16) * (1 + 0.035 * t * math.sin(TAU * j / 16 * 8)), z)) for j in range(16)])
+            cz.append(V((0, 0.004, z)))
+        sk.loft(rs, M['trousers'], cz)
+        skb = torso_weights(b)
+
+        def skw(co):
+            f_ = sstep(z0, z1, co.z) * 0.9
+            s_ = sstep(-0.05, 0.05, co.x)
+            return mix_w((skb(co), 1 - f_), ({'thigh_L': s_, 'thigh_R': 1 - s_}, f_))
+        parts.append(weigh(sk.build('skirt', angle=60), skw))
     # ---- pelvis + legs + shoes
     if kind != 'woman':
         hz = b.hip_z
@@ -1573,9 +1612,9 @@ def build_villager(kind):
         parts += leg_parts(b, M, M['trousers'], [(0, 0.07), (0.6, 0.066), (1.0, 0.066)], n=10, cuff=0.018,
                            trouser_end=0.36, bare=M['skin'], bare_prof=[(0, 0.042), (0.6, 0.036), (1, 0.032)])
     for S in 'LR':
-        bt = boot(b, S, M['shoes'], M['dark'], shaft_top=0.13 * H / 1.45 if kind != 'kid' else 0.11,
-                  shaft_r=0.05 * H / 1.45 if kind != 'kid' else 0.042, width=0.05 * H / 1.5, toe_h=0.058 * H / 1.5,
-                  cuff=None, flare=1.04, tab=False, s=H / 1.5 if kind != 'kid' else 0.9, heel=0.05)
+        bt = boot(b, S, M['shoes'], M['dark'], shaft_top=0.13 * H / 1.45 if not child else 0.11,
+                  shaft_r=0.05 * H / 1.45 if not child else 0.042, width=0.05 * H / 1.5, toe_h=0.058 * H / 1.5,
+                  cuff=None, flare=1.04, tab=False, s=H / 1.5 if not child else 0.9, heel=0.05)
         parts.append(weigh(bt, leg_weights(S, b)))
     # ---- arms: sleeves (rolled for the man, short for the kid), mitten hands
     if kind == 'man':
@@ -1588,13 +1627,14 @@ def build_villager(kind):
         parts += arm_parts(b, M, M['shirt'], [(0, 0.05), (0.3, 0.05), (0.45, 0.052), (1.0, 0.05)], M['skin'],
                            sleeve_end=-0.55, roll=0.012, ball=0.048, bare_m=M['skin'],
                            hand_kw=dict(curl=0.4, s=0.85, mitten=True), n=10)
-    k = normalize_height(parts, b, H, style={'man': 'man', 'woman': 'villager-woman', 'kid': 'kid'}[kind], head=hd)
+    k = normalize_height(parts, b, H, style={'man': 'man', 'woman': 'villager-woman', 'kid': 'kid', 'girl': 'kid'}[kind], head=hd)
     arm = make_armature('Villager', b)
     body = skin(parts, arm, 'villager-' + kind, ao=AO)
     smooth_colors(body, 3, {'Skin'})
-    face_tints(body, hd, k, blush={'man': 0.3, 'woman': 0.6, 'kid': 0.75}[kind], az=40)
+    face_tints(body, hd, k, blush={'man': 0.3, 'woman': 0.6, 'kid': 0.75, 'girl': 0.85}[kind], az=40)
     style = {'man': dict(energy=0.9, arm_swing=0.9), 'woman': dict(energy=0.9, idle_hands=PA.hands_clasped_front, sway=1.1),
-             'kid': dict(energy=1.35, bounce=1.4, arm_swing=1.3, step=1.05)}[kind]
+             'kid': dict(energy=1.35, bounce=1.4, arm_swing=1.3, step=1.05),
+             'girl': dict(energy=1.3, bounce=1.35, arm_swing=1.2, step=1.05, sway=1.1)}[kind]
     anims.humanoid_clips(arm, b, 'villager-' + kind, ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Run', 'Jump', 'Bow', 'Interact', 'Hammer',
                                                      'Sweep', 'Carry', 'Sit', 'Throw', 'Kick'] + (['RideCow', 'RideCowTrot', 'RideCowLean', 'Crouch', 'CrouchWalk', 'CrouchReach', 'CrouchReachHold', 'Kneel', 'Pickup', 'SitGrass'] if kind == 'kid' else []), **style)
     return export_rigged('villager-' + kind, arm)
@@ -1602,4 +1642,4 @@ def build_villager(kind):
 
 BUILDERS = {'genzo': build_genzo, 'rin': build_rin, 'ota': build_ota, 'hana': build_hana, 'sora': build_sora,
             'villager-man': lambda: build_villager('man'), 'villager-woman': lambda: build_villager('woman'),
-            'villager-kid': lambda: build_villager('kid')}
+            'villager-kid': lambda: build_villager('kid'), 'villager-girl': lambda: build_villager('girl')}
