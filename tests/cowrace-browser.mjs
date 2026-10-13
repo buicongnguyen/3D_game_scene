@@ -1,5 +1,5 @@
 // The cow race and the cow ride in a real browser, desktop (1280x720) and phone (390x844, touch), through the real controls.
-//   node tests/cowrace-browser.mjs [--only=desktop|phone] [--quality=low,medium,high] [--story=grandma|classic] [--ride=0] [--shots=0] [--out=.tools/review/cows3-test]
+//   node tests/cowrace-browser.mjs [--only=desktop|phone] [--quality=low,medium,high] [--story=grandma|classic] [--ride=0] [--balance=0] [--shots=0] [--out=.tools/review/cows3-test]
 //   GAME_URL=http://127.0.0.1:5842/   (a vite dev or preview server must be running there, or it starts a dev server)
 // It checks that
 //   * in EVERY phase of the race (line-up, intro card, countdown, race, mud, finish, podium) all four riders (Mika, Kenta, Yui,
@@ -7,6 +7,8 @@
 //   * the first try shows the 3-step intro card, the beat ring is the big practice ring, a tap gets a word, the teacher answers the
 //     first taps, "?" pauses the race and brings the card back, and the results card explains the stars;
 //   * the free ride teaches itself by its own card (steer, hold to gallop, moo) and every gait and the dismount keep Mika seated;
+//   * in a bareback heat she leans with the controls, the balance arc follows and warns, held too far she slides off into the
+//     grass (sitting on the ground, not on the cow, not in the air), hops back on and is seated again;
 //   * quitting at every stage (line-up, card, countdown, race, podium) leaves the scene as it was, and nothing logs an error.
 import { createRequire } from 'module';
 import { mkdirSync, existsSync } from 'fs';
@@ -76,10 +78,11 @@ const RIDERS = () => {
 // what a round must not leave behind: its cows and riders in the scene, its cards and HUD in the page, its test hook, and (over repeated rounds) memory
 const LEFT = () => {
   const Q = window.__STARLINE_QA__, g = window.__STARLINE__, m = g.renderer.renderer.info.memory, left = [];
-  g.scene.traverse(o => { if (/racecow|racekid|race-podium/.test(o.name || '')) left.push(o.name); });
+  g.scene.traverse(o => { if (/racecow|racekid|race-podium|race-bumps|race-puddles/.test(o.name || '')) left.push(o.name); });
   for (const id of ['cowRace', 'cowCard']) if (document.getElementById(id)) left.push('#' + id);
   if (Q.cowRace) left.push('QA hook');
   if (document.body.classList.contains('cow-race')) left.push('body.cow-race');
+  if (g.player.model.rotation.z !== 0) left.push(`Mika still leans ${g.player.model.rotation.z.toFixed(2)}`);
   return { left, geometries: m.geometries, textures: m.textures, mounted: !!g.player.mounted, pose: g.player.pose };
 };
 
@@ -209,8 +212,9 @@ async function race(s, { quitAt = null, first = true } = {}) {
         done.steer = true;
         const before = t.lat, dir = before > 1.5 ? -1 : 1;
         if (s.touch) {
-          await s.touch_('touchStart', [{ x: 90, y: 640, id: 1 }]);
-          for (let i = 1; i <= 8; i++) { await s.touch_('touchMove', [{ x: 90 + dir * i * 8, y: 640, id: 1 }]); await sleep(70); }
+          // (the drag starts below the menu's "Stop playing" button, which sits at the left edge around y 600-650 on a phone)
+          await s.touch_('touchStart', [{ x: 90, y: 740, id: 1 }]);
+          for (let i = 1; i <= 8; i++) { await s.touch_('touchMove', [{ x: 90 + dir * i * 8, y: 740, id: 1 }]); await sleep(70); }
           await sleep(500); await s.touch_('touchEnd', []);
         } else { const key = dir > 0 ? 'KeyD' : 'KeyA'; await s.page.keyboard.down(key); await sleep(700); await s.page.keyboard.up(key); }
         const after = (await s.S()).lat;
@@ -256,6 +260,69 @@ async function race(s, { quitAt = null, first = true } = {}) {
   const fin = await s.S();
   check(fin.fixes === 0, `${s.name}: a rider had to be corrected ${fin.fixes} times`);
   return [...seen];
+}
+
+/**
+ * A bareback heat (the "wobbly final" of Normal, asked for on its own through the QA hook), through the real controls: she
+ * leans the way the player leans, the arc over her head follows, held too long she slides off INTO THE GRASS (sitting on the
+ * ground beside her cow, not standing on it, not floating), hops back on and is properly seated again; the help card has its
+ * fourth step; quitting leaves nothing of it behind.
+ */
+async function balance(s) {
+  const page = s.page;
+  await page.evaluate(() => { const Q = window.__STARLINE_QA__; Q.level = 'normal'; Q.cowHeats = ['bareback']; });
+  await s.launch('#mgChip');
+  const B = () => page.evaluate(() => {
+    const Q = window.__STARLINE_QA__, g = Q.game, R = Q.cowRace, me = R?.race?.racers[0], p = g.player, V = g.camera.position.constructor, rp = new V(), hp = new V();
+    p.root.updateMatrixWorld(true); p.root.getWorldPosition(rp); p.model.getObjectByName('hips')?.getWorldPosition(hp);
+    const gauge = document.querySelector('#cowRace .gauge'), mk = gauge?.querySelector('.mk');
+    return { phase: R?.dbg?.phase || null, bal: R?.race?.balance?.key || null, t: R?.race?.t ?? 0, tilt: me?.tilt ?? 0, fallT: me?.fallT ?? 0, falls: me?.falls ?? 0, spill: !!R?.dbg?.spill, fixes: R?.dbg?.fixes ?? 0, warns: R?.dbg?.warns ?? 0,
+      clip: p.anim.currentName, up: +(rp.y - g.world.heightAt(rp.x, rp.z)).toFixed(2), hipsUp: +(hp.y - rp.y).toFixed(2), roll: +p.model.rotation.z.toFixed(2),
+      gauge: gauge ? getComputedStyle(gauge).display !== 'none' : false, marker: mk?.getAttribute('transform') || '', warn: !!gauge?.classList.contains('warn'), prompt: gauge?.querySelector('.gl')?.textContent || '' };
+  });
+  let st = await skipTalk(s);
+  for (let i = 0; i < 150 && (st = await B()).phase !== 'race'; i++) { await s.seated(st.phase || 'wait'); await sleep(200); }
+  check(st.phase === 'race' && st.bal === 'gentle', `${s.name}: the bareback heat runs (${JSON.stringify(st)})`);
+  await page.waitForFunction(() => window.__STARLINE_QA__.cowRace?.race?.t > 2.4, null, { timeout: 15000 }).catch(() => {});
+  st = await B();
+  check(st.gauge && /rotate\(/.test(st.marker), `${s.name}: the balance arc is on screen (${JSON.stringify(st)})`);
+  // the "?" card of a day with a bareback heat has four steps and fits the screen
+  await s.hit('#cowRace .helpbtn'); await sleep(700);
+  const card = await page.evaluate(() => { const b = document.querySelector('#cowCard .box'); return { steps: document.querySelectorAll('#cowCard .st').length, arts: document.querySelectorAll('#cowCard .ch-art').length, bal: !!document.querySelector('#cowCard .balarc svg'), fits: b.scrollHeight <= b.clientHeight + 1 && b.getBoundingClientRect().bottom <= innerHeight && b.scrollWidth <= b.clientWidth + 1 }; });
+  check(card.steps === 4 && card.arts === 4 && card.bal && card.fits, `${s.name}: the help card of a bareback day has 4 steps and fits: ${JSON.stringify(card)}`);
+  await s.shot('balance-card');
+  await s.pressE(); await sleep(600);
+  // lean right and keep leaning: the marker goes right, she rolls right, the warning comes, then she is off
+  if (s.touch) { await s.touch_('touchStart', [{ x: 90, y: 740, id: 1 }]); await s.touch_('touchMove', [{ x: 150, y: 740, id: 1 }]); } else await page.keyboard.down('KeyD');
+  let warned = false, leaned = false, off = null;
+  for (let i = 0; i < 80 && !off; i++) {
+    st = await B();
+    if (st.tilt > 0.25 && !st.spill && !leaned) { leaned = true; check(st.roll > 0.08 && /^RideCow|^Sit$/.test(st.clip) && st.up > 1.1, `${s.name}: she leans right in the saddle (${JSON.stringify(st)})`); }
+    if (st.warn && !warned) { warned = true; check(/Lean left/.test(st.prompt), `${s.name}: the arc says which way to lean ("${st.prompt}")`); await s.shot('balance-warning'); }   // (the warning lasts a third of a second: seen when a poll lands in it)
+    if (st.spill) off = st; else await sleep(40);
+  }
+  if (s.touch) await s.touch_('touchEnd', []); else await page.keyboard.up('KeyD');
+  check(off && leaned && off.warns >= 1, `${s.name}: leaning too far tips her off, after a lean and a warning (${JSON.stringify({ off: !!off, leaned, warns: off?.warns, seen: warned })})`);
+  await sleep(750);
+  st = await B();
+  check(st.spill && st.clip === 'SitGrass' && Math.abs(st.up) < 0.2 && st.roll === 0 && st.falls === 1, `${s.name}: she sits in the grass beside her cow (${JSON.stringify(st)})`);
+  await s.shot('balance-in-the-grass');
+  await page.evaluate(() => { window.__STARLINE_QA__.cowRace.lean = 'bot'; });       // (from here the rules' careful rider keeps her on)
+  for (let i = 0; i < 60 && (st = await B()).spill; i++) await sleep(80);
+  check(!st.spill && st.fallT === 0, `${s.name}: she is back on within the fall's two seconds (${JSON.stringify(st)})`);
+  for (let i = 0; i < 6; i++) {
+    await sleep(250);
+    await s.seated('after the remount');
+    st = await B();
+    check(st.up > 1.2 && st.up < 1.7 && Math.abs(st.roll) < 0.35 && st.falls === 1, `${s.name}: back in the saddle, upright (${JSON.stringify(st)})`);
+  }
+  await s.shot('balance-back-on');
+  check(st.fixes === 0, `${s.name}: the fall and the remount needed ${st.fixes} seat corrections`);
+  await page.keyboard.press('Backspace');
+  await sleep(1500);
+  await page.evaluate(() => { const Q = window.__STARLINE_QA__; Q.level = null; Q.cowHeats = null; });
+  const c = await page.evaluate(LEFT);
+  check(c.left.length === 0 && !c.mounted && !c.pose, `${s.name}: after quitting the bareback heat the round is gone: ${JSON.stringify(c)}`);
 }
 
 /** Hay, feed, the floating hints, mount, the coach's three steps done by their own words, every gait, dismount. */
@@ -360,6 +427,7 @@ try {
       // (other systems stream things in and out near the track: a bounded drift is fine, a round that leaks would grow without bound; 7 repeated quits were flat in a manual run)
       check(c.geometries <= base.geometries + 120 && c.textures <= base.textures + 8, `${name}: after quitting at ${stage} memory is bounded (geometries ${base.geometries} -> ${c.geometries}, textures ${base.textures} -> ${c.textures})`);
     }
+    if (args.balance !== '0') { log(`== ${name}: the bareback heat`); await balance(s); }
     check(s.errors.length === 0, `${name}: console errors: ${s.errors.slice(0, 3).join(' | ')}`);
     log(`${name}: ${s.samples} rider checks, ${s.errors.length} errors`);
     await s.close();

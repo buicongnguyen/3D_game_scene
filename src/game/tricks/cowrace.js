@@ -3,8 +3,13 @@
 // hooves), Kenta, Yui and Daichi ride the others. Rules (pure, tested): ./rules-cowrace.js.
 //
 // A round is a small race day (rules-cowrace.js meetPlan): two heats on Easy (a warm-up without mud, then the classic race),
-// three on Normal (the classic race, then finals with grass in two lanes only) and three on Difficult (rivals that sprint for
-// the ribbon, rows of puddles to steer round, a tighter beat). The points of the heats add up; the podium shows the day's standings.
+// three on Normal (the classic race, a final with grass in two lanes only, a bareback final) and four on Difficult (rivals that
+// sprint for the ribbon, rows of puddles to steer round, a tighter beat, the rodeo final). The points of the heats add up; the
+// podium shows the day's standings.
+//
+// The bareback heats (rules-cowbalance.js): the cows keep their lanes and left / right LEANS the rider. She tips slowly to one
+// side (the whole rider rolls about the saddle, after the mixer; an arc over her head shows how far), and past the edge she
+// slides off into the grass, sits there a moment and hops back on. The village kids sway too and, in the rodeo, slide off as well.
 //
 // Drawing: the track, the ropes, the pennants, the gate and the stands are a few merged vertex-coloured meshes built once
 // (when Mika comes within sight, or for a round) and freed when she leaves. The spectators are two instanced meshes. The
@@ -13,12 +18,13 @@ import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { NPC } from '../../actors/npc.js';
-import { makeRig, removeRig, ridingMaterial, SEAT, KID_SEAT, playGait, riderPose, riderClip, seatRider, ensureSeated, hipsHeight, seatHeight } from '../../actors/cow-rig.js';
-import { RaceCard, icon } from '../../actors/cow-help.js';
+import { makeRig, removeRig, ridingMaterial, SEAT, KID_SEAT, playGait, riderPose, riderClip, isSeatedClip, seatRider, ensureSeated, hipsHeight, seatHeight } from '../../actors/cow-rig.js';
+import { RaceCard, icon, gaugeSvg } from '../../actors/cow-help.js';
 import { addCss, disposeRigs } from './util.js';
 import { SITE } from '../../content/cowtrack.js';
-import { TRACK, PRACTICE_BEAT, SURGE_FROM, PLACE_POINTS, meetPlan, newRace, stepRace, tap, tapKind, beatPhase, placeNow, result, raceScore } from './rules-cowrace.js';
-import { tapLabel, coachLine, COACH_TAPS, ghostDue, GHOST_SHOW, starsNote } from './rules-cowhelp.js';
+import { TRACK, COURSE, PRACTICE_BEAT, SURGE_FROM, PLACE_POINTS, BUMP_HALF, meetPlan, isBareback, newRace, stepRace, tap, tapKind, beatPhase, placeNow, result, raceScore, steady, botBalance } from './rules-cowrace.js';
+import { STEADY_BONUS, HOP } from './rules-cowbalance.js';
+import { tapLabel, coachLine, COACH_TAPS, ghostDue, GHOST_SHOW, starsNote, leanPrompt, GAUGE_SPAN } from './rules-cowhelp.js';
 
 const V3 = THREE.Vector3;
 /** The track: it starts at (x0, z) and runs east (+X). Lane 0 is the north-most (left when you look east is north). */
@@ -77,6 +83,16 @@ const CSS = `
 #cowRace .giddy svg{width:22px;height:22px;flex:none}
 #cowRace.touch .giddy{display:flex}
 #cowRace .giddy.hit{transform:scale(1.1);filter:brightness(1.12)}
+#cowRace .gauge{position:absolute;left:0;top:0;width:160px;height:62px;margin:-112px 0 0 -80px;display:none;filter:drop-shadow(0 2px 3px rgba(40,20,0,.4));will-change:transform;transform-origin:80px 112px}
+@media (max-height:480px){#cowRace.bal.racing .say{display:none}}
+#cowRace.bal.racing .gauge{display:block}
+#cowRace.fin .gauge{display:none!important}
+#cowRace .gauge svg{display:block;width:160px;height:62px;overflow:visible}
+#cowRace .gauge .gl{position:absolute;left:50%;bottom:calc(100% + 6px);transform:translateX(-50%);padding:2px 12px;border-radius:12px;background:#e4584a;color:#fff;font:700 15px Fredoka,Nunito,sans-serif;white-space:nowrap;display:none;box-shadow:0 2px 0 #a8321f}
+#cowRace .gauge.warn .gl{display:block}
+#cowRace .gauge.warn svg{animation:cowGaugeShake .24s linear infinite}
+#cowRace .gauge.off svg{opacity:.4}
+@keyframes cowGaugeShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
 body.cow-race #inventory{visibility:hidden}
 #cowRace.fin .giddy,#cowRace.fin .ghostf{display:none!important}#cowRace.fin .beat{opacity:0}
 #cowRace .giddy:active{transform:translateY(4px)}
@@ -331,7 +347,7 @@ export default {
         <div class="chip tired off"><span class="ic">${icon('puff')}</span><span class="lb"></span><span class="bar"><i></i></span></div>
         <div class="chip boost off"><span class="ic">${icon('grass')}</span><span class="lb"></span><span class="bar"><i></i></span></div>
         <button class="helpbtn" type="button">?</button></div>
-      <div class="say"></div><div class="big"></div>
+      <div class="say"></div><div class="big"></div><div class="gauge"><div class="gl"></div><span class="gs"></span></div>
       <div class="beat${practice ? ' lg' : ''}"><div class="cap"></div><div class="pop"></div><div class="shrink"></div><div class="core">${icon('hoof')}</div>
         <div class="ghost"><span class="kc">E</span><span class="gt"></span></div></div>
       <svg class="ghostf" viewBox="0 0 32 40"><path d="M12 4a3 3 0 0 1 6 0v14l4-1a3 3 0 0 1 3 4l-2 12a6 6 0 0 1-6 5h-4a7 7 0 0 1-6-4L3 24a3 3 0 0 1 5-3l4 5z" fill="#fff" stroke="#5a3a22" stroke-width="2"/></svg>
@@ -339,7 +355,7 @@ export default {
     document.body.appendChild(root);
     const q = s => root.querySelector(s);
     const el = { strip: q('.strip'), m1: q('.m1'), place: q('.place'), say: q('.say'), big: q('.big'), shrink: q('.shrink'), core: q('.core'), beat: q('.beat'), cap: q('.cap'), pop: q('.pop'),
-      ghost: q('.ghost'), ghostf: q('.ghostf'), giddy: q('.giddy'), dots: [], help: q('.helpbtn'),
+      ghost: q('.ghost'), ghostf: q('.ghostf'), giddy: q('.giddy'), dots: [], help: q('.helpbtn'), gauge: q('.gauge'), gl: q('.gauge .gl'), gs: q('.gauge .gs'), mk: null,
       streak: q('.chip.streak'), streakV: q('.chip.streak .v'), tired: q('.chip.tired'), tiredBar: q('.chip.tired .bar i'), boost: q('.chip.boost'), boostBar: q('.chip.boost .bar i') };
     const mudA = TRACK.mud[0] / TRACK.len * 100, mudB = TRACK.mud[1] / TRACK.len * 100;
     el.m1.style.left = `${(8 + mudA * 0.84).toFixed(1)}%`; el.m1.style.width = `${((mudB - mudA) * 0.84).toFixed(1)}%`;
@@ -370,17 +386,92 @@ export default {
 
     // ---- the pooled actors: four cows, three kid riders, Mika's seat
     const cows = [], kids = [], rigs = [];
-    let S = null, race = null, me = null, puddles = null, cleaned = false, fixes = 0;
+    let S = null, race = null, me = null, puddles = null, bumps = null, cleaned = false, fixes = 0, dayBalance = false;
     const slabs = [];                                  // the podium blocks (made at the end of a race)
     const tmp = { x: 0, y: 0, z: 0 }, v1 = new V3();
     const syncRigs = () => { for (let i = 0; i < rigs.length; i++) { cows[i].root.updateMatrixWorld(true); rigs[i].userData.update(); } };
     const seatM = new THREE.Object3D();
+    // ---- the riders' balance (the bareback heats). One record per racer (0 = Mika), made once: nothing is allocated in a race.
+    //   lean   the roll shown now (radians, + = to her right), eased toward the rules' tilt; flail: arms out in the red (0..1)
+    //   spill  a fall being played: t seconds in, side (-1 left, +1 right), cost (its whole length), sat (she has landed)
+    //   bones  what is bent on top of the clip, after the mixer (see bend())
+    const LEAN_MAX = 0.6, SLIDE = 0.45, SPILL_X = 1.2;
+    const fallM = new THREE.Object3D();                // where Mika is while she is off her cow (in the cow's own space)
+    const riders = [0, 1, 2, 3].map(() => ({ model: null, anim: null, lean: 0, flail: 0, spill: false, t: 0, side: 1, cost: 2, sat: false, seatY: 0, bones: [] }));
+    const boneOf = (model, name, axis, k) => { const b = model?.getObjectByName?.(name); return b ? { b, axis, k, base: new THREE.Quaternion(), out: new THREE.Quaternion(), has: false } : null; };
+    const rigRider = (R, model, anim) => {
+      R.model = model; R.anim = anim;
+      // the spine leans with the roll, the head stays a little more upright, the arms come out as she flails
+      R.bones = [boneOf(model, 'spine', 'lean', 0.3), boneOf(model, 'head', 'lean', -0.35), boneOf(model, 'upperarm_L', 'flail', -0.85), boneOf(model, 'upperarm_R', 'flail', 0.85)].filter(Boolean);
+    };
+    /**
+     * Turn a bone about its own Z on top of what the clip gave it. The mixer only writes a bone again when the clip's value
+     * for it has changed, so the turn must not pile up frame after frame: when the bone still holds what was written here
+     * last frame, the clip's own value is put back first.
+     */
+    const bend = (o, angle) => {
+      const q = o.b.quaternion;
+      if (o.has && q.equals(o.out)) q.copy(o.base); else o.base.copy(q);
+      o.has = Math.abs(angle) > 1e-4;
+      if (!o.has) return;
+      o.b.rotateZ(angle);
+      o.out.copy(q);
+    };
+    const poseRiders = () => {
+      for (let i = 0; i < 4; i++) {
+        const R = riders[i];
+        if (!R.model) continue;
+        R.model.rotation.z = R.lean;
+        for (let k = 0; k < R.bones.length; k++) { const o = R.bones[k]; bend(o, o.axis === 'lean' ? R.lean * o.k : R.flail * o.k); }
+      }
+    };
+    /** Rider i is back in the saddle, upright, on a ride clip: after a fall, between heats, at the end. */
+    const settle = i => {
+      const R = riders[i];
+      R.spill = false; R.sat = false; R.t = 0; R.lean = 0; R.flail = 0;
+      if (i === 0) { if (p.mounted) { p.pose = riderPose(p.anim); p.poseSpeed = 1; if (!isSeatedClip(p.anim?.currentName)) seatRider(p.anim, 'RideCow'); } }
+      else if (kids[i - 1]) { const k = kids[i - 1]; k.root.position.set(KID_SEAT.x, R.seatY, KID_SEAT.z); if (!isSeatedClip(k.anim?.currentName)) seatRider(k.anim, 'RideCow'); }
+    };
+    /** Rider i slides off to `side` (the rules have just said so). */
+    const spillStart = (i, side, cost) => { const R = riders[i]; R.spill = true; R.sat = false; R.t = 0; R.side = side; R.cost = cost; };
+    /**
+     * One frame of a fall, in the cow's own space (+X is the cow's left): the slide down the flank (SLIDE s), sitting in the
+     * grass, and the hop back up over the last HOP s. Returns 'land' on the frame she touches the grass, 'hop' when she jumps.
+     */
+    const spillStep = (i, dt) => {
+      const R = riders[i];
+      R.t += dt;
+      const at = i === 0 ? fallM.position : kids[i - 1].root.position, seatY = i === 0 ? SEAT.y : R.seatY, seatZ = i === 0 ? SEAT.z : KID_SEAT.z;
+      const gx = -R.side * SPILL_X, hopAt = Math.max(SLIDE + 0.3, R.cost - HOP);
+      let what = null;
+      if (R.t < SLIDE) {
+        const e = R.t / SLIDE, e2 = e * e;
+        at.set(gx * e, seatY * (1 - e2) + Math.sin(e * Math.PI) * 0.12, seatZ);
+        R.lean = R.side * (LEAN_MAX + (1.25 - LEAN_MAX) * e); R.flail = 1;
+      } else if (R.t < hopAt) {
+        if (!R.sat) { R.sat = true; what = 'land'; }
+        at.set(gx, 0, seatZ);
+        R.lean = 0; R.flail = 0;
+      } else {
+        if (R.sat) { R.sat = false; what = 'hop'; }
+        const e = Math.min(1, (R.t - hopAt) / HOP), k = 1 - (1 - e) * (1 - e);
+        at.set(gx * (1 - k), seatY * k + Math.sin(e * Math.PI) * 0.3, seatZ);
+        R.lean = -R.side * 0.25 * (1 - e); R.flail = (1 - e) * 0.6;
+      }
+      return what;
+    };
     const was = { zoom: g.follow.zoomTarget, pose: p.pose };
     const qa = typeof window !== 'undefined' && window.__STARLINE_QA__ ? (window.__STARLINE_QA__.cowRace = { cows, kids, race: null, site: null, dbg: { fixes: 0, helpOpen: false, taps: 0, ghost: false, phase: 'setup' } }) : null;
     const cleanup = () => {
       if (cleaned) return;
       cleaned = true;
       p.mounted = null; p.pose = was.pose ?? null; p.poseSpeed = 1;
+      // the lean and the fall leave nothing on her: upright, the bones as the clips give them
+      for (const R of riders) { R.lean = R.flail = 0; R.spill = false; }
+      poseRiders();
+      for (const R of riders) { R.model = null; R.bones.length = 0; }
+      fallM.removeFromParent();
+      if (bumps) { bumps.removeFromParent(); bumps.geometry.dispose(); bumps.dispose(); bumps = null; }
       p.anim?.cancelOneShot();
       p.anim?.snap(p.anim.has(was.pose) ? was.pose : 'Idle');      // standing again on the very frame she leaves the seat
       for (const c of cows) { c.root.parent?.remove(c.root); c.root.removeFromParent(); disposeRigs(c.root); }
@@ -408,11 +499,12 @@ export default {
     // Every rider is posed by the same per-frame step in EVERY phase (the line-up, the hint card, the countdown, the race,
     // the podium): the animators of the cows and the kids belong to nobody else, so a phase that did not tick them left the
     // kids in their bind pose, standing on the cows' backs. After the ticks each rider is checked and corrected if it is not
-    // on a ride clip (this must never fire; it is counted in fixes and logged).
+    // on a ride clip (this must never fire; it is counted in fixes and logged). A rider who has slid off in a bareback heat
+    // (riders[i].spill) is the one exception: she sits in the grass beside her cow until she hops back on.
     const keepSeated = () => {
       const fix = (anim, who) => { if (ensureSeated(anim, 'RideCow')) { fixes++; if (fixes <= 3) console.warn(`[cowrace] ${who} was not on a ride clip: corrected`); } };
-      kids.forEach((k, i) => fix(k.anim, race?.racers[i + 1]?.id || `kid${i + 1}`));
-      if (p.mounted) fix(p.anim, 'mika');
+      kids.forEach((k, i) => { if (!riders[i + 1].spill) fix(k.anim, race?.racers[i + 1]?.id || `kid${i + 1}`); });
+      if (p.mounted && !riders[0].spill) fix(p.anim, 'mika');
     };
     const tick = dt => {
       for (const c of cows) c.anim?.update(dt);
@@ -420,12 +512,13 @@ export default {
       syncRigs();
       poseMika();
       keepSeated();
+      poseRiders();
       if (qa) qa.dbg.fixes = fixes;
     };
     const poseMika = () => {
       if (!race) return;
       cows[0].root.updateMatrixWorld(true);
-      seatM.getWorldPosition(p.pos);
+      (riders[0].spill ? fallM : seatM).getWorldPosition(p.pos);
       p.facing = cows[0].facing;
       p.root.position.copy(p.pos);
       p.root.rotation.y = p.facing;
@@ -435,7 +528,7 @@ export default {
 
     // the help card ("?"): the same three steps as the intro, reopened any time; the race stands still while it is up
     let helpGrace = 0;
-    const openHelp = start => new Promise(res => { helpOpen = true; helpGrace = 0; card.open(() => { helpOpen = false; res(); }, { start }); });
+    const openHelp = start => new Promise(res => { helpOpen = true; helpGrace = 0; card.open(() => { helpOpen = false; res(); }, { start, balance: dayBalance }); });
     /** Called by every waiting step and the race: opens the card on "?", closes it on E / Space; true while it is up. */
     const pollHelp = dt => {
       if (helpReq && !helpOpen) { helpReq = false; openHelp(!race || race.t === 0); }
@@ -465,6 +558,9 @@ export default {
       const rig = makeRig(cows[0].root); cows[0].root.add(rig); rigs.push(rig);
       seatM.position.set(SEAT.x, SEAT.y, SEAT.z);
       cows[0].root.add(seatM);
+      fallM.position.copy(seatM.position);
+      cows[0].root.add(fallM);
+      rigRider(riders[0], p.model, p.anim);
       for (let i = 1; i < 4; i++) {
         const r = makeRig(cows[i].root); cows[i].root.add(r); rigs.push(r);
         const k = new NPC(scene, g.assets, world, `racekid${i}`, 'villager-kid', { x: SITE.x0, z: SITE.z, tint: NPC.villagerTint(KID_TINTS[i - 1]) });
@@ -476,14 +572,19 @@ export default {
         // the seat height comes from the kid's own skeleton (hips in the bind pose = its size, hips in the ride pose), then it sits
         const bindHips = hipsHeight(k.model, k.root);
         seatRider(k.anim, 'RideCow');                  // seated before the first frame is drawn: never the bind pose
-        k.root.position.y = seatHeight(bindHips, hipsHeight(k.model, k.root));
+        k.root.position.y = riders[i].seatY = seatHeight(bindHips, hipsHeight(k.model, k.root));
+        rigRider(riders[i], k.model, k.anim);
         kids.push(k);
       }
       document.body.classList.add('cow-race');
       root.classList.add('on');
 
       // ---- the race day: the heats of the level (the picker's choice; the first try is Easy's day with a practice lap first)
-      const plan = meetPlan(ctx.level, ctx.first), heats = plan.heats.length;
+      const plan = meetPlan(ctx.level, ctx.first);
+      // (a QA script may ask for a day of its own, e.g. one bareback heat: window.__STARLINE_QA__.cowHeats = ['bareback'])
+      if (qa && !ctx.first && Array.isArray(window.__STARLINE_QA__.cowHeats)) { const own = window.__STARLINE_QA__.cowHeats.filter(c => COURSE[c]); if (own.length) plan.heats = own.map(course => ({ course, assist: 0, practice: false })); }
+      const heats = plan.heats.length;
+      dayBalance = plan.heats.some(h => isBareback(h.course));       // (the "?" card then has its fourth step: keep your balance)
       const points = [0, 0, 0, 0], places = [];            // the day's standings (Mika, Kenta, Yui, Daichi) and Mika's place in each heat
       let total = 0, raceTime = 0, heat = 0, rs = null, res = null;
       // puddles (Difficult): one small instanced mesh for the whole day, laid out again for each heat
@@ -497,6 +598,19 @@ export default {
         puddles = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.25, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 }), PUD_MAX);
         puddles.name = 'race-puddles'; puddles.count = 0; puddles.frustumCulled = false; puddles.receiveShadow = true;
         scene.add(puddles);
+      }
+      // the ridges of the rodeo final: a low earth bank across all four lanes with a straw line on top (one small instanced
+      // mesh, made only on a day that has them)
+      const BUMP_MAX = 5;
+      if (plan.heats.some(h => COURSE[h.course]?.bumps)) {
+        const w = TRACK.lanes * TRACK.laneW + 0.5;
+        const parts = [paint(new THREE.CylinderGeometry(0.34, 0.34, w, 10).rotateX(Math.PI / 2).scale(1, 0.42, 1), '#7a5a3a'),     // (its lower half is in the ground)
+          paint(new THREE.BoxGeometry(0.16, 0.03, w - 0.3).translate(0, 0.145, 0), '#e8c86a')];
+        const geo = mergeGeometries(parts);
+        for (const q of parts) q.dispose();
+        bumps = new THREE.InstancedMesh(geo, ridingMaterial(), BUMP_MAX);
+        bumps.name = 'race-bumps'; bumps.count = 0; bumps.frustumCulled = false; bumps.receiveShadow = true;
+        scene.add(bumps);
       }
       const startHeat = h => {
         const ht = plan.heats[h];
@@ -516,6 +630,28 @@ export default {
           puddles.setMatrixAt(i, M4);
         }
         puddles.instanceMatrix.needsUpdate = true;
+        if (bumps) {
+          const U = race.course.bumps;
+          bumps.count = Math.min(BUMP_MAX, U.length);
+          for (let i = 0; i < bumps.count; i++) {
+            trackPos(world, U[i], (TRACK.lanes - 1) / 2, tmp);
+            M4.compose(P4.set(tmp.x, tmp.y + 0.03, tmp.z), Q4.identity(), S4.set(1, 1, 1));
+            bumps.setMatrixAt(i, M4);
+          }
+          bumps.instanceMatrix.needsUpdate = true;
+        }
+        // a bareback heat: the balance arc over Mika's head, its green middle as wide as this heat's safe zone
+        for (let i = 0; i < 4; i++) settle(i);
+        const B = race.balance;
+        root.classList.toggle('bal', !!B);
+        el.gauge.classList.remove('warn', 'off');
+        el.gs.innerHTML = B ? gaugeSvg({ span: GAUGE_SPAN, warn: B.warn }) : '';
+        el.mk = B ? el.gs.querySelector('.mk') : null;
+        el.gd = 999; el.gw = false; el.gp = ''; el.gx = el.gy = -1; el.goff = false;
+        el.zoom = parseFloat(getComputedStyle(root).zoom) || 1;
+        // a phone held sideways is short: a smaller arc, and the teacher keeps quiet about tips and falls (her bubble would hide Mika)
+        el.short = window.innerHeight / el.zoom < 480;
+        el.gk = el.short ? ' scale(.7)' : '';
         race.racers.forEach((r, i) => place(i, -1.8, r.lane));
         root.classList.remove('fin', 'racing');
         root.querySelector('.beat').classList.toggle('lg', !!ht.practice);
@@ -584,7 +720,11 @@ export default {
         surge: N_('Near the ribbon the others sprint. Keep your streak for the end!'),
         puddles: N_('Puddles! A splash slows her down. Steer round them.'),
         grand: N_('The grand final: puddles, grass and a sprint. Plan your lanes!'),
+        // (the players call a bareback heat "the wobbly final": the cow keeps her blanket on, and a child knows "wobbly")
+        bareback: touch ? N_('The wobbly final! She tips to one side. Drag the other way to stay on!') : N_('The wobbly final! She tips to one side. Press A or D to lean the other way!'),
+        rodeo: N_('The rodeo final! Bumps shake her. Lean the other way, quick!'),
       };
+      const saidBal = { tip: false, fall: false };       // the teacher explains a tip and a fall once a day
       for (heat = 0; heat < heats; heat++) {
       const practiceLap = !!plan.heats[heat].practice;
       if (heat > 0) {
@@ -617,8 +757,8 @@ export default {
       const beat = race.beat;
       let lastBeatN = -1, mudShown = false, tiredShown = false, said = 0, lineAt = 0, popLeft = 0, finishedMe = false, lastPlace = 0, ribbonT = 0, hintLevel = 0;
       let taps = 0, goodRow = 0, ghostEnd = -99, ghostUntil = -1, ghostOn = false, puddleSaid = false, surgeSaid = false;
-      const practice = practiceLap;                     // (the first heat of a first try: a word for every tap, the teacher's tips)
-      el.sayLeft = Math.min(el.sayLeft || 0, 0.6);
+      const B = race.balance, U = race.course.bumps;    // a bareback heat: left / right leans the rider (the cows keep their lanes); the ridges
+      const practice = practiceLap;                     // (the first heat of a first try: a word for every tap, the teacher's tips)      el.sayLeft = Math.min(el.sayLeft || 0, 0.6);
       const kidSay = [N_('Come on, cow! Come ON!'), N_('Slow and steady, Moo-moo!'), N_('Look at her go!'), N_('Mud ahead! Mind your socks!'), N_('Yeah, Mika! Yeah!')];
       const TONE = { good: '#bff5c2', ok: '#ffe9a0', bad: '#ffb3a8' };
       const pop = (text, color, life = 0.5) => { el.pop.textContent = text; el.pop.style.color = color || '#fff'; el.pop.style.transition = 'none'; el.pop.style.opacity = '1'; el.pop.style.transform = 'translateX(-50%) translateY(0)'; popLeft = life; };
@@ -646,11 +786,30 @@ export default {
             if (qa) qa.dbg.taps = taps;
           }
         }
-        stepRace(race, dt, { steer: input.move.x });
+        // (a QA script may ride for her: qa.lean = 'bot' leans like the rules' careful rider, a number is a held lean)
+        stepRace(race, dt, { steer: input.move.x, lean: qa?.lean == null ? input.move.x : qa.lean === 'bot' ? botBalance(race) : qa.lean });
+        if (qa) { qa.dbg.tilt = me.tilt; qa.dbg.falls = me.falls; qa.dbg.spill = riders[0].spill; }
         // ---- the events of this frame
         for (const e of race.events) {
           const a = cows[e.who];
-          if (e.type === 'grass') {
+          if (e.type === 'wobble') {
+            audio.bad();
+            if (qa) qa.dbg.warns = (qa.dbg.warns || 0) + 1;
+            if (!saidBal.tip && !el.short) { saidBal.tip = true; ctx.hint(N_('She is tipping! Lean the other way.'), 3); }
+          } else if (e.type === 'fall') {
+            spillStart(e.who, e.side, race.racers[e.who].fallT);
+            audio.whoosh?.(3);
+            if (e.who === 0) {
+              audio.miss(); popMsg(tx(N_('Whoops!')), '#ffd0c0');
+              if (!saidBal.fall && !el.short) { saidBal.fall = true; ctx.hint(N_('Whoops, off she slides! Up she hops again. Lean a little sooner.'), 3.5); }
+            } else if (!finishedMe) say(tx(N_('{name} slid off!'), { name: race.racers[e.who].name }), 1.8);
+          } else if (e.type === 'remount') {
+            settle(e.who);
+            if (e.who === 0) { seatRider(p.anim, 'RideCow'); audio.good(); popMsg(tx(N_('Back on!')), '#d5ffa8'); }
+            else seatRider(kids[e.who - 1].anim, 'RideCow');
+          } else if (e.type === 'bump') {
+            audio.land?.(0.5); popMsg(tx(N_('Bump!')), '#ffe9a0');
+          } else if (e.type === 'grass') {
             S.eat(Math.max(0, Math.min(7, race.racers[e.who].lane * 2 + e.i)));
             fx.burst(v1.set(a.pos.x, a.pos.y + 1.1, a.pos.z), { n: 12, color: [0.45, 0.85, 0.3], speed: 1.6, size: 0.2, gravity: 1 });
             if (e.who === 0) { audio.good(); popMsg(tx(N_('Yum! Fresh grass!')), '#d5ffa8'); }
@@ -675,9 +834,11 @@ export default {
             if (e.who === 0) {
               finishedMe = true;
               root.classList.add('fin');
-              say(who.place === 1 ? tx(N_('Mika is first!')) : tx(N_('Mika crosses the line!')), 2.4);
-              ctx.hud(total + raceScore(who.place, who.finished), null);
+              const st = steady(race);                     // bareback and never in the grass: the bonus
+              say((who.place === 1 ? tx(N_('Mika is first!')) : tx(N_('Mika crosses the line!'))) + (st ? ` ${tx(N_('Steady rider! +{n}'), { n: STEADY_BONUS })}` : ''), st ? 3 : 2.4);
+              ctx.hud(total + raceScore(who.place, who.finished) + (st ? STEADY_BONUS : 0), null);
               audio.good();
+              if (st) audio.star?.();
             } else if (!finishedMe) say(tx(N_('{name} is across!'), { name: who.name }), 1.8);
           }
         }
@@ -691,9 +852,33 @@ export default {
           a.facing = Math.PI / 2 - lean;
           a.pos.set(tmp.x, tmp.y, tmp.z);
           const bob = r.v > 0.4 ? Math.abs(Math.sin(r.stride * 1.9)) * (0.012 + r.v * 0.012) : 0;
-          a.root.position.set(a.pos.x, a.pos.y + bob, a.pos.z);
+          let hop = 0;                                   // a ridge of the rodeo final: every cow hops it
+          for (let k = 0; k < U.length; k++) { const d = Math.abs(r.s - U[k]); if (d < BUMP_HALF) hop = Math.cos(d / BUMP_HALF * Math.PI / 2) * 0.17; }
+          a.root.position.set(a.pos.x, a.pos.y + bob + hop, a.pos.z);
           a.root.rotation.y = a.facing;
           a.root.rotation.x = Math.sin(r.stride * 1.9) * 0.012;
+          // the rider's lean: in a bareback heat the rules' tilt (arms out in the red), else a little sway with the stride
+          const R = riders[i];
+          if (R.spill) {
+            // off her cow: the slide, the sit in the grass, the hop back (the cow stands and waits)
+            const what = spillStep(i, dt), an = kid ? kid.anim : p.anim;
+            if (what === 'land') {
+              const sit = an?.has('SitGrass') ? 'SitGrass' : riderPose(an);
+              if (kid) an?.snap(sit); else { p.pose = sit; p.poseSpeed = 1; an?.snap(sit); }
+              fx.burst(v1.set(a.pos.x, a.pos.y + 0.25, a.pos.z + R.side * SPILL_X), { n: 12, color: [0.5, 0.82, 0.35], speed: 1.8, size: 0.2, gravity: 3 });
+              if (i === 0) audio.land?.(0.7);
+            } else if (what === 'hop') {
+              if (kid) seatRider(an, 'RideCow'); else { p.pose = riderPose(an); p.poseSpeed = 1; seatRider(an, 'RideCow'); }
+              if (i === 0) audio.jump?.();
+            }
+            playGait(a.anim, r.v, false, 0.15);
+            continue;
+          }
+          const sway = r.v > 0.4 ? Math.sin(r.stride * 0.95 + i * 1.7) * Math.min(0.045, r.v * 0.015) : 0;
+          const want = B && r.finished == null ? r.tilt * LEAN_MAX + sway * 0.5 : sway;
+          R.lean += (want - R.lean) * Math.min(1, dt * 12);
+          const fl = B && r.finished == null ? Math.max(0, Math.min(1, (Math.abs(r.tilt) - B.warn) / (1 - B.warn))) : 0;
+          R.flail += (fl - R.flail) * Math.min(1, dt * 10);
           if (r.finished != null && r.v < 0.5) {
             // across the line and standing: the cow stands, the rider keeps sitting (the sway clip), nobody cheers on her back
             a.anim?.play('Idle', { fade: 0.4 });
@@ -714,6 +899,22 @@ export default {
         ctx.hud(total + raceScore(placeNow(race), null), race.t);
         if (race.course.surge && !surgeSaid && !finishedMe && me.s > TRACK.len - SURGE_FROM - 5) { surgeSaid = true; said = 4; say(tx(N_('Here they come! Sprint for the ribbon!')), 2.4); }
         drawStrip();
+        if (B && el.mk) {
+          // the balance arc: it stands over Mika (its centre is her saddle on the screen), the marker tips as she does. The
+          // page is touched only when a whole degree, a pixel or the warning changes
+          const gd = Math.round(Math.max(-1, Math.min(1, me.tilt)) * GAUGE_SPAN);
+          if (gd !== el.gd) { el.gd = gd; el.mk.setAttribute('transform', `rotate(${gd} 80 112)`); }
+          const gw = me.fallT <= 0 && Math.abs(me.tilt) >= B.warn;
+          if (gw !== el.gw) { el.gw = gw; el.gauge.classList.toggle('warn', gw); }
+          const gp = gw ? leanPrompt(me.tilt, B.warn) : '';
+          if (gp !== el.gp) { el.gp = gp; el.gl.textContent = gp ? tx(gp) : ''; }
+          const goff = me.fallT > 0;
+          if (goff !== el.goff) { el.goff = goff; el.gauge.classList.toggle('off', goff); }
+          cows[0].root.updateMatrixWorld(true);
+          seatM.getWorldPosition(v1).project(g.camera);
+          const gx = Math.round((v1.x * 0.5 + 0.5) * window.innerWidth / el.zoom), gy = Math.round((0.5 - v1.y * 0.5) * window.innerHeight / el.zoom);
+          if (Math.abs(gx - el.gx) + Math.abs(gy - el.gy) >= 2) { el.gx = gx; el.gy = gy; el.gauge.style.transform = `translate(${gx}px,${gy}px)${el.gk}`; }
+        }
         const pl = placeNow(race);
         if (pl !== lastPlace) { lastPlace = pl; el.place.textContent = tx(ordinal(pl)); }
         // the ring: an outer ring closes on the core exactly at each beat
@@ -759,6 +960,7 @@ export default {
       if (res?.quit || ctx.quit) return { score: 0, quit: true };
       setGhost(false);
       root.classList.remove('racing');
+      for (let i = 0; i < 4; i++) if (riders[i].spill) { settle(i); seatRider(i ? kids[i - 1].anim : p.anim, 'RideCow'); } else riders[i].lean = riders[i].flail = 0;   // (the clock ran out on a rider in the grass: back in the saddle)
       // ---- the heat is run: its points join the day's
       rs = result(race);
       total += rs.score; raceTime += rs.time ?? TRACK.timeout; places.push(rs.place);

@@ -63,9 +63,17 @@ export function skipRideStep(c) { if (c.step < RIDE_STEPS.length) { c.doneT = 0;
 export const rideCoachDone = c => c.step >= RIDE_STEPS.length;
 
 // -------------------------------------------------------------------------------------------------- the cow race: card
-/** The three steps of the race's intro card (all shown at once): steer, tap on the beat, do not mash. */
+/**
+ * The steps of the race's intro card (all shown at once): steer, tap on the beat, do not mash. Step 3 (the fourth) is shown
+ * on a race day with a bareback heat (rules-cowbalance.js): keep your balance.
+ */
+export const RACE_STEPS = ['rsteer', 'rbeat', 'rmash', 'rbalance'];
 export function raceStepText(step, touch) {
   switch (step) {
+    case 3: return {
+      title: N_('4. Keep your balance'),
+      text: touch ? N_('In a wobbly final she tips to one side. Drag the other way to stay on!') : N_('In a wobbly final she tips to one side. Press A or D to lean the other way!'),
+    };
     case 0: return {
       title: N_('1. Steer'),
       text: touch ? N_('Drag on the left side of the screen to steer between the lanes.') : N_('Press A and D (or the arrow keys) to steer between the lanes.'),
@@ -131,6 +139,15 @@ export const STARS_NOTE = N_('Stars: 1st place = 3 stars. A slower place or time
 /** The same for a race day of several heats (the levels: rules-cowrace.js meetPlan). */
 export const STARS_NOTE_DAY = N_('Stars: the points of all heats add up. Win every heat for 3 stars.');
 export const starsNote = heats => (heats > 1 ? STARS_NOTE_DAY : STARS_NOTE);
+
+// ------------------------------------------------------------------------------------------ the bareback heats: the gauge
+/** What the balance gauge tells the rider: nothing while she sits well, which way to lean once she tips into the red. */
+export function leanPrompt(tilt, warn) {
+  if (Math.abs(tilt) < warn) return '';
+  return tilt > 0 ? N_('Lean left!') : N_('Lean right!');
+}
+/** Degrees either side of straight up that the gauge's arc spans; the marker stands at tilt * GAUGE_SPAN. */
+export const GAUGE_SPAN = 56;
 
 /** The floating hint over a cow: what to do next with her, from where Mika stands. */
 export function cowHintText(kind, near) {

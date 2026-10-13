@@ -204,10 +204,12 @@ export const TRICKS = [
     why: 'Cows have a steady walking rhythm, so a rider moves with it. Racing oxen are fed, cheered and rested, never hit: a happy cow runs best.',
     safety: 'Never ride a real cow without a grown-up who knows her.',
     // a race day of heats (tricks/rules-cowrace.js meetPlan): a heat is 80 / 50 / 30 / 10 by place plus up to 25 for a
-    // quick time, and the heats add up. Easy: two heats (about 205 at best). Normal: three (about 305): three stars want
-    // two wins and a second. Difficult: three heats with sprints, puddles and a tight beat (length: about a round, not a timer)
-    stars: [100, 200, 270], length: 95, firstLength: 65, unit: 'points',
-    levels: { easy: { stars: [60, 130, 180], length: 65 }, normal: { stars: [100, 200, 270], length: 95 }, hard: { stars: [100, 190, 270], length: 95 } },
+    // quick time, and the heats add up; a bareback heat (rules-cowbalance.js) ridden without a fall adds 15. Easy: two heats
+    // (about 205 at best), nobody falls off. Normal: three, the last one bareback (330 at best): three stars want two wins,
+    // a second and a steady ride. Difficult: four heats with sprints, puddles, a tight beat and the rodeo final (435 at best).
+    // Tuned with the bots of tests/cowrace.test.mjs (.tools/cow-tune.mjs). (length: about a round, not a timer)
+    stars: [100, 200, 280], length: 95, firstLength: 65, unit: 'points',
+    levels: { easy: { stars: [60, 130, 180], length: 65 }, normal: { stars: [100, 200, 280], length: 95 }, hard: { stars: [130, 250, 360], length: 125 } },
   },
   {
     // the henhouse itself is built by tricks/eggs.js (HOUSE): the sign stands at its right corner, beside the egg basket

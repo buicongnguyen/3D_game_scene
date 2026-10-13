@@ -67,6 +67,21 @@ test('the race card has three steps for a phone and a keyboard', () => {
   assert.match(raceStepText(2, false).text, /too fast|mash/i);
 });
 
+test('a race day with a bareback heat has a fourth step: keep your balance (the first three stay as they were)', async () => {
+  const { RACE_STEPS } = await import('../src/game/tricks/rules-cowhelp.js');
+  assert.deepEqual(RACE_STEPS, ['rsteer', 'rbeat', 'rmash', 'rbalance']);
+  for (const touch of [false, true]) { const t = raceStepText(3, touch); assert.ok(t.title.startsWith('4.') && /tips/.test(t.text) && t.text.length < 90, t.text); }
+  assert.match(raceStepText(3, false).text, /A or D/); assert.match(raceStepText(3, true).text, /Drag/);
+  assert.equal(raceStepText(2, true).title, '3. Do not mash'); assert.equal(raceStepText(7, true).title, '3. Do not mash');
+  // the card is told about the day by the race, and the gauge is one drawing shared by the card's picture and the race
+  const help = fs.readFileSync(new URL('../src/actors/cow-help.js', import.meta.url), 'utf8'), race = fs.readFileSync(new URL('../src/game/tricks/cowrace.js', import.meta.url), 'utf8');
+  assert.match(help, /RACE_STEPS\.slice\(0, balance \? 4 : 3\)/); assert.match(help, /case 'rbalance'/); assert.match(help, /export function gaugeSvg/);
+  assert.match(race, /balance: dayBalance/); assert.match(race, /gaugeSvg\(/);
+  // a fallen rider is the one exception to the seat check, and nothing of the lean outlives the round
+  assert.match(race, /if \(p\.mounted && !riders\[0\]\.spill\) fix\(p\.anim, 'mika'\)/);
+  assert.match(race.slice(race.indexOf('const cleanup')), /poseRiders\(\);[\s\S]*fallM\.removeFromParent\(\)/);
+});
+
 test('the practice beat is slower, grading and mashing follow it, and a default race is unchanged', () => {
   assert.ok(PRACTICE_BEAT > BEAT * 1.15, 'the practice ring is clearly slower');
   const normal = newRace({ seed: 3 }), practice = newRace({ seed: 3, assist: 1, beat: PRACTICE_BEAT });

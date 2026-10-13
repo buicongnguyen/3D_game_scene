@@ -2,7 +2,7 @@
 // coach card (3 steps, learn by doing) and the cow race's intro card. Texts and the step logic are pure and tested:
 // game/tricks/rules-cowhelp.js. Used by actors/cow-ride.js and game/tricks/cowrace.js.
 import { tx } from '../i18n/i18n.js';
-import { RIDE_STEPS, rideStepText, raceStepText } from '../game/tricks/rules-cowhelp.js';
+import { RIDE_STEPS, RACE_STEPS, rideStepText, raceStepText } from '../game/tricks/rules-cowhelp.js';
 
 const CSS = `
 .ch-kc{display:inline-block;min-width:26px;padding:3px 7px;border-radius:7px;background:#fff;border:2px solid #b89a78;border-bottom-width:4px;color:#5a3a22;font:700 13px Nunito,system-ui,sans-serif;text-align:center;line-height:1.1}
@@ -55,7 +55,28 @@ const CSS = `
 .ch-art .grass{right:2px;top:4px;width:34px;height:34px;animation:chGrass 1.6s ease-in-out infinite}
 @keyframes chGrass{0%,100%{transform:scale(1)}50%{transform:scale(1.14)}}
 .ch-art .flag{right:6px;bottom:2px;width:30px;height:28px}
+.ch-art .balarc{left:8px;top:0;width:80px;height:44px}
+.ch-art .balarc .mk{transform-box:view-box;transform-origin:40px 62px;animation:chBal 3s ease-in-out infinite}
+.ch-art .balkid{left:38px;top:30px;width:20px;height:28px;transform-origin:50% 100%;animation:chBalKid 3s ease-in-out infinite}
+.ch-art .balkeys{left:14px;bottom:0;display:flex;gap:26px}
+.ch-art .balkeys .ch-kc:nth-child(1){animation:chBalL 3s ease-in-out infinite}.ch-art .balkeys .ch-kc:nth-child(2){animation:chBalR 3s ease-in-out infinite}
+.ch-art .balstick{left:32px;bottom:-4px;width:30px;height:30px;border-radius:50%;background:#5a3a2222;border:3px solid #5a3a2255;box-sizing:border-box}
+.ch-art .balstick i{display:block;width:13px;height:13px;margin:5.500px;border-radius:50%;background:#f08a3c;box-shadow:0 2px 0 #b8581c;animation:chBalStick 3s ease-in-out infinite}
+@keyframes chBal{0%,100%{transform:rotate(0deg)}22%{transform:rotate(40deg)}45%{transform:rotate(0deg)}70%{transform:rotate(-40deg)}90%{transform:rotate(0deg)}}
+@keyframes chBalKid{0%,100%{transform:rotate(0deg)}22%{transform:rotate(26deg)}45%{transform:rotate(0deg)}70%{transform:rotate(-26deg)}90%{transform:rotate(0deg)}}
+@keyframes chBalL{0%,20%{background:#fff;transform:none}24%,44%{background:#ffd08a;transform:translateY(2px)}48%,100%{background:#fff;transform:none}}
+@keyframes chBalR{0%,68%{background:#fff;transform:none}72%,88%{background:#ffd08a;transform:translateY(2px)}92%,100%{background:#fff;transform:none}}
+@keyframes chBalStick{0%,20%{transform:none}24%,44%{transform:translateX(-7px)}48%,68%{transform:none}72%,88%{transform:translateX(7px)}92%,100%{transform:none}}
 `;
+
+/** The balance gauge as an SVG arc: red ends, yellow, a green middle `warn` wide (0..1), a marker group .mk that turns about (cx, cy). */
+export function gaugeSvg({ w = 160, h = 62, cx = 80, cy = 112, r = 96, span = 56, warn = 0.6, sw = 9 } = {}) {
+  const pt = deg => { const a = (deg - 90) * Math.PI / 180; return `${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`; };
+  const arc = (a, b, color, width = sw) => `<path d="M${pt(a)}A${r} ${r} 0 0 1 ${pt(b)}" fill="none" stroke="${color}" stroke-width="${width}" stroke-linecap="round"/>`;
+  const g = span * warn, y = span * (warn + (1 - warn) * 0.45);
+  return `<svg viewBox="0 0 ${w} ${h}">${arc(-span, span, '#fff', sw + 5)}${arc(-span, span, '#e4584a')}${arc(-y, y, '#f2c542')}${arc(-g, g, '#5fcf68')}`
+    + `<g class="mk"><circle cx="${cx}" cy="${cy - r}" r="${(sw * 0.95).toFixed(1)}" fill="#fff" stroke="#5a3a22" stroke-width="2.500"/><circle cx="${cx}" cy="${cy - r}" r="${(sw * 0.4).toFixed(1)}" fill="#c2541c"/></g></svg>`;
+}
 
 let cssOn = false;
 export function ensureCss() {
@@ -102,6 +123,7 @@ export function art(kind, touch) {
     case 'rsteer': return `<div class="ch-art"><div class="lanes">${[0, 1, 2, 3].map(i => `<span class="ln" style="left:${2 + i * 30}px"></span>`).join('')}${COW_TOP}</div>${touch ? '<div class="stick" style="right:30px;bottom:0;transform:scale(.7)"><i></i></div>' : `<div class="wasd" style="right:auto;left:22px;bottom:0">${kc('A')}${kc('D')}</div>`}</div>`;
     case 'rbeat': return `<div class="ch-art"><div class="ringbox"><span class="out"></span><span class="core">${icon('hoof')}</span></div>${touch ? `<div class="tap"><span class="gbtn" style="padding:5px 9px">${tx('Giddy-up!')}</span></div>` : `<div class="tap">${kc('E')}</div>`}</div>`;
     case 'rmash': return `<div class="ch-art"><div class="puff">${icon('puff')}</div><div class="mashx">${icon('hoofDark')}${icon('hoofDark')}${icon('hoofDark')}${icon('cross')}</div><div class="grass">${icon('grass')}</div><div class="flag">${icon('flag')}</div></div>`;
+    case 'rbalance': return `<div class="ch-art"><div class="balarc">${gaugeSvg({ w: 80, h: 44, cx: 40, cy: 62, r: 50, span: 50, warn: 0.5, sw: 6 })}</div>${icon('kid').replace('<svg', '<svg class="balkid"')}${touch ? '<div class="balstick"><i></i></div>' : `<div class="balkeys">${kc('A')}${kc('D')}</div>`}</div>`;
     default: return '<div class="ch-art"></div>';
   }
 }
@@ -186,6 +208,9 @@ const CARD_CSS = `
 #cowCard .go kbd{font:700 12px Nunito,sans-serif;padding:1px 6px;border-radius:5px;background:#0003;margin-left:8px}
 #cowCard .st .ch-art{zoom:1.3}
 #cowCard .sub{margin-top:8px;font-size:13px;font-weight:600;color:#7a6a58}
+@media (min-width:641px){#cowCard.four .box{width:min(900px,94vw)}#cowCard.four .steps{grid-template-columns:repeat(4,1fr)}}
+@media (max-width:640px){#cowCard.four .st{padding:6px 10px}#cowCard.four h2{margin-bottom:6px}#cowCard.four .steps{gap:7px}}
+@media (max-width:900px) and (min-width:641px){#cowCard.four .box{padding:10px 12px}#cowCard.four h2{font-size:20px;margin-bottom:6px}#cowCard.four .st{padding:6px 6px;font-size:13px}#cowCard.four .st b{font-size:15px}#cowCard.four .st .ch-art{zoom:1}#cowCard.four .go{margin-top:8px;min-height:44px}#cowCard.four .sub{display:none}}
 @media (max-width:640px){#cowCard .steps{grid-template-columns:1fr}#cowCard .st{flex-direction:row;text-align:left;gap:12px;padding:8px 10px}#cowCard .st .tt{flex:1}#cowCard .st b{display:block}#cowCard .box{padding:12px 12px 12px}#cowCard h2{font-size:22px;margin-bottom:8px}
  #cowCard .st .ch-art{zoom:1}}
 `;
@@ -206,14 +231,16 @@ export class RaceCard {
     el.querySelector('.go').addEventListener('click', e => { e.stopPropagation(); this.close(); });
   }
   get shown() { return !!this.el?.classList.contains('on'); }
-  open(onClose, { start = true } = {}) {
+  /** balance: the race day has a bareback heat, so the card has a fourth step (keep your balance). */
+  open(onClose, { start = true, balance = false } = {}) {
     const el = this.el;
     if (!el) return;
     this.onClose = onClose || null;
     const q = s => el.querySelector(s);
     q('h2').textContent = tx('How to win the cow race');
-    q('.steps').innerHTML = [0, 1, 2].map(i => {
-      return `<div class="st">${art(['rsteer', 'rbeat', 'rmash'][i], this.touch)}<div class="tt"><b></b><span></span></div></div>`;
+    el.classList.toggle('four', !!balance);
+    q('.steps').innerHTML = RACE_STEPS.slice(0, balance ? 4 : 3).map(kind => {
+      return `<div class="st">${art(kind, this.touch)}<div class="tt"><b></b><span></span></div></div>`;
     }).join('');
     el.querySelectorAll('.st').forEach((s, i) => { const t = raceStepText(i, this.touch); s.querySelector('.tt b').textContent = tx(t.title); s.querySelector('.tt span').textContent = tx(t.text); });
     q('.go').innerHTML = `${start ? tx("Let's race!") : tx('Back to the race')}${this.touch ? '' : '<kbd>E</kbd>'}`;

@@ -6,6 +6,7 @@
 //
 // Units: metres along the track (s), lane units across it (0..3, one per lane), seconds, metres per second.
 import { rng } from '../../engine/spline.js';
+import { newBalance, riderState, stepTilt, stepFall, jolt, botLean, STEADY_BONUS } from './rules-cowbalance.js';
 
 export const TRACK = {
   len: 56,                    // start line to ribbon
@@ -41,6 +42,9 @@ export const KIDS = ['Kenta', 'Yui', 'Daichi'];
 //   puddles  rows of puddles (two lanes each): a puddle slows a cow for a moment; Mika can steer round, the kids hold their lane
 //   surge    the kids sprint for the ribbon over the last SURGE_FROM metres (this much faster)
 //   bias     the kids' skill, a little up for a final
+//   balance  a bareback heat (rules-cowbalance.js: 'gentle' | 'wild'): the cows keep their lanes, left / right is leaning,
+//            and a rider who tips too far slides off into the grass. Grass lies in every lane (there is no steering for it)
+//   bumps    low ridges across the whole track (a bareback heat): every cow hops them, and the hop shoves the rider
 export const COURSE = {
   plain: { mud: false, pick: 0, puddles: 0, surge: 0, bias: 0 },
   classic: { mud: true, pick: 0, puddles: 0, surge: 0, bias: 0 },
@@ -49,27 +53,34 @@ export const COURSE = {
   surge: { mud: true, pick: 2, puddles: 0, surge: 0.07, bias: 0.015 },
   puddles: { mud: true, pick: 2, puddles: 3, surge: 0.07, bias: 0.03 },
   grand: { mud: true, pick: 2, puddles: 4, surge: 0.1, bias: 0.04 },
+  bareback: { mud: true, pick: 0, puddles: 0, surge: 0, bias: 0.035, balance: 'gentle', bumps: 0 },
+  rodeo: { mud: true, pick: 0, puddles: 0, surge: 0.08, bias: 0.04, balance: 'wild', bumps: 4 },
 };
+export const BUMP_S = [8, 17, 32.5, 43, 50];  // where the ridges lie (a course uses the last `bumps` of them): clear of the mud and the grass
+export const BUMP_HALF = 0.9;                 // metres either side of a ridge over which a cow hops
 export const PUDDLE_S = [7, 17, 33, 46];      // where the rows of puddles lie (a course uses the last `puddles` of them)
 export const PUDDLE = { half: 0.8, time: 1.1, slow: 0.6 };   // metres either side of its middle, seconds of splashing, speed times
 export const SURGE_FROM = 14;                 // metres before the ribbon
 
 /**
  * The race day of a level: { heats: [{ course, assist, practice }], window (the beat window, times) }.
- * Easy: a warm-up without mud, then the classic race, with a wide beat window and slower rivals. Normal: the classic race, a
- * final where the grass lies in two lanes only, and a champions' final. Difficult: rivals that sprint for the ribbon, rows of
- * puddles to steer round, a tighter beat window. The guided first try is Easy's day with its warm-up as a slow practice lap
+ * Easy: a warm-up without mud, then the classic race, with a wide beat window and slower rivals (nobody can fall off). Normal:
+ * the classic race, a final where the grass lies in two lanes only, and a BAREBACK final (gentle tipping: lean to stay on).
+ * Difficult: four heats: rivals that sprint for the ribbon, rows of puddles to steer round, the grand final, and the RODEO final
+ * (bareback over bumps, a narrow balance, the rivals can slide off too), all with a tighter beat window. The guided first try is Easy's day with its warm-up as a slow practice lap
  * (practice: the slower beat and the widest window).
  */
 export function meetPlan(level = 'normal', first = false) {
   const day = (courses, assist, window) => ({ heats: courses.map(course => ({ course, assist, practice: false })), window });
   if (first) { const p = day(['plain', 'classic'], 0.6, 1); p.heats[0].assist = 1; p.heats[0].practice = true; return p; }
   if (level === 'easy') return day(['plain', 'classic'], 0.6, 1);
-  if (level === 'hard') return day(['surge', 'puddles', 'grand'], 0, 0.82);
-  return day(['classic', 'final', 'champions'], 0, 1);
+  if (level === 'hard') return day(['surge', 'puddles', 'grand', 'rodeo'], 0, 0.82);
+  return day(['classic', 'final', 'bareback'], 0, 1);
 }
-/** The most a race day can score (every heat won at the best time bonus). */
-export const meetMax = plan => plan.heats.length * (80 + 25);
+/** Is this heat ridden bareback (balance on)? */
+export const isBareback = course => !!COURSE[course]?.balance;
+/** The most a race day can score (every heat won at the best time bonus, every bareback heat without a fall). */
+export const meetMax = plan => plan.heats.reduce((n, h) => n + 80 + 25 + (isBareback(h.course) ? STEADY_BONUS : 0), 0);
 /** Points a racer takes from a heat for the day's standings (the podium): by place. */
 export const PLACE_POINTS = [80, 50, 30, 10];
 
@@ -88,7 +99,7 @@ export const inMud = s => s >= TRACK.mud[0] && s <= TRACK.mud[1];
 function newRacer(id, lane, extra = {}) {
   return {
     id, lane, s: 0, lat: lane, latV: 0, v: 0, puff: 0, tiredT: 0, boostT: 0, combo: 0, lastTap: -9, lastPush: -9,
-    grass: [false, false], finished: null, place: 0, stride: 0, mud: false, splashT: 0, puddle: -1, ...extra,
+    grass: [false, false], finished: null, place: 0, stride: 0, mud: false, splashT: 0, puddle: -1, ...riderState(), ...extra,
   };
 }
 
@@ -105,7 +116,8 @@ export function newRace(opts = {}) {
   const C = COURSE[opts.course] || COURSE.classic, wm = opts.window || 1;
   const race = {
     t: 0, seed, assist, over: false, finishedCount: 0, order: [], course: layCourse(C, seed),
-    beat: opts.beat || BEAT,          // seconds between footfalls in this race (BEAT, or PRACTICE_BEAT on the first try)
+    balance: newBalance(C.balance, seed),   // a bareback heat: the rider's balance (null: a saddle heat, nobody tips)
+    beat: opts.beat || BEAT,        // seconds between footfalls in this race (BEAT, or PRACTICE_BEAT on the first try)
     window: { good: WINDOW.good * (1 + assist * 0.55) * wm, ok: WINDOW.ok * (1 + assist * 0.5) * wm },
     racers: [newRacer('mika', playerLane, { player: true })],
     last: null,           // the last tap { t, grade }
@@ -116,6 +128,15 @@ export function newRace(opts = {}) {
     const skill = 0.95 + R() * 0.11 + (opts.skillBias || 0) + C.bias;
     race.racers.push(newRacer(name, others[i], { ai: true, name, skill, wob: R() * 6.28, wobRate: 0.5 + R() * 0.5 }));
   });
+  const B = race.balance;
+  if (B) {
+    race.racers[0].graceT = B.grace;
+    // on a wild heat a village kid may slide off once too (where: seeded), which is funny and fair
+    for (let i = 1; i < race.racers.length; i++) {
+      const r = race.racers[i], falls = B.R() < B.rivals, at = 11 + B.R() * 32, side = B.R() < 0.5 ? -1 : 1;
+      r.fallAt = falls ? at : -1; r.fallSide = side;
+    }
+  }
   return race;
 }
 
@@ -136,7 +157,7 @@ function layCourse(C, seed) {
   const grass = [pickLanes(C.pick), pickLanes(C.pick)];
   const puddles = [];
   for (const s of PUDDLE_S.slice(PUDDLE_S.length - C.puddles)) { const on = pickLanes(2); for (let l = 0; l < TRACK.lanes; l++) if (on[l]) puddles.push({ s, lane: l }); }
-  return { mud: C.mud, grass, puddles, surge: C.surge };
+  return { mud: C.mud, grass, puddles, surge: C.surge, bumps: C.bumps ? BUMP_S.slice(BUMP_S.length - C.bumps) : [] };
 }
 
 /** Where the cow's next footfall is, in seconds: the nearest beat and how far off `t` is from it. */
@@ -180,8 +201,8 @@ function topSpeed(r, race) {
 
 /** One tap of "Giddy-up!" from Mika at the current race time. */
 export function tap(race) {
-  const r = race.racers[0];
-  if (race.over || r.finished != null) return null;
+  const r = race.racers[0], B = race.balance;
+  if (race.over || r.finished != null || r.fallT > 0) return null;      // (in the grass: no cow under her to ask)
   const t = race.t;
   if (t - r.lastTap < (race.beat || BEAT) * 0.55) {
     // mashing: no push, and the cow starts to puff
@@ -190,6 +211,7 @@ export function tap(race) {
     r.combo = Math.max(0, r.combo - 1);
     race.events.push({ type: 'mash', who: 0 });
     if (r.puff >= 1 && r.tiredT <= 0) { r.tiredT = 2.2; race.events.push({ type: 'tired', who: 0 }); }
+    if (B) jolt(r, B, B.offbeat);
     race.last = { t, grade: 'mash' };
     return 'mash';
   }
@@ -199,6 +221,7 @@ export function tap(race) {
   if (grade === 'good') { r.combo = Math.min(SPEED.maxCombo, r.combo + 1); r.v += SPEED.push; r.lastPush = t; }
   else if (grade === 'ok') { r.combo = Math.max(r.combo, 1); r.v += SPEED.push * 0.4; r.lastPush = t; }
   else if (!r.mud) r.combo = Math.max(0, r.combo - 2);     // a miss costs a little; in the mud nothing: ease off, keep the beat later
+  if (B && grade === 'miss') jolt(r, B, B.offbeat);        // bareback: a tap off the beat jolts her
   race.events.push({ type: grade, who: 0 });
   return grade;
 }
@@ -212,7 +235,13 @@ function advance(r, race, dt, steer) {
   } else r.lat += (r.lane - r.lat) * Math.min(1, dt * 4);
   const wasMud = r.mud;
   r.mud = race.course.mud && inMud(r.s);
-  if (r.mud && !wasMud) race.events.push({ type: 'mud', who: race.racers.indexOf(r) });
+  if (r.mud && !wasMud) { race.events.push({ type: 'mud', who: race.racers.indexOf(r) }); if (r.player && race.balance) jolt(r, race.balance, race.balance.mud); }
+  // ridges (a bareback heat): the cow hops, the hop shoves Mika to a seeded side
+  const U = race.course.bumps;
+  if (r.bump < U.length && r.s >= U[r.bump]) {
+    r.bump++;
+    if (r.player && race.balance && jolt(r, race.balance, race.balance.bump, race.balance.R() < 0.5 ? -1 : 1)) race.events.push({ type: 'bump', who: 0 });
+  }
   // grass bundles: eaten in passing when the cow is in (or next to) that lane
   for (let i = 0; i < 2; i++) {
     if (!r.grass[i] && r.s >= TRACK.grass[i] - 0.6 && r.s <= TRACK.grass[i] + 0.6 && Math.abs(r.lat - Math.round(r.lat)) < 0.4 && race.course.grass[i][Math.round(r.lat)]) {
@@ -241,16 +270,24 @@ function advance(r, race, dt, steer) {
 export function laneOf(r) { return Math.round(r.lat); }
 
 /**
- * Advance the whole race by dt. input: { steer: -1..1 (left/right across the lanes) }. Taps go through tap().
+ * Advance the whole race by dt. input: { steer: -1..1 (left/right across the lanes), lean: -1..1 (a bareback heat: the
+ * same stick or keys lean the rider, and the cow keeps its lane) }. Taps go through tap().
  * Everything is a plain number: nothing is allocated per frame except the occasional event.
  */
 export function stepRace(race, dt, input = {}) {
   if (race.over) return;
   race.t += dt;
-  const me = race.racers[0];
+  const me = race.racers[0], B = race.balance;
   for (let i = 0; i < race.racers.length; i++) {
     const r = race.racers[i];
-    if (r.finished != null) { r.v *= Math.exp(-dt * 1.6); r.s += r.v * dt; continue; }
+    if (r.finished != null) { r.v *= Math.exp(-dt * 1.6); r.s += r.v * dt; r.tilt *= Math.exp(-dt * 3); continue; }
+    if (r.fallT > 0) {
+      // in the grass beside the cow, which stops and waits; then up the rider hops and the race goes on
+      r.v *= Math.exp(-dt * 6);
+      advance(r, race, dt, r.player ? 0 : undefined);
+      if (stepFall(r, B, dt)) { if (r.player) r.v = Math.max(r.v, r.fallV * B.restart); r.lastPush = race.t; race.events.push({ type: 'remount', who: i }); }
+      continue;
+    }
     if (r.player) {
       // the cow's own pace: slows to a walk when Mika stops asking, speeds toward the top speed she has earned
       let top = topSpeed(r, race);
@@ -259,7 +296,12 @@ export function stepRace(race, dt, input = {}) {
       const k = 1 - Math.exp(-dt * (top > r.v ? 1.6 : 2.4));
       r.v += (top - r.v) * k;
       r.lane = Math.round(r.lat);
-      advance(r, race, dt, input.steer || 0);
+      advance(r, race, dt, B ? 0 : input.steer || 0);
+      if (B) {
+        const what = stepTilt(r, B, race.t, dt, input.lean || 0, r.v);
+        if (what === 'fall') { r.combo = Math.floor(r.combo * B.keep); race.events.push({ type: 'fall', who: 0, side: r.fallSide }); }
+        else if (what === 'warn') race.events.push({ type: 'wobble', who: 0, side: Math.sign(r.tilt) });
+      }
     } else {
       // a kid: cruising speed with a wobble, the rubber band toward Mika, the mud, a grass burst
       r.wob += dt * r.wobRate;
@@ -271,6 +313,20 @@ export function stepRace(race, dt, input = {}) {
       if (r.splashT > 0) top *= PUDDLE.slow;
       r.v += (top - r.v) * (1 - Math.exp(-dt * 1.8));
       advance(r, race, dt, undefined);
+      if (B) {
+        // a kid sways for show; one who is about to slide off (fallAt) tips over the last metres before it. A rival that
+        // passes Mika (or is passed) in the next lane brushes her: a shove away from it
+        const due = r.fallAt > 0 ? Math.max(0, Math.min(1, 1 - (r.fallAt - r.s) / 3.5)) : 0;
+        r.tilt = Math.sin(r.wob * 2.3) * 0.3 * (1 - due) + r.fallSide * due * 0.95;
+        if (r.fallAt > 0 && r.s >= r.fallAt) { r.fallAt = -1; r.fallT = B.cost * 0.85; r.falls++; r.tilt = 0; race.events.push({ type: 'fall', who: i, side: r.fallSide }); }
+        const gap = r.s - me.s;
+        if (Math.abs(gap) > 0.3) {
+          const ahead = gap > 0;
+          if (r.ahead !== undefined && ahead !== r.ahead && race.t > 3 && Math.abs(r.lane - me.lane) === 1 && me.fallT <= 0 && me.finished == null
+            && jolt(me, B, B.brush, Math.sign(me.lane - r.lane))) race.events.push({ type: 'brush', who: i });
+          r.ahead = ahead;
+        }
+      }
     }
     if (r.s >= TRACK.len && r.finished == null) {
       r.finished = race.t;
@@ -301,11 +357,14 @@ export function placeNow(race) {
   return p;
 }
 
-/** The result of a finished race: { place, time, score, stars, order }. */
+/** Was the heat ridden bareback without a fall, all the way to the ribbon? ("Steady rider!": STEADY_BONUS points) */
+export const steady = race => !!race.balance && race.racers[0].finished != null && race.racers[0].falls === 0;
+
+/** The result of a finished race: { place, time, score, stars, order, falls, steady }. */
 export function result(race) {
   finish(race);
-  const me = race.racers[0], score = raceScore(me.place, me.finished);
-  return { place: me.place, time: me.finished, score, stars: STARS.filter(t => score >= t).length, order: race.order.map(i => race.racers[i].id) };
+  const me = race.racers[0], st = steady(race), score = raceScore(me.place, me.finished) + (st ? STEADY_BONUS : 0);
+  return { place: me.place, time: me.finished, score, stars: STARS.filter(t => score >= t).length, order: race.order.map(i => race.racers[i].id), falls: me.falls, steady: st };
 }
 
 /**
@@ -326,6 +385,9 @@ export function botSteer(race, look = 7) {
   const d = want - me.lat;
   return Math.abs(d) < 0.06 ? 0 : Math.max(-1, Math.min(1, d * 3));
 }
+
+/** Where a rider leans in a bareback heat (tests, the QA autopilot): against the tip. opts.dead: see rules-cowbalance.js botLean. */
+export const botBalance = (race, opts) => (race.balance && race.racers[0].fallT <= 0 ? botLean(race.racers[0], opts) : 0);
 
 /** A tiny scripted player for tests and the QA autopilot: taps on the beat (a little off by `jitter` s), steers for grass. */
 export function botTaps(race, rand, { jitter = 0.03, mash = false, idle = false, lazy = 0 } = {}) {
@@ -353,7 +415,7 @@ export function simulate(seed, botOpts = {}, raceOpts = {}) {
   let guard = 0;
   while (!race.over && guard++ < 60 * 90) {
     botTaps(race, R, botOpts);
-    stepRace(race, dt, { steer: botOpts.steer ? botSteer(race) : 0 });
+    stepRace(race, dt, { steer: botOpts.steer ? botSteer(race) : 0, lean: botOpts.lean ? botBalance(race, botOpts.lean === true ? undefined : botOpts.lean) : 0 });
     race.events.length = 0;
   }
   return { race, ...result(race) };
@@ -362,10 +424,10 @@ export function simulate(seed, botOpts = {}, raceOpts = {}) {
 /** A whole race day with a bot (Node tests, tuning): { score, places, times, plan }. */
 export function simulateMeet(seed, level, botOpts = {}, first = false) {
   const plan = meetPlan(level, first), places = [], times = [];
-  let score = 0;
+  let score = 0, falls = 0;
   plan.heats.forEach((ht, h) => {
     const r = simulate(seed * 13 + h * 101, botOpts, { course: ht.course, assist: ht.assist, window: plan.window, beat: ht.practice ? PRACTICE_BEAT : undefined });
-    score += r.score; places.push(r.place); times.push(r.time);
+    score += r.score; places.push(r.place); times.push(r.time); falls += r.falls;
   });
-  return { score, places, times, plan };
+  return { score, places, times, falls, plan };
 }
