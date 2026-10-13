@@ -24864,6 +24864,13 @@
   ]
  },
  {
+  "s": "More games",
+  "ctx": [
+   "UI (src/game/tricks.js)",
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "Done",
   "ctx": [
    "UI (src/game/tricks.js)",
@@ -27190,6 +27197,12 @@
   "ctx": [
    "UI (src/ui/map.js)",
    "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Back to games",
+  "ctx": [
+   "UI (src/ui/minigame-stop.js)"
   ]
  },
  {

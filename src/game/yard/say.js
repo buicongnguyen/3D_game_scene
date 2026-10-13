@@ -82,7 +82,7 @@ body.touch #yardStop kbd{display:none}
 #yardPad button.big{min-width:150px;background:#f08a3c;color:#fff;font-size:20px}
 #yardPad button:active,#yardPad button.down{filter:brightness(.9);transform:scale(.97)}
 @media (max-width:560px){#yardHud{font-size:14px;padding:6px 12px;gap:7px}#yardHud .big{font-size:19px;min-width:44px}#yardHud .sub{display:none}
- #yardHint{top:calc(112px + env(safe-area-inset-top,0px));font-size:14px;max-width:78vw}
+ #yardHint{top:calc(112px + env(safe-area-inset-top,0px));font-size:13.5px;max-width:78vw;padding:6px 11px}
  #yardStop{top:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px));left:12px}#yardCam{top:auto;bottom:calc(250px + env(safe-area-inset-bottom,0px));left:12px}
  #yardPad{bottom:calc(30px + env(safe-area-inset-bottom,0px))}}
 body.touch.yard-pad #tAct,body.touch.yard-pad #tJump{display:none}

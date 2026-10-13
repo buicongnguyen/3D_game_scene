@@ -54,6 +54,7 @@ const CSS = `
 body.trick-round #objective{visibility:hidden}
 @media (max-width:560px){body.trick-round #clock,body.trick-round #inventory{visibility:hidden}}
 @media (max-width:520px){#trickHud .n{display:none}#trickHud{white-space:nowrap}}
+@media (max-width:560px),(max-height:480px){#trickHint{font-size:14px;padding:7px 12px;border-radius:14px;max-width:84vw;line-height:1.25}}
 #trickCard{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,14,30,.35)}
 #trickCard .box{width:min(440px,92vw);max-height:88vh;overflow:auto;padding:20px 22px 16px;border-radius:24px;background:#fff8ea;box-shadow:0 14px 40px rgba(0,0,0,.35);
  font:700 15px Nunito,system-ui,sans-serif;color:#4a3020;text-align:center;zoom:var(--ui-scale,1)}
@@ -378,7 +379,8 @@ export class Tricks {
     q('.safe').textContent = t.safety ? tx(t.safety) : '';
     const touch = ui.touch;
     q('.again').innerHTML = `${tx('Play again')}${touch ? '' : '<kbd>Space</kbd>'}`;
-    q('.done').innerHTML = `${tx('Done')}${touch ? '' : '<kbd>E</kbd>'}`;
+    const toList = this.d.minigameMenu?.running && !this.d.minigameMenu.session?.story;      // (played from the Mini games list: Done goes back to it)
+    q('.done').innerHTML = `${toList ? tx('More games') : tx('Done')}${touch ? '' : '<kbd>E</kbd>'}`;
     if (res?.extra) q('.score').textContent += ` · ${tx(res.extra)}`;
     // a round may explain its stars in one line under the score (the cow race: "1st place = 3 stars"), already translated
     if (res?.note) {

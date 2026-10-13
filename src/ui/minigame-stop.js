@@ -39,6 +39,8 @@ const CSS = `
 #minigameStop.hidden{display:none}#minigameStop:focus-visible{outline:3px solid #f28b35;outline-offset:3px}#minigameStop:hover{background:#fff}
 #minigameStop .stop-icon{width:12px;height:12px;background:currentColor;border-radius:2px}
 body.touch #minigameStop{left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(196px + env(safe-area-inset-bottom,0px));font-size:15px}
+/* an upright phone: above the teacher's hint bubble (which sits 150 px up), not on top of its first words */
+@media (orientation:portrait){body.touch.trick-round:not(.yard-round) #minigameStop{bottom:calc(232px + env(safe-area-inset-bottom,0px))}}
 body #minigameStop[data-kind="workshop"]{top:calc(112px + env(safe-area-inset-top,0px));bottom:auto}
 body #minigameStop[data-kind="sky"]{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto}
 body.minigame-stoppable #yardStop,body.minigame-stoppable #archLeave,body.minigame-stoppable #fishLeave,
@@ -69,7 +71,9 @@ export class MinigameStop {
   update() {
     this.target = stoppableGame(this.d);
     if (!this.button) return;
-    const text = tx('Stop playing');
+    // from the Mini games list the way out leads back to the list: say so
+    const menu = this.d.minigameMenu;
+    const text = menu?.running && menu.session && !menu.session.story ? tx('Back to games') : tx('Stop playing');
     if (this.text !== text) { this.text = text; this.label.textContent = text; this.button.setAttribute('aria-label', text); }
     const kind = this.target?.kind || '';
     if (this.button.dataset.kind !== kind) this.button.dataset.kind = kind;

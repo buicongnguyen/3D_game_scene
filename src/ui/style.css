@@ -447,3 +447,21 @@ body.talking .bark, #hud.hidden ~ #barks .bark { display: none; }
 #journalBody .sgc.locked small { color: #6c665a; }
 #journalBody .sgc svg { flex: 0 0 64px; }
 #journalBody .sgc.locked svg { opacity: 0.55; }
+
+/* Phones: what people say is smaller and tighter, so it covers less of the play (the dialogue box, the bubbles over heads). */
+@media (max-width: 560px), (max-height: 480px) {
+  #dialogue { width: min(760px, 96vw); bottom: calc(6px + var(--safe-b)); }
+  #dialogue .box { padding: 6px 8px 5px; border-radius: 15px; }
+  #dialogue .lines { gap: 4px; max-height: 24vh; }
+  .dl-row { gap: 6px; }
+  .dl-row .av { flex-basis: 30px; height: 30px; border-width: 2px; }
+  .dl-row .bub { padding: 3px 9px 4px; border-radius: 12px 12px 12px 5px; }
+  .dl-row .nm { font-size: 11px; }
+  .dl-row .tx { font-size: 14px; line-height: 1.26; }
+  #dialogue .dlgbar { margin-top: 3px; }
+  .bark { font-size: calc(12px * var(--ui-scale, 1)) !important; max-width: 54vw !important; padding: 4px 9px !important; }
+}
+@media (max-height: 480px) and (orientation: landscape) {
+  #dialogue .lines { max-height: 34vh; }
+  .dl-row .tx { font-size: 13.5px; }
+}

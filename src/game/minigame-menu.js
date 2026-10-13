@@ -204,8 +204,15 @@ export class MinigameMenu {
   afterGame(e) {
     // after the round's own result toast has gone, so the two never pile up at the top of a phone
     clearTimeout(this.hintT);
-    this.hintT = setTimeout(() => { if (this.session && !this.session.story && !this.running) this.ui.toast?.(tx('Menu → Mini games to pick another'), e?.icon); }, 2600);
     this.showChip();
+    // back to the list of games, so the next one is a tap away (closing the list leaves Mika free in the valley, with the chip).
+    // A QA run keeps the chip and a hint unless it asks for the list with ?autolist=1: the browser suites press the chip.
+    const qa = typeof window !== 'undefined' && !!window.__STARLINE_QA__ && this.g.params?.get?.('autolist') !== '1';
+    this.hintT = setTimeout(() => {
+      if (!this.session || this.session.story || this.running) return;
+      if (qa || !this.canOpen()) this.ui.toast?.(tx('Menu → Mini games to pick another'), e?.icon);
+      else this.open();
+    }, qa ? 2600 : 900);
   }
 
   // ------------------------------------------------------------------ the games
