@@ -60,6 +60,12 @@ export const GUIDE_CSS = `
 #archGhost .garrow{position:absolute;left:0;top:0;width:0;height:0}
 #archGhost .garrow svg{position:absolute;left:-34px;top:-9px;width:68px;height:18px;overflow:visible;filter:drop-shadow(0 2px 3px #0007)}
 #archGhost .glab{position:absolute;padding:3px 10px;border-radius:12px;background:rgba(255,247,232,.92);font:600 15px Fredoka,Nunito,sans-serif;color:#c2541c;white-space:nowrap;transform:translate(-50%,0);box-shadow:0 3px 10px #0003}
+#archHelp .tip{margin:10px 0 0;padding:7px 12px;border-radius:14px;background:#ffe9b8;font-size:16px;line-height:1.25;color:#8a4a12}
+@media (max-height:500px){#archHelp .card.tipped .step p.sub{display:none}#archHelp .tip{margin-top:6px;padding:5px 12px;font-size:14px}}
+#archNote{position:absolute;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);box-sizing:border-box;width:max-content;max-width:min(600px,calc(100vw - 500px));padding:7px 16px;border-radius:18px;background:rgba(255,247,232,.95);box-shadow:0 4px 14px rgba(40,20,0,.28);font:600 17px/1.25 Fredoka,Nunito,sans-serif;color:#c2541c;text-align:center;pointer-events:none;zoom:var(--ui-scale,1);opacity:0;transition:opacity .3s}
+#archNote.on{opacity:1}
+@media (max-width:620px){#archNote{bottom:calc(150px + env(safe-area-inset-bottom,0px));max-width:88vw;font-size:16px}}
+@media (max-height:500px) and (min-width:621px){#archNote{left:calc(10px + env(safe-area-inset-left,0px));top:calc(152px + env(safe-area-inset-top,0px));bottom:auto;transform:none;max-width:236px;font-size:15px;padding:6px 12px;text-align:left}}
 #archHelpBtn{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(106px + env(safe-area-inset-top,0px));width:40px;height:40px;border-radius:50%;padding:0;background:rgba(90,58,34,.82);font:700 22px/40px Fredoka,Nunito,sans-serif;text-align:center;zoom:var(--ui-scale,1)}
 @media (max-width:520px){#archHelpBtn{top:calc(112px + env(safe-area-inset-top,0px));left:calc(90px + env(safe-area-inset-left,0px))}}
 `;
@@ -73,6 +79,8 @@ const STEP_TEXT = {
   pad: [N_('Move the stick. Put the circle on the target.'), N_('Hold the right trigger (RT). The string comes back.'), N_('Let go to shoot!')],
 };
 const STEP_SUB = [N_('A green circle means: right on the target.'), N_('The ring fills up: a long draw flies fast and straight.'), N_('Does the wind sock bend? Aim a little upwind.')];
+/** The balloon end in one line: said under the picture when the end begins, and on the card while it is played. */
+export const BALLOON_NOTE = N_('Balloons! Pop the top one and its weight breaks the ones below.');
 /** The text of a control for a device, for the cue and the glyphs. */
 export function controlLabel(dev) { return dev === 'touch' ? tx('Draw') : dev === 'pad' ? 'RT' : 'E'; }
 
@@ -210,7 +218,7 @@ export function drawStep(g, w, h, step, t, dev, label) {
  */
 export function createGuide(parent, dev0, onClose) {
   const doc = parent.ownerDocument;
-  let dev = dev0, label = controlLabel(dev), open = false, raf = 0, t0 = 0, dead = false, canvases = [];
+  let dev = dev0, label = controlLabel(dev), open = false, raf = 0, t0 = 0, dead = false, canvases = [], tip = null;
   const help = doc.createElement('div');
   help.id = 'archHelp'; help.className = 'hidden';
   help.setAttribute('role', 'dialog');
@@ -218,7 +226,7 @@ export function createGuide(parent, dev0, onClose) {
     dev = d; label = controlLabel(d);
     const steps = [0, 1, 2].map(i => `<div class="step"><canvas width="330" height="210" data-i="${i}"></canvas>
       <p class="t"><span class="n">${i + 1}</span><b>${tx(STEP_TITLE[i])}</b></p><p class="txt">${tx(STEP_TEXT[d][i], { act: '<kbd>E</kbd>' })}</p><p class="sub">${tx(STEP_SUB[i])}</p></div>`).join('');
-    help.innerHTML = `<div class="card"><h2>${tx('How to shoot')}</h2><div class="steps">${steps}</div>
+    help.innerHTML = `<div class="card${tip ? ' tipped' : ''}"><h2>${tx('How to shoot')}</h2><div class="steps">${steps}</div>${tip ? `<p class="tip">${tx(tip)}</p>` : ''}
       <div class="btns"><button class="go">${tx('Got it!')}</button><button class="skip">${tx('Skip')}</button></div></div>`;
     canvases = [...help.querySelectorAll('canvas')];
     help.querySelector('.go').addEventListener('click', closeIt);
@@ -251,7 +259,8 @@ export function createGuide(parent, dev0, onClose) {
   const ghost = doc.createElement('div'); ghost.id = 'archGhost';
   ghost.innerHTML = `<div class="gring"></div><div class="gcap"></div><svg class="ghand" viewBox="0 0 44 44"><path d="M16 4c3 0 4 2 4 4v13l2-1c2-1 4 0 4 2l1-1c2-1 4 0 4 2l1-1c2-1 4 1 4 3v8c0 6-4 10-10 10h-4c-5 0-8-3-10-7l-6-10c-1-2 0-4 2-4s3 1 4 3l2 3V8c0-2 1-4 4-4z" fill="#fff" stroke="#8a6a4a" stroke-width="2" stroke-linejoin="round"/></svg>
     <div class="garrow"><svg viewBox="0 0 68 18"><path d="M2 9h56" stroke="#ead7a4" stroke-width="5" stroke-linecap="round"/><path d="M58 3l8 6-8 6z" fill="#ff7a2a"/><path d="M2 9h14" stroke="#e8553d" stroke-width="5" stroke-linecap="round"/></svg></div><div class="glab"></div>`;
-  parent.append(cue, mark, ghost);
+  const note = doc.createElement('div'); note.id = 'archNote';
+  parent.append(cue, mark, ghost, note);
   const memo = {};
   const gl = { ring: ghost.querySelector('.gring'), cap: ghost.querySelector('.gcap'), hand: ghost.querySelector('.ghand'), arrow: ghost.querySelector('.garrow'), lab: ghost.querySelector('.glab') };
   const setDevice = d => {
@@ -300,6 +309,16 @@ export function createGuide(parent, dev0, onClose) {
       }
       if (step && (memo.cx !== x || memo.cy !== y)) { memo.cx = x; memo.cy = y; cue.style.left = `${x}px`; cue.style.top = `${y}px`; }
     },
+    /** One short line at the foot of the picture (a new kind of end begins), or null to take it away. */
+    setNote(text) {
+      const key = text || '';
+      if (memo.note === key) return;
+      memo.note = key;
+      if (text) note.textContent = tx(text);
+      note.classList.toggle('on', !!text);
+    },
+    /** A line the card carries under its three steps while a special end is played (null: none). */
+    setTip(text) { if (tip !== (text || null)) { tip = text || null; build(dev); } },
     /** The bouncing marker over the target the player should aim at (screen px) or hidden. */
     setMark(on, x, y) {
       if (memo.mark !== on) { memo.mark = on; mark.classList.toggle('on', !!on); }
@@ -333,7 +352,7 @@ export function createGuide(parent, dev0, onClose) {
     destroy() {
       dead = true;
       G.close();
-      help.remove(); cue.remove(); mark.remove(); ghost.remove();
+      help.remove(); cue.remove(); mark.remove(); ghost.remove(); note.remove();
     },
   };
   return G;

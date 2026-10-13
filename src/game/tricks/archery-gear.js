@@ -160,6 +160,121 @@ export function makeFingers(kind, palm, bowSide) {
   return { mesh, own: [mesh.geometry, mat] };
 }
 
+// ------------------------------------------------------------------------------------------------ the balloon end
+// (rules-balloons.js) Four small instanced meshes, no model files: the balloons (a pear-shaped lathe with a knot, a colour per
+// instance), a soft white shine on each (it is what makes a coloured ball read as a balloon), the strings, and the sandbags
+// (the ones still hanging and the ones falling). Nothing is allocated while they are drawn.
+export const BALLOON_COLOURS = ['#ff3d45', '#ff7a1a', '#3fd24e', '#2b6dff', '#a25cff', '#ff5fb0'];
+export const BALLOON_GOLD = '#ffc81a';
+// the same colours as plain numbers, for the confetti of a pop (fx.burst takes [r, g, b])
+export const BALLOON_RGB = [[1, 0.24, 0.27], [1, 0.48, 0.1], [0.25, 0.82, 0.3], [0.17, 0.43, 1], [0.64, 0.36, 1], [1, 0.37, 0.69]];
+export const BALLOON_GOLD_RGB = [1, 0.8, 0.15];
+
+/**
+ * max: the most balloons up at once. Returns { root, own, draw(S, W, cam, t, fly), clear() }.
+ * draw: S the stage (rules-balloons.js), W(u, v, y, out) lane -> world, cam the camera, t seconds (the wobble), fly 0..1 (the
+ * end is over: what is left sails away), K the rules' sizes (BAL).
+ */
+export function makeBalloons(max, K) {
+  const root = new THREE.Group();
+  root.name = 'archery:balloons';
+  // the balloon, radius 1 about its middle: round on top, drawn out below to the knot
+  const pts = [];
+  for (let i = 0; i <= 14; i++) {
+    const a = i / 14 * Math.PI, c = Math.cos(a), s = Math.sin(a);
+    pts.push(new THREE.Vector2(Math.max(0.001, s * (c < 0 ? 1 - 0.3 * c * c : 1)), c < 0 ? c * 1.06 : c * 0.98));
+  }
+  pts.reverse();
+  const body = new THREE.LatheGeometry(pts, 18).toNonIndexed();
+  body.deleteAttribute('uv');
+  {
+    // a little darker underneath, so it reads as round whatever the light does
+    const p = body.attributes.position, col = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) { const k = 0.8 + 0.2 * Math.min(1, Math.max(0, (p.getY(i) + 1) / 1.6)); col[i * 3] = col[i * 3 + 1] = col[i * 3 + 2] = k; }
+    body.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  }
+  const kb = new Kit();
+  kb.parts.push(body);
+  kb.add(new THREE.ConeGeometry(0.12, 0.15, 8), '#c4c4c4', 0, -K.knot + 0.02, 0);
+  const bGeo = kb.merge();
+  const bMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.3, metalness: 0 });
+  // a balloon glows a little with its own colour (thin rubber in daylight): never a dull ball in the shade
+  bMat.onBeforeCompile = sh => { sh.fragmentShader = sh.fragmentShader.replace('#include <emissivemap_fragment>', '#include <emissivemap_fragment>\n\ttotalEmissiveRadiance += diffuseColor.rgb * 0.3;'); };
+  const balloons = new THREE.InstancedMesh(bGeo, bMat, max);
+  balloons.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const shGeo = new THREE.SphereGeometry(1, 10, 6);
+  const shMat = new THREE.MeshBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0.78, depthWrite: false });
+  const shine = new THREE.InstancedMesh(shGeo, shMat, max);
+  shine.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  const stGeo = new THREE.CylinderGeometry(0.011, 0.011, 1, 5).translate(0, -0.5, 0);
+  const stMat = new THREE.MeshBasicMaterial({ color: '#fff6e2' });
+  const strings = new THREE.InstancedMesh(stGeo, stMat, max);
+  strings.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  // the sandbag, radius 1: a round sack tied at the neck with a red cord
+  const sack = new THREE.LatheGeometry([[0.001, -1], [0.72, -0.94], [1, -0.45], [0.96, 0.05], [0.62, 0.55], [0.3, 0.74], [0.3, 0.84], [0.46, 1.08], [0.001, 1.02]].map(p => new THREE.Vector2(p[0], p[1])), 10).toNonIndexed();
+  sack.deleteAttribute('uv');
+  {
+    const p = sack.attributes.position, col = new Float32Array(p.count * 3), C = new THREE.Color();
+    for (let i = 0; i < p.count; i++) { const y = p.getY(i); C.set(y > 0.6 && y < 0.9 ? '#e0412c' : y < -0.5 ? '#b58a4c' : '#dcb878'); col[i * 3] = C.r; col[i * 3 + 1] = C.g; col[i * 3 + 2] = C.b; }
+    sack.setAttribute('color', new THREE.BufferAttribute(col, 3));
+  }
+  const wMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, emissive: '#3a2408', emissiveIntensity: 0.35 });
+  const weights = new THREE.InstancedMesh(sack, wMat, max * 2);
+  weights.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+  for (const m of [balloons, shine, strings, weights]) { m.frustumCulled = false; m.castShadow = false; m.count = 0; root.add(m); }
+  balloons.name = 'archery:balloon'; weights.name = 'archery:sandbag';
+  shine.renderOrder = 2;
+  const cols = BALLOON_COLOURS.map(c => new THREE.Color(c)), gold = new THREE.Color(BALLOON_GOLD);
+  for (let i = 0; i < max; i++) balloons.setColorAt(i, cols[0]);
+  const M = new THREE.Matrix4(), P = new V3(), Sc = new V3(), Q = new THREE.Quaternion(), Q1 = new THREE.Quaternion(), D = new V3(), Rv = new V3(), Uv = new V3();
+  const AX = new V3(1, 0, 0), ONE = new THREE.Quaternion();
+  const WS = K.weightR * 1.5;                   // the sandbag is drawn a little bigger than it is, so it reads from the line
+  const draw = (S, W, cam, t, fly = 0) => {
+    let n = 0, nw = 0;
+    const B = S.balloons, top = K.ceil + K.over, self = S.spec.selfPop;
+    Rv.setFromMatrixColumn(cam.matrixWorld, 0); Uv.setFromMatrixColumn(cam.matrixWorld, 1);
+    for (let i = 0; i < B.length && n < max; i++) {
+      const b = B[i];
+      if (b.state !== 'up') continue;
+      // it swells up as it is let go, and shrinks away where it leaves (off the top on Easy, over the cordon, or when the end is over)
+      const age = S.t - b.born, grow = age < 0.35 ? 0.3 + 0.7 * (1 - (1 - age / 0.35) ** 2) : 1;
+      let k = grow * (1 - fly);
+      if (!self && b.y > top - 0.9) k *= Math.max(0, (top - b.y) / 0.9);
+      const edge = K.side - Math.abs(b.v);
+      if (edge < 0.7) k *= Math.max(0, edge / 0.7);
+      if (b.gold) k *= 1 + 0.05 * Math.sin(t * 6 + b.ph);
+      const r = b.r * k, a = S.t * 6.283 / K.swayPer + b.ph, lift = fly * fly * 5;
+      W(b.u, b.sv, b.sy + lift, P);
+      Q.setFromAxisAngle(AX, -0.13 * Math.cos(a));               // it leans the way it bobs
+      balloons.setMatrixAt(n, M.compose(P, Q, Sc.set(r, r, r)));
+      balloons.setColorAt(n, b.gold ? gold : cols[b.col % cols.length]);
+      // the string and the sandbag hang straight down from the knot
+      const kn = r * K.knot;
+      strings.setMatrixAt(n, M.compose(D.copy(P).setY(P.y - kn * 0.96), ONE, Sc.set(k, K.string * k + 0.02, k)));
+      weights.setMatrixAt(nw++, M.compose(D.copy(P).setY(P.y - kn - K.string * k), Q1.setFromAxisAngle(AX, 0.1 * Math.cos(a)), Sc.set(WS * k, WS * k, WS * k)));
+      // the shine: a small soft oval on the side toward the camera, up and to the left
+      D.copy(cam.position).sub(P).normalize().addScaledVector(Uv, 0.62).addScaledVector(Rv, -0.5).normalize();
+      P.addScaledVector(D, r * 1.02);
+      const sg = b.gold ? 1.3 : 1;
+      shine.setMatrixAt(n, M.compose(P, Q.copy(cam.quaternion).multiply(Q1.setFromAxisAngle(AXZ_, 0.6)), Sc.set(r * 0.13 * sg, r * 0.24 * sg, r * 0.03)));
+      n++;
+    }
+    for (let i = 0; i < S.weights.length && nw < max * 2; i++) {
+      const w = S.weights[i];
+      if (!w.on) continue;
+      W(w.u, w.v, w.y, P);
+      weights.setMatrixAt(nw++, M.compose(P, Q1.setFromAxisAngle(AX, w.vy * 0.25), Sc.set(WS, WS, WS)));
+    }
+    balloons.count = shine.count = strings.count = n;
+    weights.count = nw;
+    balloons.instanceMatrix.needsUpdate = shine.instanceMatrix.needsUpdate = strings.instanceMatrix.needsUpdate = weights.instanceMatrix.needsUpdate = true;
+    if (balloons.instanceColor) balloons.instanceColor.needsUpdate = true;
+  };
+  const clear = () => { balloons.count = shine.count = strings.count = weights.count = 0; };
+  return { root, draw, clear, own: [bGeo, bMat, shGeo, shMat, stGeo, stMat, sack, wMat, balloons, shine, strings, weights] };
+}
+const AXZ_ = new V3(0, 0, 1);
+
 export function dotTexture() {
   const c = document.createElement('canvas'); c.width = c.height = 32;
   const x = c.getContext('2d'), gr = x.createRadialGradient(16, 16, 0, 16, 16, 15);

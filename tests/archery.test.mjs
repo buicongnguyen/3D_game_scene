@@ -4,8 +4,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {
   ARCH, rng, roundPlan, maxScore, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, gongV, ringOf, starsOf,
-  launch, stepArrow, flyAll, arc, solveAim, missReason, aimOffset, guideStep, ghostWanted, guideDevice, slowMo, SLOWMO,
+  launch, stepArrow, flyAll, arc, solveAim, missReason, aimOffset, guideStep, ghostWanted, guideDevice, slowMo, SLOWMO, stepArrowBalloons, solveBalloon,
 } from '../src/game/tricks/rules-archery.js';
+import { BAL, stagePlan, stackGap, groupMax, stageMax, newStage, stepStage, arrowPops, liveCount, falling, nearestBalloon, topOf } from '../src/game/tricks/rules-balloons.js';
 import * as THREE from 'three';
 import { solveArm, handBasis, STANCE, nockAt } from '../src/actors/archer-rig.js';
 import { ARCHERY, toWorld, toLane, laneSamples, archerySolids } from '../src/content/archery.js';
@@ -174,11 +175,11 @@ test('the sliding target stays inside its rail and the plan has the right ends',
   for (let t = 0; t < 30; t += 0.1) assert.ok(Math.abs(movingV(A.moving, t)) <= A.moving.vMax + 1e-9);
   const first = roundPlan(true), full = roundPlan(false), easy = roundPlan(true, true);
   assert.deepEqual(first.ends.map(e => e.arrows), [4, 4, 4]);
-  assert.deepEqual(full.ends.map(e => e.target), [0, 1, 2, 'moving']);
-  assert.deepEqual(full.ends.map(e => e.arrows), [6, 6, 6, 4]);
+  assert.deepEqual(full.ends.map(e => e.target), [0, 1, 2, 'moving', 'balloons']);
+  assert.deepEqual(full.ends.map(e => e.arrows), [6, 6, 6, 4, 8]);
   assert.equal(first.windScale, 0.5); assert.equal(full.windScale, 1); assert.equal(easy.windScale, 0.5);
   assert.ok(first.arc && easy.arc && !full.arc);
-  assert.equal(maxScore(full), 220);
+  assert.equal(maxScore(full), 220 + stageMax(stagePlan('normal')));
   // the aim arc fades on later tries
   assert.equal(arcAlpha(0), 1); assert.ok(arcAlpha(1) < 1 && arcAlpha(1) > arcAlpha(2)); assert.equal(arcAlpha(5), 0); assert.equal(arcAlpha(5, true), 1);
 });
@@ -186,12 +187,42 @@ test('the sliding target stays inside its rail and the plan has the right ends',
 // ------------------------------------------------------------------------------------------------ the bots: a round, end to end
 /** Play a whole round with a model player: sigma = the angular error of the hand (radians); belief = how much of the wind they allow for
  *  (0 ignores the sock, 1 reads it right), windErr = how much that guess wobbles. */
-function playRound(seed, { sigma, belief = 1, windErr = 0, first = false, holdT = 1.2, idle = false }) {
-  const plan = roundPlan(first, false), wind = makeWind(seed, plan.ends.length, plan.windScale), R = rng(seed * 7 + 1);
+/** The balloon end with a model player: every `pace` seconds one arrow, at the top balloon of the tallest stack with a chance of
+ *  `smart` (else at the lowest balloon), with the hand's error sigma. Returns the stage (its score, what popped, what was lost). */
+function playBalloons(seed, level, wind, ei, { sigma, smart = 1, pace = 3.5 }, R, gauss) {
+  const spec = stagePlan(level), we = wind.ends[ei], S = newStage(spec, seed, we.base * wind.scale * (we.mul ?? 1));
+  const sc = { targets: [], active: -1, back: A.back, side: A.side };
+  const adv = dt => { for (let t = 0; t < dt - 1e-9; t += 1 / 30) stepStage(S, 1 / 30, windAt(wind, ei, S.t)); };
+  let shots = 0;
+  while (shots < spec.arrows && !S.done && S.t < 200) {
+    adv(pace);
+    if (S.done) break;
+    const up = S.balloons.filter(b => b.state === 'up');
+    if (!up.length) continue;
+    let tgt;
+    if (R() < smart) {
+      const n = {};
+      for (const b of up) n[b.group] = (n[b.group] || 0) + 1;
+      tgt = topOf(S, +Object.keys(n).sort((a, b) => n[b] - n[a] || a - b)[0]);
+    } else tgt = up.slice().sort((a, b) => a.y - b.y)[0];
+    const aim = solveBalloon(tgt, 1, wind, ei, S.t);
+    aim.yaw += gauss() * sigma; aim.pitch += gauss() * sigma;
+    clampAim(aim, BAL.aim);
+    const a = launch({}, aim, 1, S.t);
+    for (let k = 0; a.state === 'fly' && k < 600; k++) { stepArrowBalloons(a, wind, ei, 1 / 60, sc, S, shots); stepStage(S, 1 / 60, windAt(wind, ei, S.t)); }
+    shots++;
+  }
+  for (let k = 0; k < 300 && falling(S); k++) stepStage(S, 1 / 30, windAt(wind, ei, S.t));
+  return S;
+}
+
+function playRound(seed, { sigma, belief = 1, windErr = 0, first = false, holdT = 1.2, idle = false, smart = 1, pace = 3.5 }) {
+  const plan = roundPlan(first, false), wind = makeWind(seed, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind)), R = rng(seed * 7 + 1);
   const gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += R(); return (s - 3) / 0.7071; };
   const sc = scene(0);
   let total = 0, bulls = 0;
   plan.ends.forEach((e, ei) => {
+    if (e.target === 'balloons') { if (!idle) total += playBalloons(seed, 'normal', wind, ei, { sigma, smart, pace }, R, gauss).score; return; }
     const idx = e.target === 'moving' ? 3 : e.target;
     sc.active = idx;
     sc.targets.forEach((t, i) => { t.off = e.target === 'moving' ? i !== 3 : i === 3; });
@@ -217,9 +248,10 @@ test('stars: an idle player earns none, a careful beginner one or two, a player 
   const N = 120, run = o => Array.from({ length: N }, (_, i) => playRound(i + 1, o).total);
   const idle = run({ idle: true, sigma: 0 });
   assert.ok(idle.every(s => s === 0));
-  const beginner = run({ sigma: 0.018, belief: 0 });          // a steady hand that never looks at the wind sock
-  const careless = run({ sigma: 0.035, belief: 0 });          // a shaky hand
-  const reader = run({ sigma: 0.008, belief: 0.7, windErr: 0.4 });   // a good hand, and the sock read about right
+  // (smart: how often they take the top balloon of a stack in the balloon end; pace: seconds between arrows there)
+  const beginner = run({ sigma: 0.018, belief: 0, smart: 0.4, pace: 4 });          // a steady hand that never looks at the wind sock
+  const careless = run({ sigma: 0.035, belief: 0, smart: 0.2, pace: 4.5 });        // a shaky hand
+  const reader = run({ sigma: 0.008, belief: 0.7, windErr: 0.4, smart: 0.9, pace: 3.2 });   // a good hand, and the sock read about right
   const expert = run({ sigma: 0.0005, belief: 1, windErr: 0.05 });
   const stars = xs => starsOf(median(xs));
   assert.ok(stars(beginner) >= 1 && stars(beginner) <= 2, `a careful beginner (median ${median(beginner)}) gets one or two stars`);
@@ -230,9 +262,9 @@ test('stars: an idle player earns none, a careful beginner one or two, a player 
   assert.ok(pctl(careless, 0.95) < ARCH.stars[2], 'three stars are not luck');
   assert.ok(pctl(beginner, 0.95) < ARCH.stars[2], 'and not for ignoring the wind');
   assert.equal(median(idle), 0);
-  // the guided first try (12 arrows, half the wind) lets a careful player earn a star, and half the wind helps everyone
+  // the guided first try (12 arrows, half the wind, no balloons; it is marked as an Easy round) lets a careful player earn a star
   const firstTry = run({ sigma: 0.018, belief: 0, first: true });
-  assert.ok(stars(firstTry) >= 1, `first try median ${median(firstTry)}`);
+  assert.ok(starsOf(median(firstTry), levelSpec(TRICK.archery, 'easy').stars) >= 1, `first try median ${median(firstTry)}`);
 });
 
 test('a round is deterministic for a seed', () => {
@@ -244,7 +276,7 @@ test('a round is deterministic for a seed', () => {
 
 test('the stars in the data are the stars of the rules', () => {
   assert.deepEqual(TRICK.archery.stars, ARCH.stars);
-  assert.equal(starsOf(59), 0); assert.equal(starsOf(60), 1); assert.equal(starsOf(100), 2); assert.equal(starsOf(140), 3);
+  assert.equal(starsOf(69), 0); assert.equal(starsOf(70), 1); assert.equal(starsOf(160), 2); assert.equal(starsOf(240), 3);
 });
 
 // ------------------------------------------------------------------------------------------------ the site
@@ -340,7 +372,7 @@ test('the teaching scene exists in both stories, and the data row reads like the
   useStory('classic');
   assert.ok(t.seasons.includes('spring') && t.seasons.includes('autumn') && !t.seasons.includes('winter'));
   assert.equal(t.unit, 'points');
-  assert.ok(t.length <= 90 && t.firstLength <= t.length);
+  assert.ok(t.length <= 120 && t.firstLength <= 60 && t.firstLength <= t.length);
   assert.ok(fs.readFileSync(new URL('../src/content/archery.js', import.meta.url), 'utf8').includes('WEST'));
 });
 
@@ -349,7 +381,7 @@ test('the first end of the first try is an easy end: a bigger face, a weaker win
   const first = roundPlan(true), full = roundPlan(false);
   assert.ok(first.ends[0].scale > 1.3 && first.ends[0].wind < 0.6 && first.ends[0].bigArc, 'the first end is easy');
   for (const e of first.ends.slice(1)) assert.ok(e.scale === 1 && e.wind === 1 && !e.bigArc, 'the others are as usual');
-  for (const e of full.ends) assert.ok(e.scale === 1 && e.wind === 1 && !e.bigArc, 'later tries have no easy end');
+  for (const e of full.ends) if (e.target !== 'balloons') assert.ok(e.scale === 1 && e.wind === 1 && !e.bigArc, 'later tries have no easy end');
   // the weaker wind of an end is a multiple of the same seeded wind
   const w1 = makeWind(9, 3, 0.5), w2 = makeWind(9, 3, 0.5, first.ends.map(e => e.wind));
   for (const t of [0, 1.7, 4, 9]) {
@@ -470,7 +502,7 @@ test("the stance fits Mika: the bow hand and the string hand reach with the meas
 
 // ------------------------------------------------------------------------------------------------ the levels
 /** A whole round at a level with a model player (as playRound above), the sliding target and the gong led with an error of `lead` seconds. */
-function playLevel(seed, level, { sigma, belief = 1, windErr = 0, lead = 0, holdT = 1.2 }) {
+function playLevel(seed, level, { sigma, belief = 1, windErr = 0, lead = 0, holdT = 1.2, smart = 1, pace = 3.5 }) {
   const plan = roundPlan(false, level), wind = makeWind(seed, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind), plan.gust), R = rng(seed * 7 + 1);
   const gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += R(); return (s - 3) / 0.7071; };
   let period = A.moving.period;
@@ -478,6 +510,7 @@ function playLevel(seed, level, { sigma, belief = 1, windErr = 0, lead = 0, hold
   const sc = { targets, active: 0, back: A.back, side: A.side, vAt: (i, t) => (i === 4 ? gongV(A.gong, t) : movingV(A.moving, t, period)) };
   let total = 0;
   plan.ends.forEach((e, ei) => {
+    if (e.target === 'balloons') { total += playBalloons(seed, level, wind, ei, { sigma, smart, pace }, R, gauss).score; return; }
     const idx = e.target === 'moving' ? 3 : e.target === 'gong' ? 4 : e.target;
     period = e.period || A.moving.period;
     sc.active = idx;
@@ -499,9 +532,9 @@ function playLevel(seed, level, { sigma, belief = 1, windErr = 0, lead = 0, hold
 test('levels: Easy has no wind and the aim arc, Normal is the full round, Difficult has gusts, a lively sliding target and a gong', () => {
   const E = roundPlan(false, 'easy'), N = roundPlan(false, 'normal'), H = roundPlan(false, 'hard');
   assert.deepEqual(roundPlan(false, true), E); assert.deepEqual(roundPlan(false, false), N); assert.deepEqual(roundPlan(false), N); assert.deepEqual(roundPlan(false, 'nonsense'), N);
-  assert.deepEqual(E.ends.map(e => [e.target, e.arrows]), [[0, 6], [1, 6], [2, 4]]);
-  assert.deepEqual(H.ends.map(e => [e.target, e.arrows]), [[1, 6], [2, 6], ['moving', 6], ['gong', 6]]);
-  assert.deepEqual([maxScore(E), maxScore(N), maxScore(H)], [160, 220, 240]);
+  assert.deepEqual(E.ends.map(e => [e.target, e.arrows]), [[0, 6], [1, 6], [2, 4], ['balloons', 6]]);
+  assert.deepEqual(H.ends.map(e => [e.target, e.arrows]), [[1, 6], [2, 6], ['moving', 6], ['gong', 6], ['balloons', 8]]);
+  assert.deepEqual([maxScore(E), maxScore(N), maxScore(H)], [160, 220, 240].map((v, i) => v + stageMax(stagePlan(['easy', 'normal', 'hard'][i]))));
   assert.ok(E.windScale === 0 && E.arc && !E.noArc && N.windScale === 1 && !N.noArc && H.windScale > 1 && H.gust > 1 && H.noArc);
   assert.deepEqual(roundPlan(true, 'hard'), roundPlan(true), 'the guided first try is the same whatever the level');
   // Easy: not a breath of wind, at any second of any end
@@ -533,8 +566,9 @@ test('levels: Easy has no wind and the aim arc, Normal is the full round, Diffic
 test('levels: the stars. Easy rewards a steady hand, Difficult wants the wind read and the moving targets led', () => {
   const N = 80, run = (level, o) => Array.from({ length: N }, (_, i) => playLevel(i + 1, level, o));
   const stars = (level, xs) => starsOf(median(xs), levelSpec(TRICK.archery, level).stars);
-  const careless = { sigma: 0.035, belief: 0, lead: 0.5 }, beginner = { sigma: 0.018, belief: 0, lead: 0.35 }, learner = { sigma: 0.013, belief: 0.4, windErr: 0.5, lead: 0.25 };
-  const reader = { sigma: 0.008, belief: 0.7, windErr: 0.4, lead: 0.15 }, sharp = { sigma: 0.005, belief: 0.9, windErr: 0.2, lead: 0.08 };
+  // (smart: how often they take the top balloon of a stack in the balloon end; pace: seconds between arrows there)
+  const careless = { sigma: 0.035, belief: 0, lead: 0.5, smart: 0.2, pace: 4.5 }, beginner = { sigma: 0.018, belief: 0, lead: 0.35, smart: 0.4, pace: 4 }, learner = { sigma: 0.013, belief: 0.4, windErr: 0.5, lead: 0.25, smart: 0.7, pace: 3.5 };
+  const reader = { sigma: 0.008, belief: 0.7, windErr: 0.4, lead: 0.15, smart: 0.9, pace: 3.2 }, sharp = { sigma: 0.005, belief: 0.9, windErr: 0.2, lead: 0.08, smart: 1, pace: 3 };
   assert.ok(stars('easy', run('easy', careless)) >= 1, 'Easy: a shaky hand still earns a star');
   assert.equal(stars('easy', run('easy', beginner)), 2);
   assert.equal(stars('easy', run('easy', reader)), 3);
@@ -548,4 +582,237 @@ test('levels: the stars. Easy rewards a steady hand, Difficult wants the wind re
   assert.equal(stars('hard', run('hard', sharp)), 3);
   assert.ok(pctl(run('hard', reader), 0.9) < levelSpec(TRICK.archery, 'hard').stars[2], 'and three stars are not luck');
   assert.ok(levelSpec(TRICK.archery, 'hard').length >= levelSpec(TRICK.archery, 'normal').length);
+});
+
+// ------------------------------------------------------------------------------------------------ the balloon end
+const noScene = () => ({ targets: [], active: -1, back: A.back, side: A.side });
+/** A stage of one wave made for a test. */
+const stageOf = (groups, o = {}) => newStage({ arrows: 6, rise: 0.2, hit: 1, selfPop: false, wind: 1, waveTime: 60, ...o, waves: [groups] }, o.seed ?? 3, o.est ?? 0);
+/** Shoot one full-draw arrow at balloon b in a wind and let the stage run on for `after` seconds. Returns the events. */
+function shootAt(S, b, wind = calm, root = 0, after = 3, miss = 0) {
+  const ev = [], aim = solveBalloon(b, 1, wind, 0, S.t), sc = noScene();
+  aim.yaw += miss;
+  const a = launch({}, aim, 1, S.t);
+  for (let k = 0; a.state === 'fly' && k < 600; k++) { stepArrowBalloons(a, wind, 0, 1 / 120, sc, S, root, ev); stepStage(S, 1 / 120, windAt(wind, 0, S.t), ev); }
+  assert.notEqual(a.state, 'fly', 'the arrow always stops');
+  for (let t = 0; t < after; t += 1 / 60) stepStage(S, 1 / 60, windAt(wind, 0, S.t), ev);
+  return ev;
+}
+
+test('balloons: every level ends with a balloon end, scaled; the guided first try has none', () => {
+  for (const lv of ['easy', 'normal', 'hard']) {
+    const plan = roundPlan(false, lv), last = plan.ends[plan.ends.length - 1], spec = stagePlan(lv);
+    assert.equal(last.target, 'balloons');
+    assert.equal(plan.ends.filter(e => e.target === 'balloons').length, 1);
+    assert.equal(last.arrows, spec.arrows); assert.equal(last.level, lv); assert.equal(last.wind, spec.wind);
+    // every stack clears the one below it, starts low and has room to climb; everything can be aimed at
+    for (const w of spec.waves) for (const g of w) {
+      let y = g.y;
+      g.k.forEach((k, i) => { assert.ok(BAL.kinds[k], k); if (i) y += stackGap(g.k[i - 1], k); });
+      assert.ok(g.y >= 1.1 && y < BAL.ceil - 1.5, `${lv}: a stack tops out at ${y}`);
+      assert.ok(Math.abs(g.v) <= 2.3 && g.u >= 9 && g.u <= 13);
+    }
+    assert.ok(stageMax(spec) > 0 && maxScore(plan) === plan.ends.slice(0, -1).reduce((s, e) => s + e.arrows * 10, 0) + stageMax(spec));
+  }
+  assert.ok(!roundPlan(true).ends.some(e => e.target === 'balloons') && !roundPlan(true, 'hard').ends.some(e => e.target === 'balloons'));
+  const E = stagePlan('easy'), N = stagePlan('normal'), H = stagePlan('hard');
+  assert.equal(stagePlan('nonsense'), N);
+  // Easy: slow, stacks of two, a generous hit circle, nothing pops by itself. Normal: stacks of three, a diagonal, a golden one.
+  // Difficult: faster, a stronger share of the wind, an exact hit circle, more small balloons.
+  const tall = s => Math.max(...s.waves.flat().map(g => g.k.length)), kinds = s => s.waves.flat().flatMap(g => g.k);
+  assert.ok(E.rise < N.rise && N.rise < H.rise && E.hit > N.hit && N.hit > H.hit && H.hit === 1);
+  assert.ok(!E.selfPop && N.selfPop && H.selfPop);
+  assert.equal(tall(E), 2); assert.equal(tall(N), 3); assert.equal(tall(H), 3);
+  assert.ok(!kinds(E).includes('gold') && kinds(N).includes('gold') && kinds(H).includes('gold'));
+  assert.ok(N.waves.flat().some(g => g.lineUp) && H.waves.flat().some(g => g.lineUp) && !E.waves.flat().some(g => g.lineUp));
+  assert.ok(H.wind * ARCH.hardWind > N.wind && E.waves.length < N.waves.length);
+  assert.ok(kinds(H).filter(k => k === 'small').length > kinds(N).filter(k => k === 'small').length);
+  // bigger is worth less, the golden one the most; a stack shot from the top is worth its chain
+  const K = BAL.kinds;
+  assert.ok(K.big.r > K.mid.r && K.mid.r > K.small.r && K.big.pts < K.mid.pts && K.mid.pts < K.small.pts && K.gold.pts > K.small.pts);
+  assert.equal(groupMax({ k: ['mid', 'mid', 'mid'] }), 3 + 6 + 9);
+  assert.equal(groupMax({ k: ['small', 'mid', 'big'] }), 2 + 3 * 2 + 4 * 3);
+  assert.equal(groupMax({ k: ['gold'] }), 8);
+});
+
+test('balloons: they rise, drift downwind (a big one faster than a small one) and can always be aimed at while they climb', () => {
+  const S = stageOf([{ k: ['big'], u: 9.5, v: 0, y: 1.3 }, { k: ['small'], u: 12, v: 0, y: 1.3 }]);
+  const [big, small] = S.balloons, v0 = [big.v, small.v];
+  for (let i = 0; i < 300; i++) stepStage(S, 1 / 60, 2);
+  near(big.y, 1.3 + 0.2 * 5, 1e-6); near(small.y, 1.3 + 0.2 * 5, 1e-6);
+  near(big.v - v0[0], 2 * BAL.kinds.big.sail * 5, 1e-6); near(small.v - v0[1], 2 * BAL.kinds.small.sail * 5, 1e-6);
+  assert.ok(big.v - v0[0] > small.v - v0[1] && small.v > v0[1], 'downwind, the big one faster');
+  assert.ok(Math.abs(big.sv - big.v) <= BAL.swayA + 1e-9 && Math.abs(big.sy - big.y) <= BAL.swayA, 'the bob is small');
+  // a wind the other way takes them the other way; no wind, straight up
+  const L = stageOf([{ k: ['mid'], u: 10, v: 0, y: 1.3 }]), l0 = L.balloons[0].v;
+  for (let t = 0; t < 3; t += 1 / 60) stepStage(L, 1 / 60, -1.5);
+  assert.ok(L.balloons[0].v < l0);
+  // the same at any frame rate
+  const P = stageOf([{ k: ['mid'], u: 10, v: 0, y: 1.3 }]), Q = stageOf([{ k: ['mid'], u: 10, v: 0, y: 1.3 }]);
+  for (let i = 0; i < 300; i++) stepStage(P, 1 / 60, 1.2);
+  for (let i = 0; i < 50; i++) stepStage(Q, 0.1, 1.2);
+  near(P.balloons[0].y, Q.balloons[0].y, 1e-6); near(P.balloons[0].v, Q.balloons[0].v, 1e-6);
+  // every balloon of every level, from the moment it is let go to the top of the range, is inside the end's aim cone
+  for (const lv of ['easy', 'normal', 'hard']) for (const est of [-2.4, 0, 2.4]) {
+    const T = newStage(stagePlan(lv), 11, est);
+    for (const b of T.balloons) for (const y of [b.y, BAL.ceil]) {
+      const aim = solveBalloon({ ...b, sy: y }, 1, calm, 0, 0);
+      const exact = { yaw: Math.atan2(b.sv - ARCH.muzzle.v, b.u - ARCH.muzzle.u), pitch: Math.atan2(y - ARCH.eye, b.u - ARCH.muzzle.u) };
+      assert.ok(Math.abs(exact.yaw) < BAL.aim.yawMax - 0.02 && aim.pitch < BAL.aim.pitchMax - 0.01 && aim.pitch > BAL.aim.pitchMin, `${lv}: yaw ${exact.yaw} pitch ${aim.pitch}`);
+    }
+  }
+  assert.ok(BAL.aim.pitchMax > ARCH.pitchMax && BAL.aim.yawMax > ARCH.yawMax, 'the balloon end aims higher and wider than the targets');
+  assert.deepEqual(clampAim({ yaw: 1, pitch: 1 }, BAL.aim), { yaw: BAL.aim.yawMax, pitch: BAL.aim.pitchMax });
+  assert.deepEqual(clampAim({ yaw: 1, pitch: 1 }), { yaw: ARCH.yawMax, pitch: ARCH.pitchMax });
+});
+
+test('balloons: one arrow at the top of a stack pops the whole column, each next one worth more', () => {
+  const S = stageOf([{ k: ['mid', 'mid', 'mid'], u: 10.5, v: -1, y: 1.2 }]);
+  for (let t = 0; t < 1.5; t += 1 / 60) stepStage(S, 1 / 60, 0);
+  const top = topOf(S, 0);
+  assert.equal(top.id, 2);
+  assert.equal(nearestBalloon(S, Math.atan2(top.sv - ARCH.muzzle.v, top.u - ARCH.muzzle.u), Math.atan2(top.sy - ARCH.eye, top.u - ARCH.muzzle.u), ARCH.muzzle.u, ARCH.muzzle.v, ARCH.eye), top);
+  const ev = shootAt(S, top), pops = ev.filter(e => e.type === 'pop');
+  assert.deepEqual(pops.map(e => [e.b.id, e.by, e.mult, e.pts]), [[2, 'arrow', 1, 3], [1, 'weight', 2, 6], [0, 'weight', 3, 9]]);
+  assert.equal(S.score, 18); assert.equal(S.popped, 3); assert.equal(S.lost, 0);
+  assert.equal(liveCount(S), 0);
+  assert.ok(!falling(S) && ev.filter(e => e.type === 'thud').length === 3, 'every sandbag reaches the ground');
+  assert.ok(S.done, 'the last wave is cleared: the end is over');
+  // the bottom one alone: one balloon, its own points, the others still up
+  const B = stageOf([{ k: ['mid', 'mid', 'mid'], u: 10.5, v: -1, y: 1.2 }]);
+  const ev2 = shootAt(B, B.balloons[0], calm, 0, 1);
+  assert.deepEqual(ev2.filter(e => e.type === 'pop').map(e => [e.b.id, e.pts]), [[0, 3]]);
+  assert.equal(liveCount(B), 2); assert.equal(B.score, 3);
+  // the middle one: it and the one below (x2), the top one flies on
+  const M = stageOf([{ k: ['small', 'small', 'small'], u: 11, v: 1, y: 1.2 }]);
+  shootAt(M, M.balloons[1], calm, 0, 2);
+  assert.equal(M.score, 4 + 8); assert.equal(liveCount(M), 1); assert.equal(M.balloons[2].state, 'up');
+  // an arrow that misses pops nothing; an arrow goes on through a balloon to one behind it (each its own points, no chain bonus)
+  const X = stageOf([{ k: ['mid'], u: 10, v: 0, y: 2 }]);
+  assert.equal(shootAt(X, X.balloons[0], calm, 0, 0.5, 0.09).filter(e => e.type === 'pop').length, 0);
+  const T = stageOf([{ k: ['big'], u: 9.5, v: 0, y: 2 }, { k: ['big'], u: 12, v: 0, y: 2 }]);
+  T.balloons[1].v = T.balloons[0].v + 0.12; T.balloons[0].ph = T.balloons[1].ph = 0;
+  stepStage(T, 1e-4, 0);
+  const through = shootAt(T, T.balloons[0], calm, 0, 0.2).filter(e => e.type === 'pop');
+  assert.deepEqual(through.map(e => [e.by, e.mult]), [['arrow', 1], ['arrow', 1]]);
+  // the hit circle is the level's: an arrow just outside the balloon pops it on Easy's generous circle, not on Difficult's exact one
+  for (const [hit, n] of [[1.35, 1], [1, 0]]) {
+    const G = stageOf([{ k: ['mid'], u: 10, v: 0, y: 2.5 }], { hit }), b = G.balloons[0];
+    assert.equal(arrowPops(G, b.u - 0.2, b.sv + b.r * 1.2, b.sy, b.u + 0.2, b.sv + b.r * 1.2, b.sy, 0), n);
+  }
+});
+
+test('balloons: a sandbag falls straight down, so it misses a balloon that has drifted aside; the wind lines a diagonal up', () => {
+  const S = stageOf([{ k: ['mid', 'mid'], u: 10, v: 0, y: 1.3 }]);
+  S.balloons[0].v += 0.9;                                         // the lower one has drifted nearly a metre aside
+  stepStage(S, 1e-4, 0);
+  const ev = shootAt(S, S.balloons[1]);
+  assert.deepEqual(ev.filter(e => e.type === 'pop').map(e => e.b.id), [1]);
+  assert.equal(S.balloons[0].state, 'up'); assert.equal(S.score, 3);
+  const thud = ev.find(e => e.type === 'thud');
+  assert.ok(thud && Math.abs(thud.v - S.balloons[1].sv) < 1e-9 && thud.y === 0, 'the sandbag came straight down to the ground');
+  assert.ok(!S.done && liveCount(S) === 1);
+  // a diagonal (small, mid, big from the bottom) in a steady wind: at first the top balloon's sandbag would fall beside the
+  // middle one; about lineUp seconds later the three stand in a column and one arrow takes them all
+  const diag = [{ k: ['small', 'mid', 'big'], u: 10.5, v: 0, y: 1.2, lineUp: 6 }];
+  for (const w of [1.6, -1.6]) {
+    const early = stageOf(diag, { est: w, seed: 5 }), late = stageOf(diag, { est: w, seed: 5 }), wind = steady(w);
+    const [lo, mid, top] = early.balloons;
+    assert.ok((top.v - lo.v) * w < 0 && (mid.v - lo.v) * w < 0 && Math.abs(top.v - lo.v) > Math.abs(mid.v - lo.v), 'the higher, bigger ones start upwind');
+    assert.ok(Math.abs(top.v - mid.v) > mid.r * BAL.land + BAL.weightR, 'too far aside at first');
+    for (let t = 0; t < 0.4; t += 1 / 60) stepStage(early, 1 / 60, w);
+    shootAt(early, early.balloons[2], wind, 0, 2);
+    assert.equal(early.balloons[1].state, 'up', 'shot too early: the sandbag misses');
+    for (let t = 0; t < 6; t += 1 / 60) stepStage(late, 1 / 60, w);
+    assert.ok(Math.abs(late.balloons[2].v - late.balloons[0].v) < 0.05 && Math.abs(late.balloons[1].v - late.balloons[0].v) < 0.05, 'lined up');
+    shootAt(late, late.balloons[2], wind, 0, 2.5);
+    assert.equal(liveCount(late), 0);
+    assert.equal(late.score, 2 + 3 * 2 + 4 * 3);
+  }
+  // with no wind a diagonal is simply a column
+  const still = stageOf(diag, { est: 0 });
+  assert.ok(still.balloons.every(b => Math.abs(b.v - still.balloons[0].v) < 1e-9));
+});
+
+test('balloons: at the top of the range one pops by itself and its sandbag breaks the ones below: those are lost, not scored', () => {
+  const S = stageOf([{ k: ['mid', 'mid', 'mid'], u: 10.5, v: 0, y: 1.2 }], { selfPop: true, rise: 0.5 });
+  const ev = [], top0 = S.balloons[2].y;
+  let t = 0;
+  while (!ev.some(e => e.type === 'pop') && t < 30) { stepStage(S, 1 / 60, 0, ev); t += 1 / 60; }
+  near(t, (BAL.ceil - top0) / 0.5, 0.05, 'it pops when it reaches the top');
+  assert.deepEqual([ev[0].b.id, ev[0].by, ev[0].pts, ev[0].lost], [2, 'self', 0, true]);
+  near(S.balloons[2].y, BAL.ceil, 0.02);
+  for (let k = 0; k < 240; k++) stepStage(S, 1 / 60, 0, ev);
+  assert.deepEqual(ev.filter(e => e.type === 'pop').map(e => [e.b.id, e.by, e.pts, e.lost]), [[2, 'self', 0, true], [1, 'weight', 0, true], [0, 'weight', 0, true]]);
+  assert.equal(S.score, 0); assert.equal(S.lost, 3); assert.equal(S.popped, 0);
+  assert.ok(S.done);
+  // shot before it gets there, the same stack is 18 points: a reason to take the high ones first
+  const B = stageOf([{ k: ['mid', 'mid', 'mid'], u: 10.5, v: 0, y: 1.2 }], { selfPop: true, rise: 0.5 });
+  for (let k = 0; k < 120; k++) stepStage(B, 1 / 60, 0);
+  shootAt(B, topOf(B, 0));
+  assert.equal(B.score, 18); assert.equal(B.lost, 0);
+  // a chain an arrow started is never taken away by a later pop at the top, and the other way round
+  const C = stageOf([{ k: ['mid', 'mid'], u: 10, v: -1.5, y: 1.2 }, { k: ['small'], u: 12, v: 1.5, y: 6.2 }], { selfPop: true, rise: 0.5 });
+  const evC = shootAt(C, topOf(C, 0), calm, 0, 4);
+  assert.equal(C.score, 3 + 6); assert.equal(C.lost, 1);
+  assert.ok(evC.some(e => e.type === 'pop' && e.by === 'self' && e.b.kind === 'small'));
+  // Easy: nothing pops by itself; a balloon floats off over the top and nothing falls
+  const E = stageOf([{ k: ['mid', 'mid'], u: 10, v: 0, y: 1.2 }], { selfPop: false, rise: 0.8 }), evE = [];
+  for (let k = 0; k < 60 * 14 && !E.done; k++) stepStage(E, 1 / 60, 0, evE);
+  assert.ok(E.done && E.away === 2 && E.lost === 0 && E.score === 0 && !evE.some(e => e.type === 'pop') && !falling(E));
+  assert.ok(E.balloons.every(b => b.state === 'away' && b.y > BAL.ceil));
+  // a balloon the wind carries over the rope cordon is gone too
+  const W = stageOf([{ k: ['big'], u: 9.5, v: 0, y: 1.3 }], { selfPop: true });
+  for (let k = 0; k < 60 * 12 && !W.done; k++) stepStage(W, 1 / 60, 5);
+  assert.ok(W.done && W.away === 1 && W.lost === 0 && Math.abs(W.balloons[0].v) > BAL.side);
+});
+
+test('balloons: the waves follow each other, the stage is the same for a seed, and a whole level plays out', () => {
+  // the next wave comes a breath after the last balloon of this one is gone, or when its time is up
+  const spec = stagePlan('normal'), S = newStage(spec, 21, 1.2);
+  assert.equal(S.wave, 0);
+  const n0 = S.balloons.length;
+  assert.equal(n0, spec.waves[0].reduce((s, g) => s + g.k.length, 0));
+  for (const b of S.balloons) b.state = 'away';
+  const ev = [];
+  for (let t = 0; t < BAL.gap - 0.1; t += 1 / 60) stepStage(S, 1 / 60, 0, ev);
+  assert.equal(S.wave, 0);
+  for (let t = 0; t < 0.3; t += 1 / 60) stepStage(S, 1 / 60, 0, ev);
+  assert.equal(S.wave, 1); assert.ok(ev.some(e => e.type === 'wave' && e.n === 1));
+  assert.ok(S.balloons.length > n0 && S.balloons.slice(n0).every(b => b.state === 'up' && b.wave === 1 && b.born > 0));
+  const T = newStage({ ...spec, selfPop: false, waveTime: 4 }, 21, 0);
+  for (let t = 0; t < 4.2; t += 1 / 60) stepStage(T, 1 / 60, 0);
+  assert.equal(T.wave, 1, 'the next wave does not wait for ever');
+  assert.ok(liveCount(T) > n0);
+  // a wave is let go upwind, mirrored or not by the seed, in colours that differ from their neighbours; a golden one is golden
+  const up = newStage(spec, 4, 2), down = newStage(spec, 4, -2);
+  const mean = Z => Z.balloons.reduce((s, b) => s + b.v, 0) / Z.balloons.length;
+  assert.ok(mean(up) < mean(down), 'upwind of the middle');
+  for (let s = 1; s < 30; s++) {
+    const Z = newStage(stagePlan('hard'), s, 1.5);
+    for (let k = 0; k < 60 * 40; k++) stepStage(Z, 1 / 30, 1.5);
+    assert.ok(Z.done, 'left alone, a stage ends by itself');
+    for (const b of Z.balloons) assert.ok(b.gold ? b.col === -1 : b.col >= 0 && b.col < BAL.colours);
+    for (let i = 1; i < Z.balloons.length; i++) if (!Z.balloons[i].gold && !Z.balloons[i - 1].gold) assert.notEqual(Z.balloons[i].col, Z.balloons[i - 1].col);
+  }
+  // replay: the same seed, wind and arrows give the same stage, to the last digit; another seed another one
+  const play = seed => {
+    const wind = makeWind(seed, 5, 1, [1, 1, 1, 1, 0.7]), R = rng(seed * 7 + 1), gauss = () => { let s = 0; for (let i = 0; i < 6; i++) s += R(); return (s - 3) / 0.7071; };
+    const Z = playBalloons(seed, 'normal', wind, 4, { sigma: 0.01, smart: 0.8, pace: 3.3 }, R, gauss);
+    return JSON.stringify({ t: Z.t, score: Z.score, popped: Z.popped, lost: Z.lost, away: Z.away, b: Z.balloons.map(b => [b.state, b.v, b.y, b.col]) });
+  };
+  assert.equal(play(77), play(77));
+  assert.notEqual(play(77), play(78));
+  // whole stages: a perfect hand that always takes the top of the tallest stack clears most of what the level can give;
+  // a hand that only ever takes the lowest balloon gets far less (the chain is the point of the end)
+  for (const lv of ['easy', 'normal', 'hard']) {
+    const run = smart => Array.from({ length: 40 }, (_, i) => {
+      const seed = i + 1, plan = roundPlan(false, lv), ei = plan.ends.length - 1, wind = makeWind(seed, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind), plan.gust);
+      const R = rng(seed * 7 + 1), gauss = () => { let s = 0; for (let k = 0; k < 6; k++) s += R(); return (s - 3) / 0.7071; };
+      return playBalloons(seed, lv, wind, ei, { sigma: 0.002, smart, pace: 3 }, R, gauss).score;
+    });
+    const top = median(run(1)), low = median(run(0)), max = stageMax(stagePlan(lv));
+    assert.ok(top >= max * 0.8, `${lv}: the clever shots give ${top} of about ${max}`);
+    assert.ok(low < top * 0.75, `${lv}: the lowest balloons only give ${low} against ${top}`);
+  }
 });

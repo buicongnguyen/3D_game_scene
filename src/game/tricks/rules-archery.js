@@ -8,6 +8,10 @@
 //
 // Safety is part of the rules, not of the scene: the aim is limited to a narrow cone down the lane, an arrow stops at the
 // ground, at a target, at the backstop plane or at the side limit, and nothing else exists to be hit.
+//
+// The last end of every round after the first try is the BALLOON end (./rules-balloons.js): balloons that rise and drift on
+// the same wind, each with a sandbag that falls when it pops and breaks the balloons below.
+import { BAL, stagePlan, stageMax, arrowPops } from './rules-balloons.js';
 
 export const ARCH = {
   g: 9.81,
@@ -35,7 +39,7 @@ export const ARCH = {
   easyWind: 0.45,         // ...and the wind this much weaker
   guideIdle: 6,           // seconds of doing nothing on the first try before the ghost hand shows how
   guideAim: 0.05,         // radians of aiming that count as "has aimed"
-  stars: [60, 100, 140],  // (content/tricks.js repeats them: the test keeps the two in step)
+  stars: [70, 160, 240],  // Normal's marks, with its balloon end (content/tricks.js repeats them: the test keeps the two in step)
 };
 
 /** A small seeded random source (same numbers every run for the same seed). */
@@ -54,7 +58,9 @@ export function rng(seed) {
  * first: the guided first try (three short ends, a gentle wind, no sliding target). Its very first end is an "easy end": the
  * target face is half as big again and the wind half as strong as the rest of that try (end.scale, end.wind), and its dotted
  * aim arc is drawn big (end.bigArc).
- * Returns { ends: [{ target: 0 | 1 | 2 | 'moving' | 'gong', arrows, scale, wind, bigArc, period? }], windScale, gust, arc, noArc }.
+ * Every level's round then closes with the balloon end (target 'balloons', level: whose stagePlan; rules-balloons.js); the
+ * guided first try has none.
+ * Returns { ends: [{ target: 0 | 1 | 2 | 'moving' | 'gong' | 'balloons', arrows, scale, wind, bigArc, period?, level? }], windScale, gust, arc, noArc }.
  */
 export function roundPlan(first, level = 'normal') {
   const lv = level === true ? 'easy' : level === 'easy' || level === 'hard' ? level : 'normal';
@@ -63,14 +69,14 @@ export function roundPlan(first, level = 'normal') {
     const n = ARCH.arrowsFirst;
     return { ends: [end(0, n, { scale: ARCH.easyScale, wind: ARCH.easyWind, bigArc: true }), end(1, n), end(2, n)], windScale: 0.5, gust: 1, arc: true, noArc: false };
   }
-  const n = ARCH.arrows;
-  if (lv === 'easy') return { ends: [end(0, n), end(1, n), end(2, ARCH.arrowsFar)], windScale: 0, gust: 1, arc: true, noArc: false };
-  if (lv === 'hard') return { ends: [end(1, n), end(2, n), end('moving', n, { period: ARCH.fastPeriod }), end('gong', n)], windScale: ARCH.hardWind, gust: ARCH.hardGust, arc: false, noArc: true };
-  return { ends: [end(0, n), end(1, n), end(2, n), end('moving', ARCH.arrowsMoving)], windScale: 1, gust: 1, arc: false, noArc: false };
+  const n = ARCH.arrows, bs = stagePlan(lv), bal = end('balloons', bs.arrows, { wind: bs.wind, level: lv });
+  if (lv === 'easy') return { ends: [end(0, n), end(1, n), end(2, ARCH.arrowsFar), bal], windScale: 0, gust: 1, arc: true, noArc: false };
+  if (lv === 'hard') return { ends: [end(1, n), end(2, n), end('moving', n, { period: ARCH.fastPeriod }), end('gong', n), bal], windScale: ARCH.hardWind, gust: ARCH.hardGust, arc: false, noArc: true };
+  return { ends: [end(0, n), end(1, n), end(2, n), end('moving', ARCH.arrowsMoving), bal], windScale: 1, gust: 1, arc: false, noArc: false };
 }
 
-/** The most points a plan can give. */
-export function maxScore(plan) { return plan.ends.reduce((s, e) => s + e.arrows, 0) * 10; }
+/** The most points a plan can give (a ring is 10 at best; the balloon end: its best chains, one arrow each). */
+export function maxScore(plan) { return plan.ends.reduce((s, e) => s + (e.target === 'balloons' ? stageMax(stagePlan(e.level)) : e.arrows * 10), 0); }
 
 /** How strongly the dotted aim arc is drawn on the nth try (plays so far, 0 = the first): 1 first try and on Easy, then fading to nothing. */
 export function arcAlpha(plays, easy = false) {
@@ -134,10 +140,10 @@ export function swayAt(t, amp, out = { yaw: 0, pitch: 0 }) {
   return out;
 }
 
-/** Keep an aim inside the cone. */
-export function clampAim(a) {
-  a.yaw = a.yaw < -ARCH.yawMax ? -ARCH.yawMax : a.yaw > ARCH.yawMax ? ARCH.yawMax : a.yaw;
-  a.pitch = a.pitch < ARCH.pitchMin ? ARCH.pitchMin : a.pitch > ARCH.pitchMax ? ARCH.pitchMax : a.pitch;
+/** Keep an aim inside the cone (lim: another cone, e.g. the balloon end's BAL.aim, which reaches much higher). */
+export function clampAim(a, lim = ARCH) {
+  a.yaw = a.yaw < -lim.yawMax ? -lim.yawMax : a.yaw > lim.yawMax ? lim.yawMax : a.yaw;
+  a.pitch = a.pitch < lim.pitchMin ? lim.pitchMin : a.pitch > lim.pitchMax ? lim.pitchMax : a.pitch;
   return a;
 }
 
@@ -302,18 +308,41 @@ export function arc(aim, draw, n, dt, out, eye = ARCH.eye) {
  * The aim that sends an arrow of the given draw through the middle of target `i` for the wind known at the release (a bot's
  * and the tests' helper): a few corrections of yaw and pitch from the flights themselves.
  */
-export function solveAim(i, draw, wind, end, t0, scene, eye = ARCH.eye) {
+export function solveAim(i, draw, wind, end, t0, scene, eye = ARCH.eye, lim = ARCH) {
   const tg = scene.targets[i], tv = tg.moving ? scene.vAt(i, t0 + 0.7) : tg.v;
   const aim = { yaw: Math.atan2(tv - ARCH.muzzle.v, tg.u - ARCH.muzzle.u), pitch: 0.03 };
   const sc = { ...scene, active: i };
   for (let k = 0; k < 8; k++) {
     // fly it to the plane only (the arrow is stopped there by a copy of the scene with this target as the backstop)
     const probe = { ...sc, back: tg.u, targets: [] };
-    const a = flyAll(clampAim({ ...aim }), draw, wind, end, t0, probe, eye);
+    const a = flyAll(clampAim({ ...aim }, lim), draw, wind, end, t0, probe, eye);
     const dist = Math.max(1, tg.u - ARCH.muzzle.u);
     const tvNow = tg.moving ? scene.vAt(i, t0 + a.t) : tg.v;
     aim.yaw += (tvNow - a.v) / dist;
     aim.pitch += (tg.y - a.y) / dist;
   }
-  return clampAim(aim);
+  return clampAim(aim, lim);
+}
+
+// ----------------------------------------------------------------------------------------------- the balloon end
+/**
+ * Advance an arrow of the balloon end by dt seconds: it flies as any arrow (the scene has no target faces then), and every
+ * balloon of stage S (rules-balloons.js) whose plane it crosses inside its hit circle pops; the arrow flies on to the ground,
+ * the backstop plane or the side limit. root: the arrow's number in the end (the chain it starts). Returns how many it popped.
+ */
+export function stepArrowBalloons(a, wind, end, dt, scene, S, root, events = null) {
+  let left = dt, n = 0;
+  while (left > 1e-9 && a.state === 'fly') {
+    const h = left > 1 / 120 ? 1 / 120 : left;
+    left -= h;
+    const pu = a.u, pv = a.v, py = a.y;
+    stepArrow(a, wind, end, h, scene);
+    n += arrowPops(S, pu, pv, py, a.u, a.v, a.y, root, events);
+  }
+  return n;
+}
+
+/** The aim that sends a full-draw arrow through a balloon where it hangs now (a bot's and the QA script's helper). */
+export function solveBalloon(b, draw, wind, end, t0, eye = ARCH.eye) {
+  return solveAim(0, draw, wind, end, t0, { targets: [{ u: b.u, v: b.sv, y: b.sy, r: b.r }], back: 99, side: 99 }, eye, BAL.aim);
 }

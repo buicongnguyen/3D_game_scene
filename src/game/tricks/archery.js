@@ -13,18 +13,23 @@
 // ring, sight pins, wind gauge, buttons). The first try is guided (./archery-guide.js: a "How to shoot" card, a cue under the
 // crosshair, hints one at a time, a ghost hand after a few idle seconds, an easy first end, and the first arrow in slow motion).
 // Everything made here is removed and freed when the round ends, quit or not.
+//
+// The last end of every round after the first try is the BALLOON end (./rules-balloons.js): balloons rise down the range and
+// drift on the wind the sock shows, each with a sandbag on its string. A popped balloon drops its sandbag straight down and it
+// breaks the balloons below (a chain: x2, x3...), so the top of a stack is the shot. Drawn as four instanced meshes (archery-gear.js).
 import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { addCss } from './util.js';
 import { RING_COLOURS } from '../../world/archery.js';
 import { ArcherRig, STANCE, nockAt } from '../../actors/archer-rig.js';
-import { arrowGeometry, makeBow, makeFingers, dotTexture, BOW } from './archery-gear.js';
-import { createGuide, GUIDE_CSS, GHOST_LOOP } from './archery-guide.js';
+import { arrowGeometry, makeBow, makeFingers, dotTexture, BOW, makeBalloons, BALLOON_RGB, BALLOON_GOLD_RGB } from './archery-gear.js';
+import { createGuide, GUIDE_CSS, GHOST_LOOP, BALLOON_NOTE } from './archery-guide.js';
 import { ARCHERY } from '../../content/archery.js';
 import {
   ARCH, roundPlan, arcAlpha, makeWind, windAt, drawAt, speedFor, swayAmp, swayAt, clampAim, movingV, gongV, launch, stepArrow, arc, solveAim,
-  missReason, aimOffset, guideStep, ghostWanted, guideDevice, SLOWMO, slowMo,
+  missReason, aimOffset, guideStep, ghostWanted, guideDevice, SLOWMO, slowMo, stepArrowBalloons, solveBalloon,
 } from './rules-archery.js';
+import { BAL, stagePlan, newStage, stepStage, falling, nearestBalloon, topOf } from './rules-balloons.js';
 
 const V3 = THREE.Vector3;
 const A = ARCHERY;
@@ -36,6 +41,16 @@ const ARC_N = 26;           // dots in the aim arc
 // shoulder, low on the left) and looks at the bore line `conv` down the range; fov 0: the game's own
 const CAM = { back: 2.3, side: 1.4, up: 0.6, conv: 9, fov: 0 };
 const CAM_TALL = { back: 3.4, side: 0.7, up: 0.8, conv: 10, fov: 72 };   // a phone held upright sees a narrow strip: stand further back and look wider
+// the balloon end: the camera stands further back and looks up the range at a fixed tilt (pitch), turning only a little with the aim
+// (follow), so the balloons' whole climb stays in the picture, under the panels at the top
+// (Mika's head and the quiver come just under the lowest sandbag, not in front of the balloons). SHORT: a phone on its side: a
+// longer lens, looking up more (the end's panel moves to the left there, see the CSS). TALL: a phone held upright.
+const CAM_BAL = { back: 3.6, side: 1.1, up: 1.1, conv: 10, fov: 50, pitch: 0.23, follow: 0.08 };
+const CAM_BAL_SHORT = { back: 3.6, side: 1.1, up: 1.2, conv: 10, fov: 37.5, pitch: 0.33, follow: 0.08 };
+const CAM_BAL_TALL = { back: 4.2, side: 0.6, up: 1.25, conv: 10, fov: 64, pitch: 0.092, follow: 0.08 };
+const BAL_AIM0 = 0.25;      // the aim (pitch) at which the camera has exactly its own tilt
+const camBal = cam => (cam.aspect < 0.9 ? CAM_BAL_TALL : innerHeight < 500 ? CAM_BAL_SHORT : CAM_BAL);
+const BAL_MAX = 20;         // balloons drawn at once (two waves can overlap)
 const LOOK = 0.0016;        // radians of aim per pixel dragged (mouse, finger)
 const KEYAIM = 0.5;         // radians per second with the keys or the stick
 
@@ -97,6 +112,7 @@ body.arch-round{cursor:none}
 body.arch-help{cursor:auto}
 body.arch-help #archUi #archDraw,body.arch-help #archUi #archBreathe{visibility:hidden}
 body.arch-round #tJump,body.arch-round #tAct,body.arch-round #btnMenu,body.arch-round #btnJournal{visibility:hidden}
+@media (max-height:500px) and (min-width:521px){body.arch-bal #archUi .end{left:calc(84px + env(safe-area-inset-left,0px));transform:none}body.arch-bal #archUi .end b{font-size:14px}body.arch-bal #archUi .pips{gap:3px}body.arch-bal #archUi .pip{min-width:15px;height:15px;padding:0 2px;font-size:10px;line-height:15px}}
 @media (max-width:520px){#archUi .end{top:calc(68px + env(safe-area-inset-top,0px));max-width:62vw}#archUi .wind{top:calc(60px + env(safe-area-inset-top,0px))}#archUi .pip{min-width:17px;height:17px;font-size:10px;line-height:17px}#archLeave{top:calc(112px + env(safe-area-inset-top,0px))}}
 `;
 
@@ -126,9 +142,13 @@ export default {
     const rec = ctx.director.tricks.rec('archery');
     const plays = rec?.plays || 0, easy = !!ctx.easy;
     const plan = roundPlan(ctx.first, ctx.level);          // the level comes from the picker: Easy has no wind, Difficult a gong
+    // QA: window.__STARLINE_QA__.archeryStage = 'balloons' plays the balloon end alone; archerySeed fixes the wind and the waves
+    const qa = (typeof window !== 'undefined' && window.__STARLINE_QA__) || {};
+    if (qa.archeryStage === 'balloons' && plan.ends.some(e => e.target === 'balloons')) plan.ends = plan.ends.filter(e => e.target === 'balloons');
     const touch = !!ctx.ui.touch;
     const y0 = R.y0, hAt = (x, z) => world.heightAt(x, z);
-    const wind = makeWind(Math.floor(Math.random() * 1e6) + 1, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind), plan.gust);
+    const seed = qa.archerySeed || Math.floor(Math.random() * 1e6) + 1;
+    const wind = makeWind(seed, plan.ends.length, plan.windScale, plan.ends.map(e => e.wind), plan.gust);
     const G = A.gong, MOVING = 3, GONG = 4;                 // the sliding target and the gong, as indices into the scene's targets
     let period = A.moving.period;                           // the sliding target's pace in the end being shot
 
@@ -156,6 +176,9 @@ export default {
     scenery.targets.push({ u: A.moving.u, v: 0, r: A.moving.r, r0: A.moving.r, y: hAt(A.x - A.moving.u, A.z) - y0 + A.centreH, moving: true, off: true });
     scenery.targets.push({ u: G.u, v: G.v, r: G.r, r0: G.r, y: hAt(A.x - G.u, A.z - G.v) - y0 + G.h, moving: true, off: true });
     let gong = null;                                        // the gong's frame and disc (made for a plan that has a gong end)
+    // the balloon end (rules-balloons.js): its drawing (made for a plan that has one), the stage while it is played, the aim cone in use
+    let balVis = null, bal = null, cone = ARCH, bAim = null;
+    const tgB = { u: 0, v: 0, y: 0, r: 0 };
 
     const cleanup = () => {
       if (cleaned) return;
@@ -164,7 +187,7 @@ export default {
       for (const o of added) o.removeFromParent();
       for (const d of disposables) d.dispose?.();
       ui?.remove();
-      document.body.classList.remove('arch-round');
+      document.body.classList.remove('arch-round', 'arch-bal');
       if (document.pointerLockElement === canvas) document.exitPointerLock?.();
       if (savedFov) g.follow.fovBase = savedFov;
       g.follow.clearCutscene(true);
@@ -260,6 +283,11 @@ export default {
         scene.add(root); added.push(root);
         disposables.push(wood, rope, bronze, dark, gold, postG, barG, discG, rimG, bossG, ropeG);
         gong = { root, swing, L, ring: 0 };
+      }
+      // ---- the balloons of the last end: four small instanced meshes (archery-gear.js), empty until that end begins
+      if (plan.ends.some(e => e.target === 'balloons')) {
+        balVis = makeBalloons(BAL_MAX, BAL);
+        scene.add(balVis.root); added.push(balVis.root); disposables.push(...balVis.own);
       }
 
       // ---- the page layer
@@ -358,8 +386,16 @@ export default {
 
       // ---- the end's targets: the active one carries a red pennant; for the sliding end the others fold down
       const showEnd = e => {
-        const kind = plan.ends[e].target, slide = kind === 'moving', isGong = kind === 'gong', moving = slide || isGong;
+        const kind = plan.ends[e].target, slide = kind === 'moving', isGong = kind === 'gong', isBal = kind === 'balloons', moving = slide || isGong || isBal;
         period = plan.ends[e].period || A.moving.period;
+        cone = isBal ? BAL.aim : ARCH;
+        if (isBal) {
+          // the straw targets are put away; the first wave is let go (a little upwind: the stage is told how the wind of this end blows)
+          const we = wind.ends[Math.min(e, wind.ends.length - 1)];
+          bal = { S: newStage(stagePlan(plan.ends[e].level), seed + 7, we.base * wind.scale * (we.mul ?? 1)), ev: [], fly: 0, noteT: 0, spark: 0, best: 0, popped: 0, lost: 0 };
+          bal.S.ground = ground;
+          document.body.classList.add('arch-bal');
+        }
         R.targets.forEach((t, i) => { t.flag.visible = !moving && kind === i; t.group.visible = !moving; t.group.scale.setScalar(1); });
         R.moving.group.visible = slide;
         R.moving.flag.visible = slide;
@@ -373,24 +409,29 @@ export default {
         scenery.targets.forEach((t, i) => { t.r = t.r0 * (i === scenery.active && !moving ? big : 1); });
         R.targets.forEach((t, i) => { const on = i === scenery.active && !moving, k = on ? big : 1; t.group.scale.setScalar(k); t.group.position.y = t.baseY + A.centreH * (1 - k); });
         arcMat.size = plan.ends[e].bigArc ? 0.27 : 0.16;
-        // the first aim points at the target's middle, a little high for the drop
-        st.yaw = Math.atan2((isGong ? G.v : tg.moving ? 0 : tg.v) - ARCH.muzzle.v, tg.u - ARCH.muzzle.u);
-        st.pitch = 0.03;
+        // the first aim points at the target's middle, a little high for the drop (the balloons: up the middle of the range)
+        st.yaw = isBal ? 0 : Math.atan2((isGong ? G.v : tg.moving ? 0 : tg.v) - ARCH.muzzle.v, tg.u - ARCH.muzzle.u);
+        st.pitch = isBal ? BAL_AIM0 : 0.03;
         // the very first aim of the first try starts a little off the target, so the first thing to learn (move the circle onto it) is a real thing to do
         if (ctx.first && e === 0) st.yaw += 0.11;
         st.camYaw = st.yaw; st.camPitch = st.pitch;
       };
-      const endDist = e => (plan.ends[e].target === 'moving' ? A.moving.dist : plan.ends[e].target === 'gong' ? G.dist : A.targets[plan.ends[e].target].dist);
+      // (the balloon end has no one distance: the crosshair is drawn at the depth of the balloon the aim is nearest to)
+      const endDist = e => (plan.ends[e].target === 'balloons' ? (bAim ? bAim.u : 10.5) : plan.ends[e].target === 'moving' ? A.moving.dist : plan.ends[e].target === 'gong' ? G.dist : A.targets[plan.ends[e].target].dist);
       const isBonus = e => typeof plan.ends[e].target === 'string';
+      const isBalEnd = () => st.end >= 0 && plan.ends[st.end].target === 'balloons';
 
       const pipsFor = () => {
-        const e = plan.ends[st.end], n = e.arrows, key = st.end * 1000 + st.scores.length * 10 + st.arrow;
+        const e = plan.ends[st.end], n = e.arrows, balE = e.target === 'balloons';
+        let key = st.end * 1000 + st.scores.length * 10 + st.arrow;
+        if (balE) for (const s of st.scores) key += s * 10000;       // an arrow's points grow while its chain runs
         if (memo.pips === key) return;
         memo.pips = key;
         let html = '';
         for (let i = 0; i < n; i++) {
           const s = st.scores[i];
           if (s === undefined) html += '<span class="pip left"></span>';
+          else if (balE) html += `<span class="pip s${s ? 1 : 0}" style="${s ? `background:${s >= 9 ? '#ffbf1c' : '#f46e52'};color:${s >= 9 ? '#7a4a22' : '#fff'}` : ''}">${s || '×'}</span>`;
           else html += `<span class="pip s${s ? 1 : 0}" style="${s ? `background:${RING_COLOURS[s - 1]};color:${s >= 5 && s <= 6 ? '#fff' : s >= 9 || s <= 2 ? '#7a4a22' : '#fff'}` : ''}">${s || '×'}</span>`;
         }
         el.pips.innerHTML = html;
@@ -399,8 +440,9 @@ export default {
         const e = st.end;
         setText(el.endB, 'endLabel', plan.ends[e].target === 'moving'
           ? tx('Bonus end · sliding target')
-          : plan.ends[e].target === 'gong' ? tx('Last end · swinging gong')
-            : tx('End {n} of {total} · {d} m', { n: e + 1, total: plan.ends.filter(x => typeof x.target === 'number').length, d: endDist(e) }));
+          : plan.ends[e].target === 'gong' ? tx('Bonus end · swinging gong')
+            : plan.ends[e].target === 'balloons' ? tx('Last end · balloons')
+              : tx('End {n} of {total} · {d} m', { n: e + 1, total: plan.ends.filter(x => typeof x.target === 'number').length, d: endDist(e) }));
       };
 
       // ---- the page's wind gauge (the sock itself shows in the world)
@@ -428,8 +470,11 @@ export default {
         // the arrow's start: the bow hand
         W(ARCH.muzzle.u - 0.25, ARCH.muzzle.v, A.eye, eyeW);
         eyeW.y += 0;
-        const cp = Math.cos(st.camPitch);
-        camD.set(-cp * Math.cos(st.camYaw), Math.sin(st.camPitch), -cp * Math.sin(st.camYaw));
+        // (the balloon end: the camera keeps its own tilt up the range and turns only a little with the aim)
+        const CB = bal ? camBal(cam) : null;
+        const cyaw = CB ? st.camYaw * CB.follow : st.camYaw, cpit = CB ? CB.pitch + (st.camPitch - BAL_AIM0) * CB.follow : st.camPitch;
+        const cp = Math.cos(cpit);
+        camD.set(-cp * Math.cos(cyaw), Math.sin(cpit), -cp * Math.sin(cyaw));
         const yy = st.yaw + (sw ? sw.yaw : 0), pp = st.pitch + (sw ? sw.pitch : 0), cq = Math.cos(pp);
         aimD.set(-cq * Math.cos(yy), Math.sin(pp), -cq * Math.sin(yy));
       };
@@ -447,6 +492,38 @@ export default {
       });
       /** QA: shoot now with a given aim and draw (the next 'ready' frame), exactly as the pure rules fly it. */
       ctx.debug.fire = (yaw, pitch, draw = 1) => { st.script = { yaw, pitch, draw }; };
+      /** QA: the balloon end as it stands (null before it): the balloons with where they are on the screen, the sandbags, the points. */
+      ctx.debug.balloons = () => {
+        if (!bal) return null;
+        const S = bal.S, o = { x: 0, y: 0 };
+        return {
+          t: S.t, wave: S.wave, done: S.done, score: S.score, popped: S.popped, lost: S.lost, away: S.away, best: bal.best, falling: S.weights.filter(x => x.on).length,
+          up: S.balloons.filter(b => b.state === 'up').map(b => { W(b.u, b.sv, b.sy, tmpV); toScreen(tmpV, o); return { id: b.id, kind: b.kind, group: b.group, u: b.u, v: +b.sv.toFixed(2), y: +b.sy.toFixed(2), sx: Math.round(o.x), sy: Math.round(o.y) }; }),
+          drawn: balVis.root.children[0].count, sandbags: balVis.root.children[3].count,
+        };
+      };
+      /** QA: the aim that pops a balloon now (id, or 'top': the top one of the tallest stack still up). */
+      ctx.debug.solveBalloon = (id = 'top') => {
+        if (!bal) return null;
+        let b = bal.S.balloons[id];
+        if (id === 'top') {
+          const n = {};
+          for (const x of bal.S.balloons) if (x.state === 'up') n[x.group] = (n[x.group] || 0) + 1;
+          const gr = Object.keys(n).sort((p, q) => n[q] - n[p] || p - q)[0];
+          b = gr === undefined ? null : topOf(bal.S, +gr);
+        }
+        return b && b.state === 'up' ? { id: b.id, group: b.group, ...solveBalloon(b, 1, wind, st.end, st.windT + 0.05, A.eye) } : null;
+      };
+      ctx.debug.camBal = { wide: CAM_BAL, short: CAM_BAL_SHORT, tall: CAM_BAL_TALL };      // QA: the balloon end's camera (the numbers can be tried live)
+      /** QA: where the balloons' whole climb falls on the screen (px): the box round every place a balloon of this end can be. */
+      ctx.debug.balloonBox = () => {
+        const o = { x: 0, y: 0 }, box = { x0: 1e9, y0: 1e9, x1: -1e9, y1: -1e9 };
+        for (const u of [9.5, 12.5]) for (const v of [-3.3, 3.3]) for (const y of [0.5, BAL.ceil + 0.52]) {
+          W(u, v, y, tmpV); toScreen(tmpV, o);
+          box.x0 = Math.min(box.x0, o.x); box.x1 = Math.max(box.x1, o.x); box.y0 = Math.min(box.y0, o.y); box.y1 = Math.max(box.y1, o.y);
+        }
+        return box;
+      };
       /** QA: the aim that hits the middle of the current target for the wind as it is now. */
       ctx.debug.solve = (draw = 1) => solveAim(scenery.active, draw, wind, st.end, st.windT + 0.05, scenery, A.eye);
       /** QA: set the seconds left on the clock (to reach the time-up path quickly). */
@@ -504,7 +581,9 @@ export default {
       let lastHold = false, tick = 0;
       const fire = () => {
         const s = st.cur;
-        const aim = clampAim({ yaw: st.yaw + st.sw.yaw, pitch: st.pitch + st.sw.pitch });
+        const aim = clampAim({ yaw: st.yaw + st.sw.yaw, pitch: st.pitch + st.sw.pitch }, cone);
+        const balE = isBalEnd();
+        if (balE) { st.scores.push(0); pipsFor(); }                 // this arrow's points come as its chain runs
         launch(s.a, aim, st.draw, st.windT, A.eye);
         s.use = 'fly'; s.a.state = 'fly';
         st.phase = 'flight'; st.t = 0; st.shots++;
@@ -517,7 +596,7 @@ export default {
         // the twang and whoosh
         audio.tone(210 + st.draw * 90, { type: 'triangle', dur: 0.18, vol: 0.09, glide: 0.8, rev: 0.1 });
         audio.noise({ dur: 0.14, vol: 0.05, freq: 3000, q: 1.2, sweep: 0.5 });
-        setMode('flight', 7);
+        if (!balE) setMode('flight', 7);                             // (the balloons are watched from the line: the picture stays)
         tick = 0; lastHold = false;
         st.drawShown = st.draw; st.draw = 0; st.drawT = 0;
       };
@@ -558,10 +637,61 @@ export default {
         } else if (!hit && a.state === 'ground' && st.shots < 5) hint('short2', MISS.short, 3.5);
         pipsFor();
       };
+      // ---- the balloon end: an arrow of it has stopped (it popped what it crossed on the way), and what the stage reports
+      const landedBal = (s, a) => {
+        W(a.u, a.v, a.y, st.hitW);
+        // over the net it is gone into the hillside; lower it sticks in the hay or the grass
+        if (a.state === 'back' && a.y > 3.3) release(s); else { stuckAt(s, a); audio.noise({ dur: 0.08, vol: 0.1, freq: 220, q: 0.8, type: 'lowpass' }); }
+        if (bal.S.chain[st.arrow]) st.hits++;
+        else { audio.miss(); if (!st.said.balTop && bal.noteT <= 0 && st.arrow >= 1) { st.said.balTop = true; guide.setNote(N_('Aim at the top balloon of a stack.')); bal.noteT = 4; } }
+        st.phase = 'impact'; st.t = 0;
+      };
+      const popAt = (text, big) => {
+        const vis = toScreen(tmpV, scr), pop = el.pop;
+        pop.textContent = text;
+        pop.classList.toggle('big', !!big);
+        pop.style.left = `${Math.max(60, Math.min(innerWidth - 60, vis ? scr.x : innerWidth / 2))}px`;
+        pop.style.top = `${Math.max(130, Math.min(innerHeight - 160, vis ? scr.y - 30 : innerHeight / 2))}px`;
+        pop.classList.remove('go'); void pop.offsetWidth; pop.classList.add('go');
+      };
+      const balEvents = () => {
+        const ev = bal.ev;
+        for (let i = 0; i < ev.length; i++) {
+          const e = ev[i];
+          if (e.type === 'pop') {
+            const b = e.b, col = b.gold ? BALLOON_GOLD_RGB : BALLOON_RGB[b.col % BALLOON_RGB.length];
+            W(b.u, b.sv, b.sy, tmpV);
+            // confetti in the balloon's colour, a few white scraps, and a pop that climbs with the chain
+            fx.burst?.(tmpV, { n: b.gold ? 30 : 18, color: col, speed: 3.4, life: 0.9, size: 0.17, gravity: 2.6 });
+            fx.burst?.(tmpV, { n: 6, color: [1, 1, 1], speed: 2.2, life: 0.5, size: 0.11, gravity: 1.5 });
+            audio.noise({ dur: 0.07, vol: 0.26, freq: 2600, q: 0.7, type: 'highpass' });
+            audio.tone(330 * (1 + 0.26 * Math.min(5, e.chain - 1)), { type: 'triangle', dur: 0.12, vol: 0.14, glide: 0.5, rev: 0.05 });
+            if (e.lost) {
+              bal.lost++;
+              // the first balloon that pops by itself is explained once (at the foot of the picture, clear of the balloons)
+              if (e.by === 'self') { popAt(tx('Pop!'), false); if (!st.said.selfPop) { st.said.selfPop = true; guide.setNote(N_('Too high: it popped by itself! Shoot the high balloons first.')); bal.noteT = 5; } }
+            } else {
+              bal.popped++;
+              st.total += e.pts;
+              if (st.scores[e.root] !== undefined) st.scores[e.root] += e.pts;
+              if (e.chain > bal.best) bal.best = e.chain;
+              popAt(e.mult > 1 ? `${tx('Chain ×{n}!', { n: e.mult })} +${e.pts}` : `+${e.pts}`, e.mult > 1 || b.gold);
+              if (b.gold) audio.star(); else if (e.mult > 1) audio.good();
+              if (e.mult === 3) p.gesture?.('Cheer', { lock: false });
+              pipsFor();
+            }
+          } else if (e.type === 'thud') {
+            W(e.u, e.v, e.y + 0.05, tmpV);
+            fx.burst?.(tmpV, { n: 6, color: [0.72, 0.62, 0.44], speed: 1.2, life: 0.6, size: 0.12, gravity: 1.5 });
+            audio.noise({ dur: 0.09, vol: 0.12, freq: 180, q: 0.8, type: 'lowpass' });
+          } else if (e.type === 'wave' && e.n > 0) audio.blip(1.4);
+        }
+        ev.length = 0;
+      };
       const showSummary = () => {
         const e = st.end, sum = st.ends[st.ends.length - 1];
         setMode('aim', 8);
-        ctx.hint(plan.ends[e].target === 'moving' ? tx('Bonus end: {n} points.', { n: sum }) : plan.ends[e].target === 'gong' ? tx('The gong: {n} points.', { n: sum }) : tx('End {n}: {pts} points.', { n: e + 1, pts: sum }), 2);
+        ctx.hint(plan.ends[e].target === 'balloons' ? tx('Balloons: {n} points.', { n: sum }) : plan.ends[e].target === 'moving' ? tx('Bonus end: {n} points.', { n: sum }) : plan.ends[e].target === 'gong' ? tx('The gong: {n} points.', { n: sum }) : tx('End {n}: {pts} points.', { n: e + 1, pts: sum }), 2);
         audio.good();
       };
 
@@ -595,7 +725,7 @@ export default {
           const yaw0 = st.yaw, pit0 = st.pitch;
           st.yaw += dx * LOOK * fine + input.move.x * KEYAIM * fine * dt;
           st.pitch += -dy * LOOK * 0.9 * fine + input.move.y * KEYAIM * 0.6 * fine * dt;
-          clampAim(st);
+          clampAim(st, cone);
           moved = Math.abs(st.yaw - yaw0) + Math.abs(st.pitch - pit0);
           st.aimAcc += moved;
         }
@@ -615,13 +745,20 @@ export default {
             st.phase = 'ready'; st.t = 0; st.cur = take();
             if (ctx.first && !st.helpSeen) { st.helpSeen = true; guide.open(dev()); }      // the first try starts with the "How to shoot" card
             // what the level changes is said once, at the first arrow
-            if (!ctx.first && st.end === 0 && ctx.easy) hint('lvEasy', N_('No wind today. Follow the dotted line: arrows drop as they fly.'), 4.5);
+            if (isBalEnd()) { /* (QA can start at the balloons: the level's first words belong to the targets) */ }
+            else if (!ctx.first && st.end === 0 && ctx.easy) hint('lvEasy', N_('No wind today. Follow the dotted line: arrows drop as they fly.'), 4.5);
             else if (!ctx.first && st.end === 0 && ctx.hard) hint('lvHard', N_('Strong gusts today, and no dotted line. Watch the sock before every arrow.'), 4.5);
+            // the balloon end is introduced in one line at the foot of the picture, and on the card while it is played
+            // (and the game's own hint line moves under the balloons for this end, so nothing is said across their climb)
+            if (isBalEnd()) { guide.setTip(BALLOON_NOTE); guide.setNote(BALLOON_NOTE); bal.noteT = 7; }
           }
+        } else if (ph === 'ready' && bal && bal.S.done) {
+          // every balloon is popped or gone before the arrows are: the end is over
+          st.phase = 'endSum'; st.t = 0; finishEnd(); showSummary();
         } else if (ph === 'ready' || ph === 'draw') {
           if (st.script && ph === 'ready') {
             const sc = st.script; st.script = null;
-            st.yaw = sc.yaw; st.pitch = sc.pitch; clampAim(st);
+            st.yaw = sc.yaw; st.pitch = sc.pitch; clampAim(st, cone);
             st.draw = sc.draw; st.sw.yaw = st.sw.pitch = 0;
             fire();
           } else if (ph === 'ready') {
@@ -642,8 +779,9 @@ export default {
           }
           if (st.left <= 0 && st.phase !== 'flight') { st.phase = 'timeUp'; st.t = 0; ctx.hint(N_('Time is up! Well shot.'), 3); audio.good(); setMode('aim', 8); }
         } else if (ph === 'flight') {
-          const s = st.cur, a = s.a;
-          stepArrow(a, wind, st.end, st.slow ? dt * SLOWMO : dt, scenery);
+          const s = st.cur, a = s.a, balE = isBalEnd();
+          if (balE) stepArrowBalloons(a, wind, st.end, dt, scenery, bal.S, st.arrow, bal.ev);
+          else stepArrow(a, wind, st.end, st.slow ? dt * SLOWMO : dt, scenery);
           W(a.u, a.v, a.y, s.mesh.position);
           dirW(a.vu, a.vv, a.vy, tmpD);
           if (a.state === 'fly' && a.t < 0.12 && s.lead > 0) s.mesh.position.addScaledVector(tmpD, s.lead * (1 - a.t / 0.12));
@@ -651,14 +789,18 @@ export default {
             tmpO.position.copy(s.mesh.position);
             tmpO.lookAt(tmpV.copy(s.mesh.position).add(tmpD));
             s.mesh.quaternion.copy(tmpO.quaternion);
-          } else landed(s, a);
-          if (st.t > (st.slow ? 7 : 4) && a.state === 'fly') { a.state = 'ground'; landed(s, a); }
+          } else if (balE) landedBal(s, a); else landed(s, a);
+          if (st.t > (st.slow ? 7 : 4) && a.state === 'fly') { a.state = 'ground'; if (balE) landedBal(s, a); else landed(s, a); }
         } else if (ph === 'impact') {
-          if (st.t > 1.15) {
+          const balE = isBalEnd();
+          if (st.t > (balE ? 0.45 : 1.15)) {
             st.arrow++;
-            if (st.arrow >= plan.ends[st.end].arrows || st.left <= 0) { st.phase = 'endSum'; st.t = 0; finishEnd(); showSummary(); }
+            // (the balloons: the last arrow's chain is watched to its end before the end is summed up)
+            if (st.arrow >= plan.ends[st.end].arrows || st.left <= 0) { if (balE) { st.phase = 'settle'; st.t = 0; } else { st.phase = 'endSum'; st.t = 0; finishEnd(); showSummary(); } }
             else { st.phase = 'ready'; st.t = 0; st.cur = take(); setMode('aim', 8); }
           }
+        } else if (ph === 'settle') {
+          if ((st.t > 0.5 && !falling(bal.S)) || st.t > 5) { st.phase = 'endSum'; st.t = 0; finishEnd(); showSummary(); }
         } else if (ph === 'endSum') {
           // pull the arrows (they shrink away), then the next end, or the finish
           for (const s of pool) if (s.use === 'stuck' || s.use === 'nock') { s.fade = Math.min(1, s.fade + dt / 0.5); { const f = Math.max(0.001, 1 - s.fade); s.mesh.scale.set(ARROW_XY * f, ARROW_XY * f, ARROW_Z * f); } if (s.fade >= 1) release(s); }
@@ -667,7 +809,8 @@ export default {
               st.end++; st.arrow = 0; st.scores = []; st.windT = 0; showEnd(st.end);
               for (const s of pool) release(s);
               st.phase = 'endIntro'; st.t = 0; st.draw = 0; setEndLabel(); pipsFor(); setMode('aim', 8);
-              if (plan.ends[st.end].target === 'moving') hint('moving', N_('Bonus end! The target slides: aim a little ahead of it.'), 4.5);
+              if (plan.ends[st.end].target === 'balloons') { /* introduced by the guide's own line when the first arrow is nocked */ }
+              else if (plan.ends[st.end].target === 'moving') hint('moving', N_('Bonus end! The target slides: aim a little ahead of it.'), 4.5);
               else if (plan.ends[st.end].target === 'gong') hint('gong', N_('The gong! It is small and it swings. Let go just before it reaches your circle.'), 5);
               else if (st.end === 1) hint('far', N_('Farther away, so the wind has longer to push. Check the sock.'), 4);
             } else { st.phase = 'done'; st.t = 0; }
@@ -683,6 +826,25 @@ export default {
           gong.ring = Math.max(0, gong.ring - dt * 1.4);
           gong.swing.rotation.x = Math.asin(Math.max(-0.9, Math.min(0.9, dv / gong.L)));
           gong.swing.rotation.z = Math.sin(ctx.t * 34) * 0.09 * gong.ring;
+        }
+        // the balloons rise and drift in the wind the sock shows (they hold still while the card is up and once the end is summed up)
+        if (bal) {
+          const S = bal.S, live = ph === 'ready' || ph === 'draw' || ph === 'flight' || ph === 'impact' || ph === 'settle';
+          if (live && !helpUp) stepStage(S, dt, w, bal.ev);
+          if (bal.ev.length) balEvents();
+          bal.fly = live || ph === 'endIntro' ? 0 : Math.min(1, bal.fly + dt / 1.3);
+          if (bal.noteT > 0 && !helpUp && (bal.noteT -= dt) <= 0) guide.setNote(null);
+          // the game's own hint line moves under the balloons for this end, so nothing is said across their climb (while the card
+          // is up it is back where the card expects it)
+          const low = !helpUp;
+          if (memo.hintLow !== low) { memo.hintLow = low; ctx.hintTop(true, low ? Math.max(150, innerHeight - (innerHeight < 500 ? 70 : cam.aspect < 0.9 ? 310 : 125)) : touch ? 150 : 128); }
+          // the golden balloon twinkles
+          if (live && (bal.spark -= dt) <= 0) {
+            bal.spark = 0.35;
+            for (const b of S.balloons) if (b.gold && b.state === 'up') { W(b.u, b.sv + (Math.random() - 0.5) * b.r * 1.6, b.sy + (Math.random() - 0.3) * b.r * 1.4, tmpV); fx.burst?.(tmpV, { n: 1, color: [1, 0.93, 0.55], speed: 0.4, life: 0.7, size: 0.16, gravity: -0.3 }); }
+          }
+          bAim = live ? nearestBalloon(S, st.yaw, st.pitch, ARCH.muzzle.u, ARCH.muzzle.v, A.eye) : null;
+          balVis.draw(S, W, cam, ctx.t, bal.fly);
         }
         // the sliding target glides along its rail
         if (R.moving.group.visible) {
@@ -729,11 +891,13 @@ export default {
         // camera
         if (st.mode === 'aim') {
           camR.set(-camD.z, 0, camD.x).normalize();
-          const C = cam.aspect < 0.9 ? CAM_TALL : CAM;
+          const tall = cam.aspect < 0.9, C = bal ? camBal(cam) : tall ? CAM_TALL : CAM;
           // drawing: the camera comes in a little toward the line and the picture zooms, but Mika (and her string hand) stay in view
-          camPos.copy(eyeW).addScaledVector(camD, -C.back).addScaledVector(camR, C.side * (1 - 0.22 * drawNow)); camPos.y += C.up;
+          // (not at the balloons: the picture holds still there, so the whole climb stays in it)
+          const zoom = bal ? 0 : drawNow;
+          camPos.copy(eyeW).addScaledVector(camD, -C.back).addScaledVector(camR, C.side * (1 - 0.22 * zoom)); camPos.y += C.up;
           camLook.copy(eyeW).addScaledVector(camD, C.conv);
-          g.follow.fovBase = (C.fov || savedFov) * (1 - 0.1 * drawNow);
+          g.follow.fovBase = (C.fov || savedFov) * (1 - 0.1 * zoom);
         } else if (st.mode === 'flight') {
           const a = st.cur.a;
           W(a.u, a.v, a.y, tmpE);
@@ -772,7 +936,7 @@ export default {
           W(U, ARCH.muzzle.v + pvv * tt, A.eye + pvy * tt - 0.5 * ARCH.g * tt * tt, tmpV);
           const vis = toScreen(tmpV, scr);
           const cx = innerWidth / 2, cy = innerHeight / 2;
-          const px = Math.round((scr.x - cx) * 2) / 2, py = Math.round((scr.y - cy) * 2) / 2, show = vis && (ph === 'ready' || ph === 'draw') && !(ctx.first && st.end === 0) && Math.abs(px) < innerWidth * 0.45 && Math.abs(py) < innerHeight * 0.45;
+          const px = Math.round((scr.x - cx) * 2) / 2, py = Math.round((scr.y - cy) * 2) / 2, show = vis && !bal && (ph === 'ready' || ph === 'draw') && !(ctx.first && st.end === 0) && Math.abs(px) < innerWidth * 0.45 && Math.abs(py) < innerHeight * 0.45;
           setStyle(el.ticks[i], `tk${i}`, 'transform', show ? `translate(${px}px,${py}px)` : 'translate(-999px,-999px)');
         }
         // the crosshair stands where an arrow of a full draw (no wind) would cross the plane of the target in play: the camera looks
@@ -785,7 +949,9 @@ export default {
         const oy = vis0 ? Math.round(Math.max(-innerHeight * lim, Math.min(innerHeight * lim, scr.y - innerHeight / 2)) * 2) / 2 : 0;
         setStyle(el.cross, 'cross', 'transform', `translate(${ox}px,${oy}px)`);
         const tgA = scenery.targets[scenery.active], aimPh = ph === 'ready' || ph === 'draw';
-        const onTgt = !!tgA && !tgA.moving && aimPh && aimOffset(aimTot, 1, tgA, A.eye).on;
+        // (the balloons: green when a full-draw arrow would cross the nearest one's hit circle where it hangs now)
+        if (bAim) { tgB.u = bAim.u; tgB.v = bAim.sv; tgB.y = bAim.sy; tgB.r = bAim.r * bal.S.spec.hit; }
+        const onTgt = aimPh && (bAim ? aimOffset(aimTot, 1, tgB, A.eye).on : !!tgA && !tgA.moving && aimOffset(aimTot, 1, tgA, A.eye).on);
         if (memo.halo !== (aimPh ? (onTgt ? 2 : 1) : 0)) {
           memo.halo = aimPh ? (onTgt ? 2 : 1) : 0;
           el.halo.classList.toggle('on', onTgt); el.halo.classList.toggle('off', !aimPh); el.cross.classList.toggle('on', onTgt);
@@ -848,9 +1014,9 @@ export default {
       await ctx.fade(false, 400);
       const allHit = st.shots > 0 && st.hits === st.shots;
       return {
-        score: st.total, quit: false, detail: { shots: st.shots, hits: st.hits, bulls: st.bulls, ends: st.ends },
+        score: st.total, quit: false, detail: { shots: st.shots, hits: st.hits, bulls: st.bulls, ends: st.ends, balloons: bal ? { popped: bal.popped, lost: bal.lost, chain: bal.best } : null },
         fact: { title: tx('Rings'), text: tx('The middle of the target is 10 (a bullseye). Each ring further out is worth 1 less. A miss is 0.') },
-        extra: st.bulls >= 1 ? N_('a bullseye!') : allHit ? N_('every arrow found the target') : undefined,
+        extra: bal && bal.best >= 3 ? N_('a chain of three balloons!') : st.bulls >= 1 ? N_('a bullseye!') : allHit ? N_('every arrow found the target') : undefined,
       };
 
     } finally {

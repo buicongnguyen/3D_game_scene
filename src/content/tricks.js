@@ -187,9 +187,12 @@ export const TRICKS = [
     safety: 'Only at the target, with a grown-up and practice arrows.',
     // a ring is 1..10 points (tricks/rules-archery.js roundPlan; length = seconds of lining up shots). Easy: 16 arrows, no
     // wind, the aim arc drawn (160). Normal: 22 arrows in the wind, the last four at the sliding target (220). Difficult: 24
-    // arrows in gusts with no aim arc, six at a livelier sliding target and six at a small swinging gong (240)
-    stars: [60, 100, 140], length: 90, firstLength: 60, unit: 'points',
-    levels: { easy: { stars: [40, 85, 125], length: 90 }, normal: { stars: [60, 100, 140], length: 90 }, hard: { stars: [70, 120, 185], length: 100 } },
+    // arrows in gusts with no aim arc, six at a livelier sliding target and six at a small swinging gong (240).
+    // Every level then closes with the balloon end (tricks/rules-balloons.js): Easy 6 more arrows at slow stacks of two
+    // (about 39 more at best), Normal 8 at stacks of three, a diagonal and a golden balloon (about 107), Difficult 8 at
+    // faster, smaller ones that pop by themselves at the top (about 143). The rounds are that much longer.
+    stars: [70, 160, 240], length: 120, firstLength: 60, unit: 'points',
+    levels: { easy: { stars: [40, 100, 150], length: 120 }, normal: { stars: [70, 160, 240], length: 120 }, hard: { stars: [90, 190, 310], length: 130 } },
   },
   {
     id: 'cowrace', name: 'Cow race', icon: 'trick-cowrace',
