@@ -2770,6 +2770,30 @@
   ]
  },
  {
+  "s": "One sheet of paper, a few folds, and it flies. We throw them off the hill above Takamori Landing.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Paper planes? I've made those. They dive straight into the nearest desk.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Because you fold fast and throw hard. Match the left side to the right, and press every crease flat.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Then throw it gently and level. Three throws, the best one counts. And we pick them all up after.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Rin"
+  ]
+ },
+ {
   "s": "Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.",
   "ctx": [
    "dialogue trick_dew_intro, spoken by Rin"
@@ -6103,6 +6127,30 @@
   "s": "The cow meadow south of the village. The cows won't mind. They've seen worse flying.",
   "ctx": [
    "dialogue trick_kite_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "A fine dry day, Mi-chan. Bring a few sheets of paper up the hill above the landing. We'll fold planes.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Mine always crash, Grandma. Nose first. Every single time.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Then we fold slowly. A corner to the middle line, the left the same as the right, a nail along every crease.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "And throw it as if you were handing it to the wind: gently and level. Three throws, and the best one counts.",
+  "ctx": [
+   "dialogue trick_planes_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -14335,6 +14383,42 @@
   ]
  },
  {
+  "s": "Breezy paper planes",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the open hillside above Takamori Landing, east of the river",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Spring to autumn, on a dry day",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "Fold on a table and press each crease with a fingernail. Match left and right. Throw gently and level, not hard and up.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "A paper clip puts the weight ahead of the wings' lift: a steady nose. Back edges bent up lift the nose. Too much, and it stalls.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Never throw at faces or animals, and pick up your planes afterwards.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Dew webs at dawn",
   "ctx": [
    "countryside trick name (journal, sign prompt, results card)"
@@ -16087,6 +16171,12 @@
  },
  {
   "s": "Tie a bamboo kite and fly it high in the wind.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Fold a paper plane and throw it far down the hill.",
   "ctx": [
    "UI (src/content/minigames.js)"
   ]
@@ -21126,6 +21216,90 @@
   ]
  },
  {
+  "s": "Tie the bamboo lattice",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Glue on the painted paper",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Tie on the two long tails",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Bend the bamboo into a bow",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Tie on the three flutes",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Tie the spine and the wing sticks",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Glue on the paper wings",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Tie on the bridle",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Tie the four long sticks",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Wrap on the two paper bands",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "The kaku-dako is steady but slow to climb. Be patient, and tug the line.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "The diều sáo climbs fast. Up high its flutes hum. But watch the gusts!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "The hawk kite turns quickly. Steer it with small, gentle moves.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "The box kite climbs only in the dark green, the very middle of the wind.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
   "s": "A bit wobbly, but it will fly.",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
@@ -21133,6 +21307,56 @@
  },
  {
   "s": "Good and tight!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "1 more star opens it",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "{n} more stars open it",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Which kite today?",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Build this kite",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Lift",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Steady",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)",
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Speed",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)",
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Pick a kite. Each one flies its own way: look at the bars.",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
   ]
@@ -21181,6 +21405,12 @@
  },
  {
   "s": "Today the wind turns: the green slides. And keep high near the tree on the right!",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Hear it hum? The wind is playing its flutes.",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
   ]
@@ -21241,6 +21471,12 @@
  },
  {
   "s": "See it wag? A longer, tighter tail would keep it steady.",
+  "ctx": [
+   "UI (src/game/tricks/kite.js)"
+  ]
+ },
+ {
+  "s": "Wind it in. No wind tomorrow? Then we fold paper planes on the hill.",
   "ctx": [
    "UI (src/game/tricks/kite.js)"
   ]
@@ -21328,6 +21564,450 @@
   "s": "steady thinking +{n}",
   "ctx": [
    "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Choose",
+  "ctx": [
+   "UI (src/game/tricks/pick.js)"
+  ]
+ },
+ {
+  "s": "A bit crooked. It will still fly.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A good fold.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A perfect fold!",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "No wind",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Tailwind",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Headwind",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Side wind",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "The wind is behind us today. Which plane will ride it the longest?",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "The wind is in our faces today. Which plane can push through it?",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "The wind blows across the hill today. Which plane holds its line?",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Splash! Right into the river. We will fish it out later.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A loop! Lovely to watch. For distance, throw it flatter and softer.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "It reared up, ran out of speed and dropped: a stall. Throw lower, or softer.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Nose first into the grass. Throw it harder, or a little higher.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "It curved away: the folds do not quite match left and right.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "What a glide! That is the way.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A fair flight. Try another angle.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Back edges",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "flat",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "up a little",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "up more",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "up a lot",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Bent up, they lift the nose. Too much and it stalls.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Paper clip",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "off",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "on the nose",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Weight in front: steadier, and better into the wind.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Wingtip",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "bent left",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "straight",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "bent right",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A bent wingtip makes the plane turn that way.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Best {n} m",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Goal {n} m",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Paper planes",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Which plane today?",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Fold this plane",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Float",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Fold it step by step. Tap when the red dot is in the green ring.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Fold it step by step. Press {act} or Space when the red dot is in the green ring.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Fold {n} of {m}",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Every fold exact. That plane will fly true!",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A fine plane. The folds do not quite match, so it may pull to the right.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A fine plane. The folds do not quite match, so it may pull to the left.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A fine plane! Now, down the hill with it.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Ready to throw",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Throw {n} of {m}: trim the plane",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Change the plane if you like, then tap Ready to throw.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Change the plane with the arrow keys if you like. {act} when it is ready.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Throw {n} of {m}",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Power",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "The aim swings. Press and hold to take it, then let go to throw!",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "The aim swings. Hold {act} to take it: the power fills. Let go to throw!",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Again! Change one thing and watch what it does.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Keep it held to wind up, then let go.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "{n} m",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A loop!",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "See it rise? Warm air is lifting it: a thermal.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Right in the ring! Ten more points.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Over the goal line! You read the wind well.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "In the river",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Into a headwind, try the paper clip: a heavier nose pushes through.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "It stalls with the back edges bent up so far. Flatten them a little.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "With the wind behind it, a slow, floating plane stays up longest and is carried furthest.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Against the wind a fast, heavy-nosed plane keeps its speed. A slow floater is blown back.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "A side wind pushes every plane off its line. A steady one, or a wingtip bent into the wind, holds it.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Throw gently and level, not hard and up. A plane thrown steeply slows down, stalls and drops.",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "best throw: {n} m",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "{n} of {m} folds exact",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "in the ring",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "over the goal line",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "a loop",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
+  ]
+ },
+ {
+  "s": "Today: {wind}, {plane}",
+  "ctx": [
+   "UI (src/game/tricks/planes.js)"
   ]
  },
  {
@@ -22736,6 +23416,66 @@
   ]
  },
  {
+  "s": "Diamond kite",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "Two sticks and a tail. Does everything well.",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "Kaku-dako",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "A painted Japanese square kite with two long tails. Very steady, slow to climb.",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "Diều sáo",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "The flute kite of Vietnam. It climbs fast and hums up high, but gusts toss it about.",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "Hawk kite",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "A tonbi-dako with spread wings. Quick to turn and it glides, but it is twitchy.",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "Box kite",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
+  "s": "Rock steady in a gust, but it only climbs in the strong wind in the very middle.",
+  "ctx": [
+   "UI (src/game/tricks/rules-kite.js)"
+  ]
+ },
+ {
   "s": "In the water",
   "ctx": [
    "UI (src/game/tricks/rules-lifecycle.js)"
@@ -23105,6 +23845,156 @@
   "s": "Not there. Look at the picture once more.",
   "ctx": [
    "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Fold the sheet in half the long way. Press the crease, then open it again.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the whole plane in half along the middle line.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "The Dart",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Long and pointed. Fast and far with a firm throw, but it drops quickly when it slows.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the top left corner in to the middle line.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Now the top right corner, in to the middle line.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the slanted left edge in to the middle line, too.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "And the slanted right edge, the same way.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the wings down, level with the bottom edge.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "The Glider",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Wide wings and a heavy front edge. Slow, and it floats for a long time. Throw it gently!",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the top edge down, about two fingers wide.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold it down again, over itself. That makes a heavy front edge.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the top left corner in: just a small triangle.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "And the top right corner, the same size.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the wide wings down. Leave a narrow keel to hold.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "The Looper",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Short and stubby, its back edges bent up. Throw it hard and upward and it flies a loop.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the point down, until its tip is well below the triangles.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the wings down, then bend their back edges up a little.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "The Bulldog",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "A blunt, heavy nose and tidy wings. Very steady: the one for a long, straight flight.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the point down, along the bottom of the two triangles.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "Fold the new top left corner in to the middle line.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
+  ]
+ },
+ {
+  "s": "And the new top right corner.",
+  "ctx": [
+   "UI (src/game/tricks/rules-planes.js)"
   ]
  },
  {
@@ -25917,6 +26807,24 @@
  },
  {
   "s": "Tug the line to climb.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Fold: press when the dot is in the ring.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hold to wind up. Let go to throw!",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Gentle and level flies furthest.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
