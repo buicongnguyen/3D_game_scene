@@ -32,7 +32,14 @@ export const LEVELS = {
   first: { p0: 0.02, p1: 0.30, ok: 0.70, reach: 1.75, slow: 1.3, miss: 1.5, kind: 0.8 },
   easy: { p0: 0.03, p1: 0.26, ok: 0.60, reach: 1.6, slow: 1.15, miss: 1.25, kind: 0.6 },
   normal: { p0: 0.04, p1: 0.20, ok: 0.46, reach: 1.35, slow: 1, miss: 1, kind: 0.1 },
+  // Difficult keeps Normal's timing: what it adds is in each game (wind, blocks, called passes), not a tighter window
+  hard: { p0: 0.04, p1: 0.20, ok: 0.46, reach: 1.35, slow: 1, miss: 0.9, kind: 0 },
 };
+
+/** The levels a round is played at, gentlest first ('first' is the guided very first round of a game). */
+export const ROUND_LEVELS = ['first', 'easy', 'normal', 'hard'];
+/** A value per level from a table { first, easy, normal, hard }: an unknown level reads as Normal. */
+export const byLevel = (table, level) => (level in table ? table[level] : table.normal);
 
 /** 'perfect' | 'ok' | 'early' for a swing tau seconds before the landing (tau < 0, after it, is never asked). */
 export function judge(tau, L) {

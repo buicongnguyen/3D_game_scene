@@ -363,11 +363,12 @@ test('keep it up: touches in a row are counted; three drops or the clock end the
   for (const n of [1, 2, 3, 4]) for (const p of ringPlaces(n)) assert.ok(Math.abs(p.u) <= COURT.W / 2 && p.v > 0.8 && p.v < COURT.HALF);
   assert.ok(ringPlaces(3)[0].v > RING.v + 1, 'the first place is the near one');
   const group = [MIKA, { id: 'v3', style: 'strong' }, { id: 'v20', style: 'tricky' }];
-  const a = play(new KeepupSim({ seed: 2, players: group, level: 'normal' }), s => keepupBot(s, 0.12));
+  // (Easy: the plain game on a 75 s clock; what the kids call for on Normal and Difficult is in yard-levels.test.mjs)
+  const a = play(new KeepupSim({ seed: 2, players: group, level: 'easy' }), s => keepupBot(s, 0.12));
   assert.ok(a.sim.over && a.sim.timeLeft === 0 && a.sim.lives === 3, 'a careful round runs out the clock');
   assert.ok(a.sim.over.score >= KEEPUP_STARS[1], `a good run (${a.sim.over.score})`);
   assert.equal(a.sim.over.score, a.sim.best);
-  assert.ok(a.t > 60 && a.t < 90);
+  assert.ok(a.t > 75 && a.t < 105);
   // the count follows the kicks: it is one after a serve and grows by one a touch, and a drop puts it back
   let c = 0;
   for (const e of a.log) {
@@ -375,7 +376,7 @@ test('keep it up: touches in a row are counted; three drops or the clock end the
   }
   assert.ok(Math.max(...a.log.filter(e => e.type === 'point').map(e => e.rally), c) === a.sim.best || a.sim.best >= c);
   // she never returns: three lives, then it is over, with whatever the kids managed between themselves
-  const b = play(new KeepupSim({ seed: 2, players: group, level: 'normal' }), s => keepupBot(s, () => -1));
+  const b = play(new KeepupSim({ seed: 2, players: group, level: 'easy' }), s => keepupBot(s, () => -1));
   assert.ok(b.sim.over && b.sim.lives === 0 && b.sim.timeLeft > 0);
   assert.equal(count(b.log, 'point', e => e.human), 3);
   assert.ok(count(b.log, 'kick', e => e.human) === 0);
@@ -387,7 +388,7 @@ test('keep it up: touches in a row are counted; three drops or the clock end the
   assert.ok(solo.sim.over.score >= 20 && solo.sim.over.stars >= 2);
   for (const e of solo.log) if (e.type === 'kick') assert.ok(e.human);
   // replays exactly
-  const again = new KeepupSim({ seed: 2, players: group, level: 'normal' }), log = [];
+  const again = new KeepupSim({ seed: 2, players: group, level: 'easy' }), log = [];
   for (const [mx, mv, kick] of a.inputs) { again.step(DT, { mx, mv, kick: !!kick }); for (const e of again.events) log.push(e); again.events.length = 0; }
   assert.deepEqual(log, a.log);
   // the kids' own ring has no clock and no lives
@@ -429,7 +430,7 @@ test('yard games: a registry of games with one shape, so another plugs in', () =
   assert.ok(T([]).wall && !T(['a']).wall);
   assert.deepEqual([T(['a']).theirs.length, T(['a', 'b']).theirs.length, T(['a', 'b', 'c']).mine.length, T(['a', 'b', 'c']).theirs.length], [1, 2, 1, 2]);
   assert.equal(YARD_GAME.footnet.target('first'), 3);
-  assert.equal(YARD_GAME.footnet.target('normal'), 5);
+  assert.deepEqual(['easy', 'normal', 'hard'].map(l => YARD_GAME.footnet.target(l)), [5, 6, 7]);
   // gentler the first time and in Easy mode
   assert.equal(levelFor(undefined, false), 'first');
   assert.equal(levelFor({ plays: 0 }, true), 'first');

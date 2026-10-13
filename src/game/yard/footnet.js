@@ -6,10 +6,24 @@
 //
 // With nobody to play against (wall: true) Mika practises against the kick-board behind the far end: every third
 // return in a row is a point for her, every drop one for the board.
+//
+// The levels (Mika's rounds; the kids' own game is always the plain one):
+//   first   to 3, slow shuttles, kind kids (the guided first round)
+//   easy    to 5, and the shuttle may BOUNCE ONCE on her side: a second chance at every return
+//   normal  to 6, the game as it is meant
+//   hard    to 7 in the WIND: it blows across the court, light (one arrow) or strong (two), and changes every two
+//           points. Her own kicks drift with it: in a light wind a kick aimed down the wind sails out, in a strong one
+//           she has to aim INTO it or even a straight kick may go over the side line. A gust bends an incoming shuttle
+//           in the air (the ring moves: follow it), and the kids place their returns away from her
 import { COURT, LEVELS, STYLES, KICK_Y, WINDUP, HUMAN_SPEED, rng, clamp, judge, makeFlight, flightAt, homes, stepToward } from './rules.js';
 import { N_, tx } from '../../i18n/i18n.js';
 
 const SERVE_WAIT = 1.3, POINT_PAUSE = 1.7, AI_REACH = 1.3;
+export const FOOTNET_TARGET = { first: 3, easy: 5, normal: 6, hard: 7 };
+/** Stars: [points that earn one star in a lost match, points the kids may have for the third star in a won one]. */
+export const FOOTNET_STARS = { first: [1, 1], easy: [2, 2], normal: [3, 2], hard: [5, 3] };
+export const WIND_DRIFT = [0, 1.3, 3.0]; // metres her own kick is carried across: no wind, a light one, a strong one (Difficult)
+const IN_U = COURT.W / 2;               // the side line
 const side = team => (team === 0 ? 1 : -1);
 
 export class FootnetSim {
@@ -53,6 +67,20 @@ export class FootnetSim {
     this.events = [];
     this.over = null;
     this.wound = false;
+    // the level's own rule (only in Mika's rounds: the kids' own game stays the plain one, and replays the same)
+    this.bounce = !!this.human && level === 'easy';
+    this.windy = !!this.human && level === 'hard' && !this.wall;
+    this.smart = !!this.human && level === 'hard';
+    this.wind = 0; this.gale = 0;           // which way it blows across the court (-1 | 1), and how hard (1 light, 2 strong)
+    if (this.windy) this.newWind(false);
+    this.gusts = 0; this.bounces = 0;
+  }
+
+  /** Difficult: a new wind (the first one of a match is always light). */
+  newWind(turn = true) {
+    const r = this.rand;
+    this.wind = turn ? -this.wind : r() < 0.5 ? -1 : 1;
+    this.gale = turn && r() < 0.5 ? 2 : 1;
   }
 
   pickServer(team) {
@@ -125,7 +153,14 @@ export class FootnetSim {
     if (s.human) b = this.aim(input, s, false);
     else if (toHumans) b = { u: clamp(this.human.u + (r() - 0.5) * 2.4, -2.3, 2.3), y: 0, v: clamp(this.human.v + (r() - 0.5) * 1.6, 1.6, 4.6) };
     else b = { u: (r() - 0.5) * 3.6, y: 0, v: side(to) * (2.4 + r() * 1.8) };
-    this.launch(makeFlight(a, b, 1.75 * (toHumans ? this.L.slow : 1), 2.9), s.team, {});
+    this.launch(makeFlight(a, b, 1.75 * (toHumans ? this.L.slow : 1), 2.9), s.team, { fault: s.human ? this.drift(b) : null });
+  }
+
+  /** Difficult: the wind carries Mika's kick across. Returns 'out' when that takes it over the side line. */
+  drift(b) {
+    if (!this.windy) return null;
+    b.u += this.wind * WIND_DRIFT[this.gale];
+    return Math.abs(b.u) > IN_U ? 'out' : null;
   }
 
   /** Where Mika's kick comes down: the stick aims it (left / right, short toward the net or deep). */
@@ -165,12 +200,26 @@ export class FootnetSim {
       const miss = best.style.miss * (!this.human ? 0.6 : vsHuman ? this.L.miss * this.crowd : 1) + (flat ? 0.1 : 0);
       best.plan = { tau: 0.07 + r() * 0.12, late: r() < miss, wound: false };
     }
+    // Difficult: a gust may catch a shuttle that is coming over the net, part of the way through its flight
+    if (this.windy && !fault && !f.bounced && f.av * f.bv < 0 && r() < 0.6) f.gust = { k: 0.34 + r() * 0.18, du: this.wind * (0.6 + r() * 0.7) * (flat ? 0.5 : 1) * (this.gale > 1 ? 1.3 : 0.9) };
+  }
+
+  /** The gust: from where the shuttle is now it bends toward a landing place further down the wind (still inside the lines). */
+  blow(f) {
+    const k = f.t / f.dur, u0 = f.au + (f.bu - f.au) * k, to = clamp(f.bu + f.gust.du, -IN_U + 0.35, IN_U - 0.35);
+    f.gust = null;
+    if (Math.abs(to - f.bu) < 0.2 || k > 0.7) return;
+    f.au = (u0 - to * k) / (1 - k); f.bu = to;
+    this.marker.u = to;
+    this.gusts++;
+    this.emit('gust', { dir: this.wind, mine: !!this.receiver?.human });
   }
 
   stepRally(dt, input) {
     const f = this.flight, sh = this.shuttle, h = this.human, M = this.marker;
     f.t += dt;
     const tau = f.dur - f.t;
+    if (f.gust && f.t >= f.gust.k * f.dur) this.blow(f);
     flightAt(f, Math.min(1, f.t / f.dur), sh);
     M.tau = Math.max(0, tau);
     // the kid whose shuttle it is runs under it and swings; everybody else gets back in place
@@ -216,7 +265,8 @@ export class FootnetSim {
       this.toWall(a, input, flat);
       return;
     }
-    this.launch(makeFlight(a, this.aim(input, h, flat), flat ? 1.0 : 1.75, flat ? 0.5 : 3.1), h.team, { flat });
+    const b = this.aim(input, h, flat);
+    this.launch(makeFlight(a, b, flat ? 1.0 : 1.75, flat ? 0.5 : 3.1), h.team, { flat, fault: this.drift(b) });
   }
 
   aiKick(p) {
@@ -236,7 +286,7 @@ export class FootnetSim {
     if (fault === 'out') b = r() < 0.6 ? { u: (r() - 0.5) * 4, y: 0, v: s * (COURT.HALF + 0.9 + r() * 0.9) } : { u: (r() < 0.5 ? -1 : 1) * (COURT.W / 2 + 0.8 + r() * 0.6), y: 0, v: s * (1.5 + r() * 3) };
     else if (toHumans && r() < this.L.kind) b = { u: clamp(h.u + (r() - 0.5) * 3, -2.4, 2.4), y: 0, v: clamp(h.v + (r() - 0.5) * 2.4, 1.3, 4.8) };
     else if (st.aim === 'deep') b = { u: (r() - 0.5) * 4.6, y: 0, v: s * (3.9 + r()) };
-    else if (st.aim === 'away') {
+    else if (st.aim === 'away' || (this.smart && toHumans && r() < 0.6)) {
       // wherever the nearest opponent is not: the other side of the court, short or deep
       let o = null;
       for (const q of this.players) if (q.team === to && (!o || Math.abs(q.v) < Math.abs(o.v))) o = q;
@@ -257,6 +307,18 @@ export class FootnetSim {
       return;
     }
     flightAt(f, 1, sh);
+    // Easy: on Mika's side it may bounce once (a short hop toward her), and she has another go at it
+    if (this.bounce && !f.fault && !f.bounced && f.to === this.human.team) {
+      const h = this.human, du = h.u - f.bu, dv = h.v - f.bv, d = Math.hypot(du, dv) || 1, hop = Math.min(0.9, d);
+      const b = { u: clamp(f.bu + du / d * hop, -IN_U + 0.3, IN_U - 0.3), y: 0, v: clamp(f.bv + dv / d * hop, 0.6, COURT.HALF - 0.2) };
+      this.bounces++;
+      this.emit('land', { u: f.bu, v: f.bv, fault: null, side: f.to, bounce: true });
+      this.emit('bounce', { u: f.bu, v: f.bv });
+      const g = makeFlight({ u: f.bu, y: 0.05, v: f.bv }, b, 1.25, 1.2);
+      g.bounced = true;
+      this.launch(g, f.team, {});
+      return;
+    }
     this.emit('land', { u: f.bu, v: f.bv, fault: f.fault, side: f.to });
     this.point(f.fault ? 1 - f.team : f.team, f.fault || 'ground');
   }
@@ -272,17 +334,31 @@ export class FootnetSim {
     this.state = 'pause';
     this.timer = POINT_PAUSE;
     this.server = this.wall ? this.human : this.pickServer(team);
+    // Difficult: the wind turns round after every second point
+    if (this.windy && (this.score[0] + this.score[1]) % 2 === 0 && this.won() === null) { this.newWind(); this.emit('wind', { dir: this.wind, gale: this.gale }); }
   }
 
-  hud(names) { return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: this.wall ? tx('Three in a row: a point') : tx('First to {n}', { n: this.target }) }; }
-  hint() { return this.state === 'serve' && this.server === this.human ? tx('Press {act} to serve') : null; }
+  /** The wind as the player reads it: arrows the way the shuttle is pushed across the court (two: a strong wind). */
+  windText() { return `${tx('Wind')} ${(this.wind < 0 ? '◀' : '▶').repeat(this.gale)}`; }
+  hud(names) {
+    const sub = this.wall ? tx('Three in a row: a point') : tx('First to {n}', { n: this.target });
+    return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: this.windy ? `${sub} · ${this.windText()}` : sub };
+  }
+  hint() {
+    const serve = this.state === 'serve' && this.server === this.human;
+    if (this.windy && serve && !this.touches) return `${tx('The wind carries the shuttle: aim into it.')} ${this.windText()}`;
+    if (this.windy && this.state === 'serve') return serve ? `${this.windText()} · ${tx('Press {act} to serve')}` : this.windText();
+    if (serve) return this.bounce && !this.touches ? `${tx('The shuttle may bounce once on your side.')} ${tx('Press {act} to serve')}` : tx('Press {act} to serve');
+    return null;
+  }
 
   /** The winning team, or null while the match is on. */
   won() { return this.score[0] >= this.target ? 0 : this.score[1] >= this.target ? 1 : null; }
 
   result() {
     const [a, b] = this.score, won = a >= this.target && a > b;
-    const stars = won ? (b <= 1 ? 3 : 2) : a >= this.target - 2 && a > 0 ? 1 : 0;
+    const S = FOOTNET_STARS[this.level] || FOOTNET_STARS.normal;
+    const stars = won ? (b <= S[1] ? 3 : 2) : a >= Math.min(S[0], this.target - 1) && a > 0 ? 1 : 0;
     return { won, mine: a, theirs: b, score: a, rally: Math.max(this.best, this.rally), stars, touches: this.touches };
   }
 }
@@ -294,7 +370,9 @@ export class FootnetSim {
 export function footnetBot(sim, at = 0.12) {
   const h = sim.human, out = { mx: 0, mv: 0, kick: false };
   if (!h) return out;
-  if (sim.state === 'serve') { out.kick = at !== null && sim.server === h; return out; }
+  // in the wind a careful player aims into it as she kicks, the serve too (sim.botWind = false: one who kicks straight)
+  const into = () => { if (sim.windy) { out.mx = sim.botWind === false ? 0 : -sim.wind * (sim.gale > 1 ? 1 : 0.5); out.mv = 0; } };
+  if (sim.state === 'serve') { out.kick = at !== null && sim.server === h; if (out.kick) into(); return out; }
   const f = sim.flight;
   if (sim.state !== 'rally' || !f || f.to !== h.team || f.wall || at === null) return out;
   if (!sim.marker.mine || sim.marker.out) return out;
@@ -302,6 +380,7 @@ export function footnetBot(sim, at = 0.12) {
   if (d > 0.15) { out.mx = du / d; out.mv = dv / d; }
   const tau = f.dur - f.t, want = typeof at === 'function' ? at(sim) : at;
   out.kick = tau <= want && d <= sim.L.reach;
+  if (out.kick) into();              // (one frame of stick: she hardly moves)
   return out;
 }
 
@@ -317,7 +396,7 @@ export default {
     if (kids.length >= 3) return { mine: [kids[2]], theirs: [kids[0], kids[1]] };
     return { mine: [], theirs: kids.slice(0, 2) };
   },
-  target: level => (level === 'first' ? 3 : 5),
+  target: level => FOOTNET_TARGET[level] ?? FOOTNET_TARGET.normal,
   create: opts => new FootnetSim(opts),
   bot: footnetBot,
   focus: { u: 0, v: 0, w: COURT.W + 1.5, l: COURT.L + 1.5 },      // what the camera must show

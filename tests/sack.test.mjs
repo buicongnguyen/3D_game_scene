@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import sack, { SackSim, sackBot, COURSE, SOLO_TIMES, bestSeconds } from '../src/game/yard/sack.js';
+import sack, { SackSim, sackBot, COURSE, SOLO_TIMES, SACK_LEVEL, bestSeconds } from '../src/game/yard/sack.js';
+
+// The classic course (one 13 m length, 40 s, stars at 13 / 18 s) is the guided FIRST race; the levels after it run two,
+// three and four lengths (tests/yard-levels.test.mjs). The tests here that are about the classic race name level 'first'.
 
 const DT = 1 / 60, mika = { id: 'mika', human: true };
 const stepUntil = (sim, predicate, input = () => ({}), max = 3000) => {
@@ -9,27 +12,29 @@ const stepUntil = (sim, predicate, input = () => ({}), max = 3000) => {
   return sim;
 };
 const race = sim => stepUntil(sim, s => s.state === 'race');
-const finish = (sim, policy = s => sackBot(s, 0.5)) => stepUntil(sim, s => !!s.over, policy).over;
+const finish = (sim, policy = s => sackBot(s, 0.5), max = 3000) => stepUntil(sim, s => !!s.over, policy, max).over;
 
 test('solo race waits for a genuine finish, and a steady player completes the full course for three stars', () => {
-  for (const level of ['first', 'easy', 'normal']) {
-    const sim = race(new SackSim({ players: [mika], level }));
+  for (const level of ['first', 'easy', 'normal', 'hard']) {
+    const sim = race(new SackSim({ players: [mika], level })), K = SACK_LEVEL[level];
     for (let i = 0; i < 240; i++) sim.step(DT, {});
     assert.equal(sim.state, 'race'); assert.equal(sim.human.finish, null);
     assert.equal(sim.human.d, 0, 'standing still has not crossed the line');
-    const out = finish(sim);
-    assert.equal(sim.human.d, COURSE); assert.equal(out.finished, true); assert.equal(out.won, true);
+    const out = finish(sim, undefined, 12000);
+    assert.equal(sim.human.d, COURSE * K.lengths); assert.equal(out.finished, true); assert.equal(out.won, true);
+    assert.ok(out.time <= K.solo[1], `${level}: four-second delayed steady finish: ${out.time}`);
+    if (level !== 'first') continue;
     assert.ok(out.time > 13 && out.time <= 18, `four-second delayed steady finish: ${out.time}`);
     assert.equal(out.stars, 2, 'waiting is included in solo finish time');
   }
-  const sim = race(new SackSim({ players: [mika] })), out = finish(sim);
+  const sim = race(new SackSim({ players: [mika], level: 'first' })), out = finish(sim);
   assert.ok(out.time > 9 && out.time <= SOLO_TIMES.three, `careful bot finish time: ${out.time}`);
   assert.equal(out.stars, 3); assert.equal(out.finished, true);
 });
 
 test('solo idle or unfinished race times out at 40 seconds without win, stars, score or completion text', () => {
   for (const gap of [null, 2]) {
-    const sim = race(new SackSim({ players: [mika] }));
+    const sim = race(new SackSim({ players: [mika], level: 'first' }));
     const out = finish(sim, s => sackBot(s, gap));
     assert.equal(sim.run, SOLO_TIMES.limit); assert.equal(sim.human.finish, null);
     assert.ok(sim.human.d < COURSE); assert.equal(out.finished, false); assert.equal(out.won, false);
@@ -41,7 +46,7 @@ test('solo idle or unfinished race times out at 40 seconds without win, stars, s
 
 test('solo time stars include the exact 13, 18 and 40 second boundaries', () => {
   for (const [time, expected] of [[13, 3], [13.001, 2], [18, 2], [18.001, 1], [40, 1]]) {
-    const sim = new SackSim({ players: [mika] });
+    const sim = new SackSim({ players: [mika], level: 'first' });
     Object.assign(sim.human, { d: COURSE, finish: time, place: 1 });
     const out = sim.result(); assert.equal(out.stars, expected, `time ${time}`);
     assert.equal(out.finished, true); assert.equal(out.time, time);
@@ -83,12 +88,12 @@ test('empty and ambient races remain bounded and never fabricate an empty winner
 test('a slow child who keeps hopping is never cut off behind the kids: the same pace finishes alone and in company', () => {
   // Review regression: with "must finish", the 3.5 s trailing cutoff turned a 0.75 s beat into "Did not finish" (no star)
   // against kids, although the same beat finishes alone in about 28 s for one star.
-  for (const level of ['first', 'easy', 'normal']) for (const kids of [[], ['steady'], ['strong', 'tricky', 'wobbly']]) {
-    const sim = race(new SackSim({ seed: 11, level, players: [mika, ...kids.map((style, i) => ({ id: `kid${i}`, style }))] }));
-    const out = finish(sim, s => sackBot(s, 0.75));
+  for (const level of ['first', 'easy', 'normal', 'hard']) for (const kids of [[], ['steady'], ['strong', 'tricky', 'wobbly']]) {
+    const sim = race(new SackSim({ seed: 11, level, players: [mika, ...kids.map((style, i) => ({ id: `kid${i}`, style }))] })), K = SACK_LEVEL[level];
+    const out = finish(sim, s => sackBot(s, 0.75), 12000);
     assert.equal(out.finished, true, `${level} against ${kids.length} kids`);
-    assert.ok(out.time > 20 && out.time <= SOLO_TIMES.limit, `slow finish: ${out.time}`);
-    assert.equal(sim.human.d, COURSE);
+    assert.ok(out.time > 20 && out.time <= K.limit, `${level}: slow finish: ${out.time}`);
+    assert.equal(sim.human.d, COURSE * K.lengths);
     if (kids.length < 2) assert.ok(out.stars >= 1, 'finishing alone or behind the only kid always earns a star');
   }
   // getting up from a tumble is still trying; standing still is not
@@ -102,7 +107,7 @@ test('a slow child who keeps hopping is never cut off behind the kids: the same 
 });
 
 test('the unfinished card does not print the same line twice and says how far she got', () => {
-  const sim = race(new SackSim({ players: [mika] }));
+  const sim = race(new SackSim({ players: [mika], level: 'first' }));
   for (let i = 0; i < 10; i++) { sim.step(DT, { kick: true }); for (let k = 0; k < 40; k++) sim.step(DT, {}); }
   const out = finish(sim, () => ({}));
   assert.equal(out.finished, false); assert.ok(out.dist > 3 && out.dist < COURSE);
@@ -121,7 +126,7 @@ test('after Mika finishes, the card comes within a few seconds even if a kid daw
 });
 
 test('finishing last of four still earns a star, and the card shows the best run as a time', () => {
-  const sim = new SackSim({ players: [mika, { id: 'a' }, { id: 'b' }, { id: 'c' }] });
+  const sim = new SackSim({ players: [mika, { id: 'a' }, { id: 'b' }, { id: 'c' }], level: 'first' });
   Object.assign(sim.human, { d: COURSE, finish: 31, place: 4 });
   const out = sim.result(); assert.equal(out.finished, true); assert.equal(out.stars, 1); assert.equal(out.won, false);
   Object.assign(sim.human, { d: 9, finish: null, place: 4 });

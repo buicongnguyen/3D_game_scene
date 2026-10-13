@@ -15,12 +15,35 @@
 //   quan are captured (the quick game ends at the FIRST quan captured, or after 24 turns). Pebbles left on a side count
 //   for its owner; a dân is 1 point, a quan 10; the most points wins.
 //
+// The levels (Mika's games; the kids' own game is the quick one):
+//   first   the quick game: it ends at the first quan captured or after 24 turns; a kid who hardly thinks (the guided first game)
+//   easy    a short game of exactly 12 turns: a captured quan does not end it (there are two to win, and the dân after
+//           them). A kid who looks one move ahead and slips now and then.
+//   normal  the full rules: the game ends when both quan are captured (or after 18 turns), and the YOUNG QUAN: a quan
+//           with fewer than five dân beside it in its square cannot be captured yet (the turn just ends), so a quan has
+//           to be fed before it can be won. A kid who looks two moves ahead.
+//   hard    the full rules over 24 turns against a kid who looks three moves ahead and never slips, and no hint button:
+//           every move is her own reading of the board.
+//
 // This file is pure and seeded (no three.js, no DOM): the rules first (state, moves, steps for the animation, scoring),
 // then the opponent (minimax), then the sim ./round.js shows. tests/yard2.test.mjs checks known positions.
 import { rng, clamp } from './rules.js';
 import { N_, tx } from '../../i18n/i18n.js';
 
 export const SQ = 12, QUAN_AT = [0, 6], QUAN_VALUE = 10, START_DAN = 5, QUICK_TURNS = 24;
+export const YOUNG_DAN = 5;      // the young-quan rule (Difficult): a quan with fewer dân than this beside it cannot be captured
+/**
+ * Per level: quick (the first quan ends it), the turns played at most, how far the kid looks ahead and how often they
+ * slip, the young-quan rule, the hint button, and the stars [win by this for three, lose by no more than this for one,
+ * (Easy) or reach this many points for one].
+ */
+export const OAN_LEVEL = {
+  first: { quick: true, turns: QUICK_TURNS, depth: 1, cap: 3, noise: 0.35, stars: [12, 5] },
+  easy: { quick: false, turns: 12, all: true, depth: 1, cap: 1, noise: 0.45, stars: [10, 10, 20] },
+  normal: { quick: false, turns: 18, depth: 2, cap: 2, noise: 0.12, young: true, stars: [12, 8] },
+  hard: { quick: false, turns: 24, depth: 3, cap: 3, noise: 0, young: true, noHint: true, stars: [8, 5] },
+};
+// (`cap`: a clever kid looks one move further than the level's depth, a wobbly one a move less, but never past this)
 export const isQuanSq = i => i === 0 || i === 6;
 const mod = i => ((i % SQ) + SQ) % SQ;
 /** Which side owns a small square: 1..5 are player 0's, 7..11 are player 1's; the quan squares are nobody's. */
@@ -33,7 +56,9 @@ export function newBoard() {
   for (const q of QUAN_AT) { dan[q] = 0; quan[q] = 1; }
   return { dan, quan, pile: [{ dan: 0, quan: 0 }, { dan: 0, quan: 0 }], debt: [0, 0], turns: 0, moves: 0 };
 }
-export const cloneBoard = b => ({ dan: b.dan.slice(), quan: b.quan.slice(), pile: b.pile.map(p => ({ ...p })), debt: b.debt.slice(), turns: b.turns, moves: b.moves });
+export const cloneBoard = b => ({ dan: b.dan.slice(), quan: b.quan.slice(), pile: b.pile.map(p => ({ ...p })), debt: b.debt.slice(), turns: b.turns, moves: b.moves, young: !!b.young });
+/** A young quan (board.young: the Difficult rule): the quan still in its square with fewer than YOUNG_DAN dân beside it. */
+export const isYoung = (b, i) => !!b.young && b.quan[i] > 0 && b.dan[i] < YOUNG_DAN;
 const empty = (b, i) => b.dan[i] === 0 && b.quan[i] === 0;
 
 /** A player's points so far (captured pile only): dân 1, quan 10, less what they have borrowed. */
@@ -80,6 +105,7 @@ export function play(board, p, sq, dir) {
     for (;;) {
       const after = mod(cur + dir);
       if (empty(b, after)) break;
+      if (isYoung(b, after)) { steps.push({ t: 'young', sq: after }); break; }      // too young to be captured: the turn ends
       const d = b.dan[after], q = b.quan[after];
       b.pile[p].dan += d; b.pile[p].quan += q; got.dan += d; got.quan += q;
       b.dan[after] = 0; b.quan[after] = 0;
@@ -190,19 +216,26 @@ export function hints(board, p) {
 
 // ------------------------------------------------------------------------------------------------ the sim
 const PICK_T = 0.55, DROP_T = 0.24, TAKE_T = 0.7, THINK_KID = [1.4, 2.4], PAUSE = 0.8;
-const DEPTH = { first: 1, easy: 1, normal: 2 };
-const NOISE = { first: 0.35, easy: 0.2, normal: 0.04 };
+const YOUNG_T = 0.9;
 
 export class OanSim {
-  /** players: [{ id, human?, style? }] (two; the human is player 0, the near row); level; quick: the quick game. */
-  constructor({ seed = 1, players = [], level = 'normal', quick = true } = {}) {
+  /**
+   * players: [{ id, human?, style? }] (two; the human is player 0, the near row); level. quick / turns: the quick game
+   * and the turn limit, when a caller wants other than the level's own (the kids' own game is always the quick one).
+   */
+  constructor({ seed = 1, players = [], level = 'normal', quick, turns } = {}) {
     this.rand = rng(seed);
     this.level = level;
-    this.quick = quick;
+    const L = OAN_LEVEL[level] || OAN_LEVEL.normal, mine = players.some(p => p.human);
+    const K = this.K = mine ? L : { ...OAN_LEVEL.first, depth: L.depth, noise: L.noise, stars: L.stars };
+    this.quick = quick ?? K.quick;
+    this.maxTurns = turns ?? (quick === false ? Infinity : K.turns);
+    this.noHint = !!K.noHint;
     const ordered = [...players].sort((a, b) => (b.human ? 1 : 0) - (a.human ? 1 : 0)).slice(0, 2);
     this.players = ordered.map((p, i) => ({ id: p.id, team: i, human: !!p.human, style: p.style || 'steady', u: i ? 0.55 : -0.55, v: i ? -1.35 : 1.35, moving: false, kickT: 9, lean: 0 }));
     this.human = this.players.find(p => p.human) || null;
     this.board = newBoard();
+    this.board.young = !!K.young;
     this.shown = { dan: this.board.dan.slice(), quan: this.board.quan.slice() };    // what the animation has laid out so far
     this.mover = 0;
     this.state = 'start';
@@ -217,11 +250,13 @@ export class OanSim {
     this.over = null;
     this.shuttle = { on: false, u: 0, y: 0, v: 0 };
     this.marker = { on: false, u: 0, v: 0, mine: false, out: false, tau: 1, dur: 1 };
-    this.depth = DEPTH[level] ?? 2;
+    this.depth = K.depth;
   }
 
   emit(type, o) { this.events.push({ type, ...o }); }
   get cur() { return this.players[this.mover]; }
+  /** Is the game over? Both quan gone; the quick game: the first quan gone; or the level's turns are played. */
+  done() { return this.board.turns >= this.maxTurns || (!this.K.all && finished(this.board, this.quick)); }
 
   step(dt, input = {}) {
     this.t += dt;
@@ -231,14 +266,15 @@ export class OanSim {
     if (this.state === 'think') {
       const p = this.cur;
       if (p.human) {
-        if (input.hint) { this.hintOn = !this.hintOn; this.emit('hint', {}); }
+        if (input.hint && !this.noHint) { this.hintOn = !this.hintOn; this.emit('hint', {}); }
         if (input.pick !== undefined && input.pick !== null) this.pick(input.pick);
         if (input.dir && this.sel !== null) this.go(this.sel, input.dir);
       } else {
         this.timer -= dt;
         if (this.timer <= 0) {
           const bonus = p.style === 'never' || p.style === 'strong' ? 1 : p.style === 'wobbly' ? -1 : 0;
-          const m = bestMove(this.board, this.mover, Math.max(1, this.depth + bonus), this.rand, NOISE[this.level] ?? 0.05);
+          // (never deeper than three moves: a fourth is felt as a hitch on a phone)
+          const m = bestMove(this.board, this.mover, Math.min(this.K.cap, Math.max(1, this.depth + bonus)), this.rand, this.K.noise);
           if (m) this.go(m.sq, m.dir); else this.endGame();
         }
       }
@@ -251,7 +287,7 @@ export class OanSim {
 
   /** The start of a turn: refill an empty side, end the game if it is over, otherwise wait for the move. */
   begin() {
-    if (finished(this.board, this.quick)) { this.endGame(); return; }
+    if (this.done()) { this.endGame(); return; }
     const r = refill(this.board, this.mover);
     if (r.stuck) { this.endGame(); return; }
     if (r.refilled) {
@@ -304,6 +340,7 @@ export class OanSim {
       const s = A.r.steps[A.i++], S = this.shown;
       if (s.t === 'pick') { S.dan[s.sq] = 0; A.t += PICK_T; this.emit('pick', { sq: s.sq, n: s.n }); }
       else if (s.t === 'drop') { S.dan[s.sq]++; A.t += DROP_T; A.last = s.sq; this.emit('drop', { sq: s.sq }); }
+      else if (s.t === 'young') { A.t += YOUNG_T; this.emit('young', { sq: s.sq, who: this.cur.id, human: this.cur.human }); }
       else { S.dan[s.sq] = 0; S.quan[s.sq] = 0; A.t += TAKE_T; this.emit('take', { sq: s.sq, dan: s.dan, quan: s.quan, who: this.cur.id, human: this.cur.human }); }
     }
     if (A.i >= A.r.steps.length && A.t <= 0) {
@@ -328,19 +365,22 @@ export class OanSim {
 
   result() {
     const [a, b] = this.final || this.score, h = this.human ? 0 : 0;
-    const won = a > b, tie = a === b;
-    const stars = won ? (a >= b + 12 ? 3 : 2) : tie ? 1 : a >= b - 5 ? 1 : 0;
+    const won = a > b, tie = a === b, S = this.K.stars;
+    const stars = won ? (a >= b + S[0] ? 3 : 2) : tie ? 1 : a >= b - S[1] || (S[2] && a >= S[2]) ? 1 : 0;
     void h;
     return { won, tie, mine: a, theirs: b, score: a, rally: this.board.turns, stars, touches: this.board.turns, quan: this.board.pile[0].quan };
   }
 
   hud(names) {
-    return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: this.state === 'think' && this.cur.human ? tx('Your turn') : this.state === 'over' ? '' : tx('Turn {n}', { n: this.board.turns + 1 }) };
+    return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: this.state === 'over' ? '' : this.state === 'think' && this.cur.human && this.quick ? tx('Your turn') : Number.isFinite(this.maxTurns) && !this.quick ? tx('Turn {n} of {m}', { n: Math.min(this.maxTurns, this.board.turns + 1), m: this.maxTurns }) : tx('Turn {n}', { n: this.board.turns + 1 }) };
   }
   hint() {
-    if (this.state === 'think' && this.cur.human && !this.touchUi) return this.sel === null ? tx('Left or right picks a square, then {act} sows ▶ or Space sows ◀. W shows a hint') : tx('Now: {act} sows ▶, Space sows ◀');
-    if (this.state === 'think' && this.cur.human) return this.sel === null ? tx('Tap one of your squares, then ◀ or ▶ to sow. Tap ? for a hint') : tx('Now choose the way round: ◀ or ▶');
-    return null;
+    if (this.state !== 'think' || !this.cur.human) return null;
+    // before her first move the level's own rule is said once
+    if (this.sel === null && this.board.turns < 2 && this.board.young) return tx('A quan with fewer than 5 pebbles beside it cannot be captured yet. No hints here!');
+    if (this.sel === null && this.board.turns < 2 && !this.quick) return tx('{n} turns. There are two quan to win: plan ahead.', { n: this.maxTurns });
+    if (!this.touchUi) return this.sel !== null ? tx('Now: {act} sows ▶, Space sows ◀') : this.noHint ? tx('Left or right picks a square, then {act} sows ▶ or Space sows ◀.') : tx('Left or right picks a square, then {act} sows ▶ or Space sows ◀. W shows a hint');
+    return this.sel !== null ? tx('Now choose the way round: ◀ or ▶') : this.noHint ? tx('Tap one of your squares, then ◀ or ▶ to sow.') : tx('Tap one of your squares, then ◀ or ▶ to sow. Tap ? for a hint');
   }
 }
 

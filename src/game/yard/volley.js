@@ -4,11 +4,24 @@
 // rotates inside a team, first to `target` (3 the first time). Pure, seeded (no three.js, no DOM): ./round.js shows it.
 //
 // Alone against nobody (wall: true) Mika keeps a ball going off the practice board: three returns in a row is a point.
+//
+// The levels (Mika's rounds; the kids' own game is the plain one):
+//   first   to 3, slow balls, kind kids (the guided first round)
+//   easy    to 4, and her third touch is ALWAYS a spike: bump, set, hit, whatever the timing
+//   normal  to 5, the game as it is meant: only a well-timed third touch is a spike, anything else a lob
+//   hard    to 6. The partner's sets are loose (she has to run for them), and the kid at the net BLOCKS a spike hit
+//           straight at them: the ball comes back down on her side. Aim the spike away from the blocker (the stick).
 import { COURT, LEVELS, STYLES, KICK_Y, WINDUP, HUMAN_SPEED, rng, clamp, judge, makeFlight, flightAt, stepToward } from './rules.js';
 import { N_, tx } from '../../i18n/i18n.js';
 
 export const NET_H = 2.2;
 const SERVE_WAIT = 1.4, POINT_PAUSE = 1.8, AI_REACH = 1.4;
+// (a volleyball point is long, about twenty seconds with its three touches a side: 4 / 5 / 6 points make rounds of about
+// a minute and a half, two minutes and two and a quarter)
+export const VOLLEY_TARGET = { first: 3, easy: 4, normal: 5, hard: 6 };
+/** Stars: [points that earn one star in a lost match, points the kids may have for the third star in a won one]. */
+export const VOLLEY_STARS = { first: [1, 1], easy: [2, 1], normal: [3, 1], hard: [4, 2] };
+export const BLOCK_W = 0.5;            // a spike crossing the net this close (metres) to the blocker is blocked (Difficult)
 const side = team => (team === 0 ? 1 : -1);
 
 /** Where a side's players stand: with two, a back player and a net player. */
@@ -50,6 +63,12 @@ export class VolleySim {
     this.over = null;
     this.wound = false;
     this.hold = null;
+    // the level's own rules (Mika's rounds only)
+    const mate = this.human && this.teamOf(0).length > 1, two = this.teamOf(1).length > 1;
+    this.sure = !!this.human && level === 'easy';                      // Easy: the third touch always spikes
+    this.loose = !!mate && level === 'hard';                           // Difficult: loose sets
+    this.blocker = this.human && two && level === 'hard' && !this.wall ? this.teamOf(1).reduce((a, p) => (Math.abs(p.home.v) < Math.abs(a.home.v) ? p : a)) : null;
+    this.blocks = 0;
   }
 
   pickServer(team) {
@@ -145,17 +164,17 @@ export class VolleySim {
    * The ball is in the air. meta: { kind, over (crosses the net), fault, wall, to (player who must hit it, for a pass) }.
    * A flight `over` the net is for the other side's nearest player; a pass is for the partner it names.
    */
-  launch(f, team, { kind, fault = null, wall = false, over = false, to = null } = {}) {
+  launch(f, team, { kind, fault = null, wall = false, over = false, to = null, block = null } = {}) {
     const r = this.rand;
-    Object.assign(f, { team, kind, fault, wall, over, to: over ? 1 - team : team });
+    Object.assign(f, { team, kind, fault, wall, over, block, to: over ? 1 - team : team });
     this.flight = f;
     this.wound = false;
     for (const p of this.players) p.plan = null;
     const M = this.marker;
-    M.on = !wall && fault !== 'net'; M.u = f.bu; M.v = f.bv; M.dur = f.dur; M.tau = f.dur; M.out = fault === 'out'; M.mine = false;
+    M.on = !wall && fault !== 'net' && !block; M.u = f.bu; M.v = f.bv; M.dur = f.dur; M.tau = f.dur; M.out = fault === 'out'; M.mine = false;
     this.receiver = null;
     if (over) { this.touchN = 0; }
-    if (wall || fault === 'net') return;
+    if (wall || fault === 'net' || block) return;
     let best = to;
     if (!best) {
       let bd = 1e9;
@@ -170,11 +189,22 @@ export class VolleySim {
     if (best && !best.human && fault !== 'out') {
       const vsHuman = !!this.human && this.human.team !== best.team;
       const alone = vsHuman && this.teamOf(this.human.team).length === 1;
-      const miss = best.style.miss * (!this.human ? 0.6 : vsHuman ? this.L.miss * 0.6 * (alone ? 1.8 : 1) : 0.5) + (f.kind === 'spike' ? 0.18 : 0);
+      const miss = best.style.miss * (!this.human ? 0.6 : vsHuman ? this.L.miss * 0.6 * (alone ? 1.8 : 1) : 0.5) + (f.kind === 'spike' ? 0.18 : f.kind === 'block' ? 0.3 : 0);
       best.plan = { tau: 0.07 + r() * 0.12, late: r() < miss, wound: false };
     }
     // whoever just passed goes to the net to attack the set (a kid; Mika is her own legs)
     if (kind === 'bump' || kind === 'set') for (const p of this.players) if (p.team === f.to && p !== best && !p.human) p.attack = kind === 'bump' ? { u: clamp(f.bu + (r() < 0.5 ? -1 : 1) * 1.3, -2.4, 2.4), v: side(f.to) * 2.4 } : null;
+    // Difficult: a set is going up for Mika: the kid at the net steps across to stand in front of it, arms ready
+    const B = this.blocker;
+    if (B && kind === 'set' && best?.human) B.attack = { u: clamp(f.bu, -2.5, 2.5), v: -1.0 };
+  }
+
+  /** Difficult: is Mika's spike from a to b going straight at the blocker? (They must be at the net, and it must cross near them.) */
+  blocked(a, b) {
+    const B = this.blocker;
+    if (!B || Math.abs(B.v) > 1.6) return false;
+    const k = a.v / (a.v - b.v), cu = a.u + (b.u - a.u) * k;
+    return Math.abs(cu - B.u) < BLOCK_W;
   }
 
   stepRally(dt, input) {
@@ -227,10 +257,19 @@ export class VolleySim {
       return;
     }
     // over the net: a perfect third touch is the spike (fast and steep), anything else a lob over
-    const spike = flat && n >= 2;
+    const spike = (flat && n >= 2) || (this.sure && n >= 3);
     if (spike) this.spikes++;
     const b = this.aim(input, h, flat);
     const up = { u: a.u, y: Math.max(a.y, spike ? 2.45 : a.y), v: a.v };
+    if (spike && this.blocked(up, b)) {
+      // into the blocker's hands at the tape: it comes straight back down on her side
+      const B = this.blocker, k = up.v / (up.v - b.v);
+      this.blocks++;
+      B.kickT = 0;
+      this.emit('windup', { who: B.id, kind: 'spike' });
+      this.launch(makeFlight(up, { u: up.u + (b.u - up.u) * k, y: NET_H + 0.2, v: -0.12 }, 0.28, 0.05, { net: true, netH: NET_H }), h.team, { kind: 'spike', over: true, block: B });
+      return;
+    }
     this.launch(makeFlight(up, b, spike ? 0.7 : flat ? 1.1 : 1.8, spike ? 0.2 : flat ? 0.6 : 3.1, { netH: NET_H }), h.team, { kind: spike ? 'spike' : n === 1 ? 'pass' : 'lob', over: true });
   }
 
@@ -242,7 +281,9 @@ export class VolleySim {
     else {
       // the set goes high and soft, in front of the hitter, close to the net so the spike can come down steep
       const hit = mate;
-      b = { u: clamp(hit.u + (r() - 0.5) * 1.2, -2.3, 2.3), y: 0, v: s * (1.6 + r() * 0.5) };
+      // (Difficult: the partner's set is loose: it may come down a good step to either side, and a little further back)
+      const loose = this.loose && mate.human;
+      b = { u: clamp(hit.u + (r() - 0.5) * (loose ? 3.4 : 1.2), -2.3, 2.3), y: 0, v: s * (1.6 + r() * (loose ? 1.1 : 0.5)) };
     }
     const dur = kind === 'bump' ? (good ? 1.45 : 1.2) : (good ? 1.7 : 1.15), h = kind === 'bump' ? 2.4 : good ? 3.4 : 1.8;
     this.emit('pass', { who: p.id, kind, good });
@@ -289,6 +330,14 @@ export class VolleySim {
       return;
     }
     flightAt(f, 1, sh);
+    if (f.block) {
+      // off the blocker's hands: down on Mika's side, near the net; whoever is nearest may still dig it out
+      const r = this.rand, B = f.block, s = side(1 - B.team);
+      this.emit('block', { who: B.id, u: f.bu, v: f.bv });
+      const b = { u: clamp(f.bu + (r() - 0.5) * 2.2, -2.4, 2.4), y: 0, v: s * (1.3 + r() * 1.3) };
+      this.launch(makeFlight({ u: f.bu, y: f.by, v: s * 0.12 }, b, 1.15 * this.L.slow, 0.5, { netH: 0 }), B.team, { kind: 'block', over: true });
+      return;
+    }
     this.emit('land', { u: f.bu, v: f.bv, fault: f.fault, side: f.to });
     // a ball that crossed and fell on its side is the sender's point; a pass nobody touched is the passer's loss
     if (f.fault) this.point(1 - f.team, f.fault);
@@ -312,15 +361,22 @@ export class VolleySim {
 
   result() {
     const [a, b] = this.score, won = a >= this.target && a > b;
-    const stars = won ? (b <= 1 ? 3 : 2) : a >= this.target - 2 && a > 0 ? 1 : 0;
-    return { won, mine: a, theirs: b, score: a, rally: Math.max(this.best, this.rally), stars, touches: this.touches, spikes: this.spikes };
+    const S = VOLLEY_STARS[this.level] || VOLLEY_STARS.normal;
+    const stars = won ? (b <= S[1] ? 3 : 2) : a >= Math.min(S[0], this.target - 1) && a > 0 ? 1 : 0;
+    return { won, mine: a, theirs: b, score: a, rally: Math.max(this.best, this.rally), stars, touches: this.touches, spikes: this.spikes, blocks: this.blocks };
   }
 
   hud(names) { return { l: names.mine, big: `${this.score[0]} : ${this.score[1]}`, r: names.theirs, sub: this.wall ? tx('Three in a row: a point') : tx('First to {n}', { n: this.target }) }; }
   hint() {
-    if (this.state === 'serve' && this.server === this.human) return tx('Press {act} to serve');
+    if (this.state === 'serve' && this.server === this.human) {
+      // before the first serve the level's own rule is said once
+      if (this.blocker && !this.touches) return `${tx('They block a spike hit straight at them. Aim it to the side.')} ${tx('Press {act} to serve')}`;
+      if (this.sure && !this.touches && this.teamOf(0).length > 1) return `${tx('Your third touch is always a spike.')} ${tx('Press {act} to serve')}`;
+      return tx('Press {act} to serve');
+    }
     const f = this.flight, h = this.human;
     if (this.state !== 'rally' || !f || !h || this.receiver !== h) return null;
+    if (f.kind === 'set' && this.blocker) return tx('Spike it away from the blocker!');
     return f.kind === 'set' ? tx('Spike! Press {act} just as it comes down') : f.kind === 'bump' ? tx('Set it up: press {act} as it comes down') : null;
   }
 }
@@ -338,7 +394,12 @@ export function volleyBot(sim, at = 0.12) {
   const tau = f.dur - f.t, want = typeof at === 'function' ? at(sim) : at;
   out.kick = tau <= want && d <= sim.L.reach;
   // up the court on the third touch (or when there is no partner), so she attacks
-  if (out.kick && (sim.touchN >= 2 || !sim.teamOf(h.team).some(p => p !== h))) { out.mv = -1; out.mx = 0; }
+  if (out.kick && (sim.touchN >= 2 || !sim.teamOf(h.team).some(p => p !== h))) {
+    out.mv = -1; out.mx = 0;
+    // a blocker at the net: she hits it to the side they are not on (sim.botAim = false: a player who always hits straight)
+    const B = sim.blocker;
+    if (B && sim.botAim !== false) out.mx = h.u > 0 ? -1 : 1;
+  }
   return out;
 }
 
@@ -354,7 +415,7 @@ export default {
     if (kids.length >= 3) return { mine: [kids[2]], theirs: [kids[0], kids[1]] };
     return { mine: [], theirs: kids.slice(0, 2) };
   },
-  target: level => (level === 'first' ? 3 : 5),
+  target: level => VOLLEY_TARGET[level] ?? VOLLEY_TARGET.normal,
   create: opts => new VolleySim(opts),
   bot: volleyBot,
   focus: { u: 0, v: 0, w: COURT.W + 1.5, l: COURT.L + 1.5 },

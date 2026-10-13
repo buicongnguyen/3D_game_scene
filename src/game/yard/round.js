@@ -21,7 +21,7 @@ import { Poses } from './poses.js';
 import { SAY, CSS } from './say.js';
 import { COURT } from './rules.js';
 import { BARK_RANGE } from '../barks.js';
-import { tx, getLang } from '../../i18n/i18n.js';
+import { tx, getLang, setGlobal } from '../../i18n/i18n.js';
 
 const HEAR = 30;              // the yard's sounds carry this far
 const INVITE_R = 11;          // a kid calls Mika over when she comes this close to a game
@@ -89,7 +89,10 @@ export class Yard {
     this.ring = flat(new THREE.RingGeometry(0.44, 0.56, 28), '#ffd34a', 0.95);
     this.ringOut = flat(new THREE.RingGeometry(0.6, 0.635, 32), '#ffffff', 0.7);
     this.ring.name = 'yard:ring'; this.ringOut.name = 'yard:ringOut';
-    scene.add(this.ring, this.ringOut);
+    // keep it up, Normal and Difficult: a green ring under the kid who is calling for the shuttle
+    this.callRing = flat(new THREE.RingGeometry(0.5, 0.64, 28), '#59e06a', 0.9);
+    this.callRing.name = 'yard:callRing';
+    scene.add(this.ring, this.ringOut, this.callRing);
     this.tmpCam = new THREE.PerspectiveCamera();
     this.ray = new THREE.Raycaster();
     this.plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
@@ -97,6 +100,8 @@ export class Yard {
 
   buildUi() {
     if (typeof document === 'undefined') { this.el = null; return; }
+    // "leap with {jump}" (the sack race's logs): the Space key, or the Jump button on a phone
+    setGlobal('jump', () => (this.d.ui?.touch ? `“${tx('Jump')}”` : 'Space'));
     if (!document.getElementById('yardCss')) {
       const s = document.createElement('style');
       s.id = 'yardCss';
@@ -137,11 +142,12 @@ export class Yard {
   }
 
   /** The on-screen buttons that belong to a game (none for the one-button games). */
-  showPad(look) {
+  showPad(look, sim = null) {
     if (!this.el) return;
     const on = look === 'board' || look === 'marbles';
     this.el.pad.classList.toggle('hidden', !on);
     this.padBtns.hint.style.display = this.padBtns.left.style.display = this.padBtns.right.style.display = look === 'board' ? '' : 'none';
+    if (sim?.noHint) this.padBtns.hint.style.display = 'none';          // (Difficult ô ăn quan: no hint button)
     this.padBtns.flick.style.display = look === 'marbles' ? '' : 'none';
     this.padBtns.flick.textContent = tx('Hold to flick');
     document.body.classList.toggle('yard-pad', on);
@@ -213,7 +219,7 @@ export class Yard {
     if (G.look === 'shuttle' || G.look === 'ball') return sim.shuttle.on ? to(sim.shuttle.u, sim.shuttle.v) : null;
     if (G.id === 'tug') return to(pl.team === 0 ? 4 : -4, 0);
     if (G.id === 'rope') return pl.role === 'turn' ? to(-pl.u, 0) : to(0, 3);
-    if (G.id === 'sack') return to(pl.u, -9);
+    if (G.id === 'sack') return to(pl.u, pl.back ? 9 : -9);          // (on the way home they face the near banner)
     if (G.id === 'oanquan') return to(0, pl.v > 0 ? -1 : 1);
     if (G.id === 'marbles') return to(0, 0);
     return null;
@@ -369,6 +375,9 @@ export class Yard {
     const M = sim.marker, on = withRing && M.on && (sim.state === 'rally' || sim.state === 'pull');
     this.ring.visible = on;
     this.ringOut.visible = on && M.mine && !M.out;
+    const caller = withRing && sim.state === 'rally' ? sim.call : null;
+    this.callRing.visible = !!caller;
+    if (caller) { const w = toWorld(caller.u, caller.v, W1, S); this.callRing.position.set(w.x, y0 + 0.05, w.z); this.callRing.scale.setScalar(1 + 0.1 * Math.sin(sim.t * 9)); }
     if (on) {
       const w = toWorld(M.u, M.v, W1, S), L = sim.L || { p0: 0, p1: sim.W?.perfect ?? 0.14 }, mat = this.ring.material;
       this.ring.position.set(w.x, y0 + 0.045, w.z);
@@ -424,6 +433,29 @@ export class Yard {
           this.hint(e.why === 'far' ? tx('Too far: stand in the ring') : tx('Too early!'), 1.1, 'bad');
           break;
         case 'wall': tone(170, { dur: 0.1, vol: 0.13, rev: 0.15 }); noise({ dur: 0.05, vol: 0.08, freq: 1500 }); break;
+        // ---- the levels' own moments (foot-tennis: a bounce on Easy, the wind on Difficult; volleyball: the block)
+        case 'bounce': if (mine) this.hint(tx('It bounced! Kick it now'), 1.1, 'good'); break;
+        case 'gust': noise({ dur: 0.35, vol: 0.06, freq: 700, sweep: 1.8 }); if (mine && e.mine) this.hint(tx('A gust! Follow the ring'), 1.0, 'bad'); break;
+        case 'wind': noise({ dur: 0.5, vol: 0.05, freq: 500, sweep: 1.6 }); break;
+        case 'block':
+          tone(260, { dur: 0.08, vol: 0.12, rev: 0.1 });
+          if (mine) this.hint(tx('Blocked! Aim away from the blocker'), 1.4, 'bad');
+          if (talk && it) this.shout(c, it, pick(SAY.block), 1.6);
+          break;
+        // ---- keep it up: a kid calls for the shuttle
+        case 'call': {
+          if (it) { this.cheer(it); this.shout(c, it, pick(SAY.callMe), 2.0); }
+          if (mine) this.hint(tx('{name} calls! Aim the kick at them', { name: it ? tx(it.p.name || '') : '' }), 2.2);
+          tone(700, { type: 'triangle', dur: 0.09, vol: 0.08 });
+          break;
+        }
+        case 'called':
+          if (!mine) break;
+          if (e.ok) { a.good?.(); this.hint(tx('Good pass! It counts double'), 1.1, 'good'); }
+          else this.hint(e.reset ? tx('Wrong friend! The count starts again') : tx('{name} wanted that one', { name: it ? tx(it.p.name || '') : '' }), 1.3, 'bad');
+          this.showBoard(c, sim, id);
+          break;
+        case 'swap': if (talk) this.shoutAny(c, kids, pick(SAY.swap), 1.8); break;
         case 'land': if (hear) a.land(0.25); break;
         case 'point': this.onPoint(c, sim, kids, G, mine, e, talk); break;
         // ---- rope jumping
@@ -433,8 +465,8 @@ export class Yard {
           if (id === 'rope') {
             tone(520 + Math.min(12, e.n) * 22, { type: 'triangle', dur: 0.09, vol: mine ? 0.09 : 0.04, rev: 0.1 });
             if (mine) { this.showBoard(c, sim, id); if (e.n >= 3 && talk) { const t = sim.players.find(p => p.role === 'turn'); if (t && (e.n % 5 === 0 || e.n < 10)) this.shout(c, by(t.id), tx('{n}!', { n: e.n }), 1.1); } }
-            if (mine && [8, 16, 30].includes(e.n)) { d.audio.star?.(); this.hint(tx('{n} in a row!', { n: e.n }), 1.3, 'good'); }
-          } else if (id === 'sack') { tone(300 + e.n * -50 + 300, { type: 'triangle', dur: 0.12, vol: 0.08 }); this.hint(String(e.n), 0.8, 'good'); }
+            if (mine && (sim.K?.stars || [8, 16, 30]).includes(e.n)) { d.audio.star?.(); this.hint(tx('{n} in a row!', { n: e.n }), 1.3, 'good'); }
+          } else if (id === 'sack') tone(300 + e.n * -50 + 300, { type: 'triangle', dur: 0.12, vol: 0.08 });      // (the HUD counts down; the hint line keeps the rule up)
           break;
         case 'trip':
           if (hear) a.miss();
@@ -445,18 +477,26 @@ export class Yard {
         case 'go':
           if (id === 'sack' || id === 'tug') { tone(660, { type: 'triangle', dur: 0.25, vol: 0.1 }); this.hint(tx('Go!'), 0.8, 'good'); }
           break;
+        // ---- the turners' and the pullers' calls (rope jumping, tug of war)
+        case 'tempo': { const t = sim.players.find(p => (id === 'rope' ? p.role === 'turn' : !p.human)); if (t && talk) this.shout(c, by(t.id), e.kind === 'fast' ? tx('Faster!') : tx('Slower!'), 1.4); tone(e.kind === 'fast' ? 760 : 380, { type: 'triangle', dur: 0.14, vol: 0.09 }); if (mine && id === 'tug') this.hint(e.kind === 'fast' ? tx('Faster! Watch the ring') : tx('Slower! Watch the ring'), 1.2); break; }
+        case 'double': { const t = sim.players.find(p => p.role === 'turn'); if (t && talk) this.shout(c, by(t.id), tx('Double!'), 1.4); tone(880, { type: 'triangle', dur: 0.07, vol: 0.09 }); tone(1100, { type: 'triangle', dur: 0.16, vol: 0.06 }); break; }
+        case 'holdcall': { const t = sim.players.find(p => !p.human); if (t && talk) this.shout(c, by(t.id), pick(SAY.hold), 1.3); tone(300, { type: 'sine', dur: 0.3, vol: 0.08 }); break; }
+        case 'dug': if (mine) this.hint(tx('Well held!'), 0.7, 'good'); break;
         // ---- tug of war
-        case 'beat': tone(220, { dur: 0.1, vol: mine ? 0.08 : 0.04, rev: 0.1 }); if (talk) { const t = sim.players.find(p => !p.human); if (t) this.shout(c, by(t.id), pick(SAY.heave), 0.9); } break;
+        case 'beat': if (e.hold) break; tone(220, { dur: 0.1, vol: mine ? 0.08 : 0.04, rev: 0.1 }); if (talk) { const t = sim.players.find(p => !p.human); if (t) this.shout(c, by(t.id), pick(SAY.heave), 0.9); } break;
         case 'pull': this.pose(e.who, 'pull', c, kids, false); break;
         case 'heave':
           this.poses.start(this.mikaBody(), 'pull');
           tone(e.quality === 'perfect' ? 520 : e.quality === 'good' ? 420 : 200, { type: 'triangle', dur: 0.12, vol: 0.09 });
-          this.hint(e.quality === 'perfect' ? tx('Perfect heave!') : e.quality === 'good' ? tx('Good heave') : tx('Off the beat'), 0.7, e.quality === 'off' ? 'bad' : 'good');
+          if (e.quality === 'slip') { a.bad?.(); this.hint(tx('Slipped! That was a hold'), 1.0, 'bad'); break; }
+          this.hint(e.quality === 'perfect' ? tx('Perfect heave!') : e.quality === 'good' ? tx('Good heave') : e.mud ? tx('Off the beat: slipped in the mud!') : tx('Off the beat'), 0.7, e.quality === 'off' ? 'bad' : 'good');
           break;
         // ---- sack race
         case 'hop': this.pose(e.who, 'hop', c, kids, !!e.human); tone(200 + (e.rhythm || 0) * 120, { type: 'triangle', dur: 0.05, vol: e.human ? 0.07 : 0.03, rev: 0.05 }); break;
         case 'wobble': if (e.human) { this.hint(tx('Wobbling! Slow down'), 0.9, 'bad'); a.bad(); } break;
-        case 'fall': if (hear) a.plop?.(0.6); if (talk && it) this.shout(c, it, pick(SAY.fell), 1.8); if (e.human) this.hint(tx('You tumbled! Get up and go'), 1.2, 'bad'); break;
+        case 'fall': if (hear) a.plop?.(0.6); if (talk && it) this.shout(c, it, pick(SAY.fell), 1.8); if (e.human) this.hint(e.why === 'log' ? tx('Over the log in a heap! Leap with {jump}') : tx('You tumbled! Get up and go'), 1.2, 'bad'); break;
+        // (the sack race's turn at a banner; the board games say 'turn' for whose turn it is)
+        case 'turn': if (id === 'sack' && e.human) { tone(560, { type: 'triangle', dur: 0.1, vol: 0.08 }); this.hint(e.length >= e.of ? tx('Last length!') : tx('Round the banner and back!'), 1.2, 'good'); } break;
         case 'finish': if (hear) a.chime?.(e.place); if (e.human) this.hint(tx('You finished!'), 1.2, 'good'); break;
         // ---- marbles
         case 'charge': tone(300, { type: 'triangle', dur: 0.08, vol: 0.06 }); break;
@@ -464,8 +504,9 @@ export class Yard {
         case 'click': tone(1200 + Math.random() * 600, { type: 'triangle', dur: 0.04, vol: 0.05 * (0.5 + e.strength), rev: 0 }); break;
         case 'out':
           if (hear) a.pickup?.();
-          if (e.human) this.hint(tx('Marble out! It is yours'), 1.2, 'good');
-          if (talk && !e.human && it) this.shout(c, it, pick(SAY.flick), 1.6);
+          if (e.human) this.hint(e.tor ? tx('The big one is out! Two for you') : tx('Marble out! It is yours'), 1.2, 'good');
+          else if (mine && e.gift) this.hint(tx('Oops! That blue one goes to your friend'), 1.4, 'bad');
+          if (talk && !e.human && it) this.shout(c, it, pick(e.gift ? SAY.gift : SAY.flick), 1.6);
           this.showBoard(c, sim, id);
           break;
         case 'shotdone': if (e.got === 0 && talk && it && !it.p.human) this.shout(c, it, pick(SAY.soft), 1.4); break;
@@ -474,6 +515,7 @@ export class Yard {
         case 'pick': tone(330, { type: 'triangle', dur: 0.06, vol: 0.06 }); break;
         case 'drop': tone(700 + Math.random() * 120, { type: 'triangle', dur: 0.035, vol: 0.05, rev: 0 }); noise({ dur: 0.02, vol: 0.03, freq: 3000 }); break;
         case 'take': if (hear) a.chime?.(2); if (talk && it && !e.human) this.shout(c, it, pick(SAY.take), 1.6); if (e.human) this.hint(e.quan ? tx('You captured a quan!') : tx('You captured {n}', { n: e.dan }), 1.4, 'good'); break;
+        case 'young': tone(240, { type: 'sine', dur: 0.2, vol: 0.07 }); if (mine) this.hint(e.human ? tx('That quan is too young: it needs 5 pebbles beside it') : tx('The quan is too young to be captured'), 1.8); break;
         case 'refill': if (e.human) this.hint(e.borrowed ? tx('Your side is empty: you borrow {n}', { n: e.borrowed }) : tx('Your side is empty: you refill it'), 1.8); break;
         case 'done': this.showBoard(c, sim, id); break;
         case 'select': tone(520, { type: 'triangle', dur: 0.05, vol: 0.06 }); break;
@@ -608,7 +650,7 @@ export class Yard {
   /** The middle (stage v) of a travelling shot: a little ahead of Mika, never past the ends of the game's own focus. */
   followV(R, fol) {
     const F = R.G.focus, half = Math.max(0, (F.l - fol.l) / 2);
-    return clamp(R.sim.human.v - fol.ahead, F.v - half, F.v + half);
+    return clamp(R.sim.human.v + (R.sim.human.back ? fol.ahead : -fol.ahead), F.v - half, F.v + half);      // (ahead of her whichever way she is going)
   }
   /** Slide a travelling shot to where Mika is now (two vectors moved in place: nothing is made per frame). */
   trackStage(R) {
@@ -778,7 +820,7 @@ export class Yard {
     R.names = names;
     this.setHud(sim, names);
     this.showBoard(c, sim, id);
-    this.showPad(G.look);
+    this.showPad(G.look, sim);
     this.el.hud.classList.remove('hidden');
     this.el.stop.classList.remove('hidden');
     this.el.cam.classList.toggle('hidden', !G.sideOk || !!(this.tall() && G.tall?.mode));
@@ -820,7 +862,7 @@ export class Yard {
           p.pos.x = w.x; p.pos.z = w.z; p.vel.x = 0; p.vel.z = 0;
           INP.mx = b.mx || 0; INP.mv = b.mv || 0;
         }
-        INP.kick = !!b.kick; INP.hold = !!b.hold || INP.hold;
+        INP.kick = !!b.kick; INP.jump = !!b.jump; INP.hold = !!b.hold || INP.hold;
         if (b.aimU !== undefined) { INP.aimU = b.aimU; INP.aimV = b.aimV; }
         if (b.pick !== undefined) INP.pick = b.pick;
         if (b.dir) INP.dir = b.dir;
@@ -831,6 +873,7 @@ export class Yard {
       // the hint under the HUD: what to press now
       const h = sim.hint ? sim.hint() : null, hs = h || '';
       if (hs !== lastHint) { lastHint = hs; if (hs) this.hint(hs, 60); else if (this.hintLeft > 50) this.hint('', 0.01); }
+      else if (hs && this.hintLeft <= 0) this.hint(hs, 60);      // a passing line ("Perfect heave!") is gone: what holds now ("Hold! Do not pull") comes back
       if (G.moves) for (let i = 0; i < bodies.length; i++) { if (bodies[i]) this.drive(c, bodies[i], sim.players[i], sim, dt, G, S); }
       else {
         for (let i = 0; i < bodies.length; i++) if (bodies[i]) this.drive(c, bodies[i], sim.players[i], sim, dt, G, S);
@@ -848,7 +891,7 @@ export class Yard {
     });
     // ---- the end of it
     this.views.hideAll(Y.id);
-    this.ring.visible = this.ringOut.visible = false;
+    this.ring.visible = this.ringOut.visible = this.callRing.visible = false;
     this.el.hud.classList.add('hidden');
     this.el.stop.classList.add('hidden');
     this.el.cam.classList.add('hidden');
@@ -912,7 +955,7 @@ export class Yard {
   endRound(c, keep) {
     const g = this.g, town = this.d.town;
     this.views.hideAll(c.Y.id);
-    this.ring.visible = this.ringOut.visible = false;
+    this.ring.visible = this.ringOut.visible = this.callRing.visible = false;
     if (this.el) {
       for (const k of ['hud', 'stop', 'cam', 'hint', 'pad', 'card']) this.el[k].classList.add('hidden');
       document.body.classList.remove('trick-round', 'yard-round', 'yard-pad');

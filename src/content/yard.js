@@ -202,7 +202,7 @@ export const YARD_NAMES = {
 };
 /** One line of rules for each, shown at the scoreboard. */
 export const YARD_RULES = {
-  footnet: N_('Kick the shuttle back over the net. First to 5.'),
+  footnet: N_('Kick the shuttle back over the net. Win the most points.'),
   keepup: N_('Keep the shuttle up together and count the touches.'),
   volley: N_('Bump, set, spike. Press {act} as the ball comes down.'),
   rope: N_('Jump in when the rope reaches the ground. Beat your streak.'),

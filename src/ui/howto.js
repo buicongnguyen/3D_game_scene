@@ -76,10 +76,12 @@ export const HOWTO = {
   'yard:footnet': [
     { in: 'move', pic: 'walk', text: N_('Run under the shuttle.') },
     { in: 'act', pic: 'ball', text: N_('Kick just as it comes down.') },
+    { in: 'move', pic: 'aim', text: N_('Hold a direction to aim your kick.') },
   ],
   'yard:keepup': [
     { in: 'move', pic: 'walk', text: N_('Run under the shuttle.') },
     { in: 'act', pic: 'ball', text: N_('Kick just as it comes down.') },
+    { in: 'move', pic: 'aim', text: N_('A friend calls? Aim the kick at them.') },
   ],
   'yard:volley': [
     { in: 'move', pic: 'walk', text: N_('Run under the ball.') },
@@ -93,10 +95,12 @@ export const HOWTO = {
   'yard:tug': [
     { in: 'act', pic: 'ring', text: N_('Pull when the ring closes on you.') },
     { in: null, pic: 'beat', text: N_('Off the beat tires you out.') },
+    { in: null, pic: 'stop', text: N_('A red ring means hold: do not pull.') },
   ],
   'yard:sack': [
     { in: 'act', pic: 'beat', text: N_('One press for every hop.') },
     { in: null, pic: 'stop', text: N_('Steady wins. Too fast and you wobble.') },
+    { in: 'jump', pic: 'up', text: N_('A log in the way? Leap over it.') },
   ],
   'yard:oanquan': [
     { in: 'lr', pic: 'steer', text: N_('Pick one of your squares.'), touchTap: true },

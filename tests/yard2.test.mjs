@@ -10,7 +10,7 @@ import { RopeSim, ropeBot, turnPeriod, JUMP, CLEAR_H, clearWindow, jumpHeight, R
 import { TugSim, tugBot, LINE, BEAT } from '../src/game/yard/tug.js';
 import * as O from '../src/game/yard/oanquan.js';
 import { SackSim, sackBot, COURSE } from '../src/game/yard/sack.js';
-import { MarblesSim, marblesBot, stepBalls, setup as marbleSetup, RING, R_MARBLE } from '../src/game/yard/marbles.js';
+import { MarblesSim, marblesBot, stepBalls, setup as marbleSetup, RING, R_MARBLE, MARBLES_LEVEL } from '../src/game/yard/marbles.js';
 import { PEOPLE, SPOTS } from '../src/content/townsfolk.js';
 import { buildRoads, route } from '../src/world/roads.js';
 
@@ -286,7 +286,7 @@ test('tug of war: the beat, the big pull, strain, the flag over the line, best o
   assert.ok(LINE > 1 && BEAT > 1);
   // strain: pressing off the beat tires her (the big pull is then weak), one press a beat does not
   const tired = new TugSim({ seed: 1, players: T('strong', 'tricky', 'steady'), level: 'normal' });
-  for (let i = 0; i < 200 && tired.state !== 'pull'; i++) tired.step(DT, {});
+  for (let i = 0; i < 400 && tired.state !== 'pull'; i++) tired.step(DT, {});      // (Normal reads its "Hold!" rule out first: four seconds)
   for (let i = 0; i < 6; i++) { tired.beatT = 0.7; tired.pressed = true; tired.step(DT, { kick: true }); }
   assert.ok(tired.fatigue > 0.65, `strain builds (${tired.fatigue.toFixed(2)})`);
   const rested = run(new TugSim({ seed: 1, players: T('strong', 'tricky', 'steady') }), s => tugBot(s, 0), 20);
@@ -501,7 +501,9 @@ test('sack race: a steady rhythm builds longer hops, mashing wobbles and tumbles
     assert.equal(mash, 0, `${level}: mashing never wins`);
     assert.equal(never, 0);
     assert.ok(jitter < steady, `${level}: an uneven rhythm is slower (${jitter} vs ${steady})`);
-    assert.ok(steadyTime / N > 9 && steadyTime / N < 20, `${level}: about fifteen seconds (${(steadyTime / N).toFixed(1)})`);
+    // one length is about twelve seconds: the first race is one, Easy there and back, Normal three lengths
+    const lengths = { first: 1, easy: 2, normal: 3 }[level], per = steadyTime / N / lengths;
+    assert.ok(per > 9 && per < 16, `${level}: about twelve seconds a length (${per.toFixed(1)})`);
   }
   // the hops: a press is one hop, quicker presses are wobbles
   const s = new SackSim({ seed: 1, players: P, level: 'normal' });
@@ -551,8 +553,10 @@ test('marbles: aim and flick, four shots each, first to four marbles or the most
     for (let seed = 1; seed <= N; seed++) {
       const mk = () => new MarblesSim({ seed, players: P, level });
       const s = run(mk(), q => marblesBot(q, 0.9), 400); if (s.sim.over.won) strong++;
-      assert.ok(s.sim.over.mine <= 8 && s.sim.over.theirs <= 8 && s.sim.over.mine + s.sim.over.theirs <= 8);
-      assert.ok(s.sim.players.every(p => p.shots <= 4));
+      // eight marbles (Normal: and the tor, worth two); four, five and six shots each
+      const K = MARBLES_LEVEL[level], all = 8 + (K.tor ? 2 : 0);
+      assert.ok(s.sim.over.mine <= all && s.sim.over.theirs <= all && s.sim.over.mine + s.sim.over.theirs <= all);
+      assert.ok(s.sim.players.every(p => p.shots <= K.shots));
       if (run(mk(), q => marblesBot(q, 0.12), 400).sim.over.won) weak++;
     }
     assert.ok(strong >= N * 0.8, `${level}: a good flick wins (${strong}/${N})`);
@@ -560,7 +564,7 @@ test('marbles: aim and flick, four shots each, first to four marbles or the most
   }
   // the marbles she knocks out are hers, and they are counted for the save
   const r = run(new MarblesSim({ seed: 4, players: P, level: 'normal' }), q => marblesBot(q, 0.9), 400);
-  assert.equal(r.log.filter(e => e.type === 'out' && e.human).length, r.sim.over.mine);
+  assert.equal(r.log.filter(e => e.type === 'out' && e.human).reduce((s, e) => s + (e.tor ? 2 : 1), 0), r.sim.over.mine);
   assert.equal(r.sim.over.gain, r.sim.over.mine);
   for (const b of r.sim.balls) if (b.out) assert.ok(Math.hypot(b.u, b.v) > RING);
   // a replay of the recorded round gives the same marbles

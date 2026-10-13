@@ -3,19 +3,45 @@
 // move the cross-hair), hold the button to charge the flick and let go to shoot. Four shots each: the first to four
 // marbles, or the most after eight shots, wins. A pure, deterministic 2D physics module (circles, elastic bounces,
 // friction) so a recorded game replays exactly; no three.js, no DOM. ./round.js shows it.
+//
+// The levels (the kids' own game is the plain one):
+//   first   four shots each, first to four of the eight, a flick that carries further (the guided first game)
+//   easy    five shots each, first to five of the eight
+//   normal  six shots each, and in the middle of the flower sits the big TOR: heavy, hard to shift, worth two. First
+//           to six points of the ten.
+//   hard    six shots each, the tor, and COLOURS: the four red marbles are Mika's, the four blue ones the kid's. A
+//           marble knocked out goes to whoever's colour it is, whoever shot, so a careless shot scores for the other
+//           side. The tor goes to the one who knocks it out. First to five (it cannot be done without the tor).
 import { rng, clamp, stepToward } from './rules.js';
 import { N_, tx } from '../../i18n/i18n.js';
 
 export const RING = 0.9;               // radius of the chalk ring (metres)
 export const R_MARBLE = 0.065, R_SHOOTER = 0.085;
 export const SHOTS = 4, WIN_AT = 4;
+export const R_TOR = 0.095, M_TOR = 2.2, TOR_COLOUR = 6;
+/** Per level: shots each, points that win at once, how far Mika's flick carries, the kids' aim error, the tor, the colours. */
+export const MARBLES_LEVEL = {
+  first: { shots: SHOTS, win: WIN_AT, flick: 1.22, skill: 0.1 },
+  easy: { shots: 5, win: 5, flick: 1.1, skill: 0.07 },
+  normal: { shots: 6, win: 6, flick: 1, skill: 0.035, tor: true },
+  hard: { shots: 6, win: 5, flick: 1, skill: 0.03, tor: true, sides: true },
+};
 const FRICTION = 2.4, ROLL = 0.35, REST = 0.92, V_MIN = 0.03, STEP = 1 / 240, MAXV = 6.2, V_BASE = 2.4, V_POW = 3.6;
 
 /** The start: eight marbles clustered in the middle (a flower of seven and one more beside it). */
-export function setup(seed = 1) {
+export function setup(seed = 1, { tor = false, sides = false } = {}) {
   const rand = rng(seed), out = [];
   const spot = [[0, 0], ...[0, 1, 2, 3, 4, 5].map(i => [Math.cos(i * Math.PI / 3 + 0.3) * 0.17, Math.sin(i * Math.PI / 3 + 0.3) * 0.17]), [0.4, -0.1]];
   spot.forEach(([x, y], i) => out.push({ id: i, u: x, v: y, vu: 0, vv: 0, r: R_MARBLE, c: i % 6, out: false, owner: -1, roll: 0, rot: rand() * 6.28 }));
+  if (tor) {
+    // the tor takes the middle of the flower (the petals stand a little wider for it); the marble that was there lies apart
+    const mid = out[0];
+    Object.assign(mid, { u: -0.4, v: 0.1 });
+    for (let i = 1; i <= 6; i++) { out[i].u *= 1.02; out[i].v *= 1.02; }
+    out.push({ id: 8, u: 0, v: 0, vu: 0, vv: 0, r: R_TOR, m: M_TOR, c: TOR_COLOUR, tor: true, out: false, owner: -1, roll: 0, rot: rand() * 6.28 });
+  }
+  // colours: round the flower red, blue, red, blue; the two that lie apart are one of each
+  if (sides) for (const b of out) if (!b.tor) { b.side = b.id % 2; b.c = b.side; }
   return out;
 }
 
@@ -64,7 +90,12 @@ export class MarblesSim {
     const hi = this.players.findIndex(p => p.human), first = hi < 0 ? 0 : hi;
     this.players.forEach((p, i) => { const near = i === first; p.u = near ? 1.4 : -1.4; p.v = near ? 1.15 : -1.15; });
     this.human = this.players.find(p => p.human) || null;
-    this.balls = setup(seed);
+    // (the kids' own game is the plain one: eight marbles, four shots)
+    const K = this.K = this.human ? MARBLES_LEVEL[level] || MARBLES_LEVEL.normal : { ...MARBLES_LEVEL.first, skill: (MARBLES_LEVEL[level] || MARBLES_LEVEL.normal).skill };
+    this.shots = K.shots; this.winAt = K.win;
+    this.sides = !!K.sides;                // colours: a marble out goes to its colour's owner (player 0 red, player 1 blue)
+    this.gifts = 0;                        // marbles Mika knocked out for the other side
+    this.balls = setup(seed, K);
     this.shooter = { id: 99, u: 0, v: RING, vu: 0, vv: 0, r: R_SHOOTER, m: 1.6, c: -1, out: false, owner: -1, roll: 0, rot: 0, rest: true, live: false };
     this.turn = first;                     // whose shot it is
     this.state = 'aim';
@@ -77,7 +108,7 @@ export class MarblesSim {
     this.over = null;
     this.shuttle = { on: false, u: 0, y: 0, v: 0 };
     this.marker = { on: false, u: 0, v: 0, mine: false, out: false, tau: 1, dur: 1 };
-    this.skill = level === 'first' ? 0.1 : level === 'easy' ? 0.07 : 0.035;      // the kids' aim error (radians) at best
+    this.skill = K.skill;                  // the kids' aim error (radians) at best
     this.start();
   }
 
@@ -104,7 +135,8 @@ export class MarblesSim {
 
   /** The kid picks a marble that can be knocked clear, stands opposite it and flicks. */
   think(p) {
-    const r = this.rand, live = this.balls.filter(b => !b.out);
+    const r = this.rand, all = this.balls.filter(b => !b.out), own = this.sides ? all.filter(b => b.tor || b.side === this.turn) : all;
+    const live = own.length ? own : all;       // (with colours: their own and the tor; nothing of theirs left: any)
     if (!live.length) return null;
     // the one closest to the rim in the direction it can be pushed: the largest radial offset
     let best = null, bs = -1e9;
@@ -155,7 +187,7 @@ export class MarblesSim {
       this.power += this.dirUp * dt * 0.95;
       if (this.power >= 1) { this.power = 1; this.dirUp = -1; } else if (this.power <= 0) { this.power = 0; this.dirUp = 1; }
     } else if (this.charging) {
-      const pw = Math.max(0.12, this.power), l = Math.hypot(a.u - s.u, a.v - s.v) || 1, v0 = (V_BASE + V_POW * pw) * (this.level === 'first' ? 1.22 : this.level === 'easy' ? 1.1 : 1);   // a gentler first game: the flick carries further
+      const pw = Math.max(0.12, this.power), l = Math.hypot(a.u - s.u, a.v - s.v) || 1, v0 = (V_BASE + V_POW * pw) * this.K.flick;   // a gentler first game: the flick carries further
       this.charging = false;
       this.fire((a.u - s.u) / l * v0, (a.v - s.v) / l * v0);
     }
@@ -189,7 +221,13 @@ export class MarblesSim {
     let got = 0;
     for (const b of this.balls) {
       if (b.out) continue;
-      if (Math.hypot(b.u, b.v) > RING + 0.01) { b.out = true; b.owner = this.turn; b.rest = true; got++; p.won++; this.emit('out', { who: p.id, human: p.human, id: b.id, u: b.u, v: b.v }); }
+      if (Math.hypot(b.u, b.v) > RING + 0.01) {
+        // whose it is: the shooter's, or (with colours) whoever's colour it is; the tor is the shooter's and counts two
+        const to = this.sides && !b.tor ? b.side : this.turn, q = this.players[to] || p, n = b.tor ? 2 : 1, gift = q !== p;
+        b.out = true; b.owner = to; b.rest = true; q.won += n;
+        if (!gift) got += n; else if (p.human) this.gifts++;
+        this.emit('out', { who: q.id, human: q.human, id: b.id, u: b.u, v: b.v, tor: !!b.tor, gift, by: p.id });
+      }
     }
     this.score = this.players.map(q => q.won);
     this.shooter.live = false; this.shooter.rest = true;
@@ -199,10 +237,10 @@ export class MarblesSim {
 
   next() {
     const live = this.balls.filter(b => !b.out).length;
-    const done = this.players.some(q => q.won >= WIN_AT) || this.players.every(q => q.shots >= SHOTS) || !live;
+    const done = this.players.some(q => q.won >= this.winAt) || this.players.every(q => q.shots >= this.shots) || !live;
     if (done) { this.finish(); return; }
     this.turn = (this.turn + 1) % this.players.length;
-    if (this.cur.shots >= SHOTS) this.turn = (this.turn + 1) % this.players.length;
+    if (this.cur.shots >= this.shots) this.turn = (this.turn + 1) % this.players.length;
     this.start();
   }
 
@@ -215,16 +253,28 @@ export class MarblesSim {
   result() {
     const h = this.human || this.players[0], o = this.players.find(q => q !== h) || { won: 0 };
     const won = h.won > o.won, tie = h.won === o.won;
-    const stars = won ? (h.won >= 5 || o.won === 0 ? 3 : 2) : tie || h.won >= 2 ? 1 : 0;
-    return { won, tie, mine: h.won, theirs: o.won, score: h.won, rally: h.won, stars, gain: h.won, touches: h.shots };
+    // stars. first, easy: a win is two, three with five marbles or a shut-out; a draw or two marbles earn one.
+    // normal: a win is two, three when she reached the six points; a draw or three points earn one.
+    // hard: a win is two, three with five points and at most one marble knocked out for the other side; a draw or three points earn one.
+    const lv = this.human ? this.level : 'first';
+    const stars = lv === 'normal' ? (won ? (h.won >= this.winAt ? 3 : 2) : tie || h.won >= 3 ? 1 : 0)
+      : lv === 'hard' ? (won ? (h.won >= this.winAt && this.gifts <= 1 ? 3 : 2) : tie || h.won >= 3 ? 1 : 0)
+        : won ? (h.won >= 5 || o.won === 0 ? 3 : 2) : tie || h.won >= 2 ? 1 : 0;
+    return { won, tie, mine: h.won, theirs: o.won, score: h.won, rally: h.won, stars, gain: h.won, touches: h.shots, gifts: this.gifts };
   }
 
   hud(names) {
     const h = this.human || this.players[0];
-    return { l: names.mine, big: `${this.score[0] ?? 0} : ${this.score[1] ?? 0}`, r: names.theirs, sub: tx('Shot {n} of {m}', { n: Math.min(SHOTS, h.shots + (this.state === 'aim' && this.cur === h ? 1 : 0)), m: SHOTS }) };
+    return { l: names.mine, big: `${this.score[0] ?? 0} : ${this.score[1] ?? 0}`, r: names.theirs, sub: tx('Shot {n} of {m}', { n: Math.min(this.shots, h.shots + (this.state === 'aim' && this.cur === h ? 1 : 0)), m: this.shots }) };
   }
   hint() {
-    if (this.state === 'aim' && this.cur.human) return this.charging ? tx('Let go to flick!') : tx('Aim at a marble, then hold {act} and let go to flick');
+    if (this.state === 'aim' && this.cur.human) {
+      if (this.charging) return tx('Let go to flick!');
+      // before her first shot the level's own rule is said once
+      if (!this.cur.shots && this.sides) return tx('The red marbles are yours, the blue ones are your friend\'s. The big one counts two.');
+      if (!this.cur.shots && this.K.tor) return tx('The big marble in the middle counts two.');
+      return tx('Aim at a marble, then hold {act} and let go to flick');
+    }
     return null;
   }
 }
@@ -233,7 +283,9 @@ export class MarblesSim {
 export function marblesBot(sim, power = 0.55) {
   const out = { mx: 0, mv: 0, kick: false, hold: false };
   if (sim.state !== 'aim' || !sim.human || sim.cur !== sim.human || power === null) return out;
-  const live = sim.balls.filter(b => !b.out);
+  // (with colours she goes for her own and the tor; sim.botSides = false: a player who shoots at whatever is nearest the rim)
+  const all = sim.balls.filter(b => !b.out), own = sim.sides && sim.botSides !== false ? all.filter(b => b.tor || b.side === 0) : all;
+  const live = own.length ? own : all;
   if (!live.length) return out;
   let best = live[0];
   for (const b of live) if (Math.hypot(b.u, b.v) > Math.hypot(best.u, best.v)) best = b;
@@ -251,7 +303,7 @@ export default {
   moves: false,
   /** Mika against one kid (the best kid out of doors). */
   teams(kids) { return { mine: [], theirs: kids.slice(0, 1) }; },
-  target: () => WIN_AT,
+  target: level => (MARBLES_LEVEL[level] || MARBLES_LEVEL.normal).win,
   create: opts => new MarblesSim({ ...opts, players: [...opts.players].sort((a, b) => (b.human ? 1 : 0) - (a.human ? 1 : 0)).slice(0, 2) }),
   bot: marblesBot,
   focus: { u: 0, v: 0, w: 2.8, l: 2.4, pitch: 62 },

@@ -42,6 +42,12 @@ export const SAY = {
   oanquan: [N_('Ô ăn quan! Your turn first!')],
   take: [N_('I take them!'), N_('Mine! Mine!'), N_('Ô ăn quan!')],
   careful: [N_('Careful, careful...'), N_('Let me think.')],
+  // the levels: a kid calls for the shuttle, two change places, the block at the net, the hold in the tug, a marble given away
+  callMe: [N_('To me!'), N_('Me! Me!'), N_('Over here, Mika!')],
+  swap: [N_('Change places!'), N_('Swap! Swap!')],
+  block: [N_('Blocked!'), N_('Not past me!')],
+  hold: [N_('Hold!'), N_('Dig in!')],
+  gift: [N_('Thank you!'), N_('Ha! That one is mine!')],
 };
 
 export const CSS = `

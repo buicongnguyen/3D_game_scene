@@ -264,7 +264,19 @@ export class SackView extends View {
     super(scene, quality);
     const g = new THREE.CylinderGeometry(0.2, 0.26, 0.72, 10, 1, true), m = mat('#b89860', { side: THREE.DoubleSide, roughness: 0.95 });
     this.sacks = [0, 1, 2, 3].map(i => { const s = new THREE.Mesh(g, m); s.castShadow = this.shadows; s.name = 'yard:sack'; return s; });
-    this.add(...this.sacks);
+    // the levels' course: two logs lying across the lanes (Normal, Difficult) and a strip of mud between them (Difficult)
+    const lg = new THREE.CylinderGeometry(0.11, 0.12, 1, 9);
+    lg.rotateZ(Math.PI / 2);                      // lying down, along x; stretched to the width of the lanes
+    const bark = mat('#7d5631', { roughness: 0.95 });
+    this.logs = [0, 1].map(() => { const l = new THREE.Mesh(lg, bark); l.castShadow = this.shadows; l.name = 'yard:log'; return l; });
+    // (a unit patch with soft corners; stretched to the strip, the corners come out about a third of a metre round)
+    const patch = new THREE.Shape(), rx = 0.07, ry = 0.14;
+    patch.moveTo(-0.5 + rx, -0.5); patch.lineTo(0.5 - rx, -0.5); patch.quadraticCurveTo(0.5, -0.5, 0.5, -0.5 + ry);
+    patch.lineTo(0.5, 0.5 - ry); patch.quadraticCurveTo(0.5, 0.5, 0.5 - rx, 0.5); patch.lineTo(-0.5 + rx, 0.5);
+    patch.quadraticCurveTo(-0.5, 0.5, -0.5, 0.5 - ry); patch.lineTo(-0.5, -0.5 + ry); patch.quadraticCurveTo(-0.5, -0.5, -0.5 + rx, -0.5);
+    this.mud = flatMesh(new THREE.ShapeGeometry(patch, 5), '#6a4526', 0.7);
+    this.mud.name = 'yard:mud';
+    this.add(...this.sacks, ...this.logs, this.mud);
     this.hide();
   }
   update(sim) {
@@ -273,9 +285,22 @@ export class SackView extends View {
       s.visible = !!p;
       if (!p) return;
       this.at(p.u, 0.36 + p.y, p.v, s.position);
-      s.rotation.set(-p.lean * 0.35, 0, 0);       // (leans with the racer)
+      s.rotation.set((p.back ? 1 : -1) * p.lean * 0.35, 0, 0);       // (leans with the racer, whichever way they are going)
       s.position.y -= p.fallT > 0 ? 0.16 : 0;
     });
+    const th = -(this.S.rot || 0) * Math.PI / 180, w = sim.players.length * 1.5 + 0.4;
+    this.logs.forEach((l, i) => {
+      const v = sim.logs ? sim.logs[i] : undefined;
+      l.visible = v !== undefined;
+      if (!l.visible) return;
+      this.at(0, 0.11, v, l.position);
+      l.rotation.y = th; l.scale.set(w, 1, 1);
+    });
+    this.mud.visible = !!sim.mud;
+    if (sim.mud) {
+      this.at(0, 0.03, (sim.mud[0] + sim.mud[1]) / 2, this.mud.position);
+      this.mud.rotation.z = th; this.mud.scale.set(w + 0.3, sim.mud[1] - sim.mud[0], 1);
+    }
   }
 }
 
@@ -295,7 +320,9 @@ export class MarblesView extends View {
     super(scene, quality);
     this.tex = typeof document !== 'undefined' ? swirlTexture() : null;
     const glass = new THREE.MeshStandardMaterial({ color: '#ffffff', map: this.tex, roughness: 0.12, metalness: 0.15 });
-    this.balls = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 9), glass, 8);
+    this.balls = new THREE.InstancedMesh(new THREE.SphereGeometry(1, 12, 9), glass, 10);      // eight marbles, and the tor of the harder levels
+    this.cols = [...MARBLE_COLOURS, '#f6c12e'].map(c => new THREE.Color(c));                   // (the last one: the golden tor)
+    this.painted = null;
     this.balls.frustumCulled = false; this.balls.castShadow = this.shadows;
     this.balls.name = 'yard:marbles';
     this.shooter = new THREE.Mesh(new THREE.SphereGeometry(1, 14, 10), new THREE.MeshStandardMaterial({ color: '#f4f0e0', map: this.tex, roughness: 0.1, metalness: 0.2 }));
@@ -303,12 +330,18 @@ export class MarblesView extends View {
     this.arrow = new THREE.Mesh(new THREE.BoxGeometry(1, 0.012, 0.035), new THREE.MeshBasicMaterial({ color: '#59e06a', transparent: true, opacity: 0.9 }));
     this.cross = flatMesh(new THREE.RingGeometry(0.05, 0.07, 20), '#ffffff', 0.9);
     this.add(this.balls, this.shooter, this.arrow, this.cross);
-    for (let i = 0; i < 8; i++) this.balls.setColorAt(i, new THREE.Color(MARBLE_COLOURS[i % 6]));
+    for (let i = 0; i < 10; i++) this.balls.setColorAt(i, this.cols[i % 6]);
     this.balls.instanceColor.needsUpdate = true;
     this.hide();
   }
   update(sim) {
     let n = 0;
+    // each game brings its own colours (Difficult: red for Mika, blue for the kid; the tor is gold): painted once per game
+    if (this.painted !== sim.balls) {
+      this.painted = sim.balls;
+      for (let i = 0; i < sim.balls.length && i < 10; i++) this.balls.setColorAt(i, this.cols[sim.balls[i].c] || this.cols[0]);
+      this.balls.instanceColor.needsUpdate = true;
+    }
     for (const b of sim.balls) {
       this.at(b.u, b.r, b.v, P);       // (a marble knocked out lies where it stopped)
       SC.set(b.r, b.r, b.r); E.set(b.roll, b.rot, 0); Q.setFromEuler(E);

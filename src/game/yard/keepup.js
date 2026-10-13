@@ -3,11 +3,26 @@
 // A round lasts `time` seconds, or until Mika has let it fall three times; a kid's drop only breaks the count. The
 // score is the longest run of touches.
 // Pure and seeded like ./footnet.js (same step / events / result shape, so the yard's round runner shows either).
+//
+// The levels (Mika's rounds, with two kids or more in the ring; alone or with one kid only the clock and the lives differ):
+//   first   60 s, three lives: keep it up, nothing else (the guided first round)
+//   easy    75 s, three lives: the same, a little longer
+//   normal  90 s, three lives, and the kids CALL for it: "To me!". Send it to the kid who called (the stick aims the
+//           kick) and that touch counts double; send it elsewhere and nothing is lost
+//   hard    110 s, two lives, and a call must be answered: the shuttle sent to the wrong kid starts the count again.
+//           After every second call two kids change places, so who stands where has to be looked at, not remembered
 import { COURT, LEVELS, STYLES, KICK_Y, WINDUP, HUMAN_SPEED, rng, clamp, judge, makeFlight, flightAt, stepToward, starsFor } from './rules.js';
 import { N_, tx } from '../../i18n/i18n.js';
 
 export const RING = { u: 0, v: 2.9, r: 2.0 };       // the ring's middle (court space) and radius
 export const KEEPUP_STARS = [6, 12, 24];
+/** Per level: the clock, Mika's lives, the stars (longest run of touches, a called pass counting double). */
+export const KEEPUP_LEVEL = {
+  first: { time: 60, lives: 3, stars: KEEPUP_STARS },
+  easy: { time: 75, lives: 3, stars: [6, 12, 22] },
+  normal: { time: 90, lives: 3, stars: [8, 16, 30], calls: true },
+  hard: { time: 110, lives: 2, stars: [10, 20, 36], calls: true, strict: true },
+};
 const SERVE_WAIT = 1.2, DROP_PAUSE = 1.5, AI_REACH = 1.2, MAX = 60;
 
 /** Where n players stand: on the ring, the first one nearest the camera. */
@@ -21,10 +36,12 @@ export function ringPlaces(n) {
 
 export class KeepupSim {
   /** players: [{ id, style?, human?, u?, v? }]; the human (if any) takes the place nearest the camera. lives: Mika's drops allowed. */
-  constructor({ seed = 1, players = [], level = 'normal', lives = 3, time = 60 } = {}) {
+  constructor({ seed = 1, players = [], level = 'normal', lives, time } = {}) {
     this.rand = rng(seed);
     this.L = LEVELS[level] || LEVELS.normal;
     this.level = level;
+    const K = this.K = KEEPUP_LEVEL[level] || KEEPUP_LEVEL.normal;
+    lives ??= K.lives; time ??= K.time;
     const list = [...players].sort((a, b) => (b.human ? 1 : 0) - (a.human ? 1 : 0));
     const P = ringPlaces(list.length);
     this.players = list.map((p, i) => ({
@@ -33,8 +50,15 @@ export class KeepupSim {
     }));
     this.human = this.players.find(p => p.human) || null;
     this.solo = this.players.length === 1;
-    this.lives = lives;
+    this.lives = this.maxLives = lives;
     this.timeLeft = this.human ? time : Infinity;      // the kids' own game has no clock
+    this.max = this.human ? Infinity : MAX;            // (and ends at sixty touches; Mika's ends with her clock or her lives)
+    // the kids call for the shuttle (Normal and Difficult, with two kids or more)
+    this.calls = !!this.human && !!K.calls && this.players.length >= 3;
+    this.strict = this.calls && !!K.strict;
+    this.call = null;              // the kid who has called for the shuttle Mika is about to kick
+    this.callIn = 3;               // Mika's touches until the next call
+    this.called = 0; this.wrong = 0;
     this.count = 0;                // touches in a row now
     this.best = 0;
     this.touches = 0;              // Mika's own touches
@@ -72,7 +96,7 @@ export class KeepupSim {
       this.timer -= dt;
       this.goHome(dt, null);
       if (this.timer <= 0) {
-        if (this.lives <= 0 || this.best >= MAX || this.timeLeft <= 0) { this.state = 'over'; this.over = this.result(); this.emit('over', this.over); } else { this.state = 'serve'; this.timer = SERVE_WAIT; this.wound = false; this.shuttle.on = true; }
+        if (this.lives <= 0 || this.best >= this.max || this.timeLeft <= 0) { this.state = 'over'; this.over = this.result(); this.emit('over', this.over); } else { this.state = 'serve'; this.timer = SERVE_WAIT; this.wound = false; this.shuttle.on = true; }
       }
     }
     return this;
@@ -140,6 +164,13 @@ export class KeepupSim {
         for (const o of others) { const du = o.u - p.u, dv = o.v - p.v, d = Math.hypot(du, dv) || 1, dot = (du * input.mx + dv * input.mv) / d; if (dot > bd) { bd = dot; to = o; } }
       } else if (h && !p.human && (others.length === 1 || r() < 0.55)) to = h;
       else { const rest = others.filter(o => !o.human || others.length === 1); to = rest[Math.floor(r() * rest.length)] || others[0]; }
+      if (p.human && !serve) this.answer(p, to);
+      else if (to.human && this.calls && !serve && --this.callIn <= 0) {
+        // a kid calls for the one Mika is about to kick (not the kid who has just sent it, when there is another)
+        const rest = others.filter(o => !o.human && o !== p), who = rest[Math.floor(r() * rest.length)] || p;
+        this.call = who; this.callIn = 2 + Math.floor(r() * 3);
+        this.emit('call', { who: who.id });
+      }
       const off = (clean ? 0.25 : 0.55) + heat * 0.7, ang = r() * Math.PI * 2;
       b = { u: to.home.u + Math.cos(ang) * off * r(), y: 0, v: Math.max(0.9, to.home.v + Math.sin(ang) * off * r()) };
     }
@@ -155,6 +186,30 @@ export class KeepupSim {
     if (!to.human) {
       const miss = to.style.miss * 0.45 * (clean ? 0.5 : 1) + heat * 0.05;
       to.plan = { tau: 0.07 + r() * 0.12, late: r() < miss, wound: false };
+    }
+  }
+
+  /** Mika has kicked while a kid was calling: to the caller it counts double; elsewhere it is lost (Difficult: the count starts again). */
+  answer(p, to) {
+    const c = this.call;
+    if (!c) return;
+    this.call = null;
+    if (to === c) {
+      this.count++; this.called++;
+      this.emit('called', { who: c.id, ok: true, n: this.count });
+    } else {
+      this.wrong++;
+      if (this.strict) this.count = 1;
+      this.emit('called', { who: c.id, ok: false, reset: this.strict });
+      // every wrong one is followed by a breather before the next call
+      this.callIn = Math.max(this.callIn, 3);
+    }
+    this.best = Math.max(this.best, this.count);
+    this.score[0] = this.best; this.score[1] = this.count;
+    // Difficult: after every second call two kids change places
+    if (this.strict && to === c && this.called % 2 === 0) {
+      const kids = this.players.filter(o => !o.human), i = Math.floor(this.rand() * kids.length), a = kids[i], b = kids[(i + 1) % kids.length];
+      if (a && b && a !== b) { const t = a.home; a.home = b.home; b.home = t; this.emit('swap', { a: a.id, b: b.id }); }
     }
   }
 
@@ -188,6 +243,7 @@ export class KeepupSim {
     flightAt(f, 1, this.shuttle);
     this.emit('land', { u: f.bu, v: f.bv, fault: null, side: 0 });
     if (who?.human) this.lives--;
+    this.call = null;
     this.emit('point', { team: 1, why: 'drop', who: who?.id, human: !!who?.human, score: [this.best, 0], rally: this.count, lives: this.lives });
     this.count = 0; this.score[1] = 0;
     this.flight = null; this.receiver = null; this.marker.on = false;
@@ -200,12 +256,18 @@ export class KeepupSim {
 
   hud() {
     const s = Math.max(0, Math.ceil(this.timeLeft));
-    return { l: tx('Touches'), big: String(this.count), r: tx('Best: {n}', { n: this.best }), sub: `${'♥'.repeat(Math.max(0, this.lives))}${'♡'.repeat(Math.max(0, 3 - this.lives))}${this.human ? ` · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : ''}` };
+    return { l: tx('Touches'), big: String(this.count), r: tx('Best: {n}', { n: this.best }), sub: `${'♥'.repeat(Math.max(0, this.lives))}${'♡'.repeat(Math.max(0, this.maxLives - this.lives))}${this.human ? ` · ${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}` : ''}` };
   }
-  hint() { return this.state === 'serve' && this.server === this.human ? tx('Press {act} to serve') : null; }
+  hint() {
+    if (this.state !== 'serve' || this.server !== this.human) return null;
+    // before the first serve the level's own rule is said once
+    if (this.calls && !this.touches) return `${this.strict ? tx('When a friend calls, pass to them or the count starts again.') : tx('When a friend calls, pass to them: it counts double.')} ${tx('Press {act} to serve')}`;
+    return tx('Press {act} to serve');
+  }
 
   result() {
-    return { won: this.best >= KEEPUP_STARS[0], score: this.best, rally: this.best, stars: starsFor(this.best, KEEPUP_STARS), touches: this.touches, lives: this.lives };
+    const S = this.K.stars;
+    return { won: this.best >= S[0], score: this.best, rally: this.best, stars: starsFor(this.best, S), touches: this.touches, lives: this.lives, called: this.called };
   }
 }
 
@@ -220,6 +282,10 @@ export function keepupBot(sim, at = 0.12) {
   if (d > 0.15) { out.mx = du / d; out.mv = dv / d; }
   const tau = f.dur - f.t, want = typeof at === 'function' ? at(sim) : at;
   out.kick = tau <= want && d <= sim.L.reach;
+  // a kid has called: the stick points at them as she kicks (sim.botCalls = false: a player who never answers)
+  const c = sim.call;
+  if (out.kick && c && sim.botCalls !== false) { const cu = c.u - h.u, cv = c.v - h.v, cd = Math.hypot(cu, cv) || 1; out.mx = cu / cd; out.mv = cv / cd; }
+  else if (out.kick && c) { out.mx = 0; out.mv = 0; }
   return out;
 }
 
