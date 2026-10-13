@@ -103,7 +103,7 @@ class Session {
   async shot(label) { if (SHOTS) await this.page.screenshot({ path: path.join(OUT, `${this.name}-${label}.png`) }); }
   async pressE() { await this.page.keyboard.press('KeyE'); }
   async launch(door = '#btnTitleMini') {
-    await this.page.evaluate(() => { window.__STARLINE_QA__.cowRace = null; });
+    await this.page.evaluate(() => { window.__STARLINE_QA__.cowRace = null; window.__STARLINE_QA__.level ??= 'easy'; });   // (a played game asks for a level: name it)
     await this.hit(door);
     await this.page.waitForSelector('#mgPicker:not(.hidden)');
     const cats = await this.page.evaluate(() => [...document.querySelectorAll('.mg-tab')].map(t => t.dataset.cat));

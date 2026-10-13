@@ -199,7 +199,7 @@ async function lessonCase(device,quality){
     check(!restored.ownUpdate&&!restored.left&&!restored.ui&&!restored.sign&&!restored.swimming&&!restored.locked,`${name}: completion releases controller/pool/UI/sign/pose ownership`);
     check(restored.save?.plays===1&&restored.save?.best===rec.best,`${name}: Explore save persists swimming best and play count`);
     // Reload through the real title picker. The stored best survives; quitting the next lesson never adds a completed play.
-    await s.page.reload();await s.page.waitForFunction(()=>window.__STARLINE_READY__,null,{timeout:180000});await s.choose('#btnTitleMini');
+    await s.page.reload();await s.page.waitForFunction(()=>window.__STARLINE_READY__,null,{timeout:180000});await s.page.evaluate(()=>{window.__STARLINE_QA__.level='normal';});/* a played game asks for a level: name it */await s.choose('#btnTitleMini');
     const repeat=await s.read();check(repeat.record?.plays===1&&repeat.record?.best===rec.best,`${name}: reload retains the swimming record`);
     await s.leave();const quit=await s.page.evaluate(RESTORE);row.quit=quit;
     check(!quit.ownUpdate&&!quit.left&&!quit.ui&&!quit.sign&&!quit.locked,`${name}: Leave restores original player controller and removes the pool`);
