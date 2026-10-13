@@ -426,11 +426,38 @@ function stackOf(game) {
 }
 const NOOP = Object.freeze({ active: false, dead: true, mode: '', sim: null, keep() { return this; }, drop() { return this; }, hide() { return this; }, recapture() {}, exit() {} });
 
-/** Can this game be put into focus mode at all? */
+// Is this machine struggling? A light sampler of the page's own frame times (started the first time anyone asks): a
+// strong desktop keeps the live valley behind a round, a slow one gets the still picture like a phone does.
+const SLOW_MS = 24;            // slower than about 42 frames a second, on average, counts as struggling
+let frameAvg = 0, sampling = false;
+function slowMachine() {
+  if (typeof requestAnimationFrame !== 'function' || typeof performance === 'undefined') return false;
+  if (!sampling) {
+    sampling = true;
+    let last = 0;
+    const tick = t => {
+      // (a tab that was hidden reports one huge gap: not a frame at all)
+      if (last && t - last < 250) { const d = Math.min(50, t - last); frameAvg = frameAvg ? frameAvg + (d - frameAvg) * 0.02 : d; }   // (a hitch while something loads is capped: one long frame is not a slow machine)
+      last = t;
+      requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  }
+  return frameAvg > SLOW_MS;
+}
+
+/** Does this machine want focus mode? Phones and the Low tier always; other tiers only while frames run slow. */
+export function focusWanted(tier, slow) { return !tier || tier === 'low' || !!slow; }
+
+/** Can (and should) this game be put into focus mode now? */
 export function focusSupported(game) {
-  // (`?focus=off` or window.__STARLINE_QA__.noFocus: every round is drawn the usual way, to measure what focus gains)
-  if (game?.params?.get?.('focus') === 'off' || (typeof window !== 'undefined' && window.__STARLINE_QA__?.noFocus)) return false;
-  return !!game?.renderer?.renderWorld && !!game.renderer.renderer?.copyFramebufferToTexture && !!game.scene;
+  // (`?focus=off` or window.__STARLINE_QA__.noFocus: every round is drawn the usual way, to measure what focus gains;
+  //  `?focus=on` forces the still picture on a strong machine)
+  const ask = game?.params?.get?.('focus');
+  if (ask === 'off' || (typeof window !== 'undefined' && window.__STARLINE_QA__?.noFocus)) return false;
+  if (!(game?.renderer?.renderWorld && game.renderer.renderer?.copyFramebufferToTexture && game.scene)) return false;
+  const slow = slowMachine();          // (asked every time, so the sampler is running long before the first round)
+  return ask === 'on' || focusWanted(game.renderer.qualityName, slow);
 }
 
 /**
@@ -471,3 +498,5 @@ export function exitAllFocus(game) {
   st.clear();
   for (const s of all) { s.done = true; s.dispose(); }
 }
+
+slowMachine();                 // start sampling with the page, so the first round already knows how the machine runs

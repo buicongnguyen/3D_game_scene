@@ -301,3 +301,12 @@ test('RoundLight: the menu lets go a little after a game, unless the next one st
   L.releaseLater('menu', 0.01);                  // not held: nothing to do
   assert.equal(L.linger, null);
 });
+
+test('focus is for phones and slow machines: a strong desktop keeps the live valley', async () => {
+  const { focusWanted } = await import('../src/engine/focus.js');
+  assert.equal(focusWanted('low', false), true);
+  assert.equal(focusWanted('medium', false), false);
+  assert.equal(focusWanted('high', false), false);
+  assert.equal(focusWanted('high', true), true, 'a desktop whose frames run slow gets the still picture too');
+  assert.equal(focusWanted(undefined, false), true);
+});
