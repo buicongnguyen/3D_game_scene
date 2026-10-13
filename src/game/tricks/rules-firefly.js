@@ -71,7 +71,7 @@ export function noiseOf(speed) {
  * easy: smaller. first (the guided try): only running counts.
  */
 export function scareRadius(noise, kind = HEIKE, { easy = false, first = false } = {}) {
-  if (noise <= 0 || (first && noise < 0.6)) return 0;
+  if (noise <= 0 || ((first || easy) && noise < 0.6)) return 0;      // the Easy level: a plain walk bothers nobody
   const r = FIREFLY.scare[0] + (FIREFLY.scare[1] - FIREFLY.scare[0]) * noise;
   return r * KINDS[kind].shy * (easy || first ? 0.6 : 1);
 }
@@ -88,7 +88,7 @@ export function catchable(glow, easy = false) {
 
 /** The lit share of a period for a kind: longer in the guided try and in Easy mode. */
 export function litFor(kind, { easy = false, first = false } = {}) {
-  return Math.min(0.7, KINDS[kind].lit + (first ? 0.14 : easy ? 0.07 : 0));
+  return Math.min(0.7, KINDS[kind].lit + (first ? 0.14 : easy ? 0.12 : 0));
 }
 
 /** Bonus points for n fireflies caught in one sweep. */
@@ -99,7 +99,8 @@ export function unisonBonus(n) {
 
 /** What is in the jar: how many of each kind, the points, the best sweep. */
 export class Jar {
-  constructor() {
+  constructor(size = FIREFLY.jar) {
+    this.size = size;         // a full jar ends the round early
     this.counts = [0, 0, 0];
     this.caught = 0;          // fireflies in the jar
     this.score = 0;           // points
@@ -121,8 +122,92 @@ export class Jar {
     return l;
   }
 
+  /** Points that are not fireflies (a wish of Grandma's filled on the Difficult level). */
+  extra(points) { this.score += points; this.bonus += points; }
+
   get lantern() { return this.caught >= FIREFLY.lantern; }
-  get full() { return this.caught >= FIREFLY.jar; }
+  get full() { return this.caught >= this.size; }
+}
+
+// ------------------------------------------------------------------------------------------------ the three levels
+/**
+ * A round has stages: each begins at a share of the round's time (`at`, 0..1) and says who flies in (`genji`: the share
+ * of Genji groups, `most`: how many Genji at once) and how hard the breeze blows (`breeze`, metres the swarm drifts to
+ * each side). What the teacher says when a stage begins is the round's (firefly.js STAGE_SAY).
+ *   easy    one gentle stage: a walk scares nobody, long glows, a wide net (scareRadius, litFor, FIREFLY.easyReach);
+ *   normal  two stages: the paddy edge as it is, then the Genji hour (the big ones come out over the water);
+ *   hard    three stages, and Grandma's wishes all the way through (Wish): calm, then a breeze that drifts the swarm,
+ *           then the Genji hour in a lighter breeze.
+ */
+export const FF_LEVELS = {
+  first: { jar: FIREFLY.jar, wish: false, stages: [{ at: 0, genji: FIREFLY.genjiShare, most: FIREFLY.genjiMost, breeze: 0 }] },
+  easy: { jar: FIREFLY.jar, wish: false, stages: [{ at: 0, genji: FIREFLY.genjiShare, most: FIREFLY.genjiMost, breeze: 0 }] },
+  normal: { jar: 30, wish: false, stages: [
+    { at: 0, genji: FIREFLY.genjiShare, most: FIREFLY.genjiMost, breeze: 0 },
+    { at: 0.45, genji: 0.6, most: 9, breeze: 0 },
+  ] },
+  hard: { jar: 30, wish: true, stages: [
+    { at: 0, genji: 0.4, most: 6, breeze: 0 },
+    { at: 0.33, genji: 0.4, most: 6, breeze: 2.2 },
+    { at: 0.68, genji: 0.6, most: 9, breeze: 0.9 },
+  ] },
+};
+
+/** The plan of a level ('easy' | 'normal' | 'hard'; the guided first try has its own). */
+export function levelPlan(level, first = false) {
+  return first ? FF_LEVELS.first : FF_LEVELS[level] || FF_LEVELS.normal;
+}
+
+/** Which stage a round is in after `t` of `length` seconds: its index in plan.stages. */
+export function stageAt(plan, t, length) {
+  const u = length > 0 ? t / length : 0;
+  let k = 0;
+  for (let i = 1; i < plan.stages.length; i++) if (u >= plan.stages[i].at) k = i;
+  return k;
+}
+
+/** How far (m) the breeze has pushed the swarm at time t: a slow swing to and fro, with a quicker gust on top. */
+export function breezeAt(t, strength) {
+  return strength ? strength * (0.75 * Math.sin(t * 0.55) + 0.25 * Math.sin(t * 1.45 + 1)) : 0;
+}
+
+export const WISH = { heike: 3, genji: [2, 3], bonus: 3 };
+
+/**
+ * Grandma's wishes (the Difficult level): she asks for one kind at a time ("three Heike", then "two Genji"...). Only the
+ * wished kind stays in the jar; the others in the sweep are let go again. The rare Hime is always welcome. Each wish
+ * filled is worth WISH.bonus points, and the next one is asked.
+ */
+export class Wish {
+  constructor(rand) {
+    this.rand = rand;
+    this.kind = GENJI;        // (next() turns it: the first wish is the common Heike)
+    this.need = 0; this.have = 0; this.filled = 0; this.letGo = 0;
+    this.keep = [0, 0, 0];
+    this.next();
+  }
+
+  next() {
+    this.kind = this.kind === HEIKE ? GENJI : HEIKE;
+    this.need = this.kind === HEIKE ? WISH.heike : WISH.genji[0] + Math.floor(this.rand() * (WISH.genji[1] - WISH.genji[0] + 1));
+    this.have = 0;
+  }
+
+  /**
+   * One sweep of `got` = [heike, genji, hime]. Returns what stays in the jar (this.keep, the same array every time);
+   * this.done is true when the sweep filled the wish (the next one is already asked).
+   */
+  take(got) {
+    const k = this.keep, w = this.kind;
+    k[HEIKE] = w === HEIKE ? got[HEIKE] : 0;
+    k[GENJI] = w === GENJI ? got[GENJI] : 0;
+    k[HIME] = got[HIME];
+    this.letGo += got[HEIKE] + got[GENJI] - k[HEIKE] - k[GENJI];
+    this.have += k[w];
+    this.done = this.have >= this.need;
+    if (this.done) { this.filled++; this.next(); }
+    return k;
+  }
 }
 
 /** The jar light's strength for a number of fireflies; never over `cap` (firefly.js JAR_LIGHT). */
@@ -144,11 +229,11 @@ export function jarColour(counts, out) {
  * Who flies in next. free: how many of each kind are flying now [heike, genji, hime]; t: seconds into the round;
  * himeIn: seconds until a Hime may come (<= 0: now). Returns the kind and writes nothing; the size of the group is groupSize().
  */
-export function nextKind(rand, free, t, himeIn, { first = false } = {}) {
+export function nextKind(rand, free, t, himeIn, { first = false, genji = FIREFLY.genjiShare, most = FIREFLY.genjiMost } = {}) {
   if (!first && t >= FIREFLY.himeAfter && himeIn <= 0 && free[HIME] === 0) return HIME;
-  // the common one is never missing; the big ones come now and then, and only so many at a time
+  // the common one is never missing; the big ones come now and then, and only so many at a time (more in the Genji hour)
   if (free[HEIKE] < 3) return HEIKE;
-  return free[GENJI] < FIREFLY.genjiMost && rand() < FIREFLY.genjiShare ? GENJI : HEIKE;
+  return free[GENJI] < most && rand() < genji ? GENJI : HEIKE;
 }
 
 /** How many fly in together. */

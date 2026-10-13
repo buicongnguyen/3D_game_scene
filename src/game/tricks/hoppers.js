@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { placeProblems } from '../../world/roads.js';
-import { rng, BUGS, noiseOf, aimSpot, catchable, Meadow, Net, Tally } from './rules-hoppers.js';
+import { rng, BUGS, noiseOf, aimSpot, catchable, Meadow, Net, Tally, hopLevel, waveAt, Order } from './rules-hoppers.js';
 import { BUG_CSS, Critter, NetRig, Cage, Release, creepFilter, padHeld, plural } from './bugkit.js';
 import { addCss } from './util.js';
 
@@ -20,9 +20,22 @@ const MANTIS_STALK = 0.5;        // a mantis stands on a stalk this high
 const POSE = { sit: 'idle', crouch: 'crouch', hop: 'hop', tired: 'tired', stand: 'idle', threat: 'threat', flee: null };   // (a mantis flies off with its wings fanned: it keeps the threat pose)
 const DOT = ['#6cc24a', '#f2b53a', '#e2572b'];   // a mantis's dot: calm, watching, alarmed
 const MEADOW_R = 28;             // the bugs stay within this many metres of the sign
+const TINT = [null, '#a0703a', '#c4b43a'];                    // a grasshopper's body: green (as painted), brown, golden
+const GLOW = ['#c8ff9a', '#ffb878', '#fff08a'];               // the glow in the grass under each, in its colour
+const WANT_CSS = ['#6cc24a', '#a0703a', '#d9b92e', '#3f9a52'];
+const WANT_NAME = [N_('a green one'), N_('a brown one'), N_('a golden one'), N_('a mantis')];
+/** What the teacher says when a wave begins (rules-hoppers.js HOP_LEVELS), by level. */
+const WAVE_SAY = {
+  normal: [null, N_('Part 2: two mantises are out. Creep when one stares!'), N_('Part 3: three mantises! Slow and steady.')],
+  hard: [null, N_('Part 2: a windy spell! The glow is gone. Look for the bugs themselves.'), N_('Part 3: the wind drops. Three mantises are out!')],
+};
 
 const CSS = `
 #bugPts{position:fixed;inset:0;z-index:15;pointer-events:none;overflow:hidden}
+.bugBox .want{display:flex;gap:6px;align-items:center;justify-content:center;margin-top:6px;padding:3px 8px;border-radius:999px;background:#fff1cf;font:700 13px Nunito,system-ui,sans-serif;white-space:nowrap}
+.bugBox .want i{width:14px;height:14px;border-radius:50%;background:var(--c);box-shadow:inset 0 0 0 2px #fff8,0 0 0 1px #5a3a2244;flex:none}
+.bugBox .want b{color:#c2541c;font:600 15px Fredoka,Nunito,sans-serif}
+.bugBox .want.pop{animation:bugPop .35s}
 #bugPts span{position:absolute;transform:translate(-50%,-50%);font:700 22px Fredoka,Nunito,sans-serif;color:#fff;text-shadow:0 2px 0 #b8640a,0 0 8px #f2a51a;animation:bugFloat .95s ease-out forwards}
 @keyframes bugFloat{from{opacity:1;margin-top:0}to{opacity:0;margin-top:-52px}}
 `;
@@ -47,10 +60,15 @@ class HopRound {
     this.touch = !!ctx.ui?.touch;
     this.low = g.renderer?.q?.name === 'Low';
     const first = !!ctx.first;
-    const grass = first ? 4 : this.low ? 4 : BUGS.alive.grass, mantis = first ? 1 : this.low ? 1 : BUGS.alive.mantis;
+    // the level's plan (HOP_LEVELS): its waves say how many bugs are out at once (a phone on the Low tier shows fewer)
+    const L = this.L = hopLevel(ctx.level, first);
+    this.wave = 0;
+    this.windy = 0;                                    // 0..1: how hard the windy spell blows just now
+    this.order = L.order ? new Order(rng(seed + 99)) : null;
+    const grass = this.cap('grass', L.waves[0].grass), mantis = this.cap('mantis', L.waves[0].mantis);
     const c = ctx.place, grid = g.world.grid;
     this.meadow = new Meadow({
-      rand: this.rand, grass, mantis,
+      rand: this.rand, grass, mantis, notice: L.notice, crouch: L.crouch, alarm: L.alarm,
       ok: (x, z) => Math.hypot(x - c.x, z - c.z) < MEADOW_R && !placeProblems(x, z, grid).length,
     });
     if (first) this.meadow.respawn.mantis = 12;       // the guided try: grasshoppers first, the mantis a little later
@@ -74,6 +92,9 @@ class HopRound {
     this.own = [];
   }
 
+  /** How many bugs of a kind a wave may have out at once on this device (the Low tier draws fewer grasshoppers; the mantises are the waves). */
+  cap(kind, n) { return this.low && kind === 'grass' ? Math.min(n, 4) : n; }
+
   build() {
     const g = this.g, ctx = this.ctx, assets = g.assets;
     addCss('bugCss', BUG_CSS);
@@ -92,18 +113,22 @@ class HopRound {
     const glowTex = new THREE.CanvasTexture(gc);
     glowTex.colorSpace = THREE.SRGBColorSpace;
     const glowGeo = new THREE.PlaneGeometry(0.9, 0.9).rotateX(-Math.PI / 2);
-    this.glowMat = new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, fog: false });
-    this.own.push(glowTex, glowGeo, this.glowMat);
-    for (const [kind, n] of [['grasshopper', this.meadow.want.grass + 3], ['mantis', this.meadow.want.mantis + 2]]) {
+    // (one glow material for each body colour when an order asks for bugs by colour; else one for all)
+    this.glowMats = (this.order ? GLOW : ['#ffffff']).map(col => new THREE.MeshBasicMaterial({ map: glowTex, color: col, transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+    this.own.push(glowTex, glowGeo, ...this.glowMats);
+    let maxG = 0, maxM = 0;
+    for (const w of this.L.waves) { maxG = Math.max(maxG, this.cap('grass', w.grass)); maxM = Math.max(maxM, this.cap('mantis', w.mantis)); }
+    for (const [kind, n] of [['grasshopper', maxG + 3], ['mantis', maxM + 2]]) {
       for (let i = 0; i < n; i++) {
         const c = new Critter(assets, kind);
+        c.col = kind === 'grasshopper' ? i % 3 : -1;
         if (kind === 'grasshopper') {
-          const glow = new THREE.Mesh(glowGeo, this.glowMat);
+          const glow = new THREE.Mesh(glowGeo, this.glowMats[c.col % this.glowMats.length]);
           glow.position.y = 0.06 - GRASS_LIFT;
           glow.renderOrder = 4;
           c.root.add(glow);
         }
-        if (kind === 'grasshopper' && i % 3) c.tint(i % 3 === 1 ? '#a0703a' : '#c4b43a');   // brown and golden ones show against the green grass
+        if (kind === 'grasshopper' && i % 3) c.tint(TINT[i % 3]);   // brown and golden ones show against the green grass
         if (kind === 'mantis') {
           const stalk = new THREE.Mesh(stalkGeo, stalkMat);
           stalk.castShadow = false;
@@ -138,8 +163,17 @@ class HopRound {
     el.innerHTML = `<div class="row">
       <span class="cnt g"><img alt="" src="${ctx.ui.icon('grasshopper')}"><span class="alt"></span><b>0</b></span>
       <span class="cnt m"><img alt="" src="${ctx.ui.icon('mantis')}"><span class="alt"></span><b>0</b></span></div>
+      ${this.order ? '<div class="want"><span></span><i></i><span class="wn"></span><b></b></div>' : ''}
       <div class="lab"></div><div class="bar"><i></i><b></b></div>`;
     document.body.appendChild(el);
+    if (this.order) {
+      const w = el.querySelector('.want');
+      w.firstElementChild.textContent = tx('Catch next:');
+      w.querySelector('b').textContent = `+${BUGS.orderBonus}`;
+      this.wantEl = w; this.wantDot = w.querySelector('i'); this.wantName = w.querySelector('.wn');
+      this.wantShown = -1;
+      this.showWant();
+    }
     for (const [cls, name] of [['g', N_('Grasshoppers')], ['m', N_('Mantises')]]) {
       const cnt = el.querySelector(`.cnt.${cls}`), img = cnt.querySelector('img');
       cnt.querySelector('.alt').textContent = tx(name);
@@ -166,8 +200,45 @@ class HopRound {
     if (crit) { (crit.hidden ??= new Set()).add('grasshopper').add('mantis'); this.crit = crit; }
   }
 
+  /** The order's card: the bug asked for now, by its colour and its name. */
+  showWant() {
+    const w = this.order.want;
+    if (w === this.wantShown) return;
+    const was = this.wantShown;
+    this.wantShown = w;
+    this.wantDot.style.setProperty('--c', WANT_CSS[w]);
+    this.wantName.textContent = tx(WANT_NAME[w]);
+    if (was >= 0) { this.wantEl.classList.remove('pop'); void this.wantEl.offsetWidth; this.wantEl.classList.add('pop'); }
+  }
+
+  /** The round's waves: more mantises out as it goes on; on Difficult a windy spell in the middle. */
+  waves(dt, left) {
+    const L = this.L, total = this.ctx.roundTime, k = waveAt(L, total - left, total);
+    if (k !== this.wave) {
+      this.wave = k;
+      const w = L.waves[k], m = this.meadow;
+      m.want.grass = this.cap('grass', w.grass); m.want.mantis = this.cap('mantis', w.mantis);
+      m.respawn.mantis = Math.min(m.respawn.mantis, 0.6);
+      const say = !this.ctx.first && WAVE_SAY[this.ctx.level]?.[k];
+      if (say) { this.ctx.hint(say, 5.5); this.audio?.chime?.(2); }
+      if (w.wind) this.audio?.whoosh?.(0.8);
+    }
+    // the wind: it comes up and drops over a second or two; while it blows the glow is gone, and her steps are harder to hear
+    const blow = L.waves[this.wave].wind ? 1 : 0;
+    if (this.windy !== blow) {
+      this.windy += Math.sign(blow - this.windy) * Math.min(Math.abs(blow - this.windy), dt * 0.7);
+      this.meadow.notice = L.notice * (1 - 0.15 * this.windy);
+    }
+    if (blow && (this.gust = (this.gust || 0) - dt) <= 0) { this.gust = 3.2 + Math.random() * 2; this.audio?.whoosh?.(0.5); }
+  }
+
   // ---------------------------------------------------------------- the bugs on screen
-  take(kind) { return this.free[kind].pop() || null; }
+  /** A picture for a new bug: a grasshopper of the colour the rules gave it when one is free (else any, and the bug takes that colour). */
+  take(kind, col = -1) {
+    const list = this.free[kind];
+    if (col >= 0) for (let i = list.length - 1; i >= 0; i--) if (list[i].col === col) return list.splice(i, 1)[0];
+    return list.pop() || null;
+  }
   give(c) { c.root.visible = false; c.bst = c.gz = ''; this.free[c.kind].push(c); }
 
   events() {
@@ -175,8 +246,9 @@ class HopRound {
     for (let i = 0; i < ev.length; i++) {
       const { kind, bug: b } = ev[i];
       if (kind === 'spawn') {
-        const c = this.take(b.kind === 'grass' ? 'grasshopper' : 'mantis');
+        const c = this.take(b.kind === 'grass' ? 'grasshopper' : 'mantis', b.colour);
         if (!c) { b.alive = false; continue; }
+        if (b.kind === 'grass') b.colour = c.col;
         b.vis = c; c.bug = b; c.bst = ''; c.gz = '';
         c.root.visible = true; c.root.scale.setScalar(1);
         c.pose('idle', true);
@@ -185,7 +257,7 @@ class HopRound {
       } else if (kind === 'gone') {
         if (b.vis) { this.give(b.vis); b.vis = null; }
       } else if (kind === 'crouch') {
-        audio?.blip?.(1.9);
+        if (this.windy < 0.5) audio?.blip?.(1.9);                 // (the wind in the grass hides the little rustle)
         if (!this.said.crouch && this.ctx.first && this.tally.caught === 0) { this.said.crouch = 1; this.ctx.hint(N_('It crouched! That means it is about to jump. Swing now, or creep closer next time.'), 5); }
       } else if (kind === 'hop') audio?.jump?.();
       else if (kind === 'alarm') audio?.miss?.();
@@ -218,7 +290,8 @@ class HopRound {
 
   drawBugs(dt) {
     const bugs = this.meadow.bugs;
-    this.glowMat.opacity = 0.42 + 0.2 * Math.sin(this.t * 3.2);
+    const glow = (0.42 + 0.2 * Math.sin(this.t * 3.2)) * (1 - 0.92 * this.windy);
+    for (let i = 0; i < this.glowMats.length; i++) this.glowMats[i].opacity = glow;
     for (let i = 0; i < bugs.length; i++) {
       const b = bugs[i], c = b.vis;
       if (!c || !b.alive) continue;
@@ -272,7 +345,11 @@ class HopRound {
   land(L) {
     const a = this.aim, res = this.meadow.swing(a.x, a.z, L.r, L.loud);
     const kind = res.bug ? res.bug.kind : null;
-    const pts = this.tally.swing(kind);
+    let pts = this.tally.swing(kind);
+    if (res.bug && this.order) {
+      const plus = this.tally.extra(this.order.take(res.bug));
+      if (plus) { pts += plus; this.audio?.star?.(); this.showWant(); if (!this.said.order) { this.said.order = 1; this.ctx.hint(N_('Just the one on the card! Now the next.'), 3.5); } }
+    }
     if (res.bug) {
       this.sinceHit = 0;
       this.audio?.good?.();
@@ -372,8 +449,9 @@ class HopRound {
     const scr = (x, y, z) => { _v.set(x, y, z).project(cam); return rc ? [rc.left + (_v.x + 1) / 2 * rc.width, rc.top + (1 - _v.y) / 2 * rc.height] : null; };
     return {
       t: this.t, aim: { ...this.aim }, ready: this.ready, net: this.net.phase, noise: noiseOf(this.player.speed), speed: this.player.speed, creeping: this.cs.creeping,
+      level: this.ctx.level, wave: this.wave, windy: this.windy, want: this.order ? this.order.want : -1, filled: this.order ? this.order.filled : 0,
       tally: { grass: this.tally.grass, mantis: this.tally.mantis, misses: this.tally.misses, score: this.tally.score },
-      bugs: this.meadow.bugs.filter(b => b.alive).map(b => ({ id: b.id, kind: b.kind, st: b.st, x: b.x, z: b.z, alarm: b.alarm, gaze: b.gaze, hops: b.hops, scr: scr(b.x, this.world.heightAt(b.x, b.z) + 0.3, b.z) })),
+      bugs: this.meadow.bugs.filter(b => b.alive).map(b => ({ id: b.id, kind: b.kind, colour: b.colour, st: b.st, x: b.x, z: b.z, alarm: b.alarm, gaze: b.gaze, hops: b.hops, scr: scr(b.x, this.world.heightAt(b.x, b.z) + 0.3, b.z) })),
     };
   }
 
@@ -436,11 +514,13 @@ export default {
       ctx.hint(ctx.first
         ? (r.touch ? N_('Push the stick gently to creep up on a grasshopper, then tap {act} to swing the net at the ring.')
           : N_('Creep up on a grasshopper (hold Shift), then press {act} to swing the net at the ring.'))
-        : N_('Creep up, then swing the net at the ring. Mantises are worth more.'), 7);
+        : r.order ? N_('Creep up and swing at the ring. The bug on the card is worth 10 more!')
+          : N_('Creep up, then swing the net at the ring. Mantises are worth more.'), 7);
       let left = ctx.roundTime;
       ctx.hud(0, left);
       const res = await ctx.loop(dt => {
         left -= dt;
+        r.waves(dt, left);
         r.update(dt);
         ctx.hud(r.tally.score, Math.max(0, left));
         return left <= 0 ? { done: true } : undefined;
@@ -459,7 +539,7 @@ export default {
       return {
         score: t.score, quit: !!res?.quit, caught: t.caught,
         extra: t.clean ? N_('a clean round, no misses') : caughtText(t.grass, t.mantis),
-        detail: { grass: t.grass, mantis: t.mantis, misses: t.misses, best: t.best, friends, seed: r.seed },
+        detail: { grass: t.grass, mantis: t.mantis, misses: t.misses, best: t.best, friends, seed: r.seed, level: ctx.level, orders: r.order ? r.order.filled : 0 },
       };
     } finally {
       r.dispose();

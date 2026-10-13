@@ -9,6 +9,11 @@
 //     Walking alarms it while it watches, running always does. Alarmed, it rears up in a bluff (threat), then flies off;
 //   * the net lands at a spot 1.5 m ahead of her. A quick swing is small and loud; holding the button and letting go
 //     is a gentle sweep that is wider and silent. A bug that is sitting, crouching, tired or only just leaving is caught.
+//
+// Three levels (HOP_LEVELS). Easy: one calm wave, grasshoppers that notice her later and crouch longer, one patient
+// mantis. Normal: three waves, each with one more mantis. Difficult: the three waves with warier bugs, a windy spell in
+// the second (the glow in the grass that marks the grasshoppers goes out and their crouch cannot be heard), and an order
+// to fill all the way through (Order): "a brown one", "a mantis"... the bug that is asked for is worth 10 more.
 
 /** A small seeded random source (the same numbers every run for the same seed). */
 export function rng(seed) {
@@ -42,7 +47,55 @@ export const BUGS = {
   alive: { grass: 6, mantis: 2 },   // bugs in the meadow at once (the round trims it on a phone)
   spawn: [3.2, 7], far: 15.5, respawn: [1.2, 2.4],
   points: { grass: 10, mantis: 25 }, streakFrom: 3, streakBonus: 5, cleanBonus: 15, cleanFrom: 4,
+  orderBonus: 10,         // the bug the order asks for (Difficult)
 };
+
+/**
+ * The levels. waves: each begins at a share of the round's time (`at`) and says how many bugs are out at once
+ * (`wind`: a windy spell); notice: how much sooner (> 1) or later (< 1) a grasshopper notices her; crouch: seconds of
+ * its tell; alarm: how fast a mantis takes alarm; order: bugs are asked for one at a time.
+ */
+export const HOP_LEVELS = {
+  first: { waves: [{ at: 0, grass: 4, mantis: 1 }], notice: 1, crouch: BUGS.crouch, alarm: 1, order: false },
+  easy: { waves: [{ at: 0, grass: 5, mantis: 1 }], notice: 0.75, crouch: 0.45, alarm: 0.7, order: false },
+  normal: { waves: [{ at: 0, grass: 6, mantis: 1 }, { at: 0.34, grass: 6, mantis: 2 }, { at: 0.68, grass: 5, mantis: 3 }], notice: 1, crouch: BUGS.crouch, alarm: 1, order: false },
+  hard: { waves: [{ at: 0, grass: 6, mantis: 1 }, { at: 0.3, grass: 6, mantis: 2, wind: true }, { at: 0.65, grass: 5, mantis: 3 }], notice: 1.15, crouch: 0.25, alarm: 1.25, order: true },
+};
+export const hopLevel = (level, first = false) => (first ? HOP_LEVELS.first : HOP_LEVELS[level] || HOP_LEVELS.normal);
+
+/** Which wave a round is in after `t` of `length` seconds: its index in plan.waves. */
+export function waveAt(plan, t, length) {
+  const u = length > 0 ? t / length : 0;
+  let k = 0;
+  for (let i = 1; i < plan.waves.length; i++) if (u >= plan.waves[i].at) k = i;
+  return k;
+}
+
+/** What an order can ask for: a grasshopper by its colour (0 green, 1 brown, 2 golden) or a mantis (3). */
+export const WANT_MANTIS = 3;
+export const wantOf = b => (b.kind === 'mantis' ? WANT_MANTIS : b.colour);
+
+/**
+ * The order (Difficult): one bug is asked for at a time. Catching it is worth BUGS.orderBonus more, and the next one
+ * is asked (never the same twice in a row; a mantis one time in four). Any other catch counts as usual.
+ */
+export class Order {
+  constructor(rand) { this.rand = rand; this.want = -1; this.filled = 0; this.other = 0; this.next(); }
+
+  next() {
+    let w = Math.floor(this.rand() * 4);
+    if (w === this.want) w = (w + 1) % 4;
+    this.want = w;
+  }
+
+  /** A bug was caught: returns the bonus it earned (0 when it was not the one asked for). */
+  take(bug) {
+    if (wantOf(bug) !== this.want) { this.other++; return 0; }
+    this.filled++;
+    this.next();
+    return BUGS.orderBonus;
+  }
+}
 
 const clamp01 = v => Math.max(0, Math.min(1, v));
 const between = (R, [a, b]) => a + (b - a) * R();
@@ -132,6 +185,9 @@ export class Tally {
     return BUGS.points[kind] + extra;
   }
 
+  /** Points that are not a catch of their own (the order's bonus). */
+  extra(points) { this.bonus += points; return points; }
+
   get caught() { return this.grass + this.mantis; }
   get clean() { return this.misses === 0 && this.caught >= BUGS.cleanFrom; }
   get score() { return this.grass * BUGS.points.grass + this.mantis * BUGS.points.mantis + this.bonus + (this.clean ? BUGS.cleanBonus : 0); }
@@ -144,10 +200,13 @@ export class Tally {
  * gone) are left in `this.events` as { kind, bug } for the picture and the sound; the round clears them each frame.
  */
 export class Meadow {
-  constructor({ rand, ok = () => true, grass = BUGS.alive.grass, mantis = BUGS.alive.mantis } = {}) {
+  constructor({ rand, ok = () => true, grass = BUGS.alive.grass, mantis = BUGS.alive.mantis, notice = 1, crouch = BUGS.crouch, alarm = 1 } = {}) {
     this.rand = rand;
     this.ok = ok;
     this.want = { grass, mantis };
+    this.notice = notice;       // the level: how much sooner a grasshopper notices her (the round lowers it in a windy spell)
+    this.crouch = crouch;       // ...how long its tell lasts
+    this.alarm = alarm;         // ...and how fast a mantis takes alarm
     this.bugs = [];
     this.events = [];
     this.respawn = { grass: 0.4, mantis: 2 };
@@ -167,7 +226,7 @@ export class Meadow {
       const a = (k < 9 ? p.facing + (R() - 0.5) * 2.4 : R() * Math.PI * 2), r = lo + R() * (hi - lo);
       const x = p.x + Math.sin(a) * r, z = p.z + Math.cos(a) * r;
       if (!this.ok(x, z)) continue;
-      const b = { id: this.nextId++, kind, alive: true, x, z, hx: x, hz: z, face: R() * Math.PI * 2, t: 0, u: 0, st: kind === 'grass' ? 'sit' : 'stand',
+      const b = { id: this.nextId++, kind, colour: kind === 'grass' ? this.nextId % 3 : -1, alive: true, x, z, hx: x, hz: z, face: R() * Math.PI * 2, t: 0, u: 0, st: kind === 'grass' ? 'sit' : 'stand',
         fx: x, fz: z, tx: x, tz: z, arc: 0, hops: 0, startled: false, alarm: 0, gaze: 'away', gazeT: 0, wary: 0, caught: false, ph: R() * 6.28 };
       b.t = between(R, BUGS.idleHop);
       if (kind === 'mantis') { b.gazeT = between(R, BUGS.awayFor); b.face = a + Math.PI; b.away = b.face; }
@@ -233,12 +292,13 @@ export class Meadow {
       return;                                           // too tired to mind anyone
     }
     // sitting: it notices Mika inside its radius, or after a while simply hops a little
-    if (d < noticeR(noise)) {
-      b.startled = d < noticeR(noise) * 0.62 || noise > 0.55;
-      b.st = 'crouch'; b.t = BUGS.crouch; this.emit('crouch', b);
+    const nr = noticeR(noise) * this.notice;
+    if (d < nr) {
+      b.startled = d < nr * 0.62 || noise > 0.55;
+      b.st = 'crouch'; b.t = this.crouch; this.emit('crouch', b);
       b.face = Math.atan2(b.x - p.x, b.z - p.z);
     } else if ((b.t -= dt) <= 0) {
-      if (this.hopTarget(b, p.x, p.z, between(R, BUGS.calmHop), false)) { b.st = 'crouch'; b.t = BUGS.crouch; b.startled = false; this.emit('crouch', b); }
+      if (this.hopTarget(b, p.x, p.z, between(R, BUGS.calmHop), false)) { b.st = 'crouch'; b.t = this.crouch; b.startled = false; this.emit('crouch', b); }
       else b.t = 2;
     }
   }
@@ -282,7 +342,7 @@ export class Meadow {
     const prox = 0.4 + 0.6 * clamp01(1 - d / BUGS.alarmRange), wary = b.wary > 0 ? 1.5 : 1;
     let rise = 0;
     if (noise > 0) rise = b.gaze === 'you' ? (0.5 + 1.5 * noise) * prox : Math.max(0, noise - 0.5) * 4 * prox;
-    if (rise > 0) b.alarm = Math.min(1, b.alarm + rise * wary * dt);
+    if (rise > 0) b.alarm = Math.min(1, b.alarm + rise * wary * this.alarm * dt);
     else b.alarm = Math.max(0, b.alarm - BUGS.alarmDecay * dt);
     if (b.alarm >= 1) { b.st = 'threat'; b.u = 0; this.emit('alarm', b); this.emit('threat', b); }
   }
@@ -304,7 +364,7 @@ export class Meadow {
     if (loud) {
       for (const b of this.bugs) {
         if (!b.alive || Math.hypot(b.x - ax, b.z - az) > BUGS.loud) continue;
-        if (b.kind === 'grass' && (b.st === 'sit' || b.st === 'tired')) { b.st = 'crouch'; b.t = BUGS.crouch; b.startled = true; res.startled++; this.emit('crouch', b); }
+        if (b.kind === 'grass' && (b.st === 'sit' || b.st === 'tired')) { b.st = 'crouch'; b.t = this.crouch; b.startled = true; res.startled++; this.emit('crouch', b); }
         else if (b.kind === 'mantis' && b.st === 'stand') { b.alarm = Math.min(1, b.alarm + 0.45); res.startled++; }
       }
     }
@@ -315,4 +375,60 @@ export class Meadow {
 /** Stars are in content/tricks.js. The record kept for the results card. */
 export function bugsResult(t) {
   return { grass: t.grass, mantis: t.mantis, misses: t.misses, best: t.best, clean: t.clean, score: t.score };
+}
+
+/**
+ * A scripted player on the pure rules, to tune the stars (tests/bugs.test.mjs): she walks to the bug she wants at
+ * `speed` m/s, creeps the last metres (`creep` m/s inside `creepIn` m), stands still while a mantis watches when
+ * `patient`, and swings (a sweep when `sweep`) once the bug is under the ring, after a reaction time `react`. After
+ * every swing she needs `look` seconds to find the next bug (a child looks about; a machine would not).
+ * Returns { score, grass, mantis, misses, filled }. Only the rules above are used: no picture, no clock but dt.
+ */
+export function botRound({ seed = 1, level = 'normal', length = 95, speed = 2.3, creep = 1.0, creepIn = 4.5, patient = true, sweep = true, react = 0.25, order = true, look = 3 } = {}) {
+  const L = hopLevel(level), R = rng(seed), dt = 1 / 30;
+  const m = new Meadow({ rand: R, ok: (x, z) => Math.hypot(x, z) < 28, grass: L.waves[0].grass, mantis: L.waves[0].mantis, notice: L.notice, crouch: L.crouch, alarm: L.alarm });
+  const tally = new Tally(), ord = L.order ? new Order(rng(seed + 99)) : null;
+  const p = { x: 0, z: 0, speed: 0, facing: 0 }, aim = { x: 0, z: 0 };
+  let cool = 0, wait = 0, landIn = -1, landR = 0, wave = 0, busy = look, tgt = null;
+  for (let t = 0; t < length; t += dt) {
+    const w = waveAt(L, t, length);
+    if (w !== wave) { wave = w; m.want.grass = L.waves[w].grass; m.want.mantis = L.waves[w].mantis; m.notice = L.notice * (L.waves[w].wind ? 0.85 : 1); }
+    // whom to go for: the bug the order asks for when she follows it, else the nearest (she keeps to the one she chose)
+    busy -= dt;
+    if (tgt && (!tgt.alive || Math.hypot(tgt.x - p.x, tgt.z - p.z) > 12)) { tgt = null; busy = Math.max(busy, look * 0.5); }
+    if (!tgt && busy <= 0) {
+      let td = 1e9;
+      for (const b of m.bugs) {
+        if (!b.alive || b.st === 'flee' || b.st === 'threat') continue;
+        let d = Math.hypot(b.x - p.x, b.z - p.z);
+        if (ord && order && wantOf(b) === ord.want) d -= 6;
+        if (d < td) { td = d; tgt = b; }
+      }
+    }
+    p.speed = 0;
+    if (tgt && landIn < 0 && busy <= 0) {
+      const d = Math.hypot(tgt.x - p.x, tgt.z - p.z);
+      p.facing = Math.atan2(tgt.x - p.x, tgt.z - p.z);
+      const hold = patient && tgt.kind === 'mantis' && tgt.gaze === 'you' && d < BUGS.alarmRange && creep > BUGS.creep;
+      const v = hold ? 0 : d < creepIn ? creep : speed;
+      if (d > BUGS.reach - 0.25) { const s = Math.min(v * dt, d - (BUGS.reach - 0.3)); p.x += Math.sin(p.facing) * s; p.z += Math.cos(p.facing) * s; p.speed = v; }
+      aimSpot(p.x, p.z, p.facing, aim);
+      cool -= dt;
+      if (catchable(tgt) && Math.hypot(tgt.x - aim.x, tgt.z - aim.z) < (sweep ? BUGS.sweepR : BUGS.netR) * 0.8 && cool <= 0) {
+        wait += dt;
+        if (wait >= react) { wait = 0; landIn = (sweep ? BUGS.sweepHold + BUGS.sweepLand : BUGS.quickLand); landR = sweep ? BUGS.sweepR : BUGS.netR; }
+      } else wait = 0;
+    }
+    m.update(dt, p);
+    if (landIn >= 0 && (landIn -= dt) < 0) {
+      aimSpot(p.x, p.z, p.facing, aim);
+      const res = m.swing(aim.x, aim.z, landR, !sweep);
+      tally.swing(res.bug ? res.bug.kind : null);
+      if (res.bug && ord) tally.extra(ord.take(res.bug));
+      cool = BUGS.swingCool;
+      tgt = null; busy = look;
+    }
+    m.events.length = 0;
+  }
+  return { score: tally.score, grass: tally.grass, mantis: tally.mantis, misses: tally.misses, filled: ord ? ord.filled : 0 };
 }

@@ -61,7 +61,7 @@ export const HOWTO = {
   'trick:cricket': [
     { in: 'move', pic: 'walk', text: N_('Walk toward the song.') },
     { in: null, pic: 'stop', text: N_('Stand still when it goes quiet.') },
-    { in: 'act', pic: 'ring', text: N_('Tap on its beat, three times.') },
+    { in: 'act', pic: 'ring', text: N_('Tap on its beat, softly.') },
   ],
   'trick:eggs': [
     { in: 'lr', pic: 'hat', text: N_('Catch each egg in your hat.'), touchTap: true },

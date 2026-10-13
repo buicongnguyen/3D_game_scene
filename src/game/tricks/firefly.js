@@ -18,12 +18,12 @@ import { creepFilter } from './bugkit.js';
 import { addCss, trampleGrass } from './util.js';
 import {
   FIREFLY as F, KINDS, HEIKE, GENJI, HIME, Jar, blink, rng, noiseOf, scareRadius, inNet, catchable, litFor, jarGlow, jarColour,
-  nextKind, groupSize, himeWait,
+  nextKind, groupSize, himeWait, levelPlan, stageAt, breezeAt, Wish, WISH,
 } from './rules-firefly.js';
 
 export { blink };
 
-const MAX = 48;                // fireflies in a round's swarm (live + flying + in the jar)
+const MAX = 56;                // fireflies in a round's swarm (live + flying + in the jar)
 const START = 16;              // about how many fly when the round begins
 const KEEP = 10;               // fresh ones drift in while fewer than this are free
 const LANTERN = F.lantern;     // caught fireflies that make the jar a lantern (the finale)
@@ -98,6 +98,7 @@ class Swarm {
     this.shyT = new Float32Array(n);         // seconds it stays away
     this.flee = new Float32Array(n * 2);     // the way it drifts off (x, z)
     this.jarDim = 1;
+    this.wx = 0; this.wz = 0;                // the breeze: how far (m) it has pushed the free ones just now (the Difficult level)
     const geo = new THREE.BufferGeometry();
     const dyn = (arr, k) => new THREE.BufferAttribute(arr, k).setUsage(THREE.DynamicDrawUsage);
     geo.setAttribute('position', dyn(this.pos, 3));
@@ -172,9 +173,10 @@ class Swarm {
         if (this.shyT[i] > 0) { this.shyT[i] -= dt; sh += (1 - sh) * Math.min(1, dt * 3.2); } else if (sh > 0) sh = Math.max(0, sh - dt * 0.5);
         this.shy[i] = sh;
         const e = sh * sh * (3 - 2 * sh);
-        P[j] = H[j] + Math.sin(t * 0.55 + ph[q]) * 0.65 + Math.sin(t * 0.23 + ph[q + 2]) * 0.4 + this.flee[i * 2] * e * F.flee;
+        const wind = 0.75 + 0.25 * Math.sin(ph[q + 1]);        // (light ones are carried a little further)
+        P[j] = H[j] + Math.sin(t * 0.55 + ph[q]) * 0.65 + Math.sin(t * 0.23 + ph[q + 2]) * 0.4 + this.flee[i * 2] * e * F.flee + this.wx * wind;
         P[j + 1] = H[j + 1] + Math.sin(t * 0.8 + ph[q + 1]) * 0.22 + e * F.rise;
-        P[j + 2] = H[j + 2] + Math.cos(t * 0.47 + ph[q + 2]) * 0.65 + Math.sin(t * 0.31 + ph[q]) * 0.35 + this.flee[i * 2 + 1] * e * F.flee;
+        P[j + 2] = H[j + 2] + Math.cos(t * 0.47 + ph[q + 2]) * 0.65 + Math.sin(t * 0.31 + ph[q]) * 0.35 + this.flee[i * 2 + 1] * e * F.flee + this.wz * wind;
         this.glow[i] = blink(t, this.period[i], ph[q + 3], this.lit[i]) * fade * (1 - 0.9 * e);
         this.size[i] = size;
       } else if (s === 2) {
@@ -344,7 +346,13 @@ const CSS = `
 .ffBox .bar i{display:block;height:100%;width:0;border-radius:5px;background:#6cc24a}
 .ffBox .bar i.mid{background:#f2b53a}.ffBox .bar i.hot{background:#e2572b}
 .ffBox .bar b{position:absolute;top:0;bottom:0;width:2px;background:#5a3a22;opacity:.55}
-.ffBox.end .soft{display:none}
+.ffBox.end .soft,.ffBox.end .wish{display:none}
+.ffBox .wish{display:none;gap:6px;align-items:center;justify-content:center;margin-top:6px;padding:3px 10px;border-radius:999px;background:#fff1cf}
+.ffBox.wishing .wish{display:flex}
+.ffBox .wish u{display:flex;align-items:center;justify-content:center;width:18px;height:18px;text-decoration:none;border-radius:50%;background:#27304f}
+.ffBox .wish i{display:block;width:10px;height:10px;border-radius:50%;background:radial-gradient(circle,#fffde0 0 22%,var(--c) 55%,transparent 100%);box-shadow:0 0 5px 1px var(--c)}
+.ffBox .wish b{font:600 16px Fredoka,Nunito,sans-serif;color:#c2541c}
+.ffBox .wish.pop{animation:ffPop .4s}
 .ffBox .plus{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:4px;padding:2px 12px;border-radius:999px;background:#27304f;color:#ffe45c;
  font:600 19px Fredoka,Nunito,sans-serif;opacity:0}
 .ffBox .plus.go{animation:ffPlus 1.3s both}
@@ -359,6 +367,11 @@ const CSS = `
 const DOT = [11, 18, 9];        // the chip dots, sized like the kinds (px)
 /** What the kinds are called (their Japanese names, as a child there learns them). */
 const NAMES = [N_('Heike'), N_('Genji'), N_('Hime')];
+/** What the teacher says when a stage of the round begins (rules-firefly.js FF_LEVELS), by level. */
+const STAGE_SAY = {
+  normal: [null, N_('Part 2: the Genji hour! The big ones come out over the water.')],
+  hard: [null, N_('Part 2: a breeze! The fireflies drift. Wait where they are going.'), N_('Part 3: the Genji hour! The breeze is dropping.')],
+};
 
 /** What is in the jar, by kind; ten pips to the lantern; how softly she walks. Text is only touched when a value changes. */
 class JarBox {
@@ -368,6 +381,7 @@ class JarBox {
     el.className = 'ffBox';
     el.innerHTML = `<div class="row">${KINDS.map((k, i) => `<span class="cnt" style="--c:${k.css}"><u><i style="width:${DOT[i]}px;height:${DOT[i]}px"></i></u><span></span><b>0</b></span>`).join('')}</div>
       <div class="pips">${'<i></i>'.repeat(LANTERN)}</div>
+      <div class="wish"><span class="wl"></span><u><i></i></u><span class="wn"></span><b></b></div>
       <div class="soft"><span class="lab"></span><div class="bar"><i></i><b></b></div></div><div class="plus"></div>`;
     document.body.appendChild(el);
     document.body.classList.add('ff-round');
@@ -381,6 +395,23 @@ class JarBox {
     this.plus = el.querySelector('.plus');
     this.shown = [0, 0, 0];
     this.lit = 0; this.pct = -1; this.cls = '';
+    this.wEl = el.querySelector('.wish');
+    this.wDot = this.wEl.querySelector('i'); this.wName = this.wEl.querySelector('.wn'); this.wNum = this.wEl.querySelector('b');
+    this.wEl.querySelector('.wl').textContent = tx('Catch now:');
+    this.wKind = -1; this.wText = '';
+  }
+
+  /** The kind asked for now (the Difficult level): its dot, its name and how many of them are in. */
+  wish(w) {
+    if (w.kind !== this.wKind) {
+      this.wKind = w.kind;
+      this.el.classList.add('wishing');
+      this.wDot.style.setProperty('--c', KINDS[w.kind].css);
+      this.wName.textContent = tx(NAMES[w.kind]);
+      this.wEl.classList.remove('pop'); void this.wEl.offsetWidth; this.wEl.classList.add('pop');
+    }
+    const text = `${w.have}/${w.need}`;
+    if (text !== this.wText) { this.wText = text; this.wNum.textContent = text; }
   }
 
   /** After a sweep: the counts, the next pips in the caught kinds' colours, and "+points". */
@@ -470,11 +501,17 @@ export default {
     const centre = ctx.place;
     const qa = typeof window !== 'undefined' ? window.__STARLINE_QA__ : null;
     const rand = qa?.trickSeed !== undefined ? rng(qa.trickSeed) : Math.random;
-    const mode = { easy: !!g.easy, first: !!ctx.first };
+    // the level decides (content/levels.js): Easy is gentle, Normal has the Genji hour, Difficult a breeze and a card of kinds to catch
+    const mode = { easy: !!ctx.easy, first: !!ctx.first, genji: F.genjiShare, most: F.genjiMost };
+    const plan = levelPlan(ctx.level, !!ctx.first), says = (!ctx.first && STAGE_SAY[ctx.level]) || [];
+    const wish = plan.wish ? new Wish(rand) : null;
+    let stage = 0, breeze = 0, wrongHint = 0, letGo = 0;
+    mode.genji = plan.stages[0].genji; mode.most = plan.stages[0].most;
     const reach = mode.easy ? F.easyReach : F.reach, ahead = reach - F.behind;
     const touch = !!ctx.ui?.touch;
-    const jarIn = new Jar();
+    const jarIn = new Jar(plan.jar);
     const free = [0, 0, 0], got = [0, 0, 0];
+    if (wish) box?.wish(wish);
     let himeIn = 0, spawnIn = 0, arcOn = false;
     // who is there when she arrives: the common kinds, in little groups
     for (let n = 0, k = 0; n < START; k++) n += spawnGroup(sw, k % 4 === 1 ? GENJI : HEIKE, centre, world, rand, mode, p.pos);
@@ -495,10 +532,11 @@ export default {
     const pose = { waiting: false };
     const BURST = { n: 10, color: [0.9, 1, 0.45], speed: 0.8, size: 0.1, gravity: -0.6 };
     ctx.debug.ready = () => ready > 0;
-    ctx.debug.view = () => ({ score: jarIn.score, caught: jarIn.caught, counts: [...jarIn.counts], best: jarIn.best, bonus: jarIn.bonus, sweeps: jarIn.sweeps, misses, scared, free: [...free], ready, inReach, creeping: cs.creeping, speed: +p.speed.toFixed(2), left: +left.toFixed(1) });
+    ctx.debug.view = () => ({ level: ctx.level, stage, wish: wish ? { kind: wish.kind, have: wish.have, need: wish.need, filled: wish.filled } : null, letGo, score: jarIn.score, caught: jarIn.caught, counts: [...jarIn.counts], best: jarIn.best, bonus: jarIn.bonus, sweeps: jarIn.sweeps, misses, scared, free: [...free], ready, inReach, creeping: cs.creeping, speed: +p.speed.toFixed(2), left: +left.toFixed(1) });
     ctx.hint(ctx.first
       ? (touch ? N_('Push the stick gently to walk softly up to a firefly. When its ring shines, tap {act}.') : N_('Walk softly up to a firefly. When its ring shines, press {act}.'))
-      : N_('Walk softly, and sweep when the rings shine!'), ctx.first ? 7 : 5);
+      : wish ? N_('Catch the kind the card asks for. The others fly off again!')
+        : N_('Walk softly, and sweep when the rings shine!'), ctx.first ? 7 : 5);
     let hinted = 0;
 
     /** Where the net sweeps, and who is in it: rings on those in reach (bright on the ones that can be caught now). */
@@ -518,32 +556,48 @@ export default {
     /** One sweep: every glowing firefly in reach goes to the jar. A sweep through dark ones sends those off. */
     const sweep = t => {
       got[0] = got[1] = got[2] = 0;
+      let off = 0;
       for (let i = 0; i < sw.n; i++) {
         if (sw.state[i] !== 1 || sw.mark[i] < 1) continue;
+        // a card of kinds to catch: any other kind (but the rare Hime) is let go again, and flies off
+        if (wish && sw.kind[i] !== HIME && sw.kind[i] !== wish.kind) { off++; sw.mark[i] = 0; sw.startle(i, p.pos.x, p.pos.z, F.shyFor); continue; }
         sw.state[i] = 2; sw.st[i] = 0; sw.mark[i] = 0;
         sw.from[i * 3] = sw.pos[i * 3]; sw.from[i * 3 + 1] = sw.pos[i * 3 + 1]; sw.from[i * 3 + 2] = sw.pos[i * 3 + 2];
         if (!got[0] && !got[1] && !got[2]) burstAt.set(sw.pos[i * 3], sw.pos[i * 3 + 1], sw.pos[i * 3 + 2]);
         got[sw.kind[i]]++;
       }
       const was = jarIn.caught, r = jarIn.sweep(got[0], got[1], got[2]);
+      letGo += off;
+      let plus = r.points;
+      if (wish && r.n) {
+        wish.take(got);
+        if (wish.done) { jarIn.extra(WISH.bonus); plus += WISH.bonus; audio.star?.(); }
+        box?.wish(wish);
+      }
       if (r.n) {
         lastCatch = t;
         if (got[HIME]) himeIn = himeWait(rand);
         audio.twinkle(1.4); audio.good();
         if (r.n > 1) audio.chime?.(Math.min(4, r.n));
         fx.burst(burstAt, BURST);
-        box?.caught(jarIn, got, r.points);
+        box?.caught(jarIn, got, plus);
         jarColour(jarIn.counts, rgb);
         jarCol.setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
         // one thing is said at a time: the most special first
         const now = jarIn.caught;
         if (now >= LANTERN && !said.lantern) { said.lantern = true; ctx.hint(N_('Ten! The jar is a real lantern now.'), 3.5); }
+        else if (wish?.done && !said.wish) { said.wish = true; ctx.hint(N_('That is the set! Now the next kind on the card.'), 4); }
         else if (got[HIME] && !said.hime) { said.hime = true; ctx.hint(N_('A Hime firefly, tiny and golden! A rare one: 3 points.'), 4.5); }
         else if (got[GENJI] && !said.genji) { said.genji = true; ctx.hint(N_('A Genji firefly! Big, with a slow blink. Worth 2 points.'), 4.5); }
         else if (r.n > 1 && !said.unison) { said.unison = true; ctx.hint(N_('More than one in a sweep! Fireflies caught together are worth more.'), 4.5); }
         else if (was === 0 && ctx.first) ctx.hint(got[HEIKE] ? N_('Got one! A little Heike firefly, with a quick blink.') : N_('Got one! Into the jar it goes.'), 3.5);
         else if (now >= 5 && !said.half && now < LANTERN) { said.half = true; ctx.hint(N_('Halfway to a lantern. Keep going!'), 3); }
         if (now >= 5) said.half = true;
+        return;
+      }
+      if (off) {
+        // only the wrong kind glowed: nothing for the jar
+        if (wrongHint <= 0) { wrongHint = 6; audio.miss(); ctx.hint(N_('Not the kind on the card. Off it goes again!'), 3); }
         return;
       }
       if (!inReach) return;
@@ -563,6 +617,18 @@ export default {
       pose.waiting = swing <= 0 && !press;
       ctx.groundPose?.(pose);
       const t = ctx.t;
+      // the round's stages: who flies in, and the breeze (it comes up and drops slowly)
+      const k = stageAt(plan, ctx.roundTime - left, ctx.roundTime);
+      if (k !== stage) {
+        stage = k;
+        mode.genji = plan.stages[k].genji; mode.most = plan.stages[k].most;
+        spawnIn = 0;
+        if (says[k]) { ctx.hint(says[k], 5.5); audio.chime?.(2); }
+      }
+      breeze += (plan.stages[stage].breeze - breeze) * Math.min(1, dt * 0.6);
+      const push = breezeAt(t, breeze);
+      sw.wx = push * 0.8; sw.wz = push * 0.6;
+      wrongHint -= dt;
       jarPoint(jar, jarAt);
       jarLight.intensity = jarGlow(jarIn.caught, JAR_LIGHT);
       // her noise: the ones too close take off
@@ -638,7 +704,7 @@ export default {
       score: jarIn.score, caught, extra: note ? N_('the jar lit the path') : undefined, quit: res.quit && !caught,
       // the jar's tally under the score, already translated
       note: caught ? NAMES.map((name, i) => (c[i] ? `${tx(name)} ${c[i]}` : '')).filter(Boolean).join(' · ') : undefined,
-      detail: { counts: [...c], best: jarIn.best, bonus: jarIn.bonus },
+      detail: { counts: [...c], best: jarIn.best, bonus: jarIn.bonus, level: ctx.level, wishes: wish ? wish.filled : 0, letGo },
     };
     } finally {
       cleanup();

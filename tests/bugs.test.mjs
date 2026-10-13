@@ -4,9 +4,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { TRICK, TRICKS, trickOpen, starsFor } from '../src/content/tricks.js';
 import { placeProblems } from '../src/world/roads.js';
+import { LEVELS, levelSpec } from '../src/content/levels.js';
 import {
-  BUGS, rng, noiseOf, noticeR, aimSpot, catchable, Net, Tally, Meadow,
+  BUGS, rng, noiseOf, noticeR, aimSpot, catchable, Net, Tally, Meadow, HOP_LEVELS, hopLevel, waveAt, Order, wantOf, WANT_MANTIS, botRound,
 } from '../src/game/tricks/rules-hoppers.js';
+import { CRICKET_LEVELS, cricketLevel, countOptions, SOFTER } from '../src/game/tricks/rules-cricket.js';
 import {
   CRICKET, fahrenheit, celsius, chirpsFor, tempFor, thermoTimes, guessOptions, hearing, Tickle, Crickets, cricketPoints, cricketScore,
   rng as crng,
@@ -36,9 +38,12 @@ test('the two meadow tricks are well formed and sit on clean ground', () => {
     assert.ok(t.howReal.length <= 170 && t.why.length <= 160 && t.safety.length <= 90);
   }
   assert.equal(TRICKS.indexOf(TRICK.cricket), TRICKS.indexOf(TRICK.hoppers) + 1);
-  assert.deepEqual(TRICK.hoppers.stars, [40, 80, 120]);
-  assert.deepEqual(TRICK.cricket.stars, [30, 60, 90]);
-  assert.deepEqual([TRICK.hoppers.length, TRICK.hoppers.firstLength, TRICK.cricket.length, TRICK.cricket.firstLength], [75, 40, 90, 50]);
+  // (the row's own numbers are the Normal level's; each level has its own in `levels`)
+  assert.deepEqual(TRICK.hoppers.stars, levelSpec(TRICK.hoppers, 'normal').stars);
+  assert.deepEqual(TRICK.cricket.stars, levelSpec(TRICK.cricket, 'normal').stars);
+  assert.deepEqual(LEVELS.map(l => levelSpec(TRICK.hoppers, l).length), [70, 95, 120]);
+  assert.deepEqual(LEVELS.map(l => levelSpec(TRICK.cricket, l).length), [75, 105, 130]);
+  assert.deepEqual([TRICK.hoppers.firstLength, TRICK.cricket.firstLength], [40, 50]);
   assert.deepEqual(TRICK.hoppers.seasons, ['summer', 'autumn']);
   assert.deepEqual(TRICK.cricket.seasons, ['summer', 'autumn']);
   // hoppers by day, crickets from dusk to night; a frozen story clock never blocks either
@@ -272,8 +277,95 @@ test('a mantis is caught from a quiet approach, not while it bluffs; the score c
   assert.ok(c.clean);
   assert.equal(c.score, 10 + 10 + 10 + 25 + 5 + 5 + BUGS.cleanBonus);
   assert.equal(c.score, 80);
-  assert.equal(starsFor(c.score, TRICK.hoppers.stars), 2);
-  assert.equal(starsFor(120, TRICK.hoppers.stars), 3);
+  assert.equal(starsFor(c.score, levelSpec(TRICK.hoppers, 'easy').stars), 2);
+  assert.equal(starsFor(c.score, levelSpec(TRICK.hoppers, 'normal').stars), 1);
+  assert.equal(starsFor(145, TRICK.hoppers.stars), 3);
+  // the order's bonus counts in the score, and is no catch
+  assert.equal(c.extra(BUGS.orderBonus), 10);
+  assert.equal(c.score, 90);
+  assert.equal(c.caught, 4);
+});
+
+test('hopper levels: one calm wave on Easy, three waves on Normal, warier bugs, a windy spell and an order on Difficult', () => {
+  const { first, easy, normal, hard } = HOP_LEVELS;
+  assert.equal(hopLevel('hard', true), first);
+  assert.deepEqual([easy.waves.length, normal.waves.length, hard.waves.length], [1, 3, 3]);
+  assert.deepEqual(normal.waves.map(w => w.mantis), [1, 2, 3], 'one more mantis with every wave');
+  assert.ok(easy.notice < 1 && easy.crouch > BUGS.crouch && easy.alarm < 1, 'Easy: they notice her later, crouch longer, and the mantis is patient');
+  assert.ok(hard.notice > 1 && hard.crouch < BUGS.crouch && hard.crouch >= 0.2 && hard.alarm > 1);
+  assert.ok(hard.order && !normal.order && hard.waves[1].wind && !hard.waves[0].wind && !hard.waves[2].wind && normal.waves.every(w => !w.wind));
+  assert.deepEqual([0, 30, 34, 64, 66, 94].map(t => waveAt(normal, t, 95)), [0, 0, 1, 1, 2, 2]);
+  assert.equal(waveAt(easy, 60, 70), 0);
+  // the level reaches the meadow: on Easy a creeping Mika can come closer before a grasshopper minds, and its tell is longer
+  const far = (notice, crouch) => {
+    const { m, b } = oneBug('grass', 0, 6, 11, { notice, crouch });
+    let d = 6, t = 0;
+    while (b.st === 'sit' && d > 0.2) { d -= 1.0 * DT; m.update(DT, { x: 0, z: 6 - d, speed: 1.0, facing: 0 }); }
+    const at = d;
+    while (b.st === 'crouch') { m.update(DT, { x: 0, z: 6 - d, speed: 0, facing: 0 }); t += DT; }
+    return { at, t };
+  };
+  const e = far(easy.notice, easy.crouch), n = far(normal.notice, normal.crouch), h = far(hard.notice, hard.crouch);
+  assert.ok(e.at < n.at - 0.2 && n.at < h.at - 0.1, `noticed at ${e.at.toFixed(2)} / ${n.at.toFixed(2)} / ${h.at.toFixed(2)} m`);
+  assert.ok(e.t > n.t + 0.1 && n.t > h.t, `the tell lasts ${e.t.toFixed(2)} / ${n.t.toFixed(2)} / ${h.t.toFixed(2)} s`);
+  assert.ok(h.at < BUGS.reach + BUGS.netR, 'even on Difficult the net still reaches a bug she has crept up on');
+  // a mantis takes alarm faster on Difficult
+  const alarmAfter = alarm => {
+    const { m, b } = oneBug('mantis', 0, 4, 5, { alarm });
+    b.gaze = 'you'; b.gazeT = 99;
+    let t = 0;
+    while (b.st === 'stand' && t < 20) { m.update(DT, { x: 0, z: 0, speed: 2.2, facing: 0 }); t += DT; }
+    return t;
+  };
+  assert.ok(alarmAfter(easy.alarm) > alarmAfter(1) * 1.2 && alarmAfter(hard.alarm) < alarmAfter(1) * 0.9);
+});
+
+test('the order (Difficult): one bug is asked for at a time, by colour or a mantis; the right one earns 10 more', () => {
+  const o = new Order(rng(5));
+  assert.ok(o.want >= 0 && o.want <= WANT_MANTIS);
+  assert.equal(wantOf({ kind: 'mantis', colour: -1 }), WANT_MANTIS);
+  assert.equal(wantOf({ kind: 'grass', colour: 2 }), 2);
+  const seen = new Set();
+  for (let k = 0; k < 200; k++) {
+    const w = o.want, wrong = w === WANT_MANTIS ? { kind: 'grass', colour: 0 } : { kind: 'grass', colour: (w + 1) % 3 };
+    assert.equal(o.take(wrong), 0);
+    assert.equal(o.want, w, 'another bug is a catch like any other: the order waits');
+    assert.equal(o.take(w === WANT_MANTIS ? { kind: 'mantis', colour: -1 } : { kind: 'grass', colour: w }), BUGS.orderBonus);
+    assert.notEqual(o.want, w, 'never the same twice in a row');
+    seen.add(o.want);
+  }
+  assert.deepEqual([...seen].sort(), [0, 1, 2, 3]);
+  assert.equal(o.filled, 200);
+  assert.equal(o.other, 200);
+  // every grasshopper of the meadow has one of the three colours, a mantis none
+  const m = new Meadow({ rand: rng(2), ok: () => true });
+  for (let i = 0; i < 300; i++) m.update(0.1, { x: 0, z: 0, speed: 0, facing: i * 0.1 });
+  const cols = new Set(m.bugs.filter(b => b.kind === 'grass').map(b => b.colour));
+  assert.ok(m.bugs.filter(b => b.kind === 'grass').every(b => b.colour >= 0 && b.colour <= 2) && cols.size >= 2);
+  assert.ok(m.bugs.filter(b => b.kind === 'mantis').every(b => b.colour === -1));
+});
+
+test('hoppers, a scripted player on the rules: care pays on every level, and on Difficult so does the order', () => {
+  const med = (o, n = 24) => { const s = []; for (let seed = 1; seed <= n; seed++) s.push(botRound({ seed, ...o })); return { score: s.map(r => r.score).sort((a, b) => a - b)[n >> 1], filled: s.reduce((a, r) => a + r.filled, 0) / n }; };
+  const careless = { speed: 3.2, creep: 2.6, patient: false, sweep: false, react: 0.5, order: false, look: 3.5 };
+  const careful = { speed: 2.3, creep: 1.0, patient: true, sweep: true, react: 0.35, order: false, look: 3.5 };
+  for (const level of LEVELS) {
+    const length = levelSpec(TRICK.hoppers, level).length, [one, two, three] = levelSpec(TRICK.hoppers, level).stars;
+    const a = med({ level, length, ...careless }), b = med({ level, length, ...careful });
+    assert.ok(b.score > a.score * 1.4, `${level}: careful ${b.score}, careless ${a.score}`);
+    // (the scripted player never loses a bug from sight and never mis-aims: a child scores about a third of it. The stars
+    // sit where a third of the careful machine is two stars, and where even the machine's careless run stays under three)
+    assert.ok(two <= b.score * 0.36 && two >= b.score * 0.26, `${level}: two stars at ${two}, careful machine ${b.score}`);
+    assert.ok(one <= two / 2 && three >= two * 1.4);
+  }
+  // the levels are steps: two stars ask for more points a second as they go up
+  const ask = l => levelSpec(TRICK.hoppers, l).stars[1] / levelSpec(TRICK.hoppers, l).length;
+  assert.ok(ask('easy') < ask('normal') && ask('normal') < ask('hard'));
+  // following the order fills three times as many, for about the same catches
+  const L = levelSpec(TRICK.hoppers, 'hard').length;
+  const plain = med({ level: 'hard', length: L, ...careful }), ordered = med({ level: 'hard', length: L, ...careful, order: true });
+  assert.ok(ordered.filled > plain.filled * 2.5 && ordered.filled >= 8, `orders filled: ${ordered.filled} / ${plain.filled}`);
+  assert.equal(JSON.stringify(botRound({ seed: 3, level: 'hard', length: 60 })), JSON.stringify(botRound({ seed: 3, level: 'hard', length: 60 })), 'seeded');
 });
 
 test('the meadow keeps itself stocked, loses the bugs Mika leaves behind and is the same every time for a seed', () => {
@@ -434,6 +526,73 @@ test('the tickle: three taps on the beat catch it; a tap off the beat, or none, 
   assert.equal(c.windowFor(first), CRICKET.easyWindow);
   for (let i = 0; i < 3; i++) { c.active.hunt = 12; c.catchIt(i === 0 ? 1 : 0.5); }
   assert.ok(c.done && c.caught === 3);
+  // Difficult: four taps in a narrower window (a little wider after two failures, never as wide as Easy)
+  const H = CRICKET_LEVELS.hard, on4 = [L, L + 0.8, L + 1.6, L + 2.4];
+  const play4 = (taps, win = H.window) => {
+    const q = new Tickle(0.8, win, H.beats);
+    q.start();
+    for (let t = 0; t < 8 && !q.done && !q.failed; t += DT) q.update(DT, taps.some(x => Math.abs(x - t) < DT / 2));
+    return q;
+  };
+  assert.ok(play4(on4).done && play4(on4).quality > 0.8);
+  assert.ok(play4(on).failed, 'three taps are one too few');
+  assert.ok(play4(on4.map((t, i) => t + (i === 2 ? 0.27 : 0))).failed, 'a tap that Normal forgives is too rough here');
+  assert.ok(play4(on4.map((t, i) => t + (i === 2 ? 0.27 : 0)), CRICKET.window).done);
+  const hc = new Crickets({ rand: crng(21), centre: { x: 0, z: 0 }, window: H.window, beats: H.beats });
+  assert.equal(hc.windowFor(hc.active), H.window);
+  hc.active.fails = 2;
+  assert.ok(hc.windowFor(hc.active) > H.window && hc.windowFor(hc.active) < CRICKET.easyWindow);
+});
+
+test('cricket levels: two, three and four crickets, each quieter; on Difficult a bell cricket sings too and the count is hers', () => {
+  const { first, easy, normal, hard } = CRICKET_LEVELS;
+  assert.equal(cricketLevel('hard', true), first);
+  assert.deepEqual([easy.count, normal.count, hard.count], [2, 3, 4]);
+  assert.ok(easy.window > normal.window && normal.window > hard.window && hard.beats === 4 && normal.beats === 3);
+  assert.ok(easy.step > normal.step && hard.ask === 'count' && normal.ask === 'temp' && hard.other && !normal.other);
+  // each one quieter than the last (Normal and Difficult); the last one still sings at the night's own rate
+  const c = new Crickets({ rand: crng(4), centre: { x: 0, z: 0 }, temp: 24, count: 4, soft: true });
+  assert.deepEqual(c.list.map(k => k.loud), SOFTER);
+  assert.ok(SOFTER.every((v, i) => !i || v < SOFTER[i - 1]) && SOFTER[3] >= 0.4, 'softer, never silent');
+  assert.ok(near(c.list[3].rate, c.n14 / CRICKET.thermoSeconds));
+  assert.equal(new Set(c.list.map(k => k.rate.toFixed(3))).size, 4, 'four different songs');
+  assert.ok(new Crickets({ rand: crng(4), centre: { x: 0, z: 0 }, count: 2 }).list.every(k => k.loud === 1));
+  const vols = [];
+  for (let t = 0; t < 3; t += DT) { c.update(DT, { x: 0, z: 0, speed: 0 }, 0); for (const e of c.events) if (e.kind === 'chirp') vols.push(e.vol); c.events.length = 0; }
+  const d0 = Math.hypot(c.list[0].x, c.list[0].z), v1 = vols[0];
+  c.catchIt(1); c.events.length = 0;
+  c.list[1].x = c.list[0].x; c.list[1].z = c.list[0].z;                    // the second one, from just as far away
+  for (let t = 0; t < 3; t += DT) { c.update(DT, { x: 0, z: 0, speed: 0 }, 0); for (const e of c.events) if (e.kind === 'chirp') vols.push(e.vol); c.events.length = 0; }
+  assert.ok(d0 > 5 && near(vols.at(-1), v1 * SOFTER[1], 1e-6), `the second sings more softly: ${v1} -> ${vols.at(-1)}`);
+  // the bell cricket: a slow, long, high trill from another place; standing still beside it is a wrong find, and it moves off
+  const h = new Crickets({ rand: crng(9), centre: { x: 0, z: 0 }, count: 4, soft: true, other: true });
+  const o = h.other, a = h.active;
+  assert.ok(o && Math.hypot(o.x - a.x, o.z - a.z) >= CRICKET.other.from[0] - 1e-9, 'not beside the one to find');
+  assert.ok(o.rate < a.rate * 0.5 && o.pulses >= a.pulses * 2 && o.pitch > a.pitch * 1.3, 'a song a child can tell apart');
+  const kinds = new Set();
+  for (let t = 0; t < 6; t += DT) { h.update(DT, { x: 0, z: 0, speed: 0 }, 0); for (const e of h.events) kinds.add(e.kind); h.events.length = 0; }
+  assert.ok(kinds.has('chirp') && kinds.has('other') && !kinds.has('wrong'));
+  const at = [o.x, o.z];
+  let wrong = 0;
+  for (let t = 0; t < 2 && !wrong; t += DT) { h.update(DT, { x: at[0] + 0.8, z: at[1], speed: 0 }, 0); for (const e of h.events) if (e.kind === 'wrong') wrong++; h.events.length = 0; }
+  assert.equal(wrong, 1);
+  assert.equal(h.wrong, 1);
+  assert.notDeepEqual([o.x, o.z], at, 'it moves off');
+  assert.ok(o.quiet > 0);
+  // walking past it is nothing
+  const w = new Crickets({ rand: crng(9), centre: { x: 0, z: 0 }, count: 4, other: true });
+  for (let t = 0; t < 2; t += DT) w.update(DT, { x: w.other.x + 0.8, z: w.other.z, speed: 1.5 }, 0);
+  assert.equal(w.wrong, 0);
+  // it follows the hunt to the next cricket
+  h.catchIt(1);
+  assert.ok(Math.hypot(h.other.x - h.active.x, h.other.z - h.active.z) <= CRICKET.other.from[1] + 1e-9);
+  // the count on Difficult: three answers, the right one among them, four apart
+  for (let k = 0; k < 30; k++) {
+    const opts = countOptions(33, crng(k + 1), hard.step);
+    assert.ok(opts.includes(33) && new Set(opts).size === 3);
+    assert.deepEqual([...opts].sort((p, q) => p - q).map((v, i, s) => (i ? v - s[i - 1] : 0)), [0, 4, 4]);
+  }
+  assert.deepEqual([...guessOptions(24, crng(1), easy.step)].sort((p, q) => p - q).map((v, i, s) => (i ? v - s[i - 1] : 0)), [0, 5, 5], 'Easy: answers far apart');
 });
 
 test('the cricket score: 20 each, up to 10 for speed and 10 for a gentle tickle, 10 for the right temperature', () => {
@@ -443,9 +602,23 @@ test('the cricket score: 20 each, up to 10 for speed and 10 for a gentle tickle,
   assert.equal(cricketScore([quick, quick, quick], true), 130);
   assert.equal(cricketScore([quick, slow, { caught: false, hunt: 5, quality: 1 }]), 60);
   const T = TRICK.cricket.stars;
-  assert.equal(starsFor(cricketScore([slow, slow, slow]), T), 2);
+  assert.equal(starsFor(cricketScore([slow, slow, slow]), T), 1);
   assert.equal(starsFor(cricketScore([quick, quick, slow], true), T), 3);
   assert.equal(starsFor(cricketScore([slow]), T), 0);
+  // a visit to the bell cricket costs 5 (three at the most), never below zero
+  assert.equal(cricketScore([quick, quick], false, 1), 75);
+  assert.equal(cricketScore([quick, quick], true, 9), 90 - 15);
+  assert.equal(cricketScore([], false, 2), 0);
+  // every level: a slow, rough hunt of all its crickets is one star, a fair one two, a quick gentle one with the right answer three
+  const fair = { caught: true, hunt: 15, quality: 0.6 };
+  for (const l of LEVELS) {
+    const n = cricketLevel(l).count, S = levelSpec(TRICK.cricket, l).stars, all = v => Array.from({ length: n }, () => v);
+    assert.equal(starsFor(cricketScore(all(slow)), S), l === 'easy' ? 1 : 1, `${l}: slow and rough`);
+    assert.ok(starsFor(cricketScore(all(fair), true), S) >= 2, `${l}: fair (${cricketScore(all(fair), true)})`);
+    assert.equal(starsFor(cricketScore(all(quick), true), S), 3);
+    assert.ok(cricketScore(all(quick), true) - S[2] <= 35, `${l}: three stars are near the best`);
+    assert.ok(starsFor(cricketScore(all(quick).slice(1), true), S) < 3, `${l}: not with a cricket missing`);
+  }
 });
 
 // ------------------------------------------------------------------------------------------------ the input

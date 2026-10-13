@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { inHours } from '../../content/tricks.js';
 import { sunDirection } from '../../world/seasons.js';
-import { DEW, webSpots, webVisibility, photoCheck, nearestWeb, dewScore } from './rules-dew.js';
+import { DEW, webSpots, webVisibility, photoCheck, nearestWeb, dewScore, dewLevel, photoPerfect, dryTimes, dryness } from './rules-dew.js';
 import { addCss } from './util.js';
 
 const V3 = THREE.Vector3;
@@ -28,6 +28,7 @@ const CSS = `
   linear-gradient(#fff,#fff) 100% 100%/26px 3px no-repeat,linear-gradient(#fff,#fff) 100% 100%/3px 26px no-repeat;
  filter:drop-shadow(0 1px 3px rgba(0,0,0,.55))}
 #dewAim.side{opacity:.45}
+#dewAim.best{filter:drop-shadow(0 0 5px #ffd23f) drop-shadow(0 1px 3px rgba(0,0,0,.55)) sepia(1) saturate(6) hue-rotate(-12deg)}
 #dewAim span{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:8px;white-space:nowrap;padding:4px 10px;border-radius:999px;
  background:rgba(255,253,246,.95);color:#4a3020;font:700 14px Nunito,system-ui,sans-serif}
 #dewAim.hidden,#dewShot.hidden{display:none}
@@ -41,12 +42,15 @@ const CSS = `
  background:rgba(255,247,232,.9);box-shadow:0 4px 12px rgba(40,20,0,.2);zoom:var(--ui-scale,1)}
 #dewDots i{width:14px;height:14px;border-radius:50%;background:#e4d5b6;transition:background .3s,transform .3s}
 #dewDots i.on{background:#58b7e8;transform:scale(1.2);box-shadow:0 0 6px #9fdcff}
+#dewDots i.best{background:#ffd23f;box-shadow:0 0 6px #ffe89a}
+#dewDots i.gone{background:none;box-shadow:inset 0 0 0 2px #cdb98f;opacity:.7}
+@media (max-width:520px){#dewDots{top:calc(114px + env(safe-area-inset-top,0px))}}
 `;
 
 const DROP_VERT = `
 attribute float aWeb;
 attribute float aPhase;
-uniform float uVis[${DEW.webs}];
+uniform float uVis[${DEW.maxWebs}];
 uniform float uScale;
 uniform float uTime;
 varying float vA;
@@ -139,9 +143,15 @@ export default {
 
       // ---- where the webs hide: seeded spots on dry, gentle ground with nothing solid in the way
       const cx = ctx.place.x, cz = ctx.place.z;
+      // (the rocks and bushes of the forest edge are no colliders: a web must not hang inside one, nor Mika stand in one to see it)
+      const reach = DEW.rMax * 2, inWay = [];
+      for (const [list, r] of [[g.placed?.rocks, 1.5], [g.placed?.bushes, 1.5], [g.placed?.trees, 1.6]]) {
+        for (const o of list || []) if (Math.abs(o.x - cx) < reach && Math.abs(o.z - cz) < reach) inWay.push(o.x, o.z, r + (o.s || 1) * 0.9);
+      }
       const ok = (ox, oz) => {
         const x = cx + ox, z = cz + oz, y = world.heightAt(x, z);
         if (y < 0.9) return false;
+        for (let k = 0; k < inWay.length; k += 3) if (Math.hypot(x - inWay[k], z - inWay[k + 1]) < inWay[k + 2]) return false;
         if (Math.abs(world.heightAt(x + 1, z) - y) > 0.4 || Math.abs(world.heightAt(x, z + 1) - y) > 0.4) return false;
         for (const it of g.colliders.near(x, z)) {
           const pad = 1.4;
@@ -149,10 +159,18 @@ export default {
         }
         return true;
       };
-      const seed = Math.floor(Math.random() * 1e6) + 1;
-      const spots = webSpots(seed, DEW.webs, ok);
-      const total = spots.length;
-      const far = ctx.first || g.easy ? DEW.farFirst : DEW.far;
+      // the level decides how many webs, how far they spread, whether they dry and whether old webs hang among them
+      const L = dewLevel(ctx.level, !!ctx.first);
+      const qa = typeof window !== 'undefined' ? window.__STARLINE_QA__ : null;
+      const seed = qa?.trickSeed ?? Math.floor(Math.random() * 1e6) + 1;
+      const spots = webSpots(seed, Math.min(DEW.maxWebs, L.webs + L.decoys), ok, { rMax: L.rMax, gap: L.rMax > DEW.rMax ? 5 : DEW.gap });
+      // (the old webs are picked evenly from among the spots, never the first one)
+      const nDecoy = Math.min(L.decoys, Math.max(0, spots.length - 4));
+      const decoyAt = new Set();
+      for (let k = 0; k < nDecoy; k++) decoyAt.add(2 + k * Math.floor(spots.length / nDecoy));
+      const isDecoy = i => decoyAt.has(i);
+      const total = spots.filter((s, i) => !isDecoy(i)).length;
+      const far = L.far;
 
       // ---- build: stems (one instanced mesh), webs (model or lines), drops (one Points)
       const stemGeo = new THREE.CylinderGeometry(0.012, 0.022, 1, 5);
@@ -171,7 +189,7 @@ export default {
       const webs = spots.map((s, i) => {
         const x = cx + s.x, z = cz + s.z, gy = world.heightAt(x, z);
         const yaw = Math.atan2(sunX, sunZ) + s.rot;          // the face looks (roughly) toward the sun
-        const w = { i, x, z, y: gy + s.h, yaw, found: false, vis: 0, shown: -1, mats: [], obj: null, pos: new V3(x, gy + s.h, z) };
+        const w = { i, x, z, y: gy + s.h, yaw, found: false, vis: 0, shown: -1, mats: [], obj: null, pos: new V3(x, gy + s.h, z), decoy: isDecoy(i), dry: false, dryAt: Infinity };
         const holder = new THREE.Group();
         holder.position.copy(w.pos);
         holder.rotation.y = yaw;
@@ -183,11 +201,12 @@ export default {
             o.material = o.material.clone();
             o.material.transparent = true; o.material.depthWrite = false; o.material.opacity = 0;
             o.castShadow = false; o.receiveShadow = false; o.renderOrder = 3;
+            if (w.decoy && o.material.color) o.material.color.multiplyScalar(0.72);        // an old web: dull and dusty
             w.mats.push(o.material); disposables.push(o.material);
           });
           holder.add(model);
         } else {
-          const mat = new THREE.LineBasicMaterial({ color: '#f4fbff', transparent: true, opacity: 0, depthWrite: false });
+          const mat = new THREE.LineBasicMaterial({ color: w.decoy ? '#b9b6a6' : '#f4fbff', transparent: true, opacity: 0, depthWrite: false });
           const lines = new THREE.LineSegments(lineGeo, mat);
           lines.renderOrder = 3;
           w.mats.push(mat); disposables.push(mat);
@@ -221,7 +240,7 @@ export default {
       dGeo.setAttribute('position', new THREE.BufferAttribute(dPos, 3));
       dGeo.setAttribute('aWeb', new THREE.BufferAttribute(dWeb, 1));
       dGeo.setAttribute('aPhase', new THREE.BufferAttribute(dPh, 1));
-      const uVis = new Float32Array(DEW.webs);
+      const uVis = new Float32Array(DEW.maxWebs);
       const dMat = new THREE.ShaderMaterial({
         vertexShader: DROP_VERT, fragmentShader: DROP_FRAG, uniforms: { uVis: { value: uVis }, uScale: { value: 300 }, uTime: { value: 0 } },
         transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
@@ -239,21 +258,27 @@ export default {
       const flash = mk('dewFlash');
       const shot = mk('dewShot', '<div class="f"><div class="c"></div></div>');
       shot.classList.add('hidden');
-      const dots = mk('dewDots', webs.map(() => '<i></i>').join(''));
+      const dots = mk('dewDots', '<i></i>'.repeat(total));
       let clicked = false;
       onAim = e => { e.preventDefault(); e.stopPropagation(); clicked = true; };
       aim.addEventListener('pointerdown', onAim);
       const aimText = aim.querySelector('span');
-      const txPhoto = tx(N_('Photo: {act}')), txSide = tx(N_('Sun behind you!'));
+      const txPhoto = tx(N_('Photo: {act}')), txSide = tx(N_('Sun behind you!')), txBest = tx(N_('Perfect spot! {act}'));
       let aimMode = '', aimX = NaN, aimY = NaN;
       // the score on the HUD, from one reused record (asked every frame)
-      const tally = { found: 0, total, seconds: 0, length: ctx.roundTime };
-      const scoreNow = () => { tally.found = st.found; tally.seconds = st.seconds; return dewScore(tally); };
+      const tally = { found: 0, total, seconds: 0, length: ctx.roundTime, perfect: 0, decoys: 0 };
+      const scoreNow = () => { tally.found = st.found; tally.seconds = st.seconds; tally.perfect = st.perfect; tally.decoys = st.decoys; return dewScore(tally); };
 
-      const st = { found: 0, seconds: 0, phase: 'look', near: -1, check: 'far' };
+      const st = { found: 0, seconds: 0, phase: 'look', near: -1, check: 'far', perfect: 0, decoys: 0, dried: 0, best: false };
+      // the drying: the sunny side first, from the middle of the round on (Normal and Difficult)
+      const dries = dryTimes(webs.map(w => ({ x: w.x - cx, z: w.z - cz, decoy: w.decoy })), sunX, sunZ, ctx.roundTime, L.dry);
+      webs.forEach((w, i) => { w.dryAt = dries[i]; });
+      let dryStart = L.dry > 0 ? ctx.roundTime * L.dry : Infinity, dryHint = 0;
+      const left0 = () => webs.some(w => !w.decoy && !w.found && !w.dry);
       ctx.debug.webs = webs;
       ctx.debug.sun = { x: sunX, z: sunZ };
-      ctx.debug.dew = () => ({ phase: st.phase, found: st.found, total, near: st.near, check: st.check, seconds: st.seconds, model: !!g.assets.has('spider-web'), seed });
+      ctx.debug.dew = () => ({ phase: st.phase, found: st.found, total, near: st.near, check: st.check, seconds: st.seconds, model: !!g.assets.has('spider-web'), seed,
+        level: ctx.level, perfect: st.perfect, decoys: st.decoys, dried: st.dried, best: st.best, webs: webs.length });
       /** Where to stand to photograph web i (the QA autopilot walks or teleports here): 2.2 m to its sunward side. */
       ctx.debug.standFor = i => ({ x: webs[i].x + sunX * 2.2, z: webs[i].z + sunZ * 2.2 });
 
@@ -261,7 +286,8 @@ export default {
       if (ctx.quit) return { score: 0, quit: true };
       ctx.hud(0, ctx.roundTime);
       ctx.hint(ctx.first ? N_('Six webs hide between the dry stems. Keep the sun behind you and they light up. Then press {act} for a photo.')
-        : N_('Find the six dew webs. Sun behind you, then {act} for a photo.'), 6);
+        : L.decoys ? tx('{n} dew webs, and old ones with no dew: leave those! In line with the sun, a photo is perfect.', { n: total })
+          : tx('Find the {n} dew webs. Sun behind you, then {act} for a photo.', { n: total }), 6.5);
 
       const sp = new V3(), camTo = new V3(), camLook = new V3();
       let left = ctx.roundTime, sinceFind = 0, nudge = 0, sideHint = 0, farHint = 0, shotT = 0, flashT = 0;
@@ -279,18 +305,32 @@ export default {
             shot.classList.add('hidden');
             g.follow.clearCutscene(true);
             ctx.lock(false);
-            if (st.found >= total) return { done: true };
+            if (!left0()) return { done: true };
           }
           return undefined;
         }
 
         left -= dt; st.seconds += dt; sinceFind += dt;
         const px = p.pos.x, pz = p.pos.z;
+        // the second half: the sun climbs and the webs dry, the sunny side first
+        if (st.seconds >= dryStart) {
+          dryStart = Infinity;
+          audio.chime?.(2);
+          ctx.hint(N_('Part 2: the sun is climbing! The webs on the sunny side dry first.'), 5.5);
+        }
+        dryHint -= dt;
         // each web shows by how close Mika is and whether the sun is behind her; found ones stay lit
         for (const w of webs) {
-          const target = w.found ? 1 : webVisibility(px - w.x, pz - w.z, sunX, sunZ, far);
+          const wet = w.found ? 1 : 1 - dryness(st.seconds, w.dryAt);
+          if (!w.found && !w.dry && wet <= 0) {
+            // dried away before she found it: its dot goes out (from the far end of the row)
+            w.dry = true; st.dried++;
+            dots.children[total - st.dried]?.classList.add('gone');
+            if (dryHint <= 0) { dryHint = 8; ctx.hint(N_('A web has dried away. Hurry to the ones still in the shade!'), 3.5); }
+          }
+          const target = w.found && !w.decoy ? 1 : webVisibility(px - w.x, pz - w.z, sunX, sunZ, far) * wet;
           w.vis += (target - w.vis) * Math.min(1, dt * 5);
-          uVis[w.i] = w.vis;
+          uVis[w.i] = w.decoy ? 0 : w.vis;               // an old web carries no drops at all
           if (Math.abs(w.vis - w.shown) > 0.01) {
             w.shown = w.vis;
             for (const m of w.mats) m.opacity = Math.min(1, w.vis * (m.isLineBasicMaterial ? 0.85 : 1));
@@ -301,6 +341,7 @@ export default {
         st.near = n;
         st.check = n < 0 ? 'far' : photoCheck(px - webs[n].x, pz - webs[n].z, sunX, sunZ);
         ctx.groundPose?.({ kneel: n >= 0 && st.check === 'ok' && Math.hypot(px - webs[n].x, pz - webs[n].z) <= 3.5 });
+        st.best = L.grade && st.check === 'ok' && photoPerfect(px - webs[n].x, pz - webs[n].z, sunX, sunZ);
         const press = ctx.pressed() || clicked;
         clicked = false;
         let mode = '';
@@ -312,20 +353,43 @@ export default {
             if (ax !== aimX || ay !== aimY) { aimX = ax; aimY = ay; aim.style.transform = `translate(${ax}px, ${ay}px)`; }
           } else mode = st.check === 'ok' ? 'off' : '';
         }
+        if (mode === 'ok' && st.best) mode = 'best';
         if (mode !== aimMode) {
           aimMode = mode;
-          aim.classList.toggle('hidden', mode !== 'ok' && mode !== 'side');
+          aim.classList.toggle('hidden', mode !== 'ok' && mode !== 'side' && mode !== 'best');
           aim.classList.toggle('side', mode === 'side');
-          aimText.textContent = mode === 'side' ? txSide : txPhoto;
+          aim.classList.toggle('best', mode === 'best');
+          aimText.textContent = mode === 'side' ? txSide : mode === 'best' ? txBest : txPhoto;
         }
         sideHint -= dt; farHint -= dt;
         if (press) {
           if (st.check === 'ok') {
             const w = webs[n];
+            if (w.decoy) {
+              // an old web with no dew: the photo shows nothing, and costs a little
+              w.found = true; st.decoys++; sinceFind = 0;
+              flashT = 0.4; flash.style.opacity = '1';
+              audio.click(); audio.miss();
+              st.phase = 'shot'; shotT = SHOT_TIME * 0.8;
+              ctx.lock(true);
+              camTo.set(w.x + sunX * 2.1, w.y + 0.25, w.z + sunZ * 2.1);
+              camLook.copy(w.pos);
+              g.follow.cutscene({ pos: camTo, look: camLook }, 0.001);
+              shot.querySelector('.c').textContent = tx('An old web: no dew');
+              shot.classList.remove('hidden');
+              aim.classList.add('hidden'); aimMode = '';
+              ctx.hud(scoreNow(), left);
+              ctx.hint(N_('No dew on that one: an old, empty web. Look for the sparkle first!'), 4);
+              return undefined;
+            }
+            const perfect = st.best;
             w.found = true; st.found++; sinceFind = 0; nudge = 0;
+            if (perfect) st.perfect++;
             dots.children[st.found - 1]?.classList.add('on');
+            if (perfect) dots.children[st.found - 1]?.classList.add('best');
             flashT = 0.4; flash.style.opacity = '1';
             audio.click(); audio.twinkle(2); audio.good();
+            if (perfect) audio.star?.();
             fx.burst?.(w.pos.clone(), { n: 14, color: [0.8, 0.95, 1], speed: 0.9, size: 0.1, gravity: 0 });
             if (!p.anim?.has('Kneel')) p.gesture('Interact', { lock: false });
             // the shot: from the sunward side, a little above, the web filling the frame
@@ -334,12 +398,13 @@ export default {
             camTo.set(w.x + sunX * 2.1, w.y + 0.25, w.z + sunZ * 2.1);
             camLook.copy(w.pos);
             g.follow.cutscene({ pos: camTo, look: camLook }, 0.001);
-            shot.querySelector('.c').textContent = tx('Web {n} of {total}', { n: st.found, total });
+            shot.querySelector('.c').textContent = `${tx('Web {n} of {total}', { n: st.found, total })}${perfect ? ' ★' : ''}`;
             shot.classList.remove('hidden');
             aim.classList.add('hidden'); aimMode = '';
             ctx.hud(scoreNow(), left);
             if (st.found === 1 && ctx.first) ctx.hint(N_('Got it! Every drop is a tiny lens. Five more to find.'), 3.5);
-            else if (st.found === total) ctx.hint(N_('All six! By noon the dew is gone and they vanish again.'), 4);
+            else if (st.found === total) ctx.hint(total === 6 ? N_('All six! By noon the dew is gone and they vanish again.') : N_('Every web found! By noon the dew is gone and they vanish again.'), 4);
+            else if (perfect && st.perfect === 1) ctx.hint(N_('A perfect photo! Right in line with the sun.'), 3.5);
             return undefined;
           }
           if (st.check === 'side' && sideHint <= 0) { sideHint = 5; audio.miss(); ctx.hint(N_('Too faint from this side. Walk round until the sun is behind you.'), 3.5); }
@@ -355,6 +420,7 @@ export default {
           }
         }
         ctx.hud(scoreNow(), left);
+        if (!left0() && st.phase === 'look') return { done: true };
         if (left <= 0) { ctx.hint(N_('The sun is up and the dew is drying. The rest will keep for another dawn.'), 3.5); return { done: true }; }
         return undefined;
       });
@@ -369,6 +435,7 @@ export default {
       return {
         score, found: st.found, quit: !!res?.quit && !st.found,
         extra: st.found >= total && total > 0 ? N_('every web found') : undefined,
+        detail: { level: ctx.level, found: st.found, total, perfect: st.perfect, decoys: st.decoys, dried: st.dried },
       };
     } finally {
       if (!cleaned) { cleanup(); ctx.fade(false, 300); }

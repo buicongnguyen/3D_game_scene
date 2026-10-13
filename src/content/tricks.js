@@ -29,7 +29,10 @@ export const TRICKS = [
     why: 'Fireflies flash to talk to each other, and each kind has its own blink pattern. They need clean water and real darkness.',
     safety: 'Always let them go before bed, right where you found them.',
     // points: Heike 1, Genji 2, Hime 3, and a bonus for a sweep of several (tricks/rules-firefly.js)
-    stars: [8, 20, 36], length: 75, firstLength: 45, unit: 'points',
+    // levels (rules-firefly.js FF_LEVELS): Easy is one gentle stage; Normal adds the Genji hour; Difficult a breeze and
+    // a card of kinds to catch (3 points a set: a catch is worth about twice as much there, and there are fewer of them)
+    stars: [10, 22, 40], length: 95, firstLength: 45, unit: 'points',
+    levels: { easy: { stars: [6, 15, 26], length: 70 }, normal: { stars: [10, 22, 40], length: 95 }, hard: { stars: [16, 34, 56], length: 120 } },
   },
   {
     id: 'river', name: 'Night river lantern', icon: 'trick-river',
@@ -39,7 +42,10 @@ export const TRICKS = [
     howReal: 'With a grown-up, wade only ankle-deep shallows with a torch. Move slowly and look straight down into the circle of light.',
     why: 'Many fish rest near the bottom at night. Shrimp eyes shine back in a torch beam like a cat\'s: that is called eyeshine.',
     safety: 'Only go to the river at night with a grown-up, and stay in the shallows.',
-    stars: [5, 10, 15], length: 80, firstLength: 30, unit: 'fish spotted',
+    // levels (tricks/river.js RIVER_LEVELS): 7 fish on Easy; 9 and then 5 more ("the night deepens") on Normal; 9 + 6 on
+    // Difficult, where a splash sends a fish off and three kinds on a list are worth 5 more
+    stars: [8, 14, 20], length: 95, firstLength: 30, unit: 'fish spotted',
+    levels: { easy: { stars: [4, 8, 12], length: 70 }, normal: { stars: [8, 14, 20], length: 95 }, hard: { stars: [10, 18, 26], length: 120 } },
   },
   {
     id: 'stars', name: 'Stargazing', icon: 'trick-stars',
@@ -59,7 +65,10 @@ export const TRICKS = [
     howReal: 'After a warm rain, visit a paddy or pond at dusk. Walk only while the frogs sing, and freeze when they stop.',
     why: 'Frogs sing loudest after rain. The puffed-up throat pouch works like a speaker, and only the males call.',
     safety: 'Wet your hands before you hold a frog, and put it back where you found it.',
-    stars: [30, 60, 90], length: 70, firstLength: 30, unit: 'points',
+    // levels (tricks/frogs.js FROG_LEVELS; the most a level can score is frogsBest: 80 / 130 / 160). length: the time
+    // for the sneaking (one singer on Easy, two after that); the call-and-answer after it is untimed
+    stars: [45, 90, 120], length: 90, firstLength: 30, unit: 'points',
+    levels: { easy: { stars: [20, 45, 70], length: 70 }, normal: { stars: [45, 90, 120], length: 90 }, hard: { stars: [55, 110, 145], length: 110 } },
   },
   // ---- phase 2 (docs/RURAL-TRICKS.md §6)
   {
@@ -80,7 +89,10 @@ export const TRICKS = [
     howReal: 'Get up at sunrise after a cool, still night. Walk slowly along a hedge with the sun behind you and look low between the stems.',
     why: 'Webs are almost invisible until dew or mist hangs tiny drops on every thread. Each drop shines like a little lens.',
     safety: 'Look, don\'t touch: a web is a spider\'s home and its dinner table.',
-    stars: [30, 60, 75], length: 90, firstLength: 70, unit: 'points',
+    // levels (tricks/rules-dew.js DEW_LEVELS): 5 webs on Easy; 8 on Normal, drying from the middle of the round on; 10 on
+    // Difficult with two old webs that cost 5 and perfect photos worth 5 more. 10 a web, a point per 3 s left when all are found
+    stars: [40, 70, 88], length: 110, firstLength: 70, unit: 'points',
+    levels: { easy: { stars: [20, 40, 55], length: 80 }, normal: { stars: [40, 70, 88], length: 110 }, hard: { stars: [60, 105, 140], length: 130 } },
   },
   {
     id: 'roast', name: 'Sweet potato roast', icon: 'trick-roast',
@@ -113,7 +125,10 @@ export const TRICKS = [
     howReal: 'Creep through long grass with a soft net. Sweep it low over a sitting grasshopper, take a good look, then let it go.',
     why: 'A grasshopper hears with ears on its belly. A mantis can turn its head almost right round, so it sees you coming. Move slowly when it watches.',
     safety: 'Look, then let them go where you found them. Mantises are friends of the garden.',
-    stars: [40, 80, 120], length: 75, firstLength: 40, unit: 'points',
+    // levels (tricks/rules-hoppers.js HOP_LEVELS): one calm wave on Easy; three waves with one more mantis each on Normal;
+    // on Difficult warier bugs, a windy spell and an order to fill (10 more for the bug that is asked for)
+    stars: [50, 100, 145], length: 95, firstLength: 40, unit: 'points',
+    levels: { easy: { stars: [30, 60, 100], length: 70 }, normal: { stars: [50, 100, 145], length: 95 }, hard: { stars: [70, 140, 220], length: 120 } },
   },
   {
     id: 'cricket', name: 'Cricket by its song', icon: 'trick-cricket',
@@ -123,7 +138,10 @@ export const TRICKS = [
     howReal: 'At dusk, stand still in a quiet meadow and listen. Walk toward the song, stop when it stops, and look low in the grass.',
     why: 'Only male crickets chirp, by rubbing their wings. The warmer the night, the faster they chirp: chirps in 14 seconds plus 40 is the temperature in °F.',
     safety: 'Keep your torch low, and put the cricket back in the grass before bed.',
-    stars: [30, 60, 90], length: 90, firstLength: 50, unit: 'points',
+    // levels (tricks/rules-cricket.js CRICKET_LEVELS): two, three and four crickets (up to 40 each, 10 for the guess).
+    // length: the time for the hunting; the tickle, the 14-second count and the guess come on top
+    stars: [35, 70, 100], length: 105, firstLength: 50, unit: 'points',
+    levels: { easy: { stars: [20, 45, 70], length: 75 }, normal: { stars: [35, 70, 100], length: 105 }, hard: { stars: [50, 100, 140], length: 130 } },
   },
   {
     id: 'archery', name: 'Bow and arrow', icon: 'trick-archery',

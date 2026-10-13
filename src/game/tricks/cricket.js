@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { N_, tx } from '../../i18n/i18n.js';
 import { inHours } from '../../content/tricks.js';
 import { placeProblems } from '../../world/roads.js';
-import { CRICKET, rng, tempFor, celsius, fahrenheit, thermoTimes, guessOptions, Tickle, Crickets, cricketScore } from './rules-cricket.js';
+import { CRICKET, rng, tempFor, celsius, fahrenheit, thermoTimes, guessOptions, countOptions, Tickle, Crickets, cricketScore, cricketLevel } from './rules-cricket.js';
 import { BUG_CSS, Critter, Cage, Release, plural } from './bugkit.js';
 import { addCss } from './util.js';
 
@@ -24,6 +24,7 @@ const CSS = `
 #cricketRadar .dot{position:absolute;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;opacity:0;
  background:radial-gradient(circle,#fff6b8 0,#ffe066 35%,rgba(255,200,60,.45) 60%,rgba(255,200,60,0) 72%);box-shadow:0 0 22px 8px rgba(255,224,102,.35)}
 #cricketRadar .ring{position:absolute;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;border:3px solid rgba(255,236,150,.8);opacity:0}
+#cricketRadar .ring2{position:absolute;left:0;top:0;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:3px dashed rgba(170,220,255,.9);opacity:0}
 #cricketTap{position:fixed;left:50%;top:37%;transform:translate(-50%,-50%);z-index:15;width:150px;height:150px;pointer-events:none}
 #cricketTap .target{position:absolute;inset:35px;border-radius:50%;border:4px solid #fff3c4;background:rgba(255,243,196,.18);box-shadow:0 0 14px rgba(255,236,150,.6)}
 #cricketTap .beat{position:absolute;inset:35px;border-radius:50%;border:4px solid #ffb43a;opacity:.95}
@@ -61,7 +62,11 @@ class CricketRound {
     this.season = g.shownSeason || g.time?.season || 'summer';
     this.temp = tempFor(seed, this.season);
     const grid = g.world.grid;
-    this.crickets = new Crickets({ rand: this.rand, centre: ctx.place, temp: this.temp, first: !!ctx.first, ok: (x, z) => !placeProblems(x, z, grid).length });
+    const L = this.L = cricketLevel(ctx.level, !!ctx.first);       // the level's plan (CRICKET_LEVELS)
+    this.crickets = new Crickets({ rand: this.rand, centre: ctx.place, temp: this.temp, first: !!ctx.first, ok: (x, z) => !placeProblems(x, z, grid).length,
+      count: L.count, window: L.window, beats: L.beats, soft: L.soft, other: L.other });
+    this.o = { rel: 0, dist: 0, at: -9, flash: 0, x: 0, y: 0, key: '', off: true };   // the other singer's pulse on the screen edge
+    this.loud = 1;
     this.phase = 'hunt';
     this.t = 0;
     this.left = ctx.roundTime;
@@ -100,14 +105,14 @@ class CricketRound {
     // the edge pulse that shows where the song comes from
     const rd = this.rd = document.createElement('div');
     rd.id = 'cricketRadar';
-    rd.innerHTML = '<div class="ring hidden"></div><div class="dot hidden"></div>';
+    rd.innerHTML = '<div class="ring2 hidden"></div><div class="ring hidden"></div><div class="dot hidden"></div>';
     document.body.appendChild(rd);
-    this.dot = rd.querySelector('.dot'); this.rring = rd.querySelector('.ring');
+    this.dot = rd.querySelector('.dot'); this.rring = rd.querySelector('.ring'); this.ring2 = rd.querySelector('.ring2');
     // the beat to tap on, and the thermometer
     const tp = this.tapEl = document.createElement('div');
     tp.id = 'cricketTap';
     tp.className = 'hidden';
-    tp.innerHTML = '<div class="target"></div><div class="beat"></div><div class="dots"><i></i><i></i><i></i></div>';
+    tp.innerHTML = `<div class="target"></div><div class="beat"></div><div class="dots">${'<i></i>'.repeat(this.L.beats)}</div>`;
     document.body.appendChild(tp);
     this.beatEl = tp.querySelector('.beat'); this.beatDots = [...tp.querySelectorAll('.dots i')];
     const th = this.thEl = document.createElement('div');
@@ -156,7 +161,8 @@ class CricketRound {
       if (e.kind === 'chirp') {
         a?.chirpAt?.(e.vol, e.pitch, e.pan, e.pulses);
         this.flash = 1;
-        this.rel = e.rel; this.dist = e.d; this.heardAt = this.t;
+        this.rel = e.rel; this.dist = e.d; this.heardAt = this.t; this.loud = e.c.loud;
+        if (e.c.i > 0 && e.c.loud < 1 && !this.said.soft && e.d > 6) { this.said.soft = 1; ctx.hint(N_('This one sings more softly. Listen hard!'), 4); }
         if (!this.said.heard && ctx.first) { this.said.heard = 1; ctx.hint(N_('Listen! Turn toward the song and walk. It gets louder as you get close.'), 6); }
       } else if (e.kind === 'hush') {
         this.heardAt = -9;
@@ -166,6 +172,17 @@ class CricketRound {
         this.flash = 1; this.rel = 0; this.dist = e.d; this.heardAt = this.t;
         if (!this.said.close) { this.said.close = 1; ctx.hint(N_('It is right here. Take a tiny step closer, then stand still again.'), 4.5); }
       } else if (e.kind === 'reveal') this.startTickle(e.c);
+      else if (e.kind === 'other') {
+        // the bell cricket: another song from another place, and a dashed blue ring for eyes
+        a?.chirpAt?.(e.vol, e.pitch, e.pan, e.pulses);
+        const o = this.o;
+        o.rel = e.rel; o.dist = e.d; o.at = this.t; o.flash = 1;
+      } else if (e.kind === 'wrong') {
+        a?.bad?.();
+        this.o.at = -9;
+        ctx.fx?.burst?.(_v.set(e.x, this.world.heightAt(e.x, e.z) + 0.3, e.z), { n: 8, color: [0.7, 0.85, 1], speed: 1.2, size: 0.09, gravity: 0.6 });
+        ctx.hint(N_('That was the bell cricket: a long, high trill. Ours sings in short chirps!'), 5);
+      }
     }
     ev.length = 0;
     const c = this.active;
@@ -177,7 +194,7 @@ class CricketRound {
   startTickle(c) {
     const ctx = this.ctx, p = this.player, g = this.g;
     this.phase = 'tickle';
-    this.tickle = new Tickle(c.beat, this.crickets.windowFor(c));
+    this.tickle = new Tickle(c.beat, this.crickets.windowFor(c), this.L.beats);
     this.tickle.start();
     this.cue = 0;
     ctx.lock(true);
@@ -196,7 +213,7 @@ class CricketRound {
     this.tapEl.classList.remove('hidden');
     this.beatDots.forEach(d => d.classList.remove('on'));
     this.setLab(tx('Tap with the beat'));
-    ctx.hint(ctx.first ? (this.touch ? N_('Three taps on its beat: tap {act} when the orange ring reaches the circle. Gently!') : N_('Three taps on its beat: press {act} or Space when the orange ring reaches the circle. Gently!')) : N_('Tap with its beat, three times.'), 5);
+    ctx.hint(ctx.first ? (this.touch ? N_('Three taps on its beat: tap {act} when the orange ring reaches the circle. Gently!') : N_('Three taps on its beat: press {act} or Space when the orange ring reaches the circle. Gently!')) : this.L.beats > 3 ? N_('Tap with its beat, four times. Softly!') : N_('Tap with its beat, three times.'), 5);
     this.audio?.chime?.(1);
   }
 
@@ -204,7 +221,7 @@ class CricketRound {
     const k = this.tickle, c = this.active, inp = this.g.input, a = this.audio;
     // the song, as a count-in and then the beat itself: two beats before the first tap, then one on each
     const b = k.beat;
-    while (this.cue < 5 && k.t >= CRICKET.lead + (this.cue - 2) * b) {
+    while (this.cue < k.beats + 2 && k.t >= CRICKET.lead + (this.cue - 2) * b) {
       a?.chirpAt?.(1, c.pitch, 0, c.pulses);
       this.pics[c.i].pose('chirp', true);
       this.flash = 1;
@@ -285,12 +302,13 @@ class CricketRound {
     this.thermo = { t: 0, n: 0, times: thermoTimes(this.crickets.n14), c: this.crickets.list[this.crickets.list.length - 1] };
     this.thEl.classList.remove('hidden');
     this.th.h.textContent = tx('Chirp thermometer');
-    this.th.n.textContent = '0';
-    this.th.cap.textContent = tx('chirps in 14 seconds');
+    const hide = this.hideCount = this.L.ask === 'count';      // Difficult: the screen does not count for her
+    this.th.n.textContent = hide ? '?' : '0';
+    this.th.cap.textContent = hide ? tx('Count them yourself!') : tx('chirps in 14 seconds');
     this.th.opts.textContent = '';
     this.th.skip.hidden = true;
     this.setLab(tx('Count the chirps'));
-    ctx.hint(N_('Count the chirps for 14 seconds. They tell how warm the night is!'), 6);
+    ctx.hint(hide ? N_('Count the chirps yourself for 14 seconds. No number on the screen this time!') : N_('Count the chirps for 14 seconds. They tell how warm the night is!'), 6);
   }
 
   doThermo(dt) {
@@ -300,7 +318,7 @@ class CricketRound {
       T.n++;
       a?.chirpAt?.(0.9, T.c.pitch, 0, T.c.pulses);
       this.flash = 1;
-      this.th.n.textContent = T.n;
+      if (!this.hideCount) this.th.n.textContent = T.n;
       this.th.n.classList.remove('pulse'); void this.th.n.offsetWidth; this.th.n.classList.add('pulse');
     }
     const pct = Math.round(Math.min(1, T.t / CRICKET.thermoSeconds) * 100);
@@ -311,12 +329,13 @@ class CricketRound {
   startGuess() {
     const ctx = this.ctx, n = this.crickets.n14;
     this.phase = 'guess';
-    this.guess = { opts: guessOptions(this.temp, this.rand), sel: 1, t: 0, done: false };
-    this.th.h.textContent = tx('How warm is the night?');
+    const count = this.L.ask === 'count';
+    this.guess = { opts: count ? countOptions(n, this.rand, this.L.step) : guessOptions(this.temp, this.rand, this.L.step), right: count ? n : this.temp, sel: 1, t: 0, done: false };
+    this.th.h.textContent = count ? tx('How many chirps was that?') : tx('How warm is the night?');
     this.th.opts.textContent = '';
     this.guess.btns = this.guess.opts.map((v, i) => {
       const b = document.createElement('button');
-      b.textContent = `${v} °C`;
+      b.textContent = count ? `${v}` : `${v} °C`;
       b.onpointerdown = e => { e.preventDefault(); this.answer(i); };
       this.th.opts.appendChild(b);
       return b;
@@ -325,7 +344,8 @@ class CricketRound {
     this.th.skip.onpointerdown = e => { e.preventDefault(); this.answer(-1); };
     this.markSel();
     this.setLab(tx('Make a guess'));
-    ctx.hint(this.touch ? tx('{n} chirps in 14 seconds. Add 40 for °F. Tap how warm you think it is!', { n }) : tx('{n} chirps in 14 seconds. Add 40 for °F. Pick how warm you think it is: 1, 2 or 3.', { n }), 9);
+    if (count) ctx.hint(this.touch ? N_('How many chirps did you count? Tap your answer!') : N_('How many chirps did you count? Pick 1, 2 or 3.'), 9);
+    else ctx.hint(this.touch ? tx('{n} chirps in 14 seconds. Add 40 for °F. Tap how warm you think it is!', { n }) : tx('{n} chirps in 14 seconds. Add 40 for °F. Pick how warm you think it is: 1, 2 or 3.', { n }), 9);
     const key = e => {
       if (this.phase !== 'guess' || this.guess.done) return;
       const k = e.key;
@@ -342,9 +362,10 @@ class CricketRound {
     if (G.done) return;
     G.done = true; G.t = 0;
     G.pick = i;
-    const right = i >= 0 && G.opts[i] === this.temp;
+    const right = i >= 0 && G.opts[i] === G.right;
     this.guessed = right;
-    G.btns.forEach((b, k) => { if (G.opts[k] === this.temp) b.classList.add('right'); else if (k === i) b.classList.add('wrong'); });
+    G.btns.forEach((b, k) => { if (G.opts[k] === G.right) b.classList.add('right'); else if (k === i) b.classList.add('wrong'); });
+    if (this.hideCount) { this.th.n.textContent = this.crickets.n14; this.th.cap.textContent = tx('chirps in 14 seconds'); }
     this.th.skip.hidden = true;
     this.audio?.[right ? 'star' : i < 0 ? 'click' : 'blip']?.();
     this.ctx.hint(right ? N_('Spot on! A cricket is a very good thermometer.') : i < 0 ? N_('Never mind. Now every cricket goes home.') : N_('Close! Now every cricket goes home.'), 3.5);
@@ -394,6 +415,7 @@ class CricketRound {
 
   // ---------------------------------------------------------------- the picture
   draw(dt) {
+    if (this.L.other) this.drawOther(dt);
     // the edge pulse: toward the sound, bigger and brighter the nearer it is
     const dot = this.dot, ring = this.rring;
     const show = this.phase === 'hunt' && this.t - (this.heardAt ?? -9) < 1.4 && this.dist !== undefined;
@@ -403,7 +425,7 @@ class CricketRound {
     const w = innerWidth, h = innerHeight, rel = this.rel, prox = Math.max(0, 1 - this.dist / CRICKET.hear);
     const tx_ = w * 0.5 + Math.sin(rel) * w * 0.44, ty = h * 0.52 - Math.cos(rel) * h * 0.34;
     this.rx += (tx_ - this.rx) * Math.min(1, dt * 14); this.ry += (ty - this.ry) * Math.min(1, dt * 14);
-    const sc = (0.55 + prox * 1.5) * (1 + this.flash * 0.45), op = Math.min(1, 0.18 + this.flash * 0.85);
+    const sc = (0.55 + prox * 1.5) * (1 + this.flash * 0.45), op = Math.min(1, 0.18 + this.flash * 0.85) * (0.5 + 0.5 * this.loud);
     const key = `${Math.round(this.rx)},${Math.round(this.ry)},${sc.toFixed(2)},${op.toFixed(2)}`;
     if (key !== this.shown.dotKey) {
       this.shown.dotKey = key;
@@ -414,6 +436,24 @@ class CricketRound {
     }
   }
 
+  /** The other singer's pulse (Difficult): a dashed blue ring toward its long trill. */
+  drawOther(dt) {
+    const o = this.o, el = this.ring2;
+    o.flash = Math.max(0, o.flash - dt * 1.1);
+    const show = this.phase === 'hunt' && this.t - o.at < 1.6;
+    if (!show) { if (!o.off) { o.off = true; el.classList.add('hidden'); } return; }
+    if (o.off) { o.off = false; el.classList.remove('hidden'); }
+    const w = innerWidth, h = innerHeight, prox = Math.max(0, 1 - o.dist / CRICKET.hear);
+    const tx_ = w * 0.5 + Math.sin(o.rel) * w * 0.44, ty = h * 0.52 - Math.cos(o.rel) * h * 0.34;
+    o.x += (tx_ - o.x) * Math.min(1, dt * 14); o.y += (ty - o.y) * Math.min(1, dt * 14);
+    const key = `${Math.round(o.x)},${Math.round(o.y)},${(0.6 + prox * 1.3).toFixed(2)},${(o.flash * 0.9).toFixed(2)}`;
+    if (key !== o.key) {
+      o.key = key;
+      el.style.transform = `translate(${o.x.toFixed(0)}px,${o.y.toFixed(0)}px) scale(${(0.6 + prox * 1.3).toFixed(2)})`;
+      el.style.opacity = (o.flash * 0.9).toFixed(2);
+    }
+  }
+
   hud() {
     const s = this.shown, n = this.crickets.caught;
     if (n !== s.dots) { s.dots = n; this.dotEls.forEach((e, i) => { e.style.opacity = i < n ? '1' : '0.35'; if (i === n - 1) { e.classList.remove('pop'); void e.offsetWidth; e.classList.add('pop'); } }); }
@@ -421,15 +461,16 @@ class CricketRound {
     if (prox !== s.prox2) { s.prox2 = prox; this.q.fill.style.width = prox < 0 ? '0%' : `${prox}%`; this.q.fill.className = prox > 70 ? 'hot' : prox > 40 ? 'mid' : ''; }
   }
 
-  score() { return cricketScore(this.crickets.list, this.guessed); }
+  score() { return cricketScore(this.crickets.list, this.guessed, this.crickets.wrong); }
 
   view() {
     const c = this.active, H = this.crickets.heard;
     return {
+      level: this.ctx.level, wrong: this.crickets.wrong, other: this.crickets.other ? { x: this.crickets.other.x, z: this.crickets.other.z } : null,
       phase: this.phase, temp: this.temp, n14: this.crickets.n14, seed: this.seed, caught: this.crickets.caught, score: this.score(), left: this.left,
       active: c ? { i: c.i, x: c.x, z: c.z, st: c.st, d: H.d, rel: H.rel, pan: H.pan, vol: H.vol, fails: c.fails, beat: c.beat } : null,
       tickle: this.tickle ? { t: this.tickle.t, n: this.tickle.n, toBeat: this.tickle.toBeat, beat: this.tickle.beat, failed: this.tickle.failed } : null,
-      guess: this.guess ? { opts: this.guess.opts, done: this.guess.done } : null,
+      guess: this.guess ? { opts: this.guess.opts, done: this.guess.done, right: this.guess.right } : null,
       thermo: this.thermo ? { n: this.thermo.n, t: this.thermo.t } : null,
     };
   }
@@ -462,7 +503,8 @@ export default {
       r.build();
       ctx.hint(ctx.first
         ? N_('Close your eyes and listen: a cricket is singing. Walk toward the song. When it goes quiet, stand still.')
-        : N_('Follow the cricket\'s song. Quiet means stand still.'), 7);
+        : r.L.other ? N_('Two songs tonight! Follow the short chirps, not the long high trill.')
+          : N_('Follow the cricket\'s song. Quiet means stand still.'), 7);
       ctx.hud(0, r.left);
       const res = await ctx.loop(dt => {
         r.update(dt);
@@ -483,7 +525,7 @@ export default {
       const out = {
         score: r.score(), quit: !!res?.quit, caught: n,
         extra: n ? plural(n, N_('1 cricket'), N_('{n} crickets')) : tx('The song got away'),
-        detail: { caught: n, temp: r.temp, n14: C.n14, guessed: r.guessed, friends, seed: r.seed },
+        detail: { caught: n, temp: r.temp, n14: C.n14, guessed: r.guessed, friends, seed: r.seed, level: ctx.level, wrong: C.wrong },
       };
       if (r.thermo) {
         const n14 = C.n14, f = fahrenheit(n14), c = Math.round(celsius(n14));

@@ -3,9 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { TRICK, starsFor } from '../src/content/tricks.js';
+import { LEVELS, levelSpec } from '../src/content/levels.js';
 import {
   FIREFLY as F, KINDS, HEIKE, GENJI, HIME, Jar, blink, rng, noiseOf, scareRadius, inNet, catchable, litFor, unisonBonus,
-  jarGlow, jarColour, nextKind, groupSize, himeWait,
+  jarGlow, jarColour, nextKind, groupSize, himeWait, FF_LEVELS, levelPlan, stageAt, breezeAt, Wish, WISH,
 } from '../src/game/tricks/rules-firefly.js';
 
 const near = (a, b, e = 1e-6) => Math.abs(a - b) < e;
@@ -62,6 +63,7 @@ test('walking softly: tiptoe and standing are silent, a walk clears the ones bes
   assert.ok(near(scareRadius(1, HIME), run * KINDS[HIME].shy));
   // leniency
   assert.ok(near(scareRadius(1, HEIKE, { easy: true }), run * 0.6));
+  assert.equal(scareRadius(noiseOf(1.86), HEIKE, { easy: true }), 0, 'the Easy level: a walk bothers nobody');
   assert.equal(scareRadius(noiseOf(1.86), HEIKE, { first: true }), 0, 'the guided try: a walk bothers nobody');
   assert.equal(scareRadius(noiseOf(1.86), HIME, { first: true }), 0);
   assert.ok(scareRadius(1, HEIKE, { first: true }) > 2, '...but running still does');
@@ -148,24 +150,93 @@ test('who flies in: Heike always about, Genji now and then, one rare Hime at a t
 test('the firefly entry: points, one star is easy, three take a nearly full jar caught well', () => {
   const t = TRICK.firefly;
   assert.equal(t.unit, 'points');
-  assert.ok(t.length >= 60 && t.length <= 90 && t.firstLength >= 40 && t.firstLength < t.length);
-  const [one, two, three] = t.stars;
-  // one star: six or seven of the common kind, one at a time, well short of the lantern
-  assert.ok(one <= 8 && one < F.lantern);
-  // two stars: about a lantern's worth with some Genji or sweeps of two, never by ten single Heike alone
-  const lanternPlain = F.lantern * KINDS[HEIKE].points;
-  assert.ok(two > lanternPlain && two <= lanternPlain * 2);
-  // three stars: out of reach of a full jar of single Heike, in reach of a full jar caught well
-  const plainJar = F.jar * KINDS[HEIKE].points;
-  const good = new Jar();
-  for (let i = 0; i < 4; i++) good.sweep(0, 2);            // four pairs of Genji
-  for (let i = 0; i < 3; i++) good.sweep(2);               // three pairs of Heike
-  good.sweep(0, 0, 1);                                     // one Hime
-  while (!good.full) good.sweep(1);
-  assert.ok(three > plainJar, `${three} > ${plainJar}`);
-  assert.ok(good.score >= three + 4, `a good jar scores ${good.score}`);
-  assert.equal(starsFor(good.score, t.stars), 3);
-  assert.equal(starsFor(plainJar, t.stars), 2);
+  assert.ok(t.firstLength >= 40 && t.firstLength < levelSpec(t, 'easy').length);
+  assert.deepEqual(LEVELS.map(l => levelSpec(t, l).length), [70, 95, 120], 'a little longer with every level');
+  for (const l of ['easy', 'normal']) {
+    const [one, two, three] = levelSpec(t, l).stars, jar = levelPlan(l).jar;
+    // one star: a handful of the common kind, one at a time
+    assert.ok(one <= 12 && (l !== 'easy' || one < F.lantern), `${l}: one star at ${one}`);
+    // two stars: more than a lantern's worth of single Heike
+    const lanternPlain = F.lantern * KINDS[HEIKE].points;
+    assert.ok(two > lanternPlain && two <= lanternPlain * 2.6, `${l}: two stars at ${two}`);
+    // three stars: out of reach of a full jar of single Heike on Normal and Difficult, in reach of a full jar caught well
+    const plainJar = jar * KINDS[HEIKE].points;
+    const good = new Jar(jar);
+    for (let i = 0; i < 4; i++) good.sweep(0, 2);            // four pairs of Genji
+    for (let i = 0; i < 3; i++) good.sweep(2);               // three pairs of Heike
+    good.sweep(0, 0, 1);                                     // one Hime
+    while (!good.full) good.sweep(1);
+    if (l !== 'easy') assert.ok(three > plainJar, `${l}: ${three} > ${plainJar}`);
+    assert.ok(good.score >= three, `${l}: a good jar scores ${good.score}`);
+    assert.equal(starsFor(good.score, levelSpec(t, l).stars), 3);
+  }
+  assert.ok(new Jar(30).size === 30 && !Object.assign(new Jar(30), { caught: 29 }).full && new Jar().size === F.jar);
+  // Difficult: only the kind on the card stays, and a set is worth 3 more, so a catch is worth about twice as much.
+  // A jar filled set by set (Heike one at a time, Genji in pairs) is three stars; two thirds of one is two; one set and a bit is one
+  const [one, two, three] = levelSpec(t, 'hard').stars, jar = new Jar(levelPlan('hard').jar), w = new Wish(rng(3));
+  const marks = [];
+  while (!jar.full) {
+    const got = w.kind === HEIKE ? [1, 0, 0] : [0, Math.min(2, w.need - w.have), 0];
+    jar.sweep(...w.take(got));
+    if (w.done) jar.extra(WISH.bonus);
+    marks.push(jar.score);
+  }
+  assert.ok(jar.score >= three + 6 && jar.score <= three * 1.5, `a jar of sets scores ${jar.score}, three stars at ${three}`);
+  assert.ok(three > jar.size, 'never by thirty single fireflies');
+  assert.ok(marks[Math.floor(marks.length * 0.66)] >= two && marks[Math.floor(marks.length * 0.4)] < two, `two stars (${two}) are about two thirds of that jar`);
+  assert.ok(marks[5] >= one * 0.6 && marks[2] < one, `one star (${one}) is two sets`);
+});
+
+test('the levels: a gentle Easy, the Genji hour on Normal, a breeze and a card of kinds to catch on Difficult', () => {
+  assert.deepEqual([levelPlan('easy').stages.length, levelPlan('normal').stages.length, levelPlan('hard').stages.length], [1, 2, 3]);
+  assert.equal(levelPlan('hard', true), FF_LEVELS.first, 'the guided try has its own plan');
+  assert.ok(!levelPlan('easy').wish && !levelPlan('normal').wish && levelPlan('hard').wish);
+  for (const p of Object.values(FF_LEVELS)) {
+    assert.equal(p.stages[0].at, 0);
+    for (let i = 1; i < p.stages.length; i++) assert.ok(p.stages[i].at > p.stages[i - 1].at && p.stages[i].at < 1);
+    assert.ok(p.jar >= F.jar && p.jar + 16 <= 56, 'the swarm has room for a full jar and the ones still flying');
+  }
+  // the stages follow the round's clock
+  const N = levelPlan('normal'), H = levelPlan('hard');
+  assert.deepEqual([0, 40, 44, 94].map(t => stageAt(N, t, 95)), [0, 0, 1, 1]);
+  assert.deepEqual([0, 39, 41, 80, 83, 119].map(t => stageAt(H, t, 120)), [0, 0, 1, 1, 2, 2]);
+  assert.ok(N.stages[1].genji > N.stages[0].genji && N.stages[1].most > N.stages[0].most, 'the Genji hour');
+  assert.ok(H.stages[1].breeze > 1.5 && H.stages[2].breeze < H.stages[1].breeze && N.stages.every(s => !s.breeze));
+  // more Genji fly in during their hour
+  const rand = rng(11);
+  let plain = 0, hour = 0;
+  for (let i = 0; i < 2000; i++) { if (nextKind(rand, [9, 2, 1], 30, 5) === GENJI) plain++; if (nextKind(rand, [9, 2, 1], 30, 5, N.stages[1]) === GENJI) hour++; }
+  assert.ok(hour > plain * 1.6, `${hour} / ${plain}`);
+  for (let i = 0; i < 100; i++) assert.equal(nextKind(rand, [9, N.stages[1].most, 1], 30, 5, N.stages[1]), HEIKE);
+  // the breeze: none when calm, a drift to both sides within its strength, never a jump
+  assert.equal(breezeAt(12, 0), 0);
+  let lo = 0, hi = 0, last = breezeAt(0, 2.2);
+  for (let t = 0; t < 60; t += 1 / 30) { const b = breezeAt(t, 2.2); lo = Math.min(lo, b); hi = Math.max(hi, b); assert.ok(Math.abs(b - last) < 0.08); last = b; }
+  assert.ok(hi > 1.5 && lo < -1.5 && hi <= 2.2 && lo >= -2.2);
+});
+
+test('the card of kinds (Difficult): only the kind asked for stays in the jar, a set is worth a bonus, Hime is always welcome', () => {
+  const w = new Wish(rng(4));
+  assert.equal(w.kind, HEIKE, 'the common kind first');
+  assert.equal(w.need, WISH.heike);
+  // a mixed sweep: the Genji are let go, the two Heike and the Hime stay
+  assert.deepEqual([...w.take([2, 3, 1])], [2, 0, 1]);
+  assert.equal(w.letGo, 3);
+  assert.ok(!w.done && w.have === 2);
+  assert.deepEqual([...w.take([0, 2, 0])], [0, 0, 0], 'only the wrong kind: nothing for the jar');
+  assert.deepEqual([...w.take([1, 0, 0])], [1, 0, 0]);
+  assert.ok(w.done && w.filled === 1);
+  assert.equal(w.kind, GENJI, 'then the big ones');
+  assert.ok(w.need >= WISH.genji[0] && w.need <= WISH.genji[1] && w.have === 0);
+  w.take([0, 3, 0]);
+  assert.ok(w.done && w.kind === HEIKE && w.filled === 2);
+  assert.equal(w.take([0, 0, 0]), w.keep, 'no array is made per sweep');
+  // the jar takes the bonus as points
+  const jar = new Jar();
+  jar.sweep(3);
+  jar.extra(WISH.bonus);
+  assert.equal(jar.score, 3 + 2 + WISH.bonus);
+  assert.equal(jar.caught, 3);
 });
 
 test('the round draws what the rules say, and puts everything back', () => {
@@ -180,6 +251,8 @@ test('the round draws what the rules say, and puts everything back', () => {
   for (const s of ['sw.dispose()', 'arc.geometry.dispose()', 'arc.material.dispose()', 'box?.dispose()', 'wild.visible = wildOn', 'g.lights.remove(jarLight)', 'tamo.calm = 1']) assert.ok(cleanup.includes(s), s);
   assert.match(src, /finally \{\n\s+cleanup\(\);/);
   // the guided try, Easy mode and the lantern are still there
-  assert.match(src, /first: !!ctx\.first/); assert.match(src, /easy: !!g\.easy/);
+  assert.match(src, /first: !!ctx\.first/); assert.match(src, /easy: !!ctx\.easy/);
+  assert.doesNotMatch(src, /\bg\.easy\b|\bgame\.easy\b/, 'the level picker alone decides how hard it is');
+  assert.match(src, /levelPlan\(ctx\.level, !!ctx\.first\)/);
   assert.match(src, /caught >= LANTERN/); assert.match(src, /this\.release\(ctx/);
 });

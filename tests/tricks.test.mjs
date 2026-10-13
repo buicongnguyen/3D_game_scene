@@ -77,17 +77,17 @@ test('a trick opens in its season; a running clock must reach its hours; rain hi
 test('stars and records: thresholds, best kept, plays counted', () => {
   const t = TRICK.firefly;
   assert.equal(starsFor(0, t.stars), 0);
-  // (the firefly jar counts points: 8 for one star, 20 for two, 36 for three)
-  assert.deepEqual(t.stars, [8, 20, 36]);
-  assert.equal(starsFor(8, t.stars), 1);
+  // (the firefly jar counts points; on the Normal level: 10 for one star, 22 for two, 40 for three)
+  assert.deepEqual(t.stars, [10, 22, 40]);
+  assert.equal(starsFor(10, t.stars), 1);
   assert.equal(starsFor(35, t.stars), 2);
   assert.equal(starsFor(99, t.stars), 3);
-  let r = recordRound(undefined, t, 21);
+  let r = recordRound(undefined, t, 23);
   const core = ({ levels, level, ...x }) => x;       // (the per-level fields: tests/levels.test.mjs)
-  assert.deepEqual(core(r.rec), { learned: true, best: 21, stars: 2, plays: 1 });
+  assert.deepEqual(core(r.rec), { learned: true, best: 23, stars: 2, plays: 1 });
   assert.ok(r.newBest);
   r = recordRound({ ...r.rec, intro: true }, t, 4);
-  assert.deepEqual(core(r.rec), { learned: true, best: 21, stars: 2, plays: 2, intro: true });
+  assert.deepEqual(core(r.rec), { learned: true, best: 23, stars: 2, plays: 2, intro: true });
   assert.equal(r.stars, 0);
   assert.ok(!r.newBest);
 });

@@ -4,7 +4,12 @@
 // order and Mika copies it (left/right + E, the number keys, or a tap on the frog).
 //
 // The rules (the chorus's swells, the sneak, the call-and-answer and the score) are pure and Node-tested; the round
-// below only draws them. Cheap: up to 9 frog clones made once per round (no shadows), two rings, no lights.
+// below only draws them. Cheap: up to 9 frog clones made once per round (no shadows), a few rings, no lights.
+//
+// Three levels (FROG_LEVELS): Easy is one gentle sneak and a short song with three frogs. Normal is two sneaks (a second
+// singer on a bund further off) and the song with four frogs, up to five calls. Difficult keeps the two sneaks, with a
+// sharper chorus (a short warning) and frogs that must be given a wide berth (walk right past one and it plops in), and
+// the song has five frogs, up to six calls, a quicker tempo and no ring on the caller: watch the throats and listen.
 import * as THREE from 'three';
 import { PADDIES } from '../../world/layout.js';
 import { VEG_BEDS } from '../../world/fields.js';
@@ -18,9 +23,10 @@ import { disposeRigs } from './util.js';
  * Moving is only wrong while it is `quiet`. gentle (the guided first try): longer songs and a longer warning.
  */
 export class Chorus {
-  constructor({ rand = Math.random, gentle = false } = {}) {
+  constructor({ rand = Math.random, gentle = false, sharp = false } = {}) {
     this.rand = rand;
     this.gentle = gentle;
+    this.sharp = sharp && !gentle;        // Difficult: a short warning, and silences of very different lengths
     this.phase = 'loud';
     this.t = 0;
     this.dur = this.len('loud');
@@ -30,6 +36,7 @@ export class Chorus {
 
   len(phase) {
     const r = this.rand(), g = this.gentle;
+    if (this.sharp) return phase === 'loud' ? 2.6 + r * 3.4 : phase === 'hush' ? 0.5 : 1.4 + r * 2.4;
     if (phase === 'loud') return (g ? 5 : 3.2) + r * (g ? 2 : 3);
     if (phase === 'hush') return g ? 1.4 : 0.8;
     return (g ? 1.6 : 1.8) + r * (g ? 0.8 : 1.4);       // quiet
@@ -130,9 +137,50 @@ export class Simon {
   }
 }
 
-/** The whole round's score (stars in content/tricks.js: 30 / 60 / 90). */
-export function frogsScore({ startles = 0, reached = false, simon = 0 }) {
-  return sneakScore(startles, reached) + simon;
+/**
+ * The whole round's score (stars per level in content/tricks.js). sneaks: [{ startles, reached }], one for each singer
+ * of the round (or, for a round of one sneak, plain `startles` and `reached`).
+ */
+export function frogsScore({ startles = 0, reached = false, simon = 0, sneaks = null }) {
+  if (!sneaks) return sneakScore(startles, reached) + simon;
+  let s = simon;
+  for (const k of sneaks) s += sneakScore(k.startles || 0, !!k.reached);
+  return s;
+}
+
+/**
+ * The levels. sneaks: singers to reach, one after the other; far: how far off the first one sits [from, to] (m);
+ * berth: frogs other than the singer plop in when Mika walks this close to them (0: they do not mind);
+ * row / start / max / lives: the call-and-answer (frogs in the row, the first and the longest call, mistakes allowed);
+ * gap: seconds between two calls; rings: the caller is shown with a ring (false: only its throat and its voice).
+ */
+export const FROG_LEVELS = {
+  first: { sneaks: 1, gentle: true, sharp: false, far: [9, 16], berth: 0, row: 3, start: 2, max: 3, lives: 2, gap: 0.95, rings: true },
+  easy: { sneaks: 1, gentle: true, sharp: false, far: [8, 13], berth: 0, row: 3, start: 2, max: 4, lives: 3, gap: 0.9, rings: true },
+  normal: { sneaks: 2, gentle: false, sharp: false, far: [9, 16], berth: 0, row: 4, start: 3, max: 5, lives: 2, gap: 0.75, rings: true },
+  hard: { sneaks: 2, gentle: false, sharp: true, far: [9, 16], berth: 2.1, row: 5, start: 3, max: 6, lives: 2, gap: 0.62, rings: false },
+};
+export const frogLevel = (level, first = false) => (first ? FROG_LEVELS.first : FROG_LEVELS[level] || FROG_LEVELS.normal);
+
+/** The most a level can score: clean sneaks and every call copied. */
+export function frogsBest(L) {
+  let simon = 0;
+  for (let n = L.start; n <= L.max; n++) simon += 5 * n;
+  return L.sneaks * sneakScore(0) + simon;
+}
+
+/**
+ * Giving the other frogs a wide berth (Difficult, pure): the sitting frog nearest to Mika at (px, pz), other than
+ * `skip`, when it is closer than `r`; else null. frogs: [{ x, z, st }].
+ */
+export function tooClose(frogs, px, pz, r, skip = null) {
+  let best = null, bd = r;
+  for (const f of frogs) {
+    if (f === skip || f.st !== 'sit') continue;
+    const d = Math.hypot(f.x - px, f.z - pz);
+    if (d < bd) { bd = d; best = f; }
+  }
+  return best;
 }
 
 /** Spots along the paddy bunds within `r` m of (x, z) (pure): { x, y, z, wx, wy, wz } with a water point beside. */
@@ -171,7 +219,11 @@ class FrogRound {
     this.scene = this.g.scene;
     this.added = [];
     this.frogs = [];
-    this.st = { startles: 0 };
+    this.L = frogLevel(ctx.level, !!ctx.first);          // the level's plan (FROG_LEVELS)
+    this.sneaks = [];                                   // one record for each singer: { startles, reached }
+    for (let i = 0; i < this.L.sneaks; i++) this.sneaks.push({ startles: 0, reached: false });
+    this.stage = 0;
+    this.st = this.sneaks[0];
     this.phase = 'sneak';
     this.simonPts = 0;
     this.reached = false;
@@ -216,10 +268,20 @@ class FrogRound {
     for (let k = spots.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [spots[k], spots[j]] = [spots[j], spots[k]]; }
     // the singer: a spot 9-16 m off; the others anywhere round it
     const dist = s => Math.hypot(s.x - p.x, s.z - p.z);
-    const target = spots.find(s => dist(s) > 9 && dist(s) < 16) || spots.sort((a, b) => dist(b) - dist(a))[0];
+    const far = this.L.far;
+    const target = spots.find(s => dist(s) > far[0] && dist(s) < far[1]) || spots.sort((a, b) => dist(b) - dist(a))[0];
     if (!target) return false;
     this.spots = spots;
-    const chosen = [target, ...spots.filter(s => s !== target && spots.indexOf(s) % 2 === 0).slice(0, 8)];
+    let chosen = [target, ...spots.filter(s => s !== target && spots.indexOf(s) % 2 === 0).slice(0, 8)];
+    if (this.L.berth) {
+      // frogs that want a wide berth sit well apart, so there is always a way round them to the singer
+      const apart = this.L.berth * 1.8, keep = [target];
+      for (const s of spots) {
+        if (keep.length >= 9) break;
+        if (keep.every(q => Math.hypot(q.x - s.x, q.z - s.z) >= apart)) keep.push(s);
+      }
+      chosen = keep;
+    }
     chosen.forEach((s, i) => {
       const f = this.makeFrog(i, i % 3 === 1);
       f.home = s; f.x = s.x; f.y = s.y; f.z = s.z;
@@ -234,7 +296,8 @@ class FrogRound {
     this.mark = ring('#ffe89a');
     this.selRing = ring('#ffffff');
     this.callRing = ring('#ffd23f');
-    this.chorus = new Chorus({ gentle: !!this.ctx.first });
+    this.warn = ring('#ff8a4a');                       // Difficult: under a frog she is getting too close to
+    this.chorus = new Chorus({ gentle: this.L.gentle, sharp: this.L.sharp });
     g.follow && (g.follow.first = false);
     return true;
   }
@@ -271,7 +334,10 @@ class FrogRound {
       }
       if (f.puff > 0) f.puff = Math.max(0, f.puff - dt * 2.5);
       if (f.sac) f.sac.scale.setScalar(1 + Math.sin(Math.min(1, f.puff) * Math.PI) * 1.4);
-      if (f.st !== 'hand') { f.root.position.set(f.x, f.y, f.z); f.root.rotation.set(0, f.face, 0); }
+      // in the call-and-answer the caller swells as it croaks; with no ring to show it (Difficult) it swells more and bobs up
+      const sw = f.inRow ? Math.sin(Math.min(1, f.puff) * Math.PI) : 0, plain = !this.L.rings;
+      if (f.inRow) f.root.scale.setScalar(1.5 * (1 + sw * (plain ? 0.5 : 0.28)));
+      if (f.st !== 'hand') { f.root.position.set(f.x, f.y + (plain ? sw * 0.12 : 0), f.z); f.root.rotation.set(0, f.face, 0); }
       f.anim?.update(dt);
     }
   }
@@ -296,14 +362,32 @@ class FrogRound {
     const moving = p.speed > 0.35;
     this.ctx.groundPose?.({ waiting: ch.quiet && !moving });
     _sneak.moving = moving; _sneak.quiet = ch.quiet; _sneak.dist = dist; _sneak.dt = dt;
-    const ev = this.singer.st === 'sit' ? sneakStep(this.st, _sneak) : null;
+    let ev = this.singer.st === 'sit' ? sneakStep(this.st, _sneak) : null;
+    // Difficult: the other frogs want a wide berth. A ring warns under the one she is getting close to; closer, it plops in
+    if (this.L.berth) {
+      const w = tooClose(this.frogs, p.pos.x, p.pos.z, this.L.berth * 2, this.singer);
+      if (w) {
+        const d = Math.hypot(w.x - p.pos.x, w.z - p.pos.z);
+        this.warn.position.set(w.x, w.y + 0.02, w.z);
+        this.warn.material.opacity = Math.min(0.95, 0.25 + (1 - (d - this.L.berth) / this.L.berth) * 0.7);
+        this.warn.scale.setScalar(1.5 + Math.sin(performance.now() / 120) * 0.15);
+        if (d < this.L.berth && moving && !ev && this.st.cool <= 0 && this.singer.st === 'sit') {
+          this.st.startles = (this.st.startles || 0) + 1;
+          this.st.cool = COOLDOWN;
+          this.hop(w, w.home.wx, w.home.wy, w.home.wz, 0.45, 0.4, 'swim');
+          this.ctx.audio?.bad?.();
+          this.ctx.hint?.(tx('Plop! Too close to that frog. Give the others a wide berth.'));
+        }
+      } else this.warn.material.opacity = 0;
+    }
     if (ev === 'startle' || ev === 'flee') {
       // the nearest frogs that are still out jump in
       const near = this.frogs.filter(f => f.st === 'sit' && f !== this.singer).sort((a, b) => Math.hypot(a.x - p.pos.x, a.z - p.pos.z) - Math.hypot(b.x - p.pos.x, b.z - p.pos.z)).slice(0, 2);
       for (const f of near) this.hop(f, f.home.wx, f.home.wy, f.home.wz, 0.45, 0.4, 'swim');
       this.ctx.audio?.bad?.();
       if (ev === 'flee') {
-        const s = this.spots.filter(q => !this.frogs.some(f => f.home === q) && Math.hypot(q.x - p.pos.x, q.z - p.pos.z) > 7)
+        const apart = this.L.berth * 1.8;
+        const s = this.spots.filter(q => !this.frogs.some(f => f.home === q || (apart && f !== this.singer && Math.hypot(f.home.x - q.x, f.home.z - q.z) < apart)) && Math.hypot(q.x - p.pos.x, q.z - p.pos.z) > 7)
           .sort(() => Math.random() - 0.5)[0];
         if (s) { this.singer.home = s; this.hop(this.singer, s.x, s.y, s.z, 1.2, 1.2); }
         this.ctx.hint?.(tx('Oh! The singer hopped away. Find it by its voice.'));
@@ -320,6 +404,8 @@ class FrogRound {
   onReach() {
     const p = this.player, s = this.singer;
     this.reached = true;
+    this.st.reached = true;
+    this.warn.material.opacity = 0;
     this.phase = 'hand';
     this.handT = 0;
     this.mark.material.opacity = 0;
@@ -342,24 +428,49 @@ class FrogRound {
     }
     if (this.handT > 2.4) {
       s.st = 'sit'; s.x = s.root.position.x; s.y = s.root.position.y; s.z = s.root.position.z;
-      this.startSimon();
+      if (this.stage + 1 < this.sneaks.length) this.nextSinger(); else this.startSimon();
     }
   }
 
+  /** The second part of the sneak: the frog on her hand hops home, and another one, on a bund further off, takes up the song. */
+  nextSinger() {
+    const p = this.player.pos, old = this.singer;
+    const dist = f => Math.hypot(f.home.x - p.x, f.home.z - p.z);
+    const others = this.frogs.filter(f => f !== old);
+    const next = others.find(f => f.st === 'sit' && dist(f) > 9 && dist(f) < 18) || others.sort((a, b) => dist(b) - dist(a))[0];
+    if (!next) { this.startSimon(); return; }
+    this.hop(old, old.home.x, old.home.y, old.home.z, 0.6, 0.5);
+    old.pitch = PITCH[old.i % PITCH.length];
+    if (next.st !== 'sit') { next.wet = 0; this.hop(next, next.home.x, next.home.y, next.home.z, 0.4, 0.25); }
+    next.pitch = 0.95;
+    next.croakT = 0.4;
+    this.singer = next;
+    this.stage++;
+    this.st = this.sneaks[this.stage];
+    this.phase = 'sneak';
+    this.ctx.audio?.chime?.(2);
+    this.ctx.hint?.(tx('Part 2: another singer, on a bund further off. Follow its voice!'));
+  }
+
   startSimon() {
-    const p = this.player, g = this.g, first = !!this.ctx.first;
+    const p = this.player, g = this.g, first = !!this.ctx.first, L = this.L;
     this.phase = 'simon';
+    this.warn.material.opacity = 0;
+    this.mark.material.opacity = 0;
     this.ctx.lock?.(true);
-    // four (three on the first try) frogs hop into a row in front of Mika
-    const n = first ? 3 : 4, fx = Math.sin(p.facing), fz = Math.cos(p.facing), rx = Math.cos(p.facing), rz = -Math.sin(p.facing);
+    // three, four or five frogs (the level says) hop into a row in front of Mika
+    const n = Math.min(L.row, this.frogs.length), fx = Math.sin(p.facing), fz = Math.cos(p.facing), rx = Math.cos(p.facing), rz = -Math.sin(p.facing);
     this.row = [];
     const pool = [this.singer, ...this.frogs.filter(f => f !== this.singer)];
+    // (on a phone held upright a row of five sits closer together, so the camera need not back off further than for four)
+    const cam = g.camera, sp = (cam?.aspect || 1.78) < 1 ? Math.min(0.75, 2.25 / Math.max(1, n - 1)) : 0.75;
     for (let k = 0; k < n; k++) {
-      const f = pool[k], off = (k - (n - 1) / 2) * 0.75;
+      const f = pool[k], off = (k - (n - 1) / 2) * sp;
       const x = p.pos.x + fx * 2.1 + rx * off, z = p.pos.z + fz * 2.1 + rz * off;
       const y = Math.max(g.world.heightAt(x, z), paddyWater(x, z) ?? -1e9);
       f.pitch = PITCH[k + (n === 3 ? 1 : 0)];
       f.wet = 0;
+      f.inRow = true;
       this.hop(f, x, y, z, 0.5 + k * 0.08, 0.45, 'sit');
       f.face = Math.atan2(p.pos.x - x, p.pos.z - z);
       f.root.scale.setScalar(1.5);                  // a little larger for the call-and-answer close-up
@@ -370,15 +481,16 @@ class FrogRound {
     const mid = V().set(p.pos.x + fx * 2.1, p.pos.y + 0.2, p.pos.z + fz * 2.1);
     // (on a phone held upright the picture is narrow: the camera backs off along the same line until the whole row
     // fits, or the outer frogs of a four-frog call could be neither seen nor tapped)
-    const cam = g.camera, half = Math.tan((cam?.fov || 55) * Math.PI / 360) * (cam?.aspect || 1.78);
-    const back = Math.max(1, ((n - 1) * 0.75 + 1.1) / (2 * half) / 4.13);          // 4.13 m: the shot's own distance
+    const half = Math.tan((cam?.fov || 55) * Math.PI / 360) * (cam?.aspect || 1.78);
+    const back = Math.max(1, ((n - 1) * sp + 1.1) / (2 * half) / 4.13);          // 4.13 m: the shot's own distance
     g.follow?.cutscene?.({ pos: V().set(mid.x + (-fx * 2.7 - rx * 0.9) * back, mid.y + 3.0 * back, mid.z + (-fz * 2.7 - rz * 0.9) * back), look: mid }, 0.9);
-    this.simon = new Simon({ count: n, start: first ? 2 : 3, max: first ? 3 : 5 });
+    this.simon = new Simon({ count: n, start: L.start, max: L.max, lives: L.lives });
     this.sel = Math.floor(n / 2);
     this.show = { i: -1, t: -1.4 };          // a beat for the frogs to settle, then the call
     this.ctx.hint?.(first
       ? tx('Listen to the order they sing in, then copy it: choose with left/right and press E, or tap the frogs.')
-      : tx('Copy the frogs\' song: same order!'));
+      : !L.rings ? tx('No ring this time: watch their throats and listen. Then copy the song!')
+        : tx('Copy the frogs\' song: same order!'));
     this.listen();
   }
 
@@ -418,13 +530,13 @@ class FrogRound {
 
   simonStep(dt) {
     const inp = this.g.input, sh = this.show;
-    // play the call: one frog every 0.75 s (0.95 on the first try)
+    // play the call: one frog every 0.75 s (slower on the first try and on Easy, quicker on Difficult)
     if (sh.i >= 0 || sh.t < 0) {
       sh.t += dt;
-      const gap = this.ctx.first ? 0.95 : 0.75;
+      const gap = this.L.gap;
       if (sh.t >= 0 && sh.t >= (sh.i + 1) * gap) {
         sh.i++;
-        if (sh.i < this.simon.seq.length) { const f = this.row[this.simon.seq[sh.i]]; this.croak(f, 1); this.flash(f, this.callRing); }
+        if (sh.i < this.simon.seq.length) { const f = this.row[this.simon.seq[sh.i]]; this.croak(f, 1); if (this.L.rings) this.flash(f, this.callRing); }
         else { sh.i = -1; sh.t = 0; this.ctx.hint?.(tx('Your turn!')); }
       }
     } else if (inp && !this.simon.over) {
@@ -449,7 +561,8 @@ class FrogRound {
     this.moveFrogs(dt);
   }
 
-  get score() { return frogsScore({ startles: this.st.startles, reached: this.reached, simon: this.simonPts }); }
+  get score() { return frogsScore({ sneaks: this.sneaks, simon: this.simonPts }); }
+  get startles() { let n = 0; for (const k of this.sneaks) n += k.startles; return n; }
   get done() { return this.phase === 'simon' && this.endT !== undefined && this.endT <= 0; }
 
   dispose() {
@@ -485,12 +598,16 @@ export default {
         r.update(dt);
         if (r.phase === 'sneak') left -= dt;
         ctx.hud?.(r.score, r.phase === 'sneak' ? Math.max(0, left) : null);
-        if (r.done || (r.phase === 'sneak' && left <= 0)) return true;
+        if (r.phase === 'sneak' && left <= 0) {
+          // out of time: with one frog already met, the song still follows; with none, the round is over
+          if (r.stage > 0) r.startSimon(); else return true;
+        }
+        if (r.done) return true;
       });
       const sm = r.simon;
       return { score: r.score, caught: r.reached ? 1 : 0, quit: !!res?.quit,
         extra: r.reached ? tx('{n} songs copied', { n: sm?.rounds || 0 }) : tx('The frog got away'),
-        detail: { startles: r.st.startles, rounds: sm?.rounds || 0, simon: r.simonPts } };
+        detail: { startles: r.startles, sneaks: r.sneaks.filter(k => k.reached).length, rounds: sm?.rounds || 0, simon: r.simonPts, level: ctx.level } };
     } finally {
       r.dispose();
       ctx.setNight?.(false);
