@@ -4,7 +4,7 @@
   "ctx": [
    "character name (mika)",
    "UI (src/game/tricks/cowrace.js)",
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/tricks/firedrill.js)"
   ]
  },
  {
@@ -2791,6 +2791,32 @@
   "s": "Dig them out just right and share them round. Nothing tastes better with cold fingers.",
   "ctx": [
    "dialogue trick_roast_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Fire drill on the Kawabe lawn. A stationmaster runs one every season, and this season you're in it.",
+  "ctx": [
+   "dialogue trick_firedrill_intro, spoken by Genzo"
+  ]
+ },
+ {
+  "s": "Do I get to put out a real fire?",
+  "ctx": [
+   "dialogue trick_firedrill_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "A small one, in a metal tray, with me beside you. At a real fire you shout \"Fire!\", tell a grown-up and get away.",
+  "ctx": [
+   "dialogue trick_firedrill_intro, spoken by Genzo",
+   "dialogue trick_firedrill_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "For the tray, four things. Pull the pin. Aim at the base. Squeeze the handle. Sweep from side to side.",
+  "ctx": [
+   "dialogue trick_firedrill_intro, spoken by Genzo",
+   "dialogue trick_firedrill_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -6077,6 +6103,12 @@
   "s": "Too soon and they're raw, too late and they're coal. Dig them out just right and share with the children.",
   "ctx": [
    "dialogue trick_roast_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Fire drill on the lawn today, Mi-chan. The village does one every season, and you're big enough to join in.",
+  "ctx": [
+   "dialogue trick_firedrill_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -14279,6 +14311,42 @@
   ]
  },
  {
+  "s": "Fire drill",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the lawn in Kawabe, behind the market stall",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Any day, in daylight",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "At a fire drill a grown-up lets you try a practice extinguisher: pull the pin, aim at the base, squeeze the handle, sweep from side to side.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "A fire needs fuel, heat and air. Powder smothers it at the base, where the fuel burns. Aimed up at the flames it just blows through.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "A real fire? Shout \"Fire!\", tell a grown-up and get away. Practise only with a grown-up.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Beetle sap trap",
   "ctx": [
    "countryside trick name (journal, sign prompt, results card)"
@@ -15904,6 +15972,12 @@
   ]
  },
  {
+  "s": "Practise with a fire extinguisher: pull, aim, squeeze, sweep.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
   "s": "Paint sap on the bark and welcome the night visitors.",
   "ctx": [
    "UI (src/content/minigames.js)"
@@ -17290,7 +17364,7 @@
   "ctx": [
    "UI (src/game/director.js)",
    "UI (src/game/tricks/archery-guide.js)",
-   "menu / screen text"
+   "UI (src/game/tricks/firedrill.js)"
   ]
  },
  {
@@ -18782,6 +18856,24 @@
   ]
  },
  {
+  "s": "The wobbly final! She tips to one side. Drag the other way to stay on!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "The wobbly final! She tips to one side. Press A or D to lean the other way!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "The rodeo final! Bumps shake her. Lean the other way, quick!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
   "s": "Heat {n} of {total}",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
@@ -18825,6 +18917,42 @@
   ]
  },
  {
+  "s": "She is tipping! Lean the other way.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Whoops!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Whoops, off she slides! Up she hops again. Lean a little sooner.",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "{name} slid off!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Back on!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Bump!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
   "s": "Yum! Fresh grass!",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
@@ -18862,6 +18990,12 @@
  },
  {
   "s": "Mika crosses the line!",
+  "ctx": [
+   "UI (src/game/tricks/cowrace.js)"
+  ]
+ },
+ {
+  "s": "Steady rider! +{n}",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)"
   ]
@@ -19434,6 +19568,289 @@
   "s": "{caught} caught · {golden} golden · {broken} broken",
   "ctx": [
    "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Wait: first shout \"Fire!\" so that everyone knows. Then the extinguisher.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "The handle will not move: the pin is still in. Stand in the ring and pull it out first.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Aim low! The spray must hit the base of the fire, where it burns. Up in the flames it does nothing.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Sweep from side to side, so that the whole base is covered.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "It flared up again! Keep sweeping a moment after the flames are down.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Too close: it is hot there. Stand in the ring, two or three steps back.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Too far: the spray falls short. Come into the ring.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Go nearer: stand in the ring round the burning tray.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "The wind blows the spray back at you. Stand with the wind at your back: look at the wind sock.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Keep your back to the way out, so that you can always get away.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Stop! Never water on burning oil: it splashes and flares up. Take the powder one.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Powder works here, but water is better: it soaks paper and straw, so they cannot flare up again.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Take an extinguisher from the stand first.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Stand in the ring at the tray first, then squeeze.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Pull",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Squeeze",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Sweep",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Pull pin",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)",
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Stand",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Step back",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Powder",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Water",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "The wind has turned. Look at the wind sock before you stand.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Never water on burning oil!",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Water sinks under the hot oil, boils at once and throws burning oil out. Use powder, or a grown-up puts a lid on the pan.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Fire! Fire!",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Well shouted! At a real fire that is your whole job: shout, tell a grown-up, get away.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Too slow: the fire has jumped to the next tray! One at a time, the nearest first.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Now the next tray.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Out! Well done.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "The flames are down, but it still smoulders. Keep sweeping a moment!",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Empty! That is all an extinguisher holds. Fetch a full one from the stand.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "First of all, shout! Press {act} to shout \"Fire!\"",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Now take an extinguisher: walk to the stand and press {act}.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Stand in the ring with the wind at your back, then press {key} to pull the pin.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Stand in the green part of the ring, then press {key} to pull the pin.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Aim at the base: pull the stick down until the ring sits at the foot of the fire.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Aim at the base: hold S until the ring sits at the foot of the fire.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Now squeeze the handle: hold {act}.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Sweep! Push the stick left and right along the base while you squeeze.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Sweep! Press A and D to go left and right along the base while you squeeze.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "All out! And remember: at a real fire you shout, tell a grown-up and get away.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Time is up: I will put a lid on the rest. At a real fire you shout and get away!",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "Three fires: paper, oil and straw. Choose the right extinguisher for each: water or powder. And first?",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "We practise at a tray, together. A real fire is for grown-ups: you shout \"Fire!\" and get away.",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "{n} of {m} fires out",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
+  ]
+ },
+ {
+  "s": "fire out",
+  "ctx": [
+   "UI (src/game/tricks/firedrill.js)"
   ]
  },
  {
@@ -20616,6 +21033,24 @@
   ]
  },
  {
+  "s": "4. Keep your balance",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "In a wobbly final she tips to one side. Drag the other way to stay on!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "In a wobbly final she tips to one side. Press A or D to lean the other way!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
   "s": "Drag on the left side of the screen to steer between the lanes.",
   "ctx": [
    "UI (src/game/tricks/rules-cowhelp.js)"
@@ -20726,6 +21161,18 @@
  },
  {
   "s": "Stars: the points of all heats add up. Win every heat for 3 stars.",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Lean left!",
+  "ctx": [
+   "UI (src/game/tricks/rules-cowhelp.js)"
+  ]
+ },
+ {
+  "s": "Lean right!",
   "ctx": [
    "UI (src/game/tricks/rules-cowhelp.js)"
   ]
@@ -23786,6 +24233,24 @@
  },
  {
   "s": "Fan the ash when it goes grey.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Shout \"Fire!\" first. Take an extinguisher.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Stand in the ring. Pull the pin.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Aim low, squeeze, sweep side to side.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
