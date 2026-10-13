@@ -18681,7 +18681,8 @@
   "s": "How to play",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)",
-   "UI (src/ui/howto.js)"
+   "UI (src/ui/howto.js)",
+   "UI (src/ui/oanquan-guide.js)"
   ]
  },
  {
@@ -22758,7 +22759,9 @@
  {
   "s": "Stop playing",
   "ctx": [
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/round.js)",
+   "UI (src/ui/minigame-stop.js)",
+   "UI (src/ui/oanquan-guide.js)"
   ]
  },
  {
@@ -24049,6 +24052,270 @@
   ]
  },
  {
+  "s": "1. Sow",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Pick up every pebble in one of your five small pits. Put one in each following pit, including the big quan pits.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "2. Keep sowing",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "After the last pebble, look at the NEXT pit. If it is a small pit with pebbles, pick them all up and keep sowing in the same direction.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "3. Capture",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "If the next small pit is empty, capture everything in the pit after it. Another empty pit followed by a full one lets you capture again. Two empty pits end the turn.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "4. Capture a quan",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "You can capture a quan across an empty small pit too. A quan is worth 10 points; a pebble is worth 1.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Your five small pits are the lower row. Choose a non-empty one, then choose ◀ or ▶. Keep that direction for the whole turn.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "After your last pebble, look at the NEXT pit: a small pit with pebbles means keep sowing; an empty small pit can mean capture; a quan pit ends your turn, even if it is empty.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "An empty side refills with one captured pebble per pit. Missing pebbles are borrowed and repaid when counting. If there are fewer than five captured pebbles between both players when refilling, the round ends.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "This quick round ends when the first quan is captured, or after 24 turns. Your captured points plus pebbles left in your small pits decide the winner. Stones still in quan pits do not count.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Tap the glowing pit, or Next step, to pick up its pebbles. Try either direction.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Pick up all {n} pebbles. Keep sowing in your chosen direction.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Drop one pebble here. {n} left in your hand.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Last pebble! Look at the NEXT pit in your direction.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Skip the empty pit and capture {n} points from the next one.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "A quan was captured: this quick round ends. Count the captured points and your remaining small-pit pebbles.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "The next pit ends this turn. Now the other player takes a turn.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Sow left ◀",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Sow right ▶",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "1 quan",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Pit {n}: {m} pebbles, {q} quan",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "In hand: {n}",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Captured: {n} points",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Pit {n} {arrow} pit {m}",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Step {n} of {m}",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Example complete",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Pick up",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Next step",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "How to play Ô ăn quan",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Close help",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "The rules",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Pebble = 1 point · Quan = 10 points",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "In the real round: tap one of your lower pits, then ◀ or ▶. Tap ? for a move hint.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "In the real round: left/right chooses a pit. X sows ▶; A sows ◀. Use the on-screen ? for a hint.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "In the real round: A/D or ←/→ chooses a pit. E sows ▶; Space sows ◀. W shows a hint.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Try a small example",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Sowing direction",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Other player’s pits",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Your pits",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Restart example",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "The round is paused. This example changes no scores or pebbles in your game.",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
+  "s": "Back to the round",
+  "ctx": [
+   "UI (src/ui/oanquan-guide.js)"
+  ]
+ },
+ {
   "s": "Look for it on {when} evenings.",
   "ctx": [
    "UI (src/ui/stargroups.js)"
@@ -24218,6 +24485,12 @@
  },
  {
   "s": "Graphics setting saved — reload to apply fully",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Enable tropical trees",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]

@@ -200,7 +200,9 @@ export class Tricks {
         let res = null;
         g.player.carry?.want('worn', 'trick');     // hands free for the net, the frog, the kite line… (the night river asks for it in hand itself)
         try { res = await mod.play(ctx); } catch (e) { console.error(`[tricks] ${id} failed`, e); res = { score: 0, quit: true }; }
-        result = res || { score: 0 };
+        // A few adapters keep partial scores when they leave. Explicit Stop/Back
+        // cancels the round even when such an adapter returns quit:false.
+        result = ctx.cancelled ? { ...(res || {}), quit: true } : res || { score: 0 };
         this.endRound(ctx);
         if (result.quit) break;
         const score = Math.max(0, Math.floor(result.score || 0));
@@ -259,7 +261,7 @@ export class Tricks {
       level, easy: level === 'easy', hard: level === 'hard',
       first, roundTime: first ? (t.firstLength ?? t.length) : levelSpec(t, level).length,
       place: new THREE.Vector3(t.place.x, g.world.heightAt(t.place.x, t.place.z), t.place.z),
-      teacher: this.teacherOf(t), quit: false, t: 0,
+      teacher: this.teacherOf(t), quit: false, cancelled: false, t: 0,
       debug: {},           // what a trick shows the QA autopilot (window.__STARLINE_QA__.director.tricks.round.ctx.debug)
       /** A speech bubble from the teacher (guided hints, cheers). life in seconds. */
       hint(text, life = 4.5) { self.showHint(text, self.teacherName(t), life); },
@@ -315,6 +317,14 @@ export class Tricks {
     this.hookOn = false;
     if (this.g.beforeUpdate === this.hookFn) this.g.beforeUpdate = this.hookPrev;
     this.hookPrev = this.hookFn = null;
+  }
+
+  quitRound() {
+    const ctx = this.round?.ctx;
+    if (!ctx || ctx.quit || (this.el?.card && !this.el.card.classList.contains('hidden'))) return false;
+    ctx.cancelled = ctx.quit = true;
+    for (const l of [...this.loops]) { this.loops.delete(l); l.res({ quit: true }); }
+    return true;
   }
 
   endRound(ctx) {
@@ -479,8 +489,7 @@ export class Tricks {
       const cardUp = !this.el.card.classList.contains('hidden');
       if (g.input.pressed('back') && this.round?.ctx && !cardUp) {
         // Backspace leaves the round: every waiting step resolves { quit: true } and the trick cleans up
-        this.round.ctx.quit = true;
-        for (const l of [...this.loops]) { this.loops.delete(l); l.res({ quit: true }); }
+        this.quitRound();
       } else for (const l of this.loops) {          // (a Set may lose its current entry while it is walked)
         let r;
         // a bug inside a round must not freeze the game: end that round as if quit, and say so in the console

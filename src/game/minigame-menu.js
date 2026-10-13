@@ -19,6 +19,7 @@ import { storyId, useStory } from './stories/index.js';
 import { Quest } from './quest.js';
 import { stateAt } from './fastforward.js';
 import { MinigamePicker } from '../ui/minigames-ui.js';
+import { MinigameStop } from '../ui/minigame-stop.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -33,6 +34,7 @@ export class MinigameMenu {
     this.current = null;         // the entry being played
     this.picker = this.ui.mgPicker ??= new MinigamePicker(this.ui);
     this.buildChip();
+    this.stopControl = new MinigameStop(director);
   }
 
   get st() { return this.d.q?.state; }
@@ -283,6 +285,7 @@ body.trick-round #mgChip,body.tour-on #mgChip{display:none}`;
 
   /** Every frame: the chip shows only while nothing owns the screen. */
   update(dt = 0.016) {
+    this.stopControl?.update();
     const c = this.chip;
     if (!c || !this.session || this.session.story) return;
     const d = this.d;

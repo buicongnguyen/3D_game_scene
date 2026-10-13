@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { CAPTIONS } from './story.js';
 import { storyId } from './stories/index.js';
 import { tx } from '../i18n/i18n.js';
+import { getTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
 import { STOPS } from '../world/railway.js';
 import { RAIL_Y } from '../world/layout.js';
 import { VIDEO_DIR, clipKey } from '../content/video.js';
@@ -25,6 +26,9 @@ const CSS = `
 
 /** Phones (the Low tier) get video by default; everything else draws live. */
 export const lowTier = game => game.renderer.qualityName === 'low';
+
+/** The recordings show the original valley; the optional tropical trees need live scenery. */
+export const recordedSceneryMatches = (enabled = getTropicalTrees()) => !enabled;
 
 let manifestP = null;
 /** public/video/manifest.json (written by the recorder), or null when there are no videos. */
@@ -116,7 +120,16 @@ export class VideoLayer {
  * suspend()/resume() let the tour borrow the screen; stop() ends it for good (the game is starting).
  */
 export class TitleLoop {
-  constructor(game) { this.g = game; this.on = false; this.paused = 0; }
+  constructor(game) {
+    this.g = game; this.on = false; this.paused = 0; this.playSeq = 0;
+    this.liveForTheme = !recordedSceneryMatches();
+    this.offTheme = onTreeThemeChange(() => {
+      const wasLive = this.liveForTheme;
+      this.liveForTheme = !recordedSceneryMatches();
+      if (this.liveForTheme) { this.playSeq++; this.g.videoLayer?.hide(this); }
+      else if (wasLive && this.on && !this.paused && !this.stopped) void this.play();
+    });
+  }
 
   static of(game) { return (game.titleLoop ??= new TitleLoop(game)); }
 
@@ -127,17 +140,22 @@ export class TitleLoop {
   }
 
   async play() {
-    if (!this.on || this.paused || this.stopped || !canPlay()) return;
+    const seq = ++this.playSeq;
+    if (!this.on || this.paused || this.stopped || !recordedSceneryMatches() || !canPlay()) return;
     const clip = await clipFor('title');
-    if (!clip || !this.on || this.paused || this.stopped) return;
+    if (!clip || seq !== this.playSeq || !this.on || this.paused || this.stopped || !recordedSceneryMatches()) return;
     const layer = VideoLayer.of(this.g);
     if (layer.owner && layer.owner !== this) return;
     await layer.show(clip, { owner: this, loop: true });
   }
 
-  suspend() { this.paused++; VideoLayer.of(this.g).hide(this); }
+  suspend() { this.paused++; this.playSeq++; this.g.videoLayer?.hide(this); }
   resume() { this.paused = Math.max(0, this.paused - 1); return this.play(); }
-  stop() { this.stopped = true; this.on = false; if (this.g.videoLayer) this.g.videoLayer.hide(this, true); }
+  stop() {
+    this.stopped = true; this.on = false; this.playSeq++;
+    this.offTheme?.(); this.offTheme = null;
+    if (this.g.videoLayer) this.g.videoLayer.hide(this, true);
+  }
 }
 
 // ------------------------------------------------------------------ the arrival
@@ -165,15 +183,17 @@ function arrivalEndState(scenes) {
  */
 export async function playArrival(scenes) {
   const g = scenes.g, d = scenes.d, ui = d.ui;
-  if (!canPlay()) return false;
+  if (!recordedSceneryMatches() || !canPlay()) return false;
   const clip = await clipFor(`intro-${storyId()}`);
-  if (!clip) return false;
+  if (!clip || !recordedSceneryMatches()) return false;
   g.titleLoop?.stop();
   await ui.fade(true, 10);
+  if (!recordedSceneryMatches()) return false;
   const layer = VideoLayer.of(g), v = layer.el, owner = {};
   // pictures first: if the clip cannot start, nothing has been changed and the live cutscene takes over
   const ok = await layer.show(clip, { owner, timeout: 7000 });
   if (!ok) return false;
+  if (!recordedSceneryMatches()) { layer.hide(owner); return false; }
   g.renderer.hold = false;                           // the valley is drawn under the clip for its first second: warm-up
   arrivalEndState(scenes);
   ui.cinema(true);

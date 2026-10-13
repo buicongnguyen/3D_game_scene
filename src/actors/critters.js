@@ -247,6 +247,7 @@ export class Critters {
     const grid = this.world.grid;
     const tops = {};
     this.slots = planCritters(game.placed || {}, grid, m => (tops[m] ??= this.topOf(m)));
+    game.foliage?.protectBushPerches([...this.slots.ladybug, ...this.slots.butterfly].flatMap(s => s.perches));
     for (const [kind, def] of Object.entries(CRITTER_KINDS)) {
       const models = (def.models || [def.model]).filter(m => this.assets.has(m));
       if (!models.length || (def.web && !this.assets.has(def.web))) continue;

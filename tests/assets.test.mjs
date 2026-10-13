@@ -7,6 +7,7 @@ import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CONTRACTS, PORTRAITS, TOTAL_RAW_BYTES } from './asset-contracts.mjs';
+import { checkImportedModel } from './model-import-check.mjs';
 
 const MODELS = new URL('../public/models/', import.meta.url);
 const only = process.env.ASSETS?.split(',').map(s => s.trim()).filter(Boolean);
@@ -35,6 +36,19 @@ for (const name of names) {
   test(`${name} meets its contract`, async () => {
     const file = new URL(`${name}.glb`, MODELS);
     assert.ok(existsSync(file), `${name}.glb missing`);
+    if (c.family === 'vietnam-import') {
+      const imported = await checkImportedModel(readFileSync(file), c);
+      if (c.lodOf) {
+        const source = await checkImportedModel(readFileSync(new URL(`${c.lodOf}.glb`, MODELS)), CONTRACTS[c.lodOf]);
+        assert.ok(imported.tris < source.tris, `${name} reduces its near-model triangle count`);
+        assert.deepEqual(imported.materials, source.materials, `${name} preserves materials and leaf alpha settings`);
+        assert.deepEqual(imported.imageHashes, source.imageHashes, `${name} preserves the authored atlas`);
+        for (const edge of ['min', 'max']) for (let i = 0; i < 3; i++) {
+          assert.ok(Math.abs(imported.bounds[edge][i] - source.bounds[edge][i]) < .002, `${name} preserves the near silhouette envelope`);
+        }
+      }
+      return;
+    }
     const gltf = await load(name);
     const root = gltf.scene;
     const tris = triangles(root);

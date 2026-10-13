@@ -8,6 +8,14 @@ floating and recovery, treading, travel, turning toward the exit, swimming back 
 Use movement plus hold/release/tap Action as each cue asks. The lesson has a four-minute budget and rewards completion
 only after the dry exit. See [the researched lesson plan](SWIMMING-LESSON-PLAN.md) for the controls and design.
 
+Every running mini-game has a visible **Stop playing** button on desktop and touch screens. It returns through the
+game's normal cleanup and does not record an unfinished round or award its stars. Fishing packs up the rod and sky
+watching descends normally; catches and workshop construction already earned before stopping are kept. The control
+waits for teaching dialogue to finish and is hidden on completed results cards.
+
+**Ô ăn quan** also has a persistent **How to play** button. Its written rules and step-by-step examples pause the live
+round without changing the board or scores. Close the guide to resume, or use Stop playing while it is open.
+
 ## Where the list comes from
 
 `src/content/minigames.js` builds the catalogue at run time from the sources of truth, so a game that lands later appears

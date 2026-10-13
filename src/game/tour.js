@@ -14,12 +14,13 @@
 import * as THREE from 'three';
 import { TOURS, TOUR, YEAR, TEXT, FOV, TOUR_PLACES, timeline, poseAt, stopTime, shotOf, captionFor } from '../content/tour.js';
 import { tx, onLangChange } from '../i18n/i18n.js';
+import { onTreeThemeChange } from '../world/tree-theme.js';
 import { Quest } from './quest.js';
 import { stateAt, exploreState } from './fastforward.js';
 import { storyId, useStory } from './stories/index.js';
 import { STOPS } from '../world/railway.js';
 import { buildStars } from './skygaze.js';
-import { VideoLayer, loadManifest, clipFor, canPlay, lowTier } from './video.js';
+import { VideoLayer, loadManifest, clipFor, canPlay, lowTier, recordedSceneryMatches } from './video.js';
 import { clipKey } from '../content/video.js';
 import { defaultStory } from '../ui/ui.js';
 
@@ -192,14 +193,21 @@ export class SceneTour {
     this.onHide = () => { if (document.hidden && this.active && !this.done) { this.paused = true; if (this.mode === 'video') this.layer.el.pause(); this.syncUi(); } };
     this.onSize = () => { if (this.active && this.mode === 'video' && this.clip && this.clip.key !== clipKey(`tour-${this.tour.id}`, innerWidth, innerHeight)) this.vLoad(this.k, this.t); };
     this.frame = dt => this.update(dt);
-    this.offLang = onLangChange(() => this.text());
+    this.offLang = onLangChange(() => {
+      this.text();
+      this.syncVideoChoice();
+    });
+    this.offTheme = onTreeThemeChange(() => {
+      if (this.active && this.mode === 'video' && !recordedSceneryMatches()) this.vFallback(true);
+      this.syncVideoChoice();
+    });
   }
 
   get d() { return this.g.director; }
   get ui() { return this.g.ui; }
 
   /** The clips show Grandma's completed valley; a story save needs its own live view of current progress. */
-  canVideoTour() { return (!this.d.quest || this.d.explore) && (this.d.quest?.state.story || defaultStory()) === 'grandma'; }
+  canVideoTour() { return recordedSceneryMatches() && (!this.d.quest || this.d.explore) && (this.d.quest?.state.story || defaultStory()) === 'grandma'; }
 
   // ---------------------------------------------------------------- DOM
   buildDom() {
@@ -276,6 +284,14 @@ export class SceneTour {
       || d.yard?.round || d.minigameMenu?.running || d.workshop?.active || g.interiors?.active || p.mounted || g.kite?.active || d.running);
   }
 
+  syncVideoChoice() {
+    const box = this.el.pick.querySelector('#tourLive');
+    let live = !lowTier(this.g);
+    try { const v = JSON.parse(localStorage.getItem('starline-opt-tourLive')); if (typeof v === 'boolean') live = v; } catch { /* ignore */ }
+    box.checked = live || !this.canVideoTour();
+    box.parentNode.classList.toggle('hidden', !this.videos || !this.canVideoTour());
+  }
+
   openPicker() {
     if (this.active) return;
     const no = this.blocked();
@@ -284,10 +300,7 @@ export class SceneTour {
     // recorded video or live 3D: phones default to video, everything else to live; the box remembers the choice.
     // It shows only when there are clips this browser can play.
     const box = this.el.pick.querySelector('#tourLive');
-    let live = !lowTier(this.g);
-    try { const v = JSON.parse(localStorage.getItem('starline-opt-tourLive')); if (typeof v === 'boolean') live = v; } catch { /* ignore */ }
-    box.checked = live || !this.canVideoTour();
-    box.parentNode.classList.toggle('hidden', !this.videos || !this.canVideoTour());
+    this.syncVideoChoice();
     if (this.g.params.has('live') || !canPlay()) this.videos = false;
     else if (this.videos === undefined) loadManifest().then(m => { this.videos = !!m && Object.values(m.clips).some(c => c.tour); box.parentNode.classList.toggle('hidden', !this.videos || !this.canVideoTour()); });
     this.ui.open('tourPick');
@@ -395,14 +408,19 @@ export class SceneTour {
   }
 
   /** The clip cannot play: the same tour, live. */
-  vFallback() {
+  vFallback(appearanceChanged = false) {
     if (!this.active || this.mode !== 'video') return;
-    const id = this.year ? 'year' : this.tour.id, k = this.k;
-    console.warn('[tour] video is not available here: flying live instead');
+    const id = this.year ? 'year' : this.tour.id, k = this.k, t = this.t, paused = this.paused, done = this.done;
+    if (!appearanceChanged) console.warn('[tour] video is not available here: flying live instead');
     this.closeVideo(true);
-    this.videos = false;
-    this.el.pick.querySelector('.tour-live').classList.add('hidden');
-    if (this.start(id, { live: true }) && this.year && k > 0) this.setTour(k);
+    if (!appearanceChanged) {
+      this.videos = false;
+      this.el.pick.querySelector('.tour-live').classList.add('hidden');
+    }
+    if (this.start(id, { live: true })) {
+      if (appearanceChanged) { this.setTour(k, t); this.paused = paused; this.done = done; this.syncUi(); }
+      else if (this.year && k > 0) this.setTour(k);
+    }
   }
 
   /** Give the screen back. quiet: the live tour takes over at once, so no menu is reopened. */

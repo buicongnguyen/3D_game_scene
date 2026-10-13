@@ -42,7 +42,7 @@ Read first: `docs/STORY-GRANDMA.md` (§1a "Voice and facts" for all story text),
 - **Do not edit** `index.html`, `src/main.js`, `src/engine/input.js`, `src/game/game.js` without asking: they belong to another
   session's mobile-input work (build new DOM from JS, as `src/ui/ui.js` `bindTour` does).
 - **Ports:** pick your own (5850+); never kill processes by name, only by the exact port's PID (other sessions run servers here).
-- **Blender:** headless only, `C:\Users\n\source\repos\Petal_cafe\.tools\blender-4.5.9-windows-x64\blender.exe -b --factory-startup --python art/blender/<script>.py -- <args>`. Validate every model with
+- **Blender:** headless only. The active installation is now 5.2.2 LTS; see [BLENDER.md](BLENDER.md) for the path and environment setup. Use `& $env:BLENDER_EXE -b --factory-startup --python art/blender/<script>.py -- <args>` in PowerShell. Validate every model with
   `node art/blender/validate_glb.mjs` and `node --test tests/assets.test.mjs tests/pack.test.mjs`. **Model size cap has only ~33 KB
   headroom** (`TOTAL_RAW_BYTES` 39.9 MB, `TOTAL_PACKED_BYTES` 15.38 MB in `tests/asset-contracts.mjs`): raise it with a note in
   `art/CONTRACTS.md` when you add a model or clips.

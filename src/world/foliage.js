@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { patchMaterial } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
+import { getTropicalTrees, onTreeThemeChange, treeForTheme, bushForTheme, TROPICAL_TREES, TROPICAL_BUSHES } from './tree-theme.js';
 
 const FOLIAGE = { Leaves: 'leaves', Needles: 'needles', 'Maple leaves': 'maple', Blossom: 'blossom' };
 const BARE_IN_WINTER = new Set(['Leaves', 'Maple leaves', 'Blossom']);
@@ -12,6 +13,26 @@ const UP = new THREE.Vector3(0, 1, 0);
 // LOD / cut-off hysteresis: a tree near a threshold, or a camera orbiting the player (up to ~11 m) near
 // one, must not flip between its two meshes (or in and out of view) frame after frame. Band: 7%, >= 12 m.
 const band = d => Math.max(d * 0.07, 12);
+
+function shareTropicalAtlas(assets) {
+  // The import contracts verify byte-identical atlases for this explicit model
+  // family. Share their GPU texture before first render; keep each material's tint.
+  const atlases = new Map(), replaced = new Set();
+  for (const model of [...TROPICAL_TREES, ...TROPICAL_TREES.map(t => `${t}-lod`), ...TROPICAL_BUSHES]) {
+    if (!assets.has(model)) continue;
+    for (const { material } of assets.parts(model)) {
+      const map = material.map;
+      if (!material.name.startsWith('VN leaves') || map?.image?.width !== 2048 || map.image.height !== 1024) continue;
+      const key = JSON.stringify([map.channel, map.colorSpace, map.wrapS, map.wrapT, map.magFilter, map.minFilter,
+        map.anisotropy, map.flipY, map.premultiplyAlpha, map.generateMipmaps, map.format, map.type,
+        map.offset.toArray(), map.repeat.toArray(), map.center.toArray(), map.rotation,
+        map.matrixAutoUpdate, map.matrix.toArray()]);
+      if (!atlases.has(key)) atlases.set(key, map);
+      else if (atlases.get(key) !== map) { material.map = atlases.get(key); replaced.add(map); }
+    }
+  }
+  for (const map of replaced) map.dispose();
+}
 
 /**
  * One model placed many times: instanced meshes per primitive, with an optional low-poly LOD,
@@ -53,7 +74,7 @@ class InstanceSet {
   build(parent, parts, n, castShadow, wind) {
     return parts.map(part => {
       const mat = part.material;
-      const isFoliage = FOLIAGE[mat.name] !== undefined;
+      const isFoliage = FOLIAGE[mat.name] !== undefined || mat.name.startsWith('VN leaves');
       patchMaterial(mat, { wind: isFoliage ? wind : 0 });
       const mesh = new THREE.InstancedMesh(part.geometry, mat, n);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
@@ -71,7 +92,9 @@ class InstanceSet {
 
   buildShadow(parent, parts, n) {
     return parts.map(part => {
-      const mat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, depthTest: false });
+      const source = part.material;
+      const mat = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, depthTest: false,
+        map: source.map, alphaMap: source.alphaMap, alphaTest: source.alphaTest, side: source.side });
       const mesh = new THREE.InstancedMesh(part.geometry, mat, n);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0;
@@ -98,8 +121,8 @@ class InstanceSet {
     for (let i = 0; i < this.records.length; i++) {
       const rec = this.records[i];
       // the shadow box moves 4 m before the lists are rebuilt: keep a margin for that and the crown
-      const r = range + this.radius * rec.s + 6;
-      const px = _lx.x * rec.x + _lx.y * rec.y + _lx.z * rec.z, py = _ly.x * rec.x + _ly.y * (rec.y + this.height * rec.s * 0.5) + _ly.z * rec.z;
+      const r = range + this.radius * rec.s * Math.max(1, rec.sy ?? 1) + 6;
+      const px = _lx.x * rec.x + _lx.y * rec.y + _lx.z * rec.z, py = _ly.x * rec.x + _ly.y * (rec.y + this.height * rec.s * (rec.sy ?? 1) * 0.5) + _ly.z * rec.z;
       if (Math.abs(px - fx) > r || Math.abs(py - fy) > r) continue;
       const M = this.matrices[i];
       for (let k = 0; k < this.shadow.length; k++) {
@@ -126,10 +149,10 @@ class InstanceSet {
       if (s & 1) { if (d < nearDist - bandNear) s &= ~1; } else if (d > nearDist) s |= 1;
       st[i] = s;
       if (s & 2) continue;
-      _sphere.center.set(r.x, r.y + this.height * r.s * 0.5, r.z);
+      _sphere.center.set(r.x, r.y + this.height * r.s * (r.sy ?? 1) * 0.5, r.z);
       // Lists are only rebuilt after the camera moves 0.5 m or turns ~2.3 deg (Foliage.update), so cull
       // with that much slack: otherwise trees entering at the screen edge popped in a few frames late.
-      _sphere.radius = this.radius * r.s + Math.hypot(r.x - cam.x, r.y - cam.y, r.z - cam.z) * 0.045 + 0.6;
+      _sphere.radius = this.radius * r.s * Math.max(1, r.sy ?? 1) + Math.hypot(r.x - cam.x, r.y - cam.y, r.z - cam.z) * 0.045 + 0.6;
       if (!frustum.intersectsSphere(_sphere)) continue;
       const useNear = !(s & 1) || !this.far || r.story;
       const set = useNear ? this.near : this.far;
@@ -148,6 +171,14 @@ class InstanceSet {
 
   meshes() { return [...this.near, ...(this.far ?? [])]; }
   shadowMeshes() { return this.shadow ?? []; }
+
+  dispose() {
+    for (const mesh of [...this.meshes(), ...this.shadowMeshes()]) {
+      mesh.removeFromParent();
+      mesh.dispose(); // instance buffers belong to this set; asset geometry/materials are shared
+    }
+    for (const mesh of this.shadowMeshes()) mesh.material.dispose();
+  }
 }
 
 export class Foliage {
@@ -155,21 +186,20 @@ export class Foliage {
     this.group = new THREE.Group();
     this.group.name = 'foliage';
     scene.add(this.group);
+    this.assets = assets;
+    shareTropicalAtlas(assets);
+    this.trees = placed.trees;
+    this.bushes = placed.bushes;
+    this.treeSets = [];
+    this.bushSets = [];
+    this.perchBushes = new Set();
+    this.modelHeights = new Map();
     this.sets = [];
     this.nearDist = quality.trees >= 1 ? 120 : quality.trees >= 0.85 ? 95 : 55;
     const k = quality.trees >= 0.85 ? 1 : 0.7;   // Low: small scatter is drawn out to 70 % of the usual distance
     this.maxDist = 1400;
-    const byModel = (list, opts) => {
-      const groups = new Map();
-      for (const r of list) {
-        if (!assets.has(r.model)) continue;
-        if (!groups.has(r.model)) groups.set(r.model, []);
-        groups.get(r.model).push(r);
-      }
-      for (const [model, records] of groups) this.sets.push(new InstanceSet(this.group, assets, model, records, typeof opts === 'function' ? opts(model) : opts));
-    };
-    byModel(placed.trees, model => ({ lod: `${model}-lod`, castShadow: true, wind: 1 }));
-    byModel(placed.bushes, { castShadow: true, wind: 1, maxDist: 160 * k });
+    const byModel = (list, opts) => this.sets.push(...this.buildSets(list, opts));
+    this.bushOpts = { castShadow: true, wind: 1, maxDist: 160 * k };
     byModel(placed.rocks, { castShadow: true, wind: 0, maxDist: 320 * k });
     byModel(placed.flowers, { castShadow: false, wind: 2, maxDist: 90 * k });
     byModel(placed.reeds, { castShadow: false, wind: 2, maxDist: 110 * k });
@@ -182,6 +212,79 @@ export class Foliage {
     this.lastPos = new THREE.Vector3(1e9, 0, 0);
     this.lastQuat = new THREE.Quaternion();
     this.season = null;
+    this.theme = null;
+    this.setTheme(getTropicalTrees());
+    this.unsubscribeTheme = onTreeThemeChange(enabled => this.setTheme(enabled));
+  }
+
+  buildSets(list, opts) {
+    const groups = new Map();
+    for (const r of list) {
+      if (!this.assets.has(r.model)) continue;
+      if (!groups.has(r.model)) groups.set(r.model, []);
+      groups.get(r.model).push(r);
+    }
+    return [...groups].map(([model, records]) => new InstanceSet(this.group, this.assets, model,
+      records, typeof opts === 'function' ? opts(model) : opts));
+  }
+
+  setTheme(enabled) {
+    const theme = enabled ? 'tropical' : 'default';
+    if (this.theme === theme) return;
+    const records = this.trees.map(r => {
+      const themed = treeForTheme(r, enabled);
+      return this.assets.has(themed.model) ? themed : r;
+    });
+    const bushes = this.bushes.map(r => {
+      if (this.perchBushes.has(r)) return r;
+      const themed = bushForTheme(r, enabled);
+      if (themed === r || !this.assets.has(themed.model)) return r;
+      // Critter perches were planned against the original asset's exact top. Keep
+      // that top even though fern and banana imports share a 1.2 m reference height.
+      return { ...themed, sy: (r.sy ?? 1) * this.modelHeight(r.model) / this.modelHeight(themed.model) };
+    });
+    const next = this.buildSets(records, model => ({ lod: `${model}-lod`, castShadow: true, wind: 1 }));
+    const nextBushes = this.buildSets(bushes, this.bushOpts);
+    const old = new Set([...this.treeSets, ...this.bushSets]);
+    for (const set of old) set.dispose();
+    this.sets = [...next, ...nextBushes, ...this.sets.filter(set => !old.has(set))];
+    this.treeSets = next;
+    this.bushSets = nextBushes;
+    this.theme = theme;
+    if (this.season) this.setSeason(this.season);
+    // Even a stationary, paused camera must populate the new instance and shadow buffers.
+    this.lastPos.set(1e9, 0, 0);
+    this.shadowFocus.set(1e9, 0, 0);
+  }
+
+  modelHeight(model) {
+    if (!this.modelHeights.has(model)) {
+      const scene = this.assets.gltf(model)?.scene;
+      scene?.updateMatrixWorld(true);
+      this.modelHeights.set(model, scene ? new THREE.Box3().setFromObject(scene).max.y : 0.6);
+    }
+    return this.modelHeights.get(model);
+  }
+
+  protectBushPerches(perches) {
+    // Ferns and young bananas are open around their upper centers. Keep actual
+    // insect landing bushes solid, including every neighbour they can fly to.
+    const positions = new Set(perches.filter(p => !p.flower).map(p => `${p.x},${p.z}`));
+    const count = this.perchBushes.size;
+    for (const r of this.bushes) if (positions.has(`${r.x},${r.z}`)) this.perchBushes.add(r);
+    if (this.perchBushes.size !== count && this.theme === 'tropical') {
+      this.theme = null;
+      this.setTheme(true);
+    }
+  }
+
+  dispose() {
+    this.unsubscribeTheme?.();
+    for (const set of this.sets) set.dispose();
+    this.sets = [];
+    this.treeSets = [];
+    this.bushSets = [];
+    this.group.removeFromParent();
   }
 
   /** Rebuild the shadow-caster lists when the shadow box has moved or turned noticeably. */
