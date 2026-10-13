@@ -17,12 +17,13 @@
 //
 // The rules (the cook plan, the state of a potato, what the ash shows, the warmth, the score) are pure and Node-tested;
 // the round below only draws them. Cheap: one borrowed light from the shared LightPool, smoke and sparks from the shared
-// particle pools (fx.soft / fx.glow), three flame cones, five small mounds, and at most a dozen little models made once.
+// particle pools (fx.soft / fx.glow), one mesh of flames (fire-fx.js), five small mounds, and at most a dozen little models made once.
 import * as THREE from 'three';
 import { tx, N_ } from '../../i18n/i18n.js';
 import { rng } from '../../engine/spline.js';
 import { Animator } from '../../actors/animator.js';
 import { fit, disposeRigs, keepShallow } from './util.js';
+import { makeFire } from './fire-fx.js';
 import { WATER_Y } from '../../world/layout.js';
 
 /// ---------------------------------------------------------------------------------------------------- pure rules
@@ -549,7 +550,6 @@ class RoastRound {
       hollow: this.keep(new THREE.RingGeometry(0.17, 0.26, 20).rotateX(-Math.PI / 2)),
       ring: this.keep(new THREE.RingGeometry(0.36, 0.43, 28).rotateX(-Math.PI / 2)),
       bed: this.keep(new THREE.CircleGeometry(BED_R, 28).rotateX(-Math.PI / 2)),
-      flame: this.keep(new THREE.ConeGeometry(0.5, 1, 7).translate(0, 0.5, 0)),
       arrow: this.keep(new THREE.ConeGeometry(0.16, 0.3, 4).rotateX(Math.PI)),
       // the "turn me" sign over a mound: three quarters of a ring with an arrow head
       arc: this.keep(new THREE.TorusGeometry(0.17, 0.032, 6, 16, Math.PI * 1.5).rotateX(Math.PI / 2)),
@@ -591,15 +591,10 @@ class RoastRound {
     // the fire's own pile of straw (grows with every armful), and the flames
     this.pile = this.add(this.strawModel(1.5), h);
     this.pile.scale.setScalar(0.001);
-    this.flames = [];
-    for (const [col, s, ox, oz] of [['#ff5a10', 1, 0, 0], ['#ff9a1e', 0.72, 0.2, 0.1], ['#ffe066', 0.5, -0.12, -0.14]]) {
-      const f = this.add(new THREE.Mesh(this.geo.flame, this.mat(new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.9, depthWrite: false, fog: false }))), h);
-      f.position.set(ox, 0.05, oz);
-      f.userData.s = s;
-      f.visible = false;
-      f.renderOrder = 6;
-      this.flames.push(f);
-    }
+    // (one mesh of licking flame tongues, tricks/fire-fx.js: tall while the straw burns, low and dancing over the embers)
+    this.flames = this.keep(makeFire({ size: 1.3, tongues: 7, spread: 0.42, seed: this.seed % 97 + 1 }));
+    this.flames.object.position.set(0, 0.06, 0);
+    h.add(this.flames.object);
     // the spots round the ash: a hollow to lay a potato in (as big as the potato), a mound of ash over a buried one
     this.spots = this.game.spots.map((s, i) => {
       const a = i / this.n * Math.PI * 2 + 0.3, lx = Math.sin(a) * this.ringR, lz = Math.cos(a) * this.ringR, k = SIZES[s.size]?.k || 1;
@@ -1206,12 +1201,8 @@ class RoastRound {
     if (cooking) this.fire = 0.04 + wn * 0.12 + this.flare * 0.7;
     if (this.flare > 0.3 && Math.random() < dt * 22) this.spark(1);
     const f = this.fire;
-    for (const m of this.flames) {
-      m.visible = f > 0.02;
-      const s = m.userData.s, w = 1 + Math.sin(this.t * (9 + s * 5) + s * 4) * 0.14;
-      m.scale.set(s * (0.5 + f * 0.6), s * f * 1.9 * w * this.flick, s * (0.5 + f * 0.6));
-      m.rotation.y += dt * 2;
-    }
+    // the flames: as high as the fire burns, with the same flicker as its light; a light air leans them a little
+    this.flames.update(dt, f > 0.02 ? f * (0.9 + this.flick * 0.1) : 0, 0.07 + Math.sin(this.t * 0.7) * 0.05, 0.03);
     this.bed.material.opacity = this.embers * (0.72 + wn * 0.28);
     this.bed.material.color.setScalar((0.82 + this.flick * 0.18) * (0.3 + wn * wn * 0.7) + this.kick * 0.25);
     if (this.coals) this.coals.emissiveIntensity = EMBER_GLOW * (0.7 + this.flick * 0.45) * (0.08 + wn * 0.92);

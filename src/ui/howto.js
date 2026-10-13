@@ -25,6 +25,11 @@ export const HOWTO = {
     { in: 'act', pic: 'turn', text: N_('Rocking: turn it. Steam: dig it out!') },
     { in: 'jump', pic: 'fan', text: N_('Fan the ash when it goes grey.'), touch: N_('Fan') },
   ],
+  'trick:firedrill': [
+    { in: 'act', pic: 'shout', text: N_('Shout "Fire!" first. Take an extinguisher.') },
+    { in: 'jump', pic: 'pin', text: N_('Stand in the ring. Pull the pin.'), touch: N_('Pull pin') },
+    { in: 'hold', pic: 'sweep', text: N_('Aim low, squeeze, sweep side to side.') },
+  ],
   'trick:river': [
     { in: 'move', pic: 'walk', text: N_('Wade slowly through the shallows.') },
     { in: null, pic: 'fill', text: N_('Keep the light on a fish to name it.') },
@@ -153,6 +158,10 @@ export const PICS = {
   // a picture card dropping into the first of three places (the life-cycle card game), and a tick for its Check button
   cards: `<g fill="#e6d3b0"><rect x="3" y="23" width="10" height="14" rx="2.5"/><rect x="15" y="23" width="10" height="14" rx="2.5"/><rect x="27" y="23" width="10" height="14" rx="2.5"/></g><g class="hp-drop"><rect x="3" y="4" width="10" height="14" rx="2.5" fill="#fff" stroke="${INK}" stroke-width="1.5"/><ellipse cx="8" cy="11" rx="2.6" ry="3.4" fill="${HOT}"/></g>`,
   tick: `<circle cx="20" cy="20" r="14" fill="#e6d3b0"/><path class="hp-b2" d="M12 21l6 6 11-13" fill="none" stroke="${GREEN}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  // the fire drill: a shout, the pin drawn out of the extinguisher, the nozzle's mark sweeping along the foot of a flame
+  shout: `<circle cx="13" cy="24" r="8" fill="${SUN}" stroke="${INK}" stroke-width="1.5"/><ellipse cx="14" cy="27" rx="3" ry="3.6" fill="${INK}"/><circle cx="10" cy="21" r="1.2" fill="${INK}"/><circle cx="16.5" cy="21" r="1.2" fill="${INK}"/><g class="hp-blink" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round"><path d="M25 16l5-5M27 24h8M25 32l5 4"/></g>`,
+  pin: `<rect x="6" y="16" width="15" height="20" rx="4" fill="#e23a2c" stroke="${INK}" stroke-width="1.5"/><rect x="10" y="9" width="7" height="7" fill="${INK}"/><path d="M8 8h13" stroke="${INK}" stroke-width="3" stroke-linecap="round"/><g class="hp-sway"><circle cx="29" cy="12.5" r="4.4" fill="none" stroke="${SUN}" stroke-width="2.6"/><path d="M18 12.5h7" stroke="${SUN}" stroke-width="2.6" stroke-linecap="round"/></g>`,
+  sweep: `<path d="M20 4c2 6 8 9 8 17a8 8 0 0 1-16 0c0-4 2.6-5.6 3.8-9.4 1.3 1.5 1.5 2.8 2.6 4.2 1.2-3 1.4-6.6 1.6-11.8z" fill="${HOT}"/><path d="M20 15c1 3 4 4.4 4 8a4 4 0 0 1-8 0c0-2 1.4-2.8 2-4.6.8 1 1 1.6 1.4 2.2.3-1.4.5-3 .6-5.6z" fill="${SUN}"/><path d="M4 33h32" stroke="${INK}" stroke-width="2.4" stroke-linecap="round"/><circle class="hp-sway" cx="20" cy="30" r="4.5" fill="none" stroke="${GREEN}" stroke-width="2.8"/>`,
   turn: `<ellipse cx="20" cy="22" rx="11" ry="7" fill="#a8436e" stroke="${INK}" stroke-width="1.4"/><path class="hp-spin" d="M8 12a13 9 0 0 1 24 0m0 0-5-1m5 1 1-5" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
 

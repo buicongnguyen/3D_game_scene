@@ -123,6 +123,24 @@ export const TRICKS = [
     levels: { easy: { stars: [30, 70, 110], length: 65 }, normal: { stars: [50, 100, 140], length: 80 }, hard: { stars: [50, 105, 150], length: 90 } },
   },
   {
+    // fire-extinguisher practice with a grown-up, at a tray on the lawn in Kawabe (tricks/firedrill.js builds the ground
+    // for the round; rules-firedrill.js). 10 for the shout, then a tray is 20 out + 10 standing right + 10 aim on the base
+    // + 10 quick + 5 no wrong step (+ 10 the right extinguisher on Difficult), and up to 15 for powder not wasted.
+    // Easy: one small tray, no wind, every step prompted (80 at best). Normal: three trays in a turning wind, the big one
+    // flares up again if the sweeping stops too soon (190). Difficult: paper, a pan of oil and straw: choose water or
+    // powder, a slow fire catches the next tray, less in the extinguishers, no prompts (220). Tuned with the rules' own
+    // bot (.tools/drill-tune.mjs): a tray put out any old way is a star on Easy.
+    id: 'firedrill', name: 'Fire drill', icon: 'trick-firedrill',
+    place: { x: -32.5, z: 38.5, face: -Math.PI / 2 }, where: 'the lawn in Kawabe, behind the market stall',
+    seasons: ['spring', 'summer', 'autumn', 'winter'], hours: [9, 17], night: false, when: 'Any day, in daylight',
+    teacher: { grandma: 'sora', classic: 'genzo' }, intro: 'trick_firedrill_intro',
+    howReal: 'At a fire drill a grown-up lets you try a practice extinguisher: pull the pin, aim at the base, squeeze the handle, sweep from side to side.',
+    why: 'A fire needs fuel, heat and air. Powder smothers it at the base, where the fuel burns. Aimed up at the flames it just blows through.',
+    safety: 'A real fire? Shout "Fire!", tell a grown-up and get away. Practise only with a grown-up.',
+    stars: [70, 125, 165], length: 100, firstLength: 70, unit: 'points',
+    levels: { easy: { stars: [25, 55, 70], length: 70 }, normal: { stars: [70, 125, 165], length: 100 }, hard: { stars: [80, 150, 205], length: 130 } },
+  },
+  {
     id: 'beetles', name: 'Beetle sap trap', icon: 'trick-beetles',
     place: { x: 92, z: -103, face: Math.PI }, where: 'the chestnut grove on the shrine trail, past the orchard gate',
     seasons: ['summer'], hours: [17, 21], night: false, when: 'Summer: set at dusk, check at dawn',

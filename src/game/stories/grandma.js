@@ -67,6 +67,12 @@ export const STORY = {
       ['sora', "And tastes like four minutes. I light the straw, not you. You bury them in the ash and watch the colour."],
       ['sora', "Too soon and they're raw, too late and they're coal. Dig them out just right and share with the children."],
     ],
+    trick_firedrill_intro: [
+      ['sora', "Fire drill on the lawn today, Mi-chan. The village does one every season, and you're big enough to join in.", 'Talk'],
+      ['mika', "Do I get to put out a real fire?"],
+      ['sora', "A small one, in a metal tray, with me beside you. At a real fire you shout \"Fire!\", tell a grown-up and get away."],
+      ['sora', "For the tray, four things. Pull the pin. Aim at the base. Squeeze the handle. Sweep from side to side."],
+    ],
     trick_beetles_intro: [
       ['sora', "Summer dusk, Mi-chan. Time to lay the table for the beetles, up in the chestnut grove.", 'Talk'],
       ['mika', "Grandma. We are not inviting beetles to dinner."],

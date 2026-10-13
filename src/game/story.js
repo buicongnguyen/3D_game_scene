@@ -677,6 +677,12 @@ export const DIALOGUE = {
     ['rin', "In the ash. Grandpa lights the straw, we bury them and watch the colour. Too early, raw. Too late, charcoal."],
     ['rin', "Dig them out just right and share them round. Nothing tastes better with cold fingers."],
   ],
+  trick_firedrill_intro: [
+    ['genzo', "Fire drill on the Kawabe lawn. A stationmaster runs one every season, and this season you're in it.", 'Talk'],
+    ['mika', "Do I get to put out a real fire?"],
+    ['genzo', "A small one, in a metal tray, with me beside you. At a real fire you shout \"Fire!\", tell a grown-up and get away."],
+    ['genzo', "For the tray, four things. Pull the pin. Aim at the base. Squeeze the handle. Sweep from side to side."],
+  ],
   trick_beetles_intro: [
     ['rin', "Want to see a rhinoceros beetle? Horn like a little fork. They come out on summer nights for tree sap.", 'Talk'],
     ['mika', "A beetle with a horn. And we want to meet it because…?"],

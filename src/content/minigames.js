@@ -40,6 +40,7 @@ export const META = {
   'trick:kite': { cat: 'country', desc: N_('Tie a bamboo kite and fly it high in the wind.'), season: 'autumn', hour: 13 },
   'trick:dew': { cat: 'country', desc: N_('Find the dew-covered spider webs before the sun dries them.'), season: 'summer', hour: 6 },
   'trick:roast': { cat: 'country', desc: N_('Bury sweet potatoes in the ash and take them out just right.'), season: 'autumn', hour: 17 },
+  'trick:firedrill': { cat: 'country', desc: N_('Practise with a fire extinguisher: pull, aim, squeeze, sweep.'), season: 'spring', hour: 10, isNew: true },
   'trick:beetles': { cat: 'country', desc: N_('Paint sap on the bark and welcome the night visitors.'), season: 'summer', hour: 18.5 },
   'trick:hoppers': { cat: 'country', desc: N_('Catch grasshoppers in the tall summer grass.'), season: 'summer', hour: 10, isNew: true },
   'trick:cricket': { cat: 'country', desc: N_('Follow the chirp and find the singing cricket.'), season: 'autumn', hour: 19, isNew: true },
