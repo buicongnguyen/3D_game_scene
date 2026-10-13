@@ -83,10 +83,11 @@ test('stars and records: thresholds, best kept, plays counted', () => {
   assert.equal(starsFor(35, t.stars), 2);
   assert.equal(starsFor(99, t.stars), 3);
   let r = recordRound(undefined, t, 21);
-  assert.deepEqual(r.rec, { learned: true, best: 21, stars: 2, plays: 1 });
+  const core = ({ levels, level, ...x }) => x;       // (the per-level fields: tests/levels.test.mjs)
+  assert.deepEqual(core(r.rec), { learned: true, best: 21, stars: 2, plays: 1 });
   assert.ok(r.newBest);
   r = recordRound({ ...r.rec, intro: true }, t, 4);
-  assert.deepEqual(r.rec, { learned: true, best: 21, stars: 2, plays: 2, intro: true });
+  assert.deepEqual(core(r.rec), { learned: true, best: 21, stars: 2, plays: 2, intro: true });
   assert.equal(r.stars, 0);
   assert.ok(!r.newBest);
 });

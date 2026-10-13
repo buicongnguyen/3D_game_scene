@@ -24,7 +24,8 @@ test('pool and its full apron stand on dry, clear land; swimming is a stable lon
   for(let x=-POOL.apronX;x<=POOL.apronX;x++)for(let z=-POOL.apronZ;z<=POOL.apronZ;z++)assert.deepEqual(placeProblems(POOL.x+x,POOL.z+z),[]);
   assert.equal(TRICK.swimming.length,240);assert.deepEqual(TRICK.swimming.stars,[60,80,95]);
   const {rec}=recordRound(undefined,TRICK.swimming,96);
-  assert.deepEqual(cleanTricks({swimming:rec}),{swimming:{learned:true,best:96,stars:3,plays:1}});
+  const {levels,level,...core}=cleanTricks({swimming:rec}).swimming;
+  assert.deepEqual(core,{learned:true,best:96,stars:3,plays:1});
 });
 
 test('keyboard, touch and existing gamepad X holds map consistently; disabled input cannot act or move',()=>{

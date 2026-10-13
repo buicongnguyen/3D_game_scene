@@ -3825,5 +3825,12 @@
  "{caught} caught · {golden} golden · {broken} broken": "받은 달걀 {caught}개 · 황금 {golden}개 · 깨진 달걀 {broken}개",
  "Catch each egg in your hat.": "달걀을 모자로 받아요.",
  "An egg takes every rung it meets.": "달걀은 만나는 시소를 전부 건너요.",
- "Hat full? Run to the basket.": "모자가 가득 찼나요? 바구니로 달려가요."
+ "Hat full? Run to the basket.": "모자가 가득 찼나요? 바구니로 달려가요.",
+ "Difficult": "어려움",
+ "Get 1 star on Easy": "쉬움에서 별 1개를 받아요",
+ "Get 2 stars on Normal": "보통에서 별 2개를 받아요",
+ "New level open: {level}!": "새 단계가 열렸어요: {level}!",
+ "Choose a level": "단계를 골라요",
+ "Not played yet": "아직 안 해 봤어요",
+ "Play": "시작"
 }

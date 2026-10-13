@@ -462,9 +462,10 @@ test('yard save: the record lives in quest.state.yard and survives odd saves', (
   assert.deepEqual(cleanYard([1, 2]), { game: 'footnet' });
   assert.deepEqual(cleanYard({ game: 'chess', footnet: 'x', keepup: { plays: 2.7, best: -3, stars: 9, wins: NaN }, other: { plays: 1 } }), { game: 'footnet', keepup: { plays: 2, wins: 0, best: 0, rally: 0, stars: 3 } });
   const a = recordYard(undefined, { score: 5, won: true, rally: 9, stars: 2 });
-  assert.deepEqual(a, { rec: { plays: 1, wins: 1, best: 5, rally: 9, stars: 2 }, newBest: true });
+  const core = ({ levels, level, ...x }) => x;       // (the per-level fields: tests/levels.test.mjs)
+  assert.deepEqual({ rec: core(a.rec), newBest: a.newBest }, { rec: { plays: 1, wins: 1, best: 5, rally: 9, stars: 2 }, newBest: true });
   const b = recordYard(a.rec, { score: 3, won: false, rally: 12, stars: 1 });
-  assert.deepEqual(b, { rec: { plays: 2, wins: 1, best: 5, rally: 12, stars: 2 }, newBest: false });
+  assert.deepEqual({ rec: core(b.rec), newBest: b.newBest }, { rec: { plays: 2, wins: 1, best: 5, rally: 12, stars: 2 }, newBest: false });
   // migrate: older saves get the block, a broken one is cleaned, a good one is kept
   const old = freshState(); delete old.yard;
   assert.deepEqual(migrate(old).yard, { game: 'footnet' });

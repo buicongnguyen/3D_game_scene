@@ -3825,5 +3825,12 @@
   "{caught} caught · {golden} golden · {broken} broken": "Hứng được {caught} · trứng vàng {golden} · vỡ {broken}",
   "Catch each egg in your hat.": "Hứng từng quả trứng bằng mũ.",
   "An egg takes every rung it meets.": "Trứng gặp bập bênh nào là đi qua cái đó.",
-  "Hat full? Run to the basket.": "Mũ đầy rồi? Chạy tới cái giỏ."
+  "Hat full? Run to the basket.": "Mũ đầy rồi? Chạy tới cái giỏ.",
+  "Difficult": "Khó",
+  "Get 1 star on Easy": "Đạt 1 sao ở mức Dễ",
+  "Get 2 stars on Normal": "Đạt 2 sao ở mức Thường",
+  "New level open: {level}!": "Mở mức mới: {level}!",
+  "Choose a level": "Chọn mức chơi",
+  "Not played yet": "Chưa chơi",
+  "Play": "Chơi"
 }

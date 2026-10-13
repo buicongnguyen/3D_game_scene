@@ -3825,5 +3825,12 @@
   "{caught} caught · {golden} golden · {broken} broken": "とれた {caught}こ · 金 {golden}こ · われた {broken}こ",
   "Catch each egg in your hat.": "たまごをぼうしで受けとめよう。",
   "An egg takes every rung it meets.": "たまごは、出会ったシーソーをぜんぶわたる。",
-  "Hat full? Run to the basket.": "ぼうしがいっぱい？ かごへ走ろう。"
+  "Hat full? Run to the basket.": "ぼうしがいっぱい？ かごへ走ろう。",
+  "Difficult": "むずかしい",
+  "Get 1 star on Easy": "「やさしい」で星を1つとろう",
+  "Get 2 stars on Normal": "「ふつう」で星を2つとろう",
+  "New level open: {level}!": "新しいレベルがひらいたよ：{level}！",
+  "Choose a level": "レベルをえらぼう",
+  "Not played yet": "まだあそんでいないよ",
+  "Play": "あそぶ"
 }

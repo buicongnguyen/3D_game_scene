@@ -9,6 +9,8 @@ import { CAST, DIALOGUE } from './story.js';
 import { tx, getLang } from '../i18n/i18n.js';
 import { storyId } from './stories/index.js';
 import { showHowTo, hideHowTo } from '../ui/howto.js';
+import { LEVELS, LEVEL_NAME, defaultLevel, levelSpec, levelBest } from '../content/levels.js';
+import { openLevelPicker } from '../ui/level-picker.js';
 
 const AMBIENT_R = 60;          // the place's ambient life runs while Mika is this close
 const LOAD_R = 75;             // a trick's game is fetched when Mika comes this close to its sign (or opens it)
@@ -186,7 +188,10 @@ export class Tricks {
       let again = true;
       while (again) {
         const first = !st.tricks[id].plays;
-        const ctx = this.makeCtx(t, first);
+        // the first go is a guided Easy round; after it the player picks a level each time
+        const level = first ? 'easy' : await this.pickLevel(t, st.tricks[id]);
+        if (!level) { result = { score: 0, quit: true }; break; }
+        const ctx = this.makeCtx(t, first, level);
         this.round = { id, ctx };
         this.locks = false;
         d.ui.prompt(null);
@@ -199,7 +204,8 @@ export class Tricks {
         this.endRound(ctx);
         if (result.quit) break;
         const score = Math.max(0, Math.floor(result.score || 0));
-        const { rec, stars, newBest } = recordRound(st.tricks[id], t, score);
+        const { rec, stars, newBest, opened } = recordRound(st.tricks[id], t, score, level);
+        result.level = level; result.opened = opened;
         st.tricks[id] = { ...st.tricks[id], ...rec };
         d.ui.toast(`${starText(stars)} ${tx(t.name)}${newBest ? ` · ${tx('New best!')}` : ''}`, t.icon);
         if (stars) d.audio.star(); else d.audio.good();
@@ -226,11 +232,32 @@ export class Tricks {
     return result;
   }
 
-  makeCtx(t, first) {
+  /**
+   * Ask for the level of the next round (src/ui/level-picker.js). Resolves 'easy' | 'normal' | 'hard', or null when the
+   * player backs out. A QA script names it up front (window.__STARLINE_QA__.level) and sees no picker.
+   */
+  pickLevel(t, rec) {
+    const d = this.d, g = this.g;
+    const qa = typeof window !== 'undefined' ? window.__STARLINE_QA__?.level : null;
+    if (LEVELS.includes(qa)) return Promise.resolve(qa);
+    if (!this.el) return Promise.resolve(defaultLevel(rec, g.easy));
+    this.locks = true;
+    g.player.vel.set(0, 0, 0);
+    d.ui.prompt(null);
+    g.input.releaseAll?.();
+    const pick = openLevelPicker({ name: tx(t.name), icon: d.ui.icon(t.icon), rec, level: defaultLevel(rec, g.easy), unit: tx(t.unit), touch: d.ui.touch });
+    const l = { fn: dt => { pick.step(g.input, dt); }, res: () => pick.close() };
+    this.loops.add(l);
+    return pick.done.then(v => { this.loops.delete(l); return v; });
+  }
+
+  makeCtx(t, first, level = 'normal') {
     const d = this.d, g = this.g, self = this;
     const ctx = {
       director: d, game: g, player: g.player, audio: d.audio, ui: d.ui, fx: d.fx, input: g.input, trick: t,
-      first, roundTime: first ? (t.firstLength ?? t.length) : t.length,
+      // level: 'easy' | 'normal' | 'hard' (content/levels.js). easy / hard: the same as flags; a guided first try is always easy.
+      level, easy: level === 'easy', hard: level === 'hard',
+      first, roundTime: first ? (t.firstLength ?? t.length) : levelSpec(t, level).length,
       place: new THREE.Vector3(t.place.x, g.world.heightAt(t.place.x, t.place.z), t.place.z),
       teacher: this.teacherOf(t), quit: false, t: 0,
       debug: {},           // what a trick shows the QA autopilot (window.__STARLINE_QA__.director.tricks.round.ctx.debug)
@@ -323,7 +350,16 @@ export class Tricks {
     const q = s => el.querySelector(s);
     q('h2').textContent = tx(t.name);
     q('.score').textContent = `${score} ${unit}`;
-    q('.best').textContent = newBest && rec.plays > 1 ? tx('New best!') : tx('Best: {n}', { n: rec.best });
+    const lv = res?.level || 'normal';
+    q('.best').textContent = `${tx(LEVEL_NAME[lv])} · ${newBest && rec.plays > 1 ? tx('New best!') : tx('Best: {n}', { n: levelBest(rec, lv) || rec.best })}`;
+    if (res?.opened) {
+      // this round opened the next level: say so (Play again offers it first)
+      const o = document.createElement('div');
+      o.className = 'opened';
+      o.style.cssText = 'margin:6px 0 0;padding:6px 10px;border-radius:12px;background:#e3f6dc;color:#2f7a3a;font-weight:700';
+      o.textContent = tx('New level open: {level}!', { level: tx(LEVEL_NAME[res.opened]) });
+      q('.best').after(o);
+    }
     q('.fact b').textContent = tx('Why it works');
     q('.why').textContent = tx(t.why);
     el.querySelectorAll('.fact b')[1].textContent = tx('How to do it for real');

@@ -6,6 +6,7 @@
 // (the round puts on its own night look); a running clock (Explore cycle) must be inside the hours.
 // stars: score needed for 1, 2 and 3 stars. length: round seconds; firstLength: the guided first try.
 import { ARCHERY } from './archery.js';
+import { LEVELS, levelSpec, recordLevel, cleanLevels } from './levels.js';
 // Texts are English source strings (translated with tx(); collected by scripts/i18n-extract.mjs).
 
 export const TRICKS = [
@@ -183,15 +184,21 @@ export function trickOpen(t, { season, hour, frozen = true, raining = false }) {
   return frozen || inHours(hour, t.hours);
 }
 
-/** Fold a finished round into the saved record { learned, best, stars, plays }. Returns { rec, stars, newBest }. */
-export function recordRound(prev, t, score) {
-  const s = starsFor(score, t.stars);
+/**
+ * Fold a finished round into the saved record { learned, best, stars, plays, level, levels }. `level`: the level it was
+ * played at (content/levels.js; its star thresholds). Returns { rec, stars, newBest, opened }: newBest is the best on
+ * that level, opened the level this round has just made available (or null). best / stars stay the best over all levels.
+ */
+export function recordRound(prev, t, score, level = 'normal') {
+  const s = starsFor(score, levelSpec(t, level).stars);
   const rec = { learned: true, best: 0, stars: 0, plays: 0, ...(prev || {}) };
-  const newBest = score > rec.best;
+  const L = recordLevel(prev, level, score, s);
   rec.best = Math.max(rec.best, score);
   rec.stars = Math.max(rec.stars, s);
   rec.plays += 1;
-  return { rec, stars: s, newBest };
+  rec.levels = L.levels;
+  rec.level = L.opened || level;                 // the picker offers a level just opened first
+  return { rec, stars: s, newBest: L.newBest, opened: L.opened };
 }
 
 /** A clean tricks record for a save (migrate): known ids only, numbers whole and in range. */
@@ -204,6 +211,9 @@ export function cleanTricks(raw) {
     out[id] = { learned: !!r.learned, best: int(r.best), stars: Math.min(3, int(r.stars)), plays: int(r.plays) };
     if (r.intro) out[id].intro = true;
     if (r.note) out[id].note = true;
+    const levels = cleanLevels(r.levels);
+    if (levels) out[id].levels = levels;
+    if (LEVELS.includes(r.level)) out[id].level = r.level;
   }
   return out;
 }

@@ -13,6 +13,8 @@ import * as THREE from 'three';
 import { YARD_LIST, stageOf, toWorld, toCourt, pathBetween, enterPoint, KID_STYLE, YARD_NAMES, YARD_RULES, YARD_NOTES, recordYard, cleanYard, gameOn, setGameOn, yardAt } from '../../content/yard.js';
 import { YARD_GAME, nextGame, levelFor, ambientRoles } from './index.js';
 import { showHowTo, hideHowTo } from '../../ui/howto.js';
+import { LEVELS, LEVEL_NAME, defaultLevel } from '../../content/levels.js';
+import { openLevelPicker } from '../../ui/level-picker.js';
 import { Views } from './views.js';
 import { squareAt } from './views.js';
 import { Poses } from './poses.js';
@@ -668,19 +670,23 @@ export class Yard {
       this.locks = true;
       g.player.vel.set(0, 0, 0);
       g.player.carry?.want('worn', 'yard');         // hands free: the lantern rides on her belt
-      await d.ui.fade(true, 280);
-      let again = true, first = true;
+      // the very first round of a game is a gentle one ('first'); after it the player picks a level each time
+      let level = await this.pickLevel(G, id);
+      let again = !!level, first = true;
+      if (again) await d.ui.fade(true, 280);
       while (again) {
-        const st = this.save, level = levelFor(st[id], g.easy);
+        const st = this.save;
         const res = await this.runRound(c, G, level, first);
         first = false;
         result = res || { quit: true };
         if (result.quit) break;
-        const { rec, newBest } = recordYard(st[id], result);
+        const { rec, newBest, opened } = recordYard(st[id], result, level);
         st[id] = rec;
+        result.level = level === 'first' ? 'easy' : level; result.opened = opened;
         if (result.stars) d.audio.star(); else d.audio.good();
         this.saveNow();
         again = await this.results(G, result, rec, newBest);
+        if (again) { level = await this.pickLevel(G, id); again = !!level; }
         if (again) { this.locks = true; await d.ui.fade(true, 220); }
       }
     } catch (e) {
@@ -702,6 +708,26 @@ export class Yard {
   }
 
   /** One round: sides, places, camera, then the sim runs on Mika's input until it is over (or she stops). */
+  /**
+   * The level of the next round: 'first' for a game never played, else what the player picks ('easy' | 'normal' | 'hard';
+   * null when they back out). A QA script names it up front (window.__STARLINE_QA__.level).
+   */
+  pickLevel(G, id) {
+    const d = this.d, g = this.g, rec = this.save[id];
+    if (!rec?.plays) return Promise.resolve('first');
+    const qa = typeof window !== 'undefined' ? window.__STARLINE_QA__?.level : null;
+    if (LEVELS.includes(qa)) return Promise.resolve(qa);
+    if (!this.el) return Promise.resolve(defaultLevel(rec, g.easy));
+    this.locks = true;
+    d.ui.prompt?.(null);
+    g.input.releaseAll?.();
+    d.ui.fade?.(false, 200);                    // (a launch from the Mini games menu arrives behind a black screen)
+    const pick = openLevelPicker({ name: tx(YARD_NAMES[id] || G.name || id), icon: d.ui.icon?.(`yard-${id}`) || '', rec, level: defaultLevel(rec, g.easy), touch: d.ui.touch });
+    const l = { fn: dt => { pick.step(g.input, dt); }, res: () => pick.close() };
+    this.loops.add(l);
+    return pick.done.then(v => { this.loops.delete(l); return v; });
+  }
+
   async runRound(c, G, level, first) {
     const d = this.d, g = this.g, p = g.player, id = G.id, town = d.town, Y = c.Y;
     const S = stageOf(Y, id), y0 = this.ground(S.x, S.z);
@@ -950,7 +976,15 @@ export class Yard {
       <div class="fact"><b></b><span class="note"></span></div>
       <div class="btns"><button class="again"></button><button class="main done"></button></div>`;
     const q = s => el.querySelector(s);
-    q('h2').textContent = tx(G.name);
+    q('h2').textContent = `${tx(G.name)} · ${tx(LEVEL_NAME[res.level] || LEVEL_NAME.normal)}`;
+    if (res.opened) {
+      // this round opened the next level: say so (Play again offers it first)
+      const o = document.createElement('div');
+      o.className = 'opened';
+      o.style.cssText = 'margin:6px 0 0;padding:6px 10px;border-radius:12px;background:#e3f6dc;color:#2f7a3a;font-weight:700';
+      o.textContent = tx('New level open: {level}!', { level: tx(LEVEL_NAME[res.opened]) });
+      q('.best').after(o);
+    }
     q('.verdict').textContent = card.verdict;
     if (!card.good) q('.verdict').style.color = '#a2441c';
     q('.score').textContent = card.score;

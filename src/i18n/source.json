@@ -15714,6 +15714,38 @@
   ]
  },
  {
+  "s": "Easy",
+  "ctx": [
+   "UI (src/content/levels.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Normal",
+  "ctx": [
+   "UI (src/content/levels.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Difficult",
+  "ctx": [
+   "UI (src/content/levels.js)"
+  ]
+ },
+ {
+  "s": "Get 1 star on Easy",
+  "ctx": [
+   "UI (src/content/levels.js)"
+  ]
+ },
+ {
+  "s": "Get 2 stars on Normal",
+  "ctx": [
+   "UI (src/content/levels.js)"
+  ]
+ },
+ {
   "s": "Countryside tricks",
   "ctx": [
    "UI (src/content/minigames.js)",
@@ -16612,6 +16644,7 @@
   "s": "Back",
   "ctx": [
    "UI (src/content/tour.js)",
+   "UI (src/ui/level-picker.js)",
    "menu / screen text"
   ]
  },
@@ -20404,6 +20437,13 @@
   ]
  },
  {
+  "s": "New level open: {level}!",
+  "ctx": [
+   "UI (src/game/tricks.js)",
+   "UI (src/game/yard/round.js)"
+  ]
+ },
+ {
   "s": "Why it works",
   "ctx": [
    "UI (src/game/tricks.js)",
@@ -22162,6 +22202,24 @@
   ]
  },
  {
+  "s": "Choose a level",
+  "ctx": [
+   "UI (src/ui/level-picker.js)"
+  ]
+ },
+ {
+  "s": "Not played yet",
+  "ctx": [
+   "UI (src/ui/level-picker.js)"
+  ]
+ },
+ {
+  "s": "Play",
+  "ctx": [
+   "UI (src/ui/level-picker.js)"
+  ]
+ },
+ {
   "s": "Landslide scar",
   "ctx": [
    "UI (src/ui/map.js)"
@@ -22979,18 +23037,6 @@
  },
  {
   "s": "Difficulty",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Easy",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Normal",
   "ctx": [
    "menu / screen text"
   ]

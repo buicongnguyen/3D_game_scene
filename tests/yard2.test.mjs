@@ -662,6 +662,7 @@ test('yard save: each yard\'s scoreboard, every game\'s record, the marbles she 
   // recording a round: the marbles she wins add up
   let r = recordYard(undefined, { score: 4, won: true, stars: 2, rally: 4, gain: 4 });
   r = recordYard(r.rec, { score: 2, won: false, stars: 1, rally: 2, gain: 2 });
-  assert.deepEqual(r.rec, { plays: 2, wins: 1, best: 4, rally: 4, stars: 2, total: 6 });
+  const { levels, level, ...core } = r.rec;       // (the per-level fields: tests/levels.test.mjs)
+  assert.deepEqual(core, { plays: 2, wins: 1, best: 4, rally: 4, stars: 2, total: 6 });
   assert.equal(r.newBest, false);
 });

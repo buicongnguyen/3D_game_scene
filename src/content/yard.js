@@ -8,6 +8,7 @@
 //   v = along (metres from the stage's middle; v > 0 is the NEAR side, where Mika plays, v < 0 the far side).
 // World (rot = 0): x = stage.x - u, z = stage.z - v; rot turns (u, v) first (see toWorld).
 import { N_ } from '../i18n/i18n.js';
+import { LEVELS, recordLevel, cleanLevels } from './levels.js';
 
 const PI = Math.PI;
 
@@ -237,6 +238,9 @@ export function cleanYard(raw) {
     if (!r || typeof r !== 'object') continue;
     out[id] = { plays: int(r.plays), wins: int(r.wins), best: int(r.best), rally: int(r.rally), stars: Math.min(3, int(r.stars)) };
     if (r.total) out[id].total = int(r.total);          // marbles won, over all rounds
+    const levels = cleanLevels(r.levels);
+    if (levels) out[id].levels = levels;
+    if (LEVELS.includes(r.level)) out[id].level = r.level;
   }
   return out;
 }
@@ -251,16 +255,21 @@ export function setGameOn(save, Y, id) {
 }
 
 /** Fold a finished round into the record. result: { score, stars, won?, rally?, gain? }. Returns { rec, newBest }. */
-export function recordYard(rec, result) {
+export function recordYard(rec, result, level = 'normal') {
   const r = { plays: 0, wins: 0, best: 0, rally: 0, stars: 0, ...(rec || {}) };
-  const newBest = result.score > r.best;
+  // levels (content/levels.js): the gentle first round counts as Easy; newBest is the best on that level
+  const lv = level === 'first' ? 'easy' : level;
+  const L = recordLevel(rec, lv, Math.floor(result.score || 0), result.stars || 0);
+  const newBest = L.newBest;
+  r.levels = L.levels;
+  r.level = L.opened || lv;
   r.plays += 1;
   if (result.won) r.wins += 1;
   r.best = Math.max(r.best, Math.floor(result.score || 0));
   r.rally = Math.max(r.rally, Math.floor(result.rally || 0));
   r.stars = Math.max(r.stars, Math.min(3, Math.floor(result.stars || 0)));
   if (result.gain) r.total = (r.total || 0) + Math.floor(result.gain);
-  return { rec: r, newBest };
+  return { rec: r, newBest, opened: L.opened };
 }
 
 /** Does the straight walk a -> b cross the fence rectangle grown by m? (A walk that starts or ends inside is judged on its own.) */
