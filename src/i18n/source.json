@@ -2644,6 +2644,30 @@
   ]
  },
  {
+  "s": "Today we practise falling in with our clothes on, city girl. In the calm pool, with a grown-up right at the edge.",
+  "ctx": [
+   "dialogue trick_floatsafe_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "On purpose? In my shoes?",
+  "ctx": [
+   "dialogue trick_floatsafe_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Shoes and clothes hold air. If you ever fall in, don't thrash. Lie back, float, breathe slowly. Then call for help.",
+  "ctx": [
+   "dialogue trick_floatsafe_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "And if a friend falls in, never jump in after them. Shout for a grown-up and throw something that floats.",
+  "ctx": [
+   "dialogue trick_floatsafe_intro, spoken by Rin"
+  ]
+ },
+ {
   "s": "Summer night, city girl. Know what lives by the paddies after dark? Fireflies. Hundreds of them.",
   "ctx": [
    "dialogue trick_firefly_intro, spoken by Rin"
@@ -2961,6 +2985,30 @@
   "s": "On the green by the river, at the north end of Kawabe. No hurry: nobody is timing you.",
   "ctx": [
    "dialogue trick_lifecycle_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Sora kept field cards too. Rice, wheat, potatoes: what a farmer does with each, from the seed to the harvest.",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Rice comes from a shop. In a bag. Doesn't it?",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Five months of work first, city girl. Put the jobs in order, read the year wheel, find what each crop needs.",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "At the north edge of the rice paddies, west of Kawabe. No hurry: nobody is timing you.",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Rin"
   ]
  },
  {
@@ -6271,6 +6319,30 @@
   "s": "Come to the green by the river, at the north end of Kawabe. No hurry, no clock. Thinking is the whole game.",
   "ctx": [
    "dialogue trick_lifecycle_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Every grain of rice in your bowl took a whole summer, Mi-chan. I drew it all on cards: rice, wheat and potatoes.",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Grandma, do potatoes grow from seeds too?",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "From a potato! That is one of the puzzles. Put a crop's year in order, read the year wheel, find what it needs.",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Come to the north edge of the rice paddies, west of Kawabe. No hurry, no clock. Thinking is the whole game.",
+  "ctx": [
+   "dialogue trick_crops_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -14053,6 +14125,30 @@
   ]
  },
  {
+  "s": "Float and wait",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "Fell in? Float on your back, breathe slowly, then call for help. A friend fell in? Never jump in: shout for a grown-up and throw something that floats.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Air in your lungs, clothes and shoes helps you float. Thrashing wastes air and strength. In Japan children learn it as \"uite mate\": float and wait.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Wear a life jacket near water, and only play by water with a grown-up.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Firefly jar",
   "ctx": [
    "countryside trick name (journal, sign prompt, results card)"
@@ -14480,6 +14576,36 @@
  },
  {
   "s": "Never touch a chrysalis. Tip standing water out of pots so mosquitoes cannot breed.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
+  "s": "From seed to harvest",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the north edge of the rice paddies, west of Kawabe",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Plant a sprouting potato in a deep pot and heap soil round the stems as they grow. Count the weeks until the leaves turn yellow, then dig.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Rice wants warmth and standing water; winter wheat wants a cold winter. So one field can grow rice in summer and wheat in winter.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Never eat a green potato. Keep potatoes in the dark.",
   "ctx": [
    "countryside trick: safety line for kids"
   ]
@@ -15930,6 +16056,12 @@
   ]
  },
  {
+  "s": "Fell in with your clothes on? Float, wait and call for help.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
   "s": "Scoop glowing fireflies into a jar.",
   "ctx": [
    "UI (src/content/minigames.js)"
@@ -15997,6 +16129,12 @@
  },
  {
   "s": "Put the lives of small animals in order: a card game for thinkers.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Rice, wheat and potatoes from seed to harvest: a card game for thinkers.",
   "ctx": [
    "UI (src/content/minigames.js)"
   ]
@@ -16354,6 +16492,12 @@
  },
  {
   "s": "Rice paddies",
+  "ctx": [
+   "UI (src/content/signs.js)"
+  ]
+ },
+ {
+  "s": "Wheat field",
   "ctx": [
    "UI (src/content/signs.js)"
   ]
@@ -18257,7 +18401,8 @@
  {
   "s": "Breathe",
   "ctx": [
-   "UI (src/game/tricks/archery.js)"
+   "UI (src/game/tricks/archery.js)",
+   "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
@@ -19283,6 +19428,59 @@
   ]
  },
  {
+  "s": "Sit down by me, Mi-chan. These are my field cards: how rice, wheat and potatoes grow, from seed to harvest.",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)"
+  ]
+ },
+ {
+  "s": "Sit down, city girl. These are Sora's field cards: how rice, wheat and potatoes grow, from seed to harvest.",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)"
+  ]
+ },
+ {
+  "s": "Nobody is counting the seconds. Look at the pictures, think, and then choose.",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)",
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Rice grows all summer long. Pick the cards one by one, from first to last. The seeds come first!",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)"
+  ]
+ },
+ {
+  "s": "Now one card is missing from the row. Pick the card that fills the gap, then press Check.",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)",
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "You have got it! The next ones are all yours. A wrong answer is fine: just think and try again.",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)",
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Pick a card to lay it in the row. Pick it again to take it back.",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)",
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Pick a card, then press Check.",
+  "ctx": [
+   "UI (src/game/tricks/crops.js)",
+   "UI (src/game/tricks/lifecycle.js)"
+  ]
+ },
+ {
   "s": "Photo: {act}",
   "ctx": [
    "UI (src/game/tricks/dew.js)"
@@ -19657,7 +19855,8 @@
  {
   "s": "Pull",
   "ctx": [
-   "UI (src/game/tricks/firedrill.js)"
+   "UI (src/game/tricks/firedrill.js)",
+   "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
@@ -20038,6 +20237,580 @@
   "s": "Lid off. Goodnight, fireflies, and thank you for the light.",
   "ctx": [
    "UI (src/game/tricks/firefly.js)"
+  ]
+ },
+ {
+  "s": "Ready at the edge",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Fell in: stay calm",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Float on your back",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Float and call",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hold on to a float",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Scull to the edge",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hold the pole",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "A friend fell in",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Drill complete",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "A drill in a calm pool with a grown-up at the edge. Wear a life jacket near real water.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Rin: Easy now. Stop moving, lie back and let the water hold you.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Rin: Float first, then call. Let your breathing slow down.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hands off the stick. Just float and breathe.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Small pushes, left or right, to stay level.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Follow the ring: hold while it grows, let go while it shrinks.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Save your breath. Call when the grown-up looks your way.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Wait. Let it drift to you; do not reach for it.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Steer toward the pole while you tap.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Slower. Gentle taps keep you floating.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Try the instruction above. Take your time; Rin is here.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)",
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Rin plays a friend who has fallen in. What do you do first?",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Throw her something that floats. Which one?",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Now pull her in with the pole. How?",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Shout for a grown-up",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Jump in to her",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Wade in and grab her",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Empty bottle",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Football",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Stone",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Full school bag",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Lie flat and reach",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Stand at the very edge",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hold out my hand",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Never jump in: then two people need help.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Do not wade in: she could pull you under.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "A stone sinks. Pick something light and full of air.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "A full bag is heavy: it sinks.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Standing at the edge, you could be pulled in.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Your arm is too short, and she could pull you in.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "“Help! Someone fell in!” The grown-up comes at once.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "An empty bottle floats. She hugs it to her chest.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "A ball floats. She hugs it to her chest.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Lying flat, you cannot be pulled in. Pull slowly.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Today we practise falling in with clothes on. Rin and a grown-up are right here. Press Action to step in.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Ready? Step in",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Step in",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Mika is out and dry. Float first, then call. For a friend: reach or throw, never jump in, and get a grown-up.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Drill complete — well done",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Well done",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)",
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "The water is cold and your breath goes fast. That passes. Do not shout yet, do not swim: keep still.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Cold! Keep still…",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Shout?",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Surprise! Do not thrash. Take your hands off everything until the bar is full.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hands off… keep still",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Wait…",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Now lie back: head back, ears in the water, arms and legs out like a star. Clothes and shoes help you float: keep them on.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Lie back like a star",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Lie back",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Head back… ears in the water",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Little waves! Breathe with the ring, and nudge the stick left or right to stay level.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Breathe slowly with the ring: hold Action while it grows, let go while it shrinks.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Breathe in… (hold)",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Breathe out… (let go)",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Breathe in",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Breathe out",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Float and wait. When the grown-up looks your way, press Action once: wave one arm and shout.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Float and wait. Call when the grown-up looks your way.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Now! Wave and shout",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Float and wait…",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Help!",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "The grown-up throws something that floats. Let it drift to you, then press Action and hug it to your chest.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hug it to your chest",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Now! Hug it",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Wait… it is drifting to you",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hug it",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "This lane flows like a slow river. Feet first! Steer across to the bank and tap Action on the slow pulse.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Stay on your back. Steer toward the pole and tap Action on the slow pulse.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Slow taps… to the edge",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Gentle scull",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)",
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "The grown-up reaches out with the pole. Hold Action to hold on with both hands.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hold on… you are being pulled in",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hold on to the pole",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hold on",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Now the other side. Rin plays a friend who has fallen in. Whatever happens: do NOT jump in after her.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "A friend is in the water!",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Not that one. Try again",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Yes! That is right",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Choose an answer",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Float first, then call. Never swim after someone: reach or throw, and get a grown-up.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "You practised {steps} steps of the drill. Take your time: staying calm is what counts.",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "{step} · {name}",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)",
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "X is Action · B leaves",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Hold or tap the Action button",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "E is Action · Backspace leaves",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
+  ]
+ },
+ {
+  "s": "Calm",
+  "ctx": [
+   "UI (src/game/tricks/floatsafe.js)"
   ]
  },
  {
@@ -20509,37 +21282,7 @@
   ]
  },
  {
-  "s": "Nobody is counting the seconds. Look at the pictures, think, and then choose.",
-  "ctx": [
-   "UI (src/game/tricks/lifecycle.js)"
-  ]
- },
- {
   "s": "A butterfly has four shapes in its life. Pick the cards one by one, from first to last. The eggs come first!",
-  "ctx": [
-   "UI (src/game/tricks/lifecycle.js)"
-  ]
- },
- {
-  "s": "Now one card is missing from the row. Pick the card that fills the gap, then press Check.",
-  "ctx": [
-   "UI (src/game/tricks/lifecycle.js)"
-  ]
- },
- {
-  "s": "You have got it! The next ones are all yours. A wrong answer is fine: just think and try again.",
-  "ctx": [
-   "UI (src/game/tricks/lifecycle.js)"
-  ]
- },
- {
-  "s": "Pick a card to lay it in the row. Pick it again to take it back.",
-  "ctx": [
-   "UI (src/game/tricks/lifecycle.js)"
-  ]
- },
- {
-  "s": "Pick a card, then press Check.",
   "ctx": [
    "UI (src/game/tricks/lifecycle.js)"
   ]
@@ -21202,6 +21945,797 @@
   ]
  },
  {
+  "s": "January",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "February",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "March",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "April",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "May",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "June",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "July",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "August",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "September",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "October",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "November",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "December",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Seed, nursery bed, planting out, many stems, flowers, golden grain, harvest.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice takes about 4 to 5 months: sown in May, cut in September.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice needs warmth and a paddy full of water.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "From rice we make cooked rice, rice noodles and rice cakes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Of rice we eat the grain: the seeds in its head.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice seeds",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice seeds are soaked in water until a tiny white shoot peeps out.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Nursery bed",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The seedlings grow close together in a nursery bed for 3 to 4 weeks.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Planting out",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The seedlings are planted out in rows in the flooded paddy.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Many new stems",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "One rice plant grows many new stems from its foot. That is tillering.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice in flower",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "In late summer the heads come out of the leaves and flower.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Golden rice",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The grains fill and turn golden. A heavy rice head bends down.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice harvest",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The paddy is drained, the rice is cut and the sheaves hang up to dry.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Wheat",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Sown in autumn, small all winter, tall in spring, golden in early summer.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Winter wheat takes about 7 to 8 months: sown in November, cut in early summer.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Winter wheat needs a cool winter, and dry weather when it is cut.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "From wheat we make flour, bread and noodles.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Of wheat we eat the grain, ground into flour.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Sowing in autumn",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Winter wheat is sown in autumn, when the rice has been cut.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Sprouts in winter",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The sprouts stay small and green all winter. The cold does them good.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Tall in spring",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "In the spring warmth the wheat shoots up, knee high and higher.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Green ears",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Every stalk grows an ear that stands straight up, with a long beard.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Golden wheat",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "By early summer the wheat is golden and dry. Its ears still stand up.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Wheat harvest",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Wheat is cut on a dry day in early summer, before the rains come.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Potato",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Seed potato, sprouts, leaves and flowers, new potatoes, tops die back, digging.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Potatoes take about 3 to 4 months: planted in March, dug in June.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Potatoes need loose soil heaped up round their stems, and a dark store.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "From potatoes we make chips and potato stew.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Of the potato we eat the tuber from under the soil.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Seed potato",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A potato plant grows from a potato, not from a seed. The dents are its eyes.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Sprouting eyes",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Sprouts grow out of the eyes. Now the seed potato can be planted.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Leaves and flowers",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Leafy shoots come up and flower. Soil is heaped up round the stems.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "New potatoes",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Under the soil, new potatoes swell on side stems, in the dark.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Tops die back",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The leaves turn yellow and lie down. The potatoes are ready.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Digging potatoes",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The potatoes are dug up with a fork, 3 to 4 months after planting.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A flooded paddy",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Standing water is for rice. Wheat and potatoes would rot in it.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A cool winter",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A cool winter is for winter wheat: without it there are no ears.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Soil heaped up",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Heaping soil round the stems is for potatoes: it keeps them in the dark.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A dark store",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A dark store is for potatoes. In the light they turn green: not for eating!",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The grain",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Grain is the seed of the plant. We eat the grain of rice and of wheat.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A tuber",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "A tuber is a swollen stem under the soil. A potato is a tuber.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The leaves",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "We eat the leaves of cabbage and spinach, not of these crops.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The flowers",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The flowers are pretty, but they are not the part we eat.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Cooked rice",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Cooked rice is rice grain, washed and steamed.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice noodles",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice noodles are made from rice flour, like the noodles in pho.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice cakes",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice cakes are sticky rice, pounded or steamed: mochi and banh.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Flour",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Flour is wheat grain ground fine in a mill.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Bread",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Bread is baked from wheat flour.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Wheat noodles",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Thick wheat noodles are made from wheat flour, water and salt.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Chips",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Chips are potatoes cut into sticks and fried.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Potato stew",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Potato stew is potatoes simmered soft with meat and onions.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Tanabata in July",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "the harvest festival in October",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Put the cards in order, from first to last.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)",
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Two crops got mixed up. Fill the row with one crop, in order.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Which card fills the gap?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)",
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Which card does not belong with the others?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)",
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Look at the year wheel. Which crop is in the field in these months?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Look at the year wheel. Which crop is ready the fastest?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Look at the year wheel. Which crop stays in the field the longest?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Look at the year wheel. Which crop is out in the field all winter?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "What does this crop need?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Which crop needs this?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Which part of this plant do we eat?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Which crop gives us a tuber from under the soil?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Which food is made from this crop?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Which crop is this food made from?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "It is {now}. What do we plant now, to be ready for {festival}?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The rice is cut in September. What is sown in the same field in autumn?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The wheat is cut as summer begins. What is planted in the same field in June?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "One field, one whole year. Put its jobs in order. Start with planting the rice.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "The green cards are right. Try the others again.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)",
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Think again: which one comes first of all?",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)",
+   "UI (src/game/tricks/rules-lifecycle.js)"
+  ]
+ },
+ {
+  "s": "Potatoes are the quickest: about 3 to 4 months from planting to digging.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Winter wheat is the slowest: about 7 to 8 months, right through the winter.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Only winter wheat stays out in the cold. Rice and potatoes would freeze.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Wheat follows rice: it is sown in autumn and grows through the winter.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice follows wheat: the seedlings wait in the nursery bed until the field is free.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice in summer, wheat in winter: two harvests a year, and the field is hardly ever empty.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Rice needs warmth: it is sown in May, never in the cold months.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Winter wheat is sown in autumn, in November, and needs the winter.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Potatoes are planted in March, as soon as the soil wakes up.",
+  "ctx": [
+   "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
   "s": "In the water",
   "ctx": [
    "UI (src/game/tricks/rules-lifecycle.js)"
@@ -21496,25 +23030,7 @@
   ]
  },
  {
-  "s": "Put the cards in order, from first to last.",
-  "ctx": [
-   "UI (src/game/tricks/rules-lifecycle.js)"
-  ]
- },
- {
   "s": "Two lives got mixed up. Fill the row with one life, in order.",
-  "ctx": [
-   "UI (src/game/tricks/rules-lifecycle.js)"
-  ]
- },
- {
-  "s": "Which card fills the gap?",
-  "ctx": [
-   "UI (src/game/tricks/rules-lifecycle.js)"
-  ]
- },
- {
-  "s": "Which card does not belong with the others?",
   "ctx": [
    "UI (src/game/tricks/rules-lifecycle.js)"
   ]
@@ -21587,18 +23103,6 @@
  },
  {
   "s": "Not there. Look at the picture once more.",
-  "ctx": [
-   "UI (src/game/tricks/rules-lifecycle.js)"
-  ]
- },
- {
-  "s": "The green cards are right. Try the others again.",
-  "ctx": [
-   "UI (src/game/tricks/rules-lifecycle.js)"
-  ]
- },
- {
-  "s": "Think again: which one comes first of all?",
   "ctx": [
    "UI (src/game/tricks/rules-lifecycle.js)"
   ]
@@ -21958,6 +23462,12 @@
   ]
  },
  {
+  "s": "Frog stroke",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
   "s": "Glide, kick and paddle",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
@@ -22048,7 +23558,31 @@
   ]
  },
  {
-  "s": "Try the instruction above. Take your time; Rin is here.",
+  "s": "Too soon! Stretch long and let the glide bar reach the green.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Hold a little longer: sweep the hands round and lift the head.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Let go to kick. Pull, breathe, then kick.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Kick",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Glide",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -22114,19 +23648,13 @@
   ]
  },
  {
-  "s": "Mika is back on the dry deck. You practised all six game skills. Real swimming still needs a qualified teacher and supervision.",
+  "s": "Mika is back on the dry deck. You practised every game skill. Real swimming still needs a qualified teacher and supervision.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
   "s": "Practice complete — safely out",
-  "ctx": [
-   "UI (src/game/tricks/swimming.js)"
-  ]
- },
- {
-  "s": "Well done",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -22228,6 +23756,72 @@
   ]
  },
  {
+  "s": "Frog stroke. Hold Action: pull and breathe. Let go: kick. Then hands off and glide until the bar is green.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Frog stroke through the two red rings, then to the gold exit. Steer, pull, kick, then glide.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Frog stroke back to the gold exit. Steer, pull, kick, then glide.",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Pull — hands sweep round",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Breathe — now let go to kick",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Kick like a frog!",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Hold to pull and breathe",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Glide… stretch long and wait",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Let go: kick",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Pull and breathe",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
+  "s": "Glide… wait",
+  "ctx": [
+   "UI (src/game/tricks/swimming.js)"
+  ]
+ },
+ {
   "s": "Tap Action each time the dot reaches the green. Slow, steady taps keep her head up.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
@@ -22235,12 +23829,6 @@
  },
  {
   "s": "Wait for the pulse",
-  "ctx": [
-   "UI (src/game/tricks/swimming.js)"
-  ]
- },
- {
-  "s": "Gentle scull",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -22294,19 +23882,13 @@
   ]
  },
  {
-  "s": "You returned to the dry deck after all six game drills. Stars are game rewards.",
+  "s": "You returned to the dry deck after every game drill. Stars are game rewards.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
  },
  {
-  "s": "You practised {skills}/6 game skills. Replay and take your time with Rin's cues.",
-  "ctx": [
-   "UI (src/game/tricks/swimming.js)"
-  ]
- },
- {
-  "s": "{step} · {name}",
+  "s": "You practised {skills}/{total} game skills. Replay and take your time with Rin's cues.",
   "ctx": [
    "UI (src/game/tricks/swimming.js)"
   ]
@@ -24202,6 +25784,24 @@
   ]
  },
  {
+  "s": "Fell in? Do not thrash. Lie back and float.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Breathe: hold as the ring grows, then let go.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "A friend fell in? Shout, and throw a float.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
   "s": "Walk softly. Running scares them away.",
   "ctx": [
    "UI (src/ui/howto.js)"
@@ -24395,6 +25995,12 @@
  },
  {
   "s": "No hurry. A wrong answer can be tried again.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Pick the right card, or lay a row in order.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]
