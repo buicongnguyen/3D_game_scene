@@ -30,6 +30,19 @@ export const CONTRACTS = {
   'villager-man': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
   'villager-woman': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: VILLAGER_CLIPS },
   'villager-kid': { family: 'characters', tris: 8000, nodes: HUMAN_BONES, mats: VILLAGER_MATS, clips: KID_CLIPS },
+  // The light people (art/blender/light_people.py, made FROM the nine files above; engine/people.js picks the set).
+  // `lite` = the standard model it must match bone for bone and clip for clip. One mesh, one material; `parts` are
+  // the names in its palette (what the standard model calls its materials: the runtime tints villagers by them).
+  // The budgets are what the script reaches without visible damage (2026-10-14), with ~3% room for a rebuild.
+  'mika.lite': { family: 'characters', lite: 'mika', tris: 9500 },
+  'genzo.lite': { family: 'characters', lite: 'genzo', tris: 6500 },
+  'rin.lite': { family: 'characters', lite: 'rin', tris: 7500 },
+  'ota.lite': { family: 'characters', lite: 'ota', tris: 8200 },
+  'hana.lite': { family: 'characters', lite: 'hana', tris: 7700 },
+  'sora.lite': { family: 'characters', lite: 'sora', tris: 7100 },
+  'villager-man.lite': { family: 'characters', lite: 'villager-man', tris: 4750, parts: VILLAGER_MATS },
+  'villager-woman.lite': { family: 'characters', lite: 'villager-woman', tris: 4600, parts: VILLAGER_MATS },
+  'villager-kid.lite': { family: 'characters', lite: 'villager-kid', tris: 4450, parts: VILLAGER_MATS },
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
 
   // ---------------------------------------------------------------- animals
@@ -277,7 +290,10 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // +0.767 MB: three self-contained tropical tree imports (40,946,596 B measured).
 // +0.454 MB: fern and young banana shrubs (41,400,548 B measured).
 // +0.731 MB: three tropical tree LODs (42,131,652 B measured, 192 models).
-export const TOTAL_RAW_BYTES = 42_160_000;
+// +6.06 MB: the light people (nine <name>.lite.glb, 48,191,804 B measured). A light file is a whole model: it repeats
+// its standard file's clips (most of the bytes) so that a phone loads ONE file per person, the light one, instead of
+// two. A player downloads one set or the other, never both: on a phone the download gets ~0.8 MB smaller.
+export const TOTAL_RAW_BYTES = 48_230_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -290,7 +306,8 @@ export const TOTAL_RAW_BYTES = 42_160_000;
 // +0.714 MB: tropical imports retain their embedded PNG atlases (16,258,968 B measured).
 // +0.451 MB: shrubs preserve their embedded atlas (16,710,464 B measured).
 // +0.703 MB: tropical LODs retain the exact source atlases (17,413,544 B measured).
-export const TOTAL_PACKED_BYTES = 17_450_000;
+// +3.11 MB: the light people, packed (20,523,228 B measured); see the note on the raw budget: either set is loaded, not both.
+export const TOTAL_PACKED_BYTES = 20_560_000;
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

@@ -11,7 +11,7 @@ import { GLOW_MATERIALS } from './assets.js';
 //
 // Parts that need their own material stay as they are: glowing, metallic, see-through or textured ones.
 
-const MAX_PARTS = 16;
+export const MAX_PARTS = 16;
 const cache = new Map();   // model name -> { key, geometry } | null (cannot be merged)
 
 const plain = m => m && !Array.isArray(m) && m.isMeshStandardMaterial && !m.isMeshPhysicalMaterial
@@ -68,11 +68,16 @@ function mergeGeometry(parts) {
   return out;
 }
 
-function paletteMaterial(src, palette) {
+/**
+ * The palette shader on a copy of `src`: colour and roughness per part (uPal, read by the vertices' aPart).
+ * With `metal` (a number per part: the light people, engine/people.js) the parts also keep their metalness.
+ */
+export function paletteMaterial(src, palette, metal = null) {
   const m = src.clone();
   m.name = 'Character palette';
   m.color.set('#ffffff');
   m.roughness = 1;
+  if (metal) m.metalness = 1;
   m.vertexColors = true;
   const hook = sh => {
     sh.uniforms.uPal = { value: palette };
@@ -83,9 +88,15 @@ function paletteMaterial(src, palette) {
       .replace('#include <common>', `#include <common>\nuniform vec4 uPal[${MAX_PARTS}];\nvarying float vPart;`)
       .replace('#include <color_fragment>', '#include <color_fragment>\nvec4 partLook = uPal[int(vPart + 0.5)];\ndiffuseColor.rgb *= partLook.rgb;')
       .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = partLook.a;');
+    if (metal) {
+      sh.uniforms.uMetal = { value: metal };
+      sh.fragmentShader = sh.fragmentShader
+        .replace('varying float vPart;', `varying float vPart;\nuniform float uMetal[${MAX_PARTS}];`)
+        .replace('#include <metalnessmap_fragment>', '#include <metalnessmap_fragment>\nmetalnessFactor = uMetal[int(vPart + 0.5)];');
+    }
   };
   m.onBeforeCompile = hook;
-  m.customProgramCacheKey = () => 'character-palette';
+  m.customProgramCacheKey = () => metal ? 'character-palette-metal' : 'character-palette';
   return m;
 }
 

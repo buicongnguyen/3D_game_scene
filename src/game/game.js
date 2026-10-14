@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Renderer } from '../engine/renderer.js';
 import { Assets } from '../engine/assets.js';
+import { peopleSet } from '../engine/people.js';
 import { Input } from '../engine/input.js';
 import { FX } from '../engine/effects.js';
 import { PALETTES } from '../world/seasons.js';
@@ -22,6 +23,7 @@ export class Game {
     this.renderer.resize();
     this.input = new Input(canvas);
     this.assets = new Assets();
+    this.assets.people = peopleSet(this.renderer.qualityName, params);
     this.time = { hour: 10, speed: 0, season: 'spring' };
     this.systems = [];
     this.paused = false;

@@ -71,7 +71,7 @@ export class Player {
     }
     this.model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     // lighter tiers: Mika's plain parts are drawn as one mesh (her brass buckle keeps its own material)
-    if (world?.quality?.mergeChars) { try { mergeSkinnedParts(this.model, 'mika:player'); } catch (e) { console.warn('character merge skipped for Mika', e); } }
+    if (!model?.userData.lite && world?.quality?.mergeChars) { try { mergeSkinnedParts(this.model, 'mika:player'); } catch (e) { console.warn('character merge skipped for Mika', e); } }
     // swimming tips the body forward about the hips, not the feet
     this.pivot = new THREE.Group();
     this.pivot.position.y = SWIM.pivot;

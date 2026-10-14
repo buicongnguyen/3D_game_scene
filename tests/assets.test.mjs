@@ -31,6 +31,55 @@ function triangles(root) {
   return tris;
 }
 
+// A light person against the standard model it was made from: same skeleton, clips and nodes; one mesh, one draw.
+async function checkLite(name, c, gltf) {
+  const std = await load(c.lite), want = CONTRACTS[c.lite];
+  const meshes = [];
+  gltf.scene.traverse(o => { if (o.isMesh) meshes.push(o); });
+  assert.equal(meshes.length, 1, 'one mesh (one draw call)');
+  const mesh = meshes[0], g = mesh.geometry, lib = mesh.userData.people;
+  assert.ok(mesh.isSkinnedMesh && !Array.isArray(mesh.material), 'one skinned primitive, one material');
+  const tris = triangles(gltf.scene), stdTris = triangles(std.scene);
+  assert.ok(tris <= c.tris, `${tris} tris exceeds budget ${c.tris}`);
+  assert.ok(tris < stdTris * 0.72, `${tris} tris is not much lighter than the standard ${stdTris}`);
+  for (const a of ['position', 'normal', 'color', 'skinIndex', 'skinWeight', '_part']) assert.ok(g.attributes[a], `attribute ${a}`);
+  // the palette: every material of the standard model, by name, colour and roughness
+  const stdMats = new Map();
+  std.scene.traverse(o => { if (o.isMesh) stdMats.set(o.material.name, o.material); });
+  assert.deepEqual(lib.parts.map(p => p.name), [...stdMats.keys()], 'the palette lists the standard materials in order');
+  for (const p of lib.parts) {
+    const m = stdMats.get(p.name);
+    assert.ok(Math.abs(m.roughness - p.roughness) < 1e-3 && Math.abs(m.metalness - p.metalness) < 1e-3, `${p.name} roughness/metalness`);
+    for (const [i, k] of ['r', 'g', 'b'].entries()) assert.ok(Math.abs(m.color[k] - p.color[i]) < 1e-4, `${p.name} colour`);
+  }
+  for (const part of c.parts ?? []) assert.ok(lib.parts.some(p => p.name === part), `missing tintable part "${part}"`);
+  const used = new Set(g.attributes._part.array);
+  for (const i of used) assert.ok(i < lib.parts.length, 'part numbers are inside the palette');
+  // the skeleton: same bones, parents, rest pose and bind
+  const bones = r => { const out = []; r.traverse(o => { if (o.isBone) out.push(o); }); return out; };
+  const a = bones(gltf.scene), b = bones(std.scene);
+  assert.deepEqual(a.map(o => `${o.name}<${o.parent?.name}`), b.map(o => `${o.name}<${o.parent?.name}`), 'same bones');
+  for (const [i, o] of a.entries()) for (const k of ['position', 'quaternion', 'scale']) assert.deepEqual(o[k].toArray(), b[i][k].toArray(), `${o.name} rest ${k}`);
+  for (const n of want.nodes ?? []) assert.ok(gltf.scene.getObjectByName(n), `missing node ${n}`);
+  let stdMesh = null;
+  std.scene.traverse(o => { if (o.isSkinnedMesh && !stdMesh) stdMesh = o; });
+  assert.deepEqual(mesh.skeleton.bones.map(o => o.name), stdMesh.skeleton.bones.map(o => o.name), 'same joints, same order');
+  assert.deepEqual(mesh.skeleton.boneInverses.map(m => m.elements), stdMesh.skeleton.boneInverses.map(m => m.elements), 'same bind matrices');
+  // the clips: same names, lengths and keys
+  assert.deepEqual(gltf.animations.map(x => x.name), std.animations.map(x => x.name), 'same clips');
+  for (const [i, clip] of gltf.animations.entries()) {
+    const s = std.animations[i];
+    assert.equal(clip.duration, s.duration, `${clip.name} length`);
+    assert.deepEqual(clip.tracks.map(t => [t.name, t.times.length]), s.tracks.map(t => [t.name, t.times.length]), `${clip.name} tracks`);
+    for (const [k, t] of clip.tracks.entries()) assert.deepEqual(t.values, s.tracks[k].values, `${clip.name} ${t.name} keys`);
+  }
+  // weights: at most four bones a vertex, adding up to one; the model stands where the standard one stands
+  const w = g.attributes.skinWeight;
+  for (let i = 0; i < w.count; i++) assert.ok(Math.abs(w.getX(i) + w.getY(i) + w.getZ(i) + w.getW(i) - 1) < 2e-3, 'weights add up to one');
+  const box = new THREE.Box3().setFromObject(gltf.scene), sbox = new THREE.Box3().setFromObject(std.scene);
+  for (const e of ['min', 'max']) for (const k of ['x', 'y', 'z']) assert.ok(Math.abs(box[e][k] - sbox[e][k]) < 0.012, `same size (${e}.${k}: ${box[e][k].toFixed(3)} vs ${sbox[e][k].toFixed(3)})`);
+}
+
 for (const name of names) {
   const c = CONTRACTS[name];
   test(`${name} meets its contract`, async () => {
@@ -51,6 +100,7 @@ for (const name of names) {
     }
     const gltf = await load(name);
     const root = gltf.scene;
+    if (c.lite) { await checkLite(name, c, gltf); return; }
     const tris = triangles(root);
     assert.ok(tris > 0, 'has geometry');
     assert.ok(tris <= c.tris, `${tris} tris exceeds budget ${c.tris}`);

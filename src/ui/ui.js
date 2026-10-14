@@ -5,6 +5,7 @@ import { JournalMap } from './map.js';
 import { starGroupsHtml } from './stargroups.js';
 import { STORIES, DEFAULT_STORY, storyId } from '../game/stories/index.js';
 import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
+import { getPeopleChoice, setPeopleChoice, peopleSetFor } from '../engine/people.js';
 import { loadSave } from '../game/saves.js';
 
 /** The story a new game starts with (Settings → Story for new games). */
@@ -635,6 +636,27 @@ export class UI {
     tropicalRow.append(tropical, tropicalLabel); q.closest('label').after(tropicalRow);
     tropical.addEventListener('change', () => setTropicalTrees(tropical.checked));
     onTreeThemeChange(enabled => { tropical.checked = enabled; });
+    // People: the standard models or the light ones (engine/people.js). Automatic = light on Low graphics.
+    // The models are picked when the valley loads, so a change waits for a reload: the note says so and offers it.
+    const told = (el, src) => { el.dataset.i18n = ''; el.dataset.i18nSrc = src; el.textContent = tx(src); return el; };
+    const peopleRow = document.createElement('label');
+    const people = document.createElement('select'); people.id = 'optPeople';
+    for (const [value, name] of [['auto', N_('Automatic')], ['std', N_('Standard')], ['lite', N_('Light (phones)')]]) {
+      const o = told(document.createElement('option'), name); o.value = value; people.append(o);
+    }
+    people.value = getPeopleChoice();
+    peopleRow.append(told(document.createElement('span'), N_('People')), ' ', people);
+    const peopleNote = document.createElement('p'); peopleNote.className = 'note'; peopleNote.id = 'optPeopleNote';
+    const peopleReload = told(document.createElement('button'), N_('Reload now')); peopleReload.type = 'button'; peopleReload.className = 'small'; peopleReload.id = 'btnPeopleReload';
+    peopleNote.append(told(document.createElement('span'), N_('Lighter people for older phones. Applies after reloading.')), ' ', peopleReload);
+    tropicalRow.after(peopleRow, peopleNote);
+    // the reload is offered only when the choice would load another set than the one in the valley now
+    const peopleWaits = () => !g.params?.get?.('people') && peopleSetFor(people.value, q.value) !== (g.assets?.people || 'std');
+    const peopleShow = () => peopleReload.classList.toggle('hidden', !peopleWaits());
+    people.addEventListener('change', () => { setPeopleChoice(people.value); peopleShow(); });
+    q.addEventListener('change', peopleShow);
+    peopleReload.addEventListener('click', e => { e.preventDefault(); try { g.director?.save?.(); } catch { /* reload anyway */ } location.reload(); });
+    peopleShow();
     const load = (k, d) => { try { return JSON.parse(localStorage.getItem(`starline-opt-${k}`)) ?? d; } catch { return d; } };
     const save = (k, v) => { try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify(v)); } catch { /* ignore */ } };
     const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps'), diff = $('optDifficulty');

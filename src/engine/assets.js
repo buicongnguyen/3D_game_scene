@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { separateCoplanar } from './coplanar.js';
+import { peopleFile, prepareLite } from './people.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
 export const GLOW_MATERIALS = ['Window glow', 'Lamp glass', 'Lamp star', 'Lantern glow', 'Street glow', 'Porch glass', 'Headlamp glass', 'Tamo glow', 'Garland glow'];
@@ -19,6 +20,7 @@ export class Assets {
     this.cache = new Map();
     this.missing = new Set();
     this.glow = new Map(); // material name -> Set<Material>, for night / lamp control
+    this.people = 'std';   // which set of people a name such as 'mika' means: 'std' | 'lite' (engine/people.js)
   }
 
   async load(names, onProgress) {
@@ -32,7 +34,7 @@ export class Assets {
   get(name) {
     if (!this.cache.has(name)) {
       this.cache.set(name, new Promise(resolve => {
-        this.loader.load(`${this.base}${name}.glb`, gltf => {
+        this.loader.load(`${this.base}${peopleFile(name, this.people)}.glb`, gltf => {
           this.prepare(name, gltf);
           resolve(gltf);
         }, undefined, () => { this.missing.add(name); resolve(null); });
@@ -59,6 +61,8 @@ export class Assets {
       }
     });
     gltf.scene.userData.rigged = gltf.animations.length > 0;
+    // a light person: one mesh whose parts are numbers in a palette
+    prepareLite(gltf);
     gltf.scene.userData.name = name;
     // Details modelled flush on larger faces (beams in plaster, trims, panes, coach panels) z-fight and
     // shimmer whenever the camera moves: nudge them a few millimetres proud of the face they sit on.
