@@ -27784,6 +27784,43 @@
   ]
  },
  {
+  "s": "Automatic",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Standard",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Light (phones)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "People",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Reload now",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Lighter people for older phones. Applies after reloading.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Page {n}",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -28401,12 +28438,6 @@
  },
  {
   "s": "Render resolution",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Automatic",
   "ctx": [
    "menu / screen text"
   ]

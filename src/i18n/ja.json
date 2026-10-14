@@ -4702,5 +4702,10 @@
   "Back to games": "ゲームのいちらんへ",
   "More games": "ほかのゲーム",
   "Quick": "すぐ遊べる",
-  "Starts right away: no valley to load": "すぐに始まります。谷を読みこみません"
+  "Starts right away: no valley to load": "すぐに始まります。谷を読みこみません",
+  "People": "人物",
+  "Standard": "標準",
+  "Light (phones)": "軽量（スマホ向け）",
+  "Reload now": "今すぐ再読み込み",
+  "Lighter people for older phones. Applies after reloading.": "古いスマホ向けの軽い人物。再読み込み後に反映されます。"
 }

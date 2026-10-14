@@ -4702,5 +4702,10 @@
  "Back to games": "게임 목록으로",
  "More games": "다른 게임",
  "Quick": "바로 시작",
- "Starts right away: no valley to load": "바로 시작해요: 골짜기를 불러오지 않아요"
+ "Starts right away: no valley to load": "바로 시작해요: 골짜기를 불러오지 않아요",
+ "People": "사람들",
+ "Standard": "표준",
+ "Light (phones)": "가볍게 (휴대폰)",
+ "Reload now": "지금 새로고침",
+ "Lighter people for older phones. Applies after reloading.": "오래된 휴대폰을 위한 가벼운 사람들. 새로고침하면 적용돼요."
 }
