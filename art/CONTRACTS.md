@@ -760,3 +760,43 @@ Adding animation data uses 316,324 raw bytes without any geometry growth. The me
 is **40,183,428 raw bytes / 15,552,652 packed bytes** (184 models). Caps in `tests/asset-contracts.mjs`
 therefore rise from 39,900,000 / 15,380,000 to **40,210,000 / 15,580,000**; this keeps ~27 KB headroom
 instead of disguising the additional clips as free data.
+
+## Morning exercise clip packs (2026-10-15)
+
+The Morning exercise moves live in packs, not in the people's files: `public/models/exercise-<person>.glb` for `rin`,
+`mika`, `villager-kid` and `villager-man`, written by `art/blender/exercise_moves.py`. A pack is that person's armature
+(every bone with the same name, parent and rest pose as in `<person>.glb`, checked by `tests/assets.test.mjs`) and 34
+animations, and no mesh. The round fetches the packs of the people taking part when it starts; the clips then play on the
+standard and on the light model (same skeleton). The bodies come from `art/blender/source/exercise_rigs.json`, captured
+from the real builders with `-- --capture`: run it again whenever a person's body changes.
+
+Every clip is authored on its own body (feet planted at that body's ankles, hands on that body's floor), 30 fps, root
+at the ground origin, facing -Y like every clip. Loops are counted: a loop of n counts reaches its count-k pose at
+p = k / n and is authored at 18 frames a count (100 counts a minute); the game sets the time itself every frame, so any
+tempo plays in time. `In` clips are one-shots from the mountain pose (or hands and knees) into the pose; the game plays
+them backwards to come out again.
+
+| Clip | Counts | Pose |
+|---|---|---|
+| `ExStretch` | 4 | arms up in front to a V overhead and up on the toes on 1, held on 2, down by 4 |
+| `ExArmSwing` | 2 | arms down-out with a knee bounce on 0, crossed in front on 1 |
+| `ExArmCircle` | 2 | arms round: bottom on 0, overhead on 1 |
+| `ExSideBend` | 4 | upright 0, bend left (right arm over) 1, upright 2, bend right 3 |
+| `ExTwist` | 4 | front 0, turned left 1, front 2, turned right 3 |
+| `ExKneeBend` | 2 | hands on the knees; straight 0, bent 1 |
+| `ExJump` | 2 | a small hop on every count (crouch on the count, in the air half way) |
+| `ExBreath` | 4 | arms float up at the sides (in, 0-2) and down (out, 2-4) |
+| `ExMarch` / `ExHighKnees` | 2 | left knee up on 0, right on 1 (high knees: to the hips, a little spring) |
+| `ExStarJump` | 2 | feet together, arms down on 0; star (feet wide, arms V) on 1 |
+| `ExSquat` | 4 | down on 1 (hips back, arms forward), low 2, up by 0 |
+| `ExToeReach`, `ExMountain`, `ExPlank`, `ExCobra`, `ExChild` | 4 | holds with a slow breath |
+| `ExTreeL/R`, `ExWarriorL/R`, `ExBirdL/R` | 4 | holds; L lifts / steps / extends the left leg; R is the mirror |
+| `ExTreeInL/R`, `ExWarriorInL/R`, `ExBirdInL/R` | 2 | one-shots from the mountain |
+| `ExCatCow` | 4 | hands and knees: flat 0, cow 1, flat 2, cat 3 |
+| `ExDown` | 3 | stand -> hands and knees (squat, knees down in front of the feet, hands down, feet flat) |
+| `ExPlankIn`, `ExCobraIn`, `ExChildIn` | 2-3 | one-shots from hands and knees |
+
+A person with no pack of their own (any new model on the shared skeleton) borrows the closest body's pack by hip
+height: the runtime keeps the rotations and moves the hips track to the borrower's hip height, scaled with it
+(`src/game/tricks/exercise-moves.js`). Long skirts deform in the wide stances, so the class is led by a person in
+trousers. The instructor's hat bone is shrunk to nothing for the round (raised arms would pass through a straw brim).

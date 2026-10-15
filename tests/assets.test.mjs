@@ -162,6 +162,31 @@ async function checkLite(name, c, gltf) {
   for (const e of ['min', 'max']) for (const k of ['x', 'y', 'z']) assert.ok(Math.abs(box[e][k] - sbox[e][k]) < 0.012, `same size (${e}.${k}: ${box[e][k].toFixed(3)} vs ${sbox[e][k].toFixed(3)})`);
 }
 
+// A clip pack (the morning exercise's moves) against the person it moves: no mesh, every clip, the person's bones with
+// the same parents and rest pose, rotations for those bones only (a clip that named a bone the person lacks would not play).
+async function checkClips(name, c, gltf) {
+  let meshes = 0;
+  gltf.scene.traverse(o => { if (o.isMesh) meshes++; });
+  assert.equal(meshes, 0, 'a clip pack carries no mesh');
+  const clips = gltf.animations.map(a => a.name);
+  for (const clip of c.clips) assert.ok(clips.includes(clip), `missing clip ${clip}`);
+  const person = await load(c.of);
+  const bones = r => { const m = new Map(); r.traverse(o => { if (o.isBone) m.set(o.name, o); }); return m; };
+  const nodes = r => { const m = new Map(); r.traverse(o => m.set(o.name, o)); return m; };
+  const mine = nodes(gltf.scene), theirs = bones(person.scene);
+  for (const [n, b] of theirs) {
+    const o = mine.get(n);
+    assert.ok(o, `the pack lacks bone ${n}`);
+    assert.equal(o.parent?.name, b.parent?.name, `${n}: same parent`);
+    for (const k of ['position', 'quaternion', 'scale']) assert.deepEqual(o[k].toArray(), b[k].toArray(), `${n}: same rest ${k}`);
+  }
+  for (const a of gltf.animations) for (const t of a.tracks) {
+    const bone = t.name.slice(0, t.name.lastIndexOf('.'));
+    assert.ok(theirs.has(bone), `${a.name} moves ${bone}, which ${c.of} does not have`);
+    assert.ok(a.duration > 0 && t.times.length >= 2, `${a.name} ${t.name} is keyed`);
+  }
+}
+
 for (const name of names) {
   const c = CONTRACTS[name];
   test(`${name} meets its contract`, async () => {
@@ -185,6 +210,7 @@ for (const name of names) {
     if (c.lite) { await checkLite(name, c, gltf); return; }
     if (c.family === 'performers') { checkPerformer(name, c, gltf); return; }
     if (c.clipsOf) { await checkClipFile(name, c, gltf); return; }
+    if (c.family === 'clips') { await checkClips(name, c, gltf); return; }
     const tris = triangles(root);
     assert.ok(tris > 0, 'has geometry');
     assert.ok(tris <= c.tris, `${tris} tris exceeds budget ${c.tris}`);

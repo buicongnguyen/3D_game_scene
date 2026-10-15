@@ -9,7 +9,8 @@ import { N_, tx } from '../i18n/i18n.js';
 
 /**
  * Rows: { in, pic, text, touch? }.
- *   in    the control: 'move' | 'lr' | 'creep' | 'act' | 'hold' | 'jump' | 'tap' | 'aim' | 'sow' | null (a rule, no control)
+ *   in    the control: 'move' | 'lr' | 'creep' | 'act' | 'hold' | 'jump' | 'tap' | 'aim' | 'sow' | 'pad4' (four arrows and a
+ *         round button: the morning exercise) | null (a rule, no control)
  *   pic   the picture (PICS below)
  *   text  one short line (English source string)
  *   touch the name of the game's own touch button when it is not "Do it" (English source string)
@@ -97,6 +98,11 @@ export const HOWTO = {
     { in: 'arrows', pic: 'dance', text: N_('Watch, then copy each move.') },
     { in: null, pic: 'ring', text: N_('Press as the ring closes: on the beat!') },
     { in: 'extra', pic: 'trio', text: N_('New moves have keys of their own.') },
+  ],
+  'trick:exercise': [
+    { in: 'pad4', pic: 'arrows', text: N_('Press the card\'s arrow on the count.') },
+    { in: 'hold', pic: 'balance', text: N_('Hold a pose; tap left or right to stay steady.'), touch: N_('Hold') },
+    { in: 'hold', pic: 'fill', text: N_('Hold to breathe in, let go to breathe out.'), touch: N_('Breathe') },
   ],
   'yard:footnet': [
     { in: 'move', pic: 'walk', text: N_('Run under the shuttle.') },
@@ -189,6 +195,10 @@ export const PICS = {
   starfloat: `<path d="M2 24q5-4 9 0t9 0 9 0 9 0" fill="none" stroke="${BLUE}" stroke-width="2.6" stroke-linecap="round"/><g class="hp-rise" stroke="${INK}" stroke-width="3.2" stroke-linecap="round" fill="none"><path d="M20 15v8M20 17 9 11M20 17l11-6M20 23l-7 9M20 23l7 9"/><circle cx="20" cy="10.5" r="4.2" fill="${HOT}" stroke-width="1.6"/></g>`,
   // a life ring thrown out onto the water
   buoy: `<path d="M2 31q5-4 9 0t9 0 9 0 9 0" fill="none" stroke="${BLUE}" stroke-width="2.6" stroke-linecap="round"/><g class="hp-plop"><circle cx="24" cy="13" r="7.5" fill="none" stroke="#fff" stroke-width="5.5"/><circle cx="24" cy="13" r="7.5" fill="none" stroke="${HOT}" stroke-width="5.5" stroke-dasharray="5.9 5.9"/><circle cx="24" cy="13" r="10.3" fill="none" stroke="${INK}" stroke-width="1.2"/><circle cx="24" cy="13" r="4.7" fill="none" stroke="${INK}" stroke-width="1.2"/></g>`,
+  // the four arrows and the round button of the morning exercise, the one to press lit up in turn
+  arrows: `<g fill="#e6d3b0"><rect x="15" y="3" width="10" height="10" rx="3"/><rect x="3" y="15" width="10" height="10" rx="3"/><rect x="27" y="15" width="10" height="10" rx="3"/><rect x="15" y="27" width="10" height="10" rx="3"/><circle cx="20" cy="20" r="5"/></g><rect class="hp-b1" x="15" y="3" width="10" height="10" rx="3" fill="${HOT}"/><rect class="hp-b2" x="27" y="15" width="10" height="10" rx="3" fill="${HOT}"/><circle class="hp-b3" cx="20" cy="20" r="5" fill="${HOT}"/>`,
+  // a balance needle swaying in its green middle
+  balance: `<rect x="4" y="16" width="32" height="8" rx="4" fill="#f1d4c4"/><rect x="14.5" y="16" width="11" height="8" fill="${GREEN}"/><rect class="hp-sway" x="18.5" y="11" width="3" height="18" rx="1.5" fill="${INK}"/>`,
   turn: `<ellipse cx="20" cy="22" rx="11" ry="7" fill="#a8436e" stroke="${INK}" stroke-width="1.4"/><path class="hp-spin" d="M8 12a13 9 0 0 1 24 0m0 0-5-1m5 1 1-5" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
   // a little dancer stepping from side to side under a conical hat (the Festival dance)
   dance: `<path d="M8 20h-4m4 0-3-3m3 3-3 3M32 20h4m-4 0 3-3m-3 3 3 3" fill="none" stroke="${HOT}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><g class="hp-sway"><path d="M13 12 20 5l7 7z" fill="${SUN}" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="20" cy="14.5" r="3.2" fill="${INK}"/><path d="M20 18v8m0-6-5-4m5 4 5-4m-5 10-4 7m4-7 4 7" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/></g>`,
@@ -324,6 +334,7 @@ export function chips(row, dev) {
     case 'jump': return dev === 'touch' ? own || kbd(tx('Jump'), 'btn') : dev === 'pad' ? kbd('A', 'pad') : kbd('Space');
     case 'tap': return dev === 'touch' ? FINGER : dev === 'pad' ? kbd('X', 'pad') : MOUSE;
     case 'aim': return dev === 'touch' ? FINGER : dev === 'pad' ? STICK : MOUSE;
+    case 'pad4': return dev === 'touch' ? ['▲', '◀', '●', '▶', '▼'].map(k => kbd(k, 'btn')).join('') : dev === 'pad' ? kbd('✚', 'pad') + kbd('X', 'pad') : ['↑', '←', '↓', '→'].map(k => kbd(k)).join('') + kbd('E');
     case 'sow': return dev === 'touch' ? kbd('◀', 'btn') + kbd('▶', 'btn') : dev === 'pad' ? kbd('A', 'pad') + kbd('X', 'pad') : kbd('Space') + kbd('E');
     // the Festival dance: four arrow moves (a swipe or a button on a phone), and three more on keys of their own
     case 'arrows': return dev === 'touch' ? SWIPE : dev === 'pad' ? STICK : ['←', '↑', '↓', '→'].map(k => kbd(k)).join('');

@@ -718,6 +718,12 @@ export const DIALOGUE = {
     ['rin', "Your hat! The gutters are joined by little seesaws. An egg takes every one it meets, so watch where it is going."],
     ['rin', "A hen clucks and puffs before she lays. Stand under the right spout, and tip a full hat into the basket."],
   ],
+  trick_exercise_intro: [
+    ['rin', "Morning, city girl! Every morning I lead the exercise on the big lawn: radio exercise, a little workout, or yoga.", 'Talk'],
+    ['mika', "Exercise. Before breakfast. On purpose?"],
+    ['rin', "Watch the card and copy me. Press the arrow just as the count lands. For yoga, hold still and keep your balance."],
+    ['rin', "Nobody fails. Move gently, breathe, and stop if anything hurts. The neighbours join in when it gets harder."],
+  ],
   trick_hoppers_intro: [
     ['rin', "Below the paddies there's a meadow that hops. Grasshoppers and mantises, thick as the grass. Take my net.", 'Talk'],
     ['mika', "Grasshoppers. They jump, right? Straight at your face?"],

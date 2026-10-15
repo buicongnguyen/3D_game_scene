@@ -315,6 +315,27 @@ export const TRICKS = [
     stars: [60, 200, 320], length: 103, firstLength: 66, unit: 'points',
     levels: { easy: { stars: [24, 110, 170], length: 66 }, normal: { stars: [60, 200, 320], length: 103 }, hard: { stars: [150, 450, 720], length: 122 } },
   },
+  {
+    // the morning exercise on the big lawn (tricks/exercise.js, rules-exercise.js): three routines (the radio exercise,
+    // a kids' workout, kids' yoga) led from a low stage, Mika in the front row, two kids beside her on Normal and two
+    // grown-ups behind on Difficult. A count answered in time is a cue's points (a Good is 60 %), a hold or a breath earns
+    // by the share of its time done right, and a routine is worth 100 / 200 / 300 at its level whichever it is, so one
+    // star on Easy is about a third of the counts. Rounds last about 65-72 s, 94-107 s and 122-138 s (the routines differ
+    // a little). stage: where the class stands and the way it faces (toward the instructor, west: the morning sun is
+    // behind the class and lights her face). instructor: the model that leads (actors on the shared skeleton; one with
+    // no clip pack of its own borrows the closest body's, see tricks/exercise-moves.js).
+    id: 'exercise', name: 'Morning exercise', icon: 'trick-exercise',
+    place: { x: -20, z: 36.5, face: 0 }, where: 'the big lawn in Kawabe, by the lane to the dock',
+    stage: { x: -24, z: 41, face: -Math.PI / 2 },
+    instructor: 'rin',
+    seasons: ['spring', 'summer', 'autumn', 'winter'], hours: [6, 10], night: false, when: 'Every morning, in any season',
+    teacher: { grandma: 'rin', classic: 'rin' }, intro: 'trick_exercise_intro',
+    howReal: 'Warm up first, then move slowly and breathe through your nose. Drink some water. A few minutes every morning with your family is plenty.',
+    why: 'Moving in the morning wakes up your body and your brain, helps you focus at school and makes you feel happy. Slow breaths calm you down.',
+    safety: 'Stop if anything hurts, never push a stretch, and ask a grown-up if unsure.',
+    stars: [80, 135, 172], length: 100, firstLength: 70, unit: 'points',
+    levels: { easy: { stars: [30, 60, 82], length: 70 }, normal: { stars: [80, 135, 172], length: 100 }, hard: { stars: [130, 205, 258], length: 130 } },
+  },
 ];
 
 export const TRICK =Object.fromEntries(TRICKS.map(t => [t.id, t]));

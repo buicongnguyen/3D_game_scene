@@ -105,6 +105,13 @@ export const STORY = {
       ['hoa', "Your grandma taught me my first steps! Tonight I teach the hat dance from Vietnam. Watch me, then copy me, on the beat."],
       ['hoa', "Or join Nabi and Haru on the stage while Byeol sings. Arrows, swipes or the buttons: every move has its own."],
     ],
+    // (Rin leads the morning exercise in this story too: Grandma is only mentioned, she is not on the lawn)
+    trick_exercise_intro: [
+      ['rin', "Morning, Mika! Your grandma did radio exercise on this lawn every morning when she was your age. Want to try?", 'Talk'],
+      ['mika', "Grandma did exercise? She says she just walks to the shop and back. Quickly."],
+      ['rin', "Same thing! Copy my moves and press the arrow just as the count lands. For yoga, hold still and keep your balance."],
+      ['rin', "Nobody fails here. Move gently, breathe, and stop if anything hurts. The neighbours join in on the harder days."],
+    ],
     trick_hoppers_intro: [
       ['sora', "Hoppers today, Mi-chan! The meadow below the paddies is full of them. In my day we caught them for dinner.", 'Talk'],
       ['mika', "Grandma. For DINNER."],

@@ -53,6 +53,7 @@ export const META = {
   'trick:cowrace': { cat: 'animals', desc: N_('Race four cows down the track: steer, and tap on the beat.'), season: 'spring', hour: 11, isNew: true },
   'trick:eggs': { cat: 'animals', desc: N_('Read the bamboo gutters and catch the hens\' eggs in your hat.'), season: 'spring', hour: 10, isNew: true },
   'trick:dance': { cat: 'country', desc: N_('Dance the hat dance with Hoa, or join the K-pop stage. Keep the beat!'), season: 'summer', hour: 19.5, isNew: true },
+  'trick:exercise': { cat: 'country', desc: N_('Radio exercise, a kids\' workout or yoga on the lawn: copy the moves on the count.'), season: 'spring', hour: 7, isNew: true },
   'yard:footnet': { cat: 'yard', desc: N_('Kick the shuttle over the net with the kids. First to 5.'), season: 'spring', hour: 15 },
   'yard:keepup': { cat: 'yard', desc: N_('Keep the shuttle up together and count the touches.'), season: 'spring', hour: 15 },
   'yard:volley': { cat: 'yard', desc: N_('Bump, set and spike on the sand court.'), season: 'summer', hour: 15, isNew: true },

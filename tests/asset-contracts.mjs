@@ -306,6 +306,15 @@ export const CONTRACTS = {
   'gift-honey': { family: 'rewards', tris: 1500, icon: true },
 };
 
+// ---------------------------------------------------------------- morning exercise clip packs (exercise_moves.py)
+// A pack is a person's armature with the exercise clips and no mesh, fetched only when a Morning exercise round starts
+// (src/game/tricks/exercise-moves.js). `of`: the person whose bones it moves: same bone names, parents and rest pose,
+// so its clips play on that person's standard AND light model (tests/assets.test.mjs checks both).
+export const EXERCISE_CLIPS = ['ExStretch', 'ExArmSwing', 'ExArmCircle', 'ExSideBend', 'ExTwist', 'ExKneeBend', 'ExJump', 'ExBreath',
+  'ExMarch', 'ExHighKnees', 'ExStarJump', 'ExSquat', 'ExToeReach', 'ExDown', 'ExPlank', 'ExPlankIn', 'ExCatCow', 'ExCobra', 'ExCobraIn',
+  'ExChild', 'ExChildIn', 'ExMountain', ...['Tree', 'Warrior', 'Bird'].flatMap(n => [`Ex${n}L`, `Ex${n}R`, `Ex${n}InL`, `Ex${n}InR`])];
+for (const who of ['rin', 'mika', 'villager-kid', 'villager-man']) CONTRACTS[`exercise-${who}`] = { family: 'clips', of: who, clips: EXERCISE_CLIPS };
+
 export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru'];
 // Raw GLBs are the editable, uncompressed sources; production ships meshopt-packed copies (tests/pack.test.mjs).
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
@@ -337,7 +346,11 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // clips (hoa 2.62, nabi 3.03, byeol 3.68, haru 3.34 MB), their light files (1.0-1.1 MB each), the dance clips for Mika
 // and the villagers (0.75 MB together) and three hand props (0.1 MB). None of it is part of a first visit: the game
 // fetches these files only when a dance round starts (Tricks.ensureModels), and only the ones that round shows.
-export const TOTAL_RAW_BYTES = 66_000_000;
+
+// +1.77 MB: the Morning exercise clip packs (exercise-rin/-mika/-villager-kid/-villager-man.glb: 34 clips each and no
+// mesh; 49,963,952 B measured, 205 models). They are NOT part of the valley's start: a round fetches the packs of the
+// people in it (two on Easy, four on Difficult) when it begins. The people's own files did not grow at all.
+export const TOTAL_RAW_BYTES = 67_700_000;      // (both together: the dance game and the exercise packs)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -354,7 +367,10 @@ export const TOTAL_RAW_BYTES = 66_000_000;
 // +5.69 MB: the dance game, packed (26,213,168 B measured): a performer 0.76-1.03 MB, a light performer 0.34-0.40 MB,
 // the clip files 0.48 MB together. Loaded only by a dance round: a K-pop round with the standard people fetches about
 // 3.6 MB of them (Nabi, Haru, Byeol, Mika's and the villagers' clips, the mic and light sticks), the hat dance about 1.3 MB.
-export const TOTAL_PACKED_BYTES = 26_300_000;
+
+// +1.10 MB: the Morning exercise clip packs, packed (0.25-0.30 MB each; 21,622,600 B measured). Fetched only when a round
+// starts, never at the valley's start.
+export const TOTAL_PACKED_BYTES = 27_400_000;      // (both together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

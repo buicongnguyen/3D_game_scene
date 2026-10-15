@@ -389,7 +389,7 @@ export class Audio {
   }
 
   musicTick(night) {
-    if (!this.ctx || this.musicVol <= 0.001 || this.musicHolds?.size) return;
+    if (!this.ctx || this.musicVol <= 0.001 || this.musicHolds?.size || this.songOn) return;
     const c = this.ctx;
     const tempo = this.mood === 'finale' ? 92 : this.mood === 'tense' ? 64 : 76;
     const beatLen = 60 / tempo / 2;
@@ -411,5 +411,101 @@ export class Audio {
       this.nextNote += beatLen;
       this.beat++;
     }
+  }
+
+  // ---------------------------------------------------------------- the morning exercise (game/tricks/exercise.js)
+  /** A song of a mini game holds the valley's own music (true) or gives it back (false). */
+  song(on) {
+    this.songOn = !!on;
+    if (!on && this.ctx) this.nextNote = this.ctx.currentTime + 0.4;
+  }
+
+  /** A piano note: a quick hammer, a bright partial and a short ring (not a pluck's long tail). */
+  piano(midi, when = 0, vol = 0.08, dur = 0.55) {
+    const f = mtof(midi);
+    this.tone(f, { type: 'triangle', dur, vol, attack: 0.004, when, bus: this.music, rev: 0.25, filter: 3200 });
+    this.tone(f * 2.003, { type: 'sine', dur: dur * 0.45, vol: vol * 0.35, attack: 0.003, when, bus: this.music, rev: 0.15 });
+    this.tone(f * 0.998, { type: 'sine', dur: dur * 0.8, vol: vol * 0.4, attack: 0.006, when, bus: this.music, rev: 0.2 });
+  }
+
+  /**
+   * One count of the morning exercise's music, `when` seconds from now. style: 'radio' (a piano march in C, the bass
+   * on the count and the chord half a count after: oom-pah), 'workout' (the same tune up a tone, with a kick on every
+   * count and a clap on the even ones), 'yoga' (a calm drone with a soft bell, no tune). n: the count from the start
+   * of the song; len: seconds a count lasts.
+   */
+  exerciseBeat(style, n, when, len) {
+    if (!this.ctx) return;
+    const k = ((n % 16) + 16) % 16, half = len / 2;
+    if (style === 'yoga') {
+      const root = 50;
+      if (n % 8 === 0) this.pad([root - 12, root - 5, root, root + 7], when, len * 8.5, 0.032);
+      if (n % 4 === 0) {
+        const bell = [74, 76, 79, 81, 79, 76, 74, 71][(n / 4) % 8];
+        this.tone(mtof(bell), { type: 'sine', dur: 2.6, vol: 0.035, attack: 0.01, when, bus: this.music, rev: 0.7 });
+        this.tone(mtof(bell) * 2.76, { type: 'sine', dur: 1.2, vol: 0.008, attack: 0.01, when, bus: this.music, rev: 0.7 });
+      }
+      return;
+    }
+    const up = style === 'workout' ? 2 : 0;
+    const TUNE = [67, 72, 76, 79, 76, 72, 74, 0, 77, 76, 74, 72, 71, 72, 74, 0, 76, 79, 81, 79, 76, 72, 74, 76, 77, 74, 71, 67, 72, 0, 72, 0];
+    const BASS = [48, 48, 53, 55, 48, 53, 55, 48];
+    const CHORD = { 48: [60, 64, 67], 53: [60, 65, 69], 55: [59, 62, 67] };
+    const a = TUNE[k * 2], b = TUNE[k * 2 + 1], bass = BASS[Math.floor(k / 2)];
+    if (a) this.piano(a + up, when, 0.075);
+    if (b) this.piano(b + up, when + half, 0.065);
+    if (k % 2 === 0) this.piano(bass + up - 12 * 0, when, 0.07, 0.4);
+    else this.piano(bass + up + 7, when, 0.05, 0.35);
+    for (const m of CHORD[bass]) this.piano(m + up, when + half, 0.028, 0.22);
+    if (style === 'workout') {
+      this.tone(110, { type: 'sine', dur: 0.16, vol: 0.12, attack: 0.002, when, bus: this.music, rev: 0, glide: 0.45 });
+      if (n % 2 === 1) this.noise({ dur: 0.09, vol: 0.06, freq: 1700, q: 1.1, when, bus: this.music });
+      this.noise({ dur: 0.03, vol: 0.02, freq: 7000, q: 0.8, type: 'highpass', when: when + half, bus: this.music });
+    }
+  }
+
+  /**
+   * A sung count, one short syllable a count (the vowels of the numbers in the player's language: "one, two, three...",
+   * "ichi, ni, san...", "một, hai, ba..."), from a tiny formant voice. n: 1..8.
+   */
+  countVoice(n, when = 0, lang = 'en', vol = 0.05) {
+    if (!this.ctx) return;
+    const SAY = {
+      en: [['', 'ʌ'], ['t', 'u'], ['th', 'i'], ['f', 'ɔ'], ['f', 'ai'], ['s', 'ɪ'], ['s', 'ɛ'], ['', 'ei']],
+      ja: [['', 'i'], ['n', 'i'], ['s', 'a'], ['sh', 'i'], ['g', 'o'], ['r', 'o'], ['sh', 'i'], ['h', 'a']],
+      vi: [['m', 'o'], ['h', 'ai'], ['b', 'a'], ['b', 'o'], ['n', 'a'], ['s', 'au'], ['b', 'ai'], ['t', 'a']],
+      ko: [['h', 'a'], ['t', 'u'], ['s', 'e'], ['n', 'e'], ['t', 'a'], ['', 'ʌ'], ['', 'i'], ['', 'ʌ']],
+    };
+    const F = { a: [800, 1250], e: [480, 1950], ɛ: [580, 1800], i: [300, 2350], ɪ: [400, 2000], o: [450, 850], ɔ: [580, 880], u: [330, 900], ʌ: [660, 1200] };
+    const [cons, vow] = (SAY[lang] || SAY.en)[(n - 1) % 8];
+    const c = this.ctx, t0 = c.currentTime + when, dur = 0.2, f0 = 290 * (n === 1 || n === 5 ? 1.12 : 1) * (1 + 0.02 * ((n - 1) % 4));
+    let t = t0;
+    if (cons === 's' || cons === 'sh' || cons === 'th' || cons === 'f' || cons === 'h') {
+      const fr = cons === 's' ? 6200 : cons === 'sh' ? 3600 : cons === 'h' ? 1800 : 5000;
+      this.noise({ dur: 0.06, vol: vol * (cons === 'h' || cons === 'f' || cons === 'th' ? 0.5 : 0.9), freq: fr, q: 1.2, type: 'bandpass', when });
+      t += 0.045;
+    } else if (cons === 't' || cons === 'b' || cons === 'g') {
+      this.noise({ dur: 0.02, vol: vol * 0.7, freq: cons === 't' ? 4000 : 900, q: 0.8, when });
+      t += 0.02;
+    }
+    const src = c.createOscillator(), g = c.createGain();
+    src.type = 'sawtooth';
+    src.frequency.setValueAtTime(f0, t);
+    src.frequency.linearRampToValueAtTime(f0 * 0.9, t + dur);
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + (cons === 'n' || cons === 'm' ? 0.04 : 0.015));
+    g.gain.exponentialRampToValueAtTime(0.0008, t + dur);
+    const glide = vow.length === 2 ? vow : null, v0 = F[glide ? glide[0] : vow] || F.a, v1 = glide ? F[glide[1]] || v0 : v0;
+    for (const [i, gain] of [[0, 1], [1, 0.5]]) {
+      const bp = c.createBiquadFilter();
+      bp.type = 'bandpass'; bp.Q.value = 7;
+      bp.frequency.setValueAtTime(v0[i], t);
+      bp.frequency.linearRampToValueAtTime(v1[i], t + dur * 0.8);
+      const ga = c.createGain(); ga.gain.value = gain * 2.2;
+      src.connect(bp); bp.connect(ga); ga.connect(g);
+    }
+    g.connect(this.sfx);
+    const s = c.createGain(); s.gain.value = 0.12; g.connect(s); s.connect(this.reverb);
+    src.start(t); src.stop(t + dur + 0.05);
   }
 }
