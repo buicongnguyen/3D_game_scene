@@ -21,8 +21,10 @@ test('Standard and Light are kept on every device; Automatic follows weakDevice'
   assert.equal(peopleSetFor('auto', 'medium', old), 'std');
 });
 
-test('only the nine people have light files', () => {
+test('only the people (the nine and the four performers) have light files', () => {
   assert.equal(peopleFile('mika', 'lite'), 'mika.lite');
+  assert.equal(peopleFile('nabi', 'lite'), 'nabi.lite');
+  assert.equal(peopleFile('mika-dance', 'lite'), 'mika-dance', 'the clip-only files serve both sets');
   assert.equal(peopleFile('villager-kid', 'lite'), 'villager-kid.lite');
   assert.equal(peopleFile('tamo', 'lite'), 'tamo');
   assert.equal(peopleFile('mika', 'std'), 'mika');

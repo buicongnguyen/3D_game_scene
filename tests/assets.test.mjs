@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { CONTRACTS, PORTRAITS, TOTAL_RAW_BYTES } from './asset-contracts.mjs';
+import { CONTRACTS, PORTRAITS, TOTAL_RAW_BYTES, SHAPE_KEYS } from './asset-contracts.mjs';
 import { checkImportedModel } from './model-import-check.mjs';
 
 const MODELS = new URL('../public/models/', import.meta.url);
@@ -31,9 +31,91 @@ function triangles(root) {
   return tris;
 }
 
+// The top-level node of each wardrobe part (Top_*, Bottom_*, Shoes_*, Hat_*) and the body, by name.
+const PART = /^(Body|Top_|Bottom_|Shoes_|Hat_)/;
+function partNodes(root) {
+  const out = {};
+  root.traverse(o => { if (!o.isBone && PART.test(o.name) && !PART.test(o.parent?.name || '')) out[o.name] = o; });
+  return out;
+}
+
+// A performer of the dance game: a body and wardrobe parts on one skeleton, finger bones, shape keys, rotation clips.
+function checkPerformer(name, c, gltf) {
+  const root = gltf.scene, parts = partNodes(root);
+  assert.ok(parts.Body, 'a Body mesh');
+  for (const p of c.parts) assert.ok(parts[p], `wardrobe part ${p}`);
+  for (const p of Object.keys(parts)) assert.ok(p === 'Body' || c.parts.includes(p), `part ${p} is in the contract`);
+  const total = Object.values(parts).reduce((a, o) => a + triangles(o), 0);
+  const look = ['Body', ...c.look].reduce((a, p) => a + triangles(parts[p]), 0);
+  assert.ok(look <= c.tris, `default look ${look} tris exceeds ${c.tris}`);
+  assert.ok(total <= c.total, `${total} tris in the file exceeds ${c.total}`);
+  for (const n of c.nodes) assert.ok(root.getObjectByName(n), `missing node ${n}`);
+  const mats = new Set();
+  let draws = 0;
+  root.traverse(o => {
+    if (!o.isMesh) return;
+    assert.ok(o.isSkinnedMesh, `${o.name} is skinned`);
+    assert.ok(o.geometry.attributes.color, `${o.name} carries baked AO (COLOR_0)`);
+    mats.add(o.material.name);
+  });
+  for (const p of ['Body', ...c.look]) parts[p].traverse(o => { if (o.isMesh) draws++; });
+  assert.ok(mats.size <= 16, `${mats.size} materials`);
+  assert.ok(draws <= 14, `the default look takes ${draws} draws`);
+  for (const m of ['Skin', 'Hair', 'Eye white', 'Iris', 'Dark']) assert.ok(mats.has(m), `material ${m}`);
+  // every garment that covers the body carries the body-shape keys (so clothes follow), with the documented names
+  const keys = new Set();
+  root.traverse(o => { if (o.morphTargetDictionary) for (const k of Object.keys(o.morphTargetDictionary)) keys.add(k); });
+  for (const k of keys) assert.ok(SHAPE_KEYS.includes(k), `unknown shape key ${k}`);
+  for (const k of SHAPE_KEYS) assert.ok(keys.has(k), `shape key ${k}`);
+  for (const p of c.parts.filter(p => /^(Top|Bottom)_/.test(p))) {
+    let has = false;
+    parts[p].traverse(o => { if (o.morphTargetDictionary?.shape_build !== undefined) has = true; });
+    assert.ok(has, `${p} follows shape_build`);
+  }
+  const clips = gltf.animations.map(a => a.name);
+  for (const clip of c.clips) assert.ok(clips.includes(clip), `missing clip ${clip}`);
+  for (const a of gltf.animations) {
+    for (const t of a.tracks) {
+      const [node, prop] = t.name.split('.');
+      assert.ok(prop === 'quaternion' || (prop === 'position' && node === 'hips'), `${a.name} keys ${t.name}: only rotations and the hips' position`);
+    }
+  }
+  const box = new THREE.Box3().setFromObject(root);
+  assert.ok(box.min.y > -0.05, `stands on the origin (min y ${box.min.y.toFixed(3)})`);
+}
+
+// Clips for an existing person: no mesh, the person's own bones (rest pose to the bit) and the dance clips.
+async function checkClipFile(name, c, gltf) {
+  const std = await load(c.clipsOf);
+  let meshes = 0;
+  gltf.scene.traverse(o => { if (o.isMesh) meshes++; });
+  assert.equal(meshes, 0, 'no mesh');
+  const bones = new Map();
+  std.scene.traverse(o => { if (o.isBone) bones.set(o.name, o); });
+  let n = 0;
+  gltf.scene.traverse(o => {
+    const b = bones.get(o.name);
+    if (!b) return;
+    n++;
+    for (const k of ['position', 'quaternion', 'scale']) {
+      const x = o[k].toArray(), y = b[k].toArray();
+      assert.ok(x.every((v, i) => Math.abs(v - y[i]) < 1e-6), `${o.name} rest ${k}`);
+    }
+  });
+  assert.equal(n, bones.size, `all ${bones.size} bones of ${c.clipsOf}`);
+  const clips = gltf.animations.map(a => a.name);
+  for (const clip of c.clips) assert.ok(clips.includes(clip), `missing clip ${clip}`);
+  for (const a of gltf.animations) for (const t of a.tracks) assert.ok(bones.has(t.name.split('.')[0]), `${a.name} drives a bone ${c.clipsOf} has`);
+}
+
 // A light person against the standard model it was made from: same skeleton, clips and nodes; one mesh, one draw.
 async function checkLite(name, c, gltf) {
   const std = await load(c.lite), want = CONTRACTS[c.lite];
+  // a performer's light file is its default look: compare it with that look's meshes only
+  if (want.family === 'performers') {
+    const parts = partNodes(std.scene);
+    for (const [p, o] of Object.entries(parts)) if (p !== 'Body' && !want.look.includes(p)) o.removeFromParent();
+  }
   const meshes = [];
   gltf.scene.traverse(o => { if (o.isMesh) meshes.push(o); });
   assert.equal(meshes.length, 1, 'one mesh (one draw call)');
@@ -101,6 +183,8 @@ for (const name of names) {
     const gltf = await load(name);
     const root = gltf.scene;
     if (c.lite) { await checkLite(name, c, gltf); return; }
+    if (c.family === 'performers') { checkPerformer(name, c, gltf); return; }
+    if (c.clipsOf) { await checkClipFile(name, c, gltf); return; }
     const tris = triangles(root);
     assert.ok(tris > 0, 'has geometry');
     assert.ok(tris <= c.tris, `${tris} tris exceeds budget ${c.tris}`);

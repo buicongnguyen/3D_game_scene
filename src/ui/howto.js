@@ -93,6 +93,11 @@ export const HOWTO = {
     { in: null, pic: 'ladder', text: N_('An egg takes every rung it meets.') },
     { in: null, pic: 'trio', text: N_('A golden egg counts for three.') },
   ],
+  'trick:dance': [
+    { in: 'arrows', pic: 'dance', text: N_('Watch, then copy each move.') },
+    { in: null, pic: 'ring', text: N_('Press as the ring closes: on the beat!') },
+    { in: 'extra', pic: 'trio', text: N_('New moves have keys of their own.') },
+  ],
   'yard:footnet': [
     { in: 'move', pic: 'walk', text: N_('Run under the shuttle.') },
     { in: 'act', pic: 'ball', text: N_('Kick just as it comes down.') },
@@ -185,6 +190,8 @@ export const PICS = {
   // a life ring thrown out onto the water
   buoy: `<path d="M2 31q5-4 9 0t9 0 9 0 9 0" fill="none" stroke="${BLUE}" stroke-width="2.6" stroke-linecap="round"/><g class="hp-plop"><circle cx="24" cy="13" r="7.5" fill="none" stroke="#fff" stroke-width="5.5"/><circle cx="24" cy="13" r="7.5" fill="none" stroke="${HOT}" stroke-width="5.5" stroke-dasharray="5.9 5.9"/><circle cx="24" cy="13" r="10.3" fill="none" stroke="${INK}" stroke-width="1.2"/><circle cx="24" cy="13" r="4.7" fill="none" stroke="${INK}" stroke-width="1.2"/></g>`,
   turn: `<ellipse cx="20" cy="22" rx="11" ry="7" fill="#a8436e" stroke="${INK}" stroke-width="1.4"/><path class="hp-spin" d="M8 12a13 9 0 0 1 24 0m0 0-5-1m5 1 1-5" fill="none" stroke="${HOT}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,
+  // a little dancer stepping from side to side under a conical hat (the Festival dance)
+  dance: `<path d="M8 20h-4m4 0-3-3m3 3-3 3M32 20h4m-4 0 3-3m-3 3 3 3" fill="none" stroke="${HOT}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><g class="hp-sway"><path d="M13 12 20 5l7 7z" fill="${SUN}" stroke="${INK}" stroke-width="1.4" stroke-linejoin="round"/><circle cx="20" cy="14.5" r="3.2" fill="${INK}"/><path d="M20 18v8m0-6-5-4m5 4 5-4m-5 10-4 7m4-7 4 7" fill="none" stroke="${INK}" stroke-width="2.6" stroke-linecap="round"/></g>`,
 };
 
 const CSS = `
@@ -299,6 +306,8 @@ const CSS = `
 const STICK = `<svg class="ic" viewBox="0 0 22 22"><circle cx="11" cy="11" r="9.5" fill="#fff" stroke="#c9b48c" stroke-width="1.5"/><circle cx="13" cy="9" r="5" fill="#5a3a22"/></svg>`;
 const FINGER = `<svg class="ic" viewBox="0 0 22 22"><circle cx="11" cy="8" r="6.5" fill="none" stroke="#f08a3c" stroke-width="1.6" stroke-dasharray="3 2.4"/><path d="M11 8v9m-3.4-2.6L11 17l3.4-2.6" fill="none" stroke="#5a3a22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" transform="rotate(180 11 12.5)"/><circle cx="11" cy="8" r="2.6" fill="#5a3a22"/></svg>`;
 const MOUSE = `<svg class="ic" viewBox="0 0 22 22"><rect x="5.5" y="2" width="11" height="18" rx="5.5" fill="#fff" stroke="#5a3a22" stroke-width="1.6"/><path d="M11 2v7M5.5 9h11" stroke="#5a3a22" stroke-width="1.4"/><path d="M6.3 8.2V7.5A4.7 4.7 0 0 1 10.3 2.9v5.3z" fill="#f08a3c"/></svg>`;
+// a finger swiping left and right
+const SWIPE = `<svg class="ic" viewBox="0 0 22 22"><path d="M3 6h16M3 6l3-2.5M3 6l3 2.5M19 6l-3-2.5M19 6l-3 2.5" fill="none" stroke="#f08a3c" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="11" cy="14" r="3" fill="#5a3a22"/><path d="M11 17v4" stroke="#5a3a22" stroke-width="2.4" stroke-linecap="round"/></svg>`;
 const kbd = (s, cls = '') => `<kbd${cls ? ` class="${cls}"` : ''}>${s}</kbd>`;
 const HOLD = () => `<span class="hold">${tx('Hold')}</span>`;
 
@@ -316,6 +325,9 @@ export function chips(row, dev) {
     case 'tap': return dev === 'touch' ? FINGER : dev === 'pad' ? kbd('X', 'pad') : MOUSE;
     case 'aim': return dev === 'touch' ? FINGER : dev === 'pad' ? STICK : MOUSE;
     case 'sow': return dev === 'touch' ? kbd('◀', 'btn') + kbd('▶', 'btn') : dev === 'pad' ? kbd('A', 'pad') + kbd('X', 'pad') : kbd('Space') + kbd('E');
+    // the Festival dance: four arrow moves (a swipe or a button on a phone), and three more on keys of their own
+    case 'arrows': return dev === 'touch' ? SWIPE : dev === 'pad' ? STICK : ['←', '↑', '↓', '→'].map(k => kbd(k)).join('');
+    case 'extra': return dev === 'touch' ? kbd('★', 'btn') : dev === 'pad' ? kbd('A', 'pad') + kbd('X', 'pad') + kbd('Y', 'pad') : kbd('Space') + kbd('Q') + kbd('R');
     default: return '';
   }
 }

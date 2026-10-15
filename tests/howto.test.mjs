@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { HOWTO, PICS, chips, deviceOf, rowsHtml } from '../src/ui/howto.js';
 import { buildCatalogue } from '../src/content/minigames.js';
 
-const INPUTS = ['move', 'lr', 'creep', 'act', 'hold', 'jump', 'tap', 'aim', 'sow', null];
+const INPUTS = ['move', 'lr', 'creep', 'act', 'hold', 'jump', 'tap', 'aim', 'sow', 'arrows', 'extra', null];
 const OWN_GUIDE = new Set(['trick:archery', 'trick:cowrace', 'trick:swimming']);       // these bring a guide of their own
 const keyOf = e => (e.kind === 'fish' ? 'fish' : e.id);
 

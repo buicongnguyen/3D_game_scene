@@ -9,6 +9,14 @@ const VILLAGER_MATS = ['Villager shirt', 'Villager trousers', 'Villager hair'];
 const VILLAGER_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Run', 'Jump', 'Bow', 'Interact', 'Hammer', 'Sweep', 'Carry', 'Sit', 'Throw', 'Kick'];
 export const GROUND_CLIPS = ['Crouch', 'CrouchWalk', 'CrouchReach', 'CrouchReachHold', 'Kneel', 'Pickup', 'SitGrass'];
 const KID_CLIPS = [...VILLAGER_CLIPS, 'RideCow', 'RideCowTrot', 'RideCowLean', ...GROUND_CLIPS];
+// The dance game (art/blender/dance_anims.py): 30 fps at 90 BPM, a beat is 20 frames, a move 40 with its accent at 10.
+export const FESTIVAL_CLIPS = ['DanceIdle', 'SweepL', 'SweepR', 'FanUp', 'Turn', 'HatTilt', 'Flourish', 'DanceBow'];
+export const KPOP_CLIPS = ['KpopIdle', 'SideL', 'SideR', 'PointStep', 'JumpClap', 'Spin', 'HeartHands', 'CrowdWave'];
+export const CROWD_CLIPS = ['Clap', 'StickWave'];
+const PERFORMER_CLIPS = ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cheer', 'Bow'];
+export const FINGER_BONES = ['L', 'R'].flatMap(s => ['thumb', 'index', 'index2', 'fingers', 'fingers2'].map(f => `${f}_${s}`));
+const PERFORMER_BONES = [...HUMAN_BONES, ...FINGER_BONES];
+export const SHAPE_KEYS = ['shape_chest', 'shape_waist', 'shape_hips', 'shape_thigh', 'shape_arm', 'shape_build'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
   'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
@@ -44,6 +52,38 @@ export const CONTRACTS = {
   'villager-woman.lite': { family: 'characters', lite: 'villager-woman', tris: 4600, parts: VILLAGER_MATS },
   'villager-kid.lite': { family: 'characters', lite: 'villager-kid', tris: 4450, parts: VILLAGER_MATS },
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
+
+  // The dance game's performers (art/blender/build_performers.py on the graceful body, docs/PERFORMERS.md). Seen up
+  // close with the valley frozen behind (focus mode), so they are allowed far more than the village cast: one 'Body'
+  // mesh (head, hair, neck, hands) and one mesh per wardrobe part (`parts`; the runtime shows one look at a time,
+  // src/content/performers.js), five finger bones a hand, body-shape keys on the body and every garment, and clips that
+  // key rotations (and the hips' position) only, so bone proportions set at runtime are never undone.
+  // tris: the default look (`look`, what is drawn); total: every part in the file.
+  hoa: { family: 'performers', tris: 34000, total: 52000, nodes: PERFORMER_BONES, look: ['Top_aodai', 'Bottom_trousers', 'Shoes_flats'],
+    parts: ['Top_aodai', 'Top_long', 'Bottom_trousers', 'Bottom_skirtL', 'Shoes_flats'], clips: [...PERFORMER_CLIPS, ...FESTIVAL_CLIPS] },
+  nabi: { family: 'performers', tris: 36000, total: 58000, nodes: [...PERFORMER_BONES, 'hair_1', 'hair_2'], look: ['Top_crop', 'Bottom_skirtS', 'Shoes_sneakers'],
+    parts: ['Top_crop', 'Top_long', 'Bottom_skirtS', 'Bottom_trousers', 'Bottom_skirtL', 'Shoes_sneakers', 'Shoes_flats'], clips: [...PERFORMER_CLIPS, ...KPOP_CLIPS] },
+  byeol: { family: 'performers', tris: 39500, total: 70000, nodes: [...PERFORMER_BONES, 'hair_1', 'hair_2'], look: ['Top_coat', 'Bottom_skirtL', 'Shoes_boots'],
+    parts: ['Top_coat', 'Top_long', 'Top_crop', 'Bottom_skirtL', 'Bottom_skirtS', 'Bottom_trousers', 'Shoes_boots', 'Shoes_flats'],
+    clips: [...PERFORMER_CLIPS, 'SingIdle', 'SingReach', 'MicRaise', 'KpopIdle', 'SideL', 'SideR', 'HeartHands', 'CrowdWave'] },
+  haru: { family: 'performers', tris: 34000, total: 60000, nodes: PERFORMER_BONES, look: ['Top_jacket', 'Bottom_trousers', 'Shoes_sneakers', 'Hat_cap'],
+    parts: ['Top_jacket', 'Top_long', 'Top_coat', 'Bottom_trousers', 'Shoes_sneakers', 'Shoes_boots', 'Hat_cap'],
+    clips: [...PERFORMER_CLIPS, ...KPOP_CLIPS.filter(c => c !== 'HeartHands'), 'PowerPose', 'SlideL', 'SlideR'] },
+  // their light files: the default look in one mesh (made from a half-resolution rebuild, then light_people.py)
+  'hoa.lite': { family: 'performers', lite: 'hoa', tris: 11700 },
+  'nabi.lite': { family: 'performers', lite: 'nabi', tris: 11400 },
+  'byeol.lite': { family: 'performers', lite: 'byeol', tris: 14000 },
+  'haru.lite': { family: 'performers', lite: 'haru', tris: 12200 },
+  // the dance for people who exist already (art/blender/build_dance_clips.py): the person's own skeleton and the moves,
+  // no mesh; `clipsOf` is the file whose bones they must match exactly
+  'mika-dance': { family: 'dance', clipsOf: 'mika', clips: [...FESTIVAL_CLIPS, ...KPOP_CLIPS] },
+  'villager-kid-dance': { family: 'dance', clipsOf: 'villager-kid', clips: [...FESTIVAL_CLIPS, ...KPOP_CLIPS, ...CROWD_CLIPS] },
+  'villager-woman-dance': { family: 'dance', clipsOf: 'villager-woman', clips: CROWD_CLIPS },
+  'villager-man-dance': { family: 'dance', clipsOf: 'villager-man', clips: CROWD_CLIPS },
+  // hand props on grip_R (art/blender/build_dance_props.py)
+  'non-la': { family: 'dance', tris: 2600 },
+  mic: { family: 'dance', tris: 800 },
+  'light-stick': { family: 'dance', tris: 300, mats: ['Stick glow'] },
 
   // ---------------------------------------------------------------- animals
   fox: { family: 'animals', tris: 6000, mats: ['Fox bib'], clips: ['Idle', 'Walk', 'Run', 'Sit', 'Look'] },
@@ -266,7 +306,7 @@ export const CONTRACTS = {
   'gift-honey': { family: 'rewards', tris: 1500, icon: true },
 };
 
-export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo'];
+export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru'];
 // Raw GLBs are the editable, uncompressed sources; production ships meshopt-packed copies (tests/pack.test.mjs).
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
@@ -293,7 +333,11 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo']
 // +6.06 MB: the light people (nine <name>.lite.glb, 48,191,804 B measured). A light file is a whole model: it repeats
 // its standard file's clips (most of the bytes) so that a phone loads ONE file per person, the light one, instead of
 // two. A player downloads one set or the other, never both: on a phone the download gets ~0.8 MB smaller.
-export const TOTAL_RAW_BYTES = 48_230_000;
+// +17.67 MB: the dance game (65,856,988 B measured, 216 models): the four performers with their wardrobes, shape keys and
+// clips (hoa 2.62, nabi 3.03, byeol 3.68, haru 3.34 MB), their light files (1.0-1.1 MB each), the dance clips for Mika
+// and the villagers (0.75 MB together) and three hand props (0.1 MB). None of it is part of a first visit: the game
+// fetches these files only when a dance round starts (Tricks.ensureModels), and only the ones that round shows.
+export const TOTAL_RAW_BYTES = 66_000_000;
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -307,7 +351,10 @@ export const TOTAL_RAW_BYTES = 48_230_000;
 // +0.451 MB: shrubs preserve their embedded atlas (16,710,464 B measured).
 // +0.703 MB: tropical LODs retain the exact source atlases (17,413,544 B measured).
 // +3.11 MB: the light people, packed (20,523,228 B measured); see the note on the raw budget: either set is loaded, not both.
-export const TOTAL_PACKED_BYTES = 20_560_000;
+// +5.69 MB: the dance game, packed (26,213,168 B measured): a performer 0.76-1.03 MB, a light performer 0.34-0.40 MB,
+// the clip files 0.48 MB together. Loaded only by a dance round: a K-pop round with the standard people fetches about
+// 3.6 MB of them (Nabi, Haru, Byeol, Mika's and the villagers' clips, the mic and light sticks), the hat dance about 1.3 MB.
+export const TOTAL_PACKED_BYTES = 26_300_000;
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

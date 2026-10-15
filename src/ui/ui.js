@@ -530,7 +530,7 @@ export class UI {
       row.className = 'dl-row' + (who === 'narrator' ? ' narr' : '') + (who === 'mika' ? ' me' : '') + (who === 'sora' && storyId() !== 'grandma' ? ' letter' : '')   // Classic: Sora speaks only in her letters;
       row.style.setProperty('--c', c.color);
       row.style.animationDelay = `${k * 0.14}s`;
-      const hasPortrait = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora'].includes(who);
+      const hasPortrait = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora', 'hoa', 'nabi', 'byeol', 'haru'].includes(who);
       if (who !== 'narrator') {
         const av = document.createElement('div');
         av.className = 'av';

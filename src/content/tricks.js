@@ -7,6 +7,7 @@
 // stars: score needed for 1, 2 and 3 stars. length: round seconds; firstLength: the guided first try.
 import { ARCHERY } from './archery.js';
 import { LEVELS, levelSpec, recordLevel, cleanLevels } from './levels.js';
+import { PERFORMERS, cleanLook } from './performers.js';
 // Texts are English source strings (translated with tx(); collected by scripts/i18n-extract.mjs).
 
 export const TRICKS = [
@@ -296,6 +297,24 @@ export const TRICKS = [
     stars: [12, 28, 44], length: 105, firstLength: 50, unit: 'eggs',
     levels: { easy: { stars: [5, 14, 24], length: 78 }, normal: { stars: [12, 28, 44], length: 105 }, hard: { stars: [20, 50, 80], length: 140 } },
   },
+  {
+    // a festival dance lesson on the Takamori square, in front of the bell tower, at dusk (tricks/dance.js, rules-dance.js).
+    // Two dances on one record: the hat dance (múa nón) with Hoa, Hana's grown-up daughter, or the K-pop stage with her
+    // friends from dance school in Seoul (Nabi leads, Haru beside her, Byeol sings). Easy and Normal: watch a line, then
+    // copy it on the beat; Difficult: dance along, mirror calls, a free-style chorus. 10 a perfect move, 6 a good one,
+    // 10 a clean line, 4 a move of the longest chorus combo: 200 at best on Easy, 390 on Normal, 882 on Difficult. The
+    // stars are tuned with the rules' own dancers (tests/dance.test.mjs): one for a sloppy Easy round, three for perfect.
+    // length: the song of each level (the rules' plan). scenery: Hoa stands by the sign from this far away.
+    id: 'dance', name: 'Festival dance', icon: 'trick-dance',
+    place: { x: 122.5, z: 12, face: -Math.PI / 2 }, where: 'the Takamori square, in front of the bell tower',
+    seasons: ['spring', 'summer', 'autumn', 'winter'], hours: [17, 22.5], night: true, when: 'Any evening: festivals all year',
+    teacher: { grandma: 'hoa', classic: 'hoa' }, intro: 'trick_dance_intro', scenery: 70,
+    howReal: 'Bon odori circles a drum tower at Obon in summer: anyone may step in. Múa nón, the hat dance, comes out at Tết and harvest.',
+    why: 'Festival dances repeat a few easy steps, so everyone can join in. Watch, copy, keep the beat, and the whole village dances as one.',
+    safety: 'Dance on flat ground, leave room around you, and drink water between songs.',
+    stars: [60, 200, 320], length: 103, firstLength: 66, unit: 'points',
+    levels: { easy: { stars: [24, 110, 170], length: 66 }, normal: { stars: [60, 200, 320], length: 103 }, hard: { stars: [150, 450, 720], length: 122 } },
+  },
 ];
 
 export const TRICK =Object.fromEntries(TRICKS.map(t => [t.id, t]));
@@ -351,6 +370,23 @@ export function cleanTricks(raw) {
     const levels = cleanLevels(r.levels);
     if (levels) out[id].levels = levels;
     if (LEVELS.includes(r.level)) out[id].level = r.level;
+    // the Festival dance remembers the dance chosen last and each performer's look (offered first next time)
+    if (DANCE_MODES.includes(r.mode)) out[id].mode = r.mode;
+    const looks = cleanLooks(r.looks);
+    if (looks) out[id].looks = looks;
   }
   return out;
+}
+
+/** The dances of the Festival dance (tricks/rules-dance.js MODES). */
+export const DANCE_MODES = ['festival', 'kpop'];
+/**
+ * A clean `looks` record { performer: lookId } (undefined when there is nothing to keep): only the performers of
+ * content/performers.js, and only looks they really have.
+ */
+export function cleanLooks(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const out = {};
+  for (const p of Object.keys(PERFORMERS)) { const l = typeof raw[p] === 'string' ? cleanLook(p, raw[p]) : null; if (l) out[p] = l; }
+  return Object.keys(out).length ? out : undefined;
 }

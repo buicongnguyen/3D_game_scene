@@ -70,6 +70,7 @@ VIEW = {
     'fish-dock': (-6, 8), 'fish-mill': (-6, 8), 'cow-ride': (-6, 8), 'kite-workshop': (-8, 46), 'sky-stars': (0, 4), 'minigames': (-6, 8),
     'cat-tricks': (-6, 8), 'cat-yard': (-6, 8), 'cat-fish': (-6, 8), 'cat-sky': (0, 4), 'cat-animals': (-6, 8),
     'trick-kite': (0, 4), 'trick-dew': (0, 4), 'trick-roast': (-8, 26), 'trick-beetles': (-10, 16),
+    'trick-dance': (-4, 6),   # (art/blender/performer_icon.py)
 }
 # Rigged items: the glTF importer leaves the first clip (alphabetical) on the armature; pose these explicitly.
 POSE = {'butterfly': ('Rest', 0.0), 'dragonfly': ('Fly', 0.0), 'ladybug': ('Idle', 0.0), 'spider': ('Idle', 0.0),

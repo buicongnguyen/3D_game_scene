@@ -11,7 +11,9 @@ import { paletteMaterial, MAX_PARTS } from './skin-merge.js';
 // palette x baked ambient occlusion, the same sum the standard parts make, so the two sets look alike, and a
 // villager's shirt, trousers and hair can still be tinted by the part's name.
 
-export const PEOPLE = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid'];
+export const PEOPLE = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid',
+  // the dance game's performers (art/blender/build_performers.py): their light file is the default look in one mesh
+  'hoa', 'nabi', 'byeol', 'haru'];
 export const PEOPLE_CHOICES = ['auto', 'std', 'lite'];
 const KEY = 'starline-opt-people';
 const LITE = '.lite';

@@ -230,6 +230,27 @@ Character looks:
   Talk, Sad, Fire *once* (recoil).
 - Budget: ≤ 4k tris.
 
+#### The dance game's performers — `build_performers.py` (graceful body)
+
+Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
+
+- **Hoa** (`hoa`, the dance teacher, Hana's daughter), **Nabi** (`nabi`, dancer), **Byeol** (`byeol`, singer),
+  **Haru** (`haru`, dancer): young adults on the graceful body (`graceful.py`: ~6 heads, hip joint at 52 % of the
+  height, a 5 cm neck, sloped shoulders, slim arms and legs, real fingers), authored at final size so the three women
+  share one skeleton exactly.
+- Bones: the humanoid rig + finger bones `thumb_*`, `index_*`, `index2_*`, `fingers_*`, `fingers2_*` (both sides),
+  `hair_1`/`hair_2` where hair swings. Clips key rotations and the hips' position only (runtime proportions stay put).
+- Meshes: `Body` (head, face, hair, neck, hands) + one mesh per wardrobe part, `Top_*`, `Bottom_*`, `Shoes_*`, `Hat_*`
+  (`outfits.py`); looks and colours by material name in `src/content/performers.js`, applied by `src/engine/wardrobe.js`.
+- Shape keys `shape_chest`, `shape_waist`, `shape_hips`, `shape_thigh`, `shape_arm`, `shape_build` on the body and every
+  garment (`shapes.py`): influence = 2 x (control - 0.5).
+- Light files: the default look as one mesh (`.tools/lite-src/` from a half-resolution rebuild, then `light_people.py`).
+- Clip-only files `mika-dance`, `villager-kid-dance`, `villager-woman-dance`, `villager-man-dance`
+  (`build_dance_clips.py`): the person's own skeleton, no mesh, the dance clips (`dance_anims.py`: 90 BPM, a beat is 20
+  frames, a move 40 frames with its accent at frame 10).
+- Props on `grip_R`, modelled in grip space (`build_dance_props.py`): `non-la`, `mic`, `light-stick`.
+- Budgets: default look ≤ 34-39.5k tris and ≤ 14 draws (seen up close in focus mode); light files ≤ 11.4-14k.
+
 ### Animal rigs
 
 Bone names are free, but every clip listed must exist.

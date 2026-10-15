@@ -40,13 +40,19 @@ from mathutils.bvhtree import BVHTree
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 MODELS = os.path.join(ROOT, 'public', 'models')
+# The dance game's performers (build_performers.py) keep a wardrobe of meshes in their standard file; their light file is
+# made from the default look joined into one mesh, which build_performers.py writes to .tools/lite-src/<name>.glb.
+PERFORMER_SRC = os.path.join(ROOT, '.tools', 'lite-src')
 
 # Triangle targets. The heroine is seen up close; the townsfolk a dozen at a time.
 PEOPLE = {
     'mika': 6000,
     'sora': 4600, 'rin': 4800, 'genzo': 4800, 'hana': 4600, 'ota': 4800,
     'villager-kid': 3300, 'villager-man': 3400, 'villager-woman': 3300,
+    # the performers (up close in the dance game; a light file is for old phones, at the named cast's level)
+    'nabi': 6200, 'haru': 6000, 'byeol': 6200, 'hoa': 6000,
 }
+PERFORMERS = ('nabi', 'haru', 'byeol', 'hoa')
 
 # How willingly a part gives up triangles (1 = average). Small face parts are what a child looks at: they keep theirs.
 # Matched by lower-case substring, first hit wins; anything else is 1.
@@ -690,7 +696,7 @@ def keep_factor(name):
 
 
 def lighten(name, target):
-    src = os.path.join(MODELS, f'{name}.glb')
+    src = os.path.join(PERFORMER_SRC if name in PERFORMERS else MODELS, f'{name}.glb')
     js, binary = read_glb(src)
     assert len(js['meshes']) == 1, f'{name}: one mesh expected'
     assert not js.get('textures') and not js.get('images'), f'{name}: textures cannot go into a palette'

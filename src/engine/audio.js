@@ -6,6 +6,18 @@ const SCALES = {
 const ROOTS = { spring: 62, summer: 64, autumn: 60, winter: 57, night: 58 };
 const CHORDS = [[0, 4, 7], [5, 9, 12], [7, 11, 14], [9, 12, 16], [2, 5, 9], [4, 7, 11]];
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+// the Festival dance's two tunes (Audio.danceBeat): four bars of chords and eight eighth notes a bar (null: a rest).
+// festival: D major pentatonic over D, Bm, G, A; kpop: a bright hook over C, G, Am, F. Original, written for the game.
+const DANCE_TUNES = {
+  festival: {
+    chords: [[62, 66, 69], [59, 62, 66], [55, 59, 62], [57, 61, 64]],
+    tune: [[74, 76, 78, null, 81, 78, 76, null], [74, 76, 78, 76, 74, null, 71, null], [78, 81, 83, null, 81, 78, 76, null], [74, 76, 74, 71, 69, null, 74, null]],
+  },
+  kpop: {
+    chords: [[60, 64, 67], [55, 59, 62], [57, 60, 64], [53, 57, 60]],
+    tune: [[76, 76, 79, 76, 74, 72, 74, null], [74, 74, 79, 74, 71, null, 74, 76], [76, 76, 81, 79, 76, null, 72, 74], [77, 76, 74, 72, 74, null, null, null]],
+  },
+};
 
 export class Audio {
   constructor() {
@@ -311,8 +323,73 @@ export class Audio {
 
   setMusic(season, mood) { this.season = season; this.mood = mood || 'calm'; }
 
+  /** A round that plays a tune of its own (the Festival dance) holds the valley's music while it runs. key: who holds it. */
+  holdMusic(key, on) {
+    this.musicHolds ??= new Set();
+    if (on) this.musicHolds.add(key); else this.musicHolds.delete(key);
+  }
+
+  /**
+   * One beat of a dance tune (the Festival dance, game/tricks/dance.js), scheduled `when` seconds from now. The round's
+   * own clock decides the beats and asks for each one a moment ahead, so the song follows the game (and stops with it).
+   *   style  'festival': a plucked pentatonic tune, a soft pad, a taiko thump and a wood block (a bon odori / hat dance feel)
+   *          'kpop': a bright synth hook sung by a soft voice lead, bass, kick on every beat, claps and hats
+   *   beat   the song's beat number (0..3 the count-in clicks); spb seconds a beat
+   *   o      { energy 0..1: more layers as the dancing goes well, crowd 0..1: claps from the watchers, count: a count-in beat }
+   */
+  danceBeat(style, beat, when, spb, o = {}) {
+    if (!this.ctx) return;
+    const t = Math.max(0, when), music = this.music, sfx = this.sfx, energy = o.energy ?? 0.5;
+    const click = (f, v) => this.tone(f, { type: 'triangle', dur: 0.06, vol: v, when: t, rev: 0.05 });
+    if (o.count) { click(beat % 4 === 0 ? 1320 : 990, 0.09); if (beat % 4 === 0) this.noise({ dur: 0.05, vol: 0.05, freq: 3000, q: 2, when: t }); return; }
+    const k = ((beat % 4) + 4) % 4, bar = Math.floor(beat / 4) % 4, half = spb / 2;
+    const T = DANCE_TUNES[style] || DANCE_TUNES.festival;
+    // the chord of the bar, under everything
+    if (k === 0) {
+      this.pad(T.chords[bar].map(m => m - 12), t, spb * 4, style === 'kpop' ? 0.022 : 0.028);
+      this.tone(mtof(T.chords[bar][0] - 24), { type: style === 'kpop' ? 'square' : 'triangle', dur: spb * 1.6, vol: 0.06, when: t, bus: music, rev: 0.1, filter: 420 });
+    }
+    // the tune: two eighth notes a beat
+    for (let e = 0; e < 2; e++) {
+      const m = T.tune[bar][k * 2 + e];
+      if (m == null) continue;
+      const w = t + e * half, v = 0.07 + energy * 0.03;
+      if (style === 'kpop') {
+        // a soft "voice": two detuned triangles that swell in, and a bright synth an octave down for the hook
+        this.tone(mtof(m), { type: 'triangle', dur: half * 1.8, vol: v, attack: 0.03, when: w, bus: music, rev: 0.35, detune: -7 });
+        this.tone(mtof(m), { type: 'triangle', dur: half * 1.8, vol: v * 0.7, attack: 0.03, when: w, bus: music, rev: 0.35, detune: 8 });
+        if (energy > 0.35) this.tone(mtof(m - 12), { type: 'square', dur: half * 0.9, vol: 0.025, when: w, bus: music, rev: 0.15, filter: 2200 });
+      } else {
+        this.tone(mtof(m), { type: 'triangle', dur: 0.5, vol: v, when: w, bus: music, rev: 0.4, filter: 3200 });
+        this.tone(mtof(m) * 2, { type: 'sine', dur: 0.22, vol: v * 0.3, when: w, bus: music, rev: 0.3 });
+      }
+    }
+    // the drums
+    if (style === 'kpop') {
+      this.tone(150, { type: 'sine', dur: 0.2, vol: 0.2, when: t, glide: 0.33, rev: 0 });                       // kick on every beat
+      if (k === 1 || k === 3) this.noise({ dur: 0.12, vol: 0.12, freq: 1500, q: 0.8, when: t });              // the clap
+      this.noise({ dur: 0.035, vol: 0.035 + energy * 0.02, freq: 7500, type: 'highpass', when: t + half });   // hats between the beats
+      if (energy > 0.6) this.noise({ dur: 0.03, vol: 0.025, freq: 8000, type: 'highpass', when: t + half * 0.5 });
+      // the crowd's chant at the end of the phrase when the stage is on fire
+      if ((o.crowd || 0) > 0.55 && bar === 3 && k === 3) {
+        for (const [f, d] of [[392, 0], [494, half]]) this.tone(f, { type: 'sawtooth', dur: 0.14, vol: 0.035, when: t + d, filter: 1300, rev: 0.3, bus: sfx });
+        this.noise({ dur: 0.2, vol: 0.05, freq: 1200, q: 0.6, when: t, bus: sfx });
+      }
+    } else {
+      if (k === 0 || k === 2) {
+        // the taiko: a deep thump with a skin slap
+        this.tone(k === 0 ? 92 : 104, { type: 'sine', dur: 0.32, vol: 0.2, when: t, glide: 0.55, rev: 0.2 });
+        this.noise({ dur: 0.08, vol: 0.06, freq: 380, type: 'lowpass', when: t });
+      } else this.tone(880, { type: 'triangle', dur: 0.05, vol: 0.06, when: t, rev: 0.1 });              // the wood block
+      if (energy > 0.45) this.noise({ dur: 0.04, vol: 0.022 + energy * 0.012, freq: 6000, type: 'highpass', when: t + half });
+      if (energy > 0.75 && k === 3) this.tone(1320, { type: 'triangle', dur: 0.05, vol: 0.04, when: t + half, rev: 0.1 });
+    }
+    // the watchers clap along on the backbeat
+    if ((o.crowd || 0) > 0.2 && (k === 1 || k === 3)) this.noise({ dur: 0.07, vol: 0.03 + 0.05 * o.crowd, freq: 1900, q: 0.9, when: t + 0.01, bus: sfx });
+  }
+
   musicTick(night) {
-    if (!this.ctx || this.musicVol <= 0.001) return;
+    if (!this.ctx || this.musicVol <= 0.001 || this.musicHolds?.size) return;
     const c = this.ctx;
     const tempo = this.mood === 'finale' ? 92 : this.mood === 'tense' ? 64 : 76;
     const beatLen = 60 / tempo / 2;

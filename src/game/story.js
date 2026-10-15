@@ -13,6 +13,11 @@ export const CAST = {
   hana: { name: 'Hana', color: '#e0567a', pitch: 1.05 },
   sora: { name: 'Sora', color: '#7a6ad8', pitch: 1.0 },
   kiku: { name: 'Old Kiku', color: '#6a8a4a', pitch: 0.95 },
+  // the Festival dance (content/tricks.js): Hana's grown-up daughter and her friends from dance school in Seoul
+  hoa: { name: 'Hoa', color: '#e8664f', pitch: 1.12 },
+  nabi: { name: 'Nabi', color: '#e0458f', pitch: 1.24 },
+  byeol: { name: 'Byeol', color: '#a95bd6', pitch: 1.32 },
+  haru: { name: 'Haru', color: '#3f7ad8', pitch: 0.9 },
   villager: { name: 'Villager', color: '#6b7a8a', pitch: 1 },
   narrator: { name: '', color: '#cbd5e1', pitch: 1 },
 };
@@ -743,6 +748,14 @@ export const DIALOGUE = {
     ['rin', "A rubber tip, and only ever at the targets. Hold to draw, let go to shoot. The wind sock shows which way it will drift."],
     ['rin', "Ten, fifteen, twenty metres. Aim a little upwind, city girl."],
   ],
+  trick_dance_intro: [
+    ['hoa', "Hi, Mika! I'm Hoa, Hana's daughter. Hana and Hoa both mean flower. Mum likes things to match: buns, aprons, daughters.", 'Wave'],
+    ['mika', "The baker has a grown-up daughter? Since when?"],
+    ['hoa', "Since about twenty years ago! I study dance in Seoul. My friends Nabi, Byeol and Haru came home with me for the festival.", 'Talk'],
+    ['hoa', "Tonight I teach the hat dance from Vietnam. Watch me, then copy me, on the beat. Like a bon odori circle: anyone can join."],
+    ['mika', "And if I'd rather be a pop star?"],
+    ['hoa', "Then Nabi and Haru lead you on the stage, and Byeol sings. Arrows, swipes or the buttons: every move has its own."],
+  ],
   trick_firefly_note: [
     ['narrator', 'In the jar-light, a folded paper by the path: a drawing of a girl with a jar of fireflies, and a note.'],
     ['rin', "\"Not bad for a city girl.\" …Sora drew that one years ago. I just kept it for the right night.", 'Talk'],
@@ -756,6 +769,8 @@ export const CHATTER = {
   rin: [["The trout bite best at dusk. The starfin only bites AT dusk."], ["Grandpa's bark is worse than his bite. His bite is also bad."], ["Takamori kids have bikes. We have boats. Boats are better."], ["I tried to catch the golden ayu once. Once."], ["Race you to the dock!"]],
   ota: [["Hmph."], ["Ten years of radish. A man doesn't forget a thing like that."], ["That Hana woman makes a decent bun. Don't repeat that."], ["Rin thinks I don't know she feeds that crab. I know."], ["Keep watch, girl. That's the whole job."]],
   hana: [["Have a bun! No? Have two!"], ["Flour in my hair, flour in my tea. Flour is a way of life, love."], ["Ōta used to come to my stall every festival. Three buns. Always three."], ["My oven's older than the viaduct."], ["A bun is just a hug you can eat, sweetheart."]],
+  // Hoa by the bell tower, once she has taught the Festival dance (tricks/dance.js puts her there)
+  hoa: [["The sign by the bell tower has the steps. The hat dance or the K-pop stage: your pick!"], ["In Seoul we practise in front of a big mirror for hours. Here I have a bell tower. I like it better."], ["Mum sends buns to Seoul every month. My friends think every baker in the countryside is a hero."]],
   villager: [["Heard the Mill Lamp was lit again. Packed my bags the same night."], ["My kids had never seen the Star Train. Now they won't stop drawing it."], ["The bell rang the hours again this morning. I cried into my tea."], ["Hoshi Valley's small. Everybody knows everybody's business."], ["They say the stars fall in winter."], ["Sora's granddaughter! You've got her walk."], ["The Star Train! I remember the Star Train."], ["Mind the crows."]],
 };
 
