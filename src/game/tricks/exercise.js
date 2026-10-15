@@ -159,10 +159,15 @@ class Joy {
 
 // ---------------------------------------------------------------------------------------------------- driving a body
 /** Play `clip` on a body at `time` seconds (the round sets the time itself every frame: the clips follow the count). */
-function pose(body, clip, time, fade = 0.28) {
+// A way in or out (ExDown, Ex<Pose>In) starts where the pose before it ends: a short blend. Anything else is a change of
+// move with the arms somewhere else entirely: a slower one, so they swing over instead of whipping round.
+const LINKED = /In[LR]?$|^ExDown$/;
+const blendFor = (from, to) => (LINKED.test(from || '') || LINKED.test(to) ? 0.25 : 0.45);
+
+function pose(body, clip, time, fade) {
   const a = body.anim;
   if (!a?.has?.(clip)) return false;
-  if (a.currentName !== clip) { a.oneShot = null; a.play(clip, { fade }); }
+  if (a.currentName !== clip) { a.oneShot = null; a.play(clip, { fade: fade ?? blendFor(a.currentName, clip) }); }
   const act = a.action(clip);
   if (!act) return false;
   const d = act.getClip().duration;
@@ -191,7 +196,7 @@ function bodyClip(plan, c, cs, { demo = false, lag = 0, watchIdle = false, breat
     return { clip: m.clip, frac: (((cc - it.start) / m.counts) % 1 + 1) % 1 };
   }
   // a move (or a combo): during its first counts on Easy the class watches the instructor
-  if (!demo && watchIdle && it.watch && c - it.start < it.watch) return { clip: MOVES[it.m || it.ms[0]].floor ? 'ExCatCow' : 'ExMountain', t: 0, fade: 0.4 };
+  if (!demo && watchIdle && it.watch && c - it.start < it.watch) return { clip: MOVES[it.m || it.ms[0]].floor ? 'ExCatCow' : 'ExMountain', t: 0 };
   const mv = moveAt(it, cc);
   const m = MOVES[mv.m];
   const ph = demo ? (mv.phase + demoPhase(mv.m, !!it.mirror)) % 1 : mv.phase;

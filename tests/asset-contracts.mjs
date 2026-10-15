@@ -368,7 +368,7 @@ export const TOTAL_RAW_BYTES = 67_700_000;      // (both together: the dance gam
 // the clip files 0.48 MB together. Loaded only by a dance round: a K-pop round with the standard people fetches about
 // 3.6 MB of them (Nabi, Haru, Byeol, Mika's and the villagers' clips, the mic and light sticks), the hat dance about 1.3 MB.
 
-// +1.10 MB: the Morning exercise clip packs, packed (0.25-0.30 MB each; 21,622,600 B measured). Fetched only when a round
+// +1.10 MB: the Morning exercise clip packs, packed (0.25-0.30 MB each; 21,616,828 B measured). Fetched only when a round
 // starts, never at the valley's start.
 export const TOTAL_PACKED_BYTES = 27_400_000;      // (both together)
 

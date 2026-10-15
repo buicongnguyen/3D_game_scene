@@ -280,6 +280,20 @@ def arm_to_world(A, s, S, target, pole=None, end=None, end_rel=(0, 0, 0)):
     s.setdefault('ik', {})['arm_' + S] = g
 
 
+def gravity(A, s, scarf=(0.45, 0.25, -1.0), hair=(0.0, 0.6, -1.0)):
+    """Let the scarf and the hair hang: each of their bones is turned so that it points along `scarf` / `hair` (armature
+    directions, down with a little drape) whatever the body does, as cloth and a ponytail fall in the floor poses."""
+    for chain, t in ((('scarf_1', 'scarf_2'), scarf), (('hair_1', 'hair_2'), hair)):
+        for bone in chain:
+            if bone not in A.bones:
+                continue
+            A.P.solve({key: val for key, val in s.items() if key != 'ik'})
+            Dp = A.P.D[A.P.parent[bone]][0]
+            rest = (A.P.t[bone] - A.P.h[bone]).normalized()
+            s[bone] = rest.rotation_difference(Dp.inverted() @ V(t).normalized())
+    return s
+
+
 def hair(A, s, p, amp=0.6, drag=0.0, k=2, up=0.0, hang=0.0):
     """Scarf, hair and hat follow-through (Anim.secondary). hang: degrees the scarf and the hair fall forward when the
     body is folded over (they would otherwise stick up behind the back as if starched)."""
@@ -728,7 +742,7 @@ def toe_reach(A):
             sx = A.sx(S)
             arm_to_world(A, s, S, (A.ank[S].x + sx * (STANCE - 0.01) * k, A.ank[S].y - 0.07 * k, 0.24 * k - 0.012 * k * br),
                          pole=(sx * 0.4, 1, 0.1), end=eul((-8, 0, sx * 4)))
-        hair(A, s, p, 0.2, drag=0, hang=60)
+        gravity(A, s, scarf=(0.35, -0.2, -1.0), hair=(0.0, -0.3, -1.0))
         return s
     return n * FPC, pose, True, 2
 
@@ -740,7 +754,7 @@ FOOT_TOP = 148          # the foot's pitch then (toes pointing back, sole up)
 WRIST_H = 0.034         # wrist above the floor with the palm flat
 HAND_FLAT = (-90, 0, 0)  # the hand's turn for a palm flat on the floor, fingers forward
 TUCK = 72               # heel lift (about the toe) when kneeling with the toes tucked under
-CHILD_HEAD = 0.2       # the head joint (the base of the skull) above the floor in the child's pose: forehead down
+CHILD_HEAD = 0.215     # the head joint (the base of the skull) above the floor in the child's pose: forehead near the mat
 
 
 def _lens(A, S='L'):
@@ -815,7 +829,7 @@ def fours_base(A):
     knees = kneel_legs(A, s)
     l_th, _ = _lens(A)
     hip_at = V((0, (knees[0].y + knees[1].y) / 2, KNEE_H * k + l_th * 0.985))
-    s['spine'], s['chest'], s['neck'], s['head'] = (2, 0, 0), (2, 0, 0), (-24, 0, 0), (-16, 0, 0)
+    s['spine'], s['chest'], s['neck'], s['head'] = (2, 0, 0), (2, 0, 0), (-18, 0, 0), (-14, 0, 0)
     lo, hi = 40.0, 105.0
     for _ in range(26):
         th = (lo + hi) / 2
@@ -840,12 +854,12 @@ def fours(A, p=0.0, cow=0.0, breathe=1.0):
     s['hips'] = (base['hips'][0] + 7 * c - 7 * t, 0, 0)
     s['spine'] = (2 - 11 * c + 12 * t + br, 0, 0)
     s['chest'] = (2 - 6 * c + 8 * t, 0, 0)
-    s['neck'] = (-24 - 10 * c + 16 * t, 0, 0)
-    s['head'] = (-16 - 8 * c + 8 * t, 0, 0)
+    s['neck'] = (-18 - 12 * c + 14 * t, 0, 0)
+    s['head'] = (-14 - 8 * c + 8 * t, 0, 0)
     J = hips_world(A, base)
     place_hips(A, s, (J['thigh_L'] + J['thigh_R']) / 2)
     hands_down(A, s, hands)
-    hair(A, s, p, 0.2, drag=0, hang=10 + 30 * t)
+    gravity(A, s)
     return s
 
 
@@ -912,13 +926,13 @@ def knee_plank(A, p=0.0, breathe=1.0):
     dirv = V((0, -math.cos(al), math.sin(al)))
     br = 0.5 * math.sin(TAU * p) * breathe
     s['hips'] = (90 - math.degrees(al) + br, 0, 0)
-    s['spine'], s['chest'], s['neck'], s['head'] = (0, 0, 0), (0, 0, 0), (-10, 0, 0), (-8, 0, 0)
+    s['spine'], s['chest'], s['neck'], s['head'] = (0, 0, 0), (0, 0, 0), (-8, 0, 0), (-10, 0, 0)
     s['hips@loc'] = (0, 0, 0)
     place_hips(A, s, K + dirv * (l_th * 0.985))
     hands_down(A, s, under_shoulders(A, s))
     for S in 'LR':
         s['ik']['leg_' + S]['pole'] = (A.sx(S) * 0.05, -0.3, -1)
-    hair(A, s, p, 0.2, drag=0)
+    gravity(A, s)
     return s
 
 
@@ -935,37 +949,63 @@ def plank_in(A):
     return 2 * FPC, pose, False, 1
 
 
+PRONE_HIP = 0.09         # the hip joints above the floor lying on the tummy (x k)
+_PRONE = {}
+
+
+def lowered(A, u=1.0, lift=1.0, breathe=0.0, p=0.0, hands_to=None, walk=None):
+    """From hands and knees (u = 0) down onto the tummy (u = 1), the knees and the feet never moving: the hips swing
+    forward and down round the knees on a thigh's radius, so a knee stays on its spot all the way; on the tummy the legs
+    are long behind with the tops of the feet down. lift (0..1) raises the chest into the cobra. hands_to: where the
+    hands are at u = 1 (they walk forward, one after the other, as the body goes down; walk = (u0, u1) per side)."""
+    k = A.k
+    base, hands4 = fours_base(A)
+    s = copy_spec(base)
+    knees = [knee_spot(A, S)[0] for S in 'LR']
+    K = (knees[0] + knees[1]) / 2
+    l_th, _ = _lens(A)
+    r = l_th * 0.998
+    th_end = math.asin(clamp((PRONE_HIP * k - K.z) / r, 0.0, 0.9))
+    th = math.pi / 2 + (th_end - math.pi / 2) * u
+    hip_at = V((0, K.y - r * math.cos(th), K.z + r * math.sin(th)))
+    br = 0.8 * math.sin(TAU * p) * breathe
+    th4 = base['hips'][0]
+    s['hips'] = (th4 + (90 - 6 * lift - th4) * u, 0, 0)
+    s['spine'] = (2 + (-16 * lift - 2) * u - br, 0, 0)
+    s['chest'] = (2 + (-12 * lift - 2) * u - br * 0.5, 0, 0)
+    s['neck'] = (-18 + (-6 - 6 * lift + 18) * u, 0, 0)
+    s['head'] = (-14 + (-4 - 6 * lift + 14) * u, 0, 0)
+    s['hips@loc'] = (0, 0, 0)
+    place_hips(A, s, hip_at)
+    if hands_to is None:
+        hands_to = hands4
+    walk = walk or {'L': (0.1, 0.55), 'R': (0.4, 0.85)}
+    hands = {}
+    for S in 'LR':
+        a, b = walk[S]
+        w = smooth(clamp((u - a) / (b - a)))
+        hands[S] = hands4[S].lerp(hands_to[S], w) + V((0, 0, 0.04 * k * math.sin(math.pi * w)))
+    hands_down(A, s, hands)
+    for S in 'LR':
+        s['ik']['arm_' + S]['pole'] = (A.sx(S) * (0.35 + -0.1 * u), 1, 0.25 + 0.25 * u)
+    gravity(A, s)
+    return s
+
+
+def prone_hands(A):
+    """Where the hands rest in the cobra: under the shoulders as they are with the chest up (once per body)."""
+    key = id(A)
+    if key not in _PRONE:
+        s = lowered(A, 1.0, 1.0)
+        J = hips_world(A, s)
+        _PRONE[key] = {S: V((J['upperarm_' + S].x + A.sx(S) * 0.02 * A.k, J['upperarm_' + S].y - 0.03 * A.k, WRIST_H * A.k)) for S in 'LR'}
+    return _PRONE[key]
+
+
 def prone(A, p=0.0, lift=1.0, breathe=1.0):
     """Lying on the tummy with the chest lifted on the hands (a gentle cobra with soft elbows): legs long behind, the
-    tops of the feet on the floor, the hands where they were on hands and knees."""
-    k = A.k
-    base, hands = fours_base(A)
-    s = copy_spec(base)
-    l_th, l_sh = _lens(A)
-    br = 0.8 * math.sin(TAU * p) * breathe
-    s['hips'] = (90 - 6 * lift, 0, 0)
-    s['spine'] = (-16 * lift - br, 0, 0)
-    s['chest'] = (-12 * lift - br * 0.5, 0, 0)
-    s['neck'] = (-8 - 4 * lift, 0, 0)
-    s['head'] = (-6 - 4 * lift, 0, 0)
-    s['hips@loc'] = (0, 0, 0)
-    place_hips(A, s, (0, 0, 0.09 * k))
-    J = hips_world(A, s)
-    sh = (J['upperarm_L'] + J['upperarm_R']) / 2
-    x, y, z = s['hips@loc']
-    s['hips@loc'] = (x, y + hands['L'].y + 0.035 * k - sh.y, z)
-    J = hips_world(A, s)
-    for S in 'LR':
-        hp = J['thigh_' + S]
-        reach = (l_th + l_sh) * 0.975
-        az = ANK_LIE * k
-        target = V((hp.x + A.sx(S) * 0.01 * k, hp.y + math.sqrt(max(reach ** 2 - (hp.z - az) ** 2, 1e-6)), az))
-        s['ik']['leg_' + S] = dict(target=target, end=eul((FOOT_TOP + 4, 0, 0)), pole=(A.sx(S) * 0.05, 0.1, -1))
-    hands_down(A, s, hands, pole=None)
-    for S in 'LR':
-        s['ik']['arm_' + S]['pole'] = (A.sx(S) * 0.25, 1, 0.5)
-    hair(A, s, p, 0.2, drag=0)
-    return s
+    tops of the feet on the floor, the hands under the shoulders."""
+    return lowered(A, 1.0, lift, breathe, p, hands_to=prone_hands(A))
 
 
 def cobra(A):
@@ -974,43 +1014,67 @@ def cobra(A):
 
 
 def cobra_in(A):
-    """Hands and knees -> cobra: the legs slide back one after the other while the hips lower, then the chest lifts."""
-    k = A.k
-    pose = seq([(0, lambda p: fours(A, 0.0, 0.0, 0.0)), (0.6, lambda p: prone(A, 0.0, 0.25, 0.0)),
-                (1, lambda p: prone(A, 0.0, 1.0, 0.0))],
-               timing={0: {'leg_L': (0.0, 0.6), 'leg_R': (0.35, 1.0)}}, lifts={0: {'leg_L': 0.05 * k, 'leg_R': 0.05 * k}})
+    """Hands and knees -> cobra: knees and feet stay planted while the hips lower forward round the knees and the hands
+    walk forward one after the other, then the chest lifts."""
+    def pose(p):
+        u = smooth(clamp(p / 0.68))
+        lift = 0.2 + 0.8 * smooth(clamp((p - 0.62) / 0.38))
+        return lowered(A, u, lift, hands_to=prone_hands(A))
     return 3 * FPC, pose, False, 1
 
 
+CHILD_HIP = 0.165       # the hip joints above the floor sitting back on the heels (x k)
+_CHILD = {}
+
+
+def child_hands(A, s):
+    """The hands of the child's pose: arms long forward along the floor from the shoulders, close together."""
+    J = hips_world(A, s)
+    out = {}
+    for S in 'LR':
+        sh = J['upperarm_' + S]
+        reach = 0.97 * A.l_arm
+        dz = sh.z - WRIST_H * A.k
+        out[S] = V((sh.x * 0.82, sh.y - math.sqrt(max(reach ** 2 - dz ** 2, 1e-6)), WRIST_H * A.k))
+    return out
+
+
 def child(A, p=0.0, breathe=1.0):
-    """The child's pose (be a little mouse): knees where they were, the hips back over the heels, the body folded
-    down over the knees, the arms long in front with the hands where they were."""
+    """The child's pose (be a little mouse): knees where they were, the hips sat back onto the heels, the chest folded
+    down over the thighs, the arms stretched long in front along the floor with the palms down and the elbows straight,
+    the head low with the face tilted a little forward (so it shows, and the hair does not swallow the body)."""
     k = A.k
-    base, hands = fours_base(A)
+    base, _ = fours_base(A)
     s = copy_spec(base)
     knees = [knee_spot(A, S)[0] for S in 'LR']
     K = (knees[0] + knees[1]) / 2
     l_th, _ = _lens(A)
-    back = 0.72 * l_th
-    hip_at = V((0, K.y + back, K.z + math.sqrt(max((l_th * 0.985) ** 2 - back ** 2, 1e-6))))
-    br = 1.2 * math.sin(TAU * p) * breathe
-    s['spine'], s['chest'], s['neck'], s['head'] = (8, 0, 0), (6, 0, 0), (-18, 0, 0), (-12, 0, 0)
-    lo, hi = 70.0, 125.0
-    for _ in range(22):                      # fold until the forehead rests on the floor (the head joint a head high)
-        th = (lo + hi) / 2
+    hz = CHILD_HIP * k
+    back = math.sqrt(max((l_th * 0.996) ** 2 - (hz - K.z) ** 2, 1e-6))
+    hip_at = V((0, K.y + back, hz))
+    br = 1.0 * math.sin(TAU * p) * breathe
+    s['spine'], s['chest'], s['neck'], s['head'] = (10, 0, 0), (6, 0, 0), (-20, 0, 0), (-46, 0, 0)
+    key = id(A)
+    if key not in _CHILD:
+        lo, hi = 80.0, 140.0
+        for _ in range(22):                  # fold until the head comes down near the mat
+            th = (lo + hi) / 2
+            s['hips'], s['hips@loc'] = (th, 0, 0), (0, 0, 0)
+            place_hips(A, s, hip_at)
+            if hips_world(A, s)['head'].z > CHILD_HEAD * k:
+                lo = th
+            else:
+                hi = th
         s['hips'], s['hips@loc'] = (th, 0, 0), (0, 0, 0)
         place_hips(A, s, hip_at)
-        if hips_world(A, s)['head'].z > CHILD_HEAD * k:
-            lo = th
-        else:
-            hi = th
-    s['hips'] = (th + br, 0, 0)
-    s['hips@loc'] = (0, 0, 0)
+        _CHILD[key] = (th, child_hands(A, s))
+    th, hands = _CHILD[key]
+    s['hips'], s['hips@loc'] = (th + br, 0, 0), (0, 0, 0)
     place_hips(A, s, hip_at)
-    hands_down(A, s, {S: h + V((0, -0.13 * k, 0)) for S, h in hands.items()}, pole=None)
+    hands_down(A, s, hands, pole=None)
     for S in 'LR':
-        s['ik']['arm_' + S]['pole'] = (A.sx(S) * 0.4, 0.2, 1)
-    hair(A, s, p, 0.2, drag=-8, hang=70)
+        s['ik']['arm_' + S]['pole'] = (A.sx(S) * 0.15, 0.1, 1)
+    gravity(A, s, scarf=(0.6, 0.4, -1.0), hair=(0.0, 1.0, -0.4))
     return s
 
 
@@ -1090,16 +1154,17 @@ def bird_l(A, p=0.0, breathe=1.0):
     s = stand(A, p, 0.5 * breathe)
     flap = 3.0 * math.sin(TAU * p) * breathe
     x, y, z = s['hips@loc']
-    s['hips@loc'] = (x - 0.05 * k, y + 0.02 * k, z - 0.008 * k)
-    s['hips'], s['spine'], s['chest'] = (34, 3, 0), (4, -2, 0), (2, 0, 0)
-    s['neck'], s['head'] = (-14, 0, 0), (-16, 0, 0)
+    lean = 20.0
+    behind = 38.0 if k <= 1.001 else 48.0         # the leg behind, from straight down: a child 38 degrees, a grown-up 48
+    s['hips@loc'] = (x - 0.05 * k, y + 0.012 * k, z - 0.006 * k)
+    s['hips'], s['spine'], s['chest'] = (lean, 3, 0), (3, -2, 0), (2, 0, 0)
+    s['neck'], s['head'] = (-9, 0, 0), (-10, 0, 0)
     foot(A, s, 'R', pole=(-0.15, -1, 0))
-    base = foot(A, {}, 'L')
-    up, end = lift_target(A, s, 'L', -84, 6, foot_pitch=34)
+    up, end = lift_target(A, s, 'L', -(lean + behind), 6, foot_pitch=28)
     s['ik']['leg_L'] = dict(target=up, end=eul(end), pole=(0.05, 0.3, -1))
     for S in 'LR':
-        arm(A, s, S, fwd=-12, out=72 + flap, twist=-6, elbow=14, hand=(-8, 0, 0))
-    hair(A, s, p, 0.4, drag=8)
+        arm(A, s, S, fwd=-10, out=70 + flap, twist=-6, elbow=14, hand=(-8, 0, 0))
+    hair(A, s, p, 0.4, drag=6)
     return s
 
 
@@ -1197,7 +1262,7 @@ def main():
     for who in ONLY:
         rec = rigs[who]
         arm_ob = rebuild(rec)
-        _FOURS.clear()
+        _FOURS.clear(); _PRONE.clear(); _CHILD.clear()
         A = Anim(arm_ob, BodyRef(rec['H']), who, **rec['style'])
         T = table(A)
         names = [n for n in OPTS.get('clips', ','.join(T)).split(',') if n in T]
