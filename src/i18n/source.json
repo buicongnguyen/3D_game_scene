@@ -2968,6 +2968,30 @@
   ]
  },
  {
+  "s": "Morning, city girl! Every morning I lead the exercise on the big lawn: radio exercise, a little workout, or yoga.",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Exercise. Before breakfast. On purpose?",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Watch the card and copy me. Press the arrow just as the count lands. For yoga, hold still and keep your balance.",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Nobody fails. Move gently, breathe, and stop if anything hurts. The neighbours join in when it gets harder.",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Rin"
+  ]
+ },
+ {
   "s": "Below the paddies there's a meadow that hops. Grasshoppers and mantises, thick as the grass. Take my net.",
   "ctx": [
    "dialogue trick_hoppers_intro, spoken by Rin"
@@ -6359,6 +6383,30 @@
   "s": "A hen clucks and puffs before she lays. Hold your hat under the right spout, and tip it into the basket when it is full.",
   "ctx": [
    "dialogue trick_eggs_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "Morning, Mika! Your grandma did radio exercise on this lawn every morning when she was your age. Want to try?",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Grandma did exercise? She says she just walks to the shop and back. Quickly.",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Same thing! Copy my moves and press the arrow just as the count lands. For yoga, hold still and keep your balance.",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Rin"
+  ]
+ },
+ {
+  "s": "Nobody fails here. Move gently, breathe, and stop if anything hurts. The neighbours join in on the harder days.",
+  "ctx": [
+   "dialogue trick_exercise_intro, spoken by Rin"
   ]
  },
  {
@@ -14951,6 +14999,42 @@
   ]
  },
  {
+  "s": "Morning exercise",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the big lawn in Kawabe, by the lane to the dock",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Every morning, in any season",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "Warm up first, then move slowly and breathe through your nose. Drink some water. A few minutes every morning with your family is plenty.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Moving in the morning wakes up your body and your brain, helps you focus at school and makes you feel happy. Slow breaths calm you down.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Stop if anything hurts, never push a stretch, and ask a grown-up if unsure.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Pressed bellflower",
   "ctx": [
    "house memory: a small found object (journal)"
@@ -16408,6 +16492,12 @@
   ]
  },
  {
+  "s": "Radio exercise, a kids' workout or yoga on the lawn: copy the moves on the count.",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
   "s": "Kick the shuttle over the net with the kids. First to 5.",
   "ctx": [
    "UI (src/content/minigames.js)"
@@ -17360,8 +17450,8 @@
   "s": "Back",
   "ctx": [
    "UI (src/content/tour.js)",
-   "UI (src/ui/level-picker.js)",
-   "menu / screen text"
+   "UI (src/game/tricks/exercise-ui.js)",
+   "UI (src/ui/level-picker.js)"
   ]
  },
  {
@@ -18817,7 +18907,8 @@
   "s": "Breathe",
   "ctx": [
    "UI (src/game/tricks/archery.js)",
-   "UI (src/game/tricks/swimming.js)"
+   "UI (src/game/tricks/swimming.js)",
+   "UI (src/ui/howto.js)"
   ]
  },
  {
@@ -20374,6 +20465,145 @@
   "s": "{caught} caught · {golden} golden · {broken} broken",
   "ctx": [
    "UI (src/game/tricks/eggs.js)"
+  ]
+ },
+ {
+  "s": "Play",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)",
+   "UI (src/ui/level-picker.js)"
+  ]
+ },
+ {
+  "s": "Mirror!",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Great!",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Good",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Other way!",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Oops",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Steady!",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Hold the button",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Wobbly: tap left",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Wobbly: tap right",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Breathe in: hold",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Breathe out: let go",
+  "ctx": [
+   "UI (src/game/tricks/exercise-ui.js)"
+  ]
+ },
+ {
+  "s": "Morning exercise around the world",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "In Japan, radio exercise (rajio taisō) has played every morning since 1928. In Vietnam, pupils exercise together in the school yard, and grandparents meet in the parks at dawn.",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "Press Up as I reach up.",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "Press Down as I bend down.",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "Left, then right: press the side I move to.",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "Tap the round button on the count.",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "Hold the button and keep the needle in the green: tap left or right.",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "Hold while the circle grows, let go while it shrinks.",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "{great} great, {good} good, {miss} missed",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "steady {n}%",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
+  ]
+ },
+ {
+  "s": "breathing {n}%",
+  "ctx": [
+   "UI (src/game/tricks/exercise.js)"
   ]
  },
  {
@@ -23936,7 +24166,8 @@
  {
   "s": "Left",
   "ctx": [
-   "UI (src/game/tricks/rules-dance.js)"
+   "UI (src/game/tricks/rules-dance.js)",
+   "UI (src/game/tricks/rules-exercise.js)"
   ]
  },
  {
@@ -23948,7 +24179,8 @@
  {
   "s": "Right",
   "ctx": [
-   "UI (src/game/tricks/rules-dance.js)"
+   "UI (src/game/tricks/rules-dance.js)",
+   "UI (src/game/tricks/rules-exercise.js)"
   ]
  },
  {
@@ -23960,7 +24192,8 @@
  {
   "s": "Up",
   "ctx": [
-   "UI (src/game/tricks/rules-dance.js)"
+   "UI (src/game/tricks/rules-dance.js)",
+   "UI (src/game/tricks/rules-exercise.js)"
   ]
  },
  {
@@ -24057,6 +24290,366 @@
   "s": "Heart",
   "ctx": [
    "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Radio exercise",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Workout",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Kids' yoga",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Stretch, swing, bend and jump to the piano, like radio exercise.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "March, star jumps, squats and a little plank.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Be a tree, a cat, a snake and a little mouse. Slow and calm.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Down",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Tap",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Stretch up",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Reach up high, up on your toes!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Arm swings",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Swing your arms and bounce your knees!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Arm circles",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Big circles with both arms!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Side bends",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Bend to the side, like a flower in the wind.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Twists",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Turn your body, let your arms swing round.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Knee bends",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Hands on your knees, bend and stretch!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Little jumps",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Little jumps, light as a bird!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Deep breath",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Arms up, breathe in... and down, breathe out.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Marching",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "March on the spot, knees up!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Star jumps",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Jump out like a star, and in again!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "High knees",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Knees up high, quick feet!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Squats",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Sit back like on a chair, then stand tall.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Knee plank",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Knees down, body long and straight. Hold it!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Stretch",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Soft knees, let your hands hang down. Breathe.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Be a mountain",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Stand tall and still, like a mountain.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Be a tree",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Foot on your leg, arms up like branches.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Be a warrior",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Step wide, bend your knee, arms out strong.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Be a bird",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Lean forward, one leg back, spread your wings.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Cat and cow",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Cow: look up. Cat: round your back.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Be a snake",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Lie on your tummy and lift your chest. Hiss!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Be a little mouse",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Sit back on your heels and rest, small as a mouse.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Balloon breaths",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Fill up like a balloon... and let it out slowly.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Good morning! Stand tall, feet a little apart. Here we go!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Good morning! Let's be calm and slow today. Breathe through your nose.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Good morning! Let's get our hearts pumping!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Come down onto your hands and knees.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Last one: a big deep breath to finish.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Now I use my own left and right. Follow the word, not my side!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "No cards now. Follow me!",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
+  ]
+ },
+ {
+  "s": "Well done! Shake out your arms and legs.",
+  "ctx": [
+   "UI (src/game/tricks/rules-exercise.js)"
   ]
  },
  {
@@ -27607,6 +28200,24 @@
   ]
  },
  {
+  "s": "Press the card's arrow on the count.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hold a pose; tap left or right to stay steady.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Hold to breathe in, let go to breathe out.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
   "s": "Run under the shuttle.",
   "ctx": [
    "UI (src/ui/howto.js)"
@@ -27759,12 +28370,6 @@
  },
  {
   "s": "Not played yet",
-  "ctx": [
-   "UI (src/ui/level-picker.js)"
-  ]
- },
- {
-  "s": "Play",
   "ctx": [
    "UI (src/ui/level-picker.js)"
   ]
