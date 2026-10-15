@@ -52,6 +52,34 @@
   ]
  },
  {
+  "s": "Hoa",
+  "ctx": [
+   "character name (hoa)",
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Nabi",
+  "ctx": [
+   "character name (nabi)",
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Byeol",
+  "ctx": [
+   "character name (byeol)",
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Haru",
+  "ctx": [
+   "character name (haru)",
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
   "s": "Villager",
   "ctx": [
    "character name (villager)"
@@ -3060,6 +3088,42 @@
   ]
  },
  {
+  "s": "Hi, Mika! I'm Hoa, Hana's daughter. Hana and Hoa both mean flower. Mum likes things to match: buns, aprons, daughters.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
+  ]
+ },
+ {
+  "s": "The baker has a grown-up daughter? Since when?",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Since about twenty years ago! I study dance in Seoul. My friends Nabi, Byeol and Haru came home with me for the festival.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
+  ]
+ },
+ {
+  "s": "Tonight I teach the hat dance from Vietnam. Watch me, then copy me, on the beat. Like a bon odori circle: anyone can join.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
+  ]
+ },
+ {
+  "s": "And if I'd rather be a pop star?",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Then Nabi and Haru lead you on the stage, and Byeol sings. Arrows, swipes or the buttons: every move has its own.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
+  ]
+ },
+ {
   "s": "In the jar-light, a folded paper by the path: a drawing of a girl with a jar of fireflies, and a note.",
   "ctx": [
    "dialogue trick_firefly_note, spoken by narrator"
@@ -3189,6 +3253,24 @@
   "s": "A bun is just a hug you can eat, sweetheart.",
   "ctx": [
    "small talk by Hana"
+  ]
+ },
+ {
+  "s": "The sign by the bell tower has the steps. The hat dance or the K-pop stage: your pick!",
+  "ctx": [
+   "small talk by Hoa"
+  ]
+ },
+ {
+  "s": "In Seoul we practise in front of a big mirror for hours. Here I have a bell tower. I like it better.",
+  "ctx": [
+   "small talk by Hoa"
+  ]
+ },
+ {
+  "s": "Mum sends buns to Seoul every month. My friends think every baker in the countryside is a hero.",
+  "ctx": [
+   "small talk by Hoa"
   ]
  },
  {
@@ -6421,6 +6503,42 @@
   "s": "Watch the wind sock. The wind pushes a light arrow sideways, so aim a little upwind. The range is behind the houses.",
   "ctx": [
    "dialogue trick_archery_intro, spoken by Grandma Sora"
+  ]
+ },
+ {
+  "s": "You must be Grandma Sora's Mika! I'm Hoa, Hana's daughter. Hana and Hoa both mean flower. Mum likes things to match.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
+  ]
+ },
+ {
+  "s": "Buns, aprons, and now daughters?",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Exactly! I study dance in Seoul. My friends Nabi, Byeol and Haru came home with me for the festival.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
+  ]
+ },
+ {
+  "s": "Grandma says you danced the bon odori before you could walk.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Mika"
+  ]
+ },
+ {
+  "s": "Your grandma taught me my first steps! Tonight I teach the hat dance from Vietnam. Watch me, then copy me, on the beat.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
+  ]
+ },
+ {
+  "s": "Or join Nabi and Haru on the stage while Byeol sings. Arrows, swipes or the buttons: every move has its own.",
+  "ctx": [
+   "dialogue trick_dance_intro, spoken by Hoa"
   ]
  },
  {
@@ -14797,6 +14915,42 @@
   ]
  },
  {
+  "s": "Festival dance",
+  "ctx": [
+   "countryside trick name (journal, sign prompt, results card)"
+  ]
+ },
+ {
+  "s": "the Takamori square, in front of the bell tower",
+  "ctx": [
+   "where a countryside trick is played (journal)"
+  ]
+ },
+ {
+  "s": "Any evening: festivals all year",
+  "ctx": [
+   "when a countryside trick can be played (journal, sign)"
+  ]
+ },
+ {
+  "s": "Bon odori circles a drum tower at Obon in summer: anyone may step in. Múa nón, the hat dance, comes out at Tết and harvest.",
+  "ctx": [
+   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
+  ]
+ },
+ {
+  "s": "Festival dances repeat a few easy steps, so everyone can join in. Watch, copy, keep the beat, and the whole village dances as one.",
+  "ctx": [
+   "countryside trick: why it works, a true fun fact for kids"
+  ]
+ },
+ {
+  "s": "Dance on flat ground, leave room around you, and drink water between songs.",
+  "ctx": [
+   "countryside trick: safety line for kids"
+  ]
+ },
+ {
   "s": "Pressed bellflower",
   "ctx": [
    "house memory: a small found object (journal)"
@@ -16248,6 +16402,12 @@
   ]
  },
  {
+  "s": "Dance the hat dance with Hoa, or join the K-pop stage. Keep the beat!",
+  "ctx": [
+   "UI (src/content/minigames.js)"
+  ]
+ },
+ {
   "s": "Kick the shuttle over the net with the kids. First to 5.",
   "ctx": [
    "UI (src/content/minigames.js)"
@@ -16480,6 +16640,169 @@
   "s": "Any day",
   "ctx": [
    "UI (src/content/minigames.js)"
+  ]
+ },
+ {
+  "s": "Porcelain",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Fair",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Light",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Medium",
+  "ctx": [
+   "UI (src/content/performers.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Tan",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Brown",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Deep",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Build",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Slim",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Sturdy",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Chest",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Waist",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Hips",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Thighs",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Arms",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Dancer",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Stage jacket",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Street style",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Long skirt",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Long coat",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Singer",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Bright and short",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Jacket and trousers",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Dance teacher",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Red ao dai",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Blue ao dai",
+  "ctx": [
+   "UI (src/content/performers.js)"
+  ]
+ },
+ {
+  "s": "Village day",
+  "ctx": [
+   "UI (src/content/performers.js)"
   ]
  },
  {
@@ -17227,7 +17550,8 @@
   "s": "Talk to {name}",
   "ctx": [
    "UI (src/game/director.js)",
-   "UI (src/game/townlife.js)"
+   "UI (src/game/townlife.js)",
+   "UI (src/game/tricks/dance.js)"
   ]
  },
  {
@@ -19572,6 +19896,199 @@
   ]
  },
  {
+  "s": "My left!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "My right!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Any move!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Choose your dance",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Dance!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Hat dance",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "with Hoa",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "K-pop stage",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "with Nabi",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "{name}'s outfit",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Get ready!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Watch me!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Your turn! Copy me on the beat.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Your turn!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)",
+   "UI (src/game/tricks/frogs.js)"
+  ]
+ },
+ {
+  "s": "Dance with me! The card shows each move a beat early.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Keep going!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Follow my body! My left is your right.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "This line ends with a bow.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "This line ends with heart hands.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Free style! Any moves on the beat. Mix them up!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Take a bow! Beautiful!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Hearts up! What a show!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Watch what I do. Then you do the same.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Now you! Press when the ring closes.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Beautiful line!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Combo ×{n}",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Oops!",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Clean line! +{n}",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "Combo bonus +{n}",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "{perfect} perfect · {good} good · {missed} missed",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "On the K-pop stage",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
+  "s": "K-pop dancers practise the same moves again and again in front of a mirror. At a show the crowd sings a fan chant back and waves light sticks on the beat.",
+  "ctx": [
+   "UI (src/game/tricks/dance.js)"
+  ]
+ },
+ {
   "s": "Photo: {act}",
   "ctx": [
    "UI (src/game/tricks/dew.js)"
@@ -20972,12 +21489,6 @@
  },
  {
   "s": "Not quite. Listen again…",
-  "ctx": [
-   "UI (src/game/tricks/frogs.js)"
-  ]
- },
- {
-  "s": "Your turn!",
   "ctx": [
    "UI (src/game/tricks/frogs.js)"
   ]
@@ -23414,6 +23925,138 @@
   "s": "Potatoes are planted in March, as soon as the soil wakes up.",
   "ctx": [
    "UI (src/game/tricks/rules-crops.js)"
+  ]
+ },
+ {
+  "s": "Sweep left",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Left",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Sweep right",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Right",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Hat up",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Up",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Turn",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Hands up",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Hands",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Hat tilt",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Tilt",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Bow",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Side step",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Jump clap",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Clap",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Spin",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Point and step",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Point",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Wave to the crowd",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Wave",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Heart hands",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Heart",
+  "ctx": [
+   "UI (src/game/tricks/rules-dance.js)"
   ]
  },
  {
@@ -26946,6 +27589,24 @@
   ]
  },
  {
+  "s": "Watch, then copy each move.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "Press as the ring closes: on the beat!",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
+  "s": "New moves have keys of their own.",
+  "ctx": [
+   "UI (src/ui/howto.js)"
+  ]
+ },
+ {
   "s": "Run under the shuttle.",
   "ctx": [
    "UI (src/ui/howto.js)"
@@ -28348,12 +29009,6 @@
  },
  {
   "s": "Low (phones)",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Medium",
   "ctx": [
    "menu / screen text"
   ]
