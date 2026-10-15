@@ -713,7 +713,7 @@ class Poser:
             Dp = D[p] if p else (Quaternion(), V((0, 0, 0)))
             if n in chains:
                 kind, side, g = chains[n]
-                self._ik(kind, side, g, Dp, Q, T, D)
+                self._ik(kind, side, g, Dp, Q, T, D, V(spec.get(n + '@loc', (0, 0, 0))))
             if n not in Q:
                 r = spec.get(n)
                 if callable(r):
@@ -738,7 +738,8 @@ class Poser:
         """Posed armature-space position of a rest-space point on bone n (default its head)."""
         return self.apply(self.D[n], self.h[n] if local_point is None else local_point)
 
-    def _ik(self, kind, side, g, Dp, Q, T, D):
+    def _ik(self, kind, side, g, Dp, Q, T, D, t1=None):
+        """t1: a rest-space offset of the chain's root (an 'upperarm_L@loc' spec: a shrug, the rig has no collarbone)."""
         if kind == 'arm':
             b1, b2, b3 = 'upperarm_' + side, 'forearm_' + side, 'hand_' + side
             hinge0 = V((-1, 0, 0))
@@ -749,8 +750,13 @@ class Poser:
         pole = V(g.get('pole', (0, 1, 0) if kind == 'arm' else (0, -1, 0)))
         h1, h2, h3 = self.h[b1], self.h[b2], self.h[b3]
         u0, f0 = h2 - h1, h3 - h2
-        l1, l2 = u0.length, f0.length
-        S = Dp[0] @ h1 + Dp[1]
+        # stretch (e1, e2): the elbow and the wrist pulled apart along the bones by e1 / e2 metres (a cartoon stretch,
+        # keyed as forearm / hand locations), so a short arm can reach further
+        e1, e2 = g.get('stretch', (0.0, 0.0))
+        t2, t3 = u0.normalized() * e1, f0.normalized() * e2
+        l1, l2 = u0.length + e1, f0.length + e2
+        t1 = V((0, 0, 0)) if t1 is None else V(t1)
+        S = Dp[0] @ (h1 + t1) + Dp[1]
         dvec = target - S
         d = clamp(dvec.length, abs(l1 - l2) + 1e-4, (l1 + l2) * 0.9995)
         nrm = dvec.normalized()
@@ -770,12 +776,11 @@ class Poser:
         # upper bone: map (u0, hinge0) -> (ud, hinge) in world, then express in the parent frame
         Wrot = _frame_rot(u0, hinge0, ud, hinge)
         q1 = Dp[0].inverted() @ Wrot
-        t1 = V((0, 0, 0))
         D1 = self._delta(b1, Dp, q1, t1)
         cur = D1[0] @ f0
         q2w = cur.rotation_difference(fd)
         q2 = D1[0].inverted() @ q2w @ D1[0]
-        D2 = self._delta(b2, D1, q2, V((0, 0, 0)))
+        D2 = self._delta(b2, D1, q2, t2)
         end = g.get('end')  # desired world delta rotation of the hand / foot
         if callable(end):
             end = end(self, D)
@@ -786,8 +791,8 @@ class Poser:
             rel = g.get('end_rel', (0, 0, 0))
             q3 = rel if isinstance(rel, Quaternion) else eul(rel)
         Q[b1], T[b1] = q1, t1
-        Q[b2], T[b2] = q2, V((0, 0, 0))
-        Q[b3], T[b3] = q3, V((0, 0, 0))
+        Q[b2], T[b2] = q2, t2
+        Q[b3], T[b3] = q3, t3
 
 
 def _frame_rot(a0, b0, a1, b1):

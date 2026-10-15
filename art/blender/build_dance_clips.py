@@ -45,6 +45,27 @@ def fake_export(name, arm, extra=(), out_dir=None):
     return {'tris': 0, 'bytes': 0}
 
 
+def head_box(arm, meshes):
+    """(crown height, half width) of the head and hair as modelled, measured before the meshes go: a child's arms
+    reach over the real hair (dance_anims.Rig), not over a guess from the head bone."""
+    hz = arm.data.bones['head'].head_local.z
+    pts = []
+    for o in meshes:
+        names = {g.index: g.name for g in o.vertex_groups}
+        for v in o.data.vertices:
+            w = sum(g.weight for g in v.groups if names.get(g.group, '').startswith(('head', 'hair')))
+            if w > 0.5:
+                co = o.matrix_world @ v.co
+                if co.z > hz:
+                    pts.append(co)
+    if not pts:
+        return None
+    hw = max(abs(c.x) for c in pts)
+    crown = max(c.z for c in pts if abs(c.x) > 0.25 * hw)
+    print(f'HEAD BOX crown {crown:.3f} half width {hw:.3f}')
+    return crown, hw
+
+
 def clip_file(name):
     arm, body, style = CAPTURE['arm'], CAPTURE['body'], dict(CAPTURE['style'])
     style.pop('idle_hands', None)
@@ -52,6 +73,7 @@ def clip_file(name):
     # no meshes, no other actions: the file is the skeleton and the dance
     review = '--review' in ARGV
     meshes = [o for o in bpy.data.objects if o.type == 'MESH' and o.parent is arm]
+    box = head_box(arm, meshes)
     if not review:
         for o in list(bpy.data.objects):
             if o is not arm and o.type in ('MESH', 'EMPTY', 'CURVE'):
@@ -59,6 +81,7 @@ def clip_file(name):
     for a in list(bpy.data.actions):
         bpy.data.actions.remove(a)
     A = anims.Anim(arm, body, name, **style)
+    A.head_box = box
     table = DA.extras(A, SETS[name])
     names = [n for n in (DA.FESTIVAL + DA.KPOP + DA.CROWD) if n in table]
     anims.make_clips(A, names, table)

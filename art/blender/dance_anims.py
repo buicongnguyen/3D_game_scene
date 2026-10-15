@@ -84,13 +84,28 @@ class Rig:
         # and the kids, with their big heads, ~1.4-1.5)
         self.overhead = self.arm / (P.t['head'] - h['head']).length > 1.6
         self.sh_z = sh_z
+        self.hl = (P.t['head'] - h['head']).length
+        # the top of the hair and half the width of the head and hair seen from the front: measured on the model when the
+        # builder could (build_dance_clips.head_box), else a guess from the head bone
+        box = getattr(A, 'head_box', None) or ((self.head + (P.t['head'] - h['head']) * 1.25).z, 0.77 * self.hl)
+        self.crown = V((self.head.x, self.head.y, box[0]))
+        self.hw = box[1]
+        self.l1 = (h['forearm_L'] - h['upperarm_L']).length
+        self.l2 = (h['hand_L'] - h['forearm_L']).length
 
     def high(self, fwd=0.0):
-        """Where two hands meet up high: over the head when the arms reach; a child's short arms and big head cannot, so
-        they meet in front of the chest instead, under the chin (never in front of the face)."""
+        """Where two hands meet up high: over the head, like the teacher. A child's short arms and big head only get
+        there with the shoulders lifted (see shrug) and the hands just clearing the crown of the hair."""
         if self.overhead:
             return self.top + V((0, (-0.08 - fwd) * self.k, 0.08 * self.k))
-        return V((0, -0.5 * self.arm, self.sh_z - 0.06 * self.arm))
+        return V((0, self.head.y - (0.03 + fwd) * self.k, self.crown.z + 0.03 * self.k))
+
+    def lift(self, d, k=0.4):
+        """A raised arm's direction (for the LEFT arm, as arc takes it). Short arms: the same direction turned toward
+        straight up, so a child's raised hand rises above its big head the way the teacher's rises above hers."""
+        if self.overhead or d[2] < 0.2:
+            return d
+        return (d[0] * (1 - k), d[1] * (1 - k), d[2] + k)
 
     def reach(self, S, d, frac=0.95):
         """A hand target: from the shoulder along direction d (armature axes; x given for the LEFT arm and mirrored)."""
@@ -101,12 +116,74 @@ class Rig:
         return (self.wr[S] - self.sh[S]).normalized()
 
 
-def arm_ik(A, s, S, target, pole, end_rel=(0, 0, 0), end=None):
+def shrug(R, s, S, g):
+    """Lift (and draw in) shoulder S by g. The rig has no collarbone, so the upper arm's root moves: only the
+    short-armed children need it, to get their hands over a big head. Keyed on every frame of the clip (zero when g is
+    0), so the location track never starts part-way. Returns the offset (add it to a target measured from R.sh)."""
+    if R.overhead:
+        return V((0, 0, 0))
+    off = shrug_off(R, S) * g
+    s['upperarm_' + S + '@loc'] = tuple(off)
+    return off
+
+
+def shrug_off(R, S):
+    return V((-sx(S) * 0.04 * R.arm, 0.0, 0.16 * R.arm))
+
+
+def look_up(R, s, g):
+    """Short arms over a big head: the chest opens and the head tips back a little, so the hands read above it."""
+    if R.overhead:
+        return
+    s['chest'] = add(s['chest'], (-4 * g, 0, 0))
+    s['head'] = add(s['head'], (-10 * g, 0, 0))
+
+
+def reach_up(R, s, S, g, k=1.0):
+    """Short arms over a big head: the shoulder lifted (shrug) and the arm stretched a little, the elbow and the wrist
+    pulled apart along the bones (a cartoon stretch), so a child's hands can meet above the hair like the teacher's.
+    Returns (shrug offset, stretch for arm_ik); (0, None) for the grown-ups. Keys every frame of the clip."""
+    if R.overhead:
+        return V((0, 0, 0)), None
+    off = shrug(R, s, S, g * k)
+    s['forearm_' + S + '@loc'] = s['hand_' + S + '@loc'] = (0, 0, 0)     # key their locations: the IK fills them in
+    return off, (0.2 * R.arm * g * k, 0.05 * R.arm * g * k)
+
+
+def ELBOW_UP(R):
+    """A child's elbow when both arms reach over its head: just outside the upper corner of the head and hair."""
+    return (R.hw * 1.1, R.head.y, R.crown.z - 0.3 * (R.crown.z - R.head.z))
+
+
+def WRIST_UP(R):
+    """A child's wrist when both hands meet over its head: above the crown of the hair."""
+    return (0.02 * R.k, R.head.y - 0.04 * R.hl, R.crown.z + 0.04 * R.hl)
+
+
+def arch(R, s, S, g, elbow, wrist):
+    """A child's arm over its big head with the elbow and the wrist exactly where asked (rest space, x for the LEFT
+    arm, mirrored): the shoulder lifts (shrug) and the arm stretches just enough (cartoon stretch, scaled by g), and
+    the elbow bends toward the asked elbow. Returns (wrist target, pole, stretch) for arm_ik."""
+    off = shrug(R, s, S, g)
+    s['forearm_' + S + '@loc'] = s['hand_' + S + '@loc'] = (0, 0, 0)     # key their locations: the IK fills them in
+    m = V((sx(S), 1, 1))
+    E, W = V(elbow) * m, V(wrist) * m
+    sh = R.sh[S] + shrug_off(R, S)
+    e1 = max(0.0, (E - sh).length - R.l1)
+    e2 = max(0.0, (W - E).length - R.l2)
+    n = (W - sh).normalized()
+    pole = (E - sh) - n * (E - sh).dot(n)
+    return W, tuple(pole.normalized()), (e1 * g, e2 * g)
+
+
+def arm_ik(A, s, S, target, pole, end_rel=(0, 0, 0), end=None, stretch=None):
     """IK arm to a target in chest REST space (the chest's posed transform carries it). end: the hand's absolute
     orientation (a Quaternion, see aim_hand) instead of end_rel (relative to the forearm)."""
     g = dict(target=A.chest_pt(V(target)), pole=tuple(pole), end_rel=tuple(end_rel))
     if end is not None:
         g['end'] = end
+    if stretch is not None:
+        g['stretch'] = stretch
     s.setdefault('ik', {})['arm_' + S] = g
     s.pop('upperarm_' + S, None)
 
@@ -234,7 +311,7 @@ def sweep(A, S):
         step_side(A, R, s, S, p, dist=0.15)
         lean_to(s, side, g, roll=6, yaw=10, head_turn=18)
         # both arms sweep up and over to side S: the leading arm high and long, the other across the chest
-        hi = arc(R, S, R.rest_dir('L') + V((0, -0.3, 0.3)), (0.78, -0.3, 0.62), g, 0.9, 0.97)
+        hi = arc(R, S, R.rest_dir('L') + V((0, -0.3, 0.3)), R.lift((0.78, -0.3, 0.62), 0.25), g, 0.9, 0.97)
         lo = arc(R, O, R.rest_dir('L') + V((0, -0.3, 0.3)), (-0.5, -0.8, -0.12), g, 0.9, 0.86)
         arm_ik(A, s, S, hi, (side * 0.6, 0.6, -0.6), end=aim_hand(A, S, (0.62, -0.12, 0.78), (0.1, -1, 0.0), g))
         arm_ik(A, s, O, lo, (-side * 0.2, 0.4, -1.0), end=aim_hand(A, O, (-0.92, -0.3, -0.1), (0.0, -1, 0.1), g))
@@ -264,8 +341,9 @@ def fan_up(A):
         s['head'] = add(s['head'], (-10 * g, 2 * g, -6 * g))
         # the right hand lifts the hat high and fans it (two flicks of the wrist while held)
         fan = sn(clamp((p - 0.22) / 0.4), 2) * env(p, 0.22, 0.28, 0.56, 0.64)
-        hi = arc(R, 'R', R.rest_dir('L') + V((0, -0.3, 0.3)), (0.25, -0.25, 0.97), g, 0.9, 0.97)
-        arm_ik(A, s, 'R', hi, (-0.6, 0.5, -0.4), end=aim_hand(A, 'R', (0.25, -0.1, 1.0), (0.0, -1, 0.1), g, twist=28 * fan))
+        off, st = reach_up(R, s, 'R', g, 0.6)
+        hi = off + arc(R, 'R', R.rest_dir('L') + V((0, -0.3, 0.3)), R.lift((0.25, -0.25, 0.97), 0.3), g, 0.9, 0.97 if R.overhead else 1.08)
+        arm_ik(A, s, 'R', hi, (-0.6, 0.5, -0.4), end=aim_hand(A, 'R', (0.25, -0.1, 1.0), (0.0, -1, 0.1), g, twist=28 * fan), stretch=st)
         lo = arc(R, 'L', R.rest_dir('L') + V((0, -0.3, 0.3)), (0.85, -0.25, -0.42), g, 0.9, 0.96)
         arm_ik(A, s, 'L', lo, (0.4, 0.8, -0.3), end=aim_hand(A, 'L', (0.85, -0.2, -0.45), (0.0, -1, 0.3), g))
         fingers_mix(A, s, 'L', 'soft', 'open', g)
@@ -324,6 +402,9 @@ def hat_tilt(A):
         # the hat held up beside her head, its inside to the audience, her face peeping past it; the left hand on the waist
         hs = R.top.z - R.head.z
         by = V((R.sh['R'].x - 0.5 * hs, -0.03 * R.k, R.head.z - 0.12 * hs))
+        if not R.overhead:
+            # a child's big head: the hat beside the hair at cheek height, like the teacher's beside her face
+            by = V((-(R.hw + 0.05 * R.k), -0.06 * R.k, R.head.z + 0.3 * (R.crown.z - R.head.z)))
         rest = R.wr['R'] + V((0.012 * R.arm, -0.085 * R.arm, 0.075 * R.arm))
         arm_ik(A, s, 'R', rest.lerp(by, g), (-1.0, 0.25, -0.5), end=aim_hand(A, 'R', (0.62, -0.08, 0.78), (0.1, -1, 0.0), g))
         waist = V((R.sh['L'].x * 0.82, -0.025 * R.k, R.waist.z + 0.02 * R.k))
@@ -351,8 +432,9 @@ def flourish(A):
         s['head'] = add(s['head'], (-12 * g, 0, 0))
         twirl = sn(clamp((p - 0.2) / 0.45), 1.5) * env(p, 0.2, 0.3, 0.55, 0.66)
         for S in 'LR':
-            up = arc(R, S, R.rest_dir('L') + V((0, -0.3, 0.3)), (0.42, -0.22, 0.88), g, 0.9, 0.97)
-            arm_ik(A, s, S, up, (sx(S) * 0.8, 0.4, -0.2), end=aim_hand(A, S, (0.3, -0.12, 0.95), (0.0, -1, 0.05), g, twist=30 * twirl))
+            off, st = reach_up(R, s, S, g, 0.6)
+            up = off + arc(R, S, R.rest_dir('L') + V((0, -0.3, 0.3)), R.lift((0.42, -0.22, 0.88), 0.3), g, 0.9, 0.97 if R.overhead else 1.08)
+            arm_ik(A, s, S, up, (sx(S) * 0.8, 0.4, -0.2), end=aim_hand(A, S, (0.3, -0.12, 0.95), (0.0, -1, 0.05), g, twist=30 * twirl), stretch=st)
             if S == 'R':
                 fingers(A, s, 'R', 'hold')
             else:
@@ -423,8 +505,9 @@ def side_wave(A, S):
         lean_to(s, side, g, roll=7, yaw=6, head_turn=12)
         # the arm on that side waves high, palm to the crowd; the other bends in front
         wv = sn(clamp((p - 0.18) / 0.44), 2) * env(p, 0.18, 0.26, 0.56, 0.64)
-        up = arc(R, S, (0.3, -0.5, -0.4), (0.62, -0.42, 0.66), g, 0.8, 0.9)
-        arm_ik(A, s, S, up, (side * 0.9, 0.3, -0.5), (0, side * 18 * wv, -side * (20 + 26 * wv)))
+        off, st = reach_up(R, s, S, g, 0.4)
+        up = off + arc(R, S, (0.3, -0.5, -0.4), R.lift((0.62, -0.42, 0.66), 0.3), g, 0.8, 0.9 if R.overhead else 1.0)
+        arm_ik(A, s, S, up, (side * 0.9, 0.3, -0.5), (0, side * 18 * wv, -side * (20 + 26 * wv)), stretch=st)
         fingers_mix(A, s, S, 'soft', 'open', g)
         fingers(A, s, O, 'soft', 1.4)
         secondary(A, s, p, drag=4, sway=-10 * side * g, k=2, amp=0.8)
@@ -478,14 +561,25 @@ def jump_clap(A):
             A.plant(s, S, (sx(S) * 0.01 * leg, 0.01 * leg * tuck, max(0.0, hz + 0.0) + 0.07 * leg * tuck), pitch=20 * tuck)
         g = env(p, 0.08, 0.25, 0.4, 0.62)
         clap = R.high()
+        look_up(R, s, g)
         for S in 'LR':
             rest = kpop_hand(R, S)
-            meet = clap + V((sx(S) * 0.018 * R.k, 0, 0))
+            if R.overhead:
+                meet = clap + V((sx(S) * 0.018 * R.k, 0, 0))
+                wide = R.sh[S] + V((sx(S) * 0.75, -0.25, 0.6)).normalized() * R.arm * 0.92
+                pole, st = (sx(S) * 1.0, 0.2, -0.3), None
+            else:
+                # a child: the elbows rise past the corners of the big head, the forearms over the hair and the hands
+                # pressed together above it, palm to palm and fingers up, like the teacher's (a cartoon stretch reaches)
+                meet, pole, st = arch(R, s, S, g, ELBOW_UP(R), WRIST_UP(R))
+                wide = R.sh[S] + shrug_off(R, S) * g + V(R.lift((sx(S) * 0.75, -0.25, 0.6), 0.25)).normalized() * R.arm * 0.92
             # the hands come up wide and meet over the head at the accent
-            wide = R.sh[S] + V((sx(S) * 0.75, -0.25, 0.6)).normalized() * R.arm * 0.92
             t1 = clamp(g * 1.3)
             tgt = rest.lerp(wide, smooth(t1)).lerp(meet, smooth(clamp((g - 0.6) / 0.4))) if g < 1 else meet
-            arm_ik(A, s, S, tgt, (sx(S) * 1.0, 0.2, -0.3), (20 * g, 0, -sx(S) * 70 * g))
+            if R.overhead:
+                arm_ik(A, s, S, tgt, pole, (20 * g, 0, -sx(S) * 70 * g))
+            else:
+                arm_ik(A, s, S, tgt, pole, end=aim_hand(A, S, (0, -0.05, 1), (-1, 0, 0), smooth(g)), stretch=st)
             fingers_mix(A, s, S, 'soft', 'clap', g)
         secondary(A, s, p, drag=0, k=2, amp=1.2, up=-14 * air)
         return s
@@ -502,15 +596,26 @@ def heart_hands(A):
         s['hips@loc'] = (x + 0.012 * R.leg * g, y, z)
         s['hips'] = add(s['hips'], (0, -3 * g, 0))
         s['head'] = add(s['head'], (-6 * g, 5 * g, 0))
-        # over the head (a big heart drawn with both arms), or for short arms a small heart in front of the chest
-        top = R.top + V((0, -0.03 * R.k, 0.012 * R.k)) if R.overhead else R.high()
+        # over the head: a big heart drawn with both arms, the fingertips meeting on the crown
+        top = R.top + V((0, -0.03 * R.k, 0.012 * R.k))
+        look_up(R, s, g * 0.5)
         for S in 'LR':
             rest = kpop_hand(R, S)
-            wide = R.sh[S] + V((sx(S) * 0.75, -0.25, 0.6)).normalized() * R.arm * 0.9
-            meet = top + V((sx(S) * 0.035 * R.k, 0, 0))
+            if R.overhead:
+                wide = R.sh[S] + V((sx(S) * 0.75, -0.25, 0.6)).normalized() * R.arm * 0.9
+                meet = top + V((sx(S) * 0.035 * R.k, 0, 0))
+            else:
+                # a child: the elbows round out past the corners of the big head, the hands lie on top of the hair,
+                # fingertips meeting in the middle (shoulders lifted, a cartoon stretch reaches)
+                ce = R.crown.z - R.head.z
+                meet, pole, st = arch(R, s, S, g, (R.hw * 1.15, R.head.y, R.crown.z - 0.38 * ce), (0.42 * R.hw, R.head.y - 0.05 * R.hl, R.crown.z + 0.01 * ce))
+                wide = R.sh[S] + shrug_off(R, S) * g + V(R.lift((sx(S) * 0.75, -0.25, 0.6), 0.25)).normalized() * R.arm * 0.9
             tgt = rest.lerp(wide, smooth(clamp(g * 1.4))).lerp(meet, smooth(clamp((g - 0.55) / 0.45)))
-            # elbows out and a little forward, wrists bent in: the arms round into a heart over the head
-            arm_ik(A, s, S, tgt, (sx(S) * 1.0, -0.25, 0.35), (35 * g, 0, -sx(S) * 80 * g))
+            if R.overhead:
+                # elbows out and a little forward, wrists bent in: the arms round into a heart over the head
+                arm_ik(A, s, S, tgt, (sx(S) * 1.0, -0.25, 0.35), (35 * g, 0, -sx(S) * 80 * g))
+            else:
+                arm_ik(A, s, S, tgt, pole, end=aim_hand(A, S, (-1, -0.1, -0.3), (0, -0.2, -1), smooth(g)), stretch=st)
             fingers_mix(A, s, S, 'soft', 'heart', g)
         secondary(A, s, p, drag=0, sway=-6 * g, k=2, amp=0.5)
         return s
@@ -525,8 +630,10 @@ def crowd_wave(A):
         s = kpop_ready(A, R, p, bounce=1 - g * 0.6)
         lean_to(s, -1, g * 0.5, roll=4, yaw=4, head_turn=6)
         wv = sn(clamp((p - 0.15) / 0.6), 2) * env(p, 0.15, 0.24, 0.66, 0.76)
-        up = arc(R, 'R', (0.3, -0.5, -0.4), (0.28, -0.3, 0.92) if R.overhead else (0.62, -0.3, 0.72), g, 0.8, 0.96)
-        arm_ik(A, s, 'R', up + V((-0.08 * wv * R.k, 0, 0)), (-0.8, 0.2, -0.4), (0, -20 * wv, 15 + 28 * wv))
+        # the right arm high over the head and waving, the same for a child (shoulder lifted to clear the big head)
+        off, st = reach_up(R, s, 'R', g, 0.6)
+        up = off + arc(R, 'R', (0.3, -0.5, -0.4), (0.28, -0.3, 0.92), g, 0.8, 0.96 if R.overhead else 1.06)
+        arm_ik(A, s, 'R', up + V((-0.08 * wv * R.k, 0, 0)), (-0.8, 0.2, -0.4), (0, -20 * wv, 15 + 28 * wv), stretch=st)
         hipp = V((R.sh['L'].x * 0.95, 0.0, R.waist.z - 0.02 * R.k))
         rest = kpop_hand(R, 'L')
         arm_ik(A, s, 'L', rest.lerp(hipp, g), (1.0, 0.3, 0.0), (25 * g, 0, 75 * g))
