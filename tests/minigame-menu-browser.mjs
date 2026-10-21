@@ -69,7 +69,7 @@ const SNAP = () => {
     lamps: [...g.structures.lamps.entries()].map(([id, L]) => [id, L.target, r(L.lit)]),
   };
 };
-const COUNTS = () => { const g = window.__STARLINE__, m = g.renderer.renderer.info.memory; let n = 0; g.scene.traverse(() => n++); return { children: g.scene.children.length, objects: n, geometries: m.geometries, textures: m.textures }; };
+const COUNTS = () => { const g = window.__STARLINE__, m = g.renderer.renderer.info.memory; let n = 0; g.scene.traverse(o => { if (!o.__room) n++; }); /* (rooms fetched when a door is near stay loaded by design: the interiors group is not counted) */ g.scene.getObjectByName('interiors')?.traverse(o => { o.__room = 1; }); n = 0; g.scene.traverse(o => { if (!o.__room) n++; }); return { children: g.scene.children.length, objects: n, geometries: m.geometries, textures: m.textures }; };
 const STATE = () => {
   const g = window.__STARLINE__, d = g.director;
   if (!d?.quest) return null;
