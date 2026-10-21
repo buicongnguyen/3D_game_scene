@@ -9,7 +9,7 @@ export { Structures } from '../world/structures.js';
 export { Railway } from '../world/railway.js';
 export { Player } from '../actors/player.js';
 export { FollowCamera } from '../actors/camera.js';
-export { ALL_MODELS, bootModels } from '../content/models.js';
+export { ALL_MODELS, bootModels, TRIM_MODELS } from '../content/models.js';
 export { getTropicalTrees } from '../world/tree-theme.js';
 export { LightPool } from '../engine/lights.js';
 export { Paddies } from '../world/paddies.js';

@@ -10,6 +10,7 @@ import { loadSave, clearSave, saveSlots, lastSlot } from './game/saves.js';
 import { quickStartWanted } from './quick/switch.js';
 import { TitleStill } from './quick/title-still.js';
 import { registerServiceWorker } from './sw-register.js';
+import { trimmed } from './engine/trim.js';
 // QUICK START. This file must stay light: it is what a phone downloads before the title menu shows. The valley's own
 // code (the Director, the weather, the QA helpers: ./valley.js) and the quick-start runtime (./quick/runtime.js) are
 // fetched with import() when they are first needed. Do NOT import them (or anything under world/, actors/, fx/) here,
@@ -87,7 +88,11 @@ function glLostNotice() {
   document.body.appendChild(el);
 }
 // three.js rebuilds its GPU resources by itself when the browser gives the context back; then the game simply goes on
-canvas.addEventListener('webglcontextrestored', () => document.getElementById('glLost')?.remove());
+canvas.addEventListener('webglcontextrestored', () => {
+  // ...unless the vertex data of houses and trees was freed once it was on the card (engine/trim.js): that cannot be refilled
+  if (trimmed.arrays > 0 && game.world) { game.renderer.hold = true; return; }
+  document.getElementById('glLost')?.remove();
+});
 const audio = new Audio();
 game.audio = audio;
 const ui = new UI(game, audio);

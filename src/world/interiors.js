@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { WORLD } from './layout.js';
 import { makeGlowTexture } from '../engine/textures.js';
 import { INTERIOR_MANIFEST } from '../content/interior-manifest.js';
+import { trimOnUpload } from '../engine/trim.js';
 
 /*
  * Enterable interiors. Each room is a GLB (art/blender/build_interiors.py) hung high above the valley, where nothing
@@ -211,6 +212,7 @@ export class Interiors {
     if (!model) throw new Error(`interior model ${def.model} not loaded`);
     root.add(model);
     root.updateMatrixWorld(true);
+    trimOnUpload(model);
     const N = {};
     const cols = [], variants = [];
     model.traverse(o => {

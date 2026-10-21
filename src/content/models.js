@@ -26,6 +26,8 @@ export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWA
 // when the player comes near its door or walks in) and the tropical trees (only when that scenery option is on).
 export const TROPICAL_MODELS = [...TROPICAL_TREES, ...TROPICAL_TREES.map(t => `${t}-lod`), ...TROPICAL_BUSHES];
 export const ROOM_MODELS = INTERIORS.filter(n => n.startsWith('interior-'));
+// Models whose geometry nothing reads again once it is on the graphics card (engine/trim.js frees its arrays there)
+export const TRIM_MODELS = [...ARCHITECTURE, ...TREES, ...TREES.map(t => `${t}-lod`)];
 /** What the valley needs before play. `tropical`: the player has the tropical scenery switched on. */
 export function bootModels({ tropical = false } = {}) {
   const later = new Set([...ROOM_MODELS, ...(tropical ? [] : TROPICAL_MODELS)]);

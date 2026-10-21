@@ -64,6 +64,8 @@ export class Assets {
     // a light person: one mesh whose parts are numbers in a palette
     prepareLite(gltf);
     gltf.scene.userData.name = name;
+    // the loader's bookkeeping (the decoded file, the json) is only needed while it builds the scene: ~11 MB across the valley
+    gltf.parser = null;
     // Details modelled flush on larger faces (beams in plaster, trims, panes, coach panels) z-fight and
     // shimmer whenever the camera moves: nudge them a few millimetres proud of the face they sit on.
     if (!gltf.scene.userData.rigged) {

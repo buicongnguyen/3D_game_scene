@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Renderer } from '../engine/renderer.js';
 import { Assets } from '../engine/assets.js';
+import { trimModels } from '../engine/trim.js';
 import { peopleSet } from '../engine/people.js';
 import { Input } from '../engine/input.js';
 import { FX } from '../engine/effects.js';
@@ -37,7 +38,7 @@ export class Game {
 
   async load(onProgress = () => {}) {
     onProgress(0.02, 'Shaping the valley');
-    const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, bootModels, getTropicalTrees, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
+    const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, bootModels, TRIM_MODELS, getTropicalTrees, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
     await nextFrame();
     this.world = new World(this.scene, this.renderer.renderer, this.renderer.q);
     onProgress(0.12, 'Unpacking Blender models');
@@ -64,6 +65,7 @@ export class Game {
     this.kite = new StarKite(this);
     this.interiors = new Interiors(this);
     this.riverbed = new Riverbed(this.scene, this.assets, this.world);
+    trimModels(this.assets, TRIM_MODELS);   // (after the valley is built: everything that measures a model has done so)
     this.setSeason(this.time.season);
     onProgress(1, 'Ready');
   }
