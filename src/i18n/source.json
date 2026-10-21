@@ -29087,6 +29087,24 @@
   ]
  },
  {
+  "s": "Clear downloaded game data",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Cleared. The game downloads what it needs again next time.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "The game keeps its files on this device so it starts faster.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Page {n}",
   "ctx": [
    "UI (src/ui/ui.js)"

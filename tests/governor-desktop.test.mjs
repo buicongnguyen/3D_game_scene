@@ -33,7 +33,7 @@ for (const name of ['medium', 'high']) {
       assert.ok(cur.scale <= prev.scale, `scale at ${l}`);
       assert.ok(cur.q.msaa <= prev.q.msaa, `msaa at ${l}`);
       assert.ok(cur.q.shadow <= prev.q.shadow, `shadow at ${l}`);
-      assert.ok(cur.q.shadowEvery >= (prev.q.shadowEvery ?? 1), `shadowEvery at ${l}`);
+      assert.ok((cur.q.shadowEvery ?? 1) >= (prev.q.shadowEvery ?? 1), `shadowEvery at ${l}`);
       for (const k of DISTANCES) if (prev.q[k] !== undefined) assert.ok(cur.q[k] <= prev.q[k], `${k} at ${l}`);
       assert.ok(cur.q.shadow >= 1024 && cur.scale >= 0.6);
       assert.ok(cur.q.npcDraw >= 45 && cur.q.propDist >= 55 && cur.q.buildDist >= 200, 'the valley is never emptied');

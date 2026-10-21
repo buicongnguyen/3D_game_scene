@@ -4915,5 +4915,8 @@
   "Press the card's arrow on the count.": "Bấm mũi tên trên thẻ đúng nhịp đếm.",
   "Hold a pose; tap left or right to stay steady.": "Giữ tư thế; bấm trái hoặc phải để đứng vững.",
   "Hold to breathe in, let go to breathe out.": "Giữ nút để hít vào, thả ra để thở ra.",
-  "Marching": "Dậm chân"
+  "Marching": "Dậm chân",
+  "Clear downloaded game data": "Xóa dữ liệu game đã tải",
+  "Cleared. The game downloads what it needs again next time.": "Đã xóa. Lần sau game sẽ tải lại những gì cần.",
+  "The game keeps its files on this device so it starts faster.": "Game lưu tệp của mình trên thiết bị này để khởi động nhanh hơn."
 }

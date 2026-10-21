@@ -4915,5 +4915,8 @@
  "Press the card's arrow on the count.": "구령에 맞춰 카드의 화살표를 눌러요.",
  "Hold a pose; tap left or right to stay steady.": "자세를 유지하고, 왼쪽이나 오른쪽을 탭해서 균형을 잡아요.",
  "Hold to breathe in, let go to breathe out.": "누르고 있으면 들이마시고, 떼면 내쉬어요.",
- "Marching": "제자리 걷기"
+ "Marching": "제자리 걷기",
+ "Clear downloaded game data": "다운로드한 게임 데이터 지우기",
+ "Cleared. The game downloads what it needs again next time.": "지웠어요. 다음에 필요한 것을 다시 내려받아요.",
+ "The game keeps its files on this device so it starts faster.": "게임이 더 빨리 시작되도록 파일을 이 기기에 보관해요."
 }

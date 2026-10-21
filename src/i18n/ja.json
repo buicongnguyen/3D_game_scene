@@ -4915,5 +4915,8 @@
   "Press the card's arrow on the count.": "カウントにあわせて、カードのやじるしをおそう。",
   "Hold a pose; tap left or right to stay steady.": "ポーズをキープ。ひだりかみぎをタップして、ぐらつかないようにしよう。",
   "Hold to breathe in, let go to breathe out.": "おしたまま息をすって、はなして息をはこう。",
-  "Marching": "あしぶみ"
+  "Marching": "あしぶみ",
+  "Clear downloaded game data": "ダウンロードしたゲームデータを消す",
+  "Cleared. The game downloads what it needs again next time.": "消しました。次回、必要なものをもう一度ダウンロードします。",
+  "The game keeps its files on this device so it starts faster.": "ゲームを速く始められるよう、ファイルをこの端末に保存します。"
 }

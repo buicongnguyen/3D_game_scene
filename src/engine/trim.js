@@ -11,7 +11,13 @@ export const trimmed = { arrays: 0 };
 const seen = new WeakSet();
 
 /** `root`: a model scene (or any object). Static meshes only: skinned, instanced and morphing ones are left alone. */
+// Off by default: a phone that leaves the browser for a moment often loses its WebGL context, and with the arrays gone the
+// picture could not be rebuilt when it came back (the player would have to reload). The saving is only about 8 MB; turn it on
+// with ?trim=on to measure it.
+export const TRIM_ARRAYS = typeof location !== 'undefined' && /[?&]trim=on/.test(location.search);
+
 export function trimOnUpload(root) {
+  if (!TRIM_ARRAYS) return;
   root.traverse(o => {
     const g = o.geometry;
     if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || !g || g.isInstancedBufferGeometry || seen.has(g)) return;
