@@ -59,6 +59,7 @@ export class Game {
     for (const t of this.placed.trees) if (!t.far && t.s > 0.7) this.colliders.cylinder(t.x, t.z, 0.38 * t.s, t.y - 1, t.y + 5, { id: 'tree' });
     onProgress(0.94, 'Waking Mika');
     await nextFrame();
+    this.renderer.onShadowChange = q => this.world.sky?.setShadow(q);
     this.player = new Player(this.scene, this.assets, this.world, this.colliders);
     this.follow = new FollowCamera(this.camera, this.world, this.colliders);
     this.underwater = new Underwater(this);

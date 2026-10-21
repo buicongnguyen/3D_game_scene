@@ -5,7 +5,8 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { updateWorldMatrices } from './matrices.js';
-import { Governor, settingsAt } from './governor.js';
+import { Governor, settingsAt, ladderFor } from './governor.js';
+import { pickQuality } from './quality-pick.js';
 
 // Quality tiers. `grass` scales instanced grass, `trees` the scatter density, `shadow` the map size.
 export const QUALITY = {
@@ -20,15 +21,17 @@ export function isMobile() {
 
 export function detectQuality(gl) {
   const saved = (() => { try { return localStorage.getItem('starline-quality'); } catch { return null; } })();
-  if (saved && QUALITY[saved]) return saved;
   let renderer = '';
   try {
     const ext = gl.getExtension('WEBGL_debug_renderer_info');
     renderer = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
   } catch { /* ignore */ }
-  if (/SwiftShader|llvmpipe|Software|Basic Render/i.test(renderer)) return 'low';
-  if (isMobile()) return 'low';
-  return /RTX|Radeon RX|Apple M[2-9]|Arc/i.test(renderer) ? 'high' : 'medium';
+  // the player's own choice (Settings) always wins; otherwise the GPU, the screen and the machine decide (quality-pick.js)
+  return pickQuality({
+    saved: saved && QUALITY[saved] ? saved : null, renderer, mobile: isMobile(),
+    width: window.innerWidth, height: window.innerHeight, dpr: window.devicePixelRatio || 1,
+    deviceMemory: navigator.deviceMemory, cores: navigator.hardwareConcurrency,
+  });
 }
 
 // Colour grade applied in linear HDR before tone mapping: vibrance, warm lift, vignette.
@@ -79,7 +82,7 @@ export class Renderer {
     const gl = this.renderer.getContext();
     this.qualityName = qualityName || detectQuality(gl);
     this.q = QUALITY[this.qualityName];
-    this.governor = this.q.governor ? new Governor() : null;
+    this.governor = this.q.governor ? new Governor({ levels: ladderFor(this.qualityName).length }) : null;
     const r = this.renderer;
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.NeutralToneMapping;
@@ -96,9 +99,12 @@ export class Renderer {
 
   setQuality(name) {
     if (!QUALITY[name]) return;
+    const was = this.q;
     this.qualityName = name;
     this.q = QUALITY[name];
-    this.governor = this.q.governor ? new Governor() : null; this.appliedLevel = 0;
+    // back from a governor step that had made the shadow map smaller: the tier's own size again
+    if (this.q.shadow !== was.shadow && this.q.shadowRange === was.shadowRange) this.onShadowChange?.(this.q);
+    this.governor = this.q.governor ? new Governor({ levels: ladderFor(name).length }) : null; this.appliedLevel = 0;
     if (!this.fixedScale) this.scale = 1;
     try { localStorage.setItem('starline-quality', name); } catch { /* ignore */ }
     this.buildComposer();
@@ -137,7 +143,7 @@ export class Renderer {
     this.onResize?.(w, h);
   }
 
-  /** Adaptive resolution: drop the render scale when frames are consistently slow. */
+  /** Adaptive quality: step down the tier's ladder (governor.js) when frames are consistently slow. */
   track(dt) {
     if (this.fixedScale) return;
     if (this.governor) {
@@ -168,9 +174,13 @@ export class Renderer {
     const level = Math.max(this.governor.level, this.floor || 0);
     if (level === (this.appliedLevel || 0)) return;
     this.appliedLevel = level;
-    const { q, scale } = settingsAt(QUALITY[this.qualityName], level);
+    const { q, scale } = settingsAt(QUALITY[this.qualityName], level, ladderFor(this.qualityName));
+    const was = this.q;
     this.q = q;
+    if (q.shadow !== was.shadow) this.onShadowChange?.(q);       // a smaller shadow map (the sky makes a new one)
+    if (q.msaa !== was.msaa) this.buildComposer();               // another sample count needs another render target
     if (scale !== this.scale) { this.scale = scale; this.resize(); }
+    else if (q.msaa !== was.msaa) this.resize();
   }
 
   render(scene, camera) {

@@ -18,6 +18,23 @@ export const LADDER = [
   { scale: 0.62 },                                                                          // 5
 ];
 
+// Medium and High (desktops and laptops): the picture's cost is the pixels, then the extra passes, then how far the world is
+// drawn, so the steps go in that order. `shadowK` and `distK` scale what the tier has, so every tier loses something at every
+// step (a fixed number would do nothing on a tier that already had less), and a later step replaces an earlier one.
+export const LADDER_DESKTOP = [
+  {},                                                    // 0: the tier as designed
+  { scale: 0.85 },                                       // 1: a little softer
+  { scale: 0.72 },                                       // 2
+  { msaa: 0 },                                           // 3: no multisampling (a smoother picture costs a lot of fill)
+  { shadowK: 0.5, shadowEvery: 2 },                      // 4: a smaller shadow map
+  { distK: 0.75 },                                       // 5: people, props and buildings are drawn less far
+  { scale: 0.62 },                                       // 6
+  { distK: 0.55, shadowEvery: 3 },                       // 7: the nearest part of the valley only
+];
+
+/** The ladder for a tier: Low (phones, software renderers) steps down the people and props; the others the pixels first. */
+export const ladderFor = name => (name === 'low' ? LADDER : LADDER_DESKTOP);
+
 export class Governor {
   constructor({ levels = LADDER.length, slow = 1 / 26, spike = 1 / 16, fast = 1 / 48, calm = 5, regret = 30, window = 2 } = {}) {
     Object.assign(this, { levels, slow, spike, fast, calm, regret, window });
@@ -57,12 +74,15 @@ export class Governor {
 }
 
 /** The tier's settings at a governor level: every step up to `level` applied in order. Returns { q, scale }. */
-export function settingsAt(base, level) {
+const DISTANCES = ['npcDraw', 'npcAnim', 'npcShadow', 'propDist', 'buildDist', 'midDist', 'riverbedDist'];
+export function settingsAt(base, level, ladder = LADDER) {
   const q = { ...base };
   let scale = 1;
-  for (let i = 1; i <= level && i < LADDER.length; i++) {
-    const { scale: s, ...rest } = LADDER[i];
+  for (let i = 1; i <= level && i < ladder.length; i++) {
+    const { scale: s, shadowK, distK, ...rest } = ladder[i];
     if (s) scale = s;
+    if (shadowK) q.shadow = Math.max(1024, Math.round(base.shadow * shadowK));      // (of what the tier has: a later step replaces an earlier one)
+    if (distK) for (const k of DISTANCES) if (base[k]) q[k] = Math.max(Math.round(base[k] * distK), k === 'npcShadow' ? 0 : 30);
     for (const [k, v] of Object.entries(rest)) q[k] = k === 'shadowEvery' ? Math.max(v, base[k] ?? 1) : Math.min(v, base[k] ?? v);
   }
   return { q, scale };
