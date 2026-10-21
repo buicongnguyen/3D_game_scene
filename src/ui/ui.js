@@ -7,6 +7,7 @@ import { STORIES, DEFAULT_STORY, storyId } from '../game/stories/index.js';
 import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
 import { getPeopleChoice, setPeopleChoice, peopleSetFor } from '../engine/people.js';
 import { loadSave } from '../game/saves.js';
+import { clearGameData, canClearGameData } from '../sw-register.js';
 
 /** The story a new game starts with (Settings → Story for new games). */
 export function defaultStory() {
@@ -650,6 +651,15 @@ export class UI {
     const peopleReload = told(document.createElement('button'), N_('Reload now')); peopleReload.type = 'button'; peopleReload.className = 'small'; peopleReload.id = 'btnPeopleReload';
     peopleNote.append(told(document.createElement('span'), N_('Lighter people for older phones. Applies after reloading.')), ' ', peopleReload);
     tropicalRow.after(peopleRow, peopleNote);
+    // what the service worker stored for the next visit (public/sw.js): the models, pictures and code, kept on this device
+    if (canClearGameData()) {
+      const dataNote = document.createElement('p'); dataNote.className = 'note'; dataNote.id = 'optDataNote';
+      const dataClear = told(document.createElement('button'), N_('Clear downloaded game data')); dataClear.type = 'button'; dataClear.className = 'small'; dataClear.id = 'btnClearData';
+      const dataDone = told(document.createElement('span'), N_('Cleared. The game downloads what it needs again next time.')); dataDone.classList.add('hidden');
+      dataNote.append(told(document.createElement('span'), N_('The game keeps its files on this device so it starts faster.')), ' ', dataClear, ' ', dataDone);
+      peopleNote.after(dataNote);
+      dataClear.addEventListener('click', async e => { e.preventDefault(); await clearGameData(); dataDone.classList.remove('hidden'); });
+    }
     // the reload is offered only when the choice would load another set than the one in the valley now
     const peopleWaits = () => !g.params?.get?.('people') && peopleSetFor(people.value, q.value) !== (g.assets?.people || 'std');
     const peopleShow = () => peopleReload.classList.toggle('hidden', !peopleWaits());

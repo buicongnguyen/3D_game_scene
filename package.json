@@ -6,7 +6,7 @@
   "description": "Starline — a cosy story game in Hoshi Valley (three.js + Blender).",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/pack-models.mjs dist/models",
+    "build": "vite build && node scripts/pack-models.mjs dist/models && node scripts/stamp-sw.mjs dist",
     "preview": "vite preview",
     "test": "node --test tests/*.test.mjs",
     "test:e2e": "node tests/e2e/run.mjs",

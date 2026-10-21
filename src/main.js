@@ -9,6 +9,7 @@ import { detectLang, setLang, tx } from './i18n/i18n.js';
 import { loadSave, clearSave, saveSlots, lastSlot } from './game/saves.js';
 import { quickStartWanted } from './quick/switch.js';
 import { TitleStill } from './quick/title-still.js';
+import { registerServiceWorker } from './sw-register.js';
 // QUICK START. This file must stay light: it is what a phone downloads before the title menu shows. The valley's own
 // code (the Director, the weather, the QA helpers: ./valley.js) and the quick-start runtime (./quick/runtime.js) are
 // fetched with import() when they are first needed. Do NOT import them (or anything under world/, actors/, fx/) here,
@@ -177,6 +178,7 @@ function titleLook() {
     })());
   }
   window.__STARLINE_READY__ = true;
+  registerServiceWorker(params);
 
   const unlockAudio = () => { if (!params.has('mute')) { try { audio.unlock(); } catch (e) { console.warn('audio unavailable', e); } } };
   const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
