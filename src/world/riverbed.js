@@ -79,11 +79,11 @@ export class Riverbed {
     const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler();
     const meshes = [];
     const mats = parts.map(part => tint(part.material));
-    // in stretches of ~110 m of river, so the bed out of view is culled (as one mesh the whole river was drawn,
+    // in stretches of ~55 m of river, so the bed out of view is culled (as one mesh the whole river was drawn,
     // 180 k triangles, wherever the camera looked)
     const all = list;
-    for (let z0 = -230; z0 < 200; z0 += 110) for (const [pi, part] of parts.entries()) {
-      list = all.filter(r => r.z >= z0 && r.z < z0 + 110);
+    for (let z0 = -230; z0 < 200; z0 += 55) for (const [pi, part] of parts.entries()) {
+      list = all.filter(r => r.z >= z0 && r.z < z0 + 55);
       if (!list.length) continue;
       const mesh = new THREE.InstancedMesh(part.geometry, mats[pi], list.length);
       list.forEach((r, i) => {
