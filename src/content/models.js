@@ -22,3 +22,12 @@ export const INTERIORS = ['interior-cottage', 'interior-bakery', 'interior-mill'
   'keepsake-photo', 'keepsake-recipe', 'keepsake-float', 'keepsake-ticket'];
 export const REWARDS = ['music-box', 'golden-acorn', 'star-compass', 'star-tree', 'gift-lure', 'gift-radish', 'gift-buns', 'gift-cap', 'gift-pinecone', 'gift-honey'];
 export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWAY, ...NATURE, ...PROPS, ...ITEMS, ...INTERIORS, ...REWARDS];
+// Not needed for the first frame, fetched when something asks for them: the room models (world/interiors.js fetches a room
+// when the player comes near its door or walks in) and the tropical trees (only when that scenery option is on).
+export const TROPICAL_MODELS = [...TROPICAL_TREES, ...TROPICAL_TREES.map(t => `${t}-lod`), ...TROPICAL_BUSHES];
+export const ROOM_MODELS = INTERIORS.filter(n => n.startsWith('interior-'));
+/** What the valley needs before play. `tropical`: the player has the tropical scenery switched on. */
+export function bootModels({ tropical = false } = {}) {
+  const later = new Set([...ROOM_MODELS, ...(tropical ? [] : TROPICAL_MODELS)]);
+  return ALL_MODELS.filter(n => !later.has(n));
+}

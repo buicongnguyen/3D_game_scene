@@ -37,11 +37,11 @@ export class Game {
 
   async load(onProgress = () => {}) {
     onProgress(0.02, 'Shaping the valley');
-    const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, ALL_MODELS, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
+    const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, bootModels, getTropicalTrees, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
     await nextFrame();
     this.world = new World(this.scene, this.renderer.renderer, this.renderer.q);
     onProgress(0.12, 'Unpacking Blender models');
-    await this.assets.load(ALL_MODELS, p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
+    await this.assets.load(bootModels({ tropical: getTropicalTrees() }), p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
     await this.assets.finalize();
     onProgress(0.84, 'Planting the forests');
     await nextFrame();

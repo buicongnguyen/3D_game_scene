@@ -3,6 +3,7 @@ import { patchMaterial } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
 import { getTropicalTrees, onTreeThemeChange, treeForTheme, bushForTheme, TROPICAL_TREES, TROPICAL_BUSHES } from './tree-theme.js';
+import { TROPICAL_MODELS } from '../content/models.js';
 
 const FOLIAGE = { Leaves: 'leaves', Needles: 'needles', 'Maple leaves': 'maple', Blossom: 'blossom' };
 const BARE_IN_WINTER = new Set(['Leaves', 'Maple leaves', 'Blossom']);
@@ -214,7 +215,13 @@ export class Foliage {
     this.season = null;
     this.theme = null;
     this.setTheme(getTropicalTrees());
-    this.unsubscribeTheme = onTreeThemeChange(enabled => this.setTheme(enabled));
+    // the tropical models are not part of the first load: fetch them when the option is switched on, then change the scenery
+    this.unsubscribeTheme = onTreeThemeChange(async enabled => {
+      if (enabled && !TROPICAL_MODELS.every(m => this.assets.has(m))) {
+        try { await this.assets.loadLater(TROPICAL_MODELS); shareTropicalAtlas(this.assets); } catch (e) { console.warn('tropical trees did not load', e); }
+      }
+      if (this.group.parent) this.setTheme(getTropicalTrees());
+    });
   }
 
   buildSets(list, opts) {

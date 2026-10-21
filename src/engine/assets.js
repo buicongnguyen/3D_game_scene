@@ -93,6 +93,11 @@ export class Assets {
     }
   }
 
+  /** After finalize(): fetch more models; once this resolves they can be cloned (a missing one stays missing). */
+  async loadLater(names) {
+    await Promise.all(names.map(async n => { const g = await this.get(n); if (g) this.resolved.set(n, g); }));
+  }
+
   has(name) { return this.resolved?.has(name) ?? false; }
   gltf(name) { return this.resolved?.get(name) ?? null; }
 

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { WORLD } from './layout.js';
 import { makeGlowTexture } from '../engine/textures.js';
+import { INTERIOR_MANIFEST } from '../content/interior-manifest.js';
 
 /*
  * Enterable interiors. Each room is a GLB (art/blender/build_interiors.py) hung high above the valley, where nothing
@@ -9,6 +10,7 @@ import { makeGlowTexture } from '../engine/textures.js';
  * collider ray keeps it inside the walls, and a final clamp guarantees it never leaves the room.
  */
 
+const PREFETCH = 28;              // a room's file is fetched when the player is this close (metres) to its front door
 const HIGH = 600;                 // rooms hang this far above the valley (the valley tops out near 60 m)
 const V3 = THREE.Vector3;
 const toRad = d => d * Math.PI / 180;
@@ -98,10 +100,16 @@ export class Interiors {
   }
 
   // ------------------------------------------------------------------ building
+  /**
+   * A room is built in two steps. This one needs no download: the room's group, its door, spawn and exit, the lamps, the
+   * items and where the residents stand, all from interior-manifest.js (the node positions of the room model, written by
+   * scripts/interior-manifest.mjs), with an empty group standing in for the model. `realize` clones the model in once its
+   * file has arrived (`ensure`), which happens when the player nears the door or walks in.
+   */
   build(def) {
     const g = this.game;
-    const model = g.assets.clone(def.model);
-    if (!model) { console.warn(`interior model ${def.model} not loaded`); return; }
+    const man = INTERIOR_MANIFEST[def.model];
+    if (!man) { console.warn(`interior ${def.model} has no manifest`); return; }
     const rec = g.structures?.byId.get(def.building);
     const spot = rec ? DOOR_SPOTS[rec.name] : null;
     const back = spot && spot.out < 0;
@@ -114,56 +122,32 @@ export class Interiors {
     root.position.set(x, HIGH, z);
     root.rotation.y = yaw;
     root.visible = false;
+    // the stand-in: the named nodes of the real model, in the same places
+    const model = new THREE.Group();
+    model.name = `${def.model}:pending`;
+    const nodes = {};
+    for (const [name, n] of Object.entries(man.nodes)) {
+      const o = new THREE.Object3D();
+      o.name = name;
+      o.position.fromArray(n.p);
+      o.quaternion.fromArray(n.q);
+      o.userData = { ...(n.x || {}) };
+      model.add(o);
+      nodes[name] = o;
+    }
     root.add(model);
     this.group.add(root);
     root.updateMatrixWorld(true);
     const inv = root.matrixWorld.clone().invert();
 
-    const room = { id: def.id, def, root, model, inv, yaw, lights: [], glow: [], fire: [], nodes: {}, cols: [], motes: null, bounds: new THREE.Box3() };
+    const room = { id: def.id, def, root, model, inv, yaw, lights: [], glow: [], fire: [], nodes, cols: [], motes: null, bounds: new THREE.Box3(), loaded: false, loading: null, gears: [], pendulum: null };
     const wp = o => o.getWorldPosition(new V3());
-    const cols = [], variants = [];
-    model.traverse(o => {
-      if (o.isMesh && o.name.startsWith('Col_')) { cols.push(o); return; }
-      if (o.isMesh) {
-        const m = o.material;
-        if (m.name === 'Window view') { o.material = this.viewMat; o.castShadow = false; o.receiveShadow = false; }
-        else if (m.name === 'Interior glow' || m.name === 'Interior fire') {
-          o.castShadow = false;
-          m.emissive = new THREE.Color(m.name === 'Interior fire' ? '#ff7a2a' : '#ffb347');
-          m.emissiveIntensity = 0;
-          (m.name === 'Interior fire' ? room.fire : room.glow).push(m);
-        }
-      }
-      if (/^(Spawn|Exit|Item_|Light_|Gear_|Pendulum|Spot_)/.test(o.name)) room.nodes[o.name] = o;
-      if (/^Var_\d+$/.test(o.name)) variants.push(o);
-    });
-    // a home shows ONE of its decor variants; the others stay hidden
-    for (const v of variants) v.visible = v.name === `Var_${def.variant ?? 1}`;
-
-    // collision boxes -> kinematic colliders (hidden meshes)
-    const q = new THREE.Quaternion(), e = new THREE.Euler(), s = new V3(), c = new V3(), size = new V3();
-    for (const o of cols) {
-      o.visible = false;
-      o.castShadow = false;
-      o.geometry.computeBoundingBox();
-      const bb = o.geometry.boundingBox;
-      bb.getCenter(c); bb.getSize(size);
-      o.getWorldScale(s);
-      const wc = o.localToWorld(c.clone());
-      o.getWorldQuaternion(q);
-      e.setFromQuaternion(q, 'YXZ');
-      const ud = o.userData || {};
-      const hw = size.x * s.x / 2, hh = size.y * s.y / 2, hd = size.z * s.z / 2;
-      const it = g.colliders.box(wc.x, wc.z, hw, hd, e.y * 180 / Math.PI, wc.y - hh, wc.y + hh, {
-        walkable: !!ud.walk, blocksView: !!ud.view, surface: ud.surface || (ud.walk ? 'wood' : undefined), id: `interior-${def.id}`,
-      });
-      room.cols.push(it);
-      // room-space bounds from the floor and the camera ceiling
-      const local = bb.clone().applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld));
-      if (o.name === 'Col_floor') { room.bounds.min.set(local.min.x + 0.2, local.max.y, local.min.z + 0.2); room.bounds.max.set(local.max.x - 0.2, local.max.y + 3, local.max.z - 0.2); }
-      if (o.name === 'Col_ceiling') room.camTop = local.min.y;
+    if (man.floor) {
+      const f = man.floor;
+      room.bounds.min.set(f.min[0] + 0.2, f.max[1], f.min[2] + 0.2);
+      room.bounds.max.set(f.max[0] - 0.2, f.max[1] + 3, f.max[2] - 0.2);
     }
-    if (room.camTop !== undefined) room.bounds.max.y = room.camTop;
+    if (man.ceilingMinY !== null) { room.camTop = man.ceilingMinY; room.bounds.max.y = room.camTop; }
 
     // nodes
     const N = room.nodes;
@@ -190,14 +174,91 @@ export class Interiors {
     }
     // where the people who live here stand (+Z of the node is the way they face)
     room.spots = Object.entries(N).filter(([n]) => n.startsWith('Spot_npc_')).sort(([a], [b]) => a.localeCompare(b)).map(([, o]) => ({ pos: wp(o), yaw: yawOf(o) }));
-    room.gears = Object.entries(N).filter(([n]) => n.startsWith('Gear_')).map(([n, o]) => ({ o, axis: o.userData?.axis || 'x', ratio: o.userData?.ratio ?? 1, rest: o.rotation.clone() }));
-    room.pendulum = N.Pendulum || null;
-    room.motes = this.makeMotes(room);
     this.rooms.set(def.id, room);
 
     // the outside door
     const door = this.outsideDoor(def, rec, spot);
     if (door) this.doors.push({ id: def.id, building: def.building, ...door, inside: room.spawn.clone(), insideFacing: room.insideFacing, exit: room.exit.clone() });
+  }
+
+  /** The room's model: fetched if it has not been yet. Resolves true once the room is complete (false if it could not load). */
+  ensure(id) {
+    const room = this.rooms.get(id);
+    if (!room) return Promise.resolve(false);
+    if (room.loaded) return Promise.resolve(true);
+    return room.loading ??= (async () => {
+      await this.game.assets.loadLater([room.def.model]);
+      this.realize(room);
+      return true;
+    })().catch(e => { room.loading = null; console.warn(`interior ${room.id} did not load`, e); return false; });
+  }
+
+  /** Walk-up prefetch: start the files of the rooms whose doors are close, so the door answers at once. */
+  prefetch() {
+    const p = this.game.player?.pos;
+    if (!p || this.active) return;
+    for (const d of this.doors) {
+      const room = this.rooms.get(d.id);
+      if (!room || room.loaded || room.loading) continue;
+      if ((d.outside.x - p.x) ** 2 + (d.outside.z - p.z) ** 2 < PREFETCH * PREFETCH) this.ensure(d.id);
+    }
+  }
+
+  /** Step two: the real model replaces the stand-in, and the colliders, glow materials, decor variant and motes are made. */
+  realize(room) {
+    const g = this.game, def = room.def, root = room.root;
+    const model = g.assets.clone(def.model);
+    if (!model) throw new Error(`interior model ${def.model} not loaded`);
+    root.add(model);
+    root.updateMatrixWorld(true);
+    const N = {};
+    const cols = [], variants = [];
+    model.traverse(o => {
+      if (o.isMesh && o.name.startsWith('Col_')) { cols.push(o); return; }
+      if (o.isMesh) {
+        const m = o.material;
+        if (m.name === 'Window view') { o.material = this.viewMat; o.castShadow = false; o.receiveShadow = false; }
+        else if (m.name === 'Interior glow' || m.name === 'Interior fire') {
+          o.castShadow = false;
+          m.emissive = new THREE.Color(m.name === 'Interior fire' ? '#ff7a2a' : '#ffb347');
+          m.emissiveIntensity = 0;
+          (m.name === 'Interior fire' ? room.fire : room.glow).push(m);
+        }
+      }
+      if (/^(Spawn|Exit|Item_|Light_|Gear_|Pendulum|Spot_)/.test(o.name)) N[o.name] = o;
+      if (/^Var_d+$/.test(o.name)) variants.push(o);
+    });
+    // a home shows ONE of its decor variants; the others stay hidden
+    for (const v of variants) v.visible = v.name === `Var_${def.variant ?? 1}`;
+
+    // collision boxes -> kinematic colliders (hidden meshes)
+    const q = new THREE.Quaternion(), e = new THREE.Euler(), s = new V3(), c = new V3(), size = new V3();
+    for (const o of cols) {
+      o.visible = false;
+      o.castShadow = false;
+      o.geometry.computeBoundingBox();
+      const bb = o.geometry.boundingBox;
+      bb.getCenter(c); bb.getSize(size);
+      o.getWorldScale(s);
+      const wc = o.localToWorld(c.clone());
+      o.getWorldQuaternion(q);
+      e.setFromQuaternion(q, 'YXZ');
+      const ud = o.userData || {};
+      const hw = size.x * s.x / 2, hh = size.y * s.y / 2, hd = size.z * s.z / 2;
+      const it = g.colliders.box(wc.x, wc.z, hw, hd, e.y * 180 / Math.PI, wc.y - hh, wc.y + hh, {
+        walkable: !!ud.walk, blocksView: !!ud.view, surface: ud.surface || (ud.walk ? 'wood' : undefined), id: `interior-${def.id}`,
+      });
+      room.cols.push(it);
+    }
+
+    // the real nodes take over from the stand-ins
+    room.nodes = N;
+    room.gears = Object.entries(N).filter(([n]) => n.startsWith('Gear_')).map(([n, o]) => ({ o, axis: o.userData?.axis || 'x', ratio: o.userData?.ratio ?? 1, rest: o.rotation.clone() }));
+    room.pendulum = N.Pendulum || null;
+    room.model.removeFromParent();
+    room.model = model;
+    room.motes = this.makeMotes(room);
+    room.loaded = true;
   }
 
   /** World point in front of a building's door (walkable, clear of its collider) and the facing away from it. */
@@ -348,6 +409,8 @@ export class Interiors {
     this.busy = true;
     try {
       await fade?.(true);
+      // normally the file came while the player walked up; if not, the screen is dark meanwhile, never a half-built room
+      if (!(await this.ensure(id))) { await fade?.(false); return false; }
       if (this.active) this.leaveRoom();
       const g = this.game;
       this.active = id;
@@ -437,8 +500,9 @@ export class Interiors {
   // ------------------------------------------------------------------ per frame
   update(dt) {
     this.t += dt;
+    if (!this.active && (this.scanT = (this.scanT ?? 0) - dt) <= 0) { this.scanT = 0.5; this.prefetch(); }
     const room = this.active && this.rooms.get(this.active);
-    if (!room) return;
+    if (!room || !room.loaded) return;
     const night = this.game.night || 0;
     const t = this.t;
     // lamps: steady warm light, brighter at night; fires flicker
