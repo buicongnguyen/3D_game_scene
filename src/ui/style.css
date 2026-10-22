@@ -267,6 +267,12 @@ body.cinema #hud, body.cinema #touch { opacity: 0; pointer-events: none; }
 .controls-btn { width: 100%; margin-bottom: 10px; border: 2px solid rgba(242, 181, 58, 0.6); background: #fff8e6; border-radius: 14px; padding: 10px 14px; font: 700 15px var(--ui); color: var(--ink); cursor: pointer; }
 .controls-btn:hover, .controls-btn:focus-visible { background: #fff; outline: none; }
 .explore-intro { margin: 0 0 6px; color: var(--ink-soft); font-weight: 700; font-size: 14.5px; line-height: 1.4; }
+/* the weak-device card (ui.js deviceNote): on a short screen (a turned phone) the three choices without their lines */
+@media (max-height: 520px) {
+  #slots.device-note .info > span { display: none; }
+  #slots.device-note .explore-intro { font-size: 13px; line-height: 1.3; }
+  #slots.device-note .pick { padding-top: 6px; padding-bottom: 6px; }
+}
 .explore-row { margin: 8px 0; }
 .explore-h { margin: 0 0 6px; font-family: var(--head); font-weight: 600; font-size: 15px; }
 .explore-chips { display: flex; flex-wrap: wrap; gap: 8px; }

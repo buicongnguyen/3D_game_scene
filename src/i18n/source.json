@@ -28882,6 +28882,12 @@
   ]
  },
  {
+  "s": "The story and Explore build the whole valley. On this device it may run slowly and warm up the phone. Light mode helps.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Left thumb moves · drag the right side to look · “Do it” does anything nearby",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -29002,6 +29008,55 @@
   ]
  },
  {
+  "s": "Before you start",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Play in light mode",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Simpler people and no shadows: smoother, and kinder to the battery.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Play mini games instead",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Pick one small game from the list.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Continue",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Start as it is. Short breaks help.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Light mode saved — reload to apply fully",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Start a new game in this slot? The story saved here will be replaced.",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -29100,6 +29155,18 @@
  },
  {
   "s": "The game keeps its files on this device so it starts faster.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Use light mode",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Light mode is on.",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -29506,12 +29573,6 @@
  },
  {
   "s": "Light the four Star Lamps. Bring the Star Train home.",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Continue",
   "ctx": [
    "menu / screen text"
   ]

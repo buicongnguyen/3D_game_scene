@@ -8,6 +8,10 @@ import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/
 import { getPeopleChoice, setPeopleChoice, peopleSetFor } from '../engine/people.js';
 import { loadSave } from '../game/saves.js';
 import { clearGameData, canClearGameData } from '../sw-register.js';
+import { noteWanted, deviceFacts, noteSeen, markNoteSeen } from '../engine/device-note.js';
+
+// the weak-device card's words (engine/device-note.js); Settings repeats them
+const DEVICE_NOTE = N_('The story and Explore build the whole valley. On this device it may run slowly and warm up the phone. Light mode helps.');
 
 /** The story a new game starts with (Settings → Story for new games). */
 export function defaultStory() {
@@ -106,14 +110,21 @@ export class UI {
     this.titleClip();
     return new Promise(resolve => {
       const done = v => { $('title').classList.add('hidden'); this.game.titleLoop?.stop(); cleanup(); this.audio?.click(); resolve(v); };
+      // the story and Explore build the whole valley: a weak device is told first and offered light mode or the mini
+      // games (engine/device-note.js). true = go on; false = the player went to the mini games or closed the card.
+      const noted = async () => {
+        const n = await this.deviceNote();
+        if (n === 'mini') { onMini(); return false; }
+        return !!n;
+      };
       const onNew = async () => {
         const slot = await this.pickSlot('new', slots, last);
         if (!slot) return;
         const story = await this.pickStory();
-        if (story) done({ mode: 'new', slot, story });
+        if (story && await noted()) done({ mode: 'new', slot, story });
       };
-      const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot) done({ mode: 'continue', slot }); };
-      const onExplore = async () => { const v = await this.pickExplore(); if (v) done({ mode: 'explore', slot: 'explore', ...v }); };
+      const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot && await noted()) done({ mode: 'continue', slot }); };
+      const onExplore = async () => { const v = await this.pickExplore(); if (v && await noted()) done({ mode: 'explore', slot: 'explore', ...v }); };
       // Mini games: pick a game and play it at once (an Explore session: the game starts when the world is ready, see game/minigame-menu.js)
       const onMini = async () => { const r = await this.pickMinigame(); if (r) { this.pendingLaunch = { id: r.e.id, quick: !!r.e.quick }; done({ mode: 'explore', slot: 'explore', season: r.plan?.season, hour: r.plan?.hour, fresh: false }); } };
       const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); $('btnTitleMini')?.removeEventListener('click', onMini); };
@@ -217,6 +228,77 @@ export class UI {
         if (s.id === pre) setTimeout(() => b.focus(), 0);
       }
     });
+  }
+
+  /** Is this a device the weak-device card is for (engine/device-note.js)? `once`: and it has not seen the card yet. */
+  deviceNoteFor(once) {
+    const p = this.game.params;
+    return noteWanted({ ...deviceFacts(this.game.renderer.qualityName), seen: once && noteSeen(),
+      qa: once && (p?.has?.('qa') || !!navigator.webdriver), force: p?.get?.('devicenote') === '1' });
+  }
+
+  /**
+   * The weak-device card before the story or Explore, in the profile box: light mode, the mini games, or go on as
+   * chosen. Never blocks: on other devices, or once seen, it resolves 'go' at once. -> 'light' | 'mini' | 'go' | null
+   * (closed: back to the title).
+   */
+  deviceNote() {
+    if (!this.deviceNoteFor(true)) return Promise.resolve('go');
+    const box = $('slots'), list = $('slotList');
+    $('slotsTitle').textContent = tx('Before you start');
+    box.classList.remove('hidden');
+    box.classList.add('device-note');
+    return new Promise(resolve => {
+      const close = v => {
+        box.classList.add('hidden'); box.classList.remove('device-note'); $('slotsClose').onclick = null;
+        if (v) markNoteSeen();
+        if (v === 'light') this.lightMode();
+        resolve(v);
+      };
+      $('slotsClose').onclick = () => close(null);
+      list.innerHTML = '';
+      const intro = document.createElement('p'); intro.className = 'explore-intro'; intro.textContent = tx(DEVICE_NOTE);
+      list.appendChild(intro);
+      const choices = [
+        ['light', '☾', N_('Play in light mode'), N_('Simpler people and no shadows: smoother, and kinder to the battery.')],
+        ['mini', '◎', N_('Play mini games instead'), N_('Pick one small game from the list.')],
+        ['go', '▶', N_('Continue'), N_('Start as it is. Short breaks help.')],
+      ];
+      for (const [id, icon, name, blurb] of choices) {
+        const row = document.createElement('div'); row.className = 'slot';
+        const b = document.createElement('button'); b.className = 'pick' + (id === 'light' ? ' last' : ''); b.dataset.note = id;
+        b.innerHTML = `<span class="num">${icon}</span><span class="info"><b>${esc(tx(name))}</b><span>${esc(tx(blurb))}</span></span>`;
+        b.onclick = () => { this.audio?.click(); close(id); };
+        row.appendChild(b); list.appendChild(row);
+        if (id === 'light') setTimeout(() => b.focus(), 0);
+      }
+    });
+  }
+
+  /** Is light mode on now: the Low tier, the light people and no shadows? */
+  lightModeOn() {
+    let shadows = true;
+    try { shadows = JSON.parse(localStorage.getItem('starline-opt-shadows')) ?? true; } catch { /* default */ }
+    return this.game.renderer.qualityName === 'low' && getPeopleChoice() === 'lite' && !shadows;
+  }
+
+  /**
+   * Light mode: the Low tier, the light people (engine/people.js) and no sun shadows, saved like the Settings they
+   * are. Before the valley is built (quick start) it all applies at once; after, the people wait for a reload.
+   */
+  lightMode() {
+    const g = this.game;
+    if (g.renderer.qualityName !== 'low') g.renderer.setQuality('low');
+    else try { localStorage.setItem('starline-quality', 'low'); } catch { /* private mode */ }   // kept even if detection changes
+    const q = $('optQuality'); if (q) q.value = 'low';
+    setPeopleChoice('lite');
+    const people = $('optPeople'); if (people) { people.value = 'lite'; people.dispatchEvent(new Event('change')); }
+    if (!g.world && !g.params?.get?.('people')) g.assets.people = 'lite';
+    const shadows = $('optShadows');
+    if (shadows) { shadows.checked = false; shadows.dispatchEvent(new Event('change')); }
+    else try { localStorage.setItem('starline-opt-shadows', 'false'); } catch { /* private mode */ }
+    this.syncDeviceNote?.();
+    if (g.world && g.assets.people !== 'lite') this.toast(tx('Light mode saved — reload to apply fully'));
   }
 
   /** The profile chooser: three save slots with where each story stands. Resolves with a slot number or null. */
@@ -660,6 +742,16 @@ export class UI {
       peopleNote.after(dataNote);
       dataClear.addEventListener('click', async e => { e.preventDefault(); await clearGameData(); dataDone.classList.remove('hidden'); });
     }
+    // the weak-device card's words again, with its light-mode button (engine/device-note.js); weak devices only
+    if (this.deviceNoteFor(false)) {
+      const devNote = document.createElement('p'); devNote.className = 'note'; devNote.id = 'optDeviceNote';
+      const devLight = told(document.createElement('button'), N_('Use light mode')); devLight.type = 'button'; devLight.className = 'small'; devLight.id = 'btnLightMode';
+      const devOn = told(document.createElement('span'), N_('Light mode is on.'));
+      devNote.append(told(document.createElement('span'), DEVICE_NOTE), ' ', devLight, devOn);
+      peopleNote.after(devNote);
+      this.syncDeviceNote = () => { const on = this.lightModeOn(); devLight.classList.toggle('hidden', on); devOn.classList.toggle('hidden', !on); };
+      devLight.addEventListener('click', e => { e.preventDefault(); this.audio?.click(); this.lightMode(); });
+    }
     // the reload is offered only when the choice would load another set than the one in the valley now
     const peopleWaits = () => !g.params?.get?.('people') && peopleSetFor(people.value, q.value) !== (g.assets?.people || 'std');
     const peopleShow = () => peopleReload.classList.toggle('hidden', !peopleWaits());
@@ -703,7 +795,8 @@ export class UI {
       if (typeof g.timeOverride !== 'string') g.cycleHour = undefined;
       g.weatherOff = !weather.checked;
       if (g.world) g.applyLook?.();
-      if (g.sky?.sun) g.sky.sun.castShadow = shadows.checked;
+      const sun = g.world?.sky?.sun;             // (the sky is the world's: world/world.js)
+      if (sun) sun.castShadow = shadows.checked;
       if (g.renderer) { g.renderer.fixedScale = scale.value ? +scale.value : null; if (g.renderer.fixedScale) { g.renderer.scale = g.renderer.fixedScale; g.renderer.resize(); } }
       if (g.follow) { g.follow.fovBase = +fov.value; if (lastCam !== +camDist.value) { g.follow.zoomTarget = +camDist.value; lastCam = +camDist.value; } }
       document.documentElement.style.setProperty('--ui-scale', text.value);
@@ -718,6 +811,7 @@ export class UI {
     });
     this.applySettings = apply;
     apply();
+    if (this.syncDeviceNote) { [q, people, shadows].forEach(el => el.addEventListener('change', this.syncDeviceNote)); this.syncDeviceNote(); }
   }
 
   /** The scene tour's two doors: a button in Settings and one on the title menu. The tour itself (game/tour.js) loads on first use. */

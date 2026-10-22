@@ -36,7 +36,7 @@ To play one game by the pond, the game builds and simulates the whole valley. Th
 | # | Phase | Goal | Status | Page |
 |---|---|---|---|---|
 | 0 | Baseline and tools | Repeatable measurements in the repo; baseline recorded | done | [phase-0](play-zones/phase-0-baseline.md) |
-| 1 | Device notice and light mode | Weak devices are warned before a story and offered light mode | todo | [phase-1](play-zones/phase-1-device-notice.md) |
+| 1 | Device notice and light mode | Weak devices are warned before a story and offered light mode | done | [phase-1](play-zones/phase-1-device-notice.md) |
 | 2 | Zone builder and pilot | Builders can build one area; eggs, fireflies, tug of war run as zones | todo | [phase-2](play-zones/phase-2-zone-pilot.md) |
 | 3 | Fixed-camera games | 10 more games converted | todo | [phase-3](play-zones/phase-3-fixed-camera.md) |
 | 4 | Walking, sky and water games | 15 games converted | todo | [phase-4](play-zones/phase-4-walking-sky-water.md) |

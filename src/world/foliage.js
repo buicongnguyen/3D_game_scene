@@ -298,8 +298,14 @@ export class Foliage {
   updateShadows(focus) {
     (this.lodFocus ??= new THREE.Vector3()).copy(focus);
     // the key light (sun or moon) is the scene's shadow-casting directional light, placed by Sky.update
-    this.sun ??= this.scene.children.find(o => o.isDirectionalLight && o.castShadow) || null;
-    const dir = this.sun ? _p.subVectors(this.sun.position, this.sun.target.position).normalize() : UP;
+    this.sun ??= this.scene.children.find(o => o.isDirectionalLight && o.castShadow) || this.scene.children.find(o => o.isDirectionalLight) || null;
+    // shadows switched off (Settings → Shadows, light mode): no casters. Without a light direction the box test let
+    // every tree in the valley through, each drawn again (invisibly) by the main pass: ~1 M triangles on the Low tier
+    if (!this.sun?.castShadow) {
+      if (this.shadowFocus.x !== 1e9) { for (const s of this.sets) s.shadow?.forEach(m => { m.count = 0; show(m); }); this.shadowFocus.set(1e9, 0, 0); }
+      return;
+    }
+    const dir = _p.subVectors(this.sun.position, this.sun.target.position).normalize();
     if (focus.distanceToSquared(this.shadowFocus) < 16 && dir.dot(this.shadowDir) > 0.9995) return;
     this.shadowFocus.copy(focus);
     this.shadowDir.copy(dir);

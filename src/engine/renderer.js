@@ -7,6 +7,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { updateWorldMatrices } from './matrices.js';
 import { Governor, settingsAt, ladderFor } from './governor.js';
 import { pickQuality } from './quality-pick.js';
+import { markSlow, SLOW_LEVEL } from './device-note.js';
 
 // Quality tiers. `grass` scales instanced grass, `trees` the scatter density, `shadow` the map size.
 export const QUALITY = {
@@ -174,6 +175,8 @@ export class Renderer {
     const level = Math.max(this.governor.level, this.floor || 0);
     if (level === (this.appliedLevel || 0)) return;
     this.appliedLevel = level;
+    // far down the Low ladder by the governor's own judgement (not a cinematic's floor): remember the device as slow
+    if (this.qualityName === 'low' && this.governor.level >= SLOW_LEVEL) markSlow();
     const { q, scale } = settingsAt(QUALITY[this.qualityName], level, ladderFor(this.qualityName));
     const was = this.q;
     this.q = q;

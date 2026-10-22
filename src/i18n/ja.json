@@ -4918,5 +4918,15 @@
   "Marching": "あしぶみ",
   "Clear downloaded game data": "ダウンロードしたゲームデータを消す",
   "Cleared. The game downloads what it needs again next time.": "消しました。次回、必要なものをもう一度ダウンロードします。",
-  "The game keeps its files on this device so it starts faster.": "ゲームを速く始められるよう、ファイルをこの端末に保存します。"
+  "The game keeps its files on this device so it starts faster.": "ゲームを速く始められるよう、ファイルをこの端末に保存します。",
+  "The story and Explore build the whole valley. On this device it may run slowly and warm up the phone. Light mode helps.": "ストーリーと探検モードでは谷全体を作ります。この端末では動きが遅くなったり、スマホが熱くなったりするかもしれません。軽量モードがおすすめです。",
+  "Before you start": "はじめる前に",
+  "Play in light mode": "軽量モードで遊ぶ",
+  "Simpler people and no shadows: smoother, and kinder to the battery.": "シンプルな人物、影なし:なめらかで、バッテリーにもやさしい。",
+  "Play mini games instead": "かわりにミニゲームで遊ぶ",
+  "Pick one small game from the list.": "リストから小さなゲームをひとつ選びます。",
+  "Start as it is. Short breaks help.": "このまま始めます。ときどき休むと安心です。",
+  "Light mode saved — reload to apply fully": "軽量モードを保存しました — 再読み込みで完全に反映されます",
+  "Use light mode": "軽量モードにする",
+  "Light mode is on.": "軽量モードがオンです。"
 }

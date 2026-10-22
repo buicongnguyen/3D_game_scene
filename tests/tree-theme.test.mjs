@@ -226,6 +226,9 @@ test('new tree buffers populate with a stationary camera after a theme change', 
   const camera = new THREE.PerspectiveCamera(70, 1, 0.1, 1000);
   camera.position.set(4, 8, 35); camera.lookAt(4, 5, 10);
   const focus = new THREE.Vector3(4, 2, 10);
+  // the shadow casters follow the scene's shadow-casting sun (with shadows off there are none)
+  const sun = new THREE.DirectionalLight(); sun.castShadow = true; sun.position.set(34, 60, 30); sun.target.position.copy(focus);
+  foliage.scene.add(sun, sun.target);
   foliage.updateShadows(focus); foliage.update(camera);
   assert.ok(foliage.treeSets.some(s => s.near[0].count > 0));
   foliage.setTheme(true);
@@ -235,6 +238,13 @@ test('new tree buffers populate with a stationary camera after a theme change', 
     assert.ok(set.near[0].count > 0);
     assert.ok(set.shadow[0].count > 0);
   }
+  // shadows switched off (Settings, light mode): the casters empty out instead of taking in every tree
+  sun.castShadow = false;
+  foliage.updateShadows(focus);
+  assert.ok(foliage.treeSets.every(s => s.shadow.every(m => m.count === 0)));
+  sun.castShadow = true;
+  foliage.updateShadows(focus);
+  assert.ok(foliage.treeSets.every(s => s.shadow[0].count > 0), 'back on: the casters come back');
   foliage.dispose();
 });
 
