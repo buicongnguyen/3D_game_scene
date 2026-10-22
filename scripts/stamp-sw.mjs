@@ -12,7 +12,7 @@ const walk = (dir, base = '') => existsSync(dir) ? readdirSync(dir).flatMap(f =>
 
 export function stampTable(dist) {
   const files = {};
-  for (const dir of ['models', 'icons', 'portraits']) for (const r of walk(path.join(dist, dir), dir)) files[r] = sha(readFileSync(path.join(dist, r)));
+  for (const dir of ['models', 'icons', 'portraits', 'zones']) for (const r of walk(path.join(dist, dir), dir)) files[r] = sha(readFileSync(path.join(dist, r)));
   const assets = walk(path.join(dist, 'assets'), 'assets').sort();
   const index = readFileSync(path.join(dist, 'index.html'));
   const build = sha(JSON.stringify([sha(index, 40), files, assets]));

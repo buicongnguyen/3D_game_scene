@@ -185,6 +185,7 @@ export class Tricks {
   }
 
   async play(id) {
+    performance.mark('starline:trick-play');
     if (this.round || this.d.busy || this.d.minigame) return null;
     const t = TRICK[id], d = this.d, g = this.g;
     if (!t) return null;
@@ -467,6 +468,7 @@ export class Tricks {
     h.querySelector('.n').textContent = tx(t.name);
     this.setHud(0, ctx.roundTime, t);
     h.classList.remove('hidden');
+    performance.mark('starline:round');
     document.body.classList.add('trick-round');
     this.g.roundLight?.hold('trick');          // lighter for as long as the trick is played (game/round-light.js); let go in play()
     showHowTo(`trick:${t.id}`, { input: this.g.input, touch: this.d.ui.touch, first: ctx.first });

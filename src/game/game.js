@@ -45,9 +45,13 @@ export class Game {
     await nextFrame();
     this.world = new World(this.scene, this.renderer.renderer, this.renderer.q, this.zone);
     onProgress(0.12, 'Unpacking Blender models');
-    const zone = this.zone, Z = zone ? await import('../world/zone-build.js').then(async m => ({ ...m, ...await import('../world/zone.js') })) : null;
+    // a play zone (world/zone.js): its far view is a baked picture when there is one (world/zone-backdrop.js), and then
+    // nothing past the zone's edge is built; without one a margin past the edge is built and the haze closes in
+    const zone = this.zone, Z = zone ? Object.assign({}, ...await Promise.all([import('../world/zone-build.js'), import('../world/zone.js'), import('../world/zone-backdrop.js')])) : null;
+    const backdrop = Z?.hasBackdrop(zone.id) ? Z.loadBackdrop(zone.id, { hd: this.renderer.qualityName !== 'low' }) : null;   // (fetched while the models are)
+    if (zone) zone.margin = backdrop ? 0 : Z.VIEW_MARGIN;
     const boot = bootModels({ tropical: getTropicalTrees() });
-    await this.assets.load(Z ? Z.zoneModels(zone, boot) : boot, p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
+    await this.assets.load(Z ? Z.zoneModels(zone, boot, zone.margin) : boot, p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
     await this.assets.finalize();
     onProgress(0.84, 'Planting the forests');
     await nextFrame();
@@ -58,7 +62,7 @@ export class Game {
     this.paddies = new Paddies(this.scene, this.assets, this.world);
     const isFree = (x, z) => this.world.splat.sample(x, z, 0) < 0.12 && this.world.splat.sample(x, z, 3) > 0.1 && this.world.grid.slopeAt(x, z) < 36;
     this.placed = scatter((x, z) => this.world.heightAt(x, z), isFree, this.renderer.q.trees);
-    if (Z) this.placed = Z.zonePlaced(this.placed, zone);
+    if (Z) this.placed = Z.zonePlaced(this.placed, zone, zone.margin, !backdrop);
     for (const t of this.placed.trees) if (!t.far) this.world.splat.paintDisc(t.x, t.z, 2.4 * t.s, 2, 0.75, 2);
     this.foliage = new Foliage(this.scene, this.assets, this.placed, this.renderer.q);
     this.grass = new Grass(this.scene, this.world.heightTex, this.world.splat, this.world.terrain.noise, this.renderer.q);
@@ -73,7 +77,11 @@ export class Game {
     this.interiors = new Interiors(this);
     this.riverbed = new Riverbed(this.scene, this.assets, this.world);
     // a zone: what stands well outside it leaves the scene (world/zone-build.js)
-    if (Z) for (const root of [this.structures.group, this.railway.group, this.paddies.group, this.riverbed.group]) Z.pruneOutside(root, zone);
+    if (Z) for (const root of [this.structures.group, this.railway.group, this.paddies.group, this.riverbed.group]) Z.pruneOutside(root, zone, zone.margin);
+    // (and Mika starts in it: from her default spot the rooms by the cottage door would be fetched in the first frames)
+    if (zone) { this.player.teleport(zone.x, zone.z); this.zoneWall = Z.wallStep; }
+    const bd = backdrop && await backdrop;
+    if (bd) { Z.applyBackdrop(this, zone, bd); this.world.sky.zoneFog = undefined; this.backdrop = bd; }
     trimModels(this.assets, TRIM_MODELS);   // (after the valley is built: everything that measures a model has done so)
     this.setSeason(this.time.season);
     onProgress(1, 'Ready');
@@ -179,6 +187,11 @@ export class Game {
       this.kite?.update(dt); // the kite moves before Mika reads its handle
       this.player.aiming = !!this.director?.canAim?.() && this.input.aiming;
       this.player.update(dt, this.input, this.follow.yaw);
+      // a play zone's soft wall (world/zone.js): eased back near the edge, with a word now and then
+      if (this.zoneWall && !this.player.mounted && !this.interiors?.active && this.zoneWall(this.zone, this.player.pos, this.player.vel, dt)) {
+        const now = performance.now();
+        if (now - (this.wallToldAt || -1e9) > 9000) { this.wallToldAt = now; this.ui?.toast(tx('The game is this way')); }
+      }
       this.follow.update(dt, this.player, this.input, this.player.aiming);
       for (const s of this.systems) s.update(dt, this);
       const L = this.world.update(dt, this.viewFocus || this.player.pos);

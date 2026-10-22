@@ -172,7 +172,8 @@ export class Sky {
     this.hemi.groundColor.setRGB(0.36, 0.34, 0.22).multiplyScalar(1 - L.night * 0.7);
     this.hemi.intensity = L.hemi * 1.25;
     this.scene.fog.color.copy(toLinear(L.fog));
-    this.scene.fog.density = 0.0012 + L.night * 0.0006;
+    // (a play zone's haze closes in at its edge, where the valley is only suggested: world/zone.js)
+    this.scene.fog.density = this.zoneFog ?? 0.0012 + L.night * 0.0006;
     this.scene.environmentIntensity = L.env;
 
     // Regenerate the environment map as the light changes. Small, frequent steps (5 game minutes, at most

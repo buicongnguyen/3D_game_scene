@@ -18,7 +18,8 @@ const NO_SOLID = new Set(['platform', 'torii']);   // walk-over / walk-through m
 
 let defaultGrid = null;
 /** The shared height grid (built once on demand; the runtime may pass its own object with heightAt/slopeAt). */
-export function sharedGrid() { return defaultGrid || (defaultGrid = new HeightGrid(2)); }
+// (lazy: the same numbers as a baked step-2 grid, computed only where asked: baking all of it took ~1.7 s on a phone)
+export function sharedGrid() { return defaultGrid || (defaultGrid = HeightGrid.lazy(2)); }
 
 // ------------------------------------------------------------------ placement rules (same as tests/barks.test.mjs)
 /** True when (x, z) lies inside a building's wall footprint grown by margin m (platforms excluded). */

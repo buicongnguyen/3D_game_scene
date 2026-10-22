@@ -28,6 +28,11 @@ export function attachQA(game, director, ui) {
     lanternTargets() { return [...d.targets.values()].filter(t => t.id.startsWith('lantern') && t.when()).map(t => ({ id: t.id, pos: v(t.pos), d: t.pos.distanceTo(game.player.pos) })); },
     trace() { return d.trace || []; },
     errors: [],
+    /** The play zone this page built (world/zone.js), its far view, and any placeholder box left inside it (should be none). */
+    zoneCheck: () => import('../world/zone-build.js').then(m => ({ zone: game.zone ? { ...game.zone } : null, backdrop: !!game.backdrop,
+      placeholders: game.zone ? m.placeholdersInside(game.scene, game.zone) : [] })),
+    /** A play zone's far view, rendered from the whole valley (scripts/bake-zone-backdrops.mjs). Loaded only when asked. */
+    bakeBackdrop: opts => import('./backdrop-bake.js').then(m => m.bakeBackdrop(game, opts)),
   };
   window.__STARLINE_QA__ = qa;
   return qa;

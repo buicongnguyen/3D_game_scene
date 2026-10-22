@@ -3,6 +3,9 @@ import { Animator } from './animator.js';
 import { placeholder } from '../engine/assets.js';
 import { mergeSkinnedParts } from '../engine/skin-merge.js';
 import { tintLite } from '../engine/people.js';
+import { outside } from '../world/zone-shape.js';
+
+const LAZY_MARGIN = 20;      // metres past a zone's edge where people and animals still get their body at once
 
 const SHIRTS = ['#e0567a', '#3a8fd8', '#f2b53a', '#5fae3e', '#8a5ad8', '#e2702a', '#1fa5a0'];
 const TROUSERS = ['#2d3a5a', '#5a3a2a', '#3a4a3a', '#6a6a7a', '#2a2a3a'];
@@ -19,27 +22,16 @@ export class NPC {
     this.id = id;
     this.world = world;
     this.name = name || id;
-    const m = assets.clone(model);
     // children are never grey: the shared villager palette gave Nao, Sumi and two Kawabe kids an old woman's white hair
     if (tint && model === 'villager-kid') tint = NPC.kidTint(tint, id);
-    this.model = m || placeholder(model, [0.7, 1.6, 0.5], '#6b7aa8');
-    this.anim = m ? new Animator(m) : null;
-    // a light person is one mesh already: the tint goes into its palette, by the same part names
-    const lite = m ? tintLite(m, tint) : false;
-    this.model.traverse(o => {
-      if (!o.isMesh) return;
-      o.castShadow = true; o.receiveShadow = true;
-      if (tint && !lite) {
-        const mats = [o.material].flat().map(mat => {
-          const t = tint[mat.name];
-          if (!t) return mat;
-          const c = mat.clone(); c.color.set(t); return c;
-        });
-        o.material = Array.isArray(o.material) ? mats : mats[0];
-      }
-    });
-    // lighter tiers draw a character as one mesh instead of eight (after the tint: the colours go into its palette)
-    if (m && !lite && world?.quality?.mergeChars) { try { mergeSkinnedParts(this.model, model); } catch (e) { console.warn(`character merge skipped for ${model}`, e); } }
+    // a play zone (world/zone.js): someone who starts well outside it gets a body only when they come into view
+    // (setDetail), so the dozens of villagers and animals elsewhere in the valley cost no clone, skin or draw
+    // (and anyone whose model the zone did not load up front: it is fetched then)
+    if (world?.zone && (outside(world.zone, x, z) > LAZY_MARGIN || !assets.has(model))) {
+      this.pending = { assets, model, tint };
+      this.model = new THREE.Group();
+      this.anim = null;
+    } else this.dress(assets, model, tint);
     this.root = new THREE.Group();
     this.root.name = `npc:${id}`;
     this.root.add(this.model);
@@ -57,6 +49,51 @@ export class NPC {
     this.far = false; this.animEvery = 1; this.animAcc = 0; this.animTick = 0; this.shadow = true;
     this.place(x, z, facing);
     this.anim?.play(this.idleClip);
+  }
+
+  /** The body: the model, its clips, the tint (and on lighter tiers one merged mesh). */
+  dress(assets, model, tint) {
+    const m = assets.clone(model);
+    this.model = m || placeholder(model, [0.7, 1.6, 0.5], '#6b7aa8');
+    this.anim = m ? new Animator(m) : null;
+    // a light person is one mesh already: the tint goes into its palette, by the same part names
+    const lite = m ? tintLite(m, tint) : false;
+    this.model.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true; o.receiveShadow = true;
+      if (tint && !lite) {
+        const mats = [o.material].flat().map(mat => {
+          const t = tint[mat.name];
+          if (!t) return mat;
+          const c = mat.clone(); c.color.set(t); return c;
+        });
+        o.material = Array.isArray(o.material) ? mats : mats[0];
+      }
+    });
+    // lighter tiers draw a character as one mesh instead of eight (after the tint: the colours go into its palette)
+    if (m && !lite && this.world?.quality?.mergeChars) { try { mergeSkinnedParts(this.model, model); } catch (e) { console.warn(`character merge skipped for ${model}`, e); } }
+  }
+
+  /** A zone's late body (see the constructor): made now, in the pose and clip the person is in. */
+  hydrate() {
+    const p = this.pending;
+    if (!p || p.loading) return;
+    if (!p.assets.has(p.model) && !p.assets.missing.has(p.model)) {
+      // fetch it first; meanwhile they stay as they are (nobody to see yet)
+      p.loading = true;
+      p.assets.loadLater([p.model]).catch(() => {}).then(() => { p.loading = false; if (this.pending === p && !this.gone) this.hydrate(); });
+      return;
+    }
+    this.pending = null;
+    const old = this.model;
+    this.dress(p.assets, p.model, p.tint);
+    old.removeFromParent();
+    this.root.add(this.model);
+    if (!this.shadow) this.model.traverse(o => { if (o.isMesh) o.castShadow = false; });
+    if (this.path?.length) {
+      const run = (this.walkClip ? this.walkClip === 'Run' : this.speed > 3) && this.anim?.has('Run');
+      this.anim?.play(run ? 'Run' : 'Walk', { speed: run ? this.speed / RUN_SPEED : this.speed / 1.6 });
+    } else this.anim?.play(this.loopGesture || this.idleClip);
   }
 
   static villagerTint(seed) {
@@ -90,6 +127,7 @@ export class NPC {
   /** Detail for this distance: tier 0 full, 1 = animate every 3rd frame and no shadow, 2 = not drawn. */
   setDetail(tier, shadow) {
     const far = tier >= 2;
+    if (!far && this.pending) this.hydrate();
     if (far !== this.far) { this.far = far; this.root.visible = this.visible && !far; }
     this.animEvery = tier === 1 ? 3 : 1;
     if (shadow !== this.shadow) { this.shadow = shadow; this.model.traverse(o => { if (o.isMesh) o.castShadow = shadow; }); }

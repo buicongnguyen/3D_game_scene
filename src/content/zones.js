@@ -3,21 +3,24 @@
 // Grows phase by phase (docs/play-zones/): the pilot first.
 import { buildCatalogue } from './minigames.js';
 
-/** Zone radius (metres) for each converted game: what its camera sees and where Mika can walk, plus a margin. */
-export const ZONE_RADIUS = {
-  'trick:eggs': 50,        // phase 2 pilot: a fixed view of the henhouse yard
-  'trick:firefly': 75,     // phase 2 pilot: walking the meadow at night
-  'yard:tug': 50,          // phase 2 pilot: the Takamori green with the kids
+/**
+ * The converted games. r: zone radius (metres): what the camera sees and where Mika can walk, plus a margin.
+ * models: what the game clones at once (not through a person or an animal, whose models a zone fetches on demand).
+ */
+export const ZONES = {
+  'trick:eggs': { r: 50, models: ['chicken'] },     // phase 2 pilot: a fixed view of the henhouse yard
+  'trick:firefly': { r: 75, models: [] },           // phase 2 pilot: walking the meadow at night (its kit loads itself)
+  'yard:tug': { r: 50, models: [] },                // phase 2 pilot: the Takamori green with the kids
 };
 
 let catalogue = null;
-/** The zone a game plays in from the title: { x, z, r, id } around its place, or null (it builds the whole valley). */
+/** The zone a game plays in from the title: { x, z, r, id, models } around its place, or null (the whole valley). */
 export function zoneFor(id) {
-  const r = ZONE_RADIUS[id];
-  if (!r) return null;
+  const Z = ZONES[id];
+  if (!Z) return null;
   catalogue ??= buildCatalogue();
   const e = catalogue.find(c => c.id === id);
-  return e ? { x: e.place.x, z: e.place.z, r, id } : null;
+  return e ? { x: e.place.x, z: e.place.z, r: Z.r, id, models: Z.models } : null;
 }
 
 /** Can game `id` be played inside `zone` (the one already built)? Its own place must sit well inside it. */

@@ -114,6 +114,18 @@ export class HeightGrid {
     }
   }
 
+  /**
+   * The same grid, each point computed the first time it is read: exactly the values of `new HeightGrid(step,
+   * bounds, fn)`, for a caller that only ever looks at a few places (roads.js checks a game's standing spot).
+   */
+  static lazy(step = 2, bounds = TERRAIN, fn = rawHeight) {
+    const g = Object.create(LazyHeightGrid.prototype);
+    Object.assign(g, { step, x0: bounds.minX, z0: bounds.minZ, fn,
+      nx: Math.floor((bounds.maxX - bounds.minX) / step) + 1, nz: Math.floor((bounds.maxZ - bounds.minZ) / step) + 1 });
+    g.raw = new Float32Array(g.nx * g.nz).fill(NaN);
+    return g;
+  }
+
   static fromArray(meta, array) {
     const g = Object.create(HeightGrid.prototype);
     Object.assign(g, meta);
@@ -171,5 +183,22 @@ export class HeightGrid {
   slopeAt(x, z) {
     const n = this.normalAt(x, z);
     return Math.acos(clamp(n.ny, -1, 1)) * 180 / Math.PI;
+  }
+}
+
+/** HeightGrid.lazy(): points baked on first read (NaN = not yet). Reading `h` bakes the whole grid. */
+// (made by HeightGrid.lazy(), never with `new`)
+class LazyHeightGrid extends HeightGrid {
+  get h() {
+    for (let j = 0; j < this.nz; j++) for (let i = 0; i < this.nx; i++) this.get(i, j);
+    return this.raw;
+  }
+  get(i, j) {
+    i = i < 0 ? 0 : i >= this.nx ? this.nx - 1 : i;
+    j = j < 0 ? 0 : j >= this.nz ? this.nz - 1 : j;
+    const k = j * this.nx + i;
+    let v = this.raw[k];
+    if (v !== v) { this.raw[k] = this.fn(this.x0 + i * this.step, this.z0 + j * this.step, this.step); v = this.raw[k]; }   // (as stored: float32)
+    return v;
   }
 }

@@ -41,4 +41,19 @@ for (const n of profile.nodes) {
 const top = (m, n) => [...m].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `  ${String(Math.round(v)).padStart(6)} ms  ${k}`).join('\n');
 console.log('self time by file:\n' + top(byFile, 15));
 console.log('self time by function:\n' + top(byFn, 30));
+// --callers=fnA,fnB: self time of those functions split by their caller chain (three frames up)
+if (args.callers) {
+  const parent = new Map(); for (const n of profile.nodes) for (const c of n.children || []) parent.set(c, n);
+  for (const want of args.callers.split(',')) {
+    const m = new Map();
+    for (const n of profile.nodes) {
+      if (n.callFrame.functionName !== want) continue;
+      const ms = dt.get(n.id) || 0; if (!ms) continue;
+      const chain = []; let p = parent.get(n.id);
+      while (p && chain.length < 3) { if (p.callFrame.functionName !== want) chain.push(`${p.callFrame.functionName || '(anon)'}:${p.callFrame.lineNumber + 1}`); p = parent.get(p.id); }
+      const k = chain.join(' < '); m.set(k, (m.get(k) || 0) + ms);
+    }
+    console.log(`callers of ${want}:\n` + top(m, 8));
+  }
+}
 await b.close();

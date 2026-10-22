@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { HeightGrid, rawHeight } from './heightfield.js';
 import { TERRAIN } from './layout.js';
-import { zoneHeightFn } from './zone.js';
+import { zoneHeightFn, zoneFog } from './zone.js';
 import { Terrain, Splat } from './terrain.js';
 import { Water, makeHeightTexture } from './water.js';
 import { Sky } from './sky.js';
@@ -48,6 +48,7 @@ export class World {
     const visible = this.grid.visibleHeights();
     this.heightTex = makeHeightTexture({ ...this.grid, h: visible });
     this.sky = new Sky(scene, renderer, quality);
+    if (zone) this.sky.zoneFog = zoneFog(zone);
     this.terrain = new Terrain(scene, this.grid, this.splat);
     shadeFromHillside(this.terrain, this.grid);
     this.water = new Water(scene, this.grid, this.heightTex, this.terrain.noise);

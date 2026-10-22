@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { river, riverHalfWidth, WATER_Y } from './layout.js';
+import { ZONE_FADE, ZONE_FADE_PARS } from './zone-fade.js';
 
 /** Terrain height as a half-float texture (shared by water depth and grass placement). */
 export function makeHeightTexture(grid) {
@@ -39,8 +40,10 @@ const WATER_FS = /* glsl */`
   varying vec3 vWPos;
   varying vec2 vFlow;
   #include <fog_pars_fragment>
+  ${ZONE_FADE_PARS}
   float ground(vec2 xz) { return texture2D(uHeight, (xz - uHX.xy) * uHX.zw).r; }
   void main() {
+    zoneFade(vWPos);
     float depth = vWPos.y - ground(vWPos.xz);
     if (depth < -0.05) discard;
     if (cameraPosition.y < vWPos.y) {
@@ -152,6 +155,7 @@ export class Water {
     }]);
     this.uniforms.uHeight.value = heightTex;
     this.uniforms.uNoise.value = noiseTex;
+    this.uniforms.uZoneFade = ZONE_FADE;       // a play zone's edge (world/zone-fade.js); shared, so set after the merge copies
     this.material = new THREE.ShaderMaterial({
       uniforms: this.uniforms, vertexShader: WATER_VS, fragmentShader: WATER_FS,
       transparent: true, depthWrite: false, fog: true, side: THREE.DoubleSide,

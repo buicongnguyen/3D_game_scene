@@ -77,6 +77,7 @@ export class MinigameMenu {
   // ------------------------------------------------------------------ the launch
   /** The title's launch: called by Director.begin once the quest and the world are ready. */
   async launchFirst(id) {
+    performance.mark('starline:launch');
     const e = this.entry(id);
     if (!e) { this.ui.fade(false, 300); return false; }
     this.session = { story: false };

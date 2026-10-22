@@ -18203,6 +18203,12 @@
   ]
  },
  {
+  "s": "The game is this way",
+  "ctx": [
+   "UI (src/game/game.js)"
+  ]
+ },
+ {
   "s": "Shaping the valley",
   "ctx": [
    "loading screen"

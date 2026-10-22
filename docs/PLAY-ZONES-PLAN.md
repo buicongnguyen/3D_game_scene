@@ -37,7 +37,7 @@ To play one game by the pond, the game builds and simulates the whole valley. Th
 |---|---|---|---|---|
 | 0 | Baseline and tools | Repeatable measurements in the repo; baseline recorded | done | [phase-0](play-zones/phase-0-baseline.md) |
 | 1 | Device notice and light mode | Weak devices are warned before a story and offered light mode | done | [phase-1](play-zones/phase-1-device-notice.md) |
-| 2 | Zone builder and pilot | Builders can build one area; eggs, fireflies, tug of war run as zones | todo | [phase-2](play-zones/phase-2-zone-pilot.md) |
+| 2 | Zone builder and pilot | Builders can build one area; eggs, fireflies, tug of war run as zones | review | [phase-2](play-zones/phase-2-zone-pilot.md) |
 | 3 | Fixed-camera games | 10 more games converted | todo | [phase-3](play-zones/phase-3-fixed-camera.md) |
 | 4 | Walking, sky and water games | 15 games converted | todo | [phase-4](play-zones/phase-4-walking-sky-water.md) |
 | 5 | Long-view games and wrap-up | Kite, paper planes, cow race; docs, cleanup, final measurement | todo | [phase-5](play-zones/phase-5-long-view.md) |
@@ -55,9 +55,9 @@ Places from `src/content/minigames.js` (`buildCatalogue`). The map spans roughly
 | trick:crops | −86, −8 | card board | already quick | done |
 | yard:marbles | −26, 20 | fixed camera | already quick | done |
 | yard:oanquan | −26, 20 | fixed camera | already quick | done |
-| trick:eggs | −50, 148 | fixed camera | 2 (pilot) | todo |
-| trick:firefly | −66, 10 | walking, night | 2 (pilot) | todo |
-| yard:tug | 110, −16 | fixed camera, kids | 2 (pilot) | todo |
+| trick:eggs | −50, 148 | fixed camera | 2 (pilot) | review |
+| trick:firefly | −66, 10 | walking, night | 2 (pilot) | review |
+| yard:tug | 110, −16 | fixed camera, kids | 2 (pilot) | review |
 | yard:rope | −26, 20 | fixed camera, kids | 3 | todo |
 | yard:sack | 110, −16 | follow camera, kids | 3 | todo |
 | yard:footnet | −26, 20 | court, kids | 3 | todo |

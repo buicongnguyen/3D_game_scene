@@ -637,6 +637,7 @@ export class Director {
 
   // ------------------------------------------------------------------ game start / load
   async begin(saved) {
+    performance.mark('starline:begin');
     this.ground.reset();
     // Hay and unfinished pickup pictures are session props, never part of a loaded story save.
     this.cows.hay = 0; this.cows.hayBundle?.removeFromParent(); this.game.player.carry?.release('cow-hay');
@@ -657,6 +658,8 @@ export class Director {
     if (STEP_INDEX[st.step] > STEP_INDEX['c3.lamp'] && !st.inv.acorn && !st.flags.treePlanted && !st.flags.acornGiven) { st.inv.acorn = 1; st.flags.acornGiven = true; }
     if (resumed && st.step === 'e.free' && this.q.has('allStars')) this.event({ type: 'cutscene', id: 'starfall' });
     else if (resumed && st.chapter === 5 && !st.flags.huntAsked && !st.flags.hunt) this.run([{ cutscene: 'huntAsk' }]);
+    // a play zone (world/zone.js): the set pieces placed above that stand outside it leave the scene before the game
+    if (this.game.zone) { try { const { pruneScene } = await import('../world/zone-build.js'); this.game.zonePruned = pruneScene(this.game.scene, this.game.zone, this.game.zone.margin); } catch (e) { console.warn('[zone] prune', e); } }
     const launch = this.ui.pendingLaunch;               // chosen on the title's Mini games menu: start that game now
     this.ui.pendingLaunch = null;
     if (launch) await this.minigameMenu.launchFirst(launch.id);
@@ -675,7 +678,8 @@ export class Director {
     // The logical season and hour live in the quest state (the engine sets them before any fade finishes);
     // the position is the last safe footing, never mid-air.
     const I = this.game.interiors;
-    const s = I?.active ? I.doors.find(d => d.id === I.active).outside : p.lastSafe;
+    // (a play zone writes the records only: the Explore save keeps the place it had, world/zone.js)
+    const s = this.game.zone && this.game.zoneHome ? this.game.zoneHome : I?.active ? I.doors.find(d => d.id === I.active).outside : p.lastSafe;
     const data = { v: 1, quest: this.quest.save(), player: { x: s.x, y: s.y, z: s.z, facing: p.facing }, at: Date.now() };
     try {
       localStorage.setItem(Director.key(this.slot), JSON.stringify(data));
@@ -1183,7 +1187,8 @@ export class Director {
       if (q.count('bells') < 5) W.spawnCrows(S.nodes.scarecrows);
     } else if (group === 'peaches') {
       const trees = this.game.placed.trees.filter(t => t.orchard);
-      for (let i = 0; i < 7; i++) {
+      // (a play zone away from the orchard has none of its trees: no peaches to pick there)
+      for (let i = 0; i < 7 && trees.length; i++) {
         const t = trees[(i * 5 + 3) % trees.length];
         const id = `peach${i}`;
         if (q.has(id)) continue;

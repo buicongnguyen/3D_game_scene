@@ -118,7 +118,9 @@ const loadValley = () => (valleyP ??= (async () => {
   ui.applySettings?.(); // the world exists now: apply saved view settings (season, time, shadows, FOV…)
   game.renderer.onResize = (w, h) => { game.camera.aspect = w / h; game.camera.updateProjectionMatrix(); game.fx.resize(game.renderer.pixelRatio); };
   game.fx.resize(game.renderer.pixelRatio); // the first pass ran before the FX existed
+  performance.mark('starline:valley-built');   // (the load timeline: tests/perf/valley-breakdown.mjs reads the starline: marks)
   director = new V.Director(game, ui, audio, game.fx);
+  performance.mark('starline:director');
   game.director = director;
   game.celebrate = new V.Celebrate(game); // chapter celebrations and the valley's lasting decorations
   game.systems.push(director);
@@ -145,6 +147,10 @@ function titleLook() {
 // Nothing below may be a top-level await: in the built site every chunk imported on demand (the valley, the quick
 // runtime, the title video, the scene tour) depends on this module and would hang until the await is done.
 (async () => {
+  // the play zones (content/zones.js): which mini games build only their corner of the valley. ?zones=off: none do.
+  // ?zone=<game id>: build that game's zone whatever starts (with ?start=explore: walk about in it, tests/perf/zone-look.mjs)
+  const zones = params.get('zones') !== 'off' ? await import('./content/zones.js').catch(() => null) : null;
+  if (!game.zone && params.get('zone')) game.zone = zones?.zoneFor(params.get('zone')) || null;
   if (!quickBoot) await loadValley();
 
   // Look-dev viewer mode (screenshots): ?view=x,y,z,tx,ty,tz
@@ -166,7 +172,7 @@ function titleLook() {
   if (valleyReady) { titleLook(); ui.hideLoading(); game.start(); }
   else {
     // quick start: a filmed still of the valley behind the menu; no 3D yet
-    still = new TitleStill();
+    still = params.get('play') ? null : new TitleStill();     // (?play= goes straight into a game: no title to dress)
     ui.hideLoading();
     // the title's Scene tour shows the valley: it is loaded under the title, which then is the usual live one
     game.needValley = () => (underTitle ??= (async () => {
@@ -189,7 +195,6 @@ function titleLook() {
   const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
   let picked = null;
   // ?play=<id>: straight into a mini game that plays in a zone (a zone session reloads to this to change zones)
-  const zones = params.get('zones') !== 'off' ? await import('./content/zones.js').catch(() => null) : null;
   const playId = params.get('play');
   if (playId && zones?.zoneFor(playId)) {
     ui.pendingLaunch = { id: playId, quick: false };
@@ -240,6 +245,8 @@ function titleLook() {
     game.seasonOverride = picked.season || null;
     game.timeOverride = picked.hour ?? null;
     game.cycleHour = undefined;
+    // a play zone: Mika starts in it (nothing elsewhere wakes up for her), and the Explore save keeps its own place
+    if (game.zone) { game.zoneHome = saved.player; saved = { ...saved, player: { x: game.zone.x, z: game.zone.z, facing: 0 } }; }
   }
   unlockAudio();
   game.beforeUpdate = null;

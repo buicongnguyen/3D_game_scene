@@ -76,7 +76,8 @@ export class Yard {
   /** The yard Mika is nearest to (within `r`), or null. */
   nearest(r = 60) { const p = this.g.player.pos, Y = yardAt(p.x, p.z, r); return Y ? this.ctl[Y.id] : null; }
   mikaBody() { const p = this.g.player; return (this._mb ??= { model: p.model, root: p.root, anim: p.anim, pivot: p.pivot }); }
-  kidBody(it) { return (it._yb ??= { model: it.n.model, root: it.n.root, anim: it.n.anim, get far() { return it.n.far; } }); }
+  // (read through: in a play zone a kid's body is made when they come into view, world/zone.js)
+  kidBody(it) { return (it._yb ??= { get model() { return it.n.model; }, root: it.n.root, get anim() { return it.n.anim; }, get far() { return it.n.far; } }); }
   ground(x, z) { return this.g.world.heightAt(x, z); }
 
   // ------------------------------------------------------------------ the few shared things the games draw

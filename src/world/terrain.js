@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PATHS, WORLD } from './layout.js';
 import { PALETTES } from './seasons.js';
 import { makeNoiseTexture } from '../engine/textures.js';
+import { ZONE_FADE } from './zone-fade.js';
 
 const srgb = h => new THREE.Color(h);
 
@@ -116,6 +117,10 @@ export class Terrain {
       uDirt: { value: new THREE.Color() }, uSand: { value: new THREE.Color() }, uRock: { value: new THREE.Color() },
       uForest: { value: new THREE.Color() }, uSnow: { value: 0 },
       uMountain: { value: new THREE.Color('#3f6b4a') },
+      // a play zone (world/zone-backdrop.js): past its edge the ground wears the baked view of the whole valley, looked up
+      // from the point it was taken from, so the hills keep their shape and get the far valley's trees and houses
+      uZoneFade: ZONE_FADE,
+      uBackdrop: { value: null }, uBdPos: { value: new THREE.Vector3() }, uBdScale: { value: 1 }, uBdOn: { value: 0 },
     };
     const mat = new THREE.MeshStandardMaterial({ roughness: 0.94, metalness: 0, envMapIntensity: 0.35 });
     mat.onBeforeCompile = sh => {
@@ -127,7 +132,13 @@ export class Terrain {
         .replace('#include <common>', `#include <common>
           varying vec3 vWPos; varying vec3 vWNormal;
           uniform sampler2D uSplat, uNoise; uniform vec2 uSplatOrigin, uSplatSize;
-          uniform vec3 uGrassA, uGrassB, uGrassC, uDirt, uSand, uRock, uForest, uMountain; uniform float uSnow;`)
+          uniform vec3 uGrassA, uGrassB, uGrassC, uDirt, uSand, uRock, uForest, uMountain; uniform float uSnow;
+          uniform vec4 uZoneFade; uniform samplerCube uBackdrop; uniform vec3 uBdPos; uniform float uBdScale, uBdOn;`)
+        .replace('#include <opaque_fragment>', `#include <opaque_fragment>
+          if (uBdOn > 0.5) {
+            float zk = smoothstep(uZoneFade.z, uZoneFade.w, distance(vWPos.xz, uZoneFade.xy));
+            if (zk > 0.0) gl_FragColor.rgb = mix(gl_FragColor.rgb, textureCube(uBackdrop, normalize(vWPos - uBdPos)).rgb * uBdScale, zk);
+          }`)
         .replace('#include <map_fragment>', `
           vec2 suv = (vWPos.xz - uSplatOrigin) / uSplatSize;
           float inside = step(0.0, suv.x) * step(suv.x, 1.0) * step(0.0, suv.y) * step(suv.y, 1.0);

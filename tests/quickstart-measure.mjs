@@ -14,11 +14,14 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { exploreState } from '../src/game/fastforward.js';
 
-const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, '').split('=')));
+// (--query=a=1&b=2 adds to the page's address; --runs=N measures each game N times and prints the median too)
+const args = Object.fromEntries(process.argv.slice(2).map(a => { const s = a.replace(/^--/, ''), i = s.indexOf('='); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; }));
 const url = process.env.GAME_URL || 'http://127.0.0.1:5898/';
-const GAMES = (args.games || 'trick:lifecycle,yard:marbles').split(',');
+const RUNS = Math.max(1, +(args.runs || 1));
+const GAMES = (args.games || 'trick:lifecycle,yard:marbles').split(',').flatMap(g => Array(RUNS).fill(g));
 const THROTTLE = +(args.throttle || 4);
 const QUICK = args.quick || '';                    // '' = the build's own default for a QA run
+const EXTRA = args.query ? `&${args.query}` : '';
 const OUT = args.out || '.tools/quick/measure.json';
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 
@@ -40,7 +43,8 @@ const PLAYABLE = (id, shown = false) => {
   if (id.startsWith('trick:')) return !!document.querySelector('#lifeBoard .pick .lc-card')
     || (!!document.querySelector('#trickHud:not(.hidden)') && !document.querySelector('#trickCard:not(.hidden)') && !document.querySelector('#lvlPick:not(.hidden)'));
   const hud = document.getElementById('yardHud');
-  return !!hud && !hud.classList.contains('hidden') && (shown ? !!d?.yard?.round?.sim : ['aim', 'think'].includes(d?.yard?.round?.sim?.state));
+  // (marbles and the board games wait for an aim or a move; tug of war is 'ready' for the first pull)
+  return !!hud && !hud.classList.contains('hidden') && (shown ? !!d?.yard?.round?.sim : ['aim', 'think', 'ready', 'pull'].includes(d?.yard?.round?.sim?.state));
 };
 
 const browser = await chromium.launch({ headless: true, args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio'] });
@@ -68,7 +72,7 @@ for (const id of GAMES) {
   });
 
   const t0 = Date.now();
-  await page.goto(`${url}?mute&qa=1&quality=low${QUICK ? `&quick=${QUICK}` : ''}`);
+  await page.goto(`${url}?mute&qa=1&quality=low${QUICK ? `&quick=${QUICK}` : ''}${EXTRA}`);
   await page.waitForFunction(() => window.__STARLINE_READY__, null, { timeout: 300000, polling: 50 });
   const boot = Date.now() - t0;
   const atTitle = { n: net.n, bytes: net.bytes };
@@ -118,5 +122,9 @@ for (const id of GAMES) {
   await ctx.close();
 }
 await browser.close();
+if (RUNS > 1) for (const id of new Set(GAMES)) {
+  const r = rows.filter(x => x.id === id), med = k => { const v = r.map(x => x[k]).sort((a, b) => a - b); return v[Math.floor(v.length / 2)]; };
+  console.log(`MEDIAN ${id} of ${r.length}: tap->play ${med('tapToPlayMs')} ms (${r.map(x => x.tapToPlayMs).join(', ')})  MB ${(med('bytes') / 1048576).toFixed(2)}  heap ${med('heapMB')} MB  calls ${med('calls')}`);
+}
 fs.writeFileSync(OUT, JSON.stringify({ url, quick: QUICK || 'default', throttle: THROTTLE, rows }, null, 1));
 console.log(`written ${OUT}`);
