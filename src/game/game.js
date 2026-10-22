@@ -7,6 +7,7 @@ import { Input } from '../engine/input.js';
 import { FX } from '../engine/effects.js';
 import { PALETTES } from '../world/seasons.js';
 import { tx } from '../i18n/i18n.js';
+import { zoneFromParam } from '../world/zone-shape.js';
 // (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
 //  light: the title menu and the quick-start mini games run on it.)
 
@@ -34,15 +35,19 @@ export class Game {
     addEventListener('mobile-game-interruption', suspendMobileGame);
     document.addEventListener('visibilitychange', () => { if (document.hidden) suspendMobileGame(); });
     this.fps = 0;
+    // a play zone (world/zone.js): set before load() to build only that corner of the valley. ?zone=x,z,r tries one.
+    this.zone = zoneFromParam(params.get('zone'));
   }
 
   async load(onProgress = () => {}) {
     onProgress(0.02, 'Shaping the valley');
     const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, bootModels, TRIM_MODELS, getTropicalTrees, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
     await nextFrame();
-    this.world = new World(this.scene, this.renderer.renderer, this.renderer.q);
+    this.world = new World(this.scene, this.renderer.renderer, this.renderer.q, this.zone);
     onProgress(0.12, 'Unpacking Blender models');
-    await this.assets.load(bootModels({ tropical: getTropicalTrees() }), p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
+    const zone = this.zone, Z = zone ? await import('../world/zone-build.js').then(async m => ({ ...m, ...await import('../world/zone.js') })) : null;
+    const boot = bootModels({ tropical: getTropicalTrees() });
+    await this.assets.load(Z ? Z.zoneModels(zone, boot) : boot, p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
     await this.assets.finalize();
     onProgress(0.84, 'Planting the forests');
     await nextFrame();
@@ -53,6 +58,7 @@ export class Game {
     this.paddies = new Paddies(this.scene, this.assets, this.world);
     const isFree = (x, z) => this.world.splat.sample(x, z, 0) < 0.12 && this.world.splat.sample(x, z, 3) > 0.1 && this.world.grid.slopeAt(x, z) < 36;
     this.placed = scatter((x, z) => this.world.heightAt(x, z), isFree, this.renderer.q.trees);
+    if (Z) this.placed = Z.zonePlaced(this.placed, zone);
     for (const t of this.placed.trees) if (!t.far) this.world.splat.paintDisc(t.x, t.z, 2.4 * t.s, 2, 0.75, 2);
     this.foliage = new Foliage(this.scene, this.assets, this.placed, this.renderer.q);
     this.grass = new Grass(this.scene, this.world.heightTex, this.world.splat, this.world.terrain.noise, this.renderer.q);
@@ -66,6 +72,8 @@ export class Game {
     this.kite = new StarKite(this);
     this.interiors = new Interiors(this);
     this.riverbed = new Riverbed(this.scene, this.assets, this.world);
+    // a zone: what stands well outside it leaves the scene (world/zone-build.js)
+    if (Z) for (const root of [this.structures.group, this.railway.group, this.paddies.group, this.riverbed.group]) Z.pruneOutside(root, zone);
     trimModels(this.assets, TRIM_MODELS);   // (after the valley is built: everything that measures a model has done so)
     this.setSeason(this.time.season);
     onProgress(1, 'Ready');

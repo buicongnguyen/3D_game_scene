@@ -20,6 +20,7 @@ import { Quest } from './quest.js';
 import { stateAt } from './fastforward.js';
 import { MinigamePicker } from '../ui/minigames-ui.js';
 import { MinigameStop } from '../ui/minigame-stop.js';
+import { playableIn } from '../content/zones.js';
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -55,9 +56,22 @@ export class MinigameMenu {
     const g = this.g, wasPaused = g.paused;
     if (!wasPaused) g.togglePause?.(true, true);        // the game stands still behind the picker
     const e = await this.picker.open({ st: this.st, current: this.current?.id });
+    // a zone session (world/zone.js) has only this corner of the valley: closing the list goes back to the title, and a
+    // game outside the corner starts in its own zone (or the whole valley) from a fresh page
+    if (g.zone && (!e || !playableIn(g.zone, e.id))) { this.leaveZone(e?.id); return false; }
     if (!e) { if (!wasPaused && g.paused) g.togglePause?.(false); return false; }
     await this.launch(e);
     return true;
+  }
+
+  /** Leave a zone session: to the title (no id) or straight into game `id` (main.js ?play=). The records are saved first. */
+  leaveZone(id) {
+    try { this.d.save?.(); } catch { /* go anyway */ }
+    const p = new URLSearchParams(location.search);
+    for (const k of ['play', 'start', 'slot', 'zone']) p.delete(k);
+    if (id) p.set('play', id);
+    const q = p.toString();
+    location.href = location.pathname + (q ? `?${q}` : '');
   }
 
   // ------------------------------------------------------------------ the launch

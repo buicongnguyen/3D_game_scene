@@ -188,6 +188,14 @@ function titleLook() {
   const unlockAudio = () => { if (!params.has('mute')) { try { audio.unlock(); } catch (e) { console.warn('audio unavailable', e); } } };
   const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
   let picked = null;
+  // ?play=<id>: straight into a mini game that plays in a zone (a zone session reloads to this to change zones)
+  const zones = params.get('zones') !== 'off' ? await import('./content/zones.js').catch(() => null) : null;
+  const playId = params.get('play');
+  if (playId && zones?.zoneFor(playId)) {
+    ui.pendingLaunch = { id: playId, quick: false };
+    picked = { mode: 'explore', slot: 'explore', fresh: false };
+    document.getElementById('title').classList.add('hidden');
+  }
   while (!picked) {
     picked = auto ? { mode: auto, slot: +params.get('slot') || 1, story: params.get('story') || undefined } : await ui.title(saveSlots(), lastSlot());
     const launch = ui.pendingLaunch;
@@ -211,6 +219,8 @@ function titleLook() {
     // comes back ("Shaping the valley…") and the game starts as soon as the valley stands.
     document.getElementById('title').classList.add('hidden');
     game.quick?.dispose();
+    // a mini game picked from the title that plays in a zone: only its corner of the valley is built (world/zone.js)
+    if (!valleyP && ui.pendingLaunch) game.zone = zones?.zoneFor(ui.pendingLaunch.id) || game.zone;
     ui.showLoading();
     await (underTitle || loadValley());
     still?.remove(); still = null;

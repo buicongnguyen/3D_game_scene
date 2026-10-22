@@ -36,7 +36,9 @@ const PLAYABLE = (id, shown = false) => {
   const fade = document.getElementById('fade');
   if (fade && (fade.classList.contains('on') || +getComputedStyle(fade).opacity > 0.05)) return false;
   const d = window.__STARLINE_QA__?.director;
-  if (id.startsWith('trick:')) return !!document.querySelector('#lifeBoard .pick .lc-card');
+  // a card game's board, or (a trick played in the valley) the round's HUD with no card or level picker over it
+  if (id.startsWith('trick:')) return !!document.querySelector('#lifeBoard .pick .lc-card')
+    || (!!document.querySelector('#trickHud:not(.hidden)') && !document.querySelector('#trickCard:not(.hidden)') && !document.querySelector('#lvlPick:not(.hidden)'));
   const hud = document.getElementById('yardHud');
   return !!hud && !hud.classList.contains('hidden') && (shown ? !!d?.yard?.round?.sim : ['aim', 'think'].includes(d?.yard?.round?.sim?.state));
 };
@@ -71,7 +73,8 @@ for (const id of GAMES) {
   const boot = Date.now() - t0;
   const atTitle = { n: net.n, bytes: net.bytes };
   await page.waitForTimeout(1500);
-  await page.evaluate(() => { (window.__STARLINE_QA__ ??= {}).level = 'easy'; });
+  // (the level is named up front; a game that loads the valley gets the valley's QA helpers, so name it again there)
+  await page.evaluate(() => { (window.__STARLINE_QA__ ??= {}).level = 'easy'; setInterval(() => { const q = window.__STARLINE_QA__; if (q && !q.level) q.level = 'easy'; }, 30); });
   await page.tap('#btnTitleMini');
   await page.waitForSelector('#mgPicker:not(.hidden)');
   const cats = await page.evaluate(() => [...document.querySelectorAll('.mg-tab')].map(t => t.dataset.cat));

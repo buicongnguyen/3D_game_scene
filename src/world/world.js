@@ -1,5 +1,7 @@
 import * as THREE from 'three';
-import { HeightGrid } from './heightfield.js';
+import { HeightGrid, rawHeight } from './heightfield.js';
+import { TERRAIN } from './layout.js';
+import { zoneHeightFn } from './zone.js';
 import { Terrain, Splat } from './terrain.js';
 import { Water, makeHeightTexture } from './water.js';
 import { Sky } from './sky.js';
@@ -34,11 +36,12 @@ function shadeFromHillside(terrain, g) {
 
 /** Owns the static environment: height grid, terrain, water, sky and lighting. */
 export class World {
-  constructor(scene, renderer, quality) {
+  constructor(scene, renderer, quality, zone = null) {
     this.scene = scene;
     this.quality = quality;   // the tier the world was built for (crop density, prop shadows)
+    this.zone = zone;         // a play zone (zone.js): exact ground inside it, the coarse far landscape outside
     const t0 = performance.now();
-    this.grid = new HeightGrid(quality.terrainStep);
+    this.grid = new HeightGrid(quality.terrainStep, TERRAIN, zone ? zoneHeightFn(zone) : rawHeight);
     this.splat = new Splat(this.grid);
     this.bakeMs = performance.now() - t0;
     // grass and water sample the visible ground (the landslide model stands above the grid it hides)
