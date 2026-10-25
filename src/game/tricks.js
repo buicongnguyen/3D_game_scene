@@ -4,6 +4,7 @@
 // fact, the rewards in quest.state.tricks and the ambient look of each place. Each trick's game is a module in
 // ./tricks/<id>.js exporting { id, play(ctx), ambient?(dt, ctx), scenery?(dt, ctx) }; they load on demand and may be missing.
 import * as THREE from 'three';
+import { instancedMaterial } from '../world/static-batch.js';
 import { TRICKS, TRICK, trickOpen, inHours, recordRound } from '../content/tricks.js';
 import { CAST, DIALOGUE } from './story.js';
 import { tx, getLang } from '../i18n/i18n.js';
@@ -105,7 +106,7 @@ export class Tricks {
     if (!parts.length || !signs.length) return;
     const shadows = g.world.quality?.propShadows !== false;
     const meshes = parts.map(part => {
-      const m = new THREE.InstancedMesh(part.geometry, part.material, signs.length);
+      const m = new THREE.InstancedMesh(part.geometry, instancedMaterial(part.material, g.assets), signs.length);
       m.name = 'signposts'; m.castShadow = shadows; m.receiveShadow = true;
       m.userData.partMatrix = part.matrix;
       g.scene.add(m);

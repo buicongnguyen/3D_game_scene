@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { instancedMaterial } from './static-batch.js';
+import { SHADOW_ONLY } from './sky.js';
 import { patchMaterial } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
@@ -77,7 +79,8 @@ class InstanceSet {
       const mat = part.material;
       const isFoliage = FOLIAGE[mat.name] !== undefined || mat.name.startsWith('VN leaves');
       patchMaterial(mat, { wind: isFoliage ? wind : 0 });
-      const mesh = new THREE.InstancedMesh(part.geometry, mat, n);
+      // (its own copy for the instances: a few single trees, on the landslide scar, share these materials as plain meshes)
+      const mesh = new THREE.InstancedMesh(part.geometry, instancedMaterial(mat), n);
       mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
@@ -102,6 +105,7 @@ class InstanceSet {
       mesh.frustumCulled = false;
       mesh.castShadow = true;
       mesh.receiveShadow = false;
+      mesh.layers.set(SHADOW_ONLY);   // drawn into the shadow map only: in the view it wrote nothing and still cost a draw
       mesh.userData.partMatrix = part.matrix;
       mesh.userData.materialName = part.material.name;
       mesh.name = `${this.model}:shadow`;
@@ -339,6 +343,7 @@ export class Foliage {
         if (key && !seen.has(mesh.material)) {
           seen.add(mesh.material);
           mesh.material.color.set(s.model === 'tree-peach' && name === 'Leaves' ? p.peachLeaves : p[key]);
+          mesh.material.userData.source?.color.copy(mesh.material.color);   // and the single trees that share the colour
         }
         let on = !(p.bareTrees && deciduous && BARE_IN_WINTER.has(name));
         if (name === 'Peach') on = season === 'summer';

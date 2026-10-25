@@ -8,6 +8,7 @@ import { FX } from '../engine/effects.js';
 import { PALETTES } from '../world/seasons.js';
 import { tx } from '../i18n/i18n.js';
 import { zoneFromParam } from '../world/zone-shape.js';
+import { Pacer } from '../engine/pacer.js';
 // (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
 //  light: the title menu and the quick-start mini games run on it.)
 
@@ -133,9 +134,19 @@ export class Game {
 
   start() {
     this.clock = new THREE.Clock();
-    const loop = () => {
-      this.frame();
+    // phones (Low tier) that cannot keep 60 draw every other display frame, evenly (engine/pacer.js); ?pace=off|30
+    const pq = this.params.get('pace');
+    this.pacer = pq === 'off' || (this.renderer.qualityName !== 'low' && pq !== '30') ? null : new Pacer();
+    if (pq === '30' && this.pacer) this.pacer.pace = 1000 / 30;
+    let last = 0;
+    const loop = now => {
       requestAnimationFrame(loop);
+      const pace = this.pacer?.pace || 0;
+      if (pace && now - last < pace - 4) return;      // (a display frame early is fine: rAF times jitter by a ms or two)
+      last = now;
+      const t0 = performance.now();
+      this.frame();
+      this.pacer?.feed(performance.now() - t0);
     };
     requestAnimationFrame(loop);
   }

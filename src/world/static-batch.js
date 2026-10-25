@@ -1,5 +1,25 @@
 import * as THREE from 'three';
 
+const copies = new WeakMap();
+/**
+ * The copy of a material that instanced meshes use. three.js picks a different shader for an instanced and a plain mesh
+ * with the same material, and switching between the two looked the program up again for each draw (the merged
+ * buildings and the batched fences, signposts and viaduct share materials): one copy for all instanced uses instead.
+ * A lit pane's copy is registered with the same glow set, so it lights up with the others.
+ */
+export function instancedMaterial(m, assets) {
+  let c = copies.get(m);
+  if (!c) {
+    c = m.clone();
+    c.onBeforeCompile = m.onBeforeCompile; c.customProgramCacheKey = m.customProgramCacheKey;
+    c.userData = { ...m.userData, source: m };
+    const glow = assets?.glow?.get(m.name);
+    if (glow?.has(m)) glow.add(c);
+    copies.set(m, c);
+  }
+  return c;
+}
+
 /**
  * Turn the many separate copies of a small static model (fence panels) into a few instanced meshes.
  *
@@ -26,7 +46,7 @@ export function batchCopies(group, assets, names, { keep = new Set(), castShadow
       if (list.length < 2) continue;
       for (const o of list) o.updateMatrix();
       for (const part of parts) {
-        const mesh = new THREE.InstancedMesh(part.geometry, part.material, list.length);
+        const mesh = new THREE.InstancedMesh(part.geometry, instancedMaterial(part.material, assets), list.length);
         list.forEach((o, i) => mesh.setMatrixAt(i, M.multiplyMatrices(o.matrix, part.matrix)));
         mesh.instanceMatrix.needsUpdate = true;
         mesh.computeBoundingSphere();

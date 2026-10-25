@@ -73,6 +73,8 @@ export function herdStep(sheep, player, flock, pen, dt, rand = Math.random) {
 
 // fish swim under the water and birds fly or bob small: their shadows are never seen, and each was a draw in the shadow pass
 const NO_SHADOW = /^(fish-|crow|duck)/;
+// small animals (by id): drawn only near Mika (updateDetail)
+const SMALL = /^(rabbit|fish|duck|crab|cat|chicken)/;
 
 export class Wildlife {
   constructor(scene, assets, world, colliders) {
@@ -349,9 +351,11 @@ export class Wildlife {
       if (a.animTick === 0) a.animTick = i++;
       const d = Math.hypot(a.pos.x - p.x, a.pos.z - p.z);
       const hyst = a.far ? -5 : 5;
+      // small creatures are a few pixels beyond this: not drawn nor animated (their bones were ~1000 a frame round Kawabe)
+      const far = SMALL.test(a.id) ? Math.min(draw, a.id.startsWith('fish') ? 25 : 40) : draw;
       const tier = a.kind === 'bird' ? (d > anim ? 1 : 0)
-        : story ? (d > draw + hyst ? 2 : 0)
-        : d > draw + hyst ? 2 : d > anim + (a.animEvery > 1 ? -3 : 3) ? 1 : 0;
+        : story ? (d > far + hyst ? 2 : 0)
+        : d > far + hyst ? 2 : d > anim + (a.animEvery > 1 ? -3 : 3) ? 1 : 0;
       a.setDetail(tier, tier === 0 && d < shade + (a.shadow ? 3 : -3));
     }
   }

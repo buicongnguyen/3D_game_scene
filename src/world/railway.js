@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { placeholder } from '../engine/assets.js';
+import { batchCopies } from './static-batch.js';
 import { patchMaterial } from '../engine/effects.js';
 import { rail, RAIL_Y, DECK_Y, VIADUCT, VIADUCT_SPANS, RAIL_PORTALS, PLACES } from './layout.js';
 
@@ -116,6 +117,8 @@ export class Railway {
     }
     this.placeSleepers(s0, s1, inGap);
     this.placeViaduct();
+    // the whole spans and the abutments drawn together (the broken span and its repair stay themselves)
+    batchCopies(this.group, assets, ['viaduct-span', 'viaduct-abutment'], { cell: 400, castShadow: true });
     this.placePortals();
     // dirt verge along the line
     for (let s = s0; s < s1; s += 2) {

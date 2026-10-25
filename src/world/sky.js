@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { lightingAt } from './seasons.js';
+/** The layer of what only the sun's shadow map draws (the view's camera keeps layer 0 only). */
+export const SHADOW_ONLY = 1;
 
 const toLinear = rgb => new THREE.Color().setRGB(rgb[0], rgb[1], rgb[2], THREE.SRGBColorSpace);
 
@@ -103,6 +105,8 @@ export class Sky {
     this.sun.castShadow = true;
     this.sun.shadow.bias = -0.0004;
     this.sun.shadow.normalBias = 0.035;
+    // layer 1: things drawn only into the shadow map, never in the view (the forests' shadow casters, world/foliage.js)
+    this.sun.shadow.camera.layers.enable(SHADOW_ONLY);
     this.setShadow(quality);
     scene.add(this.sun, this.sun.target);
     this.hemi = new THREE.HemisphereLight(0xbfdfff, 0x6b7f3c, 1);
