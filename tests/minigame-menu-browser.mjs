@@ -16,6 +16,7 @@ import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import path from 'path';
 import { stateAt } from './e2e/fastforward.mjs';
+import { buildCatalogue } from '../src/content/minigames.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, '').split('=')));
@@ -343,8 +344,8 @@ async function everyGame(browser, name, dev) {
   const { ctx, page, errors, hit } = await boot(browser, dev, 'tourtest=1');
   await page.waitForTimeout(2500);
   const ids = await page.evaluate(() => window.__STARLINE__.director?.minigameMenu?.catalogue?.map(e => ({ id: e.id, kind: e.kind })) || null);
-  // the catalogue exists once the world is up; before that read it from the module
-  const list = ids || await page.evaluate(async () => (await import('/src/content/minigames.js')).buildCatalogue().map(e => ({ id: e.id, kind: e.kind })));
+  // The production server has no /src files. Read the pure catalogue fixture in Node if the world is not up yet.
+  const list = ids || buildCatalogue().map(e => ({ id: e.id, kind: e.kind }));
   const bad = [];
   let door = '#btnTitleMini';
   for (const { id } of list) {
