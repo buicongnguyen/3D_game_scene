@@ -41,7 +41,7 @@ export class Game {
 
   async load(onProgress = () => {}) {
     onProgress(0.02, 'Shaping the valley');
-    const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, bootModels, TRIM_MODELS, getTropicalTrees, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
+    const { World, scatter, Foliage, Grass, Colliders, Structures, Railway, Player, FollowCamera, bootModels, TRIM_MODELS, MERGE_MODELS, getTropicalTrees, LightPool, Paddies, Underwater, Riverbed, StarKite, Interiors } = await import('./valley-parts.js');
     await nextFrame();
     this.world = new World(this.scene, this.renderer.renderer, this.renderer.q, this.zone);
     onProgress(0.12, 'Unpacking Blender models');
@@ -50,6 +50,8 @@ export class Game {
     const zone = this.zone, Z = zone ? Object.assign({}, ...await Promise.all([import('../world/zone-build.js'), import('../world/zone.js'), import('../world/zone-backdrop.js')])) : null;
     const backdrop = Z?.hasBackdrop(zone.id) ? Z.loadBackdrop(zone.id, { hd: this.renderer.qualityName !== 'low' }) : null;   // (fetched while the models are)
     if (zone) zone.margin = backdrop ? 0 : Z.VIEW_MARGIN;
+    // buildings and props drawn as one mesh each (engine/static-merge.js); ?merge=off to compare
+    if (this.params.get('merge') !== 'off') this.assets.merge = new Set(MERGE_MODELS);
     const boot = bootModels({ tropical: getTropicalTrees() });
     await this.assets.load(Z ? Z.zoneModels(zone, boot, zone.margin) : boot, p => onProgress(0.12 + p * 0.7, 'Unpacking Blender models'));
     await this.assets.finalize();

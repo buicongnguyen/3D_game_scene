@@ -71,6 +71,9 @@ export function herdStep(sheep, player, flock, pen, dt, rand = Math.random) {
   return { x, z, vx, vz, penned, speed: Math.hypot(vx, vz) };
 }
 
+// fish swim under the water and birds fly or bob small: their shadows are never seen, and each was a draw in the shadow pass
+const NO_SHADOW = /^(fish-|crow|duck)/;
+
 export class Wildlife {
   constructor(scene, assets, world, colliders) {
     this.scene = scene;
@@ -90,6 +93,7 @@ export class Wildlife {
   add(id, model, x, z, facing = 0, idle = 'Idle') {
     const a = new NPC(this.scene, this.assets, this.world, id, model, { x, z, facing });
     a.setIdle(idle);
+    if (NO_SHADOW.test(model)) { a.noShadow = true; a.shadow = false; a.model.traverse(o => { if (o.isMesh) o.castShadow = false; }); }
     this.actors.push(a);
     return a;
   }

@@ -130,6 +130,7 @@ export class NPC {
     if (!far && this.pending) this.hydrate();
     if (far !== this.far) { this.far = far; this.root.visible = this.visible && !far; }
     this.animEvery = tier === 1 ? 3 : 1;
+    if (this.noShadow) shadow = false;            // (fish under water, birds: a shadow nobody sees still costs a draw)
     if (shadow !== this.shadow) { this.shadow = shadow; this.model.traverse(o => { if (o.isMesh) o.castShadow = shadow; }); }
   }
 

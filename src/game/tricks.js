@@ -92,7 +92,36 @@ export class Tricks {
     this.t = 0;
     this.buildUi();
     // (the quick-start runtime, src/quick/runtime.js, runs the rounds with no valley: no signposts to stand anywhere)
-    if (!this.g.quickStart) for (const t of TRICKS) this.spawnSign(t);
+    if (!this.g.quickStart) { for (const t of TRICKS) this.spawnSign(t); this.batchSigns(); }
+  }
+
+  /**
+   * Every signpost in the valley drawn together: one instanced mesh per part of the model (seven), where each post
+   * was seven meshes of its own (~170 draw calls with the shadow pass round Kawabe on High). A sign's `obj` stays a
+   * thing with `visible`, as the rounds and focus mode expect: hiding one writes an empty matrix into its slot.
+   */
+  batchSigns() {
+    const g = this.g, parts = g.assets.parts('signpost'), signs = this.signs;
+    if (!parts.length || !signs.length) return;
+    const shadows = g.world.quality?.propShadows !== false;
+    const meshes = parts.map(part => {
+      const m = new THREE.InstancedMesh(part.geometry, part.material, signs.length);
+      m.name = 'signposts'; m.castShadow = shadows; m.receiveShadow = true;
+      m.userData.partMatrix = part.matrix;
+      g.scene.add(m);
+      return m;
+    });
+    const ZERO = new THREE.Matrix4().makeScale(0, 0, 0), at = new THREE.Matrix4(), M = new THREE.Matrix4();
+    signs.forEach((s, i) => {
+      at.compose(s.at, new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), s.t.place.face ?? 0), new THREE.Vector3(0.8, 0.8, 0.8));
+      const place = at.clone();
+      let shown = true;
+      const write = () => { for (const m of meshes) { m.setMatrixAt(i, shown ? M.multiplyMatrices(place, m.userData.partMatrix) : ZERO); m.instanceMatrix.needsUpdate = true; } };
+      write();
+      s.obj = { get visible() { return shown; }, set visible(v) { v = !!v; if (v !== shown) { shown = v; write(); } } };
+    });
+    for (const m of meshes) m.computeBoundingSphere();
+    this.signMeshes = meshes;
   }
 
   /** Take the round UI off the page (the quick-start runtime, when the valley takes over and builds its own). */
@@ -126,18 +155,9 @@ export class Tricks {
     const g = this.g, w = g.world;
     const y = w.heightAt(t.place.x, t.place.z);
     const at = new THREE.Vector3(t.place.x, y, t.place.z);
-    const m = g.assets.clone('signpost');
-    if (m) {
-      m.position.copy(at);
-      m.rotation.y = t.place.face ?? 0;
-      m.scale.setScalar(0.8);
-      // like every small prop: no shadow on the tier that drops prop shadows (a post is seven meshes)
-      const shadows = w.quality?.propShadows !== false;
-      m.traverse(o => { if (o.isMesh) { o.castShadow = shadows; o.receiveShadow = true; } });
-      g.scene.add(m);
-    }
-    // obj is shown within signFar of Mika (update); `hidden`: a round has taken it out of its picture (the kite)
-    const sign = { t, at, obj: m, hidden: false };
+    // obj (made by batchSigns: all the posts are drawn together) is shown within signFar of Mika (update);
+    // `hidden`: a round has taken it out of its picture (the kite)
+    const sign = { t, at, obj: null, hidden: false };
     this.signs.push(sign);
     // asked every frame while Mika stands by the sign: the two texts are made once per language
     const text = [null, null];

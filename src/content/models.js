@@ -22,6 +22,11 @@ export const INTERIORS = ['interior-cottage', 'interior-bakery', 'interior-mill'
   'keepsake-photo', 'keepsake-recipe', 'keepsake-float', 'keepsake-ticket'];
 export const REWARDS = ['music-box', 'golden-acorn', 'star-compass', 'star-tree', 'gift-lure', 'gift-radish', 'gift-buns', 'gift-cap', 'gift-pinecone', 'gift-honey'];
 export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWAY, ...NATURE, ...PROPS, ...ITEMS, ...INTERIORS, ...REWARDS];
+// Static models whose plain parts are merged into one mesh at load (engine/static-merge.js): a building was 7-9 draws,
+// twice with its shadow. Not the drawbridge (it swings), nor anything rigged or riding the railway.
+export const MERGE_MODELS = [...ARCHITECTURE.filter(n => n !== 'drawbridge'), 'platform', 'viaduct-span', 'viaduct-abutment', 'viaduct-broken', 'viaduct-repair',
+  'lamp-viaduct', 'tunnel-portal', 'dock', 'crate', 'barrel', 'sacks', 'bench', 'well', 'market-stall', 'festival-stall', 'postbox', 'cart', 'street-lamp',
+  'signpost', 'scarecrow', 'haybale', 'flowerpot', 'sheep-pen', 'fence-wood', 'fence-bamboo', 'wall-stone'];
 // Not needed for the first frame, fetched when something asks for them: the room models (world/interiors.js fetches a room
 // when the player comes near its door or walks in) and the tropical trees (only when that scenery option is on).
 export const TROPICAL_MODELS = [...TROPICAL_TREES, ...TROPICAL_TREES.map(t => `${t}-lod`), ...TROPICAL_BUSHES];

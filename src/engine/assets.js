@@ -3,10 +3,15 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { separateCoplanar } from './coplanar.js';
+import { mergeStatic } from './static-merge.js';
 import { peopleFile, prepareLite } from './people.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
 export const GLOW_MATERIALS = ['Window glow', 'Lamp glass', 'Lamp star', 'Lantern glow', 'Street glow', 'Porch glass', 'Headlamp glass', 'Tamo glow', 'Garland glow'];
+// Parts made only of these cast no shadow (see prepare)
+const NO_SHADOW_DETAIL = ['Noren', 'Flowers', 'Leaf', 'Rope'];
+const NO_SHADOW_MATERIALS = new Set([...GLOW_MATERIALS, ...NO_SHADOW_DETAIL]);
+const GLOW_SET = new Set(GLOW_MATERIALS);
 
 /**
  * Loads GLBs from public/models and hands out clones. Static models share geometry and
@@ -20,6 +25,7 @@ export class Assets {
     this.cache = new Map();
     this.missing = new Set();
     this.glow = new Map(); // material name -> Set<Material>, for night / lamp control
+    this.merge = null;     // names of the static models whose plain parts are merged into one mesh (engine/static-merge.js)
     this.people = 'std';   // which set of people a name such as 'mika' means: 'std' | 'lite' (engine/people.js)
   }
 
@@ -46,7 +52,9 @@ export class Assets {
   prepare(name, gltf) {
     gltf.scene.traverse(o => {
       if (!o.isMesh) return;
-      o.castShadow = true;
+      // small details cast no shadow: lit panes, curtains, flower boxes, ivy and rope (a draw each in the shadow pass,
+      // a shadow nobody sees: they sit flat on walls or inside bigger casters)
+      o.castShadow = ![o.material].flat().every(m => NO_SHADOW_MATERIALS.has(m.name));
       o.receiveShadow = true;
       for (const m of [o.material].flat()) {
         // Baked AO lives in COLOR_0; make sure it multiplies the base colour.
@@ -72,6 +80,10 @@ export class Assets {
       const t0 = performance.now();
       try { gltf.scene.userData.coplanarFixed = separateCoplanar(gltf.scene); } catch (e) { console.warn(`coplanar fix skipped for ${name}`, e); }
       this.coplanarMs = (this.coplanarMs || 0) + performance.now() - t0;
+      // buildings and props: their plain parts become one mesh (engine/static-merge.js), for every copy of them
+      if (this.merge?.has(name)) {
+        try { gltf.scene.userData.merged = mergeStatic(gltf.scene, { glow: GLOW_SET, noShadow: NO_SHADOW_MATERIALS }); } catch (e) { console.warn(`merge skipped for ${name}`, e); }
+      }
     }
   }
 
