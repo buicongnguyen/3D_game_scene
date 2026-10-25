@@ -2,6 +2,7 @@
 // off for a mini game round comes back exactly, whatever the order of entering and leaving, and after an error.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import * as THREE from 'three';
 import { Stubs, Hidden, FocusStack, enterFocus, exitFocus, exitAllFocus, focusSupported } from '../src/engine/focus.js';
 import { RoundLight, ROUND_FLOOR, TOWN_EVERY } from '../src/game/round-light.js';
 
@@ -218,6 +219,32 @@ test('enterFocus: an error while a system is switched off still leaves the game 
   assert.equal(f.active, false, 'the caller gets the do-nothing handle');
   assert.equal(g.focus ?? null, null); assert.equal(g.renderer.focus, null);
   assert.equal(clean(g), true);
+  f.exit();
+});
+
+test('a focus still refreshes cell culling with its actual camera before each changed picture', () => {
+  const g = fakeGame(), camera = new THREE.PerspectiveCamera(55, 16 / 9, .35, 4600);
+  const calls = [], pictures = [];
+  g.camera = new THREE.PerspectiveCamera(); // The round may capture from a camera other than the follow camera.
+  g.renderer.q = { propDist: 100, buildDist: 300 };
+  g.renderer.renderer.getDrawingBufferSize = out => out.set(1280, 720);
+  g.structures.cull = (at, q, view) => {
+    assert.equal(at, camera.position); assert.equal(q, g.renderer.q);
+    assert.equal(view, camera, 'a stale follow-camera frustum must not hide the round backdrop');
+    calls.push(view.matrixWorld.elements.slice());
+  };
+  g.renderer.renderWorld = () => {
+    assert.equal(calls.length, pictures.length + 1, 'cell visibility is refreshed before drawing');
+    pictures.push(calls.at(-1));
+  };
+  const f = enterFocus(g, { hold: true, sim: 'all' });
+  camera.position.set(250, 30, -100); camera.lookAt(200, 0, -110);
+  f.render(g.renderer, g.scene, camera);
+  f.render(g.renderer, g.scene, camera);
+  assert.equal(pictures.length, 1, 'an unchanged still needs no new culling or draw');
+  camera.position.set(500, 40, 100); camera.lookAt(450, 0, 90);
+  f.render(g.renderer, g.scene, camera);
+  assert.equal(pictures.length, 2); assert.notDeepEqual(pictures[0], pictures[1]);
   f.exit();
 });
 

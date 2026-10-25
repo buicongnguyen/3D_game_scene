@@ -328,7 +328,7 @@ export class YardBuild {
     }
 
     structures.group.add(this.group);
-    structures.cullList.push({ obj: this.group, x: Y.x, z: Y.z - 6, prop: true });
+    structures.addCulled(this.group, Y.x, Y.z - 6, 'prop');
 
     // ---- what can be bumped into
     const { boxes, posts } = yardSolids(Y), col = structures.colliders;

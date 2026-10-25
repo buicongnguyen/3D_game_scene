@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { updateWorldMatrices } from './matrices.js';
+import { updateCellGrids } from '../world/cells.js';
 import { Governor, settingsAt, ladderFor } from './governor.js';
 import { pickQuality } from './quality-pick.js';
 import { markSlow, SLOW_LEVEL } from './device-note.js';
@@ -199,6 +200,7 @@ export class Renderer {
 
   /** The usual frame: shadows, the whole scene, bloom, grade, output. `shadows: false` keeps the shadow map as it is. */
   renderWorld(scene, camera, shadows = true) {
+    updateCellGrids(scene, camera, this.q);
     this.renderPass.scene = scene;
     this.renderPass.camera = camera;
     // our own matrix pass: hidden and unmoved objects cost nothing (see matrices.js)

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { cellIndex } from './cells.js';
 
 const copies = new WeakMap();
 /**
@@ -30,7 +31,7 @@ export function instancedMaterial(m, assets) {
  *
  * keep: objects that must stay themselves (animated or toggled ones, such as the orchard gate).
  */
-export function batchCopies(group, assets, names, { keep = new Set(), castShadow = true, cell = 48 } = {}) {
+export function batchCopies(group, assets, names, { keep = new Set(), castShadow = true, cell = 48, grid = null, preserveBatches = false } = {}) {
   let made = 0;
   for (const name of names) {
     const parts = assets.parts(name);
@@ -38,12 +39,15 @@ export function batchCopies(group, assets, names, { keep = new Set(), castShadow
     const cells = new Map();
     for (const o of [...group.children]) {
       if (o.userData.model !== name || keep.has(o) || o.userData.placeholder) continue;
-      const key = `${Math.floor(o.position.x / cell)},${Math.floor(o.position.z / cell)}`;
+      const key = grid && !preserveBatches ? `${cellIndex(o.position.x, grid.cell)},${cellIndex(o.position.z, grid.cell)}` : `${Math.floor(o.position.x / cell)},${Math.floor(o.position.z / cell)}`;
       (cells.get(key) || cells.set(key, []).get(key)).push(o);
     }
     const M = new THREE.Matrix4();
     for (const list of cells.values()) {
-      if (list.length < 2) continue;
+      if (list.length < 2) {
+        if (grid) for (const o of list) grid.add(o, o.position.x, o.position.z);
+        continue;
+      }
       for (const o of list) o.updateMatrix();
       for (const part of parts) {
         const mesh = new THREE.InstancedMesh(part.geometry, instancedMaterial(part.material, assets), list.length);
@@ -54,7 +58,8 @@ export function batchCopies(group, assets, names, { keep = new Set(), castShadow
         mesh.receiveShadow = true;
         mesh.name = `${name}:batch`;
         mesh.userData.model = `${name}:batch`;
-        group.add(mesh);
+        if (grid) grid.add(mesh, list[0].position.x, list[0].position.z);
+        else group.add(mesh);
         made++;
       }
       for (const o of list) group.remove(o);

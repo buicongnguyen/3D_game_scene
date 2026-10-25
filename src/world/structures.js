@@ -1,4 +1,5 @@
 import { batchCopies } from './static-batch.js';
+import { CELL, CellGrid, cellsEnabled, cullReference } from './cells.js';
 import * as THREE from 'three';
 import { placeholder } from '../engine/assets.js';
 import { patchMaterial } from '../engine/effects.js';
@@ -43,13 +44,26 @@ export class Structures {
     this.group = new THREE.Group();
     this.group.name = 'structures';
     scene.add(this.group);
+    this.cells = cellsEnabled() ? new CellGrid(this.group, CELL, world) : null;
     this.byId = new Map();
     this.nodes = {};          // named dynamic nodes: millWheel, drawbridge, bell, chestLid, ...
     this.lamps = new Map();   // lamp id -> {flame: Vector3, object, materials}
     this.solids = {};         // toggleable colliders: drawbridge, viaductGap, gate, bear ...
     this.worldBuild();
     // fence panels: a few instanced meshes instead of a hundred objects (the gate and the culled props stay as they are)
-    batchCopies(this.group, assets, ['fence-wood', 'fence-bamboo'], { keep: new Set([...Object.values(this.nodes), ...this.cullList.map(c => c.obj)]), castShadow: world.quality?.propShadows !== false });
+    batchCopies(this.group, assets, ['fence-wood', 'fence-bamboo'], { keep: new Set([...Object.values(this.nodes), ...this.cullList.map(c => c.obj)]), castShadow: world.quality?.propShadows !== false, grid: this.cells });
+    // Docks, stones and other formerly uncullable set pieces keep their unlimited distance, but skip offscreen cells.
+    const moving = new Set([this.nodes.ferry, this.nodes.rowboat]);
+    let bridge = this.nodes.drawbridge;
+    while (bridge?.parent && bridge.parent !== this.group) bridge = bridge.parent;
+    moving.add(bridge); // its raised and lowered footprints differ; the ferry also crosses its original bounds
+    if (this.cells) for (const obj of [...this.group.children]) if (!obj.userData.cellGroup && !moving.has(obj)) this.cells.add(obj, obj.position.x, obj.position.z);
+  }
+
+  addCulled(obj, x, z, kind) {
+    this.cullList.push({ obj, x, z, prop: kind === 'prop', mid: kind === 'mid' });
+    if (this.cells) this.cells.add(obj, x, z, kind);
+    else this.group.add(obj);
   }
 
   model(name, fallbackSize, color) {
@@ -81,7 +95,7 @@ export class Structures {
     this.group.add(obj);
     const rec = { id, name, obj, x, z, y: gy, rot, fp };
     this.byId.set(id, rec);
-    if (!opts.noCull && name !== 'belltower') this.cullList.push({ obj, x, z, prop: false });
+    if (!opts.noCull && name !== 'belltower') this.addCulled(obj, x, z, 'building');
     if (opts.collide !== false) {
       const [w, d, h] = fp;
       const shrink = opts.shrink ?? 0.94;
@@ -143,7 +157,7 @@ export class Structures {
     obj.name = 'landslide';
     this.group.add(obj);
     this.nodes.landslide = obj;
-    this.cullList.push({ obj, x: S.x, z: S.z - 3, prop: false });
+    this.addCulled(obj, S.x, S.z - 3, 'building');
     // its turf is drawn with the terrain's own shader (season palette, splat, snow), so it carries on the
     // ground around it seamlessly; the torn turf lips take the season's grass colour
     const tm = this.world.terrain.material;
@@ -175,7 +189,7 @@ export class Structures {
       tree.scale.setScalar(s);
       holder.add(tree);
       this.group.add(holder);
-      this.cullList.push({ obj: holder, x, z, prop: false, mid: true });   // trees on the far scar: lighter tiers drop them sooner
+      this.addCulled(holder, x, z, 'mid');   // trees on the far scar: lighter tiers drop them sooner
       if (DECIDUOUS.has(name)) tree.traverse(o => { if (o.isMesh && ['Leaves', 'Maple leaves', 'Blossom'].includes(o.material.name)) bare.push(o); });
       if (name.startsWith('tree')) {
         this.colliders.cylinder(x, z, 0.38 * s, y - 1, y + 5, { id: 'tree' });
@@ -485,7 +499,7 @@ export class Structures {
       o.position.set(x, y, z);
       o.rotation.y = toRad(rot);
       this.group.add(o);
-      this.cullList.push({ obj: o, x, z, prop: true });
+      this.addCulled(o, x, z, 'prop');
       if (!['flowerpot', 'noren-lantern', 'laundry-line'].includes(name)) this.colliders.cylinder(x, z, name === 'well' || name === 'market-stall' || name === 'festival-stall' ? 1.1 : 0.4, y - 0.5, y + 1.6);
       this.world.splat.paintDisc(x, z, 0.8, 3, 0.2, 0.8);
     }
@@ -496,15 +510,15 @@ export class Structures {
    * hides beyond its distance but only returns 12 m (or 6%) inside it, so a camera orbiting the player or
    * bobbing around the threshold does not blink it in and out every cull tick.
    */
-  cull(camPos, q) {
+  cull(camPos, q, camera) {
     // measure from the player while the follow camera orbits it (orbiting must not change what is shown);
     // from the camera itself for cutscene shots far from the player
-    const f = this.world.focus;
-    if (f && (f.x - camPos.x) ** 2 + (f.z - camPos.z) ** 2 < 15 * 15) camPos = f;
+    camPos = cullReference(this.world.focus, camPos);
     const back = d => Math.min(d - 12, d * 0.94) ** 2;
     const p2 = q.propDist * q.propDist, b2 = q.buildDist * q.buildDist, p2in = back(q.propDist), b2in = back(q.buildDist);
     const mid = q.midDist ?? q.buildDist, m2 = mid * mid, m2in = back(mid);
-    for (const c of this.cullList) {
+    if (this.cells) this.cells.update(camPos, camera, q);
+    else for (const c of this.cullList) {
       const d2 = (c.x - camPos.x) ** 2 + (c.z - camPos.z) ** 2;
       c.obj.visible = c.obj.visible ? d2 < (c.prop ? p2 : c.mid ? m2 : b2) : d2 < (c.prop ? p2in : c.mid ? m2in : b2in);
     }

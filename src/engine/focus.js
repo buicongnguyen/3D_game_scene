@@ -302,7 +302,7 @@ class FocusSession {
   lookFrom(R, camera) {
     if (!this.sim) return;
     const g = this.game, s = this.stubs, at = g.player?.pos || camera.position;
-    s.real(g.structures, 'cull')?.(camera.position, R.q);
+    s.real(g.structures, 'cull')?.(camera.position, R.q, camera);
     s.real(g.foliage, 'updateShadows')?.(at);
     s.real(g.foliage, 'update')?.(camera, true);
     s.real(g.grass, 'update')?.(camera.position, at);

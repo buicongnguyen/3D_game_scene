@@ -4,6 +4,7 @@ import { placeholder } from '../engine/assets.js';
 import { mergeSkinnedParts } from '../engine/skin-merge.js';
 import { tintLite } from '../engine/people.js';
 import { outside } from '../world/zone-shape.js';
+import { registerActor } from '../world/actor-cells.js';
 
 const LAZY_MARGIN = 20;      // metres past a zone's edge where people and animals still get their body at once
 
@@ -49,6 +50,7 @@ export class NPC {
     this.far = false; this.animEvery = 1; this.animAcc = 0; this.animTick = 0; this.shadow = true;
     this.place(x, z, facing);
     this.anim?.play(this.idleClip);
+    registerActor(this, scene, world);
   }
 
   /** The body: the model, its clips, the tint (and on lighter tiers one merged mesh). */

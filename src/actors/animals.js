@@ -102,7 +102,7 @@ export class Wildlife {
 
   remove(a) {
     if (!a) return;
-    this.scene.remove(a.root);
+    a.root.removeFromParent();
     this.actors = this.actors.filter(x => x !== a);
   }
 

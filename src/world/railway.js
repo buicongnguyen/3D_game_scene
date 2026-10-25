@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { placeholder } from '../engine/assets.js';
 import { batchCopies } from './static-batch.js';
+import { CELL, CellGrid, cellsEnabled } from './cells.js';
 import { patchMaterial } from '../engine/effects.js';
 import { rail, RAIL_Y, DECK_Y, VIADUCT, VIADUCT_SPANS, RAIL_PORTALS, PLACES } from './layout.js';
 
@@ -97,6 +98,7 @@ export class Railway {
     this.group = new THREE.Group();
     this.group.name = 'railway';
     scene.add(this.group);
+    this.cells = cellsEnabled() ? new CellGrid(this.group, CELL, world) : null;
     this.repaired = false;
     const s0 = RAIL_PORTALS.west - 20, s1 = RAIL_PORTALS.east + 20;
     const onViaduct = (x, z) => x > VIADUCT.x0 && x < VIADUCT.x1 && Math.abs(z - VIADUCT.z) < 4;
@@ -118,7 +120,9 @@ export class Railway {
     this.placeSleepers(s0, s1, inGap);
     this.placeViaduct();
     // the whole spans and the abutments drawn together (the broken span and its repair stay themselves)
-    batchCopies(this.group, assets, ['viaduct-span', 'viaduct-abutment'], { cell: 400, castShadow: true });
+    // Splitting these existing wide batches into 64 m draws costs more calls in both view and shadow passes.
+    // Keep each batch intact inside a cell; the grid tests its full geometry bounds across cell edges.
+    batchCopies(this.group, assets, ['viaduct-span', 'viaduct-abutment'], { cell: 400, castShadow: true, grid: this.cells, preserveBatches: true });
     this.placePortals();
     // dirt verge along the line
     for (let s = s0; s < s1; s += 2) {
