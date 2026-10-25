@@ -238,7 +238,7 @@ export class ArcheryBuild {
 
     structures.group.add(this.group);
     const mid = at((A.back - 3) / 2, 0);
-    structures.cullList.push({ obj: this.group, x: mid[0], z: mid[1], prop: true });
+    structures.addCulled(this.group, mid[0], mid[1], 'prop');
 
     // ---- what can be bumped into: the bench, the hay wall, the quiver stand, the target stands, the rail's posts, the sock's pole
     const { boxes, posts } = archerySolids(), col = structures.colliders;

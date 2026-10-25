@@ -21,6 +21,43 @@ function wrapper(name) {
   return group;
 }
 
+/** Shared conservative view test; shadow camera bookkeeping must never change the rendered shadow map. */
+export class CellVisibility {
+  constructor(world = null) {
+    this.world = world;
+    this.frustum = new THREE.Frustum();
+    this.projection = new THREE.Matrix4();
+    this.shadowFrustum = new THREE.Frustum();
+    this.shadowCamera = new THREE.OrthographicCamera();
+    this.lightAt = new THREE.Vector3();
+    this.lightTarget = new THREE.Vector3();
+  }
+
+  prepare(camera) {
+    this.view = this.shadows = false;
+    if (!camera?.isCamera) return;
+    camera.updateMatrixWorld();
+    this.frustum.setFromProjectionMatrix(this.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
+    this.view = true;
+    const sun = this.world?.sky?.sun;
+    if (sun?.castShadow) {
+      const cam = this.shadowCamera;
+      cam.projectionMatrix.copy(sun.shadow.camera.projectionMatrix);
+      sun.getWorldPosition(this.lightAt);
+      sun.target.getWorldPosition(this.lightTarget);
+      cam.position.copy(this.lightAt);
+      cam.lookAt(this.lightTarget);
+      cam.updateMatrixWorld();
+      this.shadowFrustum.setFromProjectionMatrix(this.projection.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+      this.shadows = true;
+    }
+  }
+
+  intersects(box, castsShadow = true) {
+    return !this.view || box.isEmpty() || this.frustum.intersectsBox(box) || (castsShadow && this.shadows && this.shadowFrustum.intersectsBox(box));
+  }
+}
+
 /** Identity parents let existing world-space transforms and gameplay visibility stay unchanged. */
 export class CellGrid {
   constructor(parent, cell = CELL, world = null) {
@@ -28,12 +65,7 @@ export class CellGrid {
     this.cell = cell;
     this.world = world;
     this.cells = new Map();
-    this.frustum = new THREE.Frustum();
-    this.projection = new THREE.Matrix4();
-    this.shadowFrustum = new THREE.Frustum();
-    this.shadowCamera = new THREE.OrthographicCamera();
-    this.lightAt = new THREE.Vector3();
-    this.lightTarget = new THREE.Vector3();
+    this.visibility = new CellVisibility(world);
     if (world?.scene) (world.scene.userData.cellGrids ??= []).push(this);
   }
 
@@ -73,25 +105,7 @@ export class CellGrid {
   }
 
   update(ref, camera, q) {
-    let view = false, shadows = false;
-    if (camera?.isCamera) {
-      camera.updateMatrixWorld();
-      this.frustum.setFromProjectionMatrix(this.projection.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse));
-      view = true;
-      const sun = this.world?.sky?.sun;
-      if (sun?.castShadow) {
-        // Do not update the real shadow camera between shadow-map refreshes: that would make shadows swim.
-        const cam = this.shadowCamera;
-        cam.projectionMatrix.copy(sun.shadow.camera.projectionMatrix);
-        sun.getWorldPosition(this.lightAt);
-        sun.target.getWorldPosition(this.lightTarget);
-        cam.position.copy(this.lightAt);
-        cam.lookAt(this.lightTarget);
-        cam.updateMatrixWorld();
-        this.shadowFrustum.setFromProjectionMatrix(this.projection.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
-        shadows = true;
-      }
-    }
+    this.visibility.prepare(camera);
     for (const cell of this.cells.values()) {
       if (cell.group.parent !== this.parent) continue; // play-zone pruning removed this cell
       let cellShown = false;
@@ -105,7 +119,7 @@ export class CellGrid {
           if (e.gate !== e.obj) e.gate.visible = distanceVisible(e.gate.visible, (e.x - ref.x) ** 2 + (e.z - ref.z) ** 2, distance);
           near ||= e.gate.visible;
         }
-        bucket.group.visible = near && (!view || bucket.box.isEmpty() || this.frustum.intersectsBox(bucket.box) || (shadows && this.shadowFrustum.intersectsBox(bucket.box)));
+        bucket.group.visible = near && this.visibility.intersects(bucket.box);
         cellShown ||= bucket.group.visible;
       }
       cell.group.visible = cellShown;

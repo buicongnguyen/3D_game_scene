@@ -15,11 +15,26 @@ export function whollyOutside(obj, zone, margin = VIEW_MARGIN) {
   return outside(zone, _sphere.center.x, _sphere.center.z) - _sphere.radius > margin;
 }
 
-/** Remove the children of `root` that lie wholly outside the zone. -> how many were removed */
+const hasZoneKeep = root => {
+  let keep = false;
+  root.traverse(o => { if (o.userData.zoneKeep) keep = true; });
+  return keep;
+};
+
+/** Remove outside roots, including cell wrappers and the objects in edge cells. -> how many branches were removed */
 export function pruneOutside(root, zone, margin = VIEW_MARGIN) {
   if (!root) return 0;
   let n = 0;
-  for (const child of [...root.children]) if (whollyOutside(child, zone, margin)) { child.removeFromParent(); n++; }
+  for (const child of [...root.children]) {
+    if (child.userData.zoneKeep) continue;
+    const cell = child.userData.cellGroup;
+    if (whollyOutside(child, zone, margin) && (!cell || !hasZoneKeep(child))) { child.removeFromParent(); n++; }
+    else if (cell) {
+      // Cells, kind groups and distance gates are only wrappers. A building or yard stays one atomic model.
+      n += pruneOutside(child, zone, margin);
+      if (!child.children.length) { child.removeFromParent(); n++; }
+    }
+  }
   return n;
 }
 
