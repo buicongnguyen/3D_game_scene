@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { instancedMaterial } from './static-batch.js';
 import { SHADOW_ONLY } from './sky.js';
+import { writeInstanceMatrix } from '../engine/buffer-updates.js';
 import { patchMaterial } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
@@ -133,11 +134,11 @@ class InstanceSet {
       for (let k = 0; k < this.shadow.length; k++) {
         const mesh = this.shadow[k];
         _m.multiplyMatrices(M, mesh.userData.partMatrix);
-        _m.toArray(mesh.instanceMatrix.array, counts[k] * 16);
+        writeInstanceMatrix(mesh.instanceMatrix, counts[k], _m);
         counts[k]++;
       }
     }
-    this.shadow.forEach((m, k) => { m.count = counts[k]; m.instanceMatrix.needsUpdate = true; show(m); });
+    this.shadow.forEach((m, k) => { m.count = counts[k]; show(m); });
   }
 
   update(camPos, frustum, nearDist, maxDist, cam = camPos) {
@@ -166,12 +167,12 @@ class InstanceSet {
       for (let k = 0; k < set.length; k++) {
         const mesh = set[k];
         _m.multiplyMatrices(M, mesh.userData.partMatrix);
-        _m.toArray(mesh.instanceMatrix.array, counts[k] * 16);
+        writeInstanceMatrix(mesh.instanceMatrix, counts[k], _m);
         counts[k]++;
       }
     }
-    this.near.forEach((m, k) => { m.count = nearCount[k]; m.instanceMatrix.needsUpdate = true; show(m); });
-    this.far?.forEach((m, k) => { m.count = farCount[k]; m.instanceMatrix.needsUpdate = true; show(m); });
+    this.near.forEach((m, k) => { m.count = nearCount[k]; show(m); });
+    this.far?.forEach((m, k) => { m.count = farCount[k]; show(m); });
   }
 
   meshes() { return [...this.near, ...(this.far ?? [])]; }

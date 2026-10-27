@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { dirtyRange } from '../engine/buffer-updates.js';
 
 // Sprite atlas cells (4 x 2, 128 px each). Shapes are white; particles tint them.
 export const KIND = { GLOW: 0, STAR: 1, PETAL: 2, CONFETTI: 3, LEAF: 4, SPARK: 5, HEART: 6, RING: 7 };
@@ -235,9 +236,7 @@ export class SpriteSystem {
     const n = this.n, s = this.start, c = this.pending;
     const ranges = s + c <= n ? [[s, c]] : [[s, n - s], [0, c - (n - s)]];
     for (const at of this.attrs) {
-      at.clearUpdateRanges();
-      for (const [a, b] of ranges) at.addUpdateRange(a * at.itemSize, b * at.itemSize);
-      at.needsUpdate = true;
+      for (const [a, b] of ranges) dirtyRange(at, a * at.itemSize, b * at.itemSize);
     }
     this.pending = 0;
   }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { WATER_Y } from '../world/layout.js';
+import { dirtyRange } from '../engine/buffer-updates.js';
 
 const DAY = new THREE.Color('#1c8f99');
 const DUSK = new THREE.Color('#0b3f5a');
@@ -36,8 +37,9 @@ export class Underwater {
     this.geo = new THREE.BufferGeometry();
     this.pos = new Float32Array(N * 3);
     this.size = new Float32Array(N);
-    this.geo.setAttribute('position', new THREE.BufferAttribute(this.pos, 3));
-    this.geo.setAttribute('size', new THREE.BufferAttribute(this.size, 1));
+    this.geo.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
+    this.geo.setAttribute('size', new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage));
+    this.geo.setDrawRange(0, 0);
     this.mat = new THREE.ShaderMaterial({
       uniforms: { map: { value: bubbleTex() }, scale: { value: 400 } },
       vertexShader: /* glsl */`
@@ -114,12 +116,14 @@ export class Underwater {
         if (b.p.y > WATER_Y - 0.03) b.life = 0;
       }
       const alive = b.life > 0;
+      if (!alive) continue;
       this.pos[k * 3] = b.p.x; this.pos[k * 3 + 1] = alive ? b.p.y : -999; this.pos[k * 3 + 2] = b.p.z;
       this.size[k] = alive ? b.s : 0;
       k++;
     }
-    this.geo.attributes.position.needsUpdate = true;
-    this.geo.attributes.size.needsUpdate = true;
+    this.geo.setDrawRange(0, k);
+    dirtyRange(this.geo.attributes.position, 0, k * 3);
+    dirtyRange(this.geo.attributes.size, 0, k);
     this.mat.uniforms.scale.value = g.renderer.renderer.domElement.height * 0.9;
   }
 }

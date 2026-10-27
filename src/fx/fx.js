@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { makeGlowTexture } from '../engine/textures.js';
+import { dirtyRange } from '../engine/buffer-updates.js';
 
 const V = new THREE.Vector3();
 
 /** GPU-light particle pools (Points with per-particle size/colour/alpha) + weather + fireworks + meteors. */
-class Pool {
+export class Pool {
   constructor(scene, n, { additive = true, size = 1, tex } = {}) {
     this.n = n;
     this.pos = new Float32Array(n * 3);
@@ -19,7 +20,9 @@ class Pool {
     this.base = new Float32Array(n * 4);
     this.next = 0;
     this.activeLeft = 0;       // seconds until the last particle emitted is gone: 0 = the pool is idle (not updated, not drawn)
+    this.highWater = 0;
     const g = new THREE.BufferGeometry();
+    g.setDrawRange(0, 0);
     g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(this.col, 4).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('size', new THREE.BufferAttribute(this.size, 1).setUsage(THREE.DynamicDrawUsage));
@@ -41,6 +44,7 @@ class Pool {
   emit(p, v, { life = 1, size = 0.5, color = [1, 1, 1], alpha = 1, gravity = 0, drag = 0, grow = 0 } = {}) {
     if (life > this.activeLeft) this.activeLeft = life;
     const i = this.next; this.next = (this.next + 1) % this.n;
+    this.highWater = Math.max(this.highWater, i + 1);
     this.pos.set([p.x, p.y, p.z], i * 3);
     this.vel.set([v.x, v.y, v.z], i * 3);
     this.life[i] = life; this.max[i] = life;
@@ -49,20 +53,18 @@ class Pool {
   }
 
   update(dt) {
-    // idle: nothing alive and nothing left to clear. No loop over the particles, no upload, no draw call (a clear day
-    // has no weather, no sparks and no smoke: three of the four pools were drawn for nothing every frame)
+    // idle: nothing alive. No loop over the particles, no upload, no draw call (a clear day has no weather, no sparks
+    // and no smoke: three of the four pools were drawn for nothing every frame)
     if (this.activeLeft <= 0) {
-      if (this.points.visible) {
-        this.points.visible = false;
-        for (let i = 0; i < this.n; i++) this.col[i * 4 + 3] = 0;
-        this.points.geometry.attributes.color.needsUpdate = true;
-      }
+      if (this.points.visible) { this.points.visible = false; this.highWater = 0; this.points.geometry.setDrawRange(0, 0); }
       return;
     }
     this.activeLeft -= dt;
     this.points.visible = true;
-    for (let i = 0; i < this.n; i++) {
-      if (this.life[i] <= 0) { this.col[i * 4 + 3] = 0; continue; }
+    let first = this.n, last = -1, liveEnd = 0;
+    for (let i = 0; i < this.highWater; i++) {
+      if (this.life[i] <= 0) continue;
+      first = Math.min(first, i); last = i;
       this.life[i] -= dt;
       const k = Math.max(0, this.life[i] / this.max[i]);
       const d = Math.exp(-this.drag[i] * dt);
@@ -73,9 +75,12 @@ class Pool {
       const fade = Math.min(1, (1 - k) * 8) * k;
       this.col[i * 4] = this.base[i * 4]; this.col[i * 4 + 1] = this.base[i * 4 + 1]; this.col[i * 4 + 2] = this.base[i * 4 + 2];
       this.col[i * 4 + 3] = this.base[i * 4 + 3] * Math.min(1, fade * 2.2);
+      if (this.life[i] > 0) liveEnd = i + 1;
     }
     const g = this.points.geometry;
-    g.attributes.position.needsUpdate = true; g.attributes.color.needsUpdate = true; g.attributes.size.needsUpdate = true;
+    this.highWater = liveEnd;
+    g.setDrawRange(0, liveEnd);
+    for (const a of Object.values(g.attributes)) dirtyRange(a, first * a.itemSize, (last - first + 1) * a.itemSize);
   }
 }
 
@@ -218,6 +223,7 @@ export class FX {
 
   updateMeteors(dt, camPos) {
     const pos = this.meteorPos, col = this.meteorCol;
+    let first = this.meteors.length, last = -1, liveEnd = 0;
     for (let i = 0; i < this.meteors.length; i++) {
       const m = this.meteors[i];
       if (m.life <= 0 && Math.random() < this.meteorOn * dt * 0.9) {
@@ -228,16 +234,21 @@ export class FX {
         m.max = m.life;
       }
       if (m.life > 0) {
+        first = Math.min(first, i); last = i; liveEnd = i + 1;
         m.life -= dt;
         m.p.addScaledVector(m.v, dt);
         const tail = m.p.clone().addScaledVector(m.v.clone().normalize(), -m.len);
         const a = Math.sin(Math.PI * (1 - m.life / m.max));
         pos.set([m.p.x, m.p.y, m.p.z, tail.x, tail.y, tail.z], i * 6);
         col.set([a * 1.6, a * 1.5, a * 1.2, 0, 0, 0], i * 6);
-      } else col.fill(0, i * 6, i * 6 + 6);
+      } else if (col[i * 6] !== 0) {
+        col.fill(0, i * 6, i * 6 + 6);
+        first = Math.min(first, i); last = i;
+      }
     }
-    this.meteorLines.geometry.attributes.position.needsUpdate = true;
-    this.meteorLines.geometry.attributes.color.needsUpdate = true;
+    this.meteorLines.geometry.setDrawRange(0, liveEnd * 2);
+    dirtyRange(this.meteorLines.geometry.attributes.position, first * 6, (last - first + 1) * 6);
+    dirtyRange(this.meteorLines.geometry.attributes.color, first * 6, (last - first + 1) * 6);
   }
 
   update(dt, focus, night, audio, camPos) {

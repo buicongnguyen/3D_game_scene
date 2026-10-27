@@ -1,4 +1,4 @@
-import { Object3D } from 'three';
+import { Object3D, Matrix4 } from 'three';
 
 // World matrices, once a frame, for the things that can be seen and have moved.
 //
@@ -15,20 +15,23 @@ import { Object3D } from 'three';
 
 const native = Object3D.prototype.updateMatrixWorld;
 let stamp = 0;
+const nextWorld = new Matrix4();
 
 function visit(o, parentChanged) {
   if (o.visible === false) return;
-  // seen last frame, under the same parent? If not (new, hidden until now, or moved to another parent with the same
-  // local transform) everything below is rebuilt
-  const fresh = o._mwStamp !== stamp - 1 || o._mwParent !== o.parent;
-  o._mwStamp = stamp;
+  // seen last frame, under the same parent, with the same matrixAutoUpdate? If not (new, hidden until now, moved to
+  // another parent with the same local transform) everything below is rebuilt
+  const fresh = o._mwStamp !== stamp - 1 || o._mwParent !== o.parent || o._mwAuto !== o.matrixAutoUpdate;
   o._mwParent = o.parent;
+  o._mwAuto = o.matrixAutoUpdate;
+  o._mwStamp = stamp;
   if (o.updateMatrixWorld !== native && !o.isSkinnedMesh) {
     o.updateMatrixWorld(parentChanged || fresh);
     for (const c of o.children) markSeen(c);
     return;
   }
   let changed = parentChanged || fresh || o.matrixWorldNeedsUpdate;
+  let poseChanged = false;
   if (o.matrixAutoUpdate) {
     const p = o.position, q = o.quaternion, s = o.scale;
     let c = o._mwTRS;
@@ -37,13 +40,23 @@ function visit(o, parentChanged) {
       || c[7] !== s.x || c[8] !== s.y || c[9] !== s.z || fresh) {
       c[0] = p.x; c[1] = p.y; c[2] = p.z; c[3] = q.x; c[4] = q.y; c[5] = q.z; c[6] = q.w; c[7] = s.x; c[8] = s.y; c[9] = s.z;
       o.matrix.compose(p, q, s);
+      poseChanged = true;
       changed = true;
     }
   }
   if (changed) {
     if (o.matrixWorldAutoUpdate === true) {
-      if (o.parent === null) o.matrixWorld.copy(o.matrix);
-      else o.matrixWorld.multiplyMatrices(o.parent.matrixWorld, o.matrix);
+      if (o.parent === null) nextWorld.copy(o.matrix);
+      else nextWorld.multiplyMatrices(o.parent.matrixWorld, o.matrix);
+      // Explicit getWorldPosition/updateWorldMatrix calls dirty ancestors even if their
+      // transform is identical. Do not force thousands of descendants in that case.
+      changed = fresh || poseChanged || parentChanged || !nextWorld.equals(o.matrixWorld);
+      o.matrixWorld.copy(nextWorld);
+    } else {
+      // Externally owned world matrices (including the scene) still invalidate children
+      // when their actual value changes, not just when updateMatrix sets a dirty flag.
+      changed = fresh || !o._mwManualWorld || !o._mwManualWorld.equals(o.matrixWorld);
+      (o._mwManualWorld ??= new Matrix4()).copy(o.matrixWorld);
     }
     o.matrixWorldNeedsUpdate = false;
     if (o.isSkinnedMesh) {
