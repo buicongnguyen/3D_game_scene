@@ -13,6 +13,7 @@ import { ZONES, zoneFor } from '../src/content/zones.js';
 import { buildCatalogue, launchPlan } from '../src/content/minigames.js';
 import { exploreState } from '../src/game/fastforward.js';
 import { BAND } from '../src/world/zone-backdrop.js';
+import { subsetPlan, planHash } from '../src/world/zone-plan.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const s = a.replace(/^--/, ''), i = s.indexOf('='); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; }));
@@ -26,9 +27,13 @@ const metaFile = path.join(root, 'src/content/zone-backdrops.js');
 const meta = fs.existsSync(metaFile) ? (await import(`file://${metaFile.replace(/\\/g, '/')}?t=${Date.now()}`)).BACKDROPS : {};
 
 const browser = await chromium.launch({ headless: true, args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio'] });
+const baked = new Set();   // games that share a baked view (same place, season and hour) bake it once
 for (const id of games) {
   const z = zoneFor(id), e = catalogue.find(c => c.id === id);
   if (!z || !e) { console.warn(`no zone for ${id}`); continue; }
+  if (baked.has(z.bake)) continue;
+  baked.add(z.bake);
+  const key = z.bake, vr = z.r + z.margin;   // real out to vr: the zone and the game's margin of scenery
   const plan = launchPlan(e);
   const ctx = await browser.newContext({ viewport: { width: 1280, height: 720 } });
   await ctx.addInitScript(s => localStorage.setItem('starline-save-explore', s), SAVE);
@@ -51,16 +56,31 @@ for (const id of games) {
   // two sizes: SIZE for the Low tier (phones), twice that in hd/ for Medium and High
   const sizes = [];
   for (const [size, sub] of [[SIZE, ''], [SIZE * 2, 'hd']]) {
-    const faces = await page.evaluate(o => window.__STARLINE_QA__.bakeBackdrop(o), { x: z.x, y: y + EYE, z: z.z, near: (z.r - BAND) * 0.55, inside: z.r, size, scale: SCALE });
-    const dir = path.join(root, 'public/zones', id.replace(':', '_'), sub);
+    const faces = await page.evaluate(o => window.__STARLINE_QA__.bakeBackdrop(o), { x: z.x, y: y + EYE, z: z.z, near: (vr - BAND) * 0.55, inside: vr, size, scale: SCALE });
+    const dir = path.join(root, 'public/zones', key.replace(':', '_'), sub);
     fs.mkdirSync(dir, { recursive: true });
     let bytes = 0;
     faces.forEach((d, i) => { const b = Buffer.from(d.split(',')[1], 'base64'); bytes += b.length; fs.writeFileSync(path.join(dir, `${FACES[i]}.webp`), b); });
     sizes.push(`${size} px ${(bytes / 1024).toFixed(0)} kB`);
   }
-  meta[id] = { dir: `zones/${id.replace(':', '_')}/`, y: +(y + EYE).toFixed(2), near: +((z.r - BAND) * 0.55).toFixed(1), size: SIZE, hd: SIZE * 2, scale: SCALE, season: plan.season, hour: plan.hour };
-  console.log(`${id}: ${sizes.join(', ')} (${plan.season}, ${plan.hour} h)`);
+  meta[key] = { dir: `zones/${key.replace(':', '_')}/`, y: +(y + EYE).toFixed(2), vr, near: +((vr - BAND) * 0.55).toFixed(1), size: SIZE, hd: SIZE * 2, scale: SCALE, season: plan.season, hour: plan.hour };
+  console.log(`${key}: ${sizes.join(', ')} (${plan.season}, ${plan.hour} h)`);
   await ctx.close();
+  // the valley's own forest inside the zone, per tier (the density differs): the zone plants this instead of scattering (world/zone-plan.js)
+  const tiers = ['low', 'medium', 'high'], counts = [];
+  for (const tier of tiers) {
+    const c2 = await browser.newContext({ viewport: { width: 500, height: 300 } });
+    const p2 = await c2.newPage();
+    await p2.goto(`${url}?mute&qa=1&quality=${tier}&quick=off&zones=off&start=explore&slot=explore`, { waitUntil: 'commit', timeout: 120000 });
+    await p2.waitForFunction(() => window.__STARLINE__?.placed, null, { timeout: 240000 });
+    const placed = await p2.evaluate(() => JSON.parse(JSON.stringify(window.__STARLINE__.placed)));
+    await c2.close();
+    const sub = subsetPlan(placed, z), file = path.join(root, 'public/zones', key.replace(':', '_'), `plan-${tier}.json`);
+    fs.writeFileSync(file, JSON.stringify({ hash: planHash(sub), placed: sub }));
+    counts.push(`${tier} ${sub.trees.length} trees ${(fs.statSync(file).size / 1024).toFixed(0)} kB`);
+  }
+  meta[key].plans = tiers;
+  console.log(`  forest plan: ${counts.join(', ')}`);
 }
 await browser.close();
 const body = Object.entries(meta).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `  '${k}': ${JSON.stringify(v)},`).join('\n');

@@ -4929,5 +4929,9 @@
   "Light mode saved — reload to apply fully": "軽量モードを保存しました — 再読み込みで完全に反映されます",
   "Use light mode": "軽量モードにする",
   "Light mode is on.": "軽量モードがオンです。",
-  "The game is this way": "ゲームはこっちだよ"
+  "The game is this way": "ゲームはこっちだよ",
+  "Copy performance report": "性能レポートをコピー",
+  "Copied. Paste it to the developer.": "コピーしました。開発者に貼り付けてください。",
+  "Could not copy: select the text below and copy it.": "コピーできませんでした。下の文字を選んでコピーしてください。",
+  "Slow on your phone? Copy a report of how the game runs on it.": "端末で重いですか？ゲームの動き方のレポートをコピーできます。"
 }

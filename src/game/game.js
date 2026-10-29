@@ -9,6 +9,8 @@ import { PALETTES } from '../world/seasons.js';
 import { tx } from '../i18n/i18n.js';
 import { zoneFromParam } from '../world/zone-shape.js';
 import { Pacer } from '../engine/pacer.js';
+import { markSlow } from '../engine/device-note.js';
+import { FrameRing, buildReport } from '../engine/perf-report.js';
 // (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
 //  light: the title menu and the quick-start mini games run on it.)
 
@@ -49,8 +51,11 @@ export class Game {
     // a play zone (world/zone.js): its far view is a baked picture when there is one (world/zone-backdrop.js), and then
     // nothing past the zone's edge is built; without one a margin past the edge is built and the haze closes in
     const zone = this.zone, Z = zone ? Object.assign({}, ...await Promise.all([import('../world/zone-build.js'), import('../world/zone.js'), import('../world/zone-backdrop.js')])) : null;
-    const backdrop = Z?.hasBackdrop(zone.id) ? Z.loadBackdrop(zone.id, { hd: this.renderer.qualityName !== 'low' }) : null;   // (fetched while the models are)
-    if (zone) zone.margin = backdrop ? 0 : Z.VIEW_MARGIN;
+    const tier = this.renderer.qualityName;
+    const plan = Z?.hasPlan(zone.bake, tier) ? Z.loadPlan(zone.bake, tier) : null;   // the valley's forest here (world/zone-plan.js)
+    const backdrop = Z?.hasBackdrop(zone.bake) ? Z.loadBackdrop(zone.bake, { hd: this.renderer.qualityName !== 'low' }) : null;   // (fetched while the models are)
+    // (without a baked far view the haze closes in past a full margin of real scenery; with one, the game's own margin)
+    if (zone) zone.margin = backdrop ? (zone.margin || 0) : Z.VIEW_MARGIN;
     // buildings and props drawn as one mesh each (engine/static-merge.js); ?merge=off to compare
     if (this.params.get('merge') !== 'off') this.assets.merge = new Set(MERGE_MODELS);
     const boot = bootModels({ tropical: getTropicalTrees() });
@@ -64,7 +69,8 @@ export class Game {
     this.railway = new Railway(this.scene, this.assets, this.world, this.colliders, this.lights);
     this.paddies = new Paddies(this.scene, this.assets, this.world);
     const isFree = (x, z) => this.world.splat.sample(x, z, 0) < 0.12 && this.world.splat.sample(x, z, 3) > 0.1 && this.world.grid.slopeAt(x, z) < 36;
-    this.placed = scatter((x, z) => this.world.heightAt(x, z), isFree, this.renderer.q.trees);
+    // (a zone plants what the valley plants there: scatter's one random sequence gives other trees with other ground outside the zone)
+    this.placed = (plan && await plan) || scatter((x, z) => this.world.heightAt(x, z), isFree, this.renderer.q.trees);
     if (Z) this.placed = Z.zonePlaced(this.placed, zone, zone.margin, !backdrop);
     for (const t of this.placed.trees) if (!t.far) this.world.splat.paintDisc(t.x, t.z, 2.4 * t.s, 2, 0.75, 2);
     this.foliage = new Foliage(this.scene, this.assets, this.placed, this.renderer.q);
@@ -132,21 +138,42 @@ export class Game {
     return typeof o === 'number' ? o : (this.cycleHour ??= this.time.hour);
   }
 
+  /** What the Settings button "Copy performance report" copies (engine/perf-report.js): this device and how the game runs on it. */
+  perfReport() {
+    const r = this.renderer, info = r.renderer.info, mem = performance.memory, nav = navigator, p = this.player?.pos;
+    let slowMarked = false; try { slowMarked = localStorage.getItem('starline-slow') === '1'; } catch { /* private mode */ }
+    return buildReport({
+      at: new Date().toISOString().slice(0, 16).replace('T', ' '), page: location.search || '(no switches)', params: [...this.params.keys()].filter(k => !['mute'].includes(k)).join(' ') || undefined,
+      build: [...document.scripts].map(x => x.src.split('/').pop()).find(n => /^index-/.test(n)) || 'dev',
+      ua: nav.userAgent, screen: innerWidth + 'x' + innerHeight, dpr: +(devicePixelRatio || 1).toFixed(2), cores: nav.hardwareConcurrency, memory: nav.deviceMemory,
+      tier: r.qualityName, level: r.governor?.level ?? 0, scale: +r.scale.toFixed(2), pace: this.pacer?.pace || 0, slowMarked,
+      frames: this.ring?.summary(), calls: this.lastInfo?.calls, tris: this.lastInfo?.tris, geometries: info.memory.geometries, textures: info.memory.textures,
+      heapMB: mem ? mem.usedJSHeapSize / 1048576 : undefined, heapLimitMB: mem ? mem.jsHeapSizeLimit / 1048576 : undefined,
+      place: p ? '(' + Math.round(p.x) + ', ' + Math.round(p.z) + '), ' + (this.shownSeason || this.time.season) + ', ' + Math.floor(this.shownHour()) + ' h' + (this.zone ? ', zone ' + this.zone.id : '') : undefined,
+    });
+  }
+
   start() {
     this.clock = new THREE.Clock();
     // phones (Low tier) that cannot keep 60 draw every other display frame, evenly (engine/pacer.js); ?pace=off|30
     const pq = this.params.get('pace');
     this.pacer = pq === 'off' || (this.renderer.qualityName !== 'low' && pq !== '30') ? null : new Pacer();
     if (pq === '30' && this.pacer) this.pacer.pace = 1000 / 30;
+    this.ring = new FrameRing(300);       // the last 300 frames, for the Settings button "Copy performance report"
     let last = 0;
     const loop = now => {
       requestAnimationFrame(loop);
       const pace = this.pacer?.pace || 0;
       if (pace && now - last < pace - 4) return;      // (a display frame early is fine: rAF times jitter by a ms or two)
+      const gap = last ? now - last : 0;
       last = now;
       const t0 = performance.now();
       this.frame();
-      this.pacer?.feed(performance.now() - t0);
+      const work = performance.now() - t0;
+      this.ring.push(work, gap);
+      // a phone that has to be paced is a slow one: remember it (engine/device-note.js), so the notice card can show next time
+      // (the governor alone no longer reaches that: even 33 ms frames sit under its step-down line)
+      if (this.pacer?.feed(work)) markSlow();
     };
     requestAnimationFrame(loop);
   }

@@ -29148,6 +29148,30 @@
   ]
  },
  {
+  "s": "Copy performance report",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Copied. Paste it to the developer.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Slow on your phone? Copy a report of how the game runs on it.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Could not copy: select the text below and copy it.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Clear downloaded game data",
   "ctx": [
    "UI (src/ui/ui.js)"

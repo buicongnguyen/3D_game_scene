@@ -78,13 +78,14 @@ test('every converted game has its zone and a baked far view on disk', async () 
     const z = zoneFor(id);
     assert.ok(z && z.r > 20, `${id} has a zone`);
     assert.ok(playableIn(z, id), `${id} plays in its own zone`);
-    const b = BACKDROPS[id];
-    assert.ok(b, `${id}: run scripts/bake-zone-backdrops.mjs`);
+    const b = BACKDROPS[z.bake];
+    assert.ok(b, `${id}: run scripts/bake-zone-backdrops.mjs (bake key ${z.bake})`);
     for (const sub of ['', 'hd/']) for (const f of ['px', 'nx', 'py', 'ny', 'pz', 'nz']) {
       const p = new URL(`../public/${b.dir}${sub}${f}.webp`, import.meta.url);
       assert.ok(fs.existsSync(p) && fs.statSync(p).size > 500, `${id}: ${b.dir}${sub}${f}.webp`);
     }
-    assert.ok(b.near < z.r - 10, `${id}: the bake's near plane leaves the fade band in the picture`);
+    assert.equal(b.vr, z.r + z.margin, `${id}: baked for its view radius (re-bake after changing r or margin)`);
+    assert.ok(b.near < b.vr - 10, `${id}: the bake's near plane leaves the fade band in the picture`);
   }
 });
 
@@ -99,4 +100,44 @@ test('a zone loads the buildings near it, not the ones across the valley, and no
   assert.ok(zoneModels(tug, boot, 0).includes('belltower'), 'tug: the bell tower on the green');
   assert.ok(eggs.length <= boot.length - 30, `fewer models (${eggs.length} of ${boot.length})`);
   assert.ok(LAZY_MODELS.every(n => boot.includes(n)), 'every lazy model is one the valley would load');
+});
+
+test('games that share a baked view agree on place, size, margin, season and hour; sky games keep the live sky', async () => {
+  const { ZONES, zoneFor } = await import('../src/content/zones.js');
+  const { buildCatalogue, launchPlan } = await import('../src/content/minigames.js');
+  const cat = buildCatalogue(), by = new Map();
+  for (const id of Object.keys(ZONES)) { const z = zoneFor(id), p = launchPlan(cat.find(c => c.id === id)); (by.get(z.bake) ?? by.set(z.bake, []).get(z.bake)).push({ id, z, p }); }
+  for (const [key, list] of by) for (const g of list.slice(1)) {
+    const a = list[0];
+    assert.deepEqual([g.z.x, g.z.z, g.z.r, g.z.margin, g.z.sky, g.p.season, g.p.hour], [a.z.x, a.z.z, a.z.r, a.z.margin, a.z.sky, a.p.season, a.p.hour], `${g.id} shares the view ${key} with ${a.id}: same place, size, margin, sky, season and hour`);
+  }
+  const walking = zoneFor('trick:firefly'), fixed = zoneFor('trick:eggs');
+  assert.ok(walking.margin >= 20 && walking.wallIn > fixed.wallIn, 'a walking game keeps scenery past the edge and a wider wall');
+  assert.equal(fixed.sky, 'baked');
+});
+
+test('a zone\'s forest plan: the valley\'s trees inside its circle, rounded, far rim trees left out, order-free hash', async () => {
+  const { subsetPlan, planHash } = await import('../src/world/zone-plan.js');
+  const placed = { trees: [{ model: 'a', x: 10.123456, y: 2, z: 5, s: 1.23456, far: false }, { model: 'b', x: 400, y: 0, z: 0 }, { model: 'c', x: 12, y: 1, z: 6, far: true }, { model: 'd', x: -20, y: 1, z: 30 }], rocks: [{ model: 'r', x: 0, z: 0 }], flowers: [] };
+  const sub = subsetPlan(placed, { x: 0, z: 0, r: 50, margin: 0 });
+  assert.deepEqual(sub.trees.map(t => t.model), ['a', 'd'], 'inside the circle and not a rim tree');
+  assert.equal(sub.trees[0].x, 10.123, 'rounded to the millimetre');
+  assert.equal(sub.rocks.length, 1);
+  const swapped = { trees: [...sub.trees].reverse() };
+  assert.equal(planHash(sub), planHash(swapped), 'the order does not matter');
+  assert.notEqual(planHash(sub), planHash({ trees: [{ ...sub.trees[0], x: sub.trees[0].x + 0.5 }, sub.trees[1]] }), 'a tree moved by half a metre is another plan');
+});
+
+test('every baked zone has its forest plan for every tier, and the file agrees with its own hash', async () => {
+  const fs = await import('node:fs');
+  const { BACKDROPS } = await import('../src/content/zone-backdrops.js');
+  const { planHash } = await import('../src/world/zone-plan.js');
+  for (const [key, b] of Object.entries(BACKDROPS)) {
+    assert.deepEqual(b.plans, ['low', 'medium', 'high'], `${key}: plans baked (run scripts/bake-zone-backdrops.mjs)`);
+    for (const tier of b.plans) {
+      const f = JSON.parse(fs.readFileSync(new URL(`../public/${b.dir}plan-${tier}.json`, import.meta.url), 'utf8'));
+      assert.equal(f.hash, planHash(f.placed), `${key} ${tier}: hash matches the file`);
+      assert.ok(f.placed.trees.length > 5, `${key} ${tier}: a forest, not an empty plan`);
+    }
+  }
 });

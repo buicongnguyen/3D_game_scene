@@ -142,3 +142,21 @@ Phone tier = Low, 390x844 at 2x, CPU slowed. "Visible" counts objects in the sce
 
 Baseline for the gate (2026-10-29, production build): Kawabe, phone tier, ~150 draws, ~1,800 visible objects, JS/frame ~11 ms at 4x;
 High: 509 draws at Kawabe, 470 at Takamori, 324 at the station.
+
+### What was done about the review (2026-10-29)
+
+| Gap | Result |
+|---|---|
+| 1 Edge looks poor | **Fixed for walking games.** Per-game `margin` (real scenery kept past the edge) and `wallIn` (where the wall starts) in `src/content/zones.js`; fireflies has margin 24 m and a wall 8 m in. Checked with pictures from the wall of the fireflies zone, zone against whole valley: same trees and hills (`.tools/edge3-*.png`). Fixed-camera games keep margin 0 |
+| New: zone trees were not the valley's trees | **Fixed.** The forest scatter uses one random sequence, so a zone planted other trees than the valley, even inside its own circle. A zone now loads the valley's recorded forest (`public/zones/*/plan-<tier>.json`, 5–44 kB each, `src/world/zone-plan.js`) and no longer scatters. `tests/zone-browser.mjs --only=plans` compares all 9 recorded forests (3 zones x 3 tiers) with the real valley's: identical |
+| 2 Sky games | **Prepared**: `sky: 'live'` keeps the sky dome (`zones.js`, `applyBackdrop`). No sky game is converted yet; set it when phase 4 gets there |
+| 5 No real-phone measurement | **Tool added**: Settings → "Copy performance report" (`src/engine/perf-report.js`, `tests/perf-report-browser.mjs`). Waiting for the owner to paste one from the phone |
+| 6 Safari | **Checked as far as this machine allows**: `tests/webkit-smoke.mjs` (WebKit installed for it): the title, Explore and a zone game start with no errors and no `deviceMemory`. Software WebKit draws 1.4–4 fps, so speed on a real iPhone is still unmeasured |
+| 7 Slow-device memory | **Fixed**: the pacer engaging marks the device slow (`game.js`) |
+| 8 No performance gate | **Added**: `tests/perf-budget-browser.mjs` against `tests/perf/budget.json` (6 places: draws, triangles, visible objects; limits = today + 8–10%) |
+| 10 Baked views 0.9 MB per game | **Prepared**: games in one place with one season and hour share a bake via `bake` (a test checks that sharers agree). Not used yet: it pays off when phase 3 converts the five games of the Kawabe yard |
+| 3 Phase 2b speed items | **Not done.** Shaders (~2 s), models loaded up front (~1 MB), the coplanar fix at load and the fades are still ahead. The zone no longer runs the forest scatter, which helps a little; not measured separately |
+| 4 Lazy villagers in the full valley | **Not done, on purpose.** Many story scenes and games read a person's model directly (props in hands, dancers, exercise), so this needs a full story run to be safe |
+| 9 Decor, river bed, villagers, bloom | **Not done**; cells (Codex card) come first |
+
+Budget baseline recorded 2026-10-29 (production build): phone tier Kawabe 170 draws / 1,857 visible objects, Takamori 176 / 2,460, station 126 / 1,543; High Kawabe 459 / 2,871, Takamori 398 / 3,377, station 291 / 2,391.

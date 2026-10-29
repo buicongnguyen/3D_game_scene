@@ -5,6 +5,7 @@
 import * as THREE from 'three';
 import { BACKDROPS } from '../content/zone-backdrops.js';
 import { setZoneFade } from './zone-fade.js';
+import { viewRadius } from './zone.js';
 
 /** Metres inside a zone's edge where the real ground starts fading into the far view (the bake's near plane). */
 export const BAND = 10;
@@ -12,6 +13,21 @@ const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
 
 /** Is there a baked far view for this game? */
 export const hasBackdrop = id => !!BACKDROPS[id];
+/** Is there a recorded forest plan for this graphics tier (world/zone-plan.js)? */
+export const hasPlan = (id, tier) => !!BACKDROPS[id]?.plans?.includes(tier);
+
+/** Fetch the forest plan the valley plants inside this zone for `tier`. -> the `placed` lists, or null (the zone scatters its own). */
+export async function loadPlan(id, tier, base = './') {
+  const b = BACKDROPS[id];
+  try {
+    const r = await fetch(`${base}${b.dir}plan-${tier}.json`);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return (await r.json()).placed;
+  } catch (e) {
+    console.warn(`[zone] no forest plan for ${id} (${tier})`, e);
+    return null;
+  }
+}
 
 /** Fetch the six pictures (`hd`: the sharper set for Medium and High). -> { texture, scale, ...meta } or null. */
 export async function loadBackdrop(id, { hd = false, base = './' } = {}) {
@@ -44,16 +60,20 @@ export async function loadBackdrop(id, { hd = false, base = './' } = {}) {
  */
 export function applyBackdrop(game, zone, bd) {
   const { scene, world } = game;
-  scene.background = bd.texture;
-  scene.backgroundIntensity = 1 / bd.scale;
-  if (world.sky?.mesh) world.sky.mesh.visible = false;
-  setZoneFade(zone, zone.r - BAND, zone.r - 2);
+  // sky 'live' (the star games draw their own stars and flights over the sky): the dome stays and the far view is the ground only
+  if (zone.sky !== 'live') {
+    scene.background = bd.texture;
+    scene.backgroundIntensity = 1 / bd.scale;
+    if (world.sky?.mesh) world.sky.mesh.visible = false;
+  }
+  const vr = viewRadius(zone);         // real out to here (the zone plus the game's margin of trees and buildings)
+  setZoneFade(zone, vr - BAND, vr - 2);
   const u = world.terrain.uniforms;
   u.uBackdrop.value = bd.texture; u.uBdPos.value.set(zone.x, bd.y, zone.z); u.uBdScale.value = 1 / bd.scale; u.uBdOn.value = 1;
   // no grass tufts past the edge (they grow where the ground paint's alpha says)
   const sp = world.splat;
   for (let j = 0; j < sp.h; j++) for (let i = 0; i < sp.w; i++) {
-    if (Math.hypot(sp.x0 + i + 0.5 - zone.x, sp.z0 + j + 0.5 - zone.z) > zone.r - 3) sp.data[(j * sp.w + i) * 4 + 3] = 0;
+    if (Math.hypot(sp.x0 + i + 0.5 - zone.x, sp.z0 + j + 0.5 - zone.z) > vr - 3) sp.data[(j * sp.w + i) * 4 + 3] = 0;
   }
   sp.texture.needsUpdate = true;
 }

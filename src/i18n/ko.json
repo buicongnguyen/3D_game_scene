@@ -4929,5 +4929,9 @@
  "Light mode saved — reload to apply fully": "가벼운 모드를 저장했어요 — 새로고침하면 모두 적용돼요",
  "Use light mode": "가벼운 모드 사용",
  "Light mode is on.": "가벼운 모드가 켜져 있어요.",
- "The game is this way": "게임은 이쪽이에요"
+ "The game is this way": "게임은 이쪽이에요",
+ "Copy performance report": "성능 보고서 복사",
+ "Copied. Paste it to the developer.": "복사했어요. 개발자에게 붙여넣어 주세요.",
+ "Could not copy: select the text below and copy it.": "복사하지 못했어요. 아래 글을 선택해서 복사해 주세요.",
+ "Slow on your phone? Copy a report of how the game runs on it.": "휴대폰에서 느린가요? 게임이 어떻게 돌아가는지 보고서를 복사해요."
 }

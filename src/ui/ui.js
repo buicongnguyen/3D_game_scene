@@ -733,6 +733,23 @@ export class UI {
     const peopleReload = told(document.createElement('button'), N_('Reload now')); peopleReload.type = 'button'; peopleReload.className = 'small'; peopleReload.id = 'btnPeopleReload';
     peopleNote.append(told(document.createElement('span'), N_('Lighter people for older phones. Applies after reloading.')), ' ', peopleReload);
     tropicalRow.after(peopleRow, peopleNote);
+    // a copyable report for the developer: real phones are the one thing the development machine cannot imitate (engine/perf-report.js)
+    const perfNote = document.createElement('p'); perfNote.className = 'note'; perfNote.id = 'optPerfNote';
+    const perfBtn = told(document.createElement('button'), N_('Copy performance report')); perfBtn.type = 'button'; perfBtn.className = 'small'; perfBtn.id = 'btnPerfReport';
+    const perfMsg = told(document.createElement('span'), N_('Copied. Paste it to the developer.')); perfMsg.classList.add('hidden');
+    const perfOut = document.createElement('textarea'); perfOut.readOnly = true; perfOut.rows = 7; perfOut.id = 'perfReportText'; perfOut.className = 'hidden'; perfOut.style.cssText = 'width:100%;margin-top:6px;font:12px monospace';
+    perfNote.append(told(document.createElement('span'), N_('Slow on your phone? Copy a report of how the game runs on it.')), ' ', perfBtn, ' ', perfMsg, perfOut);
+    peopleNote.after(perfNote);
+    perfBtn.addEventListener('click', async e => {
+      e.preventDefault();
+      const text = g.perfReport(); perfOut.value = text;
+      let ok = false;
+      try { await navigator.clipboard.writeText(text); ok = true; }
+      catch { try { perfOut.classList.remove('hidden'); perfOut.select(); ok = document.execCommand('copy'); } catch { /* the text is shown to copy by hand */ } }
+      perfOut.classList.toggle('hidden', ok);
+      perfMsg.textContent = tx(ok ? N_('Copied. Paste it to the developer.') : N_('Could not copy: select the text below and copy it.'));
+      perfMsg.classList.remove('hidden');
+    });
     // what the service worker stored for the next visit (public/sw.js): the models, pictures and code, kept on this device
     if (canClearGameData()) {
       const dataNote = document.createElement('p'); dataNote.className = 'note'; dataNote.id = 'optDataNote';

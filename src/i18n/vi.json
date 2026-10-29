@@ -4929,5 +4929,9 @@
   "Light mode saved — reload to apply fully": "Đã lưu chế độ nhẹ — tải lại để áp dụng đầy đủ",
   "Use light mode": "Dùng chế độ nhẹ",
   "Light mode is on.": "Chế độ nhẹ đang bật.",
-  "The game is this way": "Trò chơi ở phía này"
+  "The game is this way": "Trò chơi ở phía này",
+  "Copy performance report": "Sao chép báo cáo hiệu năng",
+  "Copied. Paste it to the developer.": "Đã sao chép. Hãy dán cho nhà phát triển.",
+  "Could not copy: select the text below and copy it.": "Không sao chép được: hãy chọn đoạn chữ bên dưới rồi sao chép.",
+  "Slow on your phone? Copy a report of how the game runs on it.": "Máy bạn chạy chậm? Sao chép báo cáo về cách game chạy trên máy."
 }

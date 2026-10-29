@@ -8,18 +8,22 @@
 //   * switch: after a round the list comes back; a game outside the zone starts in its own zone from a fresh page
 //     (?play=), and closing the list goes back to the title;
 //   * wall: walking out of a zone, Mika is held inside it and told where the game is;
-//   * off: ?zones=off builds the whole valley for the same pick, as before.
+//   * off: ?zones=off builds the whole valley for the same pick, as before;
+//   * plans: the forest plan recorded for each zone and tier is what the real valley plants there (fails after a change to
+//     world/scatter.js, the layout or the ground: run scripts/bake-zone-backdrops.mjs again).
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import { exploreState } from '../src/game/fastforward.js';
 import { ZONES, zoneFor } from '../src/content/zones.js';
+import { BACKDROPS } from '../src/content/zone-backdrops.js';
+import { subsetPlan, planHash } from '../src/world/zone-plan.js';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const s = a.replace(/^--/, ''), i = s.indexOf('='); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; }));
 const url = process.env.GAME_URL || 'http://127.0.0.1:5897/';
 const OUT = args.out || '.tools/zone/suite';
 fs.mkdirSync(OUT, { recursive: true });
-const want = k => !args.only || args.only.split(',').includes(k);
+const want = k => !args.only || args.only.split(',').includes(k);   // games, switch, wall, off, plans
 const t0 = Date.now();
 const log = (...a) => console.log(`[${String(Math.round((Date.now() - t0) / 1000)).padStart(4)}s]`, ...a);
 const failures = [];
@@ -133,6 +137,24 @@ try {
     await page.screenshot({ path: path.join(OUT, 'wall-firefly-390x844.png') });
     check(page.errors.length === 0, `no errors (${page.errors.slice(0, 3).join(' | ')})`);
     await ctx.close();
+  }
+
+  if (want('plans')) {
+    log("plans: each zone's recorded forest against the real valley's");
+    for (const tier of ['low', 'medium', 'high']) {
+      const ctx = await browser.newContext({ viewport: { width: 500, height: 300 } });
+      const page = await ctx.newPage();
+      await page.goto(`${url}?mute&qa=1&quality=${tier}&quick=off&zones=off&start=explore&slot=explore`, { waitUntil: 'commit', timeout: 120000 });
+      await page.waitForFunction(() => window.__STARLINE__?.placed, null, { timeout: 240000 });
+      const placed = await page.evaluate(() => JSON.parse(JSON.stringify(window.__STARLINE__.placed)));
+      await ctx.close();
+      for (const [key, b] of Object.entries(BACKDROPS)) {
+        const id = Object.keys(ZONES).find(k => zoneFor(k).bake === key), z = zoneFor(id);
+        const file = JSON.parse(fs.readFileSync(new URL(`../public/${b.dir}plan-${tier}.json`, import.meta.url), 'utf8'));
+        const now = planHash(subsetPlan(placed, z));
+        check(file.hash === now, `${key} ${tier}: recorded forest = the valley's (${file.hash} / ${now})`);
+      }
+    }
   }
 
   if (want('off')) {

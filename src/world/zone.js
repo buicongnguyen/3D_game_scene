@@ -25,7 +25,9 @@ export const RAIL_MODELS = ['viaduct-span', 'viaduct-abutment', 'viaduct-broken'
  * 80 % at twice the radius, so the empty valley beyond reads as distance, not as an edge. zone.fog scales it.
  */
 export const zoneFog = zone => (zone.fog ?? 1) / (zone.r + VIEW_MARGIN);
-/** The soft wall: Mika is eased back from this far inside the zone's edge (metres). */
+/** The radius out to which a baked zone is real: the zone plus the margin of trees and buildings kept past its edge. */
+export const viewRadius = zone => zone.r + (zone.margin ?? 0);
+/** The soft wall: Mika is eased back from this far inside the zone's edge (metres; a game may set its own `wallIn`). */
 export const WALL_IN = 5;
 
 /**
@@ -34,7 +36,7 @@ export const WALL_IN = 5;
  * she never gets past (zone.r - 1). -> true when the wall acted (the caller may say why)
  */
 export function wallStep(zone, pos, vel, dt) {
-  const dx = pos.x - zone.x, dz = pos.z - zone.z, d = Math.hypot(dx, dz), edge = zone.r - WALL_IN;
+  const dx = pos.x - zone.x, dz = pos.z - zone.z, d = Math.hypot(dx, dz), edge = zone.r - (zone.wallIn ?? WALL_IN);
   if (d <= edge || d === 0) return false;
   const nx = dx / d, nz = dz / d;
   const out = vel.x * nx + vel.z * nz;
