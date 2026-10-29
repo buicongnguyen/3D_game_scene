@@ -27,6 +27,7 @@ import { Workshop } from './workshop/index.js';
 import { SHOPS } from '../content/shops.js';
 import { MinigameMenu } from './minigame-menu.js';
 import { RoundLight } from './round-light.js';
+import { Vfx } from '../fx/vfx.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
 import { VILLAGERS, RETURNING, ROUTES } from '../content/villagers.js';
@@ -66,6 +67,10 @@ export class Director {
     this.barks = { clock: new BarkClock(), ui: new BarkBubbles(), recent: new Set(), mine: new Map(), scan: 0, lit: new Set() };
     this.registerStatic();
     this.game.roundLight = new RoundLight(this.game);   // what every round switches off while it runs (game/round-light.js)
+    // small cheap effects: footstep and landing puffs, pollen, chimney smoke (fx/vfx.js); ?vfx=off to compare
+    this.vfx = new Vfx(fx, game.renderer.qualityName === 'low');
+    if (game.params?.get?.('vfx') === 'off') this.vfx.off = this.vfx.disabled = true;
+    this.vfx.setChimneys(this.chimneyTops());
     this.minigameMenu = new MinigameMenu(this);   // the Mini games menu: any game from the title or the pause menu (game/minigame-menu.js)
   }
 
@@ -663,6 +668,18 @@ export class Director {
     const launch = this.ui.pendingLaunch;               // chosen on the title's Mini games menu: start that game now
     this.ui.pendingLaunch = null;
     if (launch) await this.minigameMenu.launchFirst(launch.id);
+  }
+
+  /** Where smoke leaves the bakery and the mill (world space): their authored Chimney markers (empty nodes at the top of the flue). */
+  chimneyTops() {
+    const out = [];
+    for (const id of ['bakery', 'mill']) {
+      const r = this.game.structures?.byId.get(id), node = r?.obj.getObjectByName('Chimney');
+      if (!node) continue;
+      r.obj.updateMatrixWorld(true);
+      out.push(node.getWorldPosition(new THREE.Vector3()));
+    }
+    return out;
   }
 
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
@@ -1468,14 +1485,15 @@ export class Director {
       this.saveClock = 0;
       if (!this.save() && this.saveFailed && !this.warnedSave) { this.warnedSave = true; this.ui.toast(tx("Couldn't write the save: storage is full or blocked")); }
     }
+    this.vfx.update(dt, p.pos, { night: g.night || 0, season: g.shownSeason || g.time.season, hour: g.shownHour(), raining: g.fx?.weatherKind === 'rain', hold: !!g.fx?.weatherHold || !!g.interiors?.active, level: g.renderer.qualityName === 'low' ? (g.renderer.governor?.level || 0) : 0 });
     // footsteps
     if (p.grounded && p.speed > 0.8) {
       this.stepAcc = (this.stepAcc || 0) + dt * Math.min(p.speed, 7) * 0.62;
-      if (this.stepAcc > 1) { this.stepAcc = 0; if (p.leapMul > 1) this.fx.twinkle(p.pos.clone().add(V(0, 0.2, 0))); this.audio.step(g.time.season === 'winter' && p.surface === 'grass' ? 'snow' : p.surface); }
+      if (this.stepAcc > 1) { this.stepAcc = 0; this.vfx.step(p.pos, p.surface, g.shownSeason || g.time.season, g.night || 0, p.speed); if (p.leapMul > 1) this.fx.twinkle(p.pos.clone().add(V(0, 0.2, 0))); this.audio.step(g.time.season === 'winter' && p.surface === 'grass' ? 'snow' : p.surface); }
     }
     for (const e of p.events) {
-      if (e.type === 'jump') this.audio.jump();
-      if (e.type === 'land') this.audio.land(e.strength);
+      if (e.type === 'jump') { this.audio.jump(); this.vfx.jump(p.pos, p.surface, g.shownSeason || g.time.season, g.night || 0); }
+      if (e.type === 'land') { this.audio.land(e.strength); this.vfx.land(p.pos, p.surface, g.shownSeason || g.time.season, g.night || 0, e.strength); }
       if (e.type === 'splash') { this.audio.splash(e.strength); this.fx.splash(V(e.x, 0, e.z)); }
       if (e.type === 'leap') { this.audio.whoosh(e.mul); this.fx.burst(p.pos.clone().add(V(0, 0.3, 0)), { n: 10 + e.mul, color: [1, 0.85, 0.45], speed: 2.5, size: 0.2 }); }
       if (e.type === 'stroke') { this.audio.stroke(); if (Math.random() < 0.5) this.fx.splash(V(e.x, 0, e.z)); }

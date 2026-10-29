@@ -92,6 +92,9 @@ and buildings 0.8 s), the Director and launch +1.6 s, then the first frames wait
 3. The coarse whole-map grid could be baked at build time (~0.3 s).
 4. The launch's fades and waits (~0.7 s) can be shorter when starting from the title.
 
+5. **The far view near the edge** (found in the 2026-10-29 review): fine from the middle, flat and smeared looking outward from 8 m inside the edge. See the review table in the plan, gap 1.
+6. Phase 2b (before phase 3): items 1–4 above, then the checks of gaps 1 and 2.
+
 ## Log
 
 - 2026-10-22: zone ground, models, lazy people, pruning, sessions; first measurements (eggs 11.4 s → 9.1 s).

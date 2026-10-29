@@ -18,6 +18,7 @@ class Pool {
     this.grow = new Float32Array(n);
     this.base = new Float32Array(n * 4);
     this.next = 0;
+    this.activeLeft = 0;       // seconds until the last particle emitted is gone: 0 = the pool is idle (not updated, not drawn)
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(this.pos, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('color', new THREE.BufferAttribute(this.col, 4).setUsage(THREE.DynamicDrawUsage));
@@ -33,10 +34,12 @@ class Pool {
     });
     this.points = new THREE.Points(g, m);
     this.points.frustumCulled = false;
+    this.points.visible = false;
     scene.add(this.points);
   }
 
   emit(p, v, { life = 1, size = 0.5, color = [1, 1, 1], alpha = 1, gravity = 0, drag = 0, grow = 0 } = {}) {
+    if (life > this.activeLeft) this.activeLeft = life;
     const i = this.next; this.next = (this.next + 1) % this.n;
     this.pos.set([p.x, p.y, p.z], i * 3);
     this.vel.set([v.x, v.y, v.z], i * 3);
@@ -46,6 +49,18 @@ class Pool {
   }
 
   update(dt) {
+    // idle: nothing alive and nothing left to clear. No loop over the particles, no upload, no draw call (a clear day
+    // has no weather, no sparks and no smoke: three of the four pools were drawn for nothing every frame)
+    if (this.activeLeft <= 0) {
+      if (this.points.visible) {
+        this.points.visible = false;
+        for (let i = 0; i < this.n; i++) this.col[i * 4 + 3] = 0;
+        this.points.geometry.attributes.color.needsUpdate = true;
+      }
+      return;
+    }
+    this.activeLeft -= dt;
+    this.points.visible = true;
     for (let i = 0; i < this.n; i++) {
       if (this.life[i] <= 0) { this.col[i * 4 + 3] = 0; continue; }
       this.life[i] -= dt;

@@ -107,3 +107,38 @@ Places from `src/content/minigames.js` (`buildCatalogue`). The map spans roughly
 - Look at screenshots at 1280x720, 390x844 and 844x390 for every converted game: the owner is sensitive to odd art.
 - New player-visible strings get vi, ko and ja translations in the same commit (the i18n gate in `npm test`).
 - Record the measured numbers in the phase page's log.
+
+## Review 2026-10-29: what the plan does not cover yet
+
+Found by re-reading the plan against what was measured and built. Ordered by how much each matters to the owner's two
+complaints (slow to start, laggy to play). "Evidence" says how it was found; nothing here is a guess unless marked.
+
+| # | Gap | Evidence | Proposed step | Where |
+|---|---|---|---|---|
+| 1 | **The zone's far view is poor near the edge.** Fine from the middle, flat and smeared looking outward from 8 m inside the edge: the village is painted on the ground, bunting shows as stickers, trees just past the edge are missing | `.tools/edge-*.png` (eggs zone, south edge, zone vs whole valley) | For walking games: keep real objects 24 m past the edge (as before baking), and/or move the soft wall inward (`WALL_IN` 5 → 15). Add "stand at the wall, look out" shots to `tests/perf/zone-look.mjs` and judge them before a game is marked done | phase 3/4 checklist |
+| 2 | **Sky games conflict with the baked sky.** The backdrop replaces the live sky dome, but the star games draw their own stars and flights over a live sky | code: `applyBackdrop` hides `world.sky.mesh` | Per-game flag: `sky: 'live'` keeps the dome and bakes only the ground view | phase 4 |
+| 3 | **The speed targets of phase 2 are not met** (6 s / 9.5 MB against 3 s / 4 MB) and every converted game inherits the same floor | measured: ~2 s of shader work, ~1 MB of models loaded up front, ~0.3 s coplanar fix at load, ~0.7 s of fades | New **phase 2b** before phase 3: the four items on the phase 2 page | phase 2b |
+| 4 | **The story, the main experience, has no load or lag plan** except the notice card and the "later" streaming. It builds the whole valley (8.6–12.8 s) and is where lag is felt | measurements of 2026-10-22 and 2026-10-25 | Cheaper than streaming: give every villager and animal in the full valley the zone's late body (`NPC.hydrate`): bodies only near Mika, one clone per frame. Fewer skins at load and ~1,000 fewer bones in the scene walk | phase 6a |
+| 5 | **No real-phone measurement.** Everything is a PC GPU with a throttled CPU. GPU fill (13–15 full-screen post passes: bloom, grade, output), thermal throttling and memory limits are untested | method limit | A Settings button "Copy performance report" (tier, governor level, pacer, median work, draws, heap, user agent) for the owner to paste; one remote-debug profile on the phone | perf plan |
+| 6 | **Safari (iPhone) never tested**, only Chromium. Safari has no `deviceMemory` | `src/engine/people.js` `weakDevice` | One WebKit pass of `zone-browser`, `device-note-browser`, `quickstart-browser` | perf plan |
+| 7 | **The slow-device memory can no longer fill.** Phase 1 marks a device slow when the governor reaches step 2, but the pacer holds frames at an even 33 ms, under the governor's 38 ms step-down line, so it rarely gets there. On an iPhone (no `deviceMemory`) the card may never show | read of `renderer.js` + `pacer.js` | Call `markSlow()` when the pacer first engages. Decide whether the governor should be fed work time while paced (it also never climbs back: it needs p95 < 20.8 ms) | perf plan |
+| 8 | **No performance gate.** All measuring is by hand, so new content (people, decorations) will bloat it again unnoticed | none exists | `tests/perf-budget-browser.mjs`: draws, visible objects and JS per frame at 4x at three spots, plus load MB, failing above today's numbers + 10% | perf plan |
+| 9 | **Costs measured but unplanned**: celebration decor (11–13 draws, ~138k triangles, always on at the end of the story), river bed (40 draws, 185k triangles on High), shadow pass (174 draws on High), ~70 separate villagers, bloom's 15 post draws | `tests/perf/draw-calls.mjs`, `frame-profile.mjs` | Order: cells (Codex card), decor merge, bloom on weak phones, villager batching | perf plan |
+| 10 | **Baked views are ~0.9 MB per game at two sizes** (28 more games ≈ 25 MB in `public/zones/`), though five games share one yard and three another | file sizes of the three pilots | Bake once per place and let games share it (key the bake by zone, not by game id) | phase 3 |
+| 11 | Stale statuses and no runtime table | `phase-0` tasks 0.6/0.7 still "todo" though done | Fixed with this review; the runtime table below is new | docs |
+
+### Runtime performance (outside zones): tracking
+
+Phone tier = Low, 390x844 at 2x, CPU slowed. "Visible" counts objects in the scene graph that are drawn.
+
+| Step | Status | Result (before → after) | Where |
+|---|---|---|---|
+| Draw-call audit tool | done | `tests/perf/draw-calls.mjs` | `57b04ec` |
+| Merged buildings and props, one batch for the signposts, fewer unseen shadows | done | Kawabe High 808 → 509 draws; phone 245 → ~150 | `57b04ec` |
+| Even 30 fps pacing, small animals near-only, shared instanced materials, viaduct batch, shadow-only layer | done | JS/frame at 4x 12.8 → ~11 ms; 8x steady 30 fps | `ac32acc` |
+| Cheap effects (puffs, pollen, chimney smoke) and idle particle pools not drawn | done | effect code ~0.1–0.4 ms/frame; 3 pools no longer drawn on a clear day | docs/VFX.md |
+| Cells (spatial grid) | with Codex | visible ~1,800 → ≤ 1,000 at Kawabe | `docs/codex/CELL-GRID.md` |
+| Items 4–9 above | todo | | this table |
+
+Baseline for the gate (2026-10-29, production build): Kawabe, phone tier, ~150 draws, ~1,800 visible objects, JS/frame ~11 ms at 4x;
+High: 509 draws at Kawabe, 470 at Takamori, 324 at the station.

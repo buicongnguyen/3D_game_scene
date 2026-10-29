@@ -15,8 +15,8 @@ Know what the game costs today, measured the same way each time, so every later 
 | 0.3 | Triangles by scene group | done | `.tools/tri-sources.mjs` |
 | 0.4 | Time to a playable valley, local and at 20 Mbps | done | `.tools/valley-time.mjs` |
 | 0.5 | Tap-to-play for quick games | done | `tests/quickstart-measure.mjs` |
-| 0.6 | Move the measuring tools into the repo (`tests/perf/`) so they survive the worktree | todo | do at the start of phase 2 |
-| 0.7 | Fix `tests/quickstart-measure.mjs` for valley games (it times out waiting for the quick runtime) | todo | needed to measure zones vs valley in phase 2 |
+| 0.6 | Move the measuring tools into the repo (`tests/perf/`) so they survive the worktree | done | do at the start of phase 2 |
+| 0.7 | Fix `tests/quickstart-measure.mjs` for valley games (it times out waiting for the quick runtime) | done | needed to measure zones vs valley in phase 2 |
 
 ## Baseline (phone tier, 390x844, CPU 4x, production build)
 
