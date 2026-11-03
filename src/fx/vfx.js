@@ -34,7 +34,6 @@ export class Vfx {
     this.off = false;                 // set by the owner while the governor is far down its ladder
     this.chimneys = [];               // { pos: Vector3, acc: number }
     this.moteAcc = 0;
-    this.t = 0;
   }
 
   /** One footstep at `pos`. */
@@ -88,7 +87,6 @@ export class Vfx {
    * floats about); `level`: how far down the governor's ladder a phone is (from 2: no ambient effects at all).
    */
   update(dt, focus, env) {
-    this.t += dt;
     const fx = this.fx;
     this.off = this.disabled || env.level >= 3;
     if (this.off || env.hold) return;

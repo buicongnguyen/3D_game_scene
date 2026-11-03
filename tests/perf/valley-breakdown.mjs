@@ -3,6 +3,7 @@
 //   GAME_URL=http://127.0.0.1:5897/ node tests/perf/valley-breakdown.mjs [--cpu=4] [--query=start=explore] [--from=Ready]
 // (--from: profile only from that loading label on)
 import { chromium } from 'playwright';
+import { analyse, table } from './profile-lib.mjs';
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const s = a.replace(/^--/, ''), i = s.indexOf('='); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; }));
 const url = process.env.GAME_URL || 'http://127.0.0.1:5897/';
 const cpu = +(args.cpu || 4), query = args.query || 'start=explore&slot=explore';
@@ -29,31 +30,9 @@ const playing = await p.evaluate(() => Math.round(performance.now()));
 const { profile } = await cdp.send('Profiler.stop');
 const T = await p.evaluate(() => window.__T__);
 console.log('stages (ms from navigation):'); for (const [l, t] of T) console.log(`  ${String(t).padStart(6)}  ${l}`); console.log(`  ${String(playing).padStart(6)}  PLAYING`);
-// self time per node
-const dt = new Map(); const ts = profile.timeDeltas; for (let i = 0; i < profile.samples.length; i++) dt.set(profile.samples[i], (dt.get(profile.samples[i]) || 0) + (ts[i] || 0) / 1000);
-const byFile = new Map(), byFn = new Map();
-for (const n of profile.nodes) {
-  const ms = dt.get(n.id) || 0; if (!ms) continue;
-  const f = n.callFrame, file = (f.url.split('/').pop() || f.url || '(native)').replace(/\?.*$/, '') || '(' + f.functionName + ')';
-  byFile.set(file, (byFile.get(file) || 0) + ms);
-  const k = `${f.functionName || '(anon)'} ${file}:${f.lineNumber + 1}`; byFn.set(k, (byFn.get(k) || 0) + ms);
-}
-const top = (m, n) => [...m].sort((a, b) => b[1] - a[1]).slice(0, n).map(([k, v]) => `  ${String(Math.round(v)).padStart(6)} ms  ${k}`).join('\n');
-console.log('self time by file:\n' + top(byFile, 15));
-console.log('self time by function:\n' + top(byFn, 30));
-// --callers=fnA,fnB: self time of those functions split by their caller chain (three frames up)
-if (args.callers) {
-  const parent = new Map(); for (const n of profile.nodes) for (const c of n.children || []) parent.set(c, n);
-  for (const want of args.callers.split(',')) {
-    const m = new Map();
-    for (const n of profile.nodes) {
-      if (n.callFrame.functionName !== want) continue;
-      const ms = dt.get(n.id) || 0; if (!ms) continue;
-      const chain = []; let p = parent.get(n.id);
-      while (p && chain.length < 3) { if (p.callFrame.functionName !== want) chain.push(`${p.callFrame.functionName || '(anon)'}:${p.callFrame.lineNumber + 1}`); p = parent.get(p.id); }
-      const k = chain.join(' < '); m.set(k, (m.get(k) || 0) + ms);
-    }
-    console.log(`callers of ${want}:\n` + top(m, 8));
-  }
-}
+// self time by file and by function (ms over the whole run), and --callers=fnA,fnB: who called those functions
+const A = analyse(profile);
+table(A.files, 15, 'self time by file (ms)');
+table(A.self, 30, 'self time by function (ms)');
+if (args.callers) for (const want of args.callers.split(',')) table(A.callersOf(want), 8, `callers of ${want} (ms)`);
 await b.close();

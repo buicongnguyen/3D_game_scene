@@ -664,7 +664,7 @@ export class Director {
     if (resumed && st.step === 'e.free' && this.q.has('allStars')) this.event({ type: 'cutscene', id: 'starfall' });
     else if (resumed && st.chapter === 5 && !st.flags.huntAsked && !st.flags.hunt) this.run([{ cutscene: 'huntAsk' }]);
     // a play zone (world/zone.js): the set pieces placed above that stand outside it leave the scene before the game
-    if (this.game.zone) { try { const { pruneScene } = await import('../world/zone-build.js'); this.game.zonePruned = pruneScene(this.game.scene, this.game.zone, this.game.zone.margin); } catch (e) { console.warn('[zone] prune', e); } }
+    if (this.game.zone) { try { const { pruneScene } = await import('../world/zone-build.js'); pruneScene(this.game.scene, this.game.zone, this.game.zone.margin); } catch (e) { console.warn('[zone] prune', e); } }
     const launch = this.ui.pendingLaunch;               // chosen on the title's Mini games menu: start that game now
     this.ui.pendingLaunch = null;
     if (launch) await this.minigameMenu.launchFirst(launch.id);

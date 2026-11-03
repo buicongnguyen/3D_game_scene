@@ -13,7 +13,7 @@ const KEEP_NODES = new Set(['Wheel', 'Bell', 'ChestLid', 'Chest', 'PorchFlame', 
 
 const shared = new Map();
 /** The material of every merged part with this roughness (in quarters: glossy roof tiles keep their night sheen). */
-export function mergedMaterial(rough = 0.85) {
+function mergedMaterial(rough = 0.85) {
   const r = Math.round(rough * 4) / 4;
   if (!shared.has(r)) shared.set(r, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: r, metalness: 0, name: `Merged ${r}` }));
   return shared.get(r);

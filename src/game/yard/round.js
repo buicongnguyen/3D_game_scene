@@ -11,7 +11,7 @@
 // quits, the record kept in quest.state.yard); the yard is not one of Grandma's tricks, so it has its own.
 import * as THREE from 'three';
 import { YARD_LIST, stageOf, toWorld, toCourt, pathBetween, enterPoint, KID_STYLE, YARD_NAMES, YARD_RULES, YARD_NOTES, recordYard, cleanYard, gameOn, setGameOn, yardAt } from '../../content/yard.js';
-import { YARD_GAME, nextGame, levelFor, ambientRoles } from './index.js';
+import { YARD_GAME, nextGame, ambientRoles } from './index.js';
 import { showHowTo, hideHowTo } from '../../ui/howto.js';
 import { LEVELS, LEVEL_NAME, defaultLevel } from '../../content/levels.js';
 import { openLevelPicker } from '../../ui/level-picker.js';
