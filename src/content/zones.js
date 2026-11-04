@@ -10,7 +10,7 @@ import { buildCatalogue } from './minigames.js';
  *   margin   metres of real trees, rocks and buildings kept past the edge, with the baked far view starting after them
  *            (default 0). A game where Mika walks about near the edge needs it: the baked view is only right from the
  *            middle, and it is flat and smeared close up (docs/PLAY-ZONES-PLAN.md, review gap 1).
- *   wallIn   metres inside the edge where the soft wall starts (default 5).
+ *   wallIn   metres inside the edge where the soft wall starts (default: WALL_IN in world/zone.js, applied by wallStep).
  *   sky      'baked' (default): the far view's sky replaces the sky dome. 'live': the dome stays, for games that draw
  *            their own stars and flights over it (the sky games).
  *   bake     the key of the baked far view (default: the game's id). Games in the same place with the same season and
@@ -29,7 +29,7 @@ export function zoneFor(id) {
   if (!Z) return null;
   catalogue ??= buildCatalogue();
   const e = catalogue.find(c => c.id === id);
-  return e ? { x: e.place.x, z: e.place.z, r: Z.r, id, models: Z.models, margin: Z.margin ?? 0, wallIn: Z.wallIn ?? 5, sky: Z.sky ?? 'baked', bake: Z.bake ?? id } : null;
+  return e ? { x: e.place.x, z: e.place.z, r: Z.r, id, models: Z.models, margin: Z.margin ?? 0, wallIn: Z.wallIn, sky: Z.sky ?? 'baked', bake: Z.bake ?? id } : null;
 }
 
 /** Can game `id` be played inside `zone` (the one already built)? Its own place must sit well inside it. */

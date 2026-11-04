@@ -52,8 +52,9 @@ export class Game {
     // nothing past the zone's edge is built; without one a margin past the edge is built and the haze closes in
     const zone = this.zone, Z = zone ? Object.assign({}, ...await Promise.all([import('../world/zone-build.js'), import('../world/zone.js'), import('../world/zone-backdrop.js')])) : null;
     const tier = this.renderer.qualityName;
-    const plan = Z?.hasPlan(zone.bake, tier) ? Z.loadPlan(zone.bake, tier) : null;   // the valley's forest here (world/zone-plan.js)
     const backdrop = Z?.hasBackdrop(zone.bake) ? Z.loadBackdrop(zone.bake, { hd: this.renderer.qualityName !== 'low' }) : null;   // (fetched while the models are)
+    // (the recorded forest reaches only the game's own margin, so it is used only together with the baked far view)
+    const plan = backdrop && Z.hasPlan(zone.bake, tier) ? Z.loadPlan(zone.bake, tier) : null;   // the valley's forest here (world/zone-plan.js)
     // (without a baked far view the haze closes in past a full margin of real scenery; with one, the game's own margin)
     if (zone) zone.margin = backdrop ? (zone.margin || 0) : Z.VIEW_MARGIN;
     // buildings and props drawn as one mesh each (engine/static-merge.js); ?merge=off to compare

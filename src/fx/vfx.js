@@ -26,6 +26,8 @@ export function stepKind(surface, season, speed) {
   }
 }
 
+const SOLID = new Set(['grass', 'sand', 'stone', 'wood']);   // grounds that kick up something when landed on or pushed off
+
 export class Vfx {
   /** @param fx the FX object; @param low true on the Low tier (phones): half of everything. */
   constructor(fx, low = false) {
@@ -34,18 +36,19 @@ export class Vfx {
     this.off = false;                 // set by the owner while the governor is far down its ladder
     this.chimneys = [];               // { pos: Vector3, acc: number }
     this.moteAcc = 0;
+    this.hold = false;                // set by update(): a round or an interior holds the scene (no puffs either)
   }
 
   /** One footstep at `pos`. */
   step(pos, surface, season, night, speed) {
-    if (this.off) return;
+    if (this.off || this.hold) return;
     const s = stepKind(surface, season, speed);
     if (s) this.puff(pos, s.kind, Math.max(1, Math.round(s.n * this.k)), night, speed > 4.6 ? 1.4 : 1);
   }
 
   /** Landing: a ring of dust (or snow) kicked outward; `strength` 0..1 is the fall. */
   land(pos, surface, season, night, strength) {
-    if (this.off || strength < 0.22 || surface === 'ice') return;
+    if (this.off || this.hold || strength < 0.22 || !SOLID.has(surface)) return;
     const kind = season === 'winter' && surface === 'grass' ? 'snow' : surface === 'wood' || surface === 'stone' ? 'dust' : surface === 'sand' ? 'dust' : season === 'autumn' ? 'leafy' : 'blades';
     const n = Math.max(4, Math.round((8 + strength * 6) * this.k));
     for (let i = 0; i < n; i++) {
@@ -56,7 +59,7 @@ export class Vfx {
 
   /** Push-off puff when she jumps. */
   jump(pos, surface, season, night) {
-    if (this.off || surface === 'ice') return;
+    if (this.off || this.hold || !SOLID.has(surface)) return;
     this.puff(pos, surface === 'grass' ? (season === 'winter' ? 'snow' : 'blades') : 'dust', Math.max(1, Math.round(2 * this.k)), night, 1.1);
   }
 
@@ -89,6 +92,7 @@ export class Vfx {
   update(dt, focus, env) {
     const fx = this.fx;
     this.off = this.disabled || env.level >= 3;
+    this.hold = !!env.hold;
     if (this.off || env.hold) return;
     const day = env.hour > 6.5 && env.hour < 18.5 && env.night < 0.25;
     // daylight air: pollen drifting in spring and summer, a few dry leaf flecks in autumn, ice glints in winter

@@ -112,7 +112,7 @@ test('games that share a baked view agree on place, size, margin, season and hou
     assert.deepEqual([g.z.x, g.z.z, g.z.r, g.z.margin, g.z.sky, g.p.season, g.p.hour], [a.z.x, a.z.z, a.z.r, a.z.margin, a.z.sky, a.p.season, a.p.hour], `${g.id} shares the view ${key} with ${a.id}: same place, size, margin, sky, season and hour`);
   }
   const walking = zoneFor('trick:firefly'), fixed = zoneFor('trick:eggs');
-  assert.ok(walking.margin >= 20 && walking.wallIn > fixed.wallIn, 'a walking game keeps scenery past the edge and a wider wall');
+  assert.ok(walking.margin >= 20 && walking.wallIn > (fixed.wallIn ?? (await import('../src/world/zone.js')).WALL_IN), 'a walking game keeps scenery past the edge and a wider wall');
   assert.equal(fixed.sky, 'baked');
 });
 
