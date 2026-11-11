@@ -51,7 +51,7 @@ def add(*rots):
 
 STYLE = dict(
     energy=1.0, bounce=1.0, arm_swing=1.0, sway=1.0, lean=3.0, stance=0.0, hunch=0.0, head_up=0.0,
-    wave_side='R', elbow=12.0, arm_out=0.0, walk_lift=1.0, step=0.95, run_step=1.0, cane=False,
+    wave_side='R', elbow=12.0, arm_out=0.0, walk_lift=1.0, step=0.82, run_step=1.0, cane=False,
     idle_hands=None, talk='open', stout=0.0, scarf=False, hair=False, hat=False, ponytail=False,
     walk_speed=WALK_SPEED,   # authored Walk speed (m/s); Sora walks slowly at 1.0
 )
@@ -150,24 +150,48 @@ class Anim:
         th = interp([(0, tha), (0.45, -4), (0.8, thb * 0.7), (1.0, thb)], s)
         return V((A0.x, y, z)), th
 
-    def gait_setup(self, speed, frames, beta, lift, th_hs, th_to, bob, reach=0.965, yc=0.0):
+    def gait_setup(self, speed, frames, beta, lift, th_hs, th_to, bob, reach=0.965, yc=0.0, arc=0.05):
+        """Plan a gait. The hips do not ride at one height (that has to be the lowest the whole stride needs, which
+        leaves the knee bent even over the standing leg: a crouched walk). They follow what the legs allow at each
+        phase, up to `arc` x leg length above the lowest point, smoothed: low at heel strike, high over the standing leg.
+        `bob` is added on top where the legs still reach."""
         T = frames / 30.0
         S_len = speed * T
         g = dict(S=S_len, beta=beta, lift=lift, th_hs=th_hs, th_to=th_to, yc=yc, frames=frames)
         Lmax = self.l_leg * reach
-        drop = 0.0
-        for i in range(120):
-            p = i / 120
-            z_nom = bob(p)
+        N = 120
+        lim = []
+        for i in range(N):
+            p = i / N
+            z = 1e9
             for S, off in (('L', 0.0), ('R', 0.5)):
-                a, _ = self.foot_track(S, (p + off) % 1, S_len, beta, lift, th_hs, th_to, yc)
+                ph = (p + off) % 1
+                if ph > beta:
+                    continue                      # a foot in the air follows the hips, it does not hold them down
+                a, _ = self.foot_track(S, ph, S_len, beta, lift, th_hs, th_to, yc)
                 H0 = self.hip[S]
                 dy = H0.y - a.y
                 dx = H0.x - a.x
                 rem = Lmax * Lmax - dy * dy - dx * dx
-                zlim = a.z - H0.z + math.sqrt(max(rem, 0))
-                drop = max(drop, z_nom - zlim)
-        g['drop'] = drop
+                z = min(z, a.z - H0.z + math.sqrt(max(rem, 0)))
+            lim.append(z)
+        known = [z for z in lim if z < 1e8]
+        low = min(known)
+        top = low + arc * self.l_leg
+        z = [min(v, top) for v in lim]            # (a run's flight phase has no foot down: the cap is its height)
+        for _ in range(8):                        # smooth around the loop
+            z = [(z[i - 4] + z[i - 2] + 2 * z[i] + z[(i + 2) % N] + z[(i + 4) % N]) / 6 for i in range(N)]
+        z = [z[i] + 0.5 * bob(i / N) for i in range(N)]
+        over = max(max(z[i] - lim[i] for i in range(N)), 0.0)
+        z = [v - over for v in z]
+
+        def hips_z(p):
+            x = (p % 1) * N
+            i = int(x) % N
+            f = x - int(x)
+            return z[i] * (1 - f) + z[(i + 1) % N] * f
+        g['z'] = hips_z
+        g['drop'] = -low
         return g
 
     def gait_legs(self, spec, g, p):
@@ -188,7 +212,7 @@ class Anim:
 
         def bob(p):
             return bob_a * (-cs(p, 2, -0.1))
-        g = self.gait_setup(st['walk_speed'], frames, 0.6, 0.075 * leg * st['walk_lift'], 16, 34, bob, reach=0.95)
+        g = self.gait_setup(st['walk_speed'], frames, 0.6, 0.075 * leg * st['walk_lift'], 16, 34, bob, reach=0.985)
         self._walk_g = g
         sway = 0.012 * self.k * st['sway'] * (1 + st['stout'])
         yaw = 5.0 * e
@@ -198,7 +222,7 @@ class Anim:
 
         def pose(p):
             s = {}
-            z = bob(p) - g['drop']
+            z = g['z'](p)
             s['hips@loc'] = (sway * sn(p, 1, 0.0), 0, z)
             s['hips'] = (lean * 0.3, -roll * sn(p, 1, 0.02), -yaw * cs(p))
             s['spine'] = (lean * 0.4 + 1.2 * cs(p, 2, -0.15) + st['hunch'] * 0.5, roll * 0.4 * sn(p, 1, 0.05), yaw * 0.7 * cs(p, 1, 0.03))
@@ -227,12 +251,12 @@ class Anim:
 
         def bob(p):
             return bob_a * (-cs(p, 2, -0.22))
-        g = self.gait_setup(RUN_SPEED, frames, 0.36, 0.16 * leg, 10, 48, bob, reach=0.975, yc=-0.03 * self.k)
+        g = self.gait_setup(RUN_SPEED, frames, 0.36, 0.125 * leg, 10, 48, bob, reach=0.985, yc=-0.03 * self.k, arc=0.08)
         lean = 11.0 + st['lean']
 
         def pose(p):
             s = {}
-            z = bob(p) - g['drop']
+            z = g['z'](p)
             s['hips@loc'] = (0.01 * self.k * sn(p), 0, z)
             s['hips'] = (lean * 0.35, -2.5 * sn(p, 1, 0.02), -8 * cs(p))
             s['spine'] = (lean * 0.35 + 2.5 * cs(p, 2, -0.18), 1.2 * sn(p), 6 * cs(p, 1, 0.03))

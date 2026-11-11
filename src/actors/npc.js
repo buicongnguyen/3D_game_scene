@@ -191,7 +191,9 @@ export class NPC {
     if (this.far) return;
     // mid-range people step their animation less often (staggered so they do not all tick on the same frame)
     this.animAcc += dt;
-    if (++this.animTick % this.animEvery) return;
+    // (not when frames are already slow or paced to 30 a second: a pose every third of those is 10 a second, and people
+    // glide over the ground between poses instead of walking)
+    if (++this.animTick % (dt > 0.028 ? 1 : this.animEvery)) return;
     this.anim?.update(this.animAcc);
     this.animAcc = 0;
   }

@@ -85,6 +85,7 @@ export class Player {
     const lantern = assets.clone('hand-lantern');
     if (lantern) {
       this.lantern = lantern;
+      lantern.traverse(o => { if (o.isMesh) o.castShadow = false; });   // (a shadow the size of a fist: four draws nobody sees)
       this.carry = new LanternCarry(this, lantern);
     }
   }
