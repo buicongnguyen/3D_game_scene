@@ -18,7 +18,8 @@ let stamp = 0;
 const nextWorld = new Matrix4();
 
 function visit(o, parentChanged) {
-  if (o.visible === false) return;
+  // (a hidden bone tree is still walked: it is hidden only from the renderer's own walk, see hideBoneTrees below)
+  if (o.visible === false && o.userData.mwWalk !== true) return;
   // seen last frame, under the same parent, with the same matrixAutoUpdate? If not (new, hidden until now, moved to
   // another parent with the same local transform) everything below is rebuilt
   const fresh = o._mwStamp !== stamp - 1 || o._mwParent !== o.parent || o._mwAuto !== o.matrixAutoUpdate;
@@ -90,3 +91,31 @@ export function updateWorldSubtrees(roots) {
   stamp++;
   for (let i = 0, n = roots.length; i < n; i++) visit(roots[i], false);
 }
+
+// Bones are not drawn, but the renderer still walks every one of them each frame to find out (a village of people and
+// animals is some 1,300 bones, more than half of what is visible there). A bone tree with nothing drawable in it is
+// therefore hidden from that walk; this file's own pass keeps walking it, so the skeleton still moves.
+// The mark lives in userData, which a clone copies along with `visible`.
+const plain = o => o.isBone === true || o.type === 'Object3D' || o.type === 'Group';
+
+/** Hide the bone trees of `root` that hold nothing to draw (call on a freshly cloned rigged model). */
+export function hideBoneTrees(root) {
+  const scan = o => {                       // -> true when the subtree has something other than bones and empties
+    let content = !plain(o);
+    const kids = o.children, quiet = [];
+    for (let i = 0; i < kids.length; i++) { if (scan(kids[i])) content = true; else quiet.push(kids[i]); }
+    // the highest content-free bones under a node that does have content (or under a non-bone) carry the mark
+    if (content || !o.isBone) for (const k of quiet) if (k.isBone && k.visible) { k.visible = false; k.userData.mwWalk = true; }
+    return content;
+  };
+  scan(root);
+  return root;
+}
+
+// Something is fastened to a hidden bone tree later (a net in a hand, a halter on a head): show that tree again.
+const add = Object3D.prototype.add;
+Object3D.prototype.add = function (...objects) {
+  add.apply(this, objects);
+  for (let p = this; p !== null; p = p.parent) if (p.userData.mwWalk === true) { p.visible = true; p.userData.mwWalk = false; }
+  return this;
+};

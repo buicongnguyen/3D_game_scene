@@ -13,7 +13,7 @@ export const LADDER = [
   {},                                                                                       // 0: the tier as designed
   { npcDraw: 58, npcAnim: 20, npcShadow: 12, propDist: 66, midDist: 115, shadowEvery: 3 },  // 1: fewer far people and props
   { scale: 0.85 },                                                                          // 2: a little softer
-  { npcDraw: 46, npcAnim: 16, npcShadow: 0, propDist: 55, midDist: 95 },                    // 3: only the nearest people
+  { npcDraw: 46, npcAnim: 16, npcShadow: 0, propDist: 55, midDist: 95, shadowEvery: 4 },    // 3: only the nearest people; shadows redrawn every 4th frame
   { scale: 0.72 },                                                                          // 4
   { scale: 0.62 },                                                                          // 5
 ];

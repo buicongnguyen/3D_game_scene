@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { hideBoneTrees } from './matrices.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { separateCoplanar } from './coplanar.js';
 import { mergeStatic } from './static-merge.js';
@@ -92,7 +93,7 @@ export class Assets {
     const entry = this.resolved?.get(name);
     if (!entry) return null;
     const obj = entry.animations.length ? SkeletonUtils.clone(entry.scene) : entry.scene.clone(true);
-    if (entry.animations.length) shareSkeletons(obj);
+    if (entry.animations.length) { shareSkeletons(obj); hideBoneTrees(obj); }
     obj.userData.clips = entry.animations;
     obj.userData.model = name;
     return obj;
