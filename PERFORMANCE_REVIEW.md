@@ -284,3 +284,34 @@ The per-draw cost is mostly fixed (matrices, the draw itself, the walk), so stat
 to gain is fewer draws and fewer objects walked: the structure cell grid (docs/codex/CELL-GRID.md), then the people's
 update rate on the phone tier.
 
+### Step 2: buildings and railway pieces in map squares (engine/cell-grid.js)
+
+The static children of `structures.group` and `railway.group` move into one group per 64 m square (grid centred on the
+villages, the squares at the group's origin so nothing moves in the world). Once per drawn frame, before the matrix pass
+and with the camera about to draw, a square is hidden when its ball is outside the view **and** outside the sun's shadow
+box, worked out from the light itself (not with `shadow.updateMatrices`, which would also move the matrix the picture
+reads the map with: on the phone tier the map is redrawn every other frame). Left out: whatever holds a node the game
+moves or turns by name (`structures.nodes`: the ferry, the rowboat, the drawbridge, the mill...), lights, things over
+60 m across, the train; a watchdog takes out anything adopted that moves more than 1 m. Adopted: 127 structures (665 of
+789 nodes) and 31 railway pieces. Zone pruning looks inside the squares; the backdrop bake shows them all. `?cells=off`
+builds no squares; `game.cells.enabled = false` shows them all at run time.
+
+| Phone tier, 8x CPU, 14 interleaved rounds | squares off | on (mean of two arms) | visible nodes |
+|---|---:|---:|---:|
+| Takamori | 25.9 ms | 24.6 ms | 1,138 -> 838 |
+| Kawabe | 20.0 ms | 19.3 ms | 1,226 -> 985 |
+| Station | 21.1 ms | 19.7 ms | 1,109 -> 779 |
+
+Medians move by about -1.0 ms at all three (same-vs-same control <= 0.5 ms); 17-25 of 28 squares are hidden on a phone.
+The picture is the same: the same frame drawn with and without the squares at six spots, 11:00 and 21:00, phone tier and
+High, differs in 0 pixels in 23 of 24 shots and in one pixel by one level in the last (two draws with the same setting
+differ that much too). `tests/cell-grid.test.mjs`: world matrices unchanged by adopting; a hidden square never holds
+anything in the view or the shadow box (fails when the shadow test is dropped); the sun's box equals three.js's own
+shadow frustum; switched off shows all; a mover leaves its square.
+
+Less than the 3-5 ms first estimated: that estimate assumed merging the static parts of each square too. What is left,
+measured (per frame at 8x): building shadow casters, 7 (Takamori) to 14.5 (Kawabe) draws a frame on average, could be one
+shadow-only mesh per square (about -0.5 to -1 ms; needs the story's visibility changes followed: repairs, built and
+unbuilt places); the people's animation is the rest of the Director's 4-5 ms and cannot step less often without people
+gliding at 30 fps (the floating people the owner reported, fixed in f41973a).
+

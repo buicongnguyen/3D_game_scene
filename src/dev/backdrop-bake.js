@@ -6,6 +6,7 @@
 // `scale` to keep the bright sky inside 8 bits, stored as sRGB WebP. The zone draws them as the scene background at
 // 1/scale, so they go through the same bloom, grade and tone mapping as everything else.
 import * as THREE from 'three';
+import { Cells } from '../engine/cell-grid.js';
 
 const toSrgb = v => (v <= 0.0031308 ? 12.92 * v : 1.055 * Math.pow(v, 1 / 2.4) - 0.055);
 
@@ -18,13 +19,16 @@ export async function bakeBackdrop(game, { x, y, z, near, inside = 0, size = 768
   scene.add(cam);
   // what stands inside the zone (`inside` metres round x, z) is the zone's own: not in the picture, or it would be painted
   // onto the far ground behind it. Every object outside it is in, all six ways round.
+  // every square of the map shown (engine/cell-grid.js hides squares out of the game camera's view, not this camera's)
+  const cellsWere = Cells.enabled;
+  Cells.enabled = false; Cells.update(null);
   const hidden = [], box = new THREE.Box3(), sph = new THREE.Sphere();
   const within = (cx, cz) => Math.hypot(cx - x, cz - z) < inside;
   const hide = o => { if (o.visible) { o.visible = false; hidden.push(o); } };
   for (const c of scene.children) {
     if (/^(terrain|river|foliage|interiors)$/.test(c.name) || c.isLight || c.isCamera || c === cam) continue;
     if (c.name === 'grass') { hide(c); continue; }
-    for (const o of /^(structures|railway|paddies|riverbed)$/.test(c.name) ? c.children : [c]) {
+    for (const o of /^(structures|railway|paddies|riverbed)$/.test(c.name) ? c.children.flatMap(k => (k.userData.cell ? k.children : [k])) : [c]) {
       if (o.isInstancedMesh) continue;
       box.setFromObject(o, false);
       if (box.isEmpty()) continue;
@@ -57,6 +61,7 @@ export async function bakeBackdrop(game, { x, y, z, near, inside = 0, size = 768
   }
   scene.remove(cam);
   for (const o of hidden) o.visible = true;
+  Cells.enabled = cellsWere;
   rt.dispose();
   return out;
 }

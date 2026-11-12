@@ -19,7 +19,10 @@ export function whollyOutside(obj, zone, margin = VIEW_MARGIN) {
 export function pruneOutside(root, zone, margin = VIEW_MARGIN) {
   if (!root) return 0;
   let n = 0;
-  for (const child of [...root.children]) if (whollyOutside(child, zone, margin)) { child.removeFromParent(); n++; }
+  for (const child of [...root.children]) {
+    if (child.userData.cell) { n += pruneOutside(child, zone, margin); continue; }    // a square of the map (engine/cell-grid.js): what is in it
+    if (whollyOutside(child, zone, margin)) { child.removeFromParent(); n++; }
+  }
   return n;
 }
 

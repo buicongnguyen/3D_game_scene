@@ -10,6 +10,7 @@ import { tx } from '../i18n/i18n.js';
 import { zoneFromParam } from '../world/zone-shape.js';
 import { Pacer } from '../engine/pacer.js';
 import { View } from '../engine/view.js';
+import { Cells, CellGrid } from '../engine/cell-grid.js';
 import { markSlow } from '../engine/device-note.js';
 import { FrameRing, buildReport } from '../engine/perf-report.js';
 // (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
@@ -92,6 +93,21 @@ export class Game {
     this.riverbed = new Riverbed(this.scene, this.assets, this.world);
     // a zone: what stands well outside it leaves the scene (world/zone-build.js)
     if (Z) for (const root of [this.structures.group, this.railway.group, this.paddies.group, this.riverbed.group]) Z.pruneOutside(root, zone, zone.margin);
+    // the static buildings, props and railway pieces in 64 m squares, skipped whole while out of view and out of the
+    // sun's shadow box (engine/cell-grid.js). Not what moves: whatever holds a node the game moves or turns by name, the
+    // train. ?cells=off: as before.
+    if (this.params.get('cells') !== 'off') {
+      const named = new Set(Object.values(this.structures.nodes).filter(Boolean));
+      const holdsNamed = o => { let yes = false; o.traverse(c => { if (named.has(c)) yes = true; }); return yes; };
+      const cars = new Set((this.railway.cars || []).map(c => c.obj));
+      this.cellGrids = [
+        Cells.add(new CellGrid(this.structures.group, { skip: holdsNamed })),
+        Cells.add(new CellGrid(this.railway.group, { skip: o => cars.has(o) })),
+      ];
+      for (const g of this.cellGrids) g.adopt();
+      Cells.sun = this.world.sky?.sun || null;
+    }
+    this.cells = Cells;                     // (a handle for tests and the console: game.cells.enabled)
     // (and Mika starts in it: from her default spot the rooms by the cottage door would be fetched in the first frames)
     if (zone) { this.player.teleport(zone.x, zone.z); this.zoneWall = Z.wallStep; }
     const bd = backdrop && await backdrop;
