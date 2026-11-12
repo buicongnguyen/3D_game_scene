@@ -181,3 +181,32 @@ npm run build
 
 Retain the JSON and matched screenshots for future comparisons. Do not compare against
 the skill's other-game results or convert CPU work reductions into promised phone FPS.
+
+## Phone pass, 2026-11-12: people and animals out of the camera's view
+
+Low tier, 390x844 at 3x, CPU slowed 8x (the owner's phone is estimated at about that). At Takamori the game's own work
+was 36.5 ms a frame (below 30 fps), of which `(program)`/GL submission ~21 ms, the world-matrix pass 4.8 ms and 59
+`AnimationMixer.update` calls 5.4 ms, while only 16 skinned meshes were drawn: on a portrait phone most characters in
+animation range stand beside or behind the player.
+
+`src/engine/view.js` takes the frustum of the camera that is about to draw, once per drawn frame, and asks the world's
+people and animals (`NPC` created with `cull: true`) whether they are outside it. An idle body outside the view and
+beyond shadow range hides its `model` (not the root, which other systems lock): no animation (its clock is kept), no
+matrix walk, no renderer walk. In view again it is posed with the missed time in the same frame. Margins 4.5 m to hide,
+3 m to show. `?view=off` (and `game.view.enabled = false` at run time) restores the old behaviour.
+
+| Interleaved A/B, 10 pairs, null control 0.1-0.3 ms | off | on | change |
+|---|---:|---:|---:|
+| Takamori JS per frame | 28.0 ms | 24.6 ms | -3.4 ms (12%) |
+| Kawabe JS per frame | 22.4 ms | 19.5 ms | -2.9 ms (13%) |
+
+Mixer updates per frame 59 -> 24 (Takamori) and 33 -> 6 (Kawabe); matrix-pass nodes at Takamori 2,460 -> 1,501;
+draw calls unchanged. Checked by `tests/view.test.mjs` (margins and every exclusion) and `tests/view-browser.mjs` (a
+360-degree camera sweep on a phone and a wide screen: nobody within reach of the real frustum is ever hidden; up to 45 of
+154 are hidden at once).
+
+Measured and found small, so not worth a change: `Skeleton.update` + bone texture upload 0.3 ms, bloom ~0 ms of JS,
+shadow pass 0.6 ms (desktop GPU; phone GPU cost unmeasured). What is left at 8x is flat: GL submission for ~160 draws
+(~100 us each), the matrix pass 2.6 ms, `projectObject` 3 ms. The next candidates are the cell grid for static
+structures (docs/codex/CELL-GRID.md, est. 1-2 ms), the 62 program switches a frame (distinct materials) and the three
+point lights' uniforms uploaded for every lit program.

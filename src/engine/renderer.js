@@ -5,6 +5,7 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { updateWorldMatrices } from './matrices.js';
+import { View } from './view.js';
 import { Governor, settingsAt, ladderFor } from './governor.js';
 import { pickQuality } from './quality-pick.js';
 import { markSlow, SLOW_LEVEL } from './device-note.js';
@@ -208,6 +209,7 @@ export class Renderer {
     if (!shadows) { sm.autoUpdate = false; sm.needsUpdate = false; }
     else if (every > 1 || this.shadowDirty) { sm.autoUpdate = every <= 1; if ((this.shadowTick = (this.shadowTick || 0) + 1) % every === 0 || this.shadowDirty) { sm.needsUpdate = true; this.shadowDirty = false; } }
     else if (!sm.autoUpdate) { sm.autoUpdate = true; sm.needsUpdate = true; }
+    View.update(camera);                       // out-of-view people and animals hide their bodies first (engine/view.js)
     scene.matrixWorldAutoUpdate = this.fastMatrices === false;
     if (this.fastMatrices !== false) updateWorldMatrices(scene);
     this.composer.render();

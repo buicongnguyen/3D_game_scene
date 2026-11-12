@@ -77,7 +77,7 @@ export class Director {
   // ------------------------------------------------------------------ setup
   spawnCast() {
     const g = this.game;
-    const mk = (id, model, x, z, facing, opts) => (this.npcs[id] = new NPC(g.scene, g.assets, g.world, id, model, { x, z, facing, ...opts }));
+    const mk = (id, model, x, z, facing, opts) => (this.npcs[id] = new NPC(g.scene, g.assets, g.world, id, model, { x, z, facing, cull: true, ...opts }));
     mk('genzo', 'genzo', -104, 117, Math.PI / 2);
     mk('rin', 'rin', 3.4, 31.2, Math.PI / 2);
     mk('ota', 'ota', -24, -40, Math.PI / 2);
@@ -165,7 +165,7 @@ export class Director {
         if (i === 0 && SHOP_ROOMS.has(room.id)) return;               // the shopkeeper stands behind the counter (townlife.js)
         const model = i > 0 && h % 3 === 0 ? 'villager-kid' : h % 2 ? 'villager-woman' : 'villager-man';
         const id = `res:${room.id}:${i}`;
-        const n = new NPC(g.scene, g.assets, g.world, id, model, { x: s.pos.x, z: s.pos.z, facing: s.yaw, tint: NPC.villagerTint(40 + k++) });
+        const n = new NPC(g.scene, g.assets, g.world, id, model, { x: s.pos.x, z: s.pos.z, facing: s.yaw, tint: NPC.villagerTint(40 + k++), cull: true });
         n.place(s.pos.x, s.pos.z, s.yaw, s.pos.y);
         n.villager = true; n.barkKind = model.slice(9); n.resident = room.id; n.spotYaw = s.yaw;
         n.setIdle(i ? 'Talk' : 'Idle');

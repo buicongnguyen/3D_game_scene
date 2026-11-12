@@ -4,6 +4,7 @@ import { placeholder } from '../engine/assets.js';
 import { mergeSkinnedParts } from '../engine/skin-merge.js';
 import { tintLite } from '../engine/people.js';
 import { outside } from '../world/zone-shape.js';
+import { View } from '../engine/view.js';
 
 const LAZY_MARGIN = 20;      // metres past a zone's edge where people and animals still get their body at once
 
@@ -18,7 +19,7 @@ const KID_HAIR = 4;          // the first four are a child's colours; white and 
  * can walk a short path, and exposes a talk anchor for the camera and markers.
  */
 export class NPC {
-  constructor(scene, assets, world, id, model, { x, z, facing = 0, tint = null, name } = {}) {
+  constructor(scene, assets, world, id, model, { x, z, facing = 0, tint = null, name, cull = false } = {}) {
     this.id = id;
     this.world = world;
     this.name = name || id;
@@ -47,8 +48,28 @@ export class NPC {
     // level of detail (set by the director every few frames): far people are not drawn, mid-range ones animate at a
     // lower rate and cast no shadow. `visible` stays the logical state; `far` only hides the drawing.
     this.far = false; this.animEvery = 1; this.animAcc = 0; this.animTick = 0; this.shadow = true;
+    // `unseen`: out of the camera's view (engine/view.js, only for the world's own people and animals, `cull: true`):
+    // the body is hidden, so it is not drawn, not walked by the matrix pass and not animated until it is seen again
+    this.unseen = false;
+    if (cull) View.watch(this);
     this.place(x, z, facing);
     this.anim?.play(this.idleClip);
+  }
+
+  /**
+   * Called once per drawn frame by View.update, with the camera that is about to draw. Out of view and casting no
+   * shadow into it: the body is hidden. Back in view: posed for now (the clock it missed in one step), at once.
+   * Anyone mid-gesture, riding, on a shadow-casting distance or not yet built is left alone. -> false once taken out of the world
+   */
+  cull(hides) {
+    if (!this.root.parent) return false;
+    const p = this.pos;
+    const un = !(this.far || this.shadow || !this.visible || this.riding || this.pending || this.anim?.busy) && hides(p.x, p.y + 1, p.z, this.unseen);
+    if (un === this.unseen) return true;
+    this.unseen = un;
+    this.model.visible = !un;
+    if (!un && this.animAcc > 0) { this.anim?.update(this.animAcc); this.animAcc = 0; }
+    return true;
   }
 
   /** The body: the model, its clips, the tint (and on lighter tiers one merged mesh). */
@@ -89,6 +110,7 @@ export class NPC {
     this.dress(p.assets, p.model, p.tint);
     old.removeFromParent();
     this.root.add(this.model);
+    this.unseen = false;                          // (the new body is shown; the next frame decides again)
     if (!this.shadow) this.model.traverse(o => { if (o.isMesh) o.castShadow = false; });
     if (this.path?.length) {
       const run = (this.walkClip ? this.walkClip === 'Run' : this.speed > 3) && this.anim?.has('Run');
@@ -191,6 +213,7 @@ export class NPC {
     if (this.far) return;
     // mid-range people step their animation less often (staggered so they do not all tick on the same frame)
     this.animAcc += dt;
+    if (this.unseen) return;                      // (its clock is kept: cull() poses it when it comes back into view)
     // (not when frames are already slow or paced to 30 a second: a pose every third of those is 10 a second, and people
     // glide over the ground between poses instead of walking)
     if (++this.animTick % (dt > 0.028 ? 1 : this.animEvery)) return;

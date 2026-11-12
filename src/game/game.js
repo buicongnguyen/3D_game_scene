@@ -9,6 +9,7 @@ import { PALETTES } from '../world/seasons.js';
 import { tx } from '../i18n/i18n.js';
 import { zoneFromParam } from '../world/zone-shape.js';
 import { Pacer } from '../engine/pacer.js';
+import { View } from '../engine/view.js';
 import { markSlow } from '../engine/device-note.js';
 import { FrameRing, buildReport } from '../engine/perf-report.js';
 // (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
@@ -20,6 +21,8 @@ export class Game {
     this.params = params;
     this.canvas = canvas;
     this.renderer = new Renderer(canvas, params.get('quality'));
+    this.view = View;                                               // (a handle for tests and the console: game.view.enabled)
+    if (params.get('view') === 'off') View.enabled = false;      // ?view=off: people and animals out of the camera's view stay shown (engine/view.js)
     this.scene = new THREE.Scene();
     // near 0.35 m: the follow camera never gets closer than ~1 m, and a small near plane makes distant trim
     // (train lining, window frames) z-fight and shimmer

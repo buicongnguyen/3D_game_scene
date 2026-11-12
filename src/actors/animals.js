@@ -93,7 +93,7 @@ export class Wildlife {
   }
 
   add(id, model, x, z, facing = 0, idle = 'Idle') {
-    const a = new NPC(this.scene, this.assets, this.world, id, model, { x, z, facing });
+    const a = new NPC(this.scene, this.assets, this.world, id, model, { x, z, facing, cull: true });
     a.setIdle(idle);
     if (NO_SHADOW.test(model)) { a.noShadow = true; a.shadow = false; a.model.traverse(o => { if (o.isMesh) o.castShadow = false; }); }
     this.actors.push(a);

@@ -66,7 +66,7 @@ export class TownLife {
     for (const p of PEOPLE) {
       let n = d.npcs[p.id];
       if (!n) {
-        n = d.npcs[p.id] = new NPC(g.scene, g.assets, g.world, p.id, p.model, { x: 0, z: 0, tint: NPC.villagerTint(seed++) });
+        n = d.npcs[p.id] = new NPC(g.scene, g.assets, g.world, p.id, p.model, { x: 0, z: 0, tint: NPC.villagerTint(seed++), cull: true });
         n.villager = true;
         n.barkKind = p.model.slice(9);
       }
@@ -94,7 +94,7 @@ export class TownLife {
       if (!it || !room?.spots?.length) continue;
       const spot = room.spots[0];
       const outdoor = it.n;
-      const k = new NPC(g.scene, g.assets, g.world, `shop:${key}`, outdoor.folk.model || 'villager-man', { x: spot.pos.x, z: spot.pos.z, facing: spot.yaw });
+      const k = new NPC(g.scene, g.assets, g.world, `shop:${key}`, outdoor.folk.model || 'villager-man', { x: spot.pos.x, z: spot.pos.z, facing: spot.yaw, cull: true });
       // dress the counter body exactly like the outdoor one (same tinted materials)
       const mats = new Map();
       outdoor.model.traverse(o => { if (o.isMesh) mats.set(o.name, o.material); });
