@@ -4933,5 +4933,12 @@
   "Copy performance report": "性能レポートをコピー",
   "Copied. Paste it to the developer.": "コピーしました。開発者に貼り付けてください。",
   "Could not copy: select the text below and copy it.": "コピーできませんでした。下の文字を選んでコピーしてください。",
-  "Slow on your phone? Copy a report of how the game runs on it.": "端末で重いですか？ゲームの動き方のレポートをコピーできます。"
+  "Slow on your phone? Copy a report of how the game runs on it.": "端末で重いですか？ゲームの動き方のレポートをコピーできます。",
+  "Voices": "ボイス",
+  "Blips": "ピコピコ音",
+  "Read aloud": "読み上げ",
+  "Off": "オフ",
+  "Read aloud uses the voices on your device. Where it has none for your language, you hear blips.": "読み上げは端末に入っている音声を使います。その言語の音声がない場合は、ピコピコ音になります。",
+  "Hi, I'm Mika!": "こんにちは、ミカだよ！",
+  "This device has no voice for this language, so you will hear blips.": "この端末にはこの言語の音声がないので、ピコピコ音になります。"
 }

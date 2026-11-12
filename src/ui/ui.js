@@ -9,6 +9,7 @@ import { getPeopleChoice, setPeopleChoice, peopleSetFor } from '../engine/people
 import { loadSave } from '../game/saves.js';
 import { clearGameData, canClearGameData } from '../sw-register.js';
 import { noteWanted, deviceFacts, noteSeen, markNoteSeen } from '../engine/device-note.js';
+import { Voice } from '../engine/voice.js';
 
 // the weak-device card's words (engine/device-note.js); Settings repeats them
 const DEVICE_NOTE = N_('The story and Explore build the whole valley. On this device it may run slowly and warm up the phone. Light mode helps.');
@@ -36,6 +37,7 @@ export class UI {
   constructor(game, audio) {
     this.game = game;
     this.audio = audio;
+    this.voice = new Voice();             // Settings > Voices: blips, read aloud by the device's voices, or off (engine/voice.js)
     this.dialogueOpen = false;
     this.overlay = null;
     this.touch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
@@ -597,6 +599,7 @@ export class UI {
       i++;
     }
     $('dialogue').classList.add('hidden');
+    this.voice?.stop();
     this.nav = null;
     this.dialogueOpen = false;
     return result;
@@ -607,6 +610,12 @@ export class UI {
     const page = pages[i];
     const box = $('dlgLines');
     box.innerHTML = '';
+    // Settings > Voices (engine/voice.js): the page read aloud, in order, where the device has a voice for the language;
+    // otherwise the speakers' blips; nothing when voices are off
+    const voice = this.voice, lang = getLang();
+    const reads = !!voice?.reads(lang) && voice.speak(page.lines.map(([who, text]) => ({ text, cast: CAST[who] || CAST.narrator })), lang);
+    if (!reads) voice?.stop();
+    const blips = !reads && voice?.mode !== 'off';
     page.lines.forEach(([who, text, anim], k) => {
       const c = CAST[who] || CAST.narrator;
       const row = document.createElement('div');
@@ -632,7 +641,7 @@ export class UI {
       box.appendChild(row);
       // gestures and voice blips follow the rows as they appear
       if (onLine) setTimeout(() => { if (this.dialogueOpen) onLine(who, anim); }, k * 420);
-      if (who !== 'narrator') setTimeout(() => this.audio?.blip(c.pitch), k * 140);
+      if (who !== 'narrator' && blips) setTimeout(() => this.audio?.blip(c.pitch), k * 140);
     });
     box.scrollTop = 0;
     const last = i === pages.length - 1;
@@ -649,6 +658,7 @@ export class UI {
         if (move === 'next' && performance.now() - shownAt < 180) return;
         if (move === 'back' && i === 0) return;
         if (move === 'next' && page.choice) return;
+        this.voice?.stop();                     // Next, Back or Skip: the page stops speaking
         this.nav = null;
         this.choiceActive = false;
         this.onChoice = null;
@@ -673,6 +683,7 @@ export class UI {
         box.appendChild(b);
       });
       this.onChoice = i => {
+        this.voice?.stop();
         this.choiceActive = false;
         this.onChoice = null;
         box.innerHTML = '';
@@ -779,6 +790,18 @@ export class UI {
     const load = (k, d) => { try { return JSON.parse(localStorage.getItem(`starline-opt-${k}`)) ?? d; } catch { return d; } };
     const save = (k, v) => { try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify(v)); } catch { /* ignore */ } };
     const sens = $('optSens'), inv = $('optInvert'), mus = $('optMusic'), sfx = $('optSfx'), fps = $('optFps'), diff = $('optDifficulty');
+    // Voices: the dialogue's blips, read aloud by the device's own voices, or nothing (engine/voice.js)
+    const voices = $('optVoices');
+    if (voices) {
+      voices.value = this.voice.mode;
+      voices.addEventListener('change', () => {
+        this.voice.setMode(voices.value);
+        if (voices.value !== 'read') return;
+        // a sample straight away, in the game's language; or why there will be blips
+        if (this.voice.reads(getLang())) this.voice.speak([{ text: tx(N_("Hi, I'm Mika!")), cast: CAST.mika }], getLang());
+        else this.toast(tx(N_('This device has no voice for this language, so you will hear blips.')));
+      });
+    }
     const story = $('optStory');
     if (story) {
       story.value = defaultStory();
@@ -804,6 +827,7 @@ export class UI {
       g.input.aimMode = g.hard;
       save('difficulty', diff.value);
       this.audio?.setVolumes(+mus.value, +sfx.value);
+      if (this.voice) this.voice.volume = +sfx.value;           // (read aloud follows the sound effects slider)
       $('fps').classList.toggle('hidden', !fps.checked);
       save('sens', +sens.value); save('invert', inv.checked); save('music', +mus.value); save('sfx', +sfx.value); save('fps', fps.checked);
       g.seasonOverride = season.value || null;

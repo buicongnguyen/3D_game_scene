@@ -4933,5 +4933,12 @@
  "Copy performance report": "성능 보고서 복사",
  "Copied. Paste it to the developer.": "복사했어요. 개발자에게 붙여넣어 주세요.",
  "Could not copy: select the text below and copy it.": "복사하지 못했어요. 아래 글을 선택해서 복사해 주세요.",
- "Slow on your phone? Copy a report of how the game runs on it.": "휴대폰에서 느린가요? 게임이 어떻게 돌아가는지 보고서를 복사해요."
+ "Slow on your phone? Copy a report of how the game runs on it.": "휴대폰에서 느린가요? 게임이 어떻게 돌아가는지 보고서를 복사해요.",
+  "Voices": "목소리",
+  "Blips": "삑삑 소리",
+  "Read aloud": "읽어 주기",
+  "Off": "끄기",
+  "Read aloud uses the voices on your device. Where it has none for your language, you hear blips.": "읽어 주기는 기기에 있는 음성을 사용해요. 그 언어의 음성이 없으면 삑삑 소리가 나요.",
+  "Hi, I'm Mika!": "안녕, 나는 미카야!",
+  "This device has no voice for this language, so you will hear blips.": "이 기기에는 이 언어의 음성이 없어서 삑삑 소리가 나요."
 }

@@ -797,7 +797,7 @@ export const FOLK_CAST = {
   v3: { name: 'Kenta', color: '#e0503a', pitch: 1.4 },
   v20: { name: 'Yui', color: '#e07ab0', pitch: 1.5 },
   v10: { name: 'Daichi', color: '#2a9ad0', pitch: 1.42 },
-  v4: { name: 'Aiko', color: '#e08a2a', pitch: 1.14 },
+  v4: { name: 'Aiko', color: '#e08a2a', pitch: 1.14, voice: 'f' },
   v5: { name: 'Mr. Sato', color: '#5a7ad8', pitch: 0.95 },
   v22: { name: 'Mr. Oda', color: '#6a7a5a', pitch: 0.76 },
   v27: { name: 'Mr. Tanabe', color: '#4a5a7a', pitch: 0.84 },

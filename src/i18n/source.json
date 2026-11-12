@@ -29202,6 +29202,18 @@
   ]
  },
  {
+  "s": "Hi, I'm Mika!",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "This device has no voice for this language, so you will hear blips.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Page {n}",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -29753,6 +29765,36 @@
  },
  {
   "s": "Sound effects",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Voices",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Blips",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Read aloud",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Off",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Read aloud uses the voices on your device. Where it has none for your language, you hear blips.",
   "ctx": [
    "menu / screen text"
   ]

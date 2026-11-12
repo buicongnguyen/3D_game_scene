@@ -17,9 +17,9 @@ export const STORY = {
   id: 'grandma',
 
   CAST: {
-    sora: { name: 'Grandma Sora', color: '#c0587a', pitch: 0.95 },
-    mom: { name: 'Mum', color: '#3a9a7a', pitch: 1.1 },
-    dad: { name: 'Dad', color: '#4f6fb0', pitch: 0.82 },
+    sora: { name: 'Grandma Sora', color: '#c0587a', pitch: 0.95, voice: 'f' },
+    mom: { name: 'Mum', color: '#3a9a7a', pitch: 1.1, voice: 'f' },
+    dad: { name: 'Dad', color: '#4f6fb0', pitch: 0.82, voice: 'm' },
   },
 
   // ---------------------------------------------------------------------------------------------- dialogue

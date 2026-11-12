@@ -5,19 +5,19 @@ import { FOLK_CAST } from '../content/townsfolk.js';
 import { GOODS, ERRANDS } from '../content/shops.js';
 
 export const CAST = {
-  mika: { name: 'Mika', color: '#f2b53a', pitch: 1.18 },
-  tamo: { name: 'Tamo', color: '#ffd45a', pitch: 1.6 },
-  genzo: { name: 'Genzo', color: '#2d4a7a', pitch: 0.72 },
-  rin: { name: 'Rin', color: '#1fa5a0', pitch: 1.25 },
-  ota: { name: 'Grandpa Ōta', color: '#8a5a3a', pitch: 0.8 },
-  hana: { name: 'Hana', color: '#e0567a', pitch: 1.05 },
-  sora: { name: 'Sora', color: '#7a6ad8', pitch: 1.0 },
-  kiku: { name: 'Old Kiku', color: '#6a8a4a', pitch: 0.95 },
+  mika: { name: 'Mika', color: '#f2b53a', pitch: 1.18, voice: 'c' },
+  tamo: { name: 'Tamo', color: '#ffd45a', pitch: 1.6, voice: 'c' },
+  genzo: { name: 'Genzo', color: '#2d4a7a', pitch: 0.72, voice: 'm' },
+  rin: { name: 'Rin', color: '#1fa5a0', pitch: 1.25, voice: 'f' },
+  ota: { name: 'Grandpa Ōta', color: '#8a5a3a', pitch: 0.8, voice: 'm' },
+  hana: { name: 'Hana', color: '#e0567a', pitch: 1.05, voice: 'f' },
+  sora: { name: 'Sora', color: '#7a6ad8', pitch: 1.0, voice: 'f' },
+  kiku: { name: 'Old Kiku', color: '#6a8a4a', pitch: 0.95, voice: 'f' },
   // the Festival dance (content/tricks.js): Hana's grown-up daughter and her friends from dance school in Seoul
-  hoa: { name: 'Hoa', color: '#e8664f', pitch: 1.12 },
-  nabi: { name: 'Nabi', color: '#e0458f', pitch: 1.24 },
-  byeol: { name: 'Byeol', color: '#a95bd6', pitch: 1.32 },
-  haru: { name: 'Haru', color: '#3f7ad8', pitch: 0.9 },
+  hoa: { name: 'Hoa', color: '#e8664f', pitch: 1.12, voice: 'f' },
+  nabi: { name: 'Nabi', color: '#e0458f', pitch: 1.24, voice: 'f' },
+  byeol: { name: 'Byeol', color: '#a95bd6', pitch: 1.32, voice: 'f' },
+  haru: { name: 'Haru', color: '#3f7ad8', pitch: 0.9, voice: 'm' },
   villager: { name: 'Villager', color: '#6b7a8a', pitch: 1 },
   narrator: { name: '', color: '#cbd5e1', pitch: 1 },
 };

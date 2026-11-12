@@ -96,6 +96,7 @@ canvas.addEventListener('webglcontextrestored', () => {
 const audio = new Audio();
 game.audio = audio;
 const ui = new UI(game, audio);
+ui.voice.muted = params.has('mute');      // (?mute: nothing read aloud either)
 game.ui = ui;
 
 window.__STARLINE__ = game;
