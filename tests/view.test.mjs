@@ -83,7 +83,7 @@ test('a mid-range person out of view hides its body and keeps its clock; back in
 test('nobody in the cast is hidden who could be seen or who matters: near ones, gestures, riders, far, not built', () => {
   View.update(phone());
   const out = { pos: new Vector3(500, 0, 500) };
-  for (const [why, extra] of [['casts a shadow (near)', { shadow: true }], ['mid-gesture', { anim: { busy: true, update() {} } }], ['riding', { riding: true }],
+  for (const [why, extra] of [['casts a shadow (near)', { shadow: true }], ['mid-gesture', { anim: { busy: true, update() {} } }], ['riding', { riding: true }], ['carrying Mika (cow ride)', { ridden: true }],
     ['far (not drawn already)', { far: true }], ['not built yet', { pending: {} }], ['away by the story', { visible: false }]]) {
     const n = person({ ...out, ...extra });
     n.cull(View.hides);
@@ -104,6 +104,17 @@ test('a gesture that starts while hidden shows the body again; one that is over 
   n.anim.busy = false;
   n.cull(View.hides);
   assert.equal(n.unseen, true);
+});
+
+test('a hidden body taken out of the world is shown again, so it is never put back hidden', () => {
+  View.update(phone());
+  const n = person({ pos: new Vector3(500, 0, 500) });
+  assert.equal(n.cull(View.hides), true);
+  assert.equal(n.model.visible, false);
+  n.root.removeFromParent();
+  assert.equal(n.cull(View.hides), false, 'taken out: dropped from the list');
+  assert.equal(n.unseen, false);
+  assert.equal(n.model.visible, true, 'and not left hidden for whoever puts it back');
 });
 
 test('people taken out of the world are dropped from the list; ?view=off shows everyone', () => {

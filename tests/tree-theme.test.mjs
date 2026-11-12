@@ -297,10 +297,19 @@ test('stretched tropical cedars use full height for camera and shadow culling, a
   foliage.setTheme(true);
   const set = foliage.treeSets.find(s => s.records.some(r => r.sourceModel === 'tree-cedar'));
   const at = set.records.findIndex(r => r.sourceModel === 'tree-cedar');
-  const bounds = [];
-  set.update(new THREE.Vector3(200, 0, 210), { intersectsSphere: sphere => { bounds.push(sphere.clone()); return true; } }, 55, 1400);
-  assert.equal(bounds[at].center.y, 12, '24 m tall tree is centered halfway up');
-  assert.ok(bounds[at].radius >= set.radius * 3, 'culling includes vertical stretch');
+  // (with the map squares on (world/cells.js) a square's ball is tested before its records: find the cedar's by place)
+  for (const on of [false, true]) {
+    set.cellsOn = on;
+    const bounds = [];
+    set.update(new THREE.Vector3(200, 0, 210), { intersectsSphere: sphere => { bounds.push(sphere.clone()); return true; } }, 55, 1400);
+    const mine = bounds.filter(b => b.center.x === set.records[at].x && b.center.z === set.records[at].z);
+    assert.ok(mine.length >= (on ? 2 : 1), `the cedar is tested${on ? ' (its square, then itself)' : ''}`);
+    for (const b of mine) {
+      assert.equal(b.center.y, 12, `24 m tall tree is centered halfway up (squares ${on ? 'on' : 'off'})`);
+      assert.ok(b.radius >= set.radius * 3, `culling includes vertical stretch (squares ${on ? 'on' : 'off'})`);
+    }
+  }
+  set.cellsOn = true;
   const pos = new THREE.Vector3(0, 0, 0);
   set.update(pos, { intersectsSphere: () => true }, 55, 1400);
   assert.ok(set.far?.[0].count > 0, 'thousands of distant trees use cheap meshes');

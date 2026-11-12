@@ -5,6 +5,7 @@ import { writeInstanceMatrix } from '../engine/buffer-updates.js';
 import { patchMaterial } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 import { DECIDUOUS } from './scatter.js';
+import { buildCells, cellOutside, cellOutsideShadowBox, VIEW_SLACK } from './cells.js';
 import { getTropicalTrees, onTreeThemeChange, treeForTheme, bushForTheme, TROPICAL_TREES, TROPICAL_BUSHES } from './tree-theme.js';
 import { TROPICAL_MODELS } from '../content/models.js';
 
@@ -72,6 +73,11 @@ class InstanceSet {
       _p.set(r.x, r.y, r.z);
       return new THREE.Matrix4().compose(_p, _q, _s);
     });
+    this.cellsOn = true;                                    // false: test every record, as before (tests and A/B runs; a property so the bundler cannot fold it away)
+    this.cells = buildCells(records, this.radius, this.height);
+    this.seen = new Uint8Array(this.cells.length);          // 1: the square was walked by the last update (its records' states are current)
+    this.whole = [{ idx: Int32Array.from(records.keys()), x: 0, y: 0, z: 0, r: Infinity }];   // (cells off: one square that is always walked)
+    this.wholeSeen = new Uint8Array(1);
     this.dirty = true;
   }
 
@@ -124,18 +130,21 @@ class InstanceSet {
     _lx.crossVectors(UP, _ld).normalize();
     _ly.crossVectors(_ld, _lx);
     const fx = _lx.dot(focus), fy = _ly.dot(focus);
-    for (let i = 0; i < this.records.length; i++) {
-      const rec = this.records[i];
-      // the shadow box moves 4 m before the lists are rebuilt: keep a margin for that and the crown
-      const r = range + this.radius * rec.s * Math.max(1, rec.sy ?? 1) + 6;
-      const px = _lx.x * rec.x + _lx.y * rec.y + _lx.z * rec.z, py = _ly.x * rec.x + _ly.y * (rec.y + this.height * rec.s * (rec.sy ?? 1) * 0.5) + _ly.z * rec.z;
-      if (Math.abs(px - fx) > r || Math.abs(py - fy) > r) continue;
-      const M = this.matrices[i];
-      for (let k = 0; k < this.shadow.length; k++) {
-        const mesh = this.shadow[k];
-        _m.multiplyMatrices(M, mesh.userData.partMatrix);
-        writeInstanceMatrix(mesh.instanceMatrix, counts[k], _m);
-        counts[k]++;
+    for (const cell of this.cellsOn ? this.cells : this.whole) {
+      if (cellOutsideShadowBox(cell, _lx, _ly, fx, fy, range)) continue;       // (a whole square outside the box: cells.js)
+      for (let n = 0; n < cell.idx.length; n++) {
+        const i = cell.idx[n], rec = this.records[i];
+        // the shadow box moves 4 m before the lists are rebuilt: keep a margin for that and the crown
+        const r = range + this.radius * rec.s * Math.max(1, rec.sy ?? 1) + 6;
+        const px = _lx.x * rec.x + _lx.y * rec.y + _lx.z * rec.z, py = _ly.x * rec.x + _ly.y * (rec.y + this.height * rec.s * (rec.sy ?? 1) * 0.5) + _ly.z * rec.z;
+        if (Math.abs(px - fx) > r || Math.abs(py - fy) > r) continue;
+        const M = this.matrices[i];
+        for (let k = 0; k < this.shadow.length; k++) {
+          const mesh = this.shadow[k];
+          _m.multiplyMatrices(M, mesh.userData.partMatrix);
+          writeInstanceMatrix(mesh.instanceMatrix, counts[k], _m);
+          counts[k]++;
+        }
       }
     }
     this.shadow.forEach((m, k) => { m.count = counts[k]; show(m); });
@@ -146,29 +155,37 @@ class InstanceSet {
     const farCount = this.far ? new Array(this.far.length).fill(0) : null;
     const max = this.opts.maxDist ?? maxDist;
     const st = this.state, bandMax = band(max), bandNear = band(nearDist);
-    for (let i = 0; i < this.records.length; i++) {
-      const r = this.records[i];
-      const d = Math.hypot(r.x - camPos.x, r.z - camPos.z);
-      // hysteresis on the cut-off and on the LOD switch
-      let s = st[i];
-      if (s & 2) { if (d < max - bandMax) s &= ~2; } else if (d > max) s |= 2;
-      if (s & 1) { if (d < nearDist - bandNear) s &= ~1; } else if (d > nearDist) s |= 1;
-      st[i] = s;
-      if (s & 2) continue;
-      _sphere.center.set(r.x, r.y + this.height * r.s * (r.sy ?? 1) * 0.5, r.z);
-      // Lists are only rebuilt after the camera moves 0.5 m or turns ~2.3 deg (Foliage.update), so cull
-      // with that much slack: otherwise trees entering at the screen edge popped in a few frames late.
-      _sphere.radius = this.radius * r.s * Math.max(1, r.sy ?? 1) + Math.hypot(r.x - cam.x, r.y - cam.y, r.z - cam.z) * 0.045 + 0.6;
-      if (!frustum.intersectsSphere(_sphere)) continue;
-      const useNear = !(s & 1) || !this.far || r.story;
-      const set = useNear ? this.near : this.far;
-      const counts = useNear ? nearCount : farCount;
-      const M = this.matrices[i];
-      for (let k = 0; k < set.length; k++) {
-        const mesh = set[k];
-        _m.multiplyMatrices(M, mesh.userData.partMatrix);
-        writeInstanceMatrix(mesh.instanceMatrix, counts[k], _m);
-        counts[k]++;
+    const cells = this.cellsOn ? this.cells : this.whole, seen = this.cellsOn ? this.seen : this.wholeSeen;
+    for (let c = 0; c < cells.length; c++) {
+      const cell = cells[c];
+      // a whole square past the cut-off or outside the view has nothing to draw (cells.js)
+      if (cellOutside(cell, camPos, cam, max, frustum, _sphere)) { seen[c] = 0; continue; }
+      const fresh = !seen[c];                        // not walked last time: nobody saw these records, so their distance states start over
+      seen[c] = 1;
+      for (let n = 0; n < cell.idx.length; n++) {
+        const i = cell.idx[n], r = this.records[i];
+        const d = Math.hypot(r.x - camPos.x, r.z - camPos.z);
+        // hysteresis on the cut-off and on the LOD switch
+        let s = fresh ? 0 : st[i];
+        if (s & 2) { if (d < max - bandMax) s &= ~2; } else if (d > max) s |= 2;
+        if (s & 1) { if (d < nearDist - bandNear) s &= ~1; } else if (d > nearDist) s |= 1;
+        st[i] = s;
+        if (s & 2) continue;
+        _sphere.center.set(r.x, r.y + this.height * r.s * (r.sy ?? 1) * 0.5, r.z);
+        // Lists are only rebuilt after the camera moves 0.5 m or turns ~2.3 deg (Foliage.update), so cull
+        // with that much slack: otherwise trees entering at the screen edge popped in a few frames late.
+        _sphere.radius = this.radius * r.s * Math.max(1, r.sy ?? 1) + Math.hypot(r.x - cam.x, r.y - cam.y, r.z - cam.z) * VIEW_SLACK + 0.6;
+        if (!frustum.intersectsSphere(_sphere)) continue;
+        const useNear = !(s & 1) || !this.far || r.story;
+        const set = useNear ? this.near : this.far;
+        const counts = useNear ? nearCount : farCount;
+        const M = this.matrices[i];
+        for (let k = 0; k < set.length; k++) {
+          const mesh = set[k];
+          _m.multiplyMatrices(M, mesh.userData.partMatrix);
+          writeInstanceMatrix(mesh.instanceMatrix, counts[k], _m);
+          counts[k]++;
+        }
       }
     }
     this.near.forEach((m, k) => { m.count = nearCount[k]; show(m); });

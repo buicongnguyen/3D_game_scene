@@ -210,3 +210,40 @@ shadow pass 0.6 ms (desktop GPU; phone GPU cost unmeasured). What is left at 8x 
 (~100 us each), the matrix pass 2.6 ms, `projectObject` 3 ms. The next candidates are the cell grid for static
 structures (docs/codex/CELL-GRID.md, est. 1-2 ms), the 62 program switches a frame (distinct materials) and the three
 point lights' uniforms uploaded for every lit program.
+
+## Phone pass, 2026-11-12 (2): what the mountain rim costs, and tree lists by map square
+
+The owner asked whether lowering the mountains and turning some sides into sea would cut drawing. Measured first (Low tier,
+390x844, 12 spots x 12 view directions, main pass only; a scratch probe, not kept in the repo): about 104 draws and 240k
+triangles a view.
+
+| What | Draws | Triangles |
+|---|---:|---:|
+| Drawn only for the rim (centre outside the playable rectangle) | 1.1 (1 %) | 16k (7 %), almost all rim trees |
+| Hidden behind terrain from the camera (still drawn: three.js has no occlusion test) | 12.5 (12 %) | 21k (9 %); 33 % of draws looking north or south from the edge |
+
+So a sea instead of the rim saves about one draw and a few per cent of triangles, and lowering the mountains would show
+more of what they now hide (more drawing, not less). Reshaping the rim also re-rolls the one random sequence the scatter
+is built from (every tree moves), the baked zone views and plans (public/zones) and the tunnel portals and river passes
+the story uses. Not done.
+
+The rim does cost something else: **78 % of the tree records (1,959 of 2,511) are rim forest**, and every list rebuild
+(the camera moved 0.5 m or turned 2.3 degrees: 14-27 % of frames while walking) tested all of them, then the shadow
+lists did again. `world/cells.js` groups the records in 64 m squares, each with a ball that holds its records' balls; a
+square outside the view, past the cut-off or outside the sun's shadow box is skipped with one test. Records walked per
+rebuild 3,475 -> 237-559 (7-16 %); a square coming back into view starts its distance states fresh (nobody saw them).
+
+| 8x CPU, interleaved, null control 0.0-0.1 ms | per record | per square | change |
+|---|---:|---:|---:|
+| View lists, Kawabe / Takamori / north edge | 2.4 / 2.4 / 2.2 ms | 0.8 / 0.8 / 0.4 ms | -1.6 to -1.8 ms a rebuild |
+| Shadow lists | 1.1-1.2 ms | 0.0-0.4 ms | about -0.9 ms a rebuild |
+
+The lists are identical with and without the squares at 96 camera poses on the phone tier and 96 on Medium (compared as
+sorted sets: the order of instances inside a draw differs), and `tests/cells.test.mjs` checks the invariant on random
+scatters, cameras, cut-offs and sun directions (a square that is skipped never holds a record the per-record test keeps;
+shrinking the ball fails it). `InstanceSet.cellsOn = false` restores the per-record walk. Pitfall found on the way: a
+module-level `static` switch is folded away by the production bundler when nothing in the file assigns it, so an A/B
+through it compared the new code with itself; use an instance property.
+
+Left, with the measured ceiling: skip draws that are wholly behind terrain (a horizon test per static mesh, outside shadow
+range): about 12 draws a view, ~1.2 ms at 8x on average and 3 ms looking out from the north and south edges.

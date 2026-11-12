@@ -59,12 +59,17 @@ export class NPC {
   /**
    * Called once per drawn frame by View.update, with the camera that is about to draw. Out of view and casting no
    * shadow into it: the body is hidden. Back in view: posed for now (the clock it missed in one step), at once.
-   * Anyone mid-gesture, riding, on a shadow-casting distance or not yet built is left alone. -> false once taken out of the world
+   * Anyone mid-gesture, riding (the train, or Mika on a cow: her seat and reins hang on this body), on a shadow-casting
+   * distance or not yet built is left alone. -> false once taken out of the world (shown again first: whoever puts the
+   * body back must not find it hidden and never asked again)
    */
   cull(hides) {
-    if (!this.root.parent) return false;
+    if (!this.root.parent) {
+      if (this.unseen) { this.unseen = false; this.model.visible = true; }
+      return false;
+    }
     const p = this.pos;
-    const un = !(this.far || this.shadow || !this.visible || this.riding || this.pending || this.anim?.busy) && hides(p.x, p.y + 1, p.z, this.unseen);
+    const un = !(this.far || this.shadow || !this.visible || this.riding || this.ridden || this.pending || this.anim?.busy) && hides(p.x, p.y + 1, p.z, this.unseen);
     if (un === this.unseen) return true;
     this.unseen = un;
     this.model.visible = !un;
