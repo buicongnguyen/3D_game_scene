@@ -23,6 +23,7 @@ export class Game {
     this.renderer = new Renderer(canvas, params.get('quality'));
     this.view = View;                                               // (a handle for tests and the console: game.view.enabled)
     if (params.get('view') === 'off') View.enabled = false;      // ?view=off: people and animals out of the camera's view stay shown (engine/view.js)
+    this.renderer.setProgramSort(params.get('sort') !== 'off');  // ?sort=off: three.js's own order of opaque draws (engine/renderer.js programFirst)
     this.scene = new THREE.Scene();
     // near 0.35 m: the follow camera never gets closer than ~1 m, and a small near plane makes distant trim
     // (train lining, window frames) z-fight and shimmer

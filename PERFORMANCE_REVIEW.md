@@ -247,3 +247,40 @@ through it compared the new code with itself; use an instance property.
 
 Left, with the measured ceiling: skip draws that are wholly behind terrain (a horizon test per static mesh, outside shadow
 range): about 12 draws a view, ~1.2 ms at 8x on average and 3 ms looking out from the north and south edges.
+
+## Phone pass, 2026-11-12 (3): where a phone-tier frame goes, and Step 1
+
+Low tier, 390x844, CPU slowed 8x, desktop GPU. The game's work is 23.3 ms (Kawabe) to 28.9 ms (Takamori) a frame, paced
+to 30 fps; `renderer.render` is 73 % of it and GL submission alone (`renderBufferDirect`, `setProgram` 8.4 ms) 40 %.
+The scene walk and matrix pass are 6.4 ms, the shadow map 2 ms, the Director (people, wildlife, town) 4-5 ms; foliage
+lists, culling, grass, bloom's JS and GC are each under ~1 ms. The frame fits 30 fps up to 9-11x slower than the desktop
+and 60 fps up to 4.6-5.7x. On the desktop GPU the main-pass timer barely moves from 0.5x to 1.5x drawing scale (9x the
+pixels): it measures submission, not fill, so it says nothing about a phone's GPU (the in-game `fps / tier / scale`
+readout is the on-phone check: resolution is the last step of the Low ladder).
+
+Census of one frame (Takamori / Kawabe): main draws 141 / 120 (shadow 17 / 33 on average, it is drawn every other
+frame; post 15); program switches 51 / 49 (34 / 28 programs); material switches 106 / 90; 95 / 75 visible materials
+identical to another; ~1,330 / 1,210 GL calls; 1,054 / 1,004 visible nodes of ~6,600, of which structures 491 / 543;
+478 / 490 drawables tested against the view and not drawn (structures 281 / 336, scene-root objects ~70, railway
+20-39); Hoa 12 draws and 4 bone-texture uploads; instanced meshes sharing one geometry re-bind attributes 28 / 106 times.
+
+Step 1, each tried at run time first (interleaved A/B, 12 rounds, same-vs-same control 0.45-0.5 ms):
+
+| Change | Counts | Time at 8x | Kept |
+|---|---|---|---|
+| Opaque draws by program, then material (`programFirst`) | program switches 61 -> 50 / 62 -> 40 | about -0.8 ms at both spots | yes, `?sort=off` |
+| Own geometry per instanced mesh | attribute re-binds 28 / 106 -> 0 | no change beyond the noise | no |
+| Identical materials shared (439-471 swaps) | no fewer program switches | no change beyond the noise | no (and risky) |
+| Shaders compiled behind the loading screen (`Renderer.warm`) | program links on a hop route 21 -> 18 | loading +0.1-0.2 s at 1x | yes, `?warm=off` |
+
+The sort changes 0-2 of 329,160 pixels on the phone tier and 0-18 of 921,600 on High (six spots, day and night): single
+pixels where two surfaces lie at exactly the same depth, so the one drawn last wins (they are not the no-depth-write
+contact shadows: hiding those leaves the count unchanged). Either result is right; those pixels already flip as the camera
+moves. The warm-up covers only what exists at load: arriving somewhere also links shadow-pass (depth) programs, which
+`compile()` does not build, and programs of things made later (outfits, dragonflies, the frog pond), and uploads 1-6 MB
+of geometry and textures; together those make the 100-500 ms first-arrival frames at 8x.
+
+The per-draw cost is mostly fixed (matrices, the draw itself, the walk), so state-switch tricks give little; what is left
+to gain is fewer draws and fewer objects walked: the structure cell grid (docs/codex/CELL-GRID.md), then the people's
+update rate on the phone tier.
+

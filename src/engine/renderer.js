@@ -17,6 +17,17 @@ export const QUALITY = {
   high: { name: 'High', dpr: 2.0, maxPixels: 5.0e6, shadow: 4096, shadowRange: 55, bloom: true, bloomHalf: false, msaa: 4, grass: 1, trees: 1, terrainStep: 2, clouds: 5, env: true, propDist: 240, buildDist: 900, propShadows: true, npcAnim: 55, npcDraw: 150, npcShadow: 45, mergeChars: true, riverbedDist: 170, governor: true },
 };
 
+/**
+ * Opaque draws grouped by shader program, then by material (three.js sorts them by material alone), so a frame sets each
+ * program fewer times: on the phone tier 61 -> 50 program switches at Takamori and 62 -> 40 at Kawabe, about 0.8 ms
+ * less work a frame at 8x CPU. Only the order of opaque, depth-tested draws changes; render order still comes first.
+ */
+export function programFirst(properties) {
+  const pid = m => properties.get(m).currentProgram?.id ?? 1e9;
+  return (a, b) => a.groupOrder - b.groupOrder || a.renderOrder - b.renderOrder || pid(a.material) - pid(b.material)
+    || a.material.id - b.material.id || a.z - b.z || a.id - b.id;
+}
+
 export function isMobile() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1100);
 }
@@ -97,6 +108,25 @@ export class Renderer {
     this.buildComposer();
     this.resize();
     window.addEventListener('resize', () => this.resize());
+  }
+
+  /** Opaque draws grouped by program first (programFirst); off: three.js's own order (?sort=off). */
+  setProgramSort(on) { this.renderer.setOpaqueSort(on ? programFirst(this.renderer.properties) : null); }
+
+  /**
+   * Compile the shader program of everything in `scene` (hidden things too) now, behind the loading screen, instead
+   * of the first time each thing is drawn: arriving somewhere new linked 1-6 programs in one frame, a stall of
+   * 100-500 ms at 8x CPU. Compiled against the composer's HDR target, like every frame of the world (its programs differ
+   * from ones for the screen: tone mapping, output colour space). Waits at most `maxMs` for the browser to finish.
+   */
+  async warm(scene, camera, maxMs = 8000) {
+    const r = this.renderer, prev = r.getRenderTarget(), rt = this.composer?.renderTarget1;
+    let ready;
+    try { if (rt) r.setRenderTarget(rt); ready = r.compileAsync(scene, camera); }
+    finally { r.setRenderTarget(prev); }
+    let timer;
+    await Promise.race([ready, new Promise(res => { timer = setTimeout(res, maxMs); })]);
+    clearTimeout(timer);
   }
 
   setQuality(name) {

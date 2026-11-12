@@ -125,6 +125,12 @@ const loadValley = () => (valleyP ??= (async () => {
   game.celebrate = new V.Celebrate(game); // chapter celebrations and the valley's lasting decorations
   game.systems.push(director);
   if (params.has('qa')) V.attachQA(game, director, ui);
+  // every shader program of the valley compiled now, behind the loading screen, not on first sight while playing
+  // (engine/renderer.js warm). ?warm=off: compiled on first sight, as before.
+  if (params.get('warm') !== 'off') {
+    try { await game.renderer.warm(game.scene, game.camera); } catch (e) { console.warn('[warm] shaders compile on first sight', e); }
+    performance.mark('starline:warm');
+  }
   valleyReady = true;
   window.__STARLINE_RUNTIME__ = 'valley';
 })());
