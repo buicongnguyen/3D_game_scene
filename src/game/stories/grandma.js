@@ -148,7 +148,7 @@ export const STORY = {
     ],
     trick_firefly_note: [
       ['narrator', 'In the jar-light, a folded paper by the path: a drawing of a small girl holding a jar of fireflies.'],
-      ['sora', "\"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\" I kept it for tonight.", 'Talk'],
+      ['narrator', 'In Grandma\'s handwriting: "Mi-chan, age four. She cried when we let them go, then waved goodbye to every one."'],
       ['mika', "I don't remember that. …I'd still wave."],
     ],
   // review fixes: the peaches are three for Hana's basket and two for Grandma's jam

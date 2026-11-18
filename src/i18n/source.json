@@ -6596,9 +6596,9 @@
   ]
  },
  {
-  "s": "\"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\" I kept it for tonight.",
+  "s": "In Grandma's handwriting: \"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\"",
   "ctx": [
-   "dialogue trick_firefly_note, spoken by Grandma Sora"
+   "dialogue trick_firefly_note, spoken by narrator"
   ]
  },
  {
@@ -29058,6 +29058,18 @@
  },
  {
   "s": "Light mode saved — reload to apply fully",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Start a new story in…",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Continue which story?",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]

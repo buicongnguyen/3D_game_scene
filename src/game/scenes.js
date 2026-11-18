@@ -443,10 +443,10 @@ export class Scenes {
   /** A point `dy` above whatever one would stand on at (x, z). */
   above(x, z, dy = 0) { return V(x, this.standY(x, z) + dy, z); }
 
-  /** Eases the time of day to `hour` over `ms`, the short way round the clock (golden hour, blue hour, night). */
-  async easeHour(hour, ms = 2500) {
+  /** Ease to the requested hour, taking the shortest route unless the scene needs the sun to move forward. */
+  async easeHour(hour, ms = 2500, forward = false) {
     const g = this.g, h0 = g.time.hour, t0 = performance.now();
-    const span = ((hour - h0 + 36) % 24) - 12;
+    const span = forward ? (hour - h0 + 24) % 24 : ((hour - h0 + 36) % 24) - 12;
     while (performance.now() - t0 < ms) {
       const k = (performance.now() - t0) / ms;
       g.time.hour = (h0 + span * k * k * (3 - 2 * k) + 24) % 24;
@@ -801,13 +801,7 @@ export class Scenes {
   async starfall() {
     const g = this.g, d = this.d, C = g.celebrate;
     d.ui.cinema(true);
-    const h0 = g.time.hour, to = 22.3, t0 = performance.now();
-    while (performance.now() - t0 < 3200) {
-      const k = (performance.now() - t0) / 3200, e = k * k * (3 - 2 * k);
-      g.time.hour = (h0 + ((to - h0 + 24) % 24) * e) % 24;
-      await wait(16);
-    }
-    d.q.state.hour = g.time.hour;
+    await this.easeHour(22.3, 3200, true);
     d.starfallSky ??= C?.starfall?.(true);
     d.fx.meteorShower(1);
     d.audio.setMusic(g.shownSeason || g.time.season, 'finale');

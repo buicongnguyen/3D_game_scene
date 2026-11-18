@@ -2,7 +2,7 @@
 // original story ("Starline Classic"). The default story, "A Year with Grandma" (./grandma.js), overrides its words
 // and a few step rules. useStory() swaps the chosen story's text into the shared tables *in place*, so every module
 // that imported DIALOGUE, STEPS… keeps working without knowing which story is on.
-import { CAST, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, SKY_LETTERS, KEEPSAKES, GIFTS, CAPTIONS, STEPS, TREASURES, HUNT } from '../story.js';
+import { CAST, CHAPTERS, DIALOGUE, CHATTER, JOURNAL, SKY_LETTERS, KEEPSAKES, GIFTS, CAPTIONS, STEPS, STEP_INDEX, TREASURES, HUNT } from '../story.js';
 import { STORY as GRANDMA } from './grandma.js';
 
 export const DEFAULT_STORY = 'grandma';
@@ -27,6 +27,13 @@ const refill = (obj, from) => { for (const k of Object.keys(obj)) delete obj[k];
 const refillArray = (arr, from) => { arr.length = 0; arr.push(...from); };
 const byId = (list, over) => list.map(x => (over?.[x.id] ? { ...x, ...over[x.id] } : x));
 
+/** Read a step for a save slot without switching the live story tables. Older saves use Classic. */
+export function storyStep(stepId, story) {
+  const base = BASE.STEPS[STEP_INDEX[stepId]];
+  const over = STORIES[story]?.data?.STEPS?.[stepId];
+  return over && base ? { ...base, ...over } : base;
+}
+
 /** Switch every shared story table to `id` ('grandma' | 'classic'). Unknown ids fall back to classic. */
 export function useStory(id) {
   const s = STORIES[id] ? id : 'classic';
@@ -43,7 +50,7 @@ export function useStory(id) {
   refillArray(TREASURES, byId(BASE.TREASURES.map(t => ({ ...t })), d.TREASURES));
   refillArray(HUNT, byId(BASE.HUNT, d.HUNT));
   refill(CAPTIONS, { ...clone(BASE.CAPTIONS), ...clone(d.CAPTIONS || {}) });
-  refillArray(STEPS, BASE.STEPS.map(st => (d.STEPS?.[st.id] ? { ...st, ...d.STEPS[st.id] } : st)));
+  refillArray(STEPS, BASE.STEPS.map(st => storyStep(st.id, s)));
   return s;
 }
 

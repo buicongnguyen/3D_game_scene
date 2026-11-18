@@ -2307,7 +2307,7 @@
  "So, noise. Wet noise.": "그러니까, 소음이네. 축축한 소음.",
  "Creep up while they sing, stand still when they hush. Wet your hands first, and put them back after.": "노래할 땐 살금살금 다가가고, 조용해지면 가만히 서. 손은 먼저 적시고, 다 보면 돌려놓으렴.",
  "In the jar-light, a folded paper by the path: a drawing of a small girl holding a jar of fireflies.": "병 불빛 속, 길가에 접힌 종이: 반딧불이 병을 든 꼬마 여자아이 그림.",
- "\"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\" I kept it for tonight.": "\"미카, 네 살. 놓아줄 때 울더니, 한 마리 한 마리 다 손 흔들며 작별했다.\" 오늘 밤을 위해 간직해 뒀어.",
+ "In Grandma's handwriting: \"Mi-chan, age four. She cried when we let them go, then waved goodbye to every one.\"": "할머니의 글씨다. \"미카, 네 살. 놓아줄 때 울더니, 한 마리 한 마리 손 흔들며 작별했다.\"",
  "I don't remember that. …I'd still wave.": "그거 기억 안 나. …지금도 손 흔들 거야.",
  "Firefly jar": "반딧불이 병",
  "the paddy edge, west of Kawabe": "가와베 서쪽 논가",
@@ -4940,5 +4940,7 @@
   "Off": "끄기",
   "Read aloud uses the voices on your device. Where it has none for your language, you hear blips.": "읽어 주기는 기기에 있는 음성을 사용해요. 그 언어의 음성이 없으면 삑삑 소리가 나요.",
   "Hi, I'm Mika!": "안녕, 나는 미카야!",
-  "This device has no voice for this language, so you will hear blips.": "이 기기에는 이 언어의 음성이 없어서 삑삑 소리가 나요."
+  "This device has no voice for this language, so you will hear blips.": "이 기기에는 이 언어의 음성이 없어서 삑삑 소리가 나요.",
+ "Start a new story in…": "새 이야기를 시작할 슬롯…",
+ "Continue which story?": "어떤 이야기를 계속할까요?"
 }

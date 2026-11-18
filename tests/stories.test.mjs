@@ -56,3 +56,18 @@ test('the Grandma story plays from the first step to the end, and saves load bac
   assert.equal(exploreState().story, 'grandma');
   assert.ok(STORIES.grandma.name && STORIES.classic.name);
 });
+
+test('Grandma notes found away from home are read as writing, while on-screen Grandma still speaks', () => {
+  try {
+    useStory('grandma');
+    const remoteNotes = ['trick_firefly_note', 'c3_page', ...SKY_LETTERS.map(l => l.say)];
+    for (const id of remoteNotes) {
+      assert.ok(!DIALOGUE[id].some(l => l[0] === 'sora'), `${id}: Grandma is at home, not beside the found note`);
+    }
+    assert.ok(DIALOGUE.trick_firefly_note.some(l => l[0] === 'narrator' && /Mi-chan, age four/.test(l[1])), 'her childhood annotation is preserved');
+    for (const id of ['p_letter', 'c1_party', 'ending_parents', 'porch_talk']) {
+      assert.ok(DIALOGUE[id].some(l => l[0] === 'sora'), `${id}: Grandma speaks when she is in the scene`);
+    }
+  } finally { useStory('classic'); }
+  assert.deepEqual(DIALOGUE.trick_firefly_note.map(l => l[0]), ['narrator', 'rin'], 'Classic keeps its original note scene');
+});

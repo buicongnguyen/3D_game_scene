@@ -1,9 +1,9 @@
-import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, DIALOGUE, huntProgress } from '../game/story.js';
+import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, DIALOGUE, huntProgress, objectiveText } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 import { JournalMap } from './map.js';
 import { starGroupsHtml } from './stargroups.js';
-import { STORIES, DEFAULT_STORY, storyId } from '../game/stories/index.js';
+import { STORIES, DEFAULT_STORY, storyId, storyStep } from '../game/stories/index.js';
 import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
 import { getPeopleChoice, setPeopleChoice, peopleSetFor } from '../engine/people.js';
 import { loadSave } from '../game/saves.js';
@@ -306,7 +306,7 @@ export class UI {
   /** The profile chooser: three save slots with where each story stands. Resolves with a slot number or null. */
   pickSlot(mode, slots, last) {
     const box = $('slots');
-    $('slotsTitle').textContent = tx(mode === 'new' ? 'Start a new story in…' : 'Continue which story?');
+    $('slotsTitle').textContent = tx(mode === 'new' ? N_('Start a new story in…') : N_('Continue which story?'));
     box.classList.remove('hidden');
     return new Promise(resolve => {
       const close = v => { box.classList.add('hidden'); $('slotsClose').onclick = null; resolve(v); };
@@ -354,8 +354,7 @@ export class UI {
     const lamps = Object.values(q.lamps || {}).filter(Boolean).length;
     const mins = Math.floor((q.playtime || 0) / 60);
     const time = mins >= 60 ? `${Math.floor(mins / 60)}h ${String(mins % 60).padStart(2, '0')}m` : `${mins}m`;
-    const step = STEPS[STEP_INDEX[q.step]];
-    const obj = step ? tx(step.objective).replace(/\s*[(（]\{\w+\}\/\d+[)）]/g, '').replace(/\{\w+\}/g, '') : '';
+    const obj = objectiveText(storyStep(q.step, q.story), q, tx);
     let when = '';
     try { when = new Date(data.at).toLocaleString(getLang(), { dateStyle: 'medium', timeStyle: 'short' }); } catch { /* ignore */ }
     const story = STORIES[q.story] || STORIES.classic;   // saves from before the two stories are Classic
@@ -969,7 +968,11 @@ export class UI {
     } else if (tab === 'story') {
       const cur = STEP_INDEX[q.step];
       const rows = STEPS.slice(0, cur + 1).filter(s => s.chapter === q.chapter || STEP_INDEX[s.id] === cur)
-        .map(s => `<div class="step ${STEP_INDEX[s.id] < cur ? 'done' : ''}">${STEP_INDEX[s.id] < cur ? '✓' : '★'} ${esc(tx(s.objective).replace(/\s*[(（]\{\w+\}\/\d+[)）]/g, '').replace(/\{\w+\}/g, ''))}</div>`);
+        .map(s => {
+          const done = s.id !== q.step;
+          const text = done ? tx(s.objective).replace(/\s*[(（]\{\w+\}\/\d+[)）]/g, '') : objectiveText(s, q, tx);
+          return `<div class="step ${done ? 'done' : ''}">${done ? '✓' : '★'} ${esc(text)}</div>`;
+        });
       const lamps = [['forest', 'Forest Lamp'], ['mill', 'Mill Lamp'], ['orchard', 'Orchard Lamp'], ['viaduct', 'Viaduct Lamp']].map(([l, n]) => `${q.lamps[l] ? '🟡' : '⚫'} ${esc(tx(n))}`).join(' &nbsp; ');
       body.innerHTML = `<p>${lamps}</p><h3>${esc(tx(CHAPTERS[q.chapter].title))} — ${esc(tx(CHAPTERS[q.chapter].name))}</h3>${rows.join('')}`;
     } else if (tab === 'pages') {
