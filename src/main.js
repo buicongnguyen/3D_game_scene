@@ -199,7 +199,8 @@ function titleLook() {
   registerServiceWorker(params);
 
   const unlockAudio = () => { if (!params.has('mute')) { try { audio.unlock(); } catch (e) { console.warn('audio unavailable', e); } } };
-  const auto = params.get('start'); // qa: ?start=new|continue[&slot=n] skips the title
+  const auto = params.get('start'); // qa: ?start=new|continue|explore skips the title
+  const autoSlot = auto === 'explore' ? 'explore' : +params.get('slot') || 1;
   let picked = null;
   // ?play=<id>: straight into a mini game that plays in a zone (a zone session reloads to this to change zones)
   const playId = params.get('play');
@@ -209,7 +210,7 @@ function titleLook() {
     document.getElementById('title').classList.add('hidden');
   }
   while (!picked) {
-    picked = auto ? { mode: auto, slot: +params.get('slot') || 1, story: params.get('story') || undefined } : await ui.title(saveSlots(), lastSlot());
+    picked = auto ? { mode: auto, slot: autoSlot, story: params.get('story') || undefined } : await ui.title(saveSlots(), lastSlot());
     const launch = ui.pendingLaunch;
     if (valleyP || !launch?.quick) break;
     // A game that needs no valley, picked from the title's Mini games list: the quick-start runtime plays it, and the

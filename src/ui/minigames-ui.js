@@ -27,7 +27,8 @@ const CSS = `
 #mgPicker .mg-tab small{font-weight:700;opacity:.75}
 #mgPicker .mg-grid{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:8px 14px 14px;
  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));grid-auto-rows:max-content;gap:10px;align-content:start;scroll-padding:12px}
-#mgPicker .mg-card{position:relative;display:flex;gap:12px;align-items:flex-start;text-align:left;min-height:84px;padding:12px 12px 10px;border:2px solid transparent;border-radius:18px;
+#mgPicker .mg-item{display:flex;min-width:0}
+#mgPicker .mg-card{position:relative;display:flex;flex:1;min-width:0;gap:12px;align-items:flex-start;text-align:left;min-height:84px;padding:12px 12px 10px;border:2px solid transparent;border-radius:18px;
  background:#fff;color:#4a3020;box-shadow:0 2px 8px rgba(80,40,0,.12);cursor:pointer;font:600 14px Nunito,sans-serif}
 #mgPicker .mg-card:hover{background:#fffdf6}
 #mgPicker .mg-card:focus,#mgPicker .mg-card.pad{outline:none;border-color:#f08a3c;box-shadow:0 0 0 3px #f08a3c88,0 4px 14px rgba(80,40,0,.2)}
@@ -77,7 +78,8 @@ export class MinigamePicker {
     }
     const el = this.el = document.createElement('div');
     el.id = 'mgPicker'; el.className = 'hidden'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
-    el.innerHTML = `<div class="mg-box"><header><h2></h2><button class="mg-x" type="button" aria-label="Close">×</button></header><p class="mg-sub"></p>
+    el.setAttribute('aria-labelledby', 'mgPickerTitle');
+    el.innerHTML = `<div class="mg-box"><header><h2 id="mgPickerTitle"></h2><button class="mg-x" type="button" aria-label="Close">×</button></header><p class="mg-sub"></p>
       <div class="mg-tabs" role="tablist"></div><div class="mg-grid" role="list"></div><div class="mg-foot"></div></div>`;
     document.body.appendChild(el);
     el.querySelector('.mg-x').addEventListener('click', () => this.close(null));
@@ -88,6 +90,7 @@ export class MinigamePicker {
   open({ st = null, current = null, quick = false } = {}) {
     this.ensure();
     if (this.resolve) this.close(null);
+    this.returnFocus = document.activeElement;
     this.st = st; this.current = current;
     this.quick = !!quick;        // the title's list before the valley is loaded: mark the games that start at once
     this.list = buildCatalogue();
@@ -115,6 +118,11 @@ export class MinigamePicker {
     removeEventListener('keydown', this.onKey, true);
     this.offLang?.(); this.offLang = null;
     cancelAnimationFrame(this.padRaf);
+    // Cancellation returns to the title/pause/chip control that opened the list. A chosen
+    // game owns the next focus; do not move it back to a menu that is about to disappear.
+    if (!entry && this.returnFocus?.isConnected && this.returnFocus.getClientRects().length && !this.returnFocus.disabled)
+      this.returnFocus.focus({ preventScroll: true });
+    this.returnFocus = null;
     this.ui.audio?.click?.();
     res(entry);
   }
@@ -143,17 +151,20 @@ export class MinigamePicker {
     }
     const grid = el.querySelector('.mg-grid');
     grid.innerHTML = '';
-    for (const e of this.list.filter(x => x.cat === this.tab)) grid.appendChild(this.card(e));
+    for (const e of this.list.filter(x => x.cat === this.tab)) {
+      const item = document.createElement('div'); item.className = 'mg-item'; item.setAttribute('role', 'listitem');
+      item.appendChild(this.card(e)); grid.appendChild(item);
+    }
   }
 
   card(e) {
     const rec = this.recOf(e), badge = badgeOf(e, rec);
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'mg-card'; b.dataset.id = e.id; b.setAttribute('role', 'listitem');
+    b.type = 'button'; b.className = 'mg-card'; b.dataset.id = e.id;
     const ic = document.createElement('img'); ic.className = 'mg-ic'; ic.alt = ''; ic.src = this.ui.icon(e.icon);
     ic.onerror = () => { const g = document.createElement('div'); g.className = 'mg-ic'; g.textContent = (tx(e.name)[0] || '?').toUpperCase(); ic.replaceWith(g); };
     const t = document.createElement('div'); t.className = 'mg-tx';
-    const h = document.createElement('h3'); h.textContent = e.kind === 'sky' ? `${tx(e.name)}` : tx(e.name);
+    const h = document.createElement('h3'); h.textContent = tx(e.name);
     const d = document.createElement('p'); d.className = 'd'; d.textContent = tx(e.desc);
     const w = document.createElement('p'); w.className = 'w';
     const where = document.createElement('b'); where.textContent = tx('Where');
@@ -205,7 +216,7 @@ export class MinigamePicker {
       else if (dir === 'down') cards[0]?.focus();
       return;
     }
-    if (!a || !a.classList.contains('mg-card')) { cards[0]?.focus() || tabs[0]?.focus(); return; }
+    if (!a || !a.classList.contains('mg-card')) { (cards[0] || tabs[0])?.focus(); return; }
     const r = a.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
     let best = null, bd = 1e9;
     for (const c of cards) {
@@ -221,7 +232,7 @@ export class MinigamePicker {
   }
 
   key(e) {
-    if (e.repeat && e.code !== 'ArrowDown' && e.code !== 'ArrowUp') return;
+    if (e.repeat && e.code !== 'ArrowDown' && e.code !== 'ArrowUp' && e.code !== 'Tab') return;
     const c = e.code;
     const map = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right', KeyW: 'up', KeyS: 'down', KeyA: 'left', KeyD: 'right' };
     if (c === 'Escape' || c === 'Backspace') { e.preventDefault(); e.stopImmediatePropagation(); this.close(null); return; }
@@ -237,7 +248,15 @@ export class MinigamePicker {
       if (a && this.el.contains(a)) { e.preventDefault(); e.stopImmediatePropagation(); a.click(); }
       return;
     }
-    if (c === 'Tab') { e.stopImmediatePropagation(); return; }     // the browser's own tab order inside the panel; the game never sees it
+    if (c === 'Tab') {
+      e.preventDefault(); e.stopImmediatePropagation();
+      // Inactive category tabs have tabindex=-1. Follow the remaining DOM order, wrapping
+      // both ways so the modal cannot expose the title/pause controls behind it.
+      const buttons = [...this.el.querySelectorAll('button')].filter(b => b.tabIndex >= 0 && !b.disabled && b.getClientRects().length);
+      const i = buttons.indexOf(document.activeElement), n = buttons.length;
+      buttons[e.shiftKey ? (i <= 0 ? n - 1 : i - 1) : (i + 1) % n]?.focus();
+      return;
+    }
     e.stopImmediatePropagation();                                   // nothing else reaches the game while the picker is up
   }
 

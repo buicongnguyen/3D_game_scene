@@ -277,7 +277,7 @@ body.cinema #hud, body.cinema #touch { opacity: 0; pointer-events: none; }
 .explore-h { margin: 0 0 6px; font-family: var(--head); font-weight: 600; font-size: 15px; }
 .explore-chips { display: flex; flex-wrap: wrap; gap: 8px; }
 .explore-chips .chip { border: 2px solid rgba(242, 181, 58, 0.5); background: #fff; border-radius: 999px; padding: 7px 14px; font: 700 14px var(--ui); color: var(--ink); cursor: pointer; }
-.explore-chips .chip.on { background: var(--gold); border-color: var(--gold); color: #3b1c05; }
+.explore-chips .chip[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #3b1c05; }
 .explore-go { width: 100%; margin-top: 12px; border: 0; border-radius: 16px; padding: 12px 20px; font-family: var(--head); font-size: 19px; font-weight: 600; background: linear-gradient(180deg, #ffd66b, #f2a33a); color: #3b1c05; box-shadow: var(--shadow); cursor: pointer; }
 .explore-go:hover, .explore-go:focus-visible { transform: translateY(-1px); outline: none; }
 .explore-again { width: 100%; margin-top: 8px; background: none; border: 0; color: var(--ink-soft); font: 700 13.5px var(--ui); text-decoration: underline; cursor: pointer; }

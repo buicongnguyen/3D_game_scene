@@ -19,6 +19,12 @@ const UP = new THREE.Vector3(0, 1, 0);
 // one, must not flip between its two meshes (or in and out of view) frame after frame. Band: 7%, >= 12 m.
 const band = d => Math.max(d * 0.07, 12);
 
+const distanceState = (s, d, near, nearIn, max, maxIn) => {
+  if (s & 2) { if (d < maxIn) s &= ~2; } else if (d > max) s |= 2;
+  if (s & 1) { if (d < nearIn) s &= ~1; } else if (d > near) s |= 1;
+  return s;
+};
+
 function shareTropicalAtlas(assets) {
   // The import contracts verify byte-identical atlases for this explicit model
   // family. Share their GPU texture before first render; keep each material's tint.
@@ -75,9 +81,9 @@ class InstanceSet {
     });
     this.cellsOn = true;                                    // false: test every record, as before (tests and A/B runs; a property so the bundler cannot fold it away)
     this.cells = buildCells(records, this.radius, this.height);
-    this.seen = new Uint8Array(this.cells.length);          // 1: the square was walked by the last update (its records' states are current)
+    this.distanceStates = new Int8Array(this.cells.length).fill(-1); // a skipped square's known uniform state, or -1
+    this.cellsWereOn = this.cellsOn;
     this.whole = [{ idx: Int32Array.from(records.keys()), x: 0, y: 0, z: 0, r: Infinity }];   // (cells off: one square that is always walked)
-    this.wholeSeen = new Uint8Array(1);
     this.dirty = true;
   }
 
@@ -155,20 +161,36 @@ class InstanceSet {
     const farCount = this.far ? new Array(this.far.length).fill(0) : null;
     const max = this.opts.maxDist ?? maxDist;
     const st = this.state, bandMax = band(max), bandNear = band(nearDist);
-    const cells = this.cellsOn ? this.cells : this.whole, seen = this.cellsOn ? this.seen : this.wholeSeen;
+    const nearIn = nearDist - bandNear, maxIn = max - bandMax;
+    if (this.cellsWereOn !== this.cellsOn) { this.distanceStates.fill(-1); this.cellsWereOn = this.cellsOn; }
+    const cells = this.cellsOn ? this.cells : this.whole;
     for (let c = 0; c < cells.length; c++) {
       const cell = cells[c];
       // a whole square past the cut-off or outside the view has nothing to draw (cells.js)
-      if (cellOutside(cell, camPos, cam, max, frustum, _sphere)) { seen[c] = 0; continue; }
-      const fresh = !seen[c];                        // not walked last time: nobody saw these records, so their distance states start over
-      seen[c] = 1;
+      if (cellOutside(cell, camPos, cam, max, frustum, _sphere)) {
+        // Distance hysteresis still advances while looking away, just as on the old per-record path. Most skipped
+        // squares are wholly past both distances: set their uniform state once, then skip every record again.
+        const d = Math.hypot(cell.x - camPos.x, cell.z - camPos.z);
+        const cut = d - cell.r > max ? 2 : d + cell.r < maxIn ? 0 : -1;
+        const lod = d - cell.r > nearDist ? 1 : d + cell.r < nearIn ? 0 : -1;
+        const uniform = cut < 0 || lod < 0 ? -1 : cut | lod;
+        if (uniform < 0) {
+          for (const i of cell.idx) {
+            const r = this.records[i];
+            st[i] = distanceState(st[i], Math.hypot(r.x - camPos.x, r.z - camPos.z), nearDist, nearIn, max, maxIn);
+          }
+        } else if (this.distanceStates[c] !== uniform) {
+          for (const i of cell.idx) st[i] = uniform;
+        }
+        this.distanceStates[c] = uniform;
+        continue;
+      }
+      if (this.cellsOn) this.distanceStates[c] = -1;
       for (let n = 0; n < cell.idx.length; n++) {
         const i = cell.idx[n], r = this.records[i];
         const d = Math.hypot(r.x - camPos.x, r.z - camPos.z);
         // hysteresis on the cut-off and on the LOD switch
-        let s = fresh ? 0 : st[i];
-        if (s & 2) { if (d < max - bandMax) s &= ~2; } else if (d > max) s |= 2;
-        if (s & 1) { if (d < nearDist - bandNear) s &= ~1; } else if (d > nearDist) s |= 1;
+        const s = distanceState(st[i], d, nearDist, nearIn, max, maxIn);
         st[i] = s;
         if (s & 2) continue;
         _sphere.center.set(r.x, r.y + this.height * r.s * (r.sy ?? 1) * 0.5, r.z);

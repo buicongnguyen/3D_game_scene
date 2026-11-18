@@ -152,10 +152,10 @@ export class UI {
    */
   pickExplore() {
     const box = $('slots'), list = $('slotList');
-    const has = !!this.game.director?.constructor?.loadSave?.('explore');
+    const has = !!loadSave('explore');
     $('slotsTitle').textContent = tx('Explore the valley');
     box.classList.remove('hidden');
-    const pick = { season: 'spring', hour: 10 };
+    const pick = { season: 'spring', hour: 8 };
     return new Promise(resolve => {
       const close = v => { box.classList.add('hidden'); $('slotsClose').onclick = null; resolve(v); };
       $('slotsClose').onclick = () => close(null);
@@ -165,9 +165,14 @@ export class UI {
         const btns = document.createElement('div'); btns.className = 'explore-chips';
         for (const [value, text] of options) {
           const b = document.createElement('button');
-          b.className = 'chip' + (pick[key] === value ? ' on' : '');
+          b.className = 'chip';
+          b.setAttribute('aria-pressed', String(pick[key] === value));
           b.textContent = text;
-          b.onclick = () => { pick[key] = value; this.audio?.click(); btns.querySelectorAll('.chip').forEach(x => x.classList.toggle('on', x === b)); };
+          b.onclick = () => {
+            pick[key] = value;
+            this.audio?.click();
+            for (const chip of btns.children) chip.setAttribute('aria-pressed', String(chip === b));
+          };
           btns.appendChild(b);
         }
         wrap.appendChild(btns);
@@ -186,7 +191,11 @@ export class UI {
       if (has) {
         const again = document.createElement('button'); again.className = 'explore-again';
         again.textContent = tx('Start over (keeps your stories)');
-        again.onclick = () => { this.audio?.click(); close({ ...pick, fresh: true }); };
+        again.onclick = () => {
+          if (!confirm(tx('Reset your Explore progress and mini-game records?'))) return;
+          this.audio?.click();
+          close({ ...pick, fresh: true });
+        };
         list.appendChild(again);
       }
       go.focus();
@@ -608,6 +617,10 @@ export class UI {
   /** Render one page as a little chat: portrait, name and line per row. Resolves with the reader's move. */
   showPage(pages, i, onLine) {
     const page = pages[i];
+    const timers = [];
+    let settled = false;
+    const clearRows = () => { settled = true; for (const timer of timers) clearTimeout(timer); };
+    const later = (fn, ms) => timers.push(setTimeout(() => { if (!settled && this.dialogueOpen) fn(); }, ms));
     const box = $('dlgLines');
     box.innerHTML = '';
     // Settings > Voices (engine/voice.js): the page read aloud, in order, where the device has a voice for the language;
@@ -640,8 +653,8 @@ export class UI {
       row.appendChild(bub);
       box.appendChild(row);
       // gestures and voice blips follow the rows as they appear
-      if (onLine) setTimeout(() => { if (this.dialogueOpen) onLine(who, anim); }, k * 420);
-      if (who !== 'narrator' && blips) setTimeout(() => this.audio?.blip(c.pitch), k * 140);
+      if (onLine) later(() => onLine(who, anim), k * 420);
+      if (who !== 'narrator' && blips) later(() => { if (this.voice?.mode !== 'off') this.audio?.blip(c.pitch); }, k * 140);
     });
     box.scrollTop = 0;
     const last = i === pages.length - 1;
@@ -658,6 +671,7 @@ export class UI {
         if (move === 'next' && performance.now() - shownAt < 180) return;
         if (move === 'back' && i === 0) return;
         if (move === 'next' && page.choice) return;
+        clearRows();
         this.voice?.stop();                     // Next, Back or Skip: the page stops speaking
         this.nav = null;
         this.choiceActive = false;
@@ -665,7 +679,7 @@ export class UI {
         this.audio?.click();
         resolve(move);
       };
-      if (page.choice) this.choice(page.choice).then(v => { this.nav = null; resolve({ choice: v }); });
+      if (page.choice) this.choice(page.choice).then(v => { clearRows(); this.nav = null; resolve({ choice: v }); });
     });
   }
 

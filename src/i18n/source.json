@@ -28978,6 +28978,12 @@
   ]
  },
  {
+  "s": "Reset your Explore progress and mini-game records?",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Grandma's Diary",
   "ctx": [
    "UI (src/ui/ui.js)"

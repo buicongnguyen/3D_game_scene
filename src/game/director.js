@@ -1046,7 +1046,6 @@ export class Director {
         if (n) n.gesture(anim || 'Talk');
         else if (who === 'mika') g.player.anim?.once(anim || 'Talk', { then: 'Idle' });
         else if (who === 'tamo') this.tamo.react(anim || 'Talk');
-        this.audio.blip(1);
       },
     });
     for (const s of speakers) if (this.npcs[s]) this.npcs[s].setIdle(this.npcs[s].idleClip);

@@ -2,7 +2,7 @@
 // Chromium has no voices, and real ones differ by device. Read aloud reads every line of a page in order, a man's voice
 // for a man, a woman's (raised) for a woman or child, in the game's language; Next, Skip and closing stop it; no voice
 // for the language -> blips; Off -> nothing; Blips as before; choosing Read aloud in Settings plays a sample.
-//   GAME_URL=http://127.0.0.1:5897/ node tests/voice-browser.mjs
+//   GAME_URL=http://127.0.0.1:5897/ node tests/voice-browser.mjs [--only=gameplay]
 import { chromium } from 'playwright';
 const url = process.env.GAME_URL || 'http://127.0.0.1:5897/';
 const browser = await chromium.launch({ headless: true, args: ['--mute-audio'] });
@@ -29,14 +29,15 @@ const fake = () => {
   window.SpeechSynthesisUtterance = class { constructor(text) { this.text = text; this.voice = null; this.lang = ''; this.pitch = 1; this.rate = 1; this.volume = 1; } };
 };
 
-async function open(mode, lang) {
+async function open(mode, lang, play = false) {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   await ctx.addInitScript(fake);
   await ctx.addInitScript(([mode, lang]) => { localStorage.setItem('starline-opt-voices', JSON.stringify(mode)); localStorage.setItem('starline-lang', lang); }, [mode, lang]);
   const page = await ctx.newPage();
   const errors = []; page.on('pageerror', e => errors.push(e.message));
-  await page.goto(`${url}?qa=1`);
+  await page.goto(`${url}?qa=1&quality=low${play ? '&start=explore&quick=off&zones=off&live=1' : ''}`);
   await page.waitForFunction(() => window.__STARLINE__?.ui && window.__STARLINE_READY__, null, { timeout: 120000 });
+  if (play) await page.waitForFunction(() => window.__STARLINE_PLAYING__ && window.__STARLINE__.director?.quest && !window.__STARLINE__.director.busy && !window.__STARLINE__.ui.dialogueOpen, null, { timeout: 120000 });
   await page.evaluate(() => { const ui = window.__STARLINE__.ui; window.__blips = 0; ui.audio.blip = () => { window.__blips++; }; });
   return { ctx, page, errors };
 }
@@ -46,8 +47,10 @@ const LINES = [['genzo', 'The lamp is out again.'], ['mika', 'I can fix it! ★'
   ['genzo', 'Careful on the dock.'], ['mika', 'I will.'], ['rin', 'Three fish, then.'], ['genzo', 'And grill them well.'], ['mika', 'Deal.']];
 const talk = page => page.evaluate(lines => { window.__done = false; window.__STARLINE__.ui.dialogue(lines).then(() => { window.__done = true; }); }, LINES);
 const next = async page => { await page.waitForTimeout(260); await page.evaluate(() => window.__STARLINE__.ui.nav?.('next')); };
-const until = (page, fn) => page.waitForFunction(fn, null, { timeout: 5000 });
+const until = (page, fn, arg = null) => page.waitForFunction(fn, arg, { timeout: 5000 });
 
+try {
+if (!process.argv.includes('--only=gameplay')) {
 { // Read aloud, English
   const { ctx, page, errors } = await open('read', 'en');
   await talk(page);
@@ -126,6 +129,53 @@ const until = (page, fn) => page.waitForFunction(fn, null, { timeout: 5000 });
   ok(smp.silentFirst && smp.said.voice === 'Samantha' && smp.saved === '"read"', `Settings: a sample (${JSON.stringify(smp.said)}), choice saved; options ${smp.opts.join(' / ')}`);
   await ctx.close();
 }
-await browser.close();
+}
+{ // Normal gameplay calls Director.say, whose gesture callback must obey Settings > Voices too.
+  const { ctx, page, errors } = await open('off', 'en', true);
+  for (const mode of ['off', 'read', 'blips']) {
+    await page.locator('#btnMenu').click();
+    await page.locator('#btnPauseSettings').click();
+    await page.locator('#optVoices').selectOption(mode);
+    await page.locator('#settings [data-close]').click();
+    await page.locator('#btnResume').click();
+    await page.evaluate(() => {
+      const g = window.__STARLINE__;
+      g.ui.voice.stop(); window.__speech.said = []; window.__blips = 0; window.__done = false;
+      g.director.say(null, [['mika', 'Hello there.'], ['genzo', 'Welcome back.']]).then(() => { window.__done = true; });
+    });
+    await until(page, () => window.__STARLINE__.ui.dialogueOpen);
+    await page.waitForTimeout(950);
+    const r = await page.evaluate(() => ({ said: window.__speech.said.length, blips: window.__blips }));
+    ok(r.said === (mode === 'read' ? 2 : 0) && r.blips === (mode === 'blips' ? 2 : 0), `normal Director + Settings ${mode}: ${r.said} spoken, ${r.blips} blips`);
+    await page.keyboard.press('KeyE');
+    await until(page, () => window.__done && !window.__STARLINE__.ui.dialogueOpen);
+  }
+  // Quickly skipping old rows must not animate or blip during the next queued conversation.
+  await page.evaluate(() => {
+    const d = window.__STARLINE__.director;
+    window.__blips = 0; window.__done = false;
+    window.__oldGenzoGesture = d.npcs.genzo.gesture;
+    window.__rowEvents = [];
+    d.npcs.genzo.gesture = function (...args) { window.__rowEvents.push({ type: 'gesture', time: performance.now() }); return window.__oldGenzoGesture.apply(this, args); };
+    document.getElementById('dlgSkip').addEventListener('click', () => window.__rowEvents.push({ type: 'skip', time: performance.now() }), { once: true });
+    d.say(null, [['mika', 'Old first.'], ['genzo', 'Old second.'], ['mika', 'Old third.']]);
+    d.say(null, [['mika', 'New conversation.']]).then(() => { window.__done = true; });
+  });
+  await until(page, () => document.querySelector('#dlgLines .tx')?.textContent === 'Old first.');
+  await page.locator('#dlgSkip').click();
+  await until(page, () => document.querySelector('#dlgLines .tx')?.textContent === 'New conversation.');
+  await page.waitForTimeout(650);
+  const stale = await page.evaluate(() => {
+    window.__STARLINE__.director.npcs.genzo.gesture = window.__oldGenzoGesture;
+    const skip = window.__rowEvents.find(e => e.type === 'skip');
+    return { skip: skip?.time, events: window.__rowEvents, late: window.__rowEvents.filter(e => e.type === 'gesture' && e.time > skip?.time).length };
+  });
+  ok(stale.skip !== undefined && stale.late === 0, `skipped speaker has no callbacks after the actual Skip input ${JSON.stringify(stale.events)}`);
+  await page.keyboard.press('KeyE');
+  await until(page, () => window.__done);
+  ok(!errors.length, `normal dialogue has no page errors ${errors.join(' | ')}`);
+  await ctx.close();
+}
+} finally { await browser.close(); }
 console.log(failed ? `${failed} FAILED` : 'voices: all good');
 process.exit(failed ? 1 : 0);
