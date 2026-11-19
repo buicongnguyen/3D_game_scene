@@ -144,6 +144,8 @@ export class Audio {
         this.tone(330, { type: 'square', dur: 0.13, vol: v * 0.7, attack: 0.004, glide: 0.55, filter: 1800, when: w, rev: 0.15 });
         this.noise({ dur: 0.09, vol: v * 0.55, freq: 1600, q: 0.9, when: w });
       }
+    } else if (kind === 'crow') {    // two hoarse "kaa" calls (the crows going home at the evening bell)
+      for (const w of [0, 0.3]) this.tone(620, { type: 'sawtooth', dur: 0.22, vol: v * 0.6, attack: 0.01, glide: 0.75, filter: 1400, when: w, rev: 0.3 });
     }
   }
   /** A cricket's chirp: three quick bright pulses. `vol` (0..1) is how near it is; `pitch` tells one cricket from another. */
@@ -210,6 +212,13 @@ export class Audio {
     this.noise({ dur: 0.35 + strength * 0.4, vol: 0.12 + strength * 0.3, freq: 1600 + strength * 1200, q: 0.5, type: 'lowpass', sweep: 0.3 });
   }
   whoosh(mul = 4) { this.noise({ dur: 0.5, vol: 0.12 + Math.log2(mul) * 0.03, freq: 700 + mul * 60, q: 0.8, type: 'bandpass', sweep: 2.4 }); }
+  /** One raindrop of a sun shower: a tiny bright plink (a sine, never a noise bed: a steady hiss reads as white noise). */
+  drip(vol = 1) { if (this.ctx) this.tone(1800 + Math.random() * 1400, { type: 'sine', dur: 0.03, vol: 0.012 * vol, attack: 0.002, bus: this.ambBus, rev: 0.25 }); }
+  /** A goose's soft two-note honk; `vol` (0..1) is how near the skein is. */
+  honk(vol = 1) {
+    if (!this.ctx || vol < 0.02) return;
+    for (const w of [0, 0.18]) this.tone(360, { type: 'square', dur: 0.13, vol: 0.035 * vol, attack: 0.01, glide: 0.85, filter: 1100, when: w, rev: 0.35 });
+  }
   stroke() { this.noise({ dur: 0.32, vol: 0.07, freq: 1300, q: 0.6, type: 'lowpass', sweep: 0.5 }); }
   setUnderwater(on) {
     if (!this.ctx || this._under === on) return;

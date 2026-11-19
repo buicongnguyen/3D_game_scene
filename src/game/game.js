@@ -14,6 +14,7 @@ import { Cells, CellGrid } from '../engine/cell-grid.js';
 import { markSlow } from '../engine/device-note.js';
 import { FrameRing, buildReport } from '../engine/perf-report.js';
 import { canEnter, photoState } from './photo.js';
+import { momentsWanted } from '../ui/moments-option.js';
 // (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
 //  light: the title menu and the quick-start mini games run on it.)
 
@@ -226,6 +227,16 @@ export class Game {
     return this.photoP.then(p => p.enter(from)).catch(e => { console.error('[photo] failed to open', e); this.photoP = null; return false; });
   }
 
+  /**
+   * Weather moments (game/moments.js): fetched once a game is under way and they are wanted (Settings, ?moments=;
+   * off under ?qa unless ?moments=on). Never in a play zone. Until then they cost nothing. -> a promise of them, or null
+   */
+  wakeMoments() {
+    if (this.zone || !this.director?.quest || !momentsWanted(this)) return this.momentsP ?? null;
+    return (this.momentsP ??= import('./moments.js').then(m => (this.moments = new m.Moments(this)))
+      .catch(e => { console.warn('[moments] not available', e); this.momentsP = null; return null; }));
+  }
+
   saveAndQuit() {
     if (!this.director.save()) { this.ui.toast(this.director.saveFailed ? tx("Couldn't write the save: storage is full or blocked") : tx('Can\'t save during a scene — try again in a moment')); return; }
     location.reload();
@@ -270,7 +281,8 @@ export class Game {
       }
       this.follow.update(dt, this.player, this.input, this.player.aiming);
       for (const s of this.systems) s.update(dt, this);
-      const L = this.world.update(dt, this.viewFocus || this.player.pos);
+      this.moments?.update(dt);     // (after the Director, before the sky: a shower's cloud cover shows this frame)
+      const L =this.world.update(dt, this.viewFocus || this.player.pos);
       this.underwater?.update(dt, L);
       this.riverbed?.update(dt);
       this.interiors?.update(dt);

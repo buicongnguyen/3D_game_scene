@@ -3,14 +3,15 @@
   "s": "Mika",
   "ctx": [
    "character name (mika)",
-   "UI (src/game/tricks/cowrace.js)",
-   "UI (src/game/tricks/firedrill.js)"
+   "UI (src/game/moments.js)",
+   "UI (src/game/tricks/cowrace.js)"
   ]
  },
  {
   "s": "Tamo",
   "ctx": [
    "character name (tamo)",
+   "UI (src/game/moments.js)",
    "UI (src/game/workshop/index.js)"
   ]
  },
@@ -18293,6 +18294,138 @@
   ]
  },
  {
+  "s": "Breeze",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Geese",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Swallows",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Sun shower",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Diamond dust",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Evening bell",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Sun and rain at once!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Look, a rainbow! Over there!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Whoosh! Hold on to your hat!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "The wind wants to play!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Brr! The wind is blowing the snow about.",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Look! Geese, flying in a V!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "The geese have come for the winter.",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Swallows! Zip, zip. Show-offs.",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Look how fast the swallows turn!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "The air is sparkling!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Diamond dust! Ice in the air, glittering.",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "The evening bell! Off home go the crows.",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "The evening bell! Time to head home.",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "A sun shower! The foxes must be having a wedding.",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Rain and sunshine. The washing can stay out!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
+  "s": "Rain AND sunshine? Look for the rainbow!",
+  "ctx": [
+   "UI (src/game/moments-rules.js)"
+  ]
+ },
+ {
   "s": "The album holds {n} photos. Delete one in the Journal to keep more.",
   "ctx": [
    "UI (src/game/photo-mode.js)"
@@ -30178,6 +30311,12 @@
  },
  {
   "s": "Vibration",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Weather moments (rainbows, birds, breezes)",
   "ctx": [
    "menu / screen text"
   ]

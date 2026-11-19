@@ -11,6 +11,7 @@ import { quickStartWanted } from './quick/switch.js';
 import { TitleStill } from './quick/title-still.js';
 import { registerServiceWorker } from './sw-register.js';
 import { trimmed } from './engine/trim.js';
+import { wireMomentsOption } from './ui/moments-option.js';
 // QUICK START. This file must stay light: it is what a phone downloads before the title menu shows. The valley's own
 // code (the Director, the weather, the QA helpers: ./valley.js) and the quick-start runtime (./quick/runtime.js) are
 // fetched with import() when they are first needed. Do NOT import them (or anything under world/, actors/, fx/) here,
@@ -96,6 +97,7 @@ canvas.addEventListener('webglcontextrestored', () => {
 const audio = new Audio();
 game.audio = audio;
 const ui = new UI(game, audio);
+wireMomentsOption(game);                  // (Settings > Weather moments; the moments themselves load after the start)
 ui.voice.muted = params.has('mute');      // (?mute: nothing read aloud either)
 game.ui = ui;
 
@@ -265,4 +267,5 @@ function titleLook() {
   const started = director.begin(choice === 'continue' || choice === 'explore' ? saved : null);
   window.__STARLINE_PLAYING__ = true;
   await started;
+  game.wakeMoments();
 })().catch(e => { console.error('[start]', e); showError(e?.message || String(e)); });

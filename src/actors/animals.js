@@ -194,6 +194,14 @@ export class Wildlife {
     }
   }
 
+  /**
+   * The bell startles the crows: they rise about 8 m and swing wider for `seconds`, then settle back on their round
+   * (game/moments.js). which: 'takamori' (the flock by the bell tower) or 'all'.
+   */
+  liftFlocks(which = 'all', seconds = 9) {
+    for (const b of this.flocks) if (which === 'all' || (which === 'takamori' && b.center.x > 30)) { b.lift = seconds; b.liftDur = seconds; }
+  }
+
   // ---------------------------------------------------------------- story spawns
   spawnCrab() {
     if (this.story.crab) return this.story.crab;
@@ -316,7 +324,9 @@ export class Wildlife {
         a.facing = a.targetFacing;
       } else if (a.kind === 'bird') {
         const ang = t * 0.28 + a.phase;
-        a.pos.set(a.center.x + Math.cos(ang) * a.radius, a.center.y + Math.sin(t * 0.7 + a.phase) * 1.5, a.center.z + Math.sin(ang) * a.radius);
+        if (a.lift > 0) a.lift = Math.max(0, a.lift - dt);
+        const L = a.lift > 0 ? Math.sin(Math.PI * (1 - a.lift / a.liftDur)) : 0, rad = a.radius * (1 + 0.5 * L);   // (liftFlocks)
+        a.pos.set(a.center.x + Math.cos(ang) * rad, a.center.y + Math.sin(t * 0.7 + a.phase) * 1.5 + L * 8, a.center.z + Math.sin(ang) * rad);
         a.targetFacing = Math.atan2(-Math.sin(ang), Math.cos(ang));
         a.facing = a.targetFacing;
         a.root.visible = a.visible && game?.game?.time.season !== 'winter';
