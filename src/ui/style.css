@@ -209,6 +209,8 @@ body.touch #prompt { bottom: calc(150px + var(--safe-b)); }
 @media (max-width: 700px) {
   #objective { max-width: 64vw; padding: 8px 12px; }
   #objective .text { font-size: 14px; }
+  /* the chapter line stays one line on phones (it wrapped to two): the objective keeps the room */
+  #objective .chapter { font-size: 11px; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #dialogue .portrait { width: 92px; height: 92px; margin-right: -20px; }
   #dialogue .box { padding: 16px 16px 20px 30px; min-height: 104px; }
   #dialogue .text { font-size: 16px; }
@@ -292,6 +294,12 @@ body.cinema #hud, body.cinema #touch { opacity: 0; pointer-events: none; }
 .slot .info b { font-family: var(--head); font-weight: 600; font-size: 16px; display: block; }
 .slot .info span { display: block; font-size: 13.5px; color: var(--ink-soft); font-weight: 700; }
 .slot .del { flex: 0 0 auto; border: 0; border-radius: 12px; padding: 0 12px; background: rgba(224, 86, 122, 0.12); color: var(--rose); font-weight: 800; cursor: pointer; }
+/* the in-game yes/no (ui.js confirmIn) */
+.confirm-q { font-size: 15px; line-height: 1.4; margin: 6px 2px 14px; }
+.confirm-row { display: flex; gap: 10px; }
+.confirm-row button { flex: 1; min-height: 48px; border-radius: 14px; font: 800 15px var(--ui); cursor: pointer; }
+.confirm-no { background: #fff; color: var(--ink); border: 2px solid rgba(242, 181, 58, 0.6); }
+.confirm-yes { background: var(--rose); color: #fff; border: 0; }
 /* ---------- advanced settings ---------- */
 details.adv { margin-top: 6px; border-top: 1px dashed rgba(28, 35, 64, 0.2); padding-top: 8px; }
 details.adv summary { cursor: pointer; font-family: var(--head); font-weight: 600; font-size: 16px; color: var(--gold-deep); margin-bottom: 6px; }

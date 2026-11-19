@@ -28984,6 +28984,12 @@
   ]
  },
  {
+  "s": "Start over",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Grandma's Diary",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -29084,6 +29090,13 @@
   "s": "Start a new game in this slot? The story saved here will be replaced.",
   "ctx": [
    "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "New Game",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
   ]
  },
  {
@@ -29633,12 +29646,6 @@
  },
  {
   "s": "Light the four Star Lamps. Bring the Star Train home.",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "New Game",
   "ctx": [
    "menu / screen text"
   ]

@@ -191,8 +191,8 @@ export class UI {
       if (has) {
         const again = document.createElement('button'); again.className = 'explore-again';
         again.textContent = tx('Start over (keeps your stories)');
-        again.onclick = () => {
-          if (!confirm(tx('Reset your Explore progress and mini-game records?'))) return;
+        again.onclick = async () => {
+          if (!await this.confirmIn(tx('Reset your Explore progress and mini-game records?'), tx('Start over'))) return;
           this.audio?.click();
           close({ ...pick, fresh: true });
         };
@@ -312,6 +312,32 @@ export class UI {
     if (g.world && g.assets.people !== 'lite') this.toast(tx('Light mode saved — reload to apply fully'));
   }
 
+  /**
+   * A yes/no asked inside the profile box, in the game's own look and language (not the browser's popup, which looks
+   * foreign on phones and in full screen). The box's rows come back as they were. Resolves true for `yes`.
+   */
+  confirmIn(question, yes) {
+    const list = $('slotList'), closeBtn = $('slotsClose');
+    const kept = [...list.childNodes], keptClose = closeBtn.onclick, from = document.activeElement;
+    const q = document.createElement('p'); q.className = 'explore-intro confirm-q'; q.textContent = question;
+    const row = document.createElement('div'); row.className = 'confirm-row';
+    const no = document.createElement('button'); no.className = 'confirm-no'; no.textContent = tx('Back');
+    const ok = document.createElement('button'); ok.className = 'confirm-yes'; ok.textContent = yes;
+    row.append(no, ok);
+    list.replaceChildren(q, row);
+    return new Promise(resolve => {
+      const done = v => {
+        list.replaceChildren(...kept); closeBtn.onclick = keptClose;
+        if (!v && from?.isConnected) from.focus();
+        resolve(v);
+      };
+      no.onclick = () => { this.audio?.click(); done(false); };
+      ok.onclick = () => { this.audio?.click(); done(true); };
+      closeBtn.onclick = () => done(false);
+      setTimeout(() => no.focus(), 0);
+    });
+  }
+
   /** The profile chooser: three save slots with where each story stands. Resolves with a slot number or null. */
   pickSlot(mode, slots, last) {
     const box = $('slots');
@@ -330,8 +356,8 @@ export class UI {
           pick.className = 'pick' + (s.slot === last && s.data ? ' last' : '');
           pick.innerHTML = `<span class="num ${s.data ? '' : 'empty'}">${s.slot}</span><span class="info">${this.slotInfo(s.data)}</span>`;
           pick.disabled = mode === 'continue' && !s.data;
-          pick.onclick = () => {
-            if (mode === 'new' && s.data && !confirm(tx('Start a new game in this slot? The story saved here will be replaced.'))) return;
+          pick.onclick = async () => {
+            if (mode === 'new' && s.data && !await this.confirmIn(tx('Start a new game in this slot? The story saved here will be replaced.'), tx('New Game'))) return;
             this.audio?.click();
             close(s.slot);
           };
@@ -340,8 +366,8 @@ export class UI {
             const del = document.createElement('button');
             del.className = 'del';
             del.textContent = tx('Delete');
-            del.onclick = () => {
-              if (!confirm(tx('Delete this save? This cannot be undone.'))) return;
+            del.onclick = async () => {
+              if (!await this.confirmIn(tx('Delete this save? This cannot be undone.'), tx('Delete'))) return;
               try { localStorage.removeItem(s.slot === 1 ? 'starline-save-1' : `starline-save-${s.slot}`); localStorage.removeItem(`starline-album-${s.slot}`); } catch { /* ignore */ }
               s.data = null;
               if (!slots.some(x => x.data)) $('btnContinue').classList.add('hidden');

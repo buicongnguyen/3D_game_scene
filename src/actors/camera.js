@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { WATER_Y } from '../world/layout.js';
 
 const ease = t => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+// per-frame scratch (the follow camera runs every frame: no new vectors each time)
+const _fwd = new THREE.Vector3(), _right = new THREE.Vector3(), _pivot = new THREE.Vector3(), _p = new THREE.Vector3();
 
 /**
  * Third-person follow camera with orbit input, auto-recentre, aim mode, terrain/building collision
@@ -49,6 +51,8 @@ export class FollowCamera {
 
   update(dt, player, input, aiming) {
     this.setNear(this.tracking || this.shot ? 1.2 : 0.35);
+    // her see-through shape is for play, not for framed shots
+    player.silhouette?.show(!this.tracking && !this.shot);
     if (this.tracking) {
       const tr = this.tracking;
       const k = 1 - Math.exp(-dt * tr.k);
@@ -90,25 +94,26 @@ export class FollowCamera {
     }
     this.aimBlend += ((aiming ? 1 : 0) - this.aimBlend) * (1 - Math.exp(-dt * 10));
     const dist = THREE.MathUtils.lerp(this.zoomTarget, 2.4, this.aimBlend) + this.flyBlend * 4;
-    const fwd = new THREE.Vector3(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
-    const right = new THREE.Vector3(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
-    const pivot = player.pos.clone().add(new THREE.Vector3(0, THREE.MathUtils.lerp(1.45, 1.55, this.aimBlend) - (player.groundCameraLower || 0), 0));
+    const fwd = _fwd.set(Math.sin(this.yaw) * Math.cos(this.pitch), -Math.sin(this.pitch), Math.cos(this.yaw) * Math.cos(this.pitch));
+    const right = _right.set(-Math.cos(this.yaw), 0, Math.sin(this.yaw));
+    const pivot = _pivot.copy(player.pos);
+    pivot.y += THREE.MathUtils.lerp(1.45, 1.55, this.aimBlend) - (player.groundCameraLower || 0);
     pivot.addScaledVector(right, 0.62 * this.aimBlend);
-    // collision: pull in before terrain or buildings block the view
+    // collision: pull in before terrain or buildings block the view (small props do not: she shows through them)
     let d = dist;
     const steps = 14;
     for (let i = 1; i <= steps; i++) {
       const t = (i / steps) * dist;
-      const p = pivot.clone().addScaledVector(fwd, -t);
+      const p = _p.copy(pivot).addScaledVector(fwd, -t);
       if (this.world.heightAt(p.x, p.z) > p.y - 0.35) { d = Math.max(1.2, t - 0.4); break; }
     }
-    const end = pivot.clone().addScaledVector(fwd, -d);
+    const end = _p.copy(pivot).addScaledVector(fwd, -d);
     const hitT = this.colliders.raycast(pivot.x, pivot.y, pivot.z, end.x, end.y, end.z);
     if (hitT < 1) d = Math.max(1.0, d * hitT - 0.3);
     // smooth only the distance (keeps the orbit responsive but hides snaps)
     if (this.first) { this.dist = d; this.first = false; }
     this.dist = d < this.dist ? d : this.dist + (d - this.dist) * (1 - Math.exp(-dt * 3));
-    const target = pivot.clone().addScaledVector(fwd, -this.dist);
+    const target = this.camera.position.copy(pivot).addScaledVector(fwd, -this.dist);
     const g = this.world.heightAt(target.x, target.z);
     if (target.y < g + 0.45) target.y = g + 0.45;
     // over the river the camera stays clear of the surface: above it, or below it once Mika dives
@@ -116,12 +121,13 @@ export class FollowCamera {
       if (player.submerged) target.y = Math.min(target.y, WATER_Y - 0.35);
       else target.y = Math.max(target.y, WATER_Y + 0.45);
     }
-    this.camera.position.copy(target);
     this.look.copy(pivot).addScaledVector(fwd, 10);
     if (this.shake > 0) {
       this.shake = Math.max(0, this.shake - dt * 2.5);
       const s = this.shake * 0.06;
-      this.camera.position.add(new THREE.Vector3((Math.random() - 0.5) * s, (Math.random() - 0.5) * s, (Math.random() - 0.5) * s));
+      this.camera.position.x += (Math.random() - 0.5) * s;
+      this.camera.position.y += (Math.random() - 0.5) * s;
+      this.camera.position.z += (Math.random() - 0.5) * s;
     }
     this.camera.lookAt(this.look);
     this.pos.copy(this.camera.position);

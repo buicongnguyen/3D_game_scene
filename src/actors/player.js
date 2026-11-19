@@ -1,4 +1,5 @@
 import { mergeSkinnedParts } from '../engine/skin-merge.js';
+import { Silhouette } from './silhouette.js';
 import * as THREE from 'three';
 import { Animator } from './animator.js';
 import { WORLD, WATER_Y } from '../world/layout.js';
@@ -72,6 +73,8 @@ export class Player {
     this.model.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
     // lighter tiers: Mika's plain parts are drawn as one mesh (her brass buckle keeps its own material)
     if (!model?.userData.lite && world?.quality?.mergeChars) { try { mergeSkinnedParts(this.model, 'mika:player'); } catch (e) { console.warn('character merge skipped for Mika', e); } }
+    // seen through whatever hides her from the camera (actors/silhouette.js)
+    this.silhouette = new Silhouette(this.model);
     // swimming tips the body forward about the hips, not the feet
     this.pivot = new THREE.Group();
     this.pivot.position.y = SWIM.pivot;

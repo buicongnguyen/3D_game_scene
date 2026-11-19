@@ -552,7 +552,7 @@ then its step id). Narration is in italics; stage directions are quoted.
 
 **Rin:** Okay. Plan. Grandpa melts for grilled trout. Catch me three fish—any fish, we'll call them trout—and I'll grill them.
 
-**Rin:** Rod's on the dock. Cast, wait for the float to dip, then press E. That's all there is to it.
+**Rin:** Rod's on the dock. Cast where the fish are, wait for the float to sink, then hold to reel. Ease off if the line strains.
 
 #### Catch three fish from the dock · `c1.fish`
 
@@ -1223,6 +1223,220 @@ What Mika hears when she tries a way that is not open yet.
 
 **Mika:** Grandma's kite rests here when I'm not flying. Outside, the Kite button (G) calls it.
 
+*`trick_swimming_intro`:*
+
+**Rin:** Let's practise at the calm pool, city girl. A grown-up is watching, and we find the exit before we get in.
+
+**Mika:** Bubbles, floating, then back to the exit. Slowly. I can practise that.
+
+**Rin:** This is a game lesson. In real water, learn with a qualified swimming teacher and a grown-up watching.
+
+**Rin:** No breath-holding contest. Gentle bubbles, normal breaths, and time to try again.
+
+*`trick_floatsafe_intro`:*
+
+**Rin:** Today we practise falling in with our clothes on, city girl. In the calm pool, with a grown-up right at the edge.
+
+**Mika:** On purpose? In my shoes?
+
+**Rin:** Shoes and clothes hold air. If you ever fall in, don't thrash. Lie back, float, breathe slowly. Then call for help.
+
+**Rin:** And if a friend falls in, never jump in after them. Shout for a grown-up and throw something that floats.
+
+*`trick_firefly_intro`:*
+
+**Rin:** Summer night, city girl. Know what lives by the paddies after dark? Fireflies. Hundreds of them.
+
+**Mika:** Hundreds of bugs. In the dark. You're really selling it.
+
+**Rin:** Take my net. Sweep it when one glows, not after. Ten in a jar make a lantern. The paddy edge, west of Kawabe.
+
+**Rin:** And then you let them go. That's the deal.
+
+*`trick_river_intro`:*
+
+**Rin:** The river's best at night. Take a lantern into the shallows by the dock. Fish sleep with their eyes open.
+
+**Mika:** Rude of them.
+
+**Rin:** Look for tiny sparkles too: shrimp eyes, shining back at you. Ankle-deep only. Promise?
+
+*`trick_stars_intro`:*
+
+**Rin:** Clear night. Go and lie on the hill behind the signal cottage and look up. Properly up.
+
+**Mika:** I've seen stars. There were four of them over our building.
+
+**Rin:** Ha. Find the Big Dipper, then follow its two end stars. They point straight at the North Star.
+
+*`trick_frogs_intro`:*
+
+**Rin:** Hear that racket by the bottom paddies at dusk? Frogs. Bet you can't get close to one.
+
+**Mika:** Bet I can. How hard can sneaking up on a frog be?
+
+**Rin:** Walk while they sing, freeze when they stop. They go quiet the moment they hear you.
+
+*`trick_kite_intro`:*
+
+**Rin:** Feel that wind? Kite weather. Two bamboo sticks, some paper, a long tail. I'll show you once.
+
+**Mika:** You make your own? In the city they come in a packet with instructions.
+
+**Rin:** Watch the grass and the clouds: they tell you where the wind's going before the kite does.
+
+**Rin:** Gusts will shove it about. Steer back into the wind and it climbs. The cow meadow, south of Kawabe.
+
+*`trick_planes_intro`:*
+
+**Rin:** One sheet of paper, a few folds, and it flies. We throw them off the hill above Takamori Landing.
+
+**Mika:** Paper planes? I've made those. They dive straight into the nearest desk.
+
+**Rin:** Because you fold fast and throw hard. Match the left side to the right, and press every crease flat.
+
+**Rin:** Then throw it gently and level. Three throws, the best one counts. And we pick them all up after.
+
+*`trick_dew_intro`:*
+
+**Rin:** Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.
+
+**Mika:** Hundreds of spiders. At sunrise. You keep making this place sound worse.
+
+**Rin:** You can't even see the webs by day. At dawn the dew lights them up like strings of glass beads.
+
+**Rin:** Keep the sun behind you and look low. Take pictures. Don't touch: that's somebody's house.
+
+*`trick_roast_intro`:*
+
+**Rin:** Harvest's in, so the straw's dry. You know what that means? Roast sweet potatoes out in the meadow.
+
+**Mika:** A potato. Cooked in a field. In the dirt.
+
+**Rin:** In the ash. Grandpa lights the straw, we bury them and watch the colour. Too early, raw. Too late, charcoal.
+
+**Rin:** Dig them out just right and share them round. Nothing tastes better with cold fingers.
+
+*`trick_firedrill_intro`:*
+
+**Genzo:** Fire drill on the Kawabe lawn. A stationmaster runs one every season, and this season you're in it.
+
+**Mika:** Do I get to put out a real fire?
+
+**Genzo:** A small one, in a metal tray, with me beside you. At a real fire you shout "Fire!", tell a grown-up and get away.
+
+**Genzo:** For the tray, four things. Pull the pin. Aim at the base. Squeeze the handle. Sweep from side to side.
+
+*`trick_beetles_intro`:*
+
+**Rin:** Want to see a rhinoceros beetle? Horn like a little fork. They come out on summer nights for tree sap.
+
+**Mika:** A beetle with a horn. And we want to meet it because…?
+
+**Rin:** Because it's the best thing in the forest. Rub banana and sugar on a chestnut at dusk, look again at dawn.
+
+**Rin:** The chestnut grove on the shrine trail. Lift one gently, then put it back on its tree.
+
+*`trick_cowrace_intro`:*
+
+**Rin:** In the valley you ride a cow, city girl. Tomorrow's the cow race, up on the pasture at Takamori. Four cows, four lanes!
+
+**Mika:** A race. On cows. Who thought of that?
+
+**Rin:** Farmers, ages ago. In An Giang, in Vietnam, oxen race through flooded rice fields every year, and the whole village cheers.
+
+**Rin:** Tap Giddy-up on the beat of her hooves. Mash it and she gets puffed. Cows get cheered and fed, never hit.
+
+*`trick_eggs_intro`:*
+
+**Rin:** Sora's hens lay up on the henhouse roof. Don't ask. The eggs roll down four bamboo gutters, and somebody has to catch them.
+
+**Mika:** Somebody. With what, exactly?
+
+**Rin:** Your hat! The gutters are joined by little seesaws. An egg takes every one it meets, so watch where it is going.
+
+**Rin:** A hen clucks and puffs before she lays. Stand under the right spout, and tip a full hat into the basket.
+
+*`trick_exercise_intro`:*
+
+**Rin:** Morning, city girl! Every morning I lead the exercise on the big lawn: radio exercise, a little workout, or yoga.
+
+**Mika:** Exercise. Before breakfast. On purpose?
+
+**Rin:** Watch the card and copy me. Press the arrow just as the count lands. For yoga, hold still and keep your balance.
+
+**Rin:** Nobody fails. Move gently, breathe, and stop if anything hurts. The neighbours join in when it gets harder.
+
+*`trick_hoppers_intro`:*
+
+**Rin:** Below the paddies there's a meadow that hops. Grasshoppers and mantises, thick as the grass. Take my net.
+
+**Mika:** Grasshoppers. They jump, right? Straight at your face?
+
+**Rin:** Away from it, mostly. Creep up: they crouch just before they jump. A mantis watches you, so go slow while it stares.
+
+**Rin:** Have a good look, then let them go. Catch and release, city girl.
+
+*`trick_cricket_intro`:*
+
+**Rin:** At dusk the crickets tune up on the hill above Takamori. Walk toward the song, and when it stops, you stop.
+
+**Mika:** Follow a noise. Across a field. In the dark. I love it.
+
+**Rin:** Stand still like a fence post and he starts again. Then tap along with his beat, gently, and he hops in the cage.
+
+**Rin:** Count his chirps for fourteen seconds: it's a thermometer. Don't ask me how. Then let him go home.
+
+*`trick_lifecycle_intro`:*
+
+**Rin:** Sora kept a box of nature cards. Eggs, caterpillars, tadpoles: every little animal's life, drawn by hand.
+
+**Mika:** Cards. I thought the countryside was all running about and falling in rivers.
+
+**Rin:** This one is for your head, city girl. Put a life in order, find the missing card, spot the one that doesn't belong.
+
+**Rin:** On the green by the river, at the north end of Kawabe. No hurry: nobody is timing you.
+
+*`trick_crops_intro`:*
+
+**Rin:** Sora kept field cards too. Rice, wheat, potatoes: what a farmer does with each, from the seed to the harvest.
+
+**Mika:** Rice comes from a shop. In a bag. Doesn't it?
+
+**Rin:** Five months of work first, city girl. Put the jobs in order, read the year wheel, find what each crop needs.
+
+**Rin:** At the north edge of the rice paddies, west of Kawabe. No hurry: nobody is timing you.
+
+*`trick_archery_intro`:*
+
+**Rin:** There's an archery range behind the Kawabe houses. Bamboo bow, straw targets, practice arrows with soft rubber tips.
+
+**Mika:** Archery. Me. With a pointy thing.
+
+**Rin:** A rubber tip, and only ever at the targets. Hold to draw, let go to shoot. The wind sock shows which way it will drift.
+
+**Rin:** Ten, fifteen, twenty metres. Aim a little upwind, city girl.
+
+*`trick_dance_intro`:*
+
+**Hoa:** Hi, Mika! I'm Hoa, Hana's daughter. Hana and Hoa both mean flower. Mum likes things to match: buns, aprons, daughters.
+
+**Mika:** The baker has a grown-up daughter? Since when?
+
+**Hoa:** Since about twenty years ago! I study dance in Seoul. My friends Nabi, Byeol and Haru came home with me for the festival.
+
+**Hoa:** Tonight I teach the hat dance from Vietnam. Watch me, then copy me, on the beat. Like a bon odori circle: anyone can join.
+
+**Mika:** And if I'd rather be a pop star?
+
+**Hoa:** Then Nabi and Haru lead you on the stage, and Byeol sings. Arrows, swipes or the buttons: every move has its own.
+
+*`trick_firefly_note`:*
+
+*In the jar-light, a folded paper by the path: a drawing of a girl with a jar of fireflies, and a note.*
+
+**Rin:** "Not bad for a city girl." …Sora drew that one years ago. I just kept it for the right night.
+
 ## Appendix B · Sora's letters and journal pages
 
 ### The letter in the chest (Prologue)
@@ -1336,6 +1550,8 @@ What the cast says when there is nothing story-related to talk about. The lines 
 **Grandpa Ōta:** “Hmph.” · “Ten years of radish. A man doesn't forget a thing like that.” · “That Hana woman makes a decent bun. Don't repeat that.” · “Rin thinks I don't know she feeds that crab. I know.” · “Keep watch, girl. That's the whole job.”
 
 **Hana:** “Have a bun! No? Have two!” · “Flour in my hair, flour in my tea. Flour is a way of life, love.” · “Ōta used to come to my stall every festival. Three buns. Always three.” · “My oven's older than the viaduct.” · “A bun is just a hug you can eat, sweetheart.”
+
+**Hoa:** “The sign by the bell tower has the steps. The hat dance or the K-pop stage: your pick!” · “In Seoul we practise in front of a big mirror for hours. Here I have a bell tower. I like it better.” · “Mum sends buns to Seoul every month. My friends think every baker in the countryside is a hero.”
 
 **Villager:** “Heard the Mill Lamp was lit again. Packed my bags the same night.” · “My kids had never seen the Star Train. Now they won't stop drawing it.” · “The bell rang the hours again this morning. I cried into my tea.” · “Hoshi Valley's small. Everybody knows everybody's business.” · “They say the stars fall in winter.” · “Sora's granddaughter! You've got her walk.” · “The Star Train! I remember the Star Train.” · “Mind the crows.”
 
@@ -1464,19 +1680,34 @@ one keepsake for the journal. All of this can happen at any point in the story.
 
 ## Appendix G · Valley friends
 
-Mika can say hello to 8 kinds of creature with E. The journal's Friends page shows the hint until she has
+Mika can say hello to 23 kinds of creature with E. The journal's Friends page shows the hint until she has
 met one, then its entry. The first hello with each plays a short scene.
 
 | Friend | Prompt | Hint (before meeting) | Journal entry |
 |---|---|---|---|
 | Meadow rabbit | Pet the rabbit | Walk up slowly. Rabbits bolt from anyone who runs. | Nibbles clover in the meadows round Kawabe and on the slopes below Takamori. |
 | Takamori hen | Greet the hen | In the lanes of Takamori, near the bakery. | Hana's hens. They believe the bakery belongs to them. |
-| Mochi the cat | Scratch Mochi's ears | Kawabe's main street, usually asleep. | Sleeps in the middle of Kawabe's main street. Belongs to everybody and nobody. |
+| Village cat | Scratch the cat's ears | Kawabe's main street, the cottage porch, the bakery doorstep, the orchard fence and the shade of the peach trees. Usually asleep. | Mochi sleeps in the middle of Kawabe's main street; his cousins doze on porches, doorsteps and fences. They all belong to everybody and nobody. |
 | River duck | Wave to the ducks | On the river by Kawabe. Swim out and say hello. | Paddles the slow water just upriver of the ferry, loudly. |
 | Orchard sheep | Pat the sheep | In the pen on Takamori's sheep pasture, from Chapter Two. | Hana's flock. Excellent at escaping, terrible at coming back. |
-| Forest deer | Say hello to the deer | Through the upper orchard gate. Walk, don't run. | A shy family on the plateau above the orchard. The little one is the bravest. |
+| Forest deer | Say hello to the deer | Along the west forest trail, or through the upper orchard gate. Walk, don't run. | Two shy families: one on the plateau above the orchard, one in the woods along the west forest trail. The little ones are the bravest. |
 | Kon the fox | Say hello to Kon | Near the forest shrine, from Chapter Three. | The shrine's red fox, who wears a bib and knows every path in the forest. |
 | Ōkuma the bear | Pat the sleeping bear (gently) | Asleep on the shrine stairs, or in his den after Chapter Three. | The forest's great sleeper. Loves honey chestnuts more than anything. |
+| Meadow cow | Scratch the cow's chin | In the meadow south of Kawabe and along the pasture road to Takamori. | Chews slowly, thinks slowly, and has never once been in a hurry. Her bell rings with every step. |
+| Your riding cow | Pat the cow | Take hay from the haystack by a pasture, feed a cow, then stand beside her and press E to ride. | Fed on hay, now a friend. Steer her, hold to trot and gallop, and let her rest and graze when she is tired. |
+| Takamori pig | Scratch the pig's back | Behind the houses of Takamori. | Snuffles through the lanes behind the houses, certain there are truffles in every garden. |
+| Hillside goat | Pat the goat | On the grassy slopes below Kawabe and above Takamori. | Climbs anything, eats everything, and looks very sorry about both. |
+| Kinako the dog | Pet the dog | In Kawabe, in Takamori and in Sora's garden. She will find you first. | A curly-tailed shiba who walks with anyone who looks a little lost. Barks hello, wags goodbye. |
+| Field cricket | Listen to the cricket | In the long grass round the villages, on summer and autumn evenings. Follow the chirping, and walk softly. | Sings all night with his back legs and never once runs out of song. Very shy up close. |
+| Garden spider | Watch the spider | On her web under the eaves in Kawabe and Takamori, on the fences, and between trees in the forest. Not in winter. | Mends her web every evening and lets the morning dew decorate it. Eats the mosquitoes, so everybody likes her. |
+| Ladybug | Let the ladybug climb on your finger | On flowers and bushes near the villages, on warm days. Walk up slowly or she'll fly away. | Seven spots, all of them lucky. Climbs to the very top of whatever she is on, and then flies off. |
+| River dragonfly | Hold still for the dragonfly | Over the river and the rice paddies on summer and autumn days. Stand still by the water and it will come to you. | Darts over the water like a little blue needle, then stops dead in the air to have a look at you. |
+| Meadow butterfly | Follow the butterfly | Over the meadows and gardens on spring and summer days. | Never flies in a straight line. Rests on a flower just long enough to be admired. |
+| Paddy frog | Hold out your hand to the frog | On the paddy bunds and the low river banks, on spring and summer evenings. Walk, and it will wait for you. | Sings all evening with a throat that puffs up like a balloon. Loudest after rain, and gone with a plop the moment you run. |
+| Rhinoceros beetle | Lift the beetle gently | Comes to sweet sap on summer nights. Set the Beetle sap trap on an oak or a chestnut and lift one gently at dawn. | Glossy as a chestnut, with a forked horn for wrestling rivals off the sap. Strong enough to pull a toy cart. |
+| Stag beetle | Lift the beetle gently | Shares the sap with the rhinoceros beetles. Bait a chestnut well at dusk and look again at dawn. | Flat and black, with jaws like antlers. Looks fierce, and mostly wants to be left alone with its breakfast. |
+| Meadow grasshopper | Say hello to the grasshopper | In the long grass of the meadows, on summer and autumn days. Creep up on one, or catch and release one at the Grasshopper and mantis trick. | Hears with ears on its belly and plays tunes with its back legs. Hops three times, then needs a little rest. |
+| Praying mantis | Greet the mantis politely | On a stalk in the long grass, on summer and autumn days. Go slowly while it watches you. | Turns its head almost right round to watch you, and keeps perfectly still while you creep. A friend of every garden. |
 
 ### Meadow rabbit
 
@@ -1498,9 +1729,9 @@ met one, then its entry. The first hello with each plays a short scene.
 
 *The hen looks Mika over from boots to scarf, clucks once, and allows it.*
 
-### Mochi the cat
+### Village cat
 
-*Mochi opens one eye, decides Mika is acceptable, and purrs like a very small engine.*
+*The cat opens one eye, decides Mika is acceptable, and purrs like a very small engine.*
 
 ### River duck
 
@@ -1542,9 +1773,137 @@ met one, then its entry. The first hello with each plays a short scene.
 
 **Mika:** Brave or silly? …Both. Definitely both.
 
+### Meadow cow
+
+*The cow lifts her head, considers Mika for a long, kind moment, and goes back to her grass. Her bell says thank you.*
+
+### Your riding cow
+
+**Tamo:** Mika, you are SITTING on a cow. The cow is allowing it. I have so many questions.
+
+*The cow flicks an ear, as if this is entirely normal. Her bell rings once for every happy step.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika pats her cow, who leans into it with a long, pleased breath. Tomorrow they will go somewhere much further than the next patch of grass.*
+
+### Takamori pig
+
+*The pig leans into the scratching with a grunt of pure joy, then flops over, completely finished with the day.*
+
+### Hillside goat
+
+*The goat sniffs Mika's sleeve, finds no snacks, and forgives her at once.*
+
+### Kinako the dog
+
+*Kinako barks twice, sits, and wags so hard that the whole back half of her wags with it.*
+
+### Field cricket
+
+**Tamo:** He stopped singing! Was it me? I'll be quiet. …I'm being SO quiet.
+
+*The cricket waits until Tamo is truly quiet, then plays one very loud note, just for Mika.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika crouches in the grass and holds her breath. The cricket looks her over, then chirps three times: hello, hello, hello.*
+
+### Garden spider
+
+**Tamo:** Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.
+
+*The spider plucks one thread, and the whole web shivers like a little harp.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*The spider plucks one thread, and the whole web shivers like a little harp. Mika decides that was a wave.*
+
+### Ladybug
+
+*The ladybug climbs Mika's finger all the way to the tip, thinks it over, and flies off somewhere better.*
+
+**Tamo:** Seven spots! I counted twice. It was seven both times!
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*The ladybug climbs Mika's finger all the way to the tip, opens her spotted shell, and zips away.*
+
+**Mika:** Seven spots. That has to be lucky.
+
+### River dragonfly
+
+**Tamo:** Don't. Move. It's looking at us with its whole face!
+
+*The dragonfly hangs in the air at the end of Mika's nose for one long, glittering second, then darts off over the water.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika stands as still as a fence post. The dragonfly hangs in the air at the end of her nose for one long, glittering second, then darts away.*
+
+### Meadow butterfly
+
+**Tamo:** It landed on me! It thinks I'm a flower! Mika, I'm a FLOWER!
+
+*The butterfly decides Tamo is not a flower after all, and drifts off to find a real one.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika follows the butterfly round and round the meadow until it lands on her sleeve, as if that had been the plan all along.*
+
+### Paddy frog
+
+**Tamo:** It's puffing its throat at me! Is that rude? That feels rude.
+
+*The frog blinks slowly, swells its throat like a little balloon, and sings one deep note, just for Mika.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika holds out a wet palm. The frog sits on it, cool and light, croaks once, and hops back to the bund.*
+
+### Rhinoceros beetle
+
+**Tamo:** It has a FORK on its face. Is it going to eat with it? Is it going to eat ME with it?
+
+*The rhinoceros beetle walks up Mika's sleeve as slowly as a tiny tractor, then stops and waits to be put back on its tree.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*The rhinoceros beetle sits in Mika's palm, heavy as a pebble, horn up. She sets it back on the bark and it goes straight on with breakfast.*
+
+### Stag beetle
+
+**Tamo:** Those antlers are its JAWS? I am keeping my points well away from that one.
+
+*The stag beetle opens its jaws wide, decides Mika is not a rival, and folds them again like a pair of scissors.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*The stag beetle lifts its jaws at Mika once, to be polite, and walks back to the sap without hurrying.*
+
+### Meadow grasshopper
+
+**Tamo:** It looked at me with BOTH eyes and neither one blinked. Is that a thing? That has to be a thing.
+
+*The grasshopper scrapes a back leg along its wing, plays one scratchy little note, and springs onto a taller stalk to wait for an answer.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*Mika holds very still. The grasshopper climbs onto her sleeve, tests the wool with every foot, and decides it is a perfectly good meadow.*
+
+### Praying mantis
+
+**Tamo:** Its head turned ALL the way round to look at me! Mika, that's not allowed. Is that allowed?
+
+*The mantis folds its front legs like a tiny, polite professor, and bobs once.*
+
+*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
+
+*The mantis turns its head to look at Mika, folds its front legs like a tiny, polite professor, and bobs once. Mika bobs back.*
+
 ### Every friend made
 
-*After the last of the 8 first hellos:*
+*After the last of the 23 first hellos:*
 
 **Tamo:** That's everyone! Every creature in the valley knows your name now.
 

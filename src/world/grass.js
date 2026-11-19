@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { AFTER_ORDER } from '../actors/silhouette.js';
 import { FX } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 
@@ -105,6 +106,7 @@ export class Grass {
     this.mesh.frustumCulled = false;
     this.mesh.receiveShadow = true;
     this.mesh.name = 'grass';
+    this.mesh.renderOrder = AFTER_ORDER;   // after Mika: blades at her feet are not cover for her silhouette (actors/silhouette.js)
     scene.add(this.mesh);
   }
 
