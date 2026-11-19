@@ -55,6 +55,7 @@ export class World {
     this.season = null;
     this.hour = 10;
     this.lamps = [];
+    this.cover = undefined;  // cloud cover for the sky; undefined: the sky's own (a sun shower raises it, game/moments.js)
     this.seasonHooks = [];   // (season) => void, e.g. set dressing tinted with the season's grass
   }
 
@@ -75,7 +76,7 @@ export class World {
   update(dt, focus) {
     // the player: distance culling and LOD measure from here while the follow camera orbits around it
     (this.focus ??= new THREE.Vector3()).copy(focus);
-    const L = this.sky.update(dt, this.season, this.hour, focus);
+    const L = this.sky.update(dt, this.season, this.hour, focus, this.cover);
     this.water.update(dt, this.sky, this.lamps);
     return L;
   }
