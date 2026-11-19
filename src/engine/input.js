@@ -7,6 +7,7 @@ const KEYMAP = {
   Space: 'jump', KeyE: 'act', KeyF: 'act', Enter: 'act', ShiftLeft: 'sprint', ShiftRight: 'sprint',
   KeyJ: 'journal', KeyI: 'journal', Escape: 'pause', KeyP: 'pause', Backspace: 'back',
   KeyC: 'dive', KeyN: 'dive', ControlLeft: 'dive', ControlRight: 'dive', KeyG: 'kite', KeyQ: 'aim', KeyR: 'fire',
+  KeyV: 'photo',     // photo mode (game/photo-mode.js reads its own keys once it is open)
 };
 
 export class Input {
@@ -36,7 +37,8 @@ export class Input {
       // typing in a field, or arrowing through a dropdown (settings), is the page's business, not the game's
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement || e.target instanceof HTMLTextAreaElement) return;
       if (['Space', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Backspace'].includes(e.code)) e.preventDefault();
-      if (!this.keys.has(a)) this.edges.add(a);
+      // (a key held through a releaseAll - a menu or photo mode closed by it - repeats: that is not a new press)
+      if (!e.repeat && !this.keys.has(a)) this.edges.add(a);
       this.keys.add(a);
       this.lastDevice = 'keyboard';
     });
@@ -157,6 +159,7 @@ addEventListener('mobile-game-interruption', () => this.releaseAll());
       const btn = i => gp.buttons[i]?.pressed;
       this._gpEdge('jump', btn(0)); this._gpEdge('act', btn(2) || btn(1) && false); this._gpEdge('back', btn(1));
       this._gpEdge('journal', btn(8)); this._gpEdge('pause', btn(9)); this._gpEdge('kite', btn(3));
+      this._gpEdge('photo', btn(11));   // R3: photo mode
       // either trigger dives while swimming
       if (gp.buttons[6]?.value > 0.4 || gp.buttons[7]?.value > 0.4) { this.keys.add('dive'); this._gpDive = true; }
       else if (this._gpDive) { this.keys.delete('dive'); this._gpDive = false; }

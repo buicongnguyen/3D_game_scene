@@ -6,7 +6,9 @@ import { starGroupsHtml } from './stargroups.js';
 import { STORIES, DEFAULT_STORY, storyId, storyStep } from '../game/stories/index.js';
 import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
 import { getPeopleChoice, setPeopleChoice, peopleSetFor } from '../engine/people.js';
-import { loadSave } from '../game/saves.js';
+import { loadSave, shotsKey } from '../game/saves.js';
+import { canEnter, photoState } from '../game/photo.js';
+import { mountShots, creditsShots } from './photo-album.js';
 import { clearGameData, canClearGameData } from '../sw-register.js';
 import { noteWanted, deviceFacts, noteSeen, markNoteSeen } from '../engine/device-note.js';
 import { Voice } from '../engine/voice.js';
@@ -368,7 +370,7 @@ export class UI {
             del.textContent = tx('Delete');
             del.onclick = async () => {
               if (!await this.confirmIn(tx('Delete this save? This cannot be undone.'), tx('Delete'))) return;
-              try { localStorage.removeItem(s.slot === 1 ? 'starline-save-1' : `starline-save-${s.slot}`); localStorage.removeItem(`starline-album-${s.slot}`); } catch { /* ignore */ }
+              try { localStorage.removeItem(s.slot === 1 ? 'starline-save-1' : `starline-save-${s.slot}`); localStorage.removeItem(`starline-album-${s.slot}`); localStorage.removeItem(shotsKey(s.slot)); } catch { /* ignore */ }
               s.data = null;
               if (!slots.some(x => x.data)) $('btnContinue').classList.add('hidden');
               if (mode === 'continue' && !slots.some(x => x.data)) { close(null); return; }
@@ -746,6 +748,7 @@ export class UI {
     $('btnControls').addEventListener('click', () => this.openControls());
     this.bindTour();
     this.bindMinigames();
+    this.bindPhoto();
     $('btnSaveQuit').addEventListener('click', () => this.game.saveAndQuit?.());
     // Esc and J work on the menus themselves: game input is switched off while paused
     addEventListener('keydown', e => {
@@ -939,6 +942,16 @@ export class UI {
   refreshMinigames() {
     const b = $('btnPauseMini');
     if (b) b.classList.toggle('hidden', !this.game.director?.minigameMenu?.canOpen());
+    $('btnPausePhoto')?.classList.toggle('hidden', !canEnter(photoState(this.game)));
+  }
+
+  /** Photo mode's door in the pause menu (game/photo-mode.js; V and pad R3 open it from play). Built like the Mini games one. */
+  bindPhoto() {
+    const b = document.createElement('button');
+    b.id = 'btnPausePhoto'; b.type = 'button';
+    b.dataset.i18n = ''; b.dataset.i18nSrc = 'Photo mode'; b.textContent = tx('Photo mode');
+    b.addEventListener('click', () => { this.audio?.click(); this.game.openPhoto?.('pause'); });
+    $('btnPauseMini').after(b);
   }
 
   /** The title's picker: resolves { e, plan } for the chosen game, or null. The records come from the Explore save. */
@@ -1044,7 +1057,9 @@ export class UI {
     } else if (tab === 'album') {
       const photos = this.game.director?.album() || {};
       body.innerHTML = `<p>${esc(tx('Every Star Lamp you light throws a party. Each one leaves a photo here.'))}</p><div class="album">` +
-        ALBUM.map((a, i) => `<div class="polaroid" style="--tilt:${[-2, 1.5, -1, 2][i % 4]}deg">${photos[a.id] ? `<img alt="" src="${esc(photos[a.id])}">` : '<div class="blank">★</div>'}<p>${esc(tx(a.title))}</p></div>`).join('') + '</div>';
+        ALBUM.map((a, i) => `<div class="polaroid" style="--tilt:${[-2, 1.5, -1, 2][i % 4]}deg">${photos[a.id] ? `<img alt="" src="${esc(photos[a.id])}">` : '<div class="blank">★</div>'}<p>${esc(tx(a.title))}</p></div>`).join('') + '</div>' +
+        '<section id="albumShots"></section>';
+      mountShots($('albumShots'), this);     // the player's own photo-mode pictures (ui/photo-album.js)
     } else if (tab === 'folk') {
       const rows = this.game.director?.town?.journal() || [], met = rows.filter(r => r.met);
       body.innerHTML = `<p>${esc(tx('{n} of {total} neighbours met. Talk to people in Kawabe and Takamori; some will ask for a hand.', { n: met.length, total: rows.length }))}</p>` +
@@ -1079,7 +1094,8 @@ export class UI {
         row([tx('Jump')], N_('Climb (hold)')), row([tx('Dive')], N_('Descend (hold)')),
         ...(motors ? [row([tx('Boost')], N_('With motors: boost while the battery lasts (hold)')), row([], hover)] : [row([], bench)]),
         head(N_('Looking up at the sky')), row([tx('Fly up')], N_('Fly up on the Star Kite, above the mountains, for a clear sky')), row(['◀', '▶'], N_('Turn the sky clock half an hour at a time')),
-        head(N_('Countryside tricks')), row([tx('Do it')], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips'))].join('');
+        head(N_('Countryside tricks')), row([tx('Do it')], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips')),
+        head(N_('Photo mode')), row(['☰'], N_('Photo mode is in the pause menu. Drag to look, pinch to zoom, two fingers to move'))].join('');
     }
     return [head(N_('Walking')), row(['W', 'A', 'S', 'D'], N_('Move')), row(['Shift'], N_('Run faster')), row(['Space'], N_('Jump, or swim up in the water')),
       row(['C'], N_('Dive while swimming')), row(['W', 'Space', 'Space'], N_('Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)')),
@@ -1092,6 +1108,8 @@ export class UI {
       head(N_('Looking up at the sky')), row(['U', 'G'], N_('Fly up on the Star Kite, above the mountains, for a clear sky')), row(['PageUp', 'PageDown'], N_('Turn the sky clock half an hour at a time')),
       head(N_('Countryside tricks')), row(['E'], N_('Walk up to a trick sign to play; the grown-up who teaches you gives the first tips')),
       row(['Backspace'], N_('Stop a trick early')),
+      head(N_('Photo mode')), row(['V'], N_('Photo mode (also in the pause menu; gamepad R3)')),
+      row(['Space'], N_('Take the photo')), row(['T', 'F', 'B'], N_('Next pose, filter, frame')),
       row(['🎮'], N_('Gamepad supported'))].join('');
   }
 
@@ -1239,7 +1257,8 @@ export class UI {
 
   /** The credits show the year's photographs. */
   creditsAlbum(photos) {
-    $('creditsAlbum').innerHTML = ALBUM.filter(a => photos?.[a.id]).map(a => `<img alt="${esc(tx(a.title))}" src="${esc(photos[a.id])}">`).join('');
+    $('creditsAlbum').innerHTML = ALBUM.filter(a => photos?.[a.id]).map(a => `<img alt="${esc(tx(a.title))}" src="${esc(photos[a.id])}">`).join('') +
+      creditsShots(this.game.director?.slot ?? 1, esc);     // and the four newest of the player's own (ui/photo-album.js)
   }
 
   swimming(on) {

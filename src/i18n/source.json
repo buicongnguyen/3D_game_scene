@@ -4430,7 +4430,7 @@
   "ctx": [
    "the home a keepsake is in",
    "UI (src/content/signs.js)",
-   "UI (src/ui/map.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -4457,7 +4457,7 @@
   "ctx": [
    "the home a keepsake is in",
    "UI (src/content/signs.js)",
-   "UI (src/ui/map.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -7359,6 +7359,7 @@
   "s": "Viaduct Lamp",
   "ctx": [
    "Star Lamp name",
+   "UI (src/game/photo.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -16319,6 +16320,7 @@
   "s": "Normal",
   "ctx": [
    "UI (src/content/levels.js)",
+   "UI (src/game/photo.js)",
    "menu / screen text"
   ]
  },
@@ -16606,7 +16608,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/game/skygaze.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -16614,7 +16616,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/game/skygaze.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -16622,7 +16624,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/game/skygaze.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -16630,7 +16632,7 @@
   "ctx": [
    "UI (src/content/minigames.js)",
    "UI (src/content/tour.js)",
-   "UI (src/game/skygaze.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -16899,6 +16901,7 @@
   "s": "Hoshi Station",
   "ctx": [
    "UI (src/content/signs.js)",
+   "UI (src/game/photo.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -16906,6 +16909,7 @@
   "s": "Engine shed",
   "ctx": [
    "UI (src/content/signs.js)",
+   "UI (src/game/photo.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -16967,6 +16971,7 @@
   "s": "Takamori Halt",
   "ctx": [
    "UI (src/content/signs.js)",
+   "UI (src/game/photo.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -16975,13 +16980,14 @@
   "ctx": [
    "UI (src/content/signs.js)",
    "UI (src/content/tour.js)",
-   "UI (src/ui/map.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
   "s": "Sheep pasture",
   "ctx": [
    "UI (src/content/signs.js)",
+   "UI (src/game/photo.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -16990,7 +16996,7 @@
   "ctx": [
    "UI (src/content/signs.js)",
    "UI (src/content/tour.js)",
-   "UI (src/ui/map.js)"
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -17029,6 +17035,7 @@
   "s": "Kawabe",
   "ctx": [
    "UI (src/content/tour.js)",
+   "UI (src/game/photo.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -17041,7 +17048,8 @@
  {
   "s": "Kawabe Dock",
   "ctx": [
-   "UI (src/content/tour.js)"
+   "UI (src/content/tour.js)",
+   "UI (src/game/photo.js)"
   ]
  },
  {
@@ -17054,6 +17062,7 @@
   "s": "Takamori",
   "ctx": [
    "UI (src/content/tour.js)",
+   "UI (src/game/photo.js)",
    "UI (src/ui/map.js)"
   ]
  },
@@ -18197,6 +18206,13 @@
   ]
  },
  {
+  "s": "Photo mode isn't available right now",
+  "ctx": [
+   "UI (src/game/game.js)",
+   "UI (src/game/photo-mode.js)"
+  ]
+ },
+ {
   "s": "Can't save during a scene — try again in a moment",
   "ctx": [
    "UI (src/game/game.js)"
@@ -18274,6 +18290,196 @@
   "s": "Mini games ☰",
   "ctx": [
    "UI (src/game/minigame-menu.js)"
+  ]
+ },
+ {
+  "s": "The album holds {n} photos. Delete one in the Journal to keep more.",
+  "ctx": [
+   "UI (src/game/photo-mode.js)"
+  ]
+ },
+ {
+  "s": "Couldn't keep the photo: storage is full",
+  "ctx": [
+   "UI (src/game/photo-mode.js)"
+  ]
+ },
+ {
+  "s": "In your album",
+  "ctx": [
+   "UI (src/game/photo-mode.js)",
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Couldn't take the photo",
+  "ctx": [
+   "UI (src/game/photo-mode.js)"
+  ]
+ },
+ {
+  "s": "As is",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Standing",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Wave",
+  "ctx": [
+   "UI (src/game/photo.js)",
+   "UI (src/game/tricks/rules-dance.js)"
+  ]
+ },
+ {
+  "s": "Cheer",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Pointing",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Sit on the grass",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Kneel",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Crouch",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "None",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Warm film",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Sakura",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Golden hour",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Twilight",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Old photo",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Black and white",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "No frame",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Polaroid",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Postcard",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Film strip",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Star corners",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Wide",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Close-up",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Tilt left",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Level",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Tilt right",
+  "ctx": [
+   "UI (src/game/photo.js)"
+  ]
+ },
+ {
+  "s": "Landslide scar",
+  "ctx": [
+   "UI (src/game/photo.js)",
+   "UI (src/ui/map.js)"
+  ]
+ },
+ {
+  "s": "Hoshi Valley",
+  "ctx": [
+   "UI (src/game/photo.js)",
+   "menu / screen text"
   ]
  },
  {
@@ -24281,12 +24487,6 @@
   ]
  },
  {
-  "s": "Wave",
-  "ctx": [
-   "UI (src/game/tricks/rules-dance.js)"
-  ]
- },
- {
   "s": "Heart hands",
   "ctx": [
    "UI (src/game/tricks/rules-dance.js)"
@@ -26117,7 +26317,8 @@
   "s": "Done",
   "ctx": [
    "UI (src/game/tricks.js)",
-   "UI (src/game/yard/round.js)"
+   "UI (src/game/yard/round.js)",
+   "UI (src/ui/photo-ui.js)"
   ]
  },
  {
@@ -28381,12 +28582,6 @@
   ]
  },
  {
-  "s": "Landslide scar",
-  "ctx": [
-   "UI (src/ui/map.js)"
-  ]
- },
- {
   "s": "Map",
   "ctx": [
    "UI (src/ui/map.js)",
@@ -28804,6 +28999,145 @@
   ]
  },
  {
+  "s": "Your photos",
+  "ctx": [
+   "UI (src/ui/photo-album.js)"
+  ]
+ },
+ {
+  "s": "No photos of your own yet. Open Photo mode from the menu.",
+  "ctx": [
+   "UI (src/ui/photo-album.js)"
+  ]
+ },
+ {
+  "s": "Delete photo",
+  "ctx": [
+   "UI (src/ui/photo-album.js)"
+  ]
+ },
+ {
+  "s": "Delete this photo?",
+  "ctx": [
+   "UI (src/ui/photo-album.js)"
+  ]
+ },
+ {
+  "s": "Delete",
+  "ctx": [
+   "UI (src/ui/photo-album.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Pose",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Filter",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Frame",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Lens",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Grid",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Drag to look · pinch to zoom · two fingers to move",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Right stick looks · left stick moves · triggers zoom · A takes the photo",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Drag to look · right-drag or WASD to move · wheel to zoom · Space takes the photo",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Reset view",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Take photo",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Hide controls",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Face the camera",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Tamo joins",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Poses need Mika standing on the ground",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Caption",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Save picture",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Share",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
+  "s": "Couldn't share the photo. Try Save picture.",
+  "ctx": [
+   "UI (src/ui/photo-ui.js)"
+  ]
+ },
+ {
   "s": "E",
   "ctx": [
    "UI (src/ui/sky-compass.js)"
@@ -29100,12 +29434,6 @@
   ]
  },
  {
-  "s": "Delete",
-  "ctx": [
-   "UI (src/ui/ui.js)"
-  ]
- },
- {
   "s": "Delete this save? This cannot be undone.",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -29240,6 +29568,12 @@
  },
  {
   "s": "This device has no voice for this language, so you will hear blips.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Photo mode",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -29525,6 +29859,12 @@
   ]
  },
  {
+  "s": "Photo mode is in the pause menu. Drag to look, pinch to zoom, two fingers to move",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Move",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -29574,6 +29914,24 @@
  },
  {
   "s": "Stop a trick early",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Photo mode (also in the pause menu; gamepad R3)",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Take the photo",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Next pose, filter, frame",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]
@@ -29634,12 +29992,6 @@
  },
  {
   "s": "Light the way home",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Hoshi Valley",
   "ctx": [
    "menu / screen text"
   ]

@@ -83,3 +83,26 @@ owner set for all the games: Mario Kart 8 polish, vivid warm colour (not pastel)
 - Phone chapter line one line (`ui/style.css`).
 - Follow camera: no per-frame allocations.
 - `docs/STORY.md` regenerated (`npm run story:md`).
+
+## 7. Done: phase B, photo mode
+
+Built by a workflow: three code readers, two competing designs (player-first, risk-first), a judge that merged them,
+one builder, four reviewers (state and hand-back, phone UX, capture and storage, code quality), two independent
+skeptics per finding, and a fixer. 33 findings, 28 confirmed and fixed (among them: a gamepad entry that closed at
+once, a photo lost when leaving right after the shutter, Postcard holes in the saved file, bloom and sprites shrinking
+in the larger shot, the portrait tray hiding Mika, Enter on a focused button taking a photo).
+
+- Pure rules and tables: `src/game/photo.js` (tests: `tests/photo.test.mjs`).
+- The mode itself, fetched on first use: `src/game/photo-mode.js`; UI `src/ui/photo-ui.js`; frames
+  `src/ui/photo-frame.js`; album section `src/ui/photo-album.js`; filters `src/engine/photo-pass.js` (after the
+  output pass, off unless a filter is chosen).
+- Hooks: V / R3 in `engine/input.js`; `openPhoto()` and one per-frame check in `game/game.js`; `Renderer.shoot()`
+  (one larger frame for the shutter, restored in `finally`); the pause-menu button, album, credits and controls rows
+  in `ui/ui.js`; `clearShots()` in `game/saves.js` (New game and Delete clear the photos, Explore "Start over" keeps
+  them); `Tamo.glowFor()` split out of `Tamo.update()` so a joined Tamo is lit right while the world is paused.
+- Storage: `starline-shots-<slot>`, 12 thumbnails (JPEG, about 40-90 kB each); the full picture is saved or shared
+  from the card, never kept in localStorage.
+- Checks: `npm test` (1,052), i18n 5,002 × 3, `tests/photo-mode-browser.mjs` (121 checks over 390×844, 844×390,
+  1280×720 and vi/ko/ja), the Grandma story autopilot.
+- Known: a real gamepad and iPhone safe areas were not tried on hardware; Tamo very close to the camera at golden
+  hour reads as a soft glow rather than a crisp star.

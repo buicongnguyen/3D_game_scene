@@ -76,6 +76,14 @@ export class Tamo {
     this.root.rotation.y = aiming ? camYaw : f + Math.sin(this.t * 0.7) * 0.4;
     const s = 0.9 + this.power * 0.06;
     this.model.scale.setScalar(s);
+    this.glowFor(camera, night);
+    this.updateMotes(dt);
+    this.anim?.update(dt);
+    this.updateSparks(dt);
+  }
+
+  /** His glow and light for where he is and where the camera is (update() every frame; photo mode while paused). */
+  glowFor(camera, night = 0) {
     // right next to the camera (small rooms, close-ups) he tones his glow down so his face stays readable
     const near = camera ? THREE.MathUtils.smoothstep(this.pos.distanceTo(camera.position), 1.5, 4.5) : 1;
     const glow = (1.1 + Math.sin(this.t * 3) * 0.15 + this.power * 0.2) * (0.45 + 0.55 * near);
@@ -86,9 +94,6 @@ export class Tamo {
     const calm = this.calm ?? 1;
     this.light.intensity = (0.6 + night * 3.5) * (0.9 + this.power * 0.15) * (0.5 + 0.5 * near) * calm;
     this.halo.material.opacity = (0.35 + night * 0.4) * (0.3 + 0.7 * near) * (0.4 + 0.6 * calm);
-    this.updateMotes(dt);
-    this.anim?.update(dt);
-    this.updateSparks(dt);
   }
 
   /** One little orbiting light per lamp lit, in that lamp's colour: mill pink, orchard gold, forest green, viaduct blue. */

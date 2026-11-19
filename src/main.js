@@ -6,7 +6,7 @@ import { UI } from './ui/ui.js';
 import { Audio } from './engine/audio.js';
 import { PALETTES } from './world/seasons.js';
 import { detectLang, setLang, tx } from './i18n/i18n.js';
-import { loadSave, clearSave, saveSlots, lastSlot } from './game/saves.js';
+import { loadSave, clearSave, clearShots, saveSlots, lastSlot } from './game/saves.js';
 import { quickStartWanted } from './quick/switch.js';
 import { TitleStill } from './quick/title-still.js';
 import { registerServiceWorker } from './sw-register.js';
@@ -261,7 +261,7 @@ function titleLook() {
   game.player.root.visible = true;
   ui.showHud(true);
   game.follow.clearCutscene();
-  if (choice === 'new') { clearSave(picked.slot); try { localStorage.removeItem(`starline-album-${picked.slot}`); } catch { /* ignore */ } }
+  if (choice === 'new') { clearSave(picked.slot); clearShots(picked.slot); try { localStorage.removeItem(`starline-album-${picked.slot}`); } catch { /* ignore */ } }
   const started = director.begin(choice === 'continue' || choice === 'explore' ? saved : null);
   window.__STARLINE_PLAYING__ = true;
   await started;

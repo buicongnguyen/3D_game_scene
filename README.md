@@ -71,6 +71,10 @@ and chooses how to bring the two villages together. Choose a story on New Game o
   Spark) to send Tamo's spark.
 - **Phones:** the action button is **Do it**, and every "press E" in the story
   names it instead.
+- **Photo mode.** Press **V** (R3 on a gamepad, or Menu → Photo mode on phones): the moment freezes, the camera
+  is yours (drag to look, pinch or wheel to zoom, two fingers or WASD to move), Mika poses (wave, cheer, point, sit,
+  kneel, crouch, face the camera) and Tamo can join. Seven filters, four frames with the place and season as a caption.
+  The shutter saves a full-size picture (Save picture / Share) and keeps 12 per profile in the journal's Album.
 - **Three save profiles** and an **Advanced** settings panel (season and time of
   day to look at, weather, shadows, resolution, field of view, camera distance,
   text size).

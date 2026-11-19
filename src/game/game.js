@@ -13,6 +13,7 @@ import { View } from '../engine/view.js';
 import { Cells, CellGrid } from '../engine/cell-grid.js';
 import { markSlow } from '../engine/device-note.js';
 import { FrameRing, buildReport } from '../engine/perf-report.js';
+import { canEnter, photoState } from './photo.js';
 // (the world, the forests, Mika and the rest are fetched by load(): ./valley-parts.js. A Game that has not loaded is
 //  light: the title menu and the quick-start mini games run on it.)
 
@@ -212,6 +213,19 @@ export class Game {
     if (!on) this.ui.closeAll();
   }
 
+  /**
+   * Photo mode, from V / R3 ('key') or the pause menu ('pause'). Its code is fetched the first time (game/photo-mode.js):
+   * until then it costs the game nothing. -> a promise of whether it opened
+   */
+  openPhoto(from) {
+    if (!canEnter(photoState(this))) {
+      if (from === 'key') this.ui?.toast(tx("Photo mode isn't available right now"));
+      return Promise.resolve(false);
+    }
+    this.photoP ??= import('./photo-mode.js').then(m => (this.photo = new m.PhotoMode(this)));
+    return this.photoP.then(p => p.enter(from)).catch(e => { console.error('[photo] failed to open', e); this.photoP = null; return false; });
+  }
+
   saveAndQuit() {
     if (!this.director.save()) { this.ui.toast(this.director.saveFailed ? tx("Couldn't write the save: storage is full or blocked") : tx('Can\'t save during a scene — try again in a moment')); return; }
     location.reload();
@@ -231,6 +245,7 @@ export class Game {
     if (this.director?.quest && !this.ui.dialogueOpen && !this.director.minigame && !this.director.scenes.active) {
       if (this.input.pressed('pause')) { if (this.ui.overlay) this.ui.closeOverlay(); else this.togglePause(true); }
       else if (this.input.pressed('journal') && !this.paused) this.ui.openJournal();
+      else if (this.input.pressed('photo') && !this.paused) this.openPhoto('key');
     }
     this.input.enabled = !this.paused && !this.ui.dialogueOpen;
     const running = !this.paused;
@@ -270,6 +285,8 @@ export class Game {
       this.assets.setGlow('Headlamp glass', L.night * 4);
       this.afterUpdate?.(dt);
     }
+    // photo mode (game/photo-mode.js): the world stays paused, its own camera moves; what follows sees the new view
+    if (this.photo?.active) this.photo.frame(raw);
     this.lights.update(this.camera.position);
     this.cullT = (this.cullT || 0) - raw;
     if (this.cullT <= 0) { this.cullT = 0.3; this.structures.cull(this.camera.position, this.renderer.q); }

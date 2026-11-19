@@ -161,12 +161,15 @@ export class Renderer {
     this.grade = new ShaderPass(GradeShader);
     this.composer.addPass(this.grade);
     this.composer.addPass(new OutputPass());
+    // photo mode's filters (engine/photo-pass.js), once it has been opened: after the output, off unless a filter is on
+    if (this.photoPass) this.composer.addPass(this.photoPass);
   }
 
-  resize() {
+  /** force: a pixel ratio for one photo-mode shot (game/photo.js fitShot), past the tier's own ratio and pixel cap. */
+  resize(force) {
     const w = window.innerWidth, h = window.innerHeight;
-    let dpr = Math.min(window.devicePixelRatio || 1, this.q.dpr) * this.scale;
-    if (w * h * dpr * dpr > this.q.maxPixels) dpr = Math.sqrt(this.q.maxPixels / (w * h));
+    let dpr = force || Math.min(window.devicePixelRatio || 1, this.q.dpr) * this.scale;
+    if (!force && w * h * dpr * dpr > this.q.maxPixels) dpr = Math.sqrt(this.q.maxPixels / (w * h));
     this.pixelRatio = Math.max(0.5, dpr);
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(w, h, false);
@@ -227,6 +230,30 @@ export class Renderer {
       catch (e) { console.error('[focus] drawing failed: back to the usual frame', e); const f = this.focus; this.focus = null; f.exit?.(); }
     }
     this.renderWorld(scene, camera);
+  }
+
+  /**
+   * One photo-mode picture at pixel ratio `pr`: drawn larger, handed to `copy(canvas)` in the same task (the drawing
+   * buffer is not preserved, so it must be read before the browser shows it), then the screen's size is back and the
+   * view is drawn again, so not one blank frame is shown. -> what copy returned
+   */
+  shoot(scene, camera, pr, copy) {
+    const sp = this.pixelRatio;
+    let undo = null;
+    try {
+      this.resize(pr);
+      // pixel-sized effects keep the preview's look in the larger picture: the bloom's mip chain at the screen's size
+      // (its blur reach is counted in mip texels; the composite upsamples them), point sprites scaled by the ratio
+      this.bloom.setSize(innerWidth * sp, innerHeight * sp);
+      undo = this.onShot?.(pr / sp) || null;
+      this.renderWorld(scene, camera, false);
+      return copy(this.renderer.domElement);
+    } finally {
+      try { undo?.(); } finally {
+        this.resize();
+        this.renderWorld(scene, camera, false);
+      }
+    }
   }
 
   /** The usual frame: shadows, the whole scene, bloom, grade, output. `shadows: false` keeps the shadow map as it is. */

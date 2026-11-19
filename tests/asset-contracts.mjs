@@ -24,11 +24,13 @@ const ROOM_MATS = ['Window view', 'Interior glow', 'Collider'];
 // Ordinary homes (interior_<kind>.py): no keepsake; a resident stands at each Spot_npc_* node; the decor variants Var_1..3 (one shown per house).
 const HOME_NODES = ['Spawn', 'Exit', 'Light_1', 'Light_2', 'Light_3', 'Spot_npc_1', 'Spot_npc_2', 'Var_1', 'Var_2', 'Var_3', 'Col_floor', 'Col_ceiling',
   'Col_wall_back', 'Col_wall_front', 'Col_wall_left', 'Col_wall_right'];
+/** Mika's clips (photo mode's poses must be among them: tests/photo.test.mjs). */
+export const MIKA_CLIPS = ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang', 'Sit', 'SitFloor', 'Pet', 'RideCow', 'RideCowTrot', 'RideCowLean', ...GROUND_CLIPS];
 
 export const CONTRACTS = {
   // ---------------------------------------------------------------- characters
   mika: { family: 'characters', tris: 16000, nodes: [...HUMAN_BONES, 'scarf_1'],
-    clips: ['Idle', 'Walk', 'Run', 'Jump', 'Fall', 'Land', 'Aim', 'Point', 'Cast', 'Reel', 'Interact', 'Stir', 'Hammer', 'Cheer', 'Talk', 'Wave', 'Swim', 'Tread', 'Hang', 'Sit', 'SitFloor', 'Pet', 'RideCow', 'RideCowTrot', 'RideCowLean', ...GROUND_CLIPS] },
+    clips: MIKA_CLIPS },
   genzo: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Sad', 'ArmsCrossed', 'Bow'] },
   rin: { family: 'characters', tris: 12000, nodes: [...HUMAN_BONES, 'hat'], clips: ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cast', 'Reel', 'Pole', 'Cheer'] },
   ota: { family: 'characters', tris: 12000, nodes: HUMAN_BONES, clips: ['Idle', 'Walk', 'Talk', 'Wave', 'Bow', 'Sad'] },

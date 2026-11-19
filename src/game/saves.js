@@ -15,6 +15,10 @@ export function loadSave(slot = 1) {
 
 export function clearSave(slot = 1) { try { localStorage.removeItem(saveKey(slot)); } catch { /* ignore */ } }
 
+/** The player's own photo-mode pictures (game/photo.js), one album per profile; the party photos keep starline-album-*. */
+export const shotsKey = slot => `starline-shots-${slot}`;
+export function clearShots(slot) { try { localStorage.removeItem(shotsKey(slot)); } catch { /* ignore */ } }
+
 export const saveSlots = () => [1, 2, 3].map(slot => ({ slot, data: loadSave(slot) }));
 
 export function lastSlot() { try { return +localStorage.getItem('starline-last-slot') || 1; } catch { return 1; } }
