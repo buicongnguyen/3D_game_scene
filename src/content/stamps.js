@@ -39,7 +39,8 @@ export const DECOR = [
   { id: 'geraniums', model: 'flowerpot', scale: 0.75, x: -0.25, surface: 0.24, z: -2.84, yaw: 0, name: N_('A pot of geraniums'), from: N_('Granny Tsuru'), at: 4, glyph: '🪴' },
   { id: 'paperflowers', model: 'flowers-b', scale: 0.4, x: 1.62, surface: 0.904, z: 2.94, yaw: Math.PI, name: N_('Paper flowers'), from: N_('Mrs. Komori'), at: 8, icon: 'flowers' },
   { id: 'ball', model: 'ball', scale: 1, x: -3.30, surface: 0, z: 2.90, yaw: 0, name: N_("Kenta's spare ball"), from: N_('Kenta'), at: 12, icon: 'ball' },
-  { id: 'pickles', model: 'glass-jar', scale: 1.4, x: 3.04, surface: 0.904, z: 2.95, yaw: Math.PI, name: N_('A jar of plum pickles'), from: N_('Aiko'), at: 16, glyph: '🥒' },
+  // the firefly game's own jar (empty, red cloth lid): named for what it is, with the jar's own journal picture
+  { id: 'pickles', model: 'glass-jar', scale: 1.4, x: 3.04, surface: 0.904, z: 2.95, yaw: Math.PI, name: N_('A firefly jar'), from: N_('Aiko'), at: 16, icon: 'trick-firefly' },
   { id: 'bugnet', model: 'bug-net', scale: 0.9, x: 3.30, surface: 0, z: 2.50, yaw: Math.PI / 2, name: N_('A bug net'), from: N_('Yui'), at: 20, glyph: '🦋' },
   { id: 'basket', model: 'basket', scale: 0.9, x: 1.12, surface: 0, z: 2.92, yaw: Math.PI, name: N_('A straw basket'), from: N_('Mr. Kubo'), at: 26, glyph: '🧺' },
   // the low table's far end, beside the tea things: seen from the seat, never between the seated shot and Mika

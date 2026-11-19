@@ -20,8 +20,8 @@ stamps that slowly fill Grandma's cottage with decorations. Explore only. Built 
 6. **Full card.** "Card full! A bonus stamp". Crossing a threshold: "New in the cottage: A paper lantern". On the next
    visit to the cottage the new decoration sparkles (after any new gifts); if Mika is inside already, at once.
 7. **Lucky stamp.** Seeing a weather moment (docs/WEATHER-MOMENTS.md) adds "Lucky stamp: Sun shower!" once per card,
-   as a bonus (it is not one of the three). The card's lucky row shows only where moments exist (`g.moments`) or one
-   was already seen on this card.
+   as a bonus (it is not one of the three). The card's lucky row shows only where a moment can really come
+   (`g.moments`, and neither `g.momentsOff` nor `g.weatherOff`) or one was already seen on this card.
 8. **Tomorrow** (local 04:00) brings a new card. Stamps are banked at once. No streaks, no penalties, no weekdays.
 
 Out of scope: story saves, play zones' own sessions and the quick runtime's screen show no card (their plays still
@@ -76,20 +76,33 @@ whole number) into a redraw that keeps the banked stamps. `lucky` holds the Engl
 ## Look and cost
 
 - **The find.** A boot prop (ball, letters, hoe, bucket, bug net, basket) at its spot, bobbing and glinting like a hunt
-  treasure, no shadow. Its plain opaque parts are merged into one vertex-coloured mesh (the same shader program as the
-  valley's merged buildings), so it is one draw, or two for the bug net's see-through net. Picked up as item `'stamp'`,
-  which is no ITEMS id: nothing lands in the inventory and no flag is set.
+  treasure, no shadow. Its plain opaque parts are merged into one vertex-coloured mesh (the same rules as
+  `engine/static-merge.js`), so it is one draw, or two: the bug net's see-through net (drawn in one pass from a copy of
+  its material, never the firefly game's shared one) and the hoe's and bucket's metal keep their own material. Picked up
+  as item `'stamp'`, which is no ITEMS id: nothing lands in the inventory and no flag is set. Its merged geometry is freed
+  once the bend-down has put it away (on game time, so a pause in between cannot free it while it is still drawn).
+- **The find waits for free play.** It is hidden, and cannot be picked up, while a round, a launch, the sky or the
+  workshop owns the screen (a spot may lie in a practice ground: Mika would crouch for it mid-round) and in the tour.
+- **Its glint** is gated by the camera: nothing beyond 90 m or more than 2 m behind the camera (the arrow leads there),
+  the plain glint from 40 m, the strong one with its rising column close up (plain again from governor level 2).
+- **The scene tour.** The live tour lends the Director a throwaway story (`game/tour.js`). The runtime keeps the save it
+  was built for (`this.quest`); while another is lent (`borrowed()`) the card sleeps: no day check, no stamps, no find,
+  no arrow, no objective line, an empty card in the journal.
 - **The decorations** are clones under the cottage room's own group (room-local coordinates, drawn only while Mika is
-  inside, no per-frame code), merged the same way (about 11 draws for all eight), no shadows. Each rests on its surface by
-  its own bounding box (the lantern and the basket have their origin at the top). The lantern's `Lantern glow` part
-  stays separate, so the game's glow driver lights it at night without a light.
+  inside, no per-frame code), merged the same way (about 11 draws for all eight), no shadows. A piece with thin
+  one-layer sheets (the geraniums, the paper flowers' petals and leaves, the jar's cloth lid) uses the two-sided copy of
+  the merged material, so the sheets do not vanish from behind. Each rests on its surface by its own bounding box (the
+  lantern and the basket have their origin at the top). The lantern's `Lantern glow` part stays separate, so the game's
+  glow driver lights it at night without a light.
 - **Sparkles indoors.** `celebrate.root` is a scene child at y = 0, which the interiors hide while Mika is in a room, so
   `giftGlow` was invisible indoors (only its pooled light showed). `Celebrate.indoorSprites()` makes, on first use, a
   second glow sprite system (same shader: no new program) in the interiors group, and `giftGlow` sends its sprites there
   while Mika is inside. That fixes the old gift sparkles too.
 - **Feedback** waits for a free screen (no round or launch, dialogue, panel or pause) and shows one item every 1.9 s.
   The pop sits 22 % down the screen, or just under the objective card and the Mini games chip when they reach lower,
-  never in the lower half (the stick, the buttons); `prefers-reduced-motion` fades it only.
+  never in the lower half (the stick, the buttons); `prefers-reduced-motion` fades it only. Its empty live region
+  (`role=status`) is made when the runtime starts, so the first "Stamp! 1/3" is announced too; its rings are
+  `aria-hidden`. A stamped job reads "Stamped" (its own key: the shared "Done" is a close button elsewhere).
 - **CPU.** `update` does a 1 Hz play check and a 30 s day check; the arrow reads a reused vector.
 
 ## Decoration spots
@@ -107,7 +120,7 @@ hotspot stands, Spawn and Exit, 0.35 m from the gifts, keepsake and kite, top un
 | geraniums | flowerpot × 0.75 | -0.25, -2.84 | platform, between the letters shelf and the counter | Granny Tsuru | 4 |
 | paperflowers | flowers-b × 0.4 | 1.62, 2.94 | getabako top | Mrs. Komori | 8 |
 | ball | ball × 1 | -3.30, 2.90 | genkan floor, left corner | Kenta | 12 |
-| pickles | glass-jar × 1.4 | 3.04, 2.95 | getabako top, its free right end | Aiko | 16 |
+| pickles ("A firefly jar": the firefly game's empty jar, so it is named for what it shows) | glass-jar × 1.4 | 3.04, 2.95 | getabako top, its free right end | Aiko | 16 |
 | bugnet | bug-net × 0.9, yaw +π/2 | 3.30, 2.50 | genkan floor, right corner, upright | Yui | 20 |
 | basket | basket × 0.9 | 1.12, 2.92 | genkan floor by the getabako, behind the geta | Mr. Kubo | 26 |
 | postcards | letters × 1.6 | -1.30, -0.25 | low table's far end, beside the tea things (off the line between the seated shot and Mika) | Mr. Hirano | 32 |

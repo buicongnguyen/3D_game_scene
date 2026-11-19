@@ -17137,7 +17137,7 @@
   ]
  },
  {
-  "s": "A jar of plum pickles",
+  "s": "A firefly jar",
   "ctx": [
    "UI (src/content/stamps.js)"
   ]
@@ -29403,6 +29403,12 @@
   "s": "Looking {dir}",
   "ctx": [
    "UI (src/ui/sky-compass.js)"
+  ]
+ },
+ {
+  "s": "Stamped",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
   ]
  },
  {

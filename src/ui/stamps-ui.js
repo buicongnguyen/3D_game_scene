@@ -17,13 +17,15 @@ export function cardHTML(rt, ui) {
   if (!s.day || s.tasks.length !== CARD) return '';
   const done = s.tasks.filter(t => t.done).length;
   const rows = s.tasks.map(t => {
-    const sub = t.done ? tx('Done') : t.carry ? tx('Carrying') : placeOf(t) ? tx('Near {place}', { place: tx(placeOf(t)) }) : '';
+    const sub = t.done ? tx('Stamped') : t.carry ? tx('Carrying') : placeOf(t) ? tx('Near {place}', { place: tx(placeOf(t)) }) : '';
     const play = t.k === 'play' && !t.done && rt.playEntry(t.id)
       ? `<button type="button" class="stamp-play" data-play="${esc(t.id)}"${rt.d.minigameMenu?.canOpen() ? '' : ' disabled'}>${esc(tx('Play'))}</button>` : '';
     return row(t.done ? ' done' : '', t.done, tx(askerOf(t, undefined, rt.plays)), taskText(t, undefined, rt.plays, tx), sub, play);
   });
-  // the lucky stamp: only where weather moments exist (or one was already seen on this card)
-  if (rt.g.moments || s.lucky) rows.push(row(' lucky' + (s.lucky ? ' done' : ''), !!s.lucky, tx('Lucky stamp'), tx('See a weather moment'), s.lucky ? tx(s.lucky) : ''));
+  // the lucky stamp: only where a weather moment can really come (the moments exist and neither they nor the falling
+  // petals, leaves and snow are switched off), or one was already seen on this card
+  const g = rt.g;
+  if ((g.moments && !g.momentsOff && !g.weatherOff) || s.lucky) rows.push(row(' lucky' + (s.lucky ? ' done' : ''), !!s.lucky, tx('Lucky stamp'), tx('See a weather moment'), s.lucky ? tx(s.lucky) : ''));
   const next = nextThreshold(s.total);
   const decor = DECOR.map(D => {
     const known = s.total >= D.at;
@@ -58,9 +60,12 @@ function popTop() {
   return Math.min(top, Math.round(innerHeight * 0.5) - 42);
 }
 
-/** "Stamp! n/3": a mini card whose new stamp slams in. Fixed near the top, never takes a tap, gone after 1.8 s. */
-export function showPop(n) {
-  if (typeof document === 'undefined') return;
+/**
+ * The pop's empty live region, made once before the first stamp can land (the Stamps runtime calls this when it starts):
+ * screen readers announce changes only in a live region they already know, so one made and filled at once stays silent.
+ */
+export function ensurePop() {
+  if (typeof document === 'undefined') return null;
   if (!pop) {
     pop = document.createElement('div');
     pop.id = 'stampPop';
@@ -68,8 +73,15 @@ export function showPop(n) {
     pop.setAttribute('aria-live', 'polite');
     document.body.appendChild(pop);
   }
+  return pop;
+}
+
+/** "Stamp! n/3": a mini card whose new stamp slams in. Fixed near the top, never takes a tap, gone after 1.8 s. */
+export function showPop(n) {
+  if (!ensurePop()) return;
   const rings = [0, 1, 2].map(i => `<span class="sp-ring${i < n - 1 ? ' on' : i === n - 1 ? ' new' : ''}">${i < n ? '★' : ''}</span>`).join('');
-  pop.innerHTML = `<div class="sp-card"><b>${esc(tx('Stamp! {n}/3', { n }))}</b><div class="sp-rings">${rings}</div></div>`;
+  // (only "Stamp! n/3" is read out: the rings are a picture of it)
+  pop.innerHTML = `<div class="sp-card"><b>${esc(tx('Stamp! {n}/3', { n }))}</b><div class="sp-rings" aria-hidden="true">${rings}</div></div>`;
   pop.style.top = `${popTop()}px`;
   pop.classList.remove('show');
   void pop.offsetWidth;            // restart the slam

@@ -38,6 +38,7 @@ import { saveKey, loadSave, clearSave, saveSlots, lastSlot } from './saves.js'; 
 const FRIEND_BY_KIND = Object.fromEntries(FRIENDS.map(f => [f.id, f]));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
 const _grab = new THREE.Vector3();   // (scratch: where a pickup is grabbed, Mika's middle)
+const _look = new THREE.Vector3();   // (scratch: where the camera looks)
 
 /** Binds the quest engine to the world: NPCs, interactions, sparks, pickups, zones, effects, saving. */
 export class Director {
@@ -627,6 +628,19 @@ export class Director {
     this.game.scene.remove(p.obj);
     this.pickups.delete(id);
     this.interactables.delete(`pick:${id}`);
+  }
+
+  /**
+   * The stamp card's find glints only where it can be seen: nothing beyond 90 m or behind the camera (the arrow and its
+   * distance lead the way there), the plain glint from 40 m, and the strong one with its rising column close up (the
+   * plain one too once a phone's governor is two steps down).
+   */
+  stampGlint(pos) {
+    const cam = this.game.camera, dx = pos.x - cam.position.x, dz = pos.z - cam.position.z, d2 = dx * dx + dz * dz;
+    if (d2 > 90 * 90) return;
+    cam.getWorldDirection(_look);
+    if (dx * _look.x + dz * _look.z < -2 * Math.hypot(_look.x, _look.z)) return;
+    this.fx.glint(pos, d2 < 40 * 40 && (this.game.renderer?.appliedLevel || 0) < 2);
   }
 
   collect(pk) {
@@ -1422,7 +1436,8 @@ export class Director {
       pk.obj.position.y = pk.pos.y + Math.sin(pk.t * 2.2) * 0.12;
       pk.obj.rotation.y += dt * 1.6;
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
-      else if (pk.treasure || pk.letter || pk.stamp) this.fx.glint(pk.obj.position, !!pk.stamp || this.q.has('hunt'));
+      else if (pk.treasure || pk.letter) this.fx.glint(pk.obj.position, this.q.has('hunt'));
+      else if (pk.stamp) this.stampGlint(pk.obj.position);
       if (!this.busy && pk.obj.position.distanceTo(_grab) < (pk.grab || 1.45)) this.collect(pk);
     }
     // Rin's ferry is the story's way over; only when the river is frozen does walking across the ice count instead

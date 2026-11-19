@@ -10,7 +10,7 @@ import { tx } from '../i18n/i18n.js';
 import { TABLES, DELIVERIES, FINDS, DECOR } from '../content/stamps.js';
 import { cleanStamps } from './stamps-save.js';
 import { dayKeyOf, shouldRoll, drawCard, validateCard, award, luck, playCandidates, playProgress, objectiveText } from './stamps-rules.js';
-import { renderCard, showPop } from '../ui/stamps-ui.js';
+import { renderCard, showPop, ensurePop } from '../ui/stamps-ui.js';
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const POLL = 1;          // s: how often a played game is looked for
@@ -23,8 +23,14 @@ const _box = new THREE.Box3();
 const _m = new THREE.Matrix4(), _inv = new THREE.Matrix4(), _n = new THREE.Matrix3(), _p = new THREE.Vector3();
 
 // One material for every merged part: a plain vertex-coloured standard material, the same shader program the valley's
-// merged buildings already use (engine/static-merge.js), so nothing new is compiled.
-let merged = null;
+// merged buildings already use (engine/static-merge.js). A prop with thin one-layer sheets (petals, leaves, a cloth lid)
+// gets the two-sided copy instead, so those sheets do not vanish when their back turns to the camera (compiled up front
+// by Stamps.precompile).
+let merged = null, mergedDS = null;
+// a see-through two-sided sheet (the bug net's mesh) -> its copy drawn in one pass, not two (never the shared original,
+// which the firefly game's net uses)
+const onePass = new Map();
+const onePassOf = m => { let c = onePass.get(m); if (!c) { c = m.clone(); c.forceSinglePass = true; onePass.set(m, c); } return c; };
 /** A part's position, normal and colour (its material colour x the baked shading in COLOR_0) in the root's space. */
 function bakePart(mesh, toRoot) {
   const g = mesh.geometry, pos = g.attributes.position, nor = g.attributes.normal, col = g.attributes.color, n = pos.count, c = mesh.material.color;
@@ -43,17 +49,24 @@ function bakePart(mesh, toRoot) {
   if (!nor) out.computeVertexNormals();
   return out;
 }
+/** A part that may join the merged mesh: plain and opaque (the same rules as engine/static-merge.js). */
+const plain = o => {
+  const m = o.material;
+  return o.isMesh && !o.isSkinnedMesh && m && !Array.isArray(m) && !m.map && !m.alphaMap && !m.transparent && !(m.alphaTest > 0)
+    && (m.metalness ?? 0) <= 0.3 && !(m.emissiveIntensity > 0 && m.emissive?.getHex()) && !GLOW_MATERIALS.includes(m.name) && !!o.geometry.attributes.position;
+};
 /**
- * A small prop drawn in one call instead of one per material: its plain opaque parts become one vertex-coloured mesh.
- * Glowing (driven by name) and textured parts stay as they are; see-through ones too, unless `all` (the find: a spinning
- * pickup, where a solid net reads fine and one draw beats a see-through net drawn twice). The model's geometry is untouched.
+ * A small prop in as few draws as it takes: its plain opaque parts become one vertex-coloured mesh (two-sided when any of
+ * them is). Glowing (driven by name), textured, metal and see-through parts keep their own material; a see-through
+ * two-sided sheet is drawn in one pass instead of two. The model's own geometry and materials are untouched.
  */
-function oneDraw(obj, all = false) {
-  const parts = [];
+function oneDraw(obj) {
+  const parts = [], sheets = [];
   obj.traverse(o => {
-    const m = o.material;
-    if (o.isMesh && !o.isSkinnedMesh && m && !Array.isArray(m) && !m.map && (all || !m.transparent) && !GLOW_MATERIALS.includes(m.name) && o.geometry.attributes.position) parts.push(o);
+    if (plain(o)) parts.push(o);
+    else if (o.isMesh && o.material?.transparent && o.material.side === THREE.DoubleSide && !o.material.forceSinglePass) sheets.push(o);
   });
+  for (const o of sheets) o.material = onePassOf(o.material);
   if (parts.length < 2) return;
   obj.updateMatrixWorld(true);
   _inv.copy(obj.matrixWorld).invert();
@@ -62,8 +75,11 @@ function oneDraw(obj, all = false) {
   for (const g of geos) g.dispose();
   if (!geo) return;
   geo.computeBoundingBox(); geo.computeBoundingSphere();
-  merged ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0, name: 'Merged 0.75' });
-  const mesh = new THREE.Mesh(geo, merged);
+  const twoSided = parts.some(o => o.material.side === THREE.DoubleSide);
+  const mat = twoSided
+    ? (mergedDS ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0, side: THREE.DoubleSide, name: 'Merged 0.75 two-sided' }))
+    : (merged ??= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.75, metalness: 0, name: 'Merged 0.75' }));
+  const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'stamp-merged';
   mesh.userData.ownGeometry = true;
   for (const o of parts) o.removeFromParent();
@@ -75,11 +91,15 @@ export class Stamps {
   constructor(director) {
     const d = (this.d = director), g = (this.g = d.game);
     d.stamps = this;                       // (now, not after the constructor: refreshObjective below already reads the card)
-    d.q.state.stamps = cleanStamps(d.q.state.stamps);
+    // The Explore save this card belongs to. While something else is lent to the Director (the live scene tour's
+    // throwaway story), the card sleeps: nothing rolls, stamps, shows or points (see borrowed()).
+    this.quest = d.q;
+    this.quest.state.stamps = cleanStamps(this.quest.state.stamps);
     this.plays = playCandidates(d.minigameMenu?.catalogue || []);
     this.playById = new Map(this.plays.map(e => [e.id, e]));
     this.doors = new Map((g.interiors?.doors || []).map(x => [x.id, x]));
     this.queue = [];
+    this.trash = [];                       // picked-up finds, their merged geometry freed once they leave Mika's hand
     this.gapT = 0;
     this.pollT = POLL;
     this.rollT = ROLL;
@@ -88,6 +108,7 @@ export class Stamps {
     const qa = typeof window !== 'undefined' ? window.__STARLINE_QA__ : null;
     const day = g.params?.get?.('stampday');
     this.qaDay = qa && day && DAY.test(day) ? day : null;
+    ensurePop();                           // the pop's live region exists before the first stamp, so readers announce it
     this.buildDecor();
     this.register();
     if (!this.roll()) this.respawnFind();
@@ -117,10 +138,12 @@ export class Stamps {
     if (comp?.renderTarget1) R.setRenderTarget(prev);
   }
 
-  get s() { return this.d.q.state.stamps; }
+  get s() { return this.quest.state.stamps; }
+  /** Another story is lent to the Director (the live scene tour): the card sleeps until its own save is back. */
+  borrowed() { return this.d.q !== this.quest; }
   today() { return this.qaDay || dayKeyOf(new Date()); }
-  /** Task `i` of today's card (0 deliver, 1 find, 2 play), or null while there is no card. */
-  task(i) { const s = this.s; return s.day && s.tasks.length === 3 ? s.tasks[i] : null; }
+  /** Task `i` of today's card (0 deliver, 1 find, 2 play), or null while there is no card (or it sleeps). */
+  task(i) { const s = this.s; return !this.borrowed() && s.day && s.tasks.length === 3 ? s.tasks[i] : null; }
   delivery() { const t = this.task(0); return t ? DELIVERY.get(t.id) || null : null; }
   playEntry(id) { return this.playById.get(id) || null; }
   inCottage() { return this.g.interiors?.active === 'cottage'; }
@@ -175,16 +198,25 @@ export class Stamps {
     d.pickup(FIND, F.model, new THREE.Vector3(x, this.g.world.heightAt(x, z) + F.lift, z), 'stamp', () => this.findWanted(), { stamp: F, grab: 1.9 });
     const pk = d.pickups.get(FIND);
     if (!pk) return;
-    oneDraw(pk.obj, true);                // (one draw, not three)
+    oneDraw(pk.obj);                      // (at most two draws: the merged parts, and the net's mesh or the metal)
     pk.obj.scale.setScalar(F.scale);
     pk.obj.traverse(o => { if (o.isMesh) o.castShadow = false; });
   }
-  findWanted() { const t = this.task(1); return !!t && !t.done && !this.g.interiors?.active; }
+  /**
+   * The find shows (and can be picked up) only in free play outdoors: not while a round, a launch or another game owns
+   * the screen (a spot may lie in a practice ground: Mika would crouch for it mid-round), nor in the scene tour.
+   */
+  findWanted() {
+    const t = this.task(1), d = this.d, g = this.g;
+    return !!t && !t.done && !g.interiors?.active && !d.tourLock && !d.minigame && !d.minigameMenu?.running
+      && !d.tricks?.round && !d.yard?.round && !d.workshop?.active && !d.sky?.active && !g.sky?.active;
+  }
 
   // ------------------------------------------------------------------ the day
   /** A new card when the day has turned (on load, every 30 s, when the journal shows the card). -> true when one came */
   roll() {
-    const d = this.d, s = this.s, st = d.q.state, day = this.today();
+    if (this.borrowed()) return false;
+    const d = this.d, s = this.s, st = this.quest.state, day = this.today();
     if (shouldRoll(s, day)) {
       s.day = day;
       s.tasks = drawCard(day, TABLES, st, this.plays);
@@ -202,6 +234,8 @@ export class Stamps {
 
   // ------------------------------------------------------------------ per frame (from Director.update: never while paused)
   update(dt) {
+    if (this.trash.length) this.sweep();
+    if (this.borrowed()) return;          // (the tour's story: no day check, no stamps, no feedback until it is given back)
     if ((this.pollT -= dt) <= 0) { this.pollT = POLL; this.checkPlay(); }
     if ((this.rollT -= dt) <= 0) { this.rollT = ROLL; this.roll(); }
     if (this.gapT > 0) this.gapT -= dt;
@@ -215,12 +249,22 @@ export class Stamps {
   }
   feedback(fn) { this.queue.push(fn); }
 
+  /** Free a picked-up find's merged geometry once it has really left the scene (the bend-down runs on game time). */
+  sweep() {
+    for (let i = this.trash.length - 1; i >= 0; i--) {
+      const o = this.trash[i];
+      if (o.parent) continue;
+      disposeOwn(o);
+      this.trash.splice(i, 1);
+    }
+  }
+
   /** A played game shows in its record (from anywhere: the valley, the title's Mini games, a zone): its stamp. */
   checkPlay() {
     const t = this.task(2);
     if (!t || t.done) return;
     const e = this.playEntry(t.id);
-    if (e && playProgress(e, this.d.q.state) > t.base) this.give(2);
+    if (e && playProgress(e, this.quest.state) > t.base) this.give(2);
   }
 
   // ------------------------------------------------------------------ the jobs
@@ -243,13 +287,14 @@ export class Stamps {
 
   /** The Director's collect() hands a picked-up find over here. */
   found(pk) {
-    setTimeout(() => disposeOwn(pk?.obj), 4000);     // (after the bend-down has put it away)
+    if (pk?.obj) this.trash.push(pk.obj);            // (freed by sweep() once the bend-down has put it away)
     if (pk?.stamp?.id !== this.task(1)?.id) return;
     this.give(1);
   }
 
   /** A weather moment was seen (game/moments.js calls this once per moment): the lucky stamp, once per card. */
   saw(id, nameSource) {
+    if (this.borrowed()) return false;
     const r = luck(this.s, nameSource || id);
     if (!r) return false;
     const name = this.s.lucky;
@@ -261,6 +306,7 @@ export class Stamps {
 
   /** Stamp task `slot`: the pop, the bonus, the decorations it brings; then the objective, the save, the cottage. */
   give(slot) {
+    if (this.borrowed()) return null;
     const s = this.s, r = award(s, slot);
     if (!r) return null;
     const n = s.tasks.filter(t => t.done).length, a = this.d.audio;
@@ -329,11 +375,12 @@ export class Stamps {
   }
 
   /** The objective card's line ("Stamp card 1/3: Find Kenta's ball"), or null while there is no card. */
-  objective() { return objectiveText(this.s, TABLES, tx, this.plays); }
+  objective() { return this.borrowed() ? null : objectiveText(this.s, TABLES, tx, this.plays); }
 
   /** The journal's Neighbours tab: today's card at the top (a new day's card first). */
   mount(el, ui) {
     if (!el) return;
+    if (this.borrowed()) { el.innerHTML = ''; return; }
     this.roll();
     renderCard(el, this, ui);
   }
