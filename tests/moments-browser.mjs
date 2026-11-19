@@ -4,7 +4,9 @@
 // light pool unchanged, no console errors. The rainbow's apex and the flock are on screen in the default camera, the
 // arch on the side away from the sun; the shower's cloud cover rises and is handed back. Entering a house, stop(),
 // the tour's lock and a round each end it within half a second; photo mode freezes it. Settings, "Falling petals..."
-// and ?moments=off keep it off (the last never fetches the code). The 17:00 bell rings three times and lifts the crows.
+// and ?moments=off keep it off (the last never fetches the code). The 17:00 bell rings three times and lifts the crows,
+// and its crows going home are on screen; every bird of a flock stays clear of the HUD panels; swallows facing uphill
+// stay over the ground; a forced moment plays past its window; a moment cut off early earns no lucky stamp.
 // The update costs little with the CPU slowed 8x.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
@@ -69,6 +71,24 @@ const inView = () => {
   return { on: Math.abs(q.x) < 1 && Math.abs(q.y) < 1 && q.z < 1, away, ndc: [+q.x.toFixed(2), +q.y.toFixed(2)] };
 };
 
+/** Page side: every bird of the moment flock, on screen or not, and under a HUD panel or clear of it. */
+const flockView = () => {
+  const g = window.__STARLINE__, m = window.__STARLINE_QA__.moments.fx.flock.mesh, a = m.instanceMatrix.array, cam = g.camera;
+  if (!m.visible) return null;
+  const rects = ['objective', 'clock', 'btnMenu', 'btnJournal'].map(id => document.getElementById(id)?.getBoundingClientRect()).filter(Boolean);
+  const V = cam.position.constructor, W = innerWidth, H = innerHeight, r = { n: 0, on: 0, hid: 0, low: Infinity };
+  for (let i = 0; i < m.count; i++) {
+    const w = new V(a[i * 16 + 12], a[i * 16 + 13], a[i * 16 + 14]);
+    r.low = Math.min(r.low, w.y - g.world.heightAt(w.x, w.z));           // (how high over the ground under it)
+    const q = w.project(cam), x = (q.x * 0.5 + 0.5) * W, y = (-q.y * 0.5 + 0.5) * H;
+    const on = Math.abs(q.x) < 1 && Math.abs(q.y) < 1 && q.z < 1;
+    r.n++;
+    if (on) { r.on++; if (rects.some(R => x >= R.left && x <= R.right && y >= R.top && y <= R.bottom)) r.hid++; }
+  }
+  return r;
+};
+const addView = (acc, v) => { if (v) { acc.n += v.n; acc.on += v.on; acc.hid += v.hid; acc.low = Math.min(acc.low, v.low); } return acc; };
+
 const browser = await chromium.launch({ headless: true, args: ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist', '--mute-audio'] });
 try {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
@@ -104,7 +124,11 @@ try {
   await wait(() => window.__BELLS__ >= 1, null, 3000).catch(() => {});
   const lifted = await page.evaluate(() => window.__STARLINE__.director.wildlife.flocks.filter(b => b.lift > 0).length);
   const bellState = await page.evaluate(() => window.__STARLINE_QA__.moments.state());
-  await page.waitForTimeout(5200);
+  // the crows going home fly where the phone sees them, under the HUD (the valley's own flocks lift out of the frame)
+  const crows = { n: 0, on: 0, hid: 0, low: Infinity };
+  for (const until = Date.now() + 5200; Date.now() < until;) { addView(crows, await page.evaluate(flockView)); await page.waitForTimeout(300); }
+  check(crows.n > 0 && crows.on / crows.n >= 0.6 && crows.hid <= crows.on * 0.1,
+    `bell: the crows going home are on screen in ${crows.on} of ${crows.n} samples, ${crows.hid} of those under a HUD panel`);
   const bells = await page.evaluate(() => window.__BELLS__);
   check(bells === 3, `16:59 -> 17:00 by the tower: ${bells} tolls (the hour's own and two more)`);
   check(bellState.id === 'bell' && lifted === 9, `it is the evening bell moment (${bellState.id}) and every crow lifts (${lifted} of 9)`);
@@ -135,6 +159,7 @@ try {
     const started = await page.evaluate(id => window.__STARLINE_QA__.moments.start(id, { force: true }), m.id);
     if (!check(started === true, `${m.name}: starts (${started})`)) continue;
     let views = 0, on = 0, away = true, coverUp = false;
+    const flock = { n: 0, on: 0, hid: 0, low: Infinity };
     let during = null, duringCalls = null;
     const dur = await page.evaluate(() => window.__STARLINE__.moments.run.dur);
     const end = Date.now() + (dur + 1.5) * 1000;
@@ -145,6 +170,7 @@ try {
       if (m.view && s.t >= m.view[0] && s.t <= m.view[1]) {
         const v = await page.evaluate(inView);
         if (v) { views++; if (v.on) on++; if (m.id === 'shower' && !v.away) away = false; }
+        if (m.id === 'birds') addView(flock, await page.evaluate(flockView));
       }
       if (!during && s.t >= m.sample) {
         during = await page.evaluate(probe); duringCalls = await page.evaluate(callsOver, 30);
@@ -161,6 +187,8 @@ try {
     check(duringCalls.min - baseCalls.min <= 2 + 4, `${m.name}: the frame's draws rise by ${duringCalls.min - baseCalls.min} (2 + people walking about)`);
     check(during.pool === base.pool && during.lights === base.lights, `${m.name}: lights unchanged (${base.lights} -> ${during.lights})`);
     if (m.view) check(views >= 5 && on / views >= 0.5, `${m.name}: on screen in ${on} of ${views} samples`);
+    // (every bird, not just the flock's middle: none of the V's rear pairs behind the HUD)
+    if (m.id === 'birds') check(flock.on > 0 && flock.hid <= flock.on * 0.1, `${m.name}: ${flock.hid} of ${flock.on} on-screen bird samples under a HUD panel`);
     if (m.id === 'shower') { check(during.s.arc, 'shower at 8:00 in spring: a rainbow'); check(away, 'the arch is on the side away from the sun'); check(coverUp, 'the clouds thicken'); }
     await wait(() => !window.__STARLINE_QA__.moments.state().active && !window.__STARLINE__.moments.run, null, 8000).catch(() => {});
     await page.waitForTimeout(6000);
@@ -168,6 +196,46 @@ try {
     check(done.extra === base.extra, `${m.name}: 6 s after, its draws are gone (${done.extra - base.extra})`);
     if (m.cover) check(done.cover === undefined, 'the cloud cover is handed back');
   }
+
+  // ------------------------------------------------------------------ swallows facing uphill skim over the slope
+  log('swallows uphill');
+  await page.evaluate(setScene, ['summer', 10, 108, 170, 5.5]);
+  await page.evaluate(() => window.__STARLINE_QA__.moments.start('birds', { force: true }));
+  const up = { n: 0, on: 0, hid: 0, low: Infinity };
+  for (const until = Date.now() + 9000; Date.now() < until;) { addView(up, await page.evaluate(flockView)); await page.waitForTimeout(300); }
+  check(up.n > 0 && up.low >= 1, `swallows on a slope, facing uphill: never in the ground (lowest ${up.low.toFixed(2)} m over it)`);
+  await page.evaluate(() => window.__STARLINE_QA__.moments.stop(true));
+  await page.waitForTimeout(600);
+
+  // ------------------------------------------------------------------ forced outside its window; the lucky stamp only if it reached its best part
+  log('forced, highlights');
+  await page.evaluate(setScene, ['summer', 20, -2, 34, 2.6]);
+  const forced = await page.evaluate(async () => {
+    const qa = window.__STARLINE_QA__.moments, r = qa.start('shower', { force: true });
+    await new Promise(res => setTimeout(res, 1000));
+    const s = qa.state(); qa.stop(true);
+    return { r, active: s.active, n: s.perSession.shower };
+  });
+  check(forced.r === true && forced.active, `a shower forced at 20:00 plays on past its window (${forced.r}, active ${forced.active})`);
+  await page.waitForTimeout(600);
+  await page.evaluate(setScene, ['spring', 10, -2, 34, 2.6]);
+  const seen = await page.evaluate(async () => {
+    const g = window.__STARLINE__, qa = window.__STARLINE_QA__.moments, had = g.director.stamps, calls = [];
+    g.director.stamps = { saw: (id, name) => calls.push(id + ':' + name) };
+    const sleep = ms => new Promise(res => setTimeout(res, ms));
+    try {
+      qa.start('gust', { force: true }); g.moments.run.t = 1.7; qa.stop(true);
+      await sleep(900);
+      const cut = calls.length;
+      qa.start('gust', { force: true });
+      await sleep(2800);
+      qa.stop(true);
+      return { cut, full: calls.slice(cut) };
+    } finally { if (had) g.director.stamps = had; else delete g.director.stamps; }
+  });
+  check(seen.cut === 0, `a breeze stopped at 1.7 s earns no lucky stamp (${seen.cut})`);
+  check(seen.full.length === 1 && seen.full[0] === 'gust:Breeze', `a breeze seen through 2 s earns it once (${seen.full.join(', ')})`);
+  await page.waitForTimeout(600);
 
   // ------------------------------------------------------------------ fast stops
   // (act / undo: page-side code with g = the game, qa = the QA helpers)

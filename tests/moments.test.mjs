@@ -6,8 +6,9 @@ import {
   MOMENTS, IDS, SEASONS, NAMES, LINES, linesFor, variantOf, durOf, inWindow, eligible, readFlags, startBlocked, mustStop, START_FLAGS, STOP_FLAGS,
   envelope, showerLevels, gustLevel, sparkleLevels, rainbowAzimuth, rainbowDistance, rainbowPlan, sunElevation, viewBand, skeinPlan, vSlot,
   swallowPoint, bellReaction, momentsWanted, Scheduler, mulberry32, FIRST, GAP, WORLD_BOX, TOWER, SKY_BAND, RAINBOW_APEX, RAINBOW_HALF,
-  rainbowAt, RAINBOW_DRAW,
+  rainbowAt, RAINBOW_DRAW, vStep, skyCap, crowPlan, crowPoint, CROWS, SWALLOW_LOOPS, swallowLoop,
 } from '../src/game/moments-rules.js';
+import { momentsOptionOn } from '../src/ui/moments-option.js';
 import { sunDirection } from '../src/world/seasons.js';
 import { WORLD } from '../src/world/layout.js';
 
@@ -50,6 +51,11 @@ test('the table: each moment only in its own seasons, hours and light, and only 
   assert.equal(at('birds', { season: 'autumn', hour: 18.2 }), true, 'geese fly on till 18:30');
   assert.equal(durOf('birds', 'geese'), 40); assert.equal(durOf('birds', 'swallows'), 14); assert.equal(durOf('shower'), 36);
   assert.ok(inWindow('sparkle', '', free({ season: 'winter', hour: 9 })) && !inWindow('sparkle', '', free({ season: 'winter', hour: 13 })));
+  // a running flock leaves its window when the shown season changes under it (Settings > Season)
+  assert.equal(inWindow('birds', 'geese', free({ season: 'spring' })), false, 'geese stop gently in spring');
+  assert.equal(inWindow('birds', 'swallows', free({ season: 'autumn' })), false, 'swallows stop gently in autumn');
+  assert.equal(inWindow('birds', 'geese', free({ season: 'winter' })), true);
+  assert.equal(inWindow('birds', 'swallows', free({ season: 'summer' })), true);
 });
 
 test('the gates: a free state passes; each blocker alone stops a start with its own reason; some only block starts', () => {
@@ -257,6 +263,45 @@ test('paths: the skein stays in a portrait view, the V is symmetric, swallows lo
   assert.ok(Math.abs(v.x - 100) < 1e-9 && Math.abs(v.z) < 1e-9 && Math.abs(v.y - 2 - 100 * Math.tan(5 * DEG)) < 1e-9);
 });
 
+test('under the HUD: every goose of the V, and the bell crows going home, stay in the sky band; a landscape skein comes from the left', () => {
+  const cam = { x: 10, y: 6, z: -20 }, flat = () => 0;
+  let worst = -Infinity;
+  for (let s = 1; s <= 60; s++) {
+    const yaw = (s * 0.7) % (2 * Math.PI) - Math.PI, P = skeinPlan(cam, yaw, mulberry32(s), {}, flat), slot = {};
+    for (let t = 0; t <= 40; t += 0.5) {
+      const lx = P.x0 + P.hx * P.speed * t, lz = P.z0 + P.hz * P.speed * t, step = vStep(P.y, cam.y, Math.hypot(lx - cam.x, lz - cam.z));
+      assert.ok(step >= 0 && step <= 0.4);
+      for (let i = 0; i < 9; i++) {
+        vSlot(i, slot);
+        const bx = lx - P.hx * slot.back + P.hz * slot.lat, bz = lz - P.hz * slot.back - P.hx * slot.lat;
+        const by = Math.min(P.y + slot.back * step + 0.3, skyCap(cam, bx, bz));
+        worst = Math.max(worst, Math.atan2(by - cam.y, Math.hypot(bx - cam.x, bz - cam.z)) / DEG);
+      }
+    }
+  }
+  assert.ok(worst <= SKY_BAND.hi + 1e-6, `the highest goose ${worst.toFixed(2)}° above the eye (the HUD starts at 3.9°)`);
+  for (let s = 1; s <= 20; s++) assert.equal(skeinPlan(cam, 0.3, mulberry32(s), {}, flat, -1).side, -1, 'forced to come from the left');
+  // the crows: on a portrait phone most of them are in the view all along, none above the band
+  const port = Math.tan(27.5 * DEG) * 390 / 844, o = {};
+  for (const from of [1, -1]) for (const yaw of [0, 2, -2.5]) {
+    const P = crowPlan(cam, yaw, port, from, {});
+    let on = 0, n = 0;
+    for (let t = 0; t <= 8; t += 0.25) for (let i = 0; i < CROWS; i++, n++) {
+      crowPoint(i, t, P, cam, o);
+      const dx = o.x - cam.x, dz = o.z - cam.z, ahead = dx * Math.sin(yaw) + dz * Math.cos(yaw), across = dx * -Math.cos(yaw) + dz * Math.sin(yaw);
+      if (ahead > 0 && Math.abs(across / ahead) < port) on++;
+      const up = Math.atan2(o.y - cam.y, Math.hypot(dx, dz)) / DEG;
+      assert.ok(up >= SKY_BAND.lo - 1e-6 && up <= SKY_BAND.hi + 1e-6, `crow ${i} ${up.toFixed(2)}° up`);
+    }
+    assert.ok(on / n >= 0.85, `crows from ${from}, yaw ${yaw}: in view ${Math.round(on / n * 100)} %`);
+    // from the tower's side of the view (+1 = right), off to the other
+    const a0 = (P.x0 - cam.x) * -Math.cos(yaw) + (P.z0 - cam.z) * Math.sin(yaw), a1 = (P.x1 - cam.x) * -Math.cos(yaw) + (P.z1 - cam.z) * Math.sin(yaw);
+    assert.ok(Math.sign(a0) === from && Math.sign(a1) === -from);
+  }
+  // swallows: their loops are made once and read every frame
+  for (let i = 0; i < 6; i++) assert.deepEqual(SWALLOW_LOOPS[i], swallowLoop(i));
+});
+
 test('the bell: at 17:00 with the bell ready, three tolls and every crow; otherwise a lift only every 45 s', () => {
   assert.deepEqual(bellReaction(17, 0, true), { tolls: 3, lift: 'all', moment: true });
   assert.deepEqual(bellReaction(17, 100, false), { tolls: 1, lift: 'takamori', moment: false });
@@ -290,4 +335,9 @@ test('the switch: ?moments=off never, =on always, a QA page only when asked, and
   assert.equal(momentsWanted({ qa: true }), false, 'QA runs stay as they were');
   assert.equal(momentsWanted({ stored: false }), false);
   assert.equal(momentsWanted({ stored: true }), true);
+  // the Settings box (and game.momentsOff) follow the URL over a saved choice
+  assert.equal(momentsOptionOn({ param: 'on', stored: false }), true, '?moments=on wins over a saved "off"');
+  assert.equal(momentsOptionOn({ param: 'off', stored: true }), false);
+  assert.equal(momentsOptionOn({ stored: false }), false);
+  assert.equal(momentsOptionOn({}), true);
 });

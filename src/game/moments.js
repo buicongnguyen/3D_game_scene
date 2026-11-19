@@ -5,8 +5,8 @@
 import * as THREE from 'three';
 import {
   MOMENTS, NAMES, Scheduler, mulberry32, readFlags, judge, startBlocked, mustStop, eligible, variantOf, durOf, linesFor, envelope,
-  showerLevels, gustLevel, sparkleLevels, rainbowPlan, rainbowAt, sunElevation, RAINBOW_MAX_SUN, skeinPlan, vSlot, swallowPoint, swallowLoop,
-  bellReaction,
+  showerLevels, gustLevel, sparkleLevels, rainbowPlan, rainbowAt, sunElevation, RAINBOW_MAX_SUN, skeinPlan, vSlot, vStep, skyCap, swallowPoint,
+  SWALLOW_LOOPS, SWALLOW_CLEAR, crowPlan, crowPoint, CROWS, TOWER, bellReaction,
 } from './moments-rules.js';
 import { MomentFx } from '../fx/moment-fx.js';
 import { tx } from '../i18n/i18n.js';
@@ -20,6 +20,10 @@ const RING = 120;
 // (geese read as dark shapes against the hills, seen from behind and a little below: the wings tilt toward the eye)
 const GEESE = { tint: [0.2, 0.17, 0.15], flap: 9, sx: 2.2, sy: 0.7, tilt: -0.35 };
 const SWALLOWS = { tint: [0.12, 0.18, 0.42], flap: 20, sx: 0.45, sy: 0.16 };
+// the evening bell's crows going home: near-black, a slower beat than the swallows'
+const CROWS_LOOK = { tint: [0.08, 0.08, 0.1], flap: 11, sx: 1.4, sy: 0.5, tilt: -0.25 };
+const LAND_LEAN = 20 * Math.PI / 180;     // a phone on its side: sky things lean right, clear of the objective card
+const BARK_WAIT = 3;                      // a moment line waits this long at most for the villagers' bubbles to clear
 const SKY_DRAW = 30;      // far geese are drawn this far out (see stepGeese; the rainbow does the same, RAINBOW_DRAW)
 
 export class Moments {
@@ -48,6 +52,13 @@ export class Moments {
   /** Reserved: a moment never changes the weather kind (fx.setWeather stays the season's). */
   get weather() { return null; }
 
+  /**
+   * Can a moment happen at all this visit, as the switches stand now? (Settings > Weather moments, and "Falling
+   * petals, leaves and snow"; the stamp card shows its lucky row only while this holds.) The Low governor's step
+   * down is passing, so it is not counted.
+   */
+  get enabled() { return !this.g.momentsOff && !this.g.weatherOff; }
+
   // ------------------------------------------------------------------ per frame
   update(dt) {
     const g = this.g;
@@ -58,7 +69,7 @@ export class Moments {
     this.watchBell();
     const r = this.sched.tick(dt, this.f);
     if (r === 'stop-fast') this.stop(true);
-    else if (r === 'stop') this.stop(false);
+    else if (r === 'stop') { if (!this.run?.forced) this.stop(false); }   // (a forced one plays out past its window)
     else if (r) this.begin(r);
     if (this.run) this.step(dt);
     this.costs[this.costI] = performance.now() - t0;
@@ -86,7 +97,7 @@ export class Moments {
       if (!this.sched.ready(id)) return 'cooldown';
       if (!eligible(def, this.f)) return 'window';
     }
-    return this.begin(id, { variant }) ? true : 'refused';
+    return this.begin(id, { variant, force }) ? true : 'refused';
   }
 
   /** End the running moment: fast (0.4 s, the cloud cover back at once) or gently (2.5 s). */
@@ -107,13 +118,13 @@ export class Moments {
   }
 
   // ------------------------------------------------------------------ the moments
-  begin(id, { variant = '', hourly = false } = {}) {
+  begin(id, { variant = '', hourly = false, force = false } = {}) {
     if (this.run) this.finish();
     const g = this.g, f = this.f, season = f.season;
     variant = variant || variantOf(id, season);
     const R = this.run = {
       id, variant, season, t: 0, dur: durOf(id, variant), stopping: false, fast: false, fade: 1, fadeRate: 0,
-      acc: 0, next: 0, tolls: [], said: {}, high: false, arcShown: false,
+      acc: 0, next: 0, tolls: [], said: {}, wait: {}, high: false, arcShown: false, forced: !!force,
     };
     this.sched.started(id, variant);
     this.f.winFor = id; this.f.win = true;      // (it starts in its window; the next refresh judges again)
@@ -132,28 +143,45 @@ export class Moments {
       g.audio?.whoosh?.(3);
       R.next = 1.2;
     } else if (id === 'birds' && variant === 'geese') {
-      R.plan = skeinPlan(cam, cam.yaw, this.rng, {}, (x, z) => g.world.heightAt(x, z));
+      // (a phone on its side: the objective card covers the top left, so they come in from the left of a view turned
+      // right and glide off to the right)
+      const land = cam.tanH > 0.8;
+      R.plan = skeinPlan(cam, cam.yaw - (land ? LAND_LEAN : 0), this.rng, {}, (x, z) => g.world.heightAt(x, z), land ? -1 : 0);
       this.fx.flockOn(9, GEESE.tint, GEESE.flap);
       R.next = 1 + this.rng() * 1.2;
     } else if (id === 'birds') {
-      R.centre = { x: p.pos.x + Math.sin(cam.yaw) * 9, y: p.pos.y, z: p.pos.z + Math.cos(cam.yaw) * 9 };
+      const cx = p.pos.x + Math.sin(cam.yaw) * 9, cz = p.pos.z + Math.cos(cam.yaw) * 9;
+      R.centre = { x: cx, y: Math.max(p.pos.y, g.world.heightAt(cx, cz)), z: cz };
       R.prev = new Float32Array(18);
       R.yaw = cam.yaw;
       const sq = Math.min(1, Math.max(0.45, cam.tanH * 1.9));
-      for (let i = 0; i < 6; i++) { swallowPoint(i, -0.02, R.centre, _pt, sq, R.yaw); R.prev[i * 3] = _pt.x; R.prev[i * 3 + 1] = _pt.y; R.prev[i * 3 + 2] = _pt.z; }
+      for (let i = 0; i < 6; i++) {
+        swallowPoint(i, -0.02, R.centre, _pt, sq, R.yaw);
+        _pt.y = Math.max(_pt.y, g.world.heightAt(_pt.x, _pt.z) + SWALLOW_CLEAR);
+        R.prev[i * 3] = _pt.x; R.prev[i * 3 + 1] = _pt.y; R.prev[i * 3 + 2] = _pt.z;
+      }
       this.fx.flockOn(6, SWALLOWS.tint, SWALLOWS.flap);
       R.next = 0.4;
     } else if (id === 'shower') {
       const sun = g.world?.sky?.state?.sunDir;
       R.arcPlanned = !!sun && sunElevation(sun) > 0 && sunElevation(sun) <= RAINBOW_MAX_SUN;
       R.riverT = 0; R.riverS = null;
-      R.dripAcc = 0; R.ringAcc = 0; R.tipAcc = 0;
+      R.ringAcc = 0; R.tipAcc = 0;
     } else if (id === 'sparkle') {
       R.next = 1;
     } else if (id === 'bell') {
       R.tolls = hourly ? [2.2, 4.4] : [0, 2.2, 4.4];
       R.crowCalls = [0.6, 1.0, 1.7];
       this.lift('all');
+      // the crows going home, where the phone sees them (the valley's flocks lift far above the frame); none in winter,
+      // when the valley has no flocks and the line says "Time to head home" instead
+      R.crows = g.time?.season !== 'winter';
+      if (R.crows) {
+        const towerYaw = Math.atan2(TOWER.x - cam.x, TOWER.z - cam.z);
+        const from = Math.atan2(Math.sin(cam.yaw - towerYaw), Math.cos(cam.yaw - towerYaw)) >= 0 ? 1 : -1;   // (minus = right)
+        R.plan = crowPlan(cam, cam.yaw, cam.tanH, from, {}, cam.tanH > 0.8 ? LAND_LEAN : 0, R.dur);
+        this.fx.flockOn(CROWS, CROWS_LOOK.tint, CROWS_LOOK.flap);
+      }
     }
     return true;
   }
@@ -206,7 +234,7 @@ export class Moments {
       }
       if (t >= 3) this.say(R, 'line', R.id);
       if (t >= 8) this.highlight(R);
-    } else if (R.id === 'bell') this.stepBell(R);
+    } else if (R.id === 'bell') this.stepBell(R, cam);
     if (R.t >= R.dur) this.finish();
   }
 
@@ -216,11 +244,14 @@ export class Moments {
     // far off they rise over the hills they meet instead of flying into them
     R.alt ??= P.y;
     R.alt += (Math.max(P.y, this.g.world.heightAt(lx, lz) + 6) - R.alt) * (1 - Math.exp(-dt * 0.6));
+    // (each pair back flies a little higher: seen from behind at the eye's height a flat V is a line; stepped, it is a
+    // V. Less so as the leader nears the top of the band, and no bird ever above it: it would slip behind the HUD)
+    const step = vStep(R.alt, cam.y, Math.hypot(lx - cam.x, lz - cam.z));
     for (let i = 0; i < 9; i++) {
       vSlot(i, _slot);
       const wob = Math.sin(this.clock * 0.7 + i * 1.3);
-      // (each pair back flies a little higher: seen from behind at the eye's height a flat V is a line; stepped, it is a V)
-      const bx = lx - P.hx * _slot.back + px * (_slot.lat + wob * 0.25), by = R.alt + _slot.back * 0.4 + Math.sin(this.clock * 0.9 + i) * 0.3, bz = lz - P.hz * _slot.back + pz * (_slot.lat + wob * 0.25);
+      const bx = lx - P.hx * _slot.back + px * (_slot.lat + wob * 0.25), bz = lz - P.hz * _slot.back + pz * (_slot.lat + wob * 0.25);
+      const by = Math.min(R.alt + _slot.back * step + Math.sin(this.clock * 0.9 + i) * 0.3, skyCap(cam, bx, bz));
       // drawn no farther than SKY_DRAW m, the same size to the eye: the village and the hills beyond stay behind
       // them (a goose 100 m off would hide behind the first roof), anything nearer still in front
       const dx = bx - cam.x, dy = by - cam.y, dz = bz - cam.z, k = Math.min(1, SKY_DRAW / (Math.hypot(dx, dy, dz) || 1));
@@ -242,7 +273,8 @@ export class Moments {
     const k = 1 - Math.exp(-dt * 1.2);
     R.centre.x += (p.x + Math.sin(cam.yaw) * 9 - R.centre.x) * k;
     R.centre.z += (p.z + Math.cos(cam.yaw) * 9 - R.centre.z) * k;
-    R.centre.y += (p.y - R.centre.y) * k;
+    // (over the ground under the loops' middle when it rises ahead: facing uphill they would dip into the hill)
+    R.centre.y += (Math.max(p.y, g.world.heightAt(R.centre.x, R.centre.z)) - R.centre.y) * k;
     R.yaw += Math.atan2(Math.sin(cam.yaw - R.yaw), Math.cos(cam.yaw - R.yaw)) * k;
     const squeeze = Math.min(1, Math.max(0.45, cam.tanH * 1.9));
     const a = Math.min(1, t / 0.8) * (1 - Math.min(1, Math.max(0, (t - 10.5) / 3.5))) * R.fade;
@@ -255,10 +287,12 @@ export class Moments {
         const l = Math.hypot(ox, oz) || 1; ox /= l; oz /= l;
         _pt.x += ox * 6 * away; _pt.z += oz * 6 * away; _pt.y += 4 * away;
       }
+      // never into the ground under it (they skim over a slope instead; pitch follows from the raised path)
+      _pt.y = Math.max(_pt.y, g.world.heightAt(_pt.x, _pt.z) + SWALLOW_CLEAR);
       const dx = _pt.x - pv[i * 3], dy = _pt.y - pv[i * 3 + 1], dz = _pt.z - pv[i * 3 + 2];
       const h = Math.hypot(dx, dz);
       const yaw = h > 1e-5 ? Math.atan2(dx, dz) : 0, pitch = -Math.atan2(dy, h || 1e-5);
-      const bank = -Math.sign(swallowLoop(i).w) * 0.55;
+      const bank = -Math.sign(SWALLOW_LOOPS[i].w) * 0.55;
       this.fx.setBird(i, _pt.x, _pt.y, _pt.z, yaw, pitch, bank, SWALLOWS.sx, SWALLOWS.sy, SWALLOWS.sx, a);
       pv[i * 3] = _pt.x; pv[i * 3 + 1] = _pt.y; pv[i * 3 + 2] = _pt.z;
     }
@@ -280,8 +314,8 @@ export class Moments {
       R.acc += dt * L.drops * (low ? 55 : 90) * half;        // (about 60 alive on Low, most of them in view)
       const w = this.wedge(cam, 6, 18);
       for (; R.acc >= 1; R.acc--) this.fx.drop(cam, cam.yaw, w);
-      R.dripAcc += dt * L.drops * (low ? 5 : 8);
-      for (; R.dripAcc >= 1; R.dripAcc--) g.audio?.drip?.(L.drops * rand(0.6, 1));
+      // plinks at random moments (a Poisson patter, 5 or 8 a second at the peak), never a steady tick
+      if (Math.random() < dt * L.drops * (low ? 5 : 8)) g.audio?.drip?.(L.drops * rand(0.6, 1));
       // rings on the river near Mika (that mesh is drawn anyway: no extra draw)
       const p = g.player.pos;
       if ((R.riverT -= dt) <= 0) {
@@ -313,14 +347,28 @@ export class Moments {
       }
     }
     if (t >= 3) this.say(R, 'line', 'shower');
-    if (t >= 6 && !R.said.villager) { R.said.villager = true; if (this.rng() < 0.5) this.villagerLine(R); }
+    // (a neighbour waits for Tamo's bubble to end, up to 10 s in)
+    if (t >= 6 && !R.said.villager && (this.clock - this.lineAt >= 3.6 || t >= 10)) { R.said.villager = true; if (this.rng() < 0.5) this.villagerLine(R); }
     if (R.arcShown && t >= 15.5) this.say(R, 'arc', 'rainbow');
     // the best part: the arch fully drawn, or (no arc today) the heaviest drops
     if (R.arcPlanned ? R.arcShown && t >= 17.2 : t >= 10) this.highlight(R);
   }
 
-  stepBell(R) {
+  stepBell(R, cam) {
     const g = this.g, d = g.director, t = R.t;
+    if (R.crows) {
+      // the crows going home, across the view and away (drawn no farther than SKY_DRAW, like the geese)
+      const a = envelope(t, R.dur, 0.8, 1.5) * R.fade, yaw = Math.atan2(R.plan.hx, R.plan.hz);
+      for (let i = 0; i < CROWS; i++) {
+        crowPoint(i, t, R.plan, cam, _pt);
+        const wob = Math.sin(this.clock * 1.3 + i * 2.1);
+        const y = Math.min(_pt.y + wob * 0.3, skyCap(cam, _pt.x, _pt.z));
+        const dx = _pt.x - cam.x, dy = y - cam.y, dz = _pt.z - cam.z, k = Math.min(1, SKY_DRAW / (Math.hypot(dx, dy, dz) || 1));
+        this.fx.setBird(i, cam.x + dx * k, cam.y + dy * k, cam.z + dz * k, yaw + wob * 0.15, CROWS_LOOK.tilt, wob * 0.12,
+          CROWS_LOOK.sx * k, CROWS_LOOK.sy * k, CROWS_LOOK.sx * k, a);
+      }
+      this.fx.flockDone();
+    }
     while (R.tolls.length && t >= R.tolls[0]) {
       R.tolls.shift();
       g.audio?.bell?.();
@@ -344,19 +392,32 @@ export class Moments {
   // ------------------------------------------------------------------ lines, highlights, the bell
   say(R, slot, key) {
     if (R.said[slot]) return;
+    const B = this.g.director?.barks, C = B?.clock;
+    // it goes through the villagers' bark clock: while someone's bubble is up (or one only just ended) it waits, up
+    // to BARK_WAIT s, then lets the line go; once said, the villagers wait for it in turn
+    if (R.talk && !R.stopping && C && (C.live.size > 0 || C.sinceLast < C.gap)) {
+      R.wait[slot] ??= R.t;
+      if (R.t - R.wait[slot] < BARK_WAIT) return;
+      R.said[slot] = true;
+      this.said.add(R.variant || R.id);
+      return;
+    }
     R.said[slot] = true;
     this.said.add(R.variant || R.id);
     if (!R.talk || R.stopping) return;
     const list = linesFor(key, R.season, { crows: this.g.time?.season !== 'winter' });
     if (!list.length) return;
     const line = list[Math.floor(this.rng() * list.length) % list.length];
-    if (this.g.director?.barks?.ui?.show('moment', line, R.anchor, { name: R.who, life: 3.4 })) this.lineAt = this.clock;
+    if (B?.ui?.show('moment', line, R.anchor, { name: R.who, life: 3.4 })) {
+      this.lineAt = this.clock;
+      if (C) { C.spoke('moment'); C.live.set('moment', C.t + 3.4); }      // (live as long as the bubble)
+    }
   }
 
   /** A neighbour near Mika adds their bit to a sun shower (a child only when there will be a rainbow). */
   villagerLine(R) {
     const d = this.g.director, B = d?.barks, p = this.g.player.pos;
-    if (!B || R.stopping) return;
+    if (!B || R.stopping || this.clock - this.lineAt < 3.6) return;        // (never over Tamo's bubble)
     let best = null, bd = 20;
     for (const [id, n] of d.barkSpeakers?.() || []) {
       const dist = n.pos.distanceTo(p);
@@ -373,7 +434,7 @@ export class Moments {
 
   /** The best part of a moment: the stamp card's lucky stamp hears of it (game/stamps.js, when that is in). */
   highlight(R) {
-    if (R.high) return;
+    if (R.high || R.stopping) return;          // (a moment cut off before its best part earns nothing)
     R.high = true;
     try { this.g.director?.stamps?.saw?.(R.id, NAMES[R.variant || R.id]); } catch (e) { console.warn('[moments] stamp', e); }
   }
@@ -387,7 +448,10 @@ export class Moments {
     this.seenSwing = s;
     if (s === this.ownSwing || !s.node || s.node !== g.structures?.nodes?.bell) return;
     this.refresh();
-    const ready = !this.run && this.sched.ready('bell') && !this.f.halt;
+    if (this.f.off || this.f.weatherOff) return;          // (switched off: the crows stay put, as on a visit without moments)
+    // the evening bell only where one may start (the Orchard Lamp lit, near the tower, nothing on screen; the c2
+    // story bell rings in its own beat): otherwise only the Takamori crows lift
+    const ready = !this.run && this.sched.ready('bell') && !this.f.halt && !this.f.why && eligible(MOMENTS.bell, this.f);
     const r = bellReaction(Math.floor(g.shownHour()), this.clock - this.liftAt, ready);
     if (r.moment) this.begin('bell', { hourly: true });
     else if (r.lift) this.lift(r.lift);

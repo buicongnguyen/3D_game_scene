@@ -77,6 +77,8 @@ const windowOf = (def, variant) => def.variants?.[variant] || def;
 export function inWindow(id, variant, c) {
   const def = MOMENTS[id];
   if (!def || !def.seasons.includes(c.season)) return false;
+  // (a variant has its own seasons: geese leave the window when the shown season turns to spring, swallows in autumn)
+  if (def.variants && variantOf(id, c.season) !== variant) return false;
   const w = windowOf(def, variant), from = w.from ?? def.from, to = w.to ?? def.to;
   if (!(c.hour >= from && c.hour <= to)) return false;
   return def.night == null || (c.night || 0) < def.night;
@@ -308,10 +310,13 @@ export function rainbowAt(cam, p, out = {}, Dd = RAINBOW_DRAW) {
  * the other side, or raised a little (never past SKY_BAND.hi + 0.5°), where ground would hide it.
  * -> out { x0, z0, hx, hz, y, speed, passD, passT, side, elev }
  */
-export function skeinPlan(cam, camYaw, rng, out = {}, heightAt = null) {
+export function skeinPlan(cam, camYaw, rng, out = {}, heightAt = null, force = 0) {
   const passD = 55 + rng() * 30, lean = rng() * 4 * DEG, beta = (12 + rng() * 5) * DEG;
   const elev = SKY_BAND.lo + 0.4 + rng() * (SKY_BAND.hi - SKY_BAND.lo - 0.4);
   let side = rng() < 0.5 ? -1 : 1, y = cam.y + passD * Math.tan(elev * DEG), off = 0;
+  // force (+1 / -1): the side they must come from (a phone on its side: from the left, so they glide off to the right,
+  // clear of the objective card that covers the top left)
+  if (force) side = force;
   const speed = 9, back = 45;
   const plan = sd => {
     // (the pass point leans a little to the side they come from: they cross the middle later and stay longer)
@@ -336,7 +341,7 @@ export function skeinPlan(cam, camYaw, rng, out = {}, heightAt = null) {
   };
   let p = plan(side), w = blocked(p, y);
   if (w > -2) {
-    const q = plan(-side), wq = blocked(q, y);
+    const q = force ? null : plan(-side), wq = q ? blocked(q, y) : Infinity;
     if (wq < w) { side = -side; p = q; w = wq; }
     // still in the way: a little higher, never behind the HUD
     if (w > -2) y = Math.min(cam.y + passD * Math.tan((SKY_BAND.hi + 0.5) * DEG), y + w + 2);
@@ -354,12 +359,31 @@ export function vSlot(i, out = {}) {
   return out;
 }
 
+/**
+ * The height a bird at (x, z) may fly at most so it stays `deg` above the eye line or lower, i.e. under the phone's
+ * HUD: every bird, not just the leader (a V's rear pairs fly higher; seen from far off they would slip behind it).
+ */
+export const skyCap = (cam, x, z, deg = SKY_BAND.hi) => cam.y + Math.hypot(x - cam.x, z - cam.z) * Math.tan(deg * DEG);
+
+/**
+ * How much higher each pair back flies (m per metre back): 0.4 to read as a V from behind, less as the leader nears
+ * the top of SKY_BAND at distance `dist` (the last pair is 9.6 m back), none once it is there.
+ */
+export function vStep(leadY, camY, dist) {
+  const room = camY + dist * Math.tan(SKY_BAND.hi * DEG) - leadY;
+  return clamp(room / 9.6, 0, 0.4);
+}
+
 const frac = x => x - Math.floor(x);
 /** Swallow i's own loop: angular speed (rad/s, signed), radius (m), height (m) and phase. Fixed per index. */
 export function swallowLoop(i) {
   const w = (1.6 + 0.8 * frac(i * 0.618 + 0.13)) * (i % 3 === 2 ? -1 : 1);
   return { w, r: 3 + 4 * frac(i * 0.382 + 0.27), h: 2.5 + 2 * frac(i * 0.271 + 0.41), a0: i * 2.39996, ph: i * 1.7 };
 }
+/** The six swallows' loops, made once (read every frame: no allocation). */
+export const SWALLOW_LOOPS = Object.freeze([0, 1, 2, 3, 4, 5].map(swallowLoop));
+/** How high above the ground under it a swallow flies at least (the loops are ahead of Mika: uphill they would dip in). */
+export const SWALLOW_CLEAR = 1.5;
 
 /**
  * Swallow i at time t, looping round `centre` ({x, y, z}: y = Mika's feet). squeeze < 1 narrows the loops across
@@ -367,12 +391,42 @@ export function swallowLoop(i) {
  * climb away. Into `out`.
  */
 export function swallowPoint(i, t, centre, out = {}, squeeze = 1, yaw = 0) {
-  const L = swallowLoop(i), a = L.a0 + L.w * t;
+  const L = SWALLOW_LOOPS[i] || swallowLoop(i), a = L.a0 + L.w * t;
   const lat = Math.cos(a) * L.r * squeeze, fwd = Math.sin(a) * L.r;
   // right of the view = (-cos yaw, sin yaw) in the game's convention (actors/camera.js); forward = (sin yaw, cos yaw)
   out.x = centre.x - Math.cos(yaw) * lat + Math.sin(yaw) * fwd;
   out.z = centre.z + Math.sin(yaw) * lat + Math.cos(yaw) * fwd;
   out.y = centre.y + L.h + 0.8 * Math.sin(2 * a + L.ph);
+  return out;
+}
+
+/** The evening bell's crows (game/moments.js draws them with the moment flock). */
+export const CROWS = 6;
+
+/**
+ * The evening bell's crows going home, drawn where the phone sees them (the valley's own flocks circle 25-35 m above
+ * the follow camera, out of its frame): a loose group starting on the tower's side of the view (`from`: +1 right,
+ * -1 left), gliding away and across to the other side over the moment's `dur` seconds, SKY_BAND above the eye.
+ * lean: radians the whole path is turned right of the view (a phone on its side: clear of the objective card).
+ * -> out { x0, z0, x1, z1, hx, hz, dur }
+ */
+export function crowPlan(cam, camYaw, tanH, from, out = {}, lean = 0, dur = 8) {
+  const half = Math.min(Math.atan(tanH), 18 * DEG), c = camYaw - lean;
+  const b0 = c - from * half * 0.6, b1 = c + from * half * 0.7;          // (game yaw: minus turns right)
+  out.x0 = cam.x + Math.sin(b0) * 25; out.z0 = cam.z + Math.cos(b0) * 25;
+  out.x1 = cam.x + Math.sin(b1) * 110; out.z1 = cam.z + Math.cos(b1) * 110;
+  const l = Math.hypot(out.x1 - out.x0, out.z1 - out.z0) || 1;
+  out.hx = (out.x1 - out.x0) / l; out.hz = (out.z1 - out.z0) / l; out.dur = dur;
+  return out;
+}
+
+/** Crow i of the group at time t: along the plan, at its own place in the group, its own height in SKY_BAND. Into `out`. */
+export function crowPoint(i, t, P, cam, out = {}) {
+  const u = clamp(t / P.dur, 0, 1), back = 6 * frac(i * 0.71 + 0.3), lat = 7 * (frac(i * 0.382 + 0.1) - 0.5);
+  out.x = P.x0 + (P.x1 - P.x0) * u - P.hx * back + P.hz * lat;
+  out.z = P.z0 + (P.z1 - P.z0) * u - P.hz * back - P.hx * lat;
+  const elev = SKY_BAND.lo + 0.3 + (SKY_BAND.hi - SKY_BAND.lo - 0.5) * frac(i * 0.618 + 0.2);
+  out.y = cam.y + Math.hypot(out.x - cam.x, out.z - cam.z) * Math.tan(elev * DEG);
   return out;
 }
 

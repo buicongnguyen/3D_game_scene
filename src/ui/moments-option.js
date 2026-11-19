@@ -11,6 +11,11 @@ export function momentsWantedBy({ param = null, qa = false, stored = null } = {}
   return stored !== false;
 }
 
+/** Is the switch on for this visit? ?moments=on / off win over the saved choice (nothing is saved unless the box changes). */
+export function momentsOptionOn({ param = null, stored = null } = {}) {
+  return param === 'on' ? true : param === 'off' ? false : stored !== false;
+}
+
 function stored() {
   try { const v = JSON.parse(localStorage.getItem(KEY)); return typeof v === 'boolean' ? v : null; } catch { return null; }
 }
@@ -23,7 +28,7 @@ export function momentsWanted(game) {
 
 /** The Settings checkbox: shows the saved choice, and switching it starts or stops the moments at once. */
 export function wireMomentsOption(game) {
-  const on = stored() !== false;
+  const on = momentsOptionOn({ param: game?.params?.get?.('moments') ?? null, stored: stored() });
   game.momentsOff = !on;
   const box = typeof document !== 'undefined' ? document.getElementById('optMoments') : null;
   if (!box) return;
