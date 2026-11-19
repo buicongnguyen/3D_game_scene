@@ -198,6 +198,8 @@ Every game has:
 
 ## 7. Harvest Stars and the Harvest board
 
+> **2026-11-19:** superseded in part by the daily stamp card (`docs/STAMPS.md`), which already gives Explore a daily loop with cottage decorations. A future Harvest board must reuse `src/game/stamps-rules.js` (day keys, card draws, thresholds) rather than a second system.
+
 - **Harvest Stars (★):**
   - earned from mini games (1–3 per game per new threshold reached, so each game gives at most 3) and from board tasks;
   - spent on nothing, they only unlock things (trees, plots, decorations), so they are never lost.

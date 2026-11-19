@@ -129,3 +129,32 @@ came from the old issue list, not from playing.
 - **Not done: real fingers.** They need finger bones in `mika.glb`, new weights, the light model rebuilt, the Low
   tier's skin merge and her 16 k-triangle budget: a separate art job on the model every other system uses. At play
   distance the camera was the visible defect.
+
+## 9. Done: phase D, weather moments and the daily stamp card
+
+Built by workflows: five code readers and two competing designs (player-first, risk-first) merged into one checked
+spec; then two builders in their own worktrees with disjoint files, two reviewers per feature (logic and integration;
+player, phone and performance), an independent verifier per review and a fixer. 23 findings, 21 confirmed and fixed
+(among them: a lucky stamp from a moment cut short, swallows flying through the hillside, geese behind the HUD, the
+evening crows lifting out of view, the stamp card running on the scene tour's borrowed quest, a find picked up in the
+middle of the Fire drill, a merged bug net that blinked).
+
+- **Weather moments** (`docs/WEATHER-MOMENTS.md`): about once every 3-4 minutes of free roaming by day, a breeze of
+  petals, leaves or snow, geese (autumn, winter) or swallows (spring, summer), a sun shower with a rainbow away from the
+  sun, diamond dust on winter mornings, and the evening bell at 17:00 with the crows going home. Pure rules
+  `game/moments-rules.js`, lazy runtime `game/moments.js`, look `fx/moment-fx.js` (a second Rainbow and Butterflies:
+  no new shader programs, lights or shadows, at most 2 extra draws). Settings > "Weather moments" (on by default);
+  off under `?qa` unless `?moments=on`. Everything in the sky sits in the thin band a phone actually sees under the HUD
+  (1.5-3.5 degrees above the eye line, not the spec's 3-8).
+- **Daily stamp card** (`docs/STAMPS.md`, Explore only): three small jobs a day from the neighbours (deliver a parcel
+  door to door, find a lost thing, play a mini game), a lucky stamp for seeing a weather moment, decorations for
+  Grandma's cottage at 2, 4, 8 … 32 stamps. New card at 04:00 local time; no streaks, no penalties. Pure rules
+  `game/stamps-rules.js`, save shape `game/stamps-save.js` (additive, old saves get an empty card), tables
+  `content/stamps.js`, runtime `game/stamps.js`, card `ui/stamps-ui.js` at the top of the journal's Neighbours tab.
+  Gift sparkles now show indoors too (`celebrate.indoorSprites`: they were hidden with the valley before).
+- Checks: `npm test` (1,082), i18n 5,072 x 3, `tests/moments-browser.mjs`, `tests/stamps-browser.mjs`, a joint
+  check (a sun shower lands the lucky stamp once, card in Vietnamese), `tests/explore-save-browser.mjs` (updated: it
+  still expected the browser's own confirm popup that pass A replaced). Code chunks: moments 11.6 kB, stamps 8.0 kB gzip.
+- Known: the moments' own per-frame cost at 8x CPU measured in-game is 45-85 us idle and 160-440 us in a shower (the
+  spec hoped for 20 / 150; its own work, warm, is far under); geese are small on a portrait phone; the new sounds
+  (drips, honks, crows) were only checked by call counts, never listened to; nothing was tried on a real phone.

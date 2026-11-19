@@ -57,6 +57,7 @@ Intro card (3 s: goal + controls for this device) ─► Countdown 3-2-1 ─► 
   - buttons: **Play again** / **Done**.
 
 ### 2.3 Rewards
+> **2026-11-19:** the daily bonus idea is covered by the Explore stamp card (`docs/STAMPS.md`): one of its three daily jobs is a round of a mini game. Any later daily reward should build on `src/game/stamps-rules.js`.
 - **Score → goods:** `goods = base × clamp(score / par, 0.5, 1.5)`. A round never pays less than half.
 - **Stars:** 3 thresholds per game. Each threshold reached for the first time gives 1 ★, so 3 ★ at most per game.
   Stars only unlock things (trees, plots, decorations, harder rounds) and are never spent or lost.

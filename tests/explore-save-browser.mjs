@@ -26,8 +26,9 @@ try {
   assert.equal(await page.locator('.explore-again').isVisible(), true);
   const selected = page.locator('.explore-chips button[aria-pressed=true]');
   assert.deepEqual(await selected.allTextContents(), ['Spring', 'Morning']);
-  page.once('dialog', dialog => dialog.dismiss());
+  // "Start over" asks with the in-game card (ui.confirmIn); Back keeps the save
   await page.locator('.explore-again').click();
+  await page.locator('.confirm-no').click();
   assert.equal(await page.evaluate(() => localStorage.getItem('starline-save-explore')), explore);
   assert.equal(await resume.isVisible(), true);
   await page.getByRole('button', { name: 'Night', exact: true }).click();
