@@ -1073,14 +1073,27 @@ export const GIFTS = [
 // Everything Sora hid in the valley, and how the saved state knows it has been found (the journal, the map and the
 // epilogue's arrow all read this list).
 export const HUNT = [
-  { id: 'kite', name: 'Star Kite', icon: 'star-kite', found: st => (st.inv.kite || 0) > 0 },
-  { id: 'musicBox', name: "Sora's music box", icon: 'music-box', found: st => !!st.treasures.musicBox },
-  { id: 'compass', name: 'Star compass', icon: 'star-compass', found: st => !!st.treasures.compass },
-  { id: 'tree', name: 'Star-tree', icon: 'golden-acorn', found: st => !!st.flags.treePlanted },
-  ...SKY_LETTERS.map(l => ({ id: `letter-${l.id}`, name: l.name, icon: 'journal-page', found: st => st.letters.includes(l.id) })),
-  ...KEEPSAKES.map(k => ({ id: `keepsake-${k.id}`, name: k.name, icon: k.model, found: st => st.keepsakes.includes(k.id) })),
+  { id: 'kite', name: 'Star Kite', icon: 'star-kite', found: st => (st.inv?.kite || 0) > 0 },
+  { id: 'musicBox', name: "Sora's music box", icon: 'music-box', found: st => !!st.treasures?.musicBox },
+  { id: 'compass', name: 'Star compass', icon: 'star-compass', found: st => !!st.treasures?.compass },
+  { id: 'tree', name: 'Star-tree', icon: 'golden-acorn', found: st => !!st.flags?.treePlanted },
+  ...SKY_LETTERS.map(l => ({ id: `letter-${l.id}`, name: l.name, icon: 'journal-page', found: st => Array.isArray(st.letters) && st.letters.includes(l.id) })),
+  ...KEEPSAKES.map(k => ({ id: `keepsake-${k.id}`, name: k.name, icon: k.model, found: st => Array.isArray(st.keepsakes) && st.keepsakes.includes(k.id) })),
 ];
 
 export function huntProgress(st) {
   return { found: HUNT.filter(h => h.found(st)).length, total: HUNT.length };
+}
+
+/** Fill a translated objective with this player's saved counts. A translated action key may already be filled in. */
+export function objectiveText(step, state, translate = s => s) {
+  if (!step) return '';
+  const hunt = state.flags?.hunt && step.hunt ? huntProgress(state) : null;
+  let template = step.objective;
+  if (hunt) template = hunt.found === hunt.total && step.huntDone ? step.huntDone : step.hunt;
+  return translate(template).replace(/\{(\w+)\}/g, (_, key) => {
+    if (key === 'act') return 'E';
+    if (key === 'stars') return state.stars?.length || 0;
+    return hunt?.[key] ?? state.inv?.[key] ?? 0;
+  });
 }

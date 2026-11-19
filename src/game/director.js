@@ -661,7 +661,8 @@ export class Director {
     await this.run(effects, !resumed);
     const st = this.q.state;
     if (STEP_INDEX[st.step] > STEP_INDEX['c3.lamp'] && !st.inv.acorn && !st.flags.treePlanted && !st.flags.acornGiven) { st.inv.acorn = 1; st.flags.acornGiven = true; }
-    if (resumed && st.step === 'e.free' && this.q.has('allStars')) this.event({ type: 'cutscene', id: 'starfall' });
+    // A save can be written after the twelfth star but before its scene. The scene itself signals completion.
+    if (resumed && st.step === 'e.free' && this.q.has('allStars')) this.run([{ allStars: true }]);
     else if (resumed && st.chapter === 5 && !st.flags.huntAsked && !st.flags.hunt) this.run([{ cutscene: 'huntAsk' }]);
     // a play zone (world/zone.js): the set pieces placed above that stand outside it leave the scene before the game
     if (this.game.zone) { try { const { pruneScene } = await import('../world/zone-build.js'); pruneScene(this.game.scene, this.game.zone, this.game.zone.margin); } catch (e) { console.warn('[zone] prune', e); } }
@@ -1584,7 +1585,13 @@ export class Director {
     if (!m) return null;
     const [kind, what] = m.split(':');
     const p = this.game.player.pos;
-    if (kind === 'place') { const pl = PLACES[what] || PLACES[what === 'pen' ? 'pen' : what]; return pl ? V(pl.x, this.world.heightAt(pl.x, pl.z) + 2, pl.z) : null; }
+    if (kind === 'place') {
+      // Arrival objectives guide to their actual trigger, which can lie beyond the named
+      // landmark (the orchard gate itself is just outside the forest arrival zone).
+      const done = this.q.step.done, zone = this.zones.get(what);
+      const pl = done?.event === 'arrive' && done.zone === what && zone?.when() ? zone.pos : PLACES[what];
+      return pl ? V(pl.x, this.world.heightAt(pl.x, pl.z) + 2, pl.z) : null;
+    }
     if (kind === 'npc') {
       if (what === 'fox') return this.wildlife.story.fox?.pos.clone().add(V(0, 1.2, 0));
       if (what === 'sheep') {

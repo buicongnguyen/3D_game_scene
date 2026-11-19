@@ -2,7 +2,7 @@
 // effects the director must present (dialogue, cutscenes, toasts, world changes). State effects
 // (give/take/flag/lamp/journal/unlock/season/time/chapter) are applied here so state is always consistent.
 
-import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, huntProgress, CHAPTERS } from './story.js';
+import { STEPS, STEP_INDEX, DIALOGUE, CHATTER, objectiveText, CHAPTERS } from './story.js';
 import { useStory, DEFAULT_STORY, STORIES } from './stories/index.js';
 import { cleanTricks } from '../content/tricks.js';
 import { cleanWishes } from '../content/skyspots.js';
@@ -88,13 +88,8 @@ export class Quest {
   has(flag) { return !!this.state.flags[flag]; }
   unlocked(what) { return !!this.state.unlocked[what]; }
 
-  /** Objective text with live counters. */
-  /** Current objective with its counters filled in; translate() localises the template first. */
-  objective(translate = s => s) {
-    const st = this.state;
-    const hunt = st.flags.hunt && this.step.hunt ? huntProgress(st) : null;
-    const text = !hunt ? this.step.objective : hunt.found >= hunt.total && this.step.huntDone ? this.step.huntDone : this.step.hunt;
-    return translate(text).replace(/\{(found|total)\}/g, (_, k) => (k === 'found' ? hunt?.found : hunt?.total)).replace(/\{(\w+)\}/g, (_, k) => (k === 'stars' ? st.stars.length : k === 'act' ? 'E' : this.count(k)));
+  objective(translate) {
+    return objectiveText(this.step, this.state, translate);
   }
 
   /** Effects of entering the current step (call once for a new game or after loading a save). */
@@ -105,7 +100,7 @@ export class Quest {
     return this.enter(this.step);
   }
 
-  /** On load: re-apply world state without replaying dialogue. */
+  /** On load: re-apply world state without replaying completed dialogue or scenes. */
   resumeEffects() {
     const st = this.state;
     const out = [{ season: st.season, silent: true }, { time: st.hour }];
@@ -113,6 +108,9 @@ export class Quest {
     for (const s of this.spawnsSoFar()) out.push({ spawn: s, silent: true });
     for (const k of Object.keys(st.unlocked)) out.push({ unlock: k, silent: true });
     for (const k of Object.keys(st.lamps)) if (st.lamps[k]) out.push({ lamp: k, silent: true });
+    // start() marks the save started before the arrival finishes. Only that scene's completion event advances this
+    // step, so a save interrupted here must replay the unfinished arrival rather than strand Mika on the platform.
+    if (st.step === 'p.arrive') out.push({ cutscene: 'arrival' });
     return out;
   }
 

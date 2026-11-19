@@ -1,26 +1,23 @@
 # Starline — the Lanterns of Hoshi Valley
 
-*星の谷.* A cosy 3D story game about a railway, two feuding villages, a tiny fallen star,
-and the night everybody looked away.
+*星の谷.* A cosy 3D story game about a girl, a tiny fallen star and the villages along an old railway.
 
 **Play:** https://buicongnguyen.github.io/3D_game_scene/ (desktop or phone, WebGL 2)
 
-Mika arrives on the last train of winter to clear out her late grandmother's signal
-cottage. In an old brass lantern she finds Tamo, a fallen star who can't remember
-anything. To bring back the Star Train that stopped running ten years ago, Mika has
-to relight the valley's four Star Lamps. That means going from season to season,
-from the river village of Kawabe to the orchard town of Takamori and up to the
-forest shrine. Along the way she finds out who really let the train run into
-danger that night.
+In **A Year with Grandma**, the default story, Mika comes to stay with Grandma Sora after a flood
+has carried off the valley's lamp oil. She brings a suitcase of bulbs. Grandma has a list of jobs.
+Mika and Tamo start at Ōta's water mill, where three missing cogs stand between Kawabe and its first electric light.
 
-- **Two stories.** **A Year with Grandma** (the default): Mika stays the year with Grandma Sora and helps her light
-  up the valley, ending with a happy surprise on the Star Train. **Starline Classic**: the original, more
-  bittersweet story. Choose on New Game, or in Settings. See [docs/STORY-GRANDMA.md](docs/STORY-GRANDMA.md).
-- **A prologue, four seasonal chapters and an epilogue.** About 35 story steps, a
-  twist, and a choice that changes the finale.
+In **Starline Classic**, Mika comes to clear out her late grandmother's signal cottage.
+As she and Tamo relight the four Star Lamps, she learns why the train stopped ten years ago
+and chooses how to bring the two villages together. Choose a story on New Game or in Settings.
+
+- **A prologue, four seasonal chapters and an epilogue.** Travel from Kawabe to the orchards of Takamori
+  and the forest shrine before the Star Train's winter festival. The [chapter and progression guide](docs/STORY-LOGIC-PLAN.md)
+  and [Grandma story notes](docs/STORY-GRANDMA.md) contain spoilers.
 - **One button does it.** Walk up to anything and press **E**: talk, pick up,
-  fit the cogs, send a sheep home, cook, or have Tamo fly over and spark a lamp,
-  a bell, a crab or a trackside lantern. Fishing is a single press when the
+  fit the cogs, send a sheep home, cook, or have Tamo fly up to a Star Lamp.
+  He can also spark a bell, a crab or a trackside lantern. Fishing is a single press when the
   float dips.
 - **Swim and dive.** The river is open: swim across, dive to the bed and watch
   the trout, weed and sunken boats in a hushed, green-blue world. In winter the
