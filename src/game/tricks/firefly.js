@@ -756,8 +756,10 @@ export default {
     });
     if (!r?.quit && found) {
       audio.pickup();
-      p.gesture('Interact', { lock: false });
       ctx.lock(true);
+      // she bends for the page and has it in her hand before Grandma's words start (dialogue would cut the bend short)
+      if (ctx.groundPickup?.({ object: note, target: note.position })) await ctx.wait(0.9);
+      else p.gesture('Interact', { lock: false });
       await ctx.say('trick_firefly_note');
       ctx.lock(false);
       const st = d.q.state;

@@ -410,10 +410,10 @@ export class Player {
   }
 
   /** Play a one-shot gesture (Interact, Cheer, Wave, ...). Movement is locked while it plays if lock=true. */
-  gesture(name, { lock = true, then = 'Idle', onDone } = {}) {
+  gesture(name, { lock = true, then = 'Idle', onDone, fade } = {}) {
     if (!this.anim) { onDone?.(); return; }
     this.anim.oneShotLocks = lock;
-    this.anim.once(name, { then, onDone: () => { this.anim.oneShotLocks = false; onDone?.(); } });
+    this.anim.once(name, { then, fade, onDone: () => { this.anim.oneShotLocks = false; onDone?.(); } });
   }
 
   /** World position of the lantern (spark origin). */

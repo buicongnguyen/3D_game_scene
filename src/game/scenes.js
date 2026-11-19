@@ -768,7 +768,9 @@ export class Scenes {
     const cam = bank.clone().addScaledVector(front, 3.4).add(V(side.x * 1.5, 1.6, side.z * 1.5));
     g.follow.cutscene({ pos: cam, look: bank.clone().add(V(0, 0.9, 0)) }, 0.01);
     await d.ui.fade(false, 700);
-    g.player.gesture('Interact', { lock: true });
+    // she kneels by the box for the first bars of the tune (3 s clip), then stands for Tamo's words
+    if (g.player.anim?.has('Kneel')) g.player.gesture('Kneel', { lock: true, fade: 0.4 });
+    else g.player.gesture('Interact', { lock: true });
     d.audio.lullaby?.();
     C?.musicNotes?.(at.clone().add(V(0, 0.3, 0)), 10);
     const dance = C?.memory?.(bank.clone().addScaledVector(front, 4.5), 14);

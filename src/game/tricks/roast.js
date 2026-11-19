@@ -934,6 +934,13 @@ class RoastRound {
     return best;
   }
 
+  /** Hands into the ashes: she turns to the hollow and crouches to it (models without the clip keep the standing gesture). */
+  lowHands(at) {
+    const p = this.player;
+    p.turnTo?.(Math.atan2(at.x - p.pos.x, at.z - p.pos.z), 1, 50);
+    if (!this.ctx.groundReach?.()) p.gesture?.('Interact', { lock: false });
+  }
+
   act(i) {
     const game = this.game, gs = game.spots[i], s = this.spots[i], ctx = this.ctx, pt = this.potatoes[i];
     if (this.hold[i] > 0 || (gs.st === 'empty' && !pt.laid)) return;
@@ -945,7 +952,7 @@ class RoastRound {
       s.hollow.visible = false;
       s.mound.visible = true;
       s.pop = 1;
-      this.player.gesture?.('Interact', { lock: false });
+      this.lowHands(s.at);
       ctx.audio?.land?.(0.25);
       ctx.fx?.burst?.(_v.copy(s.at).setY(s.at.y + 0.15), { n: 6, color: [0.5, 0.47, 0.45], speed: 0.9, size: 0.1, gravity: 3 });
       if (gs.kind === 'nut' && !this.told.nut) {
@@ -976,7 +983,7 @@ class RoastRound {
       s.side.visible = false;
       s.arrow.visible = false;
       s.jig = 1;
-      this.player.gesture?.('Interact', { lock: false });
+      this.lowHands(s.at);
       ctx.audio?.good?.();
       ctx.fx?.burst?.(_v.copy(s.at).setY(s.at.y + 0.2), { n: 7, color: [0.55, 0.5, 0.46], speed: 1, size: 0.09, gravity: 3 });
       if (ctx.first && !this.told.turn) {
@@ -990,7 +997,7 @@ class RoastRound {
     s.mound.visible = false;
     s.arrow.visible = false;
     this.land(i, res);
-    this.player.gesture?.('Interact', { lock: false });
+    this.lowHands(s.at);
     const text = {
       perfect: gs.kind === 'nut' ? tx('A perfect chestnut! Warm and floury.') : tx('Perfect! Golden, soft and sweet.'),
       okay: gs.why === 'early' ? tx('A little firm in the middle, but good.')

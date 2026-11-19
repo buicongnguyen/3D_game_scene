@@ -12,6 +12,7 @@ import { mountShots, creditsShots } from './photo-album.js';
 import { clearGameData, canClearGameData } from '../sw-register.js';
 import { noteWanted, deviceFacts, noteSeen, markNoteSeen } from '../engine/device-note.js';
 import { Voice } from '../engine/voice.js';
+import { haptics } from '../engine/haptics.js';
 
 // the weak-device card's words (engine/device-note.js); Settings repeats them
 const DEVICE_NOTE = N_('The story and Explore build the whole valley. On this device it may run slowly and warm up the phone. Light mode helps.');
@@ -843,6 +844,12 @@ export class UI {
         if (this.voice.reads(getLang())) this.voice.speak([{ text: tx(N_("Hi, I'm Mika!")), cast: CAST.mika }], getLang());
         else this.toast(tx(N_('This device has no voice for this language, so you will hear blips.')));
       });
+    }
+    // Vibration (engine/haptics.js): a phone that can buzz, a gamepad that rumbles; a little buzz to show it is on
+    const buzz = $('optHaptics');
+    if (buzz) {
+      buzz.checked = haptics.on;
+      buzz.addEventListener('change', () => { haptics.setOn(buzz.checked); if (buzz.checked) haptics.buzz('pickup'); });
     }
     const story = $('optStory');
     if (story) {

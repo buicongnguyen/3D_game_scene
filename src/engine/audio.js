@@ -1,4 +1,7 @@
 // Procedural audio (WebAudio): generative seasonal music, voice blips, SFX and ambience. No downloads.
+// The cues a player should also feel (landings, pickups, successes, stars, lamps) buzz the phone or gamepad too
+// (engine/haptics.js), muted or not.
+import { haptics } from './haptics.js';
 
 const SCALES = {
   spring: [0, 2, 4, 7, 9], summer: [0, 2, 4, 7, 9], autumn: [0, 3, 5, 7, 10], winter: [0, 2, 3, 7, 8], night: [0, 2, 5, 7, 9],
@@ -198,8 +201,14 @@ export class Audio {
     if (surface === 'wood') this.tone(160 + Math.random() * 30, { dur: 0.08, vol: 0.05, rev: 0 });
   }
   jump() { this.noise({ dur: 0.12, vol: 0.06, freq: 1800, sweep: 0.5 }); }
-  land(s = 0.5) { this.noise({ dur: 0.14, vol: 0.08 + s * 0.12, freq: 500, q: 0.8 }); }
-  splash(strength = 0.6) { this.noise({ dur: 0.35 + strength * 0.4, vol: 0.12 + strength * 0.3, freq: 1600 + strength * 1200, q: 0.5, type: 'lowpass', sweep: 0.3 }); }
+  land(s = 0.5) {
+    if (s >= 0.8) haptics.buzz('land', s);                 // a long fall or a leap, not every hop (strength = time in the air)
+    this.noise({ dur: 0.14, vol: 0.08 + s * 0.12, freq: 500, q: 0.8 });
+  }
+  splash(strength = 0.6) {
+    if (strength >= 0.7) haptics.buzz('splash', strength);
+    this.noise({ dur: 0.35 + strength * 0.4, vol: 0.12 + strength * 0.3, freq: 1600 + strength * 1200, q: 0.5, type: 'lowpass', sweep: 0.3 });
+  }
   whoosh(mul = 4) { this.noise({ dur: 0.5, vol: 0.12 + Math.log2(mul) * 0.03, freq: 700 + mul * 60, q: 0.8, type: 'bandpass', sweep: 2.4 }); }
   stroke() { this.noise({ dur: 0.32, vol: 0.07, freq: 1300, q: 0.6, type: 'lowpass', sweep: 0.5 }); }
   setUnderwater(on) {
@@ -211,9 +220,9 @@ export class Audio {
     this.noise({ dur: 0.4, vol: 0.12, freq: 3000, sweep: 0.4 });
     [0, 4, 7, 12].forEach((d, i) => this.tone(mtof(84 + d), { dur: 0.25, vol: 0.05, when: i * 0.03, rev: 0.5 }));
   }
-  sparkHit() { [0, 7, 12, 16, 19].forEach((d, i) => this.tone(mtof(79 + d), { dur: 0.5, vol: 0.06, when: i * 0.04, rev: 0.6 })); }
+  sparkHit() { haptics.buzz('tick'); [0, 7, 12, 16, 19].forEach((d, i) => this.tone(mtof(79 + d), { dur: 0.5, vol: 0.06, when: i * 0.04, rev: 0.6 })); }
   miss() { this.tone(300, { type: 'triangle', dur: 0.25, vol: 0.06, glide: 0.6 }); }
-  pickup() { [0, 4, 7, 12].forEach((d, i) => this.tone(mtof(76 + d), { type: 'triangle', dur: 0.35, vol: 0.09, when: i * 0.06, rev: 0.4 })); }
+  pickup() { haptics.buzz('pickup'); [0, 4, 7, 12].forEach((d, i) => this.tone(mtof(76 + d), { type: 'triangle', dur: 0.35, vol: 0.09, when: i * 0.06, rev: 0.4 })); }
   /** Sora's lullaby, as a music box would play it. */
   lullaby() {
     const r = 79, tune = [0, 4, 7, 9, 7, 4, 2, 4, 0, -3, 0, 2, 4, 2, 0, -5, 0];
@@ -226,13 +235,15 @@ export class Audio {
     [0, 7, 12].forEach((d, i) => { if (Math.random() < 0.7) this.tone(mtof(base + d), { type: 'sine', dur: 2.2, vol: 0.025, when: i * 0.13 + Math.random() * 0.1, rev: 0.8 }); });
   }
   fanfare() {
+    haptics.buzz('fanfare');
     const r = (ROOTS[this.season] || 60) + 12;
     [0, 4, 7, 12, 7, 12, 16, 19, 24].forEach((d, i) => this.pluck(r + d, i * 0.11, 0.12));
     this.pad([r - 12, r - 5, r, r + 4, r + 7], 0.9, 3.5, 0.06);
     [0, 0.45, 0.9].forEach(w => this.noise({ dur: 0.08, vol: 0.08, freq: 3200, q: 2, when: w }));
   }
-  star() { [0, 7, 12, 16, 19, 24].forEach((d, i) => this.tone(mtof(79 + d), { dur: 0.8, vol: 0.07, when: i * 0.07, rev: 0.8 })); }
+  star() { haptics.buzz('star'); [0, 7, 12, 16, 19, 24].forEach((d, i) => this.tone(mtof(79 + d), { dur: 0.8, vol: 0.07, when: i * 0.07, rev: 0.8 })); }
   lamp() {
+    haptics.buzz('lamp');
     const r = ROOTS[this.season] || 60;
     this.pad([r - 12, r - 5, r, r + 4, r + 7], 0, 4.5, 0.06);
     [0, 4, 7, 11, 14, 19, 24].forEach((d, i) => this.pluck(r + 12 + d, 0.3 + i * 0.11, 0.1));
@@ -268,7 +279,7 @@ export class Audio {
   }
 
   bubble() { this.tone(300 + Math.random() * 400, { dur: 0.12, vol: 0.04, glide: 1.8, rev: 0.2 }); }
-  good() { [0, 7, 12].forEach((d, i) => this.tone(mtof(81 + d), { type: 'triangle', dur: 0.25, vol: 0.07, when: i * 0.05 })); }
+  good() { haptics.buzz('tick'); [0, 7, 12].forEach((d, i) => this.tone(mtof(81 + d), { type: 'triangle', dur: 0.25, vol: 0.07, when: i * 0.05 })); }
   bad() { this.tone(220, { type: 'square', dur: 0.2, vol: 0.04, filter: 900, glide: 0.7 }); }
   chime(n = 0) { const r = 72 + [0, 2, 4, 5, 7, 9][n % 6]; [0, 4, 7, 12, 16].forEach((d, i) => this.pluck(r + d, i * 0.18, 0.1)); }
   firework(when = 0) {

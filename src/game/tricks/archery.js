@@ -40,7 +40,10 @@ const ARC_N = 26;           // dots in the aim arc
 // the camera stands `back` behind the bow hand, `side` to its right and `up` above it (so Mika, her bow and her string hand show past her
 // shoulder, low on the left) and looks at the bore line `conv` down the range; fov 0: the game's own
 const CAM = { back: 2.3, side: 1.4, up: 0.6, conv: 9, fov: 0 };
-const CAM_TALL = { back: 3.4, side: 0.7, up: 0.8, conv: 10, fov: 72 };   // a phone held upright sees a narrow strip: stand further back and look wider
+// A phone held upright sees a narrow strip. The bow sits on the aim line just in front of her big head, so from straight
+// behind it hides; it shows only from about 30 degrees to the side, as on a desktop. Close in at that angle, looking at a
+// near point of the line (conv) turns the strip toward her so she stays in it, and a wider lens keeps the targets.
+const CAM_TALL = { back: 2.2, side: 1.35, up: 0.5, conv: 2.4, fov: 78 };
 // the balloon end: the camera stands further back and looks up the range at a fixed tilt (pitch), turning only a little with the aim
 // (follow), so the balloons' whole climb stays in the picture, under the panels at the top
 // (Mika's head and the quiver come just under the lowest sandbag, not in front of the balloons). SHORT: a phone on its side: a
