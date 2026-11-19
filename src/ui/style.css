@@ -479,3 +479,41 @@ body.talking .bark, #hud.hidden ~ #barks .bark { display: none; }
   #dialogue .lines { max-height: 34vh; }
   .dl-row .tx { font-size: 13.5px; }
 }
+
+/* ---- the daily stamp card (Explore: journal Neighbours tab, src/ui/stamps-ui.js) and the stamp pop */
+#stampCard:empty { display: none; }
+.stampcard { margin: 6px 8px 14px; padding: 10px 12px 10px; background: #fff4dc; border: 3px dashed #e2483a; border-radius: 14px; transform: rotate(-1deg); box-shadow: 0 4px 0 rgba(138, 58, 26, 0.12); }
+.stamp-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0 12px; }
+.stamp-head h3 { margin: 0; font-family: var(--head); font-weight: 700; font-size: 19px; line-height: 1.25; color: #c2362b; }
+.stamp-count { font-size: 13px; font-weight: 800; color: #8a3a1a; }
+.stamp-intro { margin: 3px 0 6px; font-size: 13px; line-height: 1.35; font-weight: 700; color: var(--ink-soft); }
+.stamp-row { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 6px 0; border-top: 1.5px dashed rgba(226, 72, 58, 0.28); }
+.stamp-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; line-height: 1.28; overflow-wrap: anywhere; }
+.stamp-text b { font-family: var(--head); font-weight: 700; font-size: 14px; color: var(--ink); }
+.stamp-task { font-size: 13px; font-weight: 700; color: var(--ink); }
+.stamp-sub { font-size: 12px; font-weight: 700; font-style: italic; color: #8a5a2a; }
+.stamp-row.done .stamp-task { color: var(--ink-soft); }
+.stamp-row.lucky .stamp-text b { color: #1f8a86; }
+.stamp-ring { flex: 0 0 40px; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: #fffaf0; border: 2.5px dashed rgba(226, 72, 58, 0.55); }
+.stamp-ring.on { background: radial-gradient(circle, #fff7f2 0 58%, #ffe0d8 60%); border: 2.5px solid #e2483a; }
+.stamp-ink { font-style: normal; font-size: 25px; line-height: 1; color: #e2483a; transform: rotate(-12deg); text-shadow: 0 0 1px #a8261c; }
+.stamp-play { flex: 0 0 auto; min-width: 88px; min-height: 44px; padding: 6px 16px; border: 0; border-radius: 14px; font-family: var(--head); font-weight: 600; font-size: 16px; background: linear-gradient(180deg, #ffd66b, #f2a33a); color: #3b1c05; box-shadow: 0 3px 0 #a8661a; }
+.stamp-play:hover:not(:disabled), .stamp-play:focus-visible { background: #ffc653; outline: none; }
+.stamp-play:disabled { opacity: 0.5; cursor: default; }
+.stamp-total { margin: 6px 0 0; padding-top: 6px; border-top: 1.5px dashed rgba(226, 72, 58, 0.28); font-size: 13px; font-weight: 800; color: #8a3a1a; }
+.stamp-decor-h { margin: 4px 0 0; font-family: var(--head); font-weight: 600; font-size: 17px; }
+.stamp-glyph { font-size: 34px; line-height: 1; }
+.jcard.unknown .stamp-glyph { filter: grayscale(1) opacity(0.32); }
+#stampPop { position: fixed; left: 50%; top: 22%; width: 220px; height: 84px; margin-left: -110px; z-index: 16; pointer-events: none; opacity: 0; transform: translateY(-8px) scale(0.94); transition: opacity 0.22s ease, transform 0.28s ease; }
+#stampPop.show { opacity: 1; transform: none; }
+#stampPop .sp-card { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; background: #fff4dc; border: 3px dashed #e2483a; border-radius: 14px; box-shadow: var(--shadow); transform: rotate(-2deg); }
+#stampPop b { font-family: var(--head); font-weight: 700; font-size: 16px; line-height: 1.1; color: #c2362b; white-space: nowrap; }
+#stampPop .sp-rings { display: flex; gap: 12px; }
+#stampPop .sp-ring { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: #fffaf0; border: 2.5px dashed rgba(226, 72, 58, 0.55); color: #e2483a; font-size: 22px; line-height: 1; }
+#stampPop .sp-ring.on, #stampPop .sp-ring.new { border-style: solid; border-color: #e2483a; background: radial-gradient(circle, #fff7f2 0 58%, #ffe0d8 60%); transform: rotate(-12deg); }
+#stampPop.show .sp-ring.new { animation: stampSlam 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+@keyframes stampSlam { 0% { transform: scale(2) rotate(-12deg); opacity: 0; } 55% { transform: scale(0.9) rotate(-12deg); opacity: 1; } 70% { transform: translateX(-2px) rotate(-9deg); } 85% { transform: translateX(2px) rotate(-14deg); } 100% { transform: rotate(-12deg); } }
+@media (prefers-reduced-motion: reduce) {
+  #stampPop { transform: none !important; transition: opacity 0.3s ease !important; }
+  #stampPop.show .sp-ring.new { animation: none !important; }
+}

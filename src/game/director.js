@@ -28,6 +28,7 @@ import { SHOPS } from '../content/shops.js';
 import { MinigameMenu } from './minigame-menu.js';
 import { RoundLight } from './round-light.js';
 import { Vfx } from '../fx/vfx.js';
+import { stampsWanted } from './stamps-save.js';
 
 const SHOP_ROOMS = new Set(Object.values(SHOPS).map(s => s.room).filter(Boolean));
 import { VILLAGERS, RETURNING, ROUTES } from '../content/villagers.js';
@@ -36,6 +37,7 @@ import { BARK_RANGE, BARK_NEAR, BarkClock, pickBark, zoneAt } from './barks.js';
 import { saveKey, loadSave, clearSave, saveSlots, lastSlot } from './saves.js';   // (the title lists the saves before the valley is loaded)
 const FRIEND_BY_KIND = Object.fromEntries(FRIENDS.map(f => [f.id, f]));
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const _grab = new THREE.Vector3();   // (scratch: where a pickup is grabbed, Mika's middle)
 
 /** Binds the quest engine to the world: NPCs, interactions, sparks, pickups, zones, effects, saving. */
 export class Director {
@@ -525,6 +527,8 @@ export class Director {
         setTimeout(() => { if (this.game.interiors?.active === 'cottage') this.game.celebrate?.giftGlow?.(x.obj.position.clone()); }, 500 + n++ * 700);
       }
       if (this.giftsEarned().length === GIFTS.length && !this.q.has('homeFull')) { this.q.state.flags.homeFull = true; this.say('home_full'); }
+      // Explore's stamp-card decorations not seen yet sparkle after the gifts (game/stamps.js)
+      this.stamps?.enteredCottage(n);
     }
   }
 
@@ -612,7 +616,8 @@ export class Director {
     this.pickups.set(id, pk);
     const label = () => (item === 'star' ? tx('Pick up the fallen star') : item === 'keepsake' ? tx('Look at: {item}', { item: tx(extra.keepsake.name) })
       : item === 'treasure' ? tx('Pick up: {item}', { item: tx(extra.treasure.name) }) : item === 'letter' ? tx('Read the Sky Letter')
-        : tx('Pick up: {item}', { item: tx(ITEMS[item]?.name || item) }));
+        : item === 'stamp' ? tx('Pick up: {item}', { item: tx(extra.stamp.name) })
+          : tx('Pick up: {item}', { item: tx(ITEMS[item]?.name || item) }));
     this.interact(`pick:${id}`, null, label, () => this.pickups.has(id) && when(), () => this.collect(pk), 2.8, () => pk.obj.position, 0.5, 3.6);
   }
 
@@ -626,14 +631,15 @@ export class Director {
 
   collect(pk) {
     if (!this.pickups.has(pk.id)) return;
-    this.q.state.flags[pk.id] = true;
+    if (!pk.stamp) this.q.state.flags[pk.id] = true;   // (the stamp card's find comes back every day: no lasting flag)
     this.removePickup(pk.id);
     this.fx.burst(pk.obj.position, { n: 24, speed: 2.5, size: 0.25 });
-    const groundItem = ['cog', 'chestnut', 'mushroom', 'honeycomb'].includes(pk.item);
+    const groundItem = !!pk.stamp || ['cog', 'chestnut', 'mushroom', 'honeycomb'].includes(pk.item);
     // Bending to the grass for something that sits on a crate top would look wrong: those keep the standing gesture.
     const lowItem = groundItem && pk.pos.y - this.game.player.pos.y < 1.05;
     if (lowItem && this.ground.pickup({ object: pk.obj, target: pk.pos })) this.game.scene.add(pk.obj);
     else this.game.player.gesture('Interact', { lock: false });
+    if (pk.stamp) { this.stamps?.found(pk); return; }
     if (pk.keepsake) { this.foundKeepsake(pk.keepsake); return; }
     if (pk.treasure) { this.foundTreasure(pk.treasure); return; }
     if (pk.letter) { this.foundLetter(pk.letter); return; }
@@ -666,6 +672,8 @@ export class Director {
     else if (resumed && st.chapter === 5 && !st.flags.huntAsked && !st.flags.hunt) this.run([{ cutscene: 'huntAsk' }]);
     // a play zone (world/zone.js): the set pieces placed above that stand outside it leave the scene before the game
     if (this.game.zone) { try { const { pruneScene } = await import('../world/zone-build.js'); pruneScene(this.game.scene, this.game.zone, this.game.zone.margin); } catch (e) { console.warn('[zone] prune', e); } }
+    // Explore's daily stamp card (game/stamps.js, fetched now; not awaited): never in a story save or a play zone
+    if (this.explore && !this.game.zone && stampsWanted(this.game.params)) this.stampsP ??= import('./stamps.js').then(m => { this.stamps = new m.Stamps(this); }).catch(e => console.warn('[stamps] not available', e));
     const launch = this.ui.pendingLaunch;               // chosen on the title's Mini games menu: start that game now
     this.ui.pendingLaunch = null;
     if (launch) await this.minigameMenu.launchFirst(launch.id);
@@ -1005,7 +1013,7 @@ export class Director {
 
   refreshObjective(pulse = false) {
     if (!this.quest) return;
-    if (this.explore) { this.ui.setObjective(-1, tx('Explore Hoshi Valley: wander, shop, play ball and visit the neighbours.'), pulse); this.refreshHud(); return; }
+    if (this.explore) { this.ui.setObjective(-1, this.stamps?.objective() || tx('Explore Hoshi Valley: wander, shop, play ball and visit the neighbours.'), pulse); this.refreshHud(); return; }
     this.ui.setObjective(this.q.state.chapter, this.q.objective(tx), pulse);
     this.refreshHud();
   }
@@ -1404,6 +1412,7 @@ export class Director {
     this.animateWorld(dt);
     this.scenes.update(dt);
     // pickups
+    _grab.copy(p.pos); _grab.y += 0.8;
     for (const pk of this.pickups.values()) {
       const active = pk.when();
       pk.obj.visible = active;
@@ -1413,8 +1422,8 @@ export class Director {
       pk.obj.position.y = pk.pos.y + Math.sin(pk.t * 2.2) * 0.12;
       pk.obj.rotation.y += dt * 1.6;
       if (pk.item === 'star') this.fx.twinkle(pk.obj.position);
-      else if (pk.treasure || pk.letter) this.fx.glint(pk.obj.position, this.q.has('hunt'));
-      if (!this.busy && pk.obj.position.distanceTo(p.pos.clone().add(V(0, 0.8, 0))) < (pk.grab || 1.45)) this.collect(pk);
+      else if (pk.treasure || pk.letter || pk.stamp) this.fx.glint(pk.obj.position, !!pk.stamp || this.q.has('hunt'));
+      if (!this.busy && pk.obj.position.distanceTo(_grab) < (pk.grab || 1.45)) this.collect(pk);
     }
     // Rin's ferry is the story's way over; only when the river is frozen does walking across the ice count instead
     if (this.step('c2.ferry') && this.world.frozen && !this.busy && !p.swimming && p.grounded && p.pos.x > 22 && p.pos.z > -60 && p.pos.z < 110) this.event({ type: 'ferry', side: 'east' });
@@ -1471,10 +1480,11 @@ export class Director {
     }
     // marker
     // inside a home the arrow only leads to a treasure in this room (the world outside is far below)
-    this.ui.marker(g.camera, this.busy || this.tricks?.round || this.yard?.round ? null : g.interiors?.active ? this.huntInside() : this.markerTarget(), p.pos);
+    this.ui.marker(g.camera, this.busy || this.tricks?.round || this.yard?.round ? null : g.interiors?.active ? this.huntInside() : (this.markerTarget() || this.stamps?.target() || null), p.pos);
     this.updateHunt();
     if (this.kiteStand) this.kiteStand.obj.visible = this.kiteStand.when();
     this.updateValley(dt);
+    this.stamps?.update(dt);
     for (const x of this.giftObjs || []) x.obj.visible = this.game.interiors?.active === 'cottage' && x.earned();
     // clock & autosave
     this.ui.setClock(g.shownSeason || g.time.season, clockLabel(g.shownHour()));
