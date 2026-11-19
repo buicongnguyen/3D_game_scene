@@ -195,7 +195,7 @@ export class UI {
         const again = document.createElement('button'); again.className = 'explore-again';
         again.textContent = tx('Start over (keeps your stories)');
         again.onclick = async () => {
-          if (!await this.confirmIn(tx('Reset your Explore progress and mini-game records?'), tx('Start over'))) return;
+          if (!await this.confirmIn(tx('Reset your Explore progress, stamps and mini-game records?'), tx('Start over'))) return;
           this.audio?.click();
           close({ ...pick, fresh: true });
         };
@@ -1069,11 +1069,14 @@ export class UI {
       mountShots($('albumShots'), this);     // the player's own photo-mode pictures (ui/photo-album.js)
     } else if (tab === 'folk') {
       const rows = this.game.director?.town?.journal() || [], met = rows.filter(r => r.met);
-      body.innerHTML = `<p>${esc(tx('{n} of {total} neighbours met. Talk to people in Kawabe and Takamori; some will ask for a hand.', { n: met.length, total: rows.length }))}</p>` +
+      // Explore's daily stamp card comes first (game/stamps.js draws it into the section; empty, it takes no room)
+      body.innerHTML = '<section id="stampCard"></section>' +
+        `<p>${esc(tx('{n} of {total} neighbours met. Talk to people in Kawabe and Takamori; some will ask for a hand.', { n: met.length, total: rows.length }))}</p>` +
         `<p>${esc(tx('Purse: {n} mon', { n: q.mon || 0 }))}</p><div class="cards">` +
         this.memoriesHTML() +
         rows.map(r => this.cardHTML(r.met, null, r.met ? tx(r.name) : tx('Someone in the valley'), r.met ? (r.ask ? tx(r.ask) : r.done >= r.total ? tx('You have heard their story.') : tx('They may have more to tell later.')) : tx('Not met yet'),
           r.met ? tx(r.role) : '', r.met && r.total ? tx('{n}/{total}', { n: r.done, total: r.total }) : '')).join('') + '</div>';
+      this.game.director?.stamps?.mount($('stampCard'), this);
     } else if (tab === 'tricks') {
       body.innerHTML = this.tricksHTML();
     } else if (tab === 'friends') {

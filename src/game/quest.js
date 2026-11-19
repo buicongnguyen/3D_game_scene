@@ -9,6 +9,7 @@ import { cleanWishes } from '../content/skyspots.js';
 import { cleanStarGroups } from '../content/constellations.js';
 import { cleanYard } from '../content/yard.js';
 import { cleanWorkshop, freshWorkshop } from './workshop/rules.js';
+import { freshStamps, cleanStamps } from './stamps-save.js';
 
 export const SAVE_VERSION = 1;
 
@@ -25,6 +26,7 @@ export function freshState(story = DEFAULT_STORY) {
     starGroups: { learned: [] },   // the star groups named and read under the night sky (content/constellations.js); not the Fallen Stars (stars)
     yard: { game: 'footnet' },  // the Kawabe playground: the game on the scoreboard and each game's record (content/yard.js)
     workshop: freshWorkshop(),  // the Kite workshop: { built, stars, best, plays, prog } (game/workshop/rules.js)
+    stamps: freshStamps(),      // the daily stamp card (Explore only): game/stamps.js
   };
 }
 
@@ -62,6 +64,7 @@ export function migrate(saved) {
   s.starGroups = cleanStarGroups(s.starGroups);
   s.yard = cleanYard(s.yard);
   s.workshop = cleanWorkshop(s.workshop);
+  s.stamps = cleanStamps(s.stamps);
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.
   if (s.step === 'c4.ride') { s.step = 'c4.board'; s.inv = { ...s.inv, lanterns: 0 }; }
   s.v = SAVE_VERSION;

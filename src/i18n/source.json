@@ -97,14 +97,16 @@
   "s": "Mrs. Komori",
   "ctx": [
    "character name (t2)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
   "s": "Mr. Hirano",
   "ctx": [
    "character name (v1)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
@@ -118,7 +120,8 @@
   "s": "Mr. Nakano",
   "ctx": [
    "character name (v8)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
@@ -133,7 +136,8 @@
   "s": "Mr. Kubo",
   "ctx": [
    "character name (v19)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
@@ -155,21 +159,24 @@
   "s": "Mrs. Ishida",
   "ctx": [
    "character name (v25)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
   "s": "Kenta",
   "ctx": [
    "character name (v3)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
   "s": "Yui",
   "ctx": [
    "character name (v20)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
@@ -221,7 +228,8 @@
   "s": "Hiro",
   "ctx": [
    "character name (v6)",
-   "a neighbour's name"
+   "a neighbour's name",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
@@ -4728,7 +4736,8 @@
  {
   "s": "Grandma Sora",
   "ctx": [
-   "character name (sora)"
+   "character name (sora)",
+   "UI (src/content/stamps.js)"
   ]
  },
  {
@@ -17033,6 +17042,126 @@
   ]
  },
  {
+  "s": "the Kawabe letters",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "a bag of rice",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "a parcel of paper",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "a jar of pickles",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "a sack of carrots",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "a new gate latch",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Kenta's ball",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Mr. Hirano's letters",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Mr. Kubo's hoe",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Mrs. Nakano's bucket",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Sumi's bug net",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Aiko's flower basket",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "A paper lantern",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "A pot of geraniums",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Paper flowers",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Kenta's spare ball",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "A firefly jar",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "A bug net",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "A straw basket",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
+  "s": "Postcards from the neighbours",
+  "ctx": [
+   "UI (src/content/stamps.js)"
+  ]
+ },
+ {
   "s": "Kawabe",
   "ctx": [
    "UI (src/content/tour.js)",
@@ -18897,6 +19026,72 @@
   "s": "A big one! That wish counts double. Probably.",
   "ctx": [
    "UI (src/game/skygaze.js)"
+  ]
+ },
+ {
+  "s": "Take {what} to {name}",
+  "ctx": [
+   "UI (src/game/stamps-rules.js)"
+  ]
+ },
+ {
+  "s": "Find {what}",
+  "ctx": [
+   "UI (src/game/stamps-rules.js)"
+  ]
+ },
+ {
+  "s": "Play {game}",
+  "ctx": [
+   "UI (src/game/stamps-rules.js)"
+  ]
+ },
+ {
+  "s": "Stamp card full. A new one comes tomorrow.",
+  "ctx": [
+   "UI (src/game/stamps-rules.js)"
+  ]
+ },
+ {
+  "s": "Stamp card {n}/3: {task}",
+  "ctx": [
+   "UI (src/game/stamps-rules.js)"
+  ]
+ },
+ {
+  "s": "Collect: {what}",
+  "ctx": [
+   "UI (src/game/stamps.js)"
+  ]
+ },
+ {
+  "s": "Deliver: {what}",
+  "ctx": [
+   "UI (src/game/stamps.js)"
+  ]
+ },
+ {
+  "s": "A new stamp card came in the post! See the journal.",
+  "ctx": [
+   "UI (src/game/stamps.js)"
+  ]
+ },
+ {
+  "s": "Lucky stamp: {what}!",
+  "ctx": [
+   "UI (src/game/stamps.js)"
+  ]
+ },
+ {
+  "s": "Card full! A bonus stamp",
+  "ctx": [
+   "UI (src/game/stamps.js)"
+  ]
+ },
+ {
+  "s": "New in the cottage: {item}",
+  "ctx": [
+   "UI (src/game/stamps.js)"
   ]
  },
  {
@@ -20816,7 +21011,8 @@
   "s": "Play",
   "ctx": [
    "UI (src/game/tricks/exercise-ui.js)",
-   "UI (src/ui/level-picker.js)"
+   "UI (src/ui/level-picker.js)",
+   "UI (src/ui/stamps-ui.js)"
   ]
  },
  {
@@ -29343,6 +29539,96 @@
   ]
  },
  {
+  "s": "Stamped",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Carrying",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Near {place}",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Lucky stamp",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "See a weather moment",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "From {name}",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "At {n} stamps",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Today's stamp card",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "{n} of 3 stamps today",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Three little jobs from the neighbours. Each one earns a stamp, and stamps bring decorations for the cottage.",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Stamps: {n}",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Every decoration is in the cottage!",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Next decoration at {n} stamps",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Cottage decorations",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
+  "s": "Stamp! {n}/3",
+  "ctx": [
+   "UI (src/ui/stamps-ui.js)"
+  ]
+ },
+ {
   "s": "Look for it on {when} evenings.",
   "ctx": [
    "UI (src/ui/stargroups.js)"
@@ -29445,7 +29731,7 @@
   ]
  },
  {
-  "s": "Reset your Explore progress and mini-game records?",
+  "s": "Reset your Explore progress, stamps and mini-game records?",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]

@@ -174,9 +174,23 @@ export class Celebrate {
 
   sfx(name, ...a) { if (this.sound) { try { this.g.audio?.[name]?.(...a); } catch { /* audio is optional */ } } }
 
-  /** A radial burst of sprites. */
-  spray(p, { n = 40, colors = GOLDS, speed = 5, life = 1.6, size = 0.35, kind = KIND.SPARK, gravity = 1, drag = 1.4, solid = false, up = 0.3, spin = 0, twinkle = 0.8, flutter = 0, swirl = 0, grow = 0, alpha = 1 } = {}) {
-    const sys = solid ? this.solid : this.glow;
+  /**
+   * Glow sprites that are drawn inside a room. `root` is a scene child at y = 0, which Interiors.hideOutdoors hides while
+   * Mika is indoors, so a sparkle emitted there never shows in a room. This system lives in the interiors group (kept
+   * indoors, at the origin: positions stay world). Same shader as `glow`, so no new program. Made on first use.
+   */
+  indoorSprites() {
+    if (!this.indoor) {
+      this.indoor = new SpriteSystem(Math.round(600 * this.k), { additive: true, renderOrder: 7 });
+      this.indoor.points.name = 'cel:indoor';
+      (this.g.interiors?.group || this.root).add(this.indoor.points);
+    }
+    return this.indoor;
+  }
+
+  /** A radial burst of sprites (into `sys` when given). */
+  spray(p, { n = 40, colors = GOLDS, speed = 5, life = 1.6, size = 0.35, kind = KIND.SPARK, gravity = 1, drag = 1.4, solid = false, up = 0.3, spin = 0, twinkle = 0.8, flutter = 0, swirl = 0, grow = 0, alpha = 1, sys = null } = {}) {
+    sys ??= solid ? this.solid : this.glow;
     for (let i = 0; i < n; i++) {
       _v.set(Math.random() - 0.5, Math.random() - 0.5 + up, Math.random() - 0.5).normalize().multiplyScalar(speed * rand(0.35, 1));
       sys.emit(p, _v, { life: life * rand(0.6, 1.2), size: size * rand(0.6, 1.3), color: pick(colors), kind, gravity, drag, spin: spin * rand(-1, 1), twinkle, flutter, swirl, center: p, grow, alpha });
@@ -1294,12 +1308,16 @@ export class Celebrate {
   }
 
   // ---------------------------------------------------------------------------------------------- 20. gift glow
-  /** A small warm sparkle and a tiny ribbon of hearts spiralling up where a thank-you gift just appeared. ~3 s. */
+  /**
+   * A small warm sparkle and a tiny ribbon of hearts spiralling up where a thank-you gift (or a stamp-card decoration)
+   * just appeared. ~3 s. Indoors its sprites go to the room's own system (indoorSprites), so they are seen.
+   */
   giftGlow(pos) {
     const P = toVec(pos), K = this.k;
-    this.spray(P, { n: Math.round(36 * K), speed: 2.2, life: 1.3, size: 0.12, gravity: -0.3, drag: 1.6, up: 0.6 });
-    this.glow.emit(P, _v.set(0, 0, 0), { life: 0.5, size: 1.2, color: [2.4, 1.8, 1.0], kind: KIND.GLOW, alpha: 0.45 });
-    this.glow.emit(P, _v.set(0, 0, 0), { life: 0.7, size: 0.5, color: [2.2, 1.7, 1.0], kind: KIND.RING, grow: 3, alpha: 0.7 });
+    const sys = this.g.interiors?.active ? this.indoorSprites() : this.glow;
+    this.spray(P, { n: Math.round(36 * K), speed: 2.2, life: 1.3, size: 0.12, gravity: -0.3, drag: 1.6, up: 0.6, sys });
+    sys.emit(P, _v.set(0, 0, 0), { life: 0.5, size: 1.2, color: [2.4, 1.8, 1.0], kind: KIND.GLOW, alpha: 0.45 });
+    sys.emit(P, _v.set(0, 0, 0), { life: 0.7, size: 0.5, color: [2.2, 1.7, 1.0], kind: KIND.RING, grow: 3, alpha: 0.7 });
     const lamp = { t: 0 };
     const src = this.light(P, () => Math.max(0, 7 * (1 - lamp.t / 1.2)), 6, '#ffd6a0');
     const HEARTS = [lin('#ff5a8a', 2.2), lin('#ff8ab8', 2.2), lin('#ffd46a', 2.1), lin('#ff6a6a', 2.1)];
@@ -1312,8 +1330,8 @@ export class Celebrate {
         acc--;
         const u = n / 15, a = u * Math.PI * 3.2;
         _p.set(P.x + Math.cos(a) * 0.32, P.y + 0.15 + u * 1.3, P.z + Math.sin(a) * 0.32);
-        this.glow.emit(_p, _v.set(-Math.sin(a) * 0.12, 0.25, Math.cos(a) * 0.12), { life: rand(1.4, 1.8), size: 0.13 + 0.06 * Math.sin(u * Math.PI), color: HEARTS[n % HEARTS.length], kind: KIND.HEART, gravity: -0.15, drag: 0.8, twinkle: 0.3, flutter: 0.04 });
-        this.glow.emit(_p, _v.set(rand(-0.2, 0.2), rand(-0.3, 0.1), rand(-0.2, 0.2)), { life: rand(0.6, 1), size: rand(0.05, 0.09), color: pick(GOLDS), kind: KIND.SPARK, twinkle: 1 });
+        sys.emit(_p, _v.set(-Math.sin(a) * 0.12, 0.25, Math.cos(a) * 0.12), { life: rand(1.4, 1.8), size: 0.13 + 0.06 * Math.sin(u * Math.PI), color: HEARTS[n % HEARTS.length], kind: KIND.HEART, gravity: -0.15, drag: 0.8, twinkle: 0.3, flutter: 0.04 });
+        sys.emit(_p, _v.set(rand(-0.2, 0.2), rand(-0.3, 0.1), rand(-0.2, 0.2)), { life: rand(0.6, 1), size: rand(0.05, 0.09), color: pick(GOLDS), kind: KIND.SPARK, twinkle: 1 });
         n++;
       }
       return t > 3;
@@ -1383,6 +1401,7 @@ export class Celebrate {
     this.decor.update(night);
     this.glow.flush();
     this.solid.flush();
+    this.indoor?.flush();
     this.notes.flush();
   }
 }
