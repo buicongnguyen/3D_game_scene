@@ -106,3 +106,26 @@ in the larger shot, the portrait tray hiding Mika, Enter on a focused button tak
   1280×720 and vi/ko/ja), the Grandma story autopilot.
 - Known: a real gamepad and iPhone safe areas were not tried on hardware; Tamo very close to the camera at golden
   hour reads as a soft glow rather than a crisp star.
+
+## 8. Done: phases C and E (`8baa2c6`)
+
+Two corrections to §1 first. **G4** was mostly done before this plan: Codex added the ground clips (Crouch, CrouchWalk,
+CrouchReach, Kneel, Pickup, SitGrass) and `actors/ground-pose-system.js` in October; low pickups, petting and the bug,
+dew, firefly and frog games already used them. **G5** was done too: the clips were re-recorded on 2026-10-12 (`e23aec5`)
+in the Grandma story with electric bulbs, and every look change since then was a pixel-identical speed pass. Both rows
+came from the old issue list, not from playing.
+
+- **C, the last standing gestures at ground level**: the roast pit (bury, turn, dig out: she turns to the hollow and
+  crouches), Grandma's note in the firefly game (she bends for it before the words start) and the music box (she kneels
+  by it). Releasing bugs from the cage keeps its gesture: the cage stands 1.8 m to her side, so a crouch would reach at
+  empty grass. Planting the acorn keeps it too: the spot is 2 m away and the tree grows there.
+- **E, haptics**: `engine/haptics.js`, called by the sound cues in `engine/audio.js` (hard landings, splashes,
+  pickups, successes, stars, lamps, fanfares; each kind throttled). A gamepad rumbles; a phone with a coarse pointer
+  buzzes; iPhones have no vibration API. Settings > Vibration (on by default). `tests/haptics.test.mjs`.
+- **E, archery on an upright phone**: from behind, her big head hid the bow (it sits on the aim line just in front of
+  her face). `CAM_TALL` now stands close at about 30 degrees, as on a desktop, and looks at a near point of the line;
+  checked at 390x844 and 360x640 (ready and full draw). The Stop button there is a 48 px square in the free top-left
+  corner (on 360x640 it covered her head).
+- **Not done: real fingers.** They need finger bones in `mika.glb`, new weights, the light model rebuilt, the Low
+  tier's skin merge and her 16 k-triangle budget: a separate art job on the model every other system uses. At play
+  distance the camera was the visible defect.
