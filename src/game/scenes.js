@@ -3,6 +3,7 @@ import { N_ } from '../i18n/i18n.js';
 import { CAPTIONS, DIALOGUE, STAR_POEM } from './story.js';
 import { tx } from '../i18n/i18n.js';
 import { storyId } from './stories/index.js';
+import { GapWatch } from '../engine/perf-report.js';
 
 /** Grandma (Grandma story only) joins the party: the row or ring gets one more place. */
 const withGrandma = (ids, extra = []) => (storyId() === 'grandma' ? [...ids, 'sora', ...extra] : ids);
@@ -58,11 +59,17 @@ export class Scenes {
   async arrival() {
     const g = this.g, r = g.railway, ui = this.d.ui;
     // phones (the Low tier) watch the arrival as a recorded clip and come back to the same platform (game/video.js);
-    // ?live=1 or a clip that cannot play keeps the live cutscene below
-    if (g.renderer.qualityName === 'low' && !g.params.has('live')) {
-      const played = await import('./video.js').then(m => m.playArrival(this)).catch(e => { console.warn('[video] arrival', e); return false; });
-      if (played) { this.d.event({ type: 'cutscene', id: 'arrival' }); return; }
+    // ?live=1 or a clip that cannot play keeps the live cutscene below. What happened goes into the Settings
+    // performance report (game.arrivalReport): which version played, why live, and how smooth it was.
+    const report = g.arrivalReport = { mode: 'live', reason: '' };
+    if (g.renderer.qualityName !== 'low') report.reason = `${g.renderer.qualityName} graphics`;
+    else if (g.params.has('live')) report.reason = 'live switch';
+    else {
+      const played = await import('./video.js').then(m => m.playArrival(this, report))
+        .catch(e => { console.warn('[video] arrival', e); report.reason = 'clip error'; return false; });
+      if (played) { report.mode = 'clip'; this.d.event({ type: 'cutscene', id: 'arrival' }); return; }
     }
+    const watch = new GapWatch().watch();
     g.renderer.setFloor?.(2);                // a wide flight costs more than play: the Low tier starts it two steps down
     await ui.fade(true, 10);
     // Kobo comes out of the west tunnel and runs the whole way in while the story is told across the top
@@ -102,6 +109,7 @@ export class Scenes {
     this.d.npcs.genzo.place(-91.8, 115.4, -Math.PI / 2, RAIL_Y + 0.95);
     await this.shot(V(-90, 19.2, 110.5), V(-93, 17.3, 115.4), 1.4, 200);
     g.renderer.setFloor?.(0);
+    report.scene = watch.stop();
     // queued after this cutscene finishes (awaiting here would deadlock the effect queue)
     this.d.event({ type: 'cutscene', id: 'arrival' });
   }

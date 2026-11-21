@@ -24,7 +24,7 @@ function runtime({ language = 'en', enabled = false, manifestGate = null, showGa
     hide(owner) { if (owner !== this.owner) return; generation++; this.owner = null; hidden++; game.renderer.hold = false; },
   };
   const ctx = {
-    THREE, URL, console, setTimeout, clearTimeout, requestAnimationFrame() {}, innerWidth: 390, innerHeight: 844,
+    THREE, URL, console, setTimeout, clearTimeout, performance, requestAnimationFrame() {}, innerWidth: 390, innerHeight: 844,
     document: { baseURI: 'https://test.example/', createElement: () => ({ canPlayType: () => 'probably' }) },
     getLang: () => lang, tx: s => s, onLangChange: fn => { langListeners.add(fn); return () => langListeners.delete(fn); },
     getTropicalTrees: () => tropical, onTreeThemeChange: fn => { listeners.add(fn); return () => listeners.delete(fn); },

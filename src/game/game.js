@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { Renderer } from '../engine/renderer.js';
+import { Renderer, isMobile } from '../engine/renderer.js';
+import { getTropicalTrees } from '../world/tree-theme.js';
 import { Assets } from '../engine/assets.js';
 import { trimModels } from '../engine/trim.js';
 import { peopleSet } from '../engine/people.js';
@@ -164,12 +165,14 @@ export class Game {
   /** What the Settings button "Copy performance report" copies (engine/perf-report.js): this device and how the game runs on it. */
   perfReport() {
     const r = this.renderer, info = r.renderer.info, mem = performance.memory, nav = navigator, p = this.player?.pos;
-    let slowMarked = false; try { slowMarked = localStorage.getItem('starline-slow') === '1'; } catch { /* private mode */ }
+    let slowMarked = false, savedTier = null;
+    try { slowMarked = localStorage.getItem('starline-slow') === '1'; savedTier = localStorage.getItem('starline-quality'); } catch { /* private mode */ }
     return buildReport({
       at: new Date().toISOString().slice(0, 16).replace('T', ' '), page: location.search || '(no switches)', params: [...this.params.keys()].filter(k => !['mute'].includes(k)).join(' ') || undefined,
       build: [...document.scripts].map(x => x.src.split('/').pop()).find(n => /^index-/.test(n)) || 'dev',
       ua: nav.userAgent, screen: innerWidth + 'x' + innerHeight, dpr: +(devicePixelRatio || 1).toFixed(2), cores: nav.hardwareConcurrency, memory: nav.deviceMemory,
       tier: r.qualityName, level: r.governor?.level ?? 0, scale: +r.scale.toFixed(2), pace: this.pacer?.pace || 0, slowMarked,
+      mobile: isMobile(), savedTier, tropical: getTropicalTrees(), arrival: this.arrivalReport,
       frames: this.ring?.summary(), calls: this.lastInfo?.calls, tris: this.lastInfo?.tris, geometries: info.memory.geometries, textures: info.memory.textures,
       heapMB: mem ? mem.usedJSHeapSize / 1048576 : undefined, heapLimitMB: mem ? mem.jsHeapSizeLimit / 1048576 : undefined,
       place: p ? '(' + Math.round(p.x) + ', ' + Math.round(p.z) + '), ' + (this.shownSeason || this.time.season) + ', ' + Math.floor(this.shownHour()) + ' h' + (this.zone ? ', zone ' + this.zone.id : '') : undefined,
@@ -259,6 +262,9 @@ export class Game {
       else if (this.input.pressed('photo') && !this.paused) this.openPhoto('key');
     }
     this.input.enabled = !this.paused && !this.ui.dialogueOpen;
+    // a recorded clip covers the whole screen (game/video.js, the phone's opening): none of the valley is seen, so none
+    // of it is updated or drawn; the phone only decodes the video. The world picks up where it was when the clip ends.
+    if (this.clipPlaying && this.renderer.hold) { FX.uTime.value += dt; this.renderer.render(this.scene, this.camera); this.input.endFrame(); return; }
     const running = !this.paused;
     if (running) {
       FX.uTime.value += dt;

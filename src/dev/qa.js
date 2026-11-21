@@ -33,6 +33,8 @@ export function attachQA(game, director, ui) {
       placeholders: game.zone ? m.placeholdersInside(game.scene, game.zone) : [] })),
     /** A play zone's far view, rendered from the whole valley (scripts/bake-zone-backdrops.mjs). Loaded only when asked. */
     bakeBackdrop: opts => import('./backdrop-bake.js').then(m => m.bakeBackdrop(game, opts)),
+    /** How the opening played (game.arrivalReport: clip or live and why, start time, dropped frames, gaps, hand-over). */
+    arrival: () => (game.arrivalReport ? JSON.parse(JSON.stringify(game.arrivalReport)) : null),
   };
   window.__STARLINE_QA__ = qa;
   return qa;

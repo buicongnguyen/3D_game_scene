@@ -228,6 +228,9 @@ function titleLook() {
     if (next) ui.pendingLaunch = { id: next.e.id };
     picked = next ? { mode: 'explore', slot: 'explore', season: next.plan.season, hour: next.plan.hour, fresh: false } : null;
   }
+  // a phone's opening is a recorded clip (game/video.js): fetch it now, while the valley loads, so it starts at once
+  if (picked.mode === 'new' && game.renderer.qualityName === 'low' && !params.has('live'))
+    import('./game/video.js').then(m => m.prefetchArrival(picked.story || 'grandma')).catch(() => {});
 
   if (!valleyReady) {
     // quick start: now the valley is needed. The quick runtime lets go of everything it made, the loading screen

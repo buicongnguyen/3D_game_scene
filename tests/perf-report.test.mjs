@@ -20,3 +20,17 @@ test('the report names the device, the tier, the frames and the scene, and copes
   const bare = buildReport({});
   assert.ok(bare.includes('performance report') && !bare.includes('NaN') && !bare.includes('undefined'), 'an empty snapshot still reads cleanly');
 });
+
+test('the opening line says which version played, why live, and how smooth it was', async () => {
+  const { GapWatch, arrivalLine } = await import('../src/engine/perf-report.js');
+  const w = new GapWatch();
+  for (const g of [16, 17, 60, 16, 120, 17]) w.add(g);
+  const s = w.stop();
+  assert.deepEqual(s, { frames: 6, worst: 120, over50: 2, over100: 1 });
+  const clip = arrivalLine({ mode: 'clip', firstMs: 812.4, dropped: 3, total: 789, scene: s, handover: 48.6, prefetched: true });
+  for (const part of ['recorded clip', 'first picture after 812 ms', 'dropped 3/789', 'worst gap 120 ms', '2 gaps over 50 ms', 'hand-over worst gap 49 ms', 'fetched early: yes']) assert.ok(clip.includes(part), `has "${part}"`);
+  assert.ok(arrivalLine({ mode: 'live', reason: 'medium graphics' }).includes('live (medium graphics)'));
+  const t = buildReport({ mobile: true, savedTier: 'medium', arrival: { mode: 'live', reason: 'medium graphics' } });
+  assert.ok(t.includes('phone: yes') && t.includes('tier saved in Settings: medium') && t.includes('opening: live (medium graphics)'));
+  assert.ok(!buildReport({}).includes('opening'), 'no opening played yet: no line');
+});

@@ -16,6 +16,36 @@ export class FrameRing {
 
 const f1 = v => (Number.isFinite(v) ? v.toFixed(1) : '?');
 
+/**
+ * Frame gaps over one stretch of time (the opening scene): the worst gap and how many went over 50 and 100 ms.
+ * `add(gap)` is pure; `watch()` feeds it from requestAnimationFrame until `stop()`.
+ */
+export class GapWatch {
+  constructor() { this.n = 0; this.worst = 0; this.over50 = 0; this.over100 = 0; this.last = 0; this.on = false; }
+  add(gap) { this.n++; if (gap > this.worst) this.worst = gap; if (gap > 50) this.over50++; if (gap > 100) this.over100++; }
+  watch(raf = globalThis.requestAnimationFrame) {
+    if (!raf) return this;
+    this.on = true; this.last = 0;
+    const tick = t => { if (!this.on) return; if (this.last) this.add(t - this.last); this.last = t; raf(tick); };
+    raf(tick);
+    return this;
+  }
+  stop() { this.on = false; return { frames: this.n, worst: Math.round(this.worst), over50: this.over50, over100: this.over100 }; }
+}
+
+/** The opening's line: which version played (and why live), how fast the clip started, and how smooth it was. */
+export function arrivalLine(a) {
+  if (!a) return '';
+  const parts = [a.mode === 'clip' ? 'opening: recorded clip' : `opening: live${a.reason ? ` (${a.reason})` : ''}`];
+  if (a.firstMs != null) parts.push(`first picture after ${Math.round(a.firstMs)} ms`);
+  if (a.total > 0) parts.push(`video frames dropped ${a.dropped}/${a.total}`);
+  const s = a.scene;
+  if (s?.frames) parts.push(`worst gap ${s.worst} ms, ${s.over50} gaps over 50 ms, ${s.over100} over 100 ms`);
+  if (a.handover != null) parts.push(`hand-over worst gap ${Math.round(a.handover)} ms`);
+  if (a.prefetched != null) parts.push(`fetched early: ${a.prefetched ? 'yes' : 'no'}`);
+  return parts.join(' · ');
+}
+
 /** snapshot -> text. Every field is optional: a browser without `performance.memory` just leaves that line out. */
 export function buildReport(s = {}) {
   const L = [];
@@ -24,6 +54,8 @@ export function buildReport(s = {}) {
   L.push(`device: ${s.ua || '?'}`);
   L.push(`screen: ${s.screen || '?'} @${s.dpr ?? '?'}x   cores: ${s.cores ?? '?'}   memory: ${s.memory ?? '?'} GB`);
   L.push(`graphics: ${s.tier || '?'}   governor step: ${s.level ?? '?'}   render scale: ${s.scale ?? '?'}   paced to 30 fps: ${s.pace ? 'yes' : 'no'}${s.slowMarked ? '   remembered as slow' : ''}`);
+  if (s.mobile != null || s.savedTier !== undefined) L.push(`phone: ${s.mobile ? 'yes' : 'no'}   tier saved in Settings: ${s.savedTier || 'none'}${s.tropical ? '   tropical trees: on' : ''}`);
+  if (s.arrival) L.push(arrivalLine(s.arrival));
   const f = s.frames;
   if (f && f.n) {
     const fps = f.gap[0] > 0 ? 1000 / f.gap[0] : NaN;

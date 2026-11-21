@@ -129,13 +129,15 @@ async function videoTotal(cache) {
   for (const req of await cache.keys()) { const r = await cache.match(req); n += +(r?.headers.get('content-length') || 0); }
   return n;
 }
-async function fetchWhole(url) {
+// `got`: a whole-file answer already fetched for the page (the game's early download of the opening): store that one
+// copy instead of downloading the file a second time
+async function fetchWhole(url, got = null) {
   if (inflight.has(url) || !(await hasRoom())) return;
   inflight.add(url);
   try {
     const cache = await caches.open(VIDEO);
     if (await cache.match(url)) return;
-    const res = await fetch(url);
+    const res = got || await fetch(url);
     const len = +(res.headers.get('content-length') || 0);
     if (!res.ok || res.status !== 200 || !len || len > VIDEO_MAX_FILE) return;
     if ((await videoTotal(cache)) + len > VIDEO_MAX_TOTAL) return;
@@ -157,6 +159,12 @@ async function video(e) {
   const cache = await caches.open(VIDEO);
   const hit = await cache.match(url);
   if (hit) return rangeFrom(hit, e.request.headers.get('range'));
+  if (!e.request.headers.get('range') && !inflight.has(url)) {
+    // the whole file is asked for (src/game/video.js prefetchArrival): one download, kept and handed on
+    const res = await fetch(e.request);
+    if (res.ok && res.status === 200) e.waitUntil(fetchWhole(url, res.clone()));
+    return res;
+  }
   e.waitUntil(fetchWhole(url));
   return fetch(e.request);
 }

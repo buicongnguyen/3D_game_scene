@@ -26651,6 +26651,12 @@
   ]
  },
  {
+  "s": "Loading the opening…",
+  "ctx": [
+   "UI (src/game/video.js)"
+  ]
+ },
+ {
   "s": "% build quality",
   "ctx": [
    "UI (src/game/workshop/index.js)"

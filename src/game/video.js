@@ -13,6 +13,7 @@ import { getTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
 import { STOPS } from '../world/railway.js';
 import { RAIL_Y } from '../world/layout.js';
 import { VIDEO_DIR, clipKey } from '../content/video.js';
+import { GapWatch } from '../engine/perf-report.js';
 
 const BASE = new URL(VIDEO_DIR, document.baseURI).href;
 const CSS = `
@@ -22,6 +23,8 @@ const CSS = `
 #introSkip{position:fixed;right:calc(14px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:19;min-width:88px;min-height:44px;padding:0 16px;border:0;border-radius:14px;
  background:rgba(11,16,36,.72);color:#fff;font:800 15px var(--ui,Nunito,sans-serif);cursor:pointer;-webkit-tap-highlight-color:transparent}
 #introSkip:hover,#introSkip:focus-visible{background:rgba(11,16,36,.9);outline:none}
+#introWait{position:fixed;left:50%;bottom:calc(22% + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;padding:10px 18px;border-radius:14px;
+ background:rgba(11,16,36,.72);color:#fff;font:700 15px var(--ui,Nunito,sans-serif);pointer-events:none;white-space:nowrap}
 `;
 
 /** Phones (the Low tier) get video by default; everything else draws live. */
@@ -175,27 +178,96 @@ function arrivalEndState(scenes) {
   g.follow.cutscene({ pos: V(-90, 19.2, 110.5), look: V(-93, 17.3, 115.4) }, 0.01);
 }
 
+// ------------------------------------------------------------------ fetching the opening early
+const early = new Map();   // clip url -> { done }
+/**
+ * New Game was chosen on a phone: download the arrival clip now, while the valley still loads, so the opening starts
+ * at once instead of spending its start time on the network. One whole-file request at low priority (the models come
+ * first); the HTTP cache and the service worker (public/sw.js) keep it for the video element's range requests.
+ */
+export async function prefetchArrival(story) {
+  if (!recordedSceneryMatches() || !canPlay()) return false;
+  const clip = await clipFor(`intro-${story}`);
+  if (!clip || early.has(clip.url)) return false;
+  const e = { done: false };
+  early.set(clip.url, e);
+  try {
+    const res = await fetch(clip.url, { priority: 'low' });
+    await res.arrayBuffer();
+    e.done = res.ok;
+  } catch { /* the clip streams when it is needed, as before */ }
+  return e.done;
+}
+
+/** A small note over the poster while a slow network still brings the clip. */
+function waitNote() {
+  const el = document.createElement('div');
+  el.id = 'introWait'; el.setAttribute('role', 'status');
+  el.textContent = tx('Loading the opening…');
+  document.body.appendChild(el);
+  return el;
+}
+
+// how long the clip may take to start before the live cutscene plays instead (the screen is dark with the poster)
+const START_TIMEOUT = 12000;
+// the cut back to live: dissolve once this many frames in a row came in under GOOD_GAP ms, or after SETTLE_MAX ms
+const GOOD_FRAMES = 2, GOOD_GAP = 50, SETTLE_MAX = 1500;
+
+/** Wait until the live view runs smoothly again; resolves with the worst frame gap seen meanwhile. */
+function settle() {
+  return new Promise(res => {
+    let last = 0, good = 0, worst = 0, t0 = 0;
+    const f = t => {
+      if (!t0) t0 = t;
+      if (last) { const gap = t - last; if (gap > worst) worst = gap; good = gap < GOOD_GAP ? good + 1 : 0; }
+      last = t;
+      if (good >= GOOD_FRAMES || t - t0 > SETTLE_MAX) return res(worst);
+      requestAnimationFrame(f);
+    };
+    requestAnimationFrame(f);
+  });
+}
+
 /**
  * The new game's arrival as a recorded clip (called by scenes.arrival on the Low tier). The same captions are told
  * live over it and a Skip button ends it early. Underneath, the valley is put straight into the state the live
- * cutscene ends in and drawn for a moment (its shaders compile out of sight), so the cut back to live is clean.
+ * cutscene ends in and drawn once behind the dark screen (its shaders and textures load out of sight); while the
+ * clip runs nothing of the valley is updated or drawn (game.clipPlaying), so the phone only decodes the video.
+ * `report` collects what the Settings performance report tells about the opening (engine/perf-report.js).
  * Resolves true when the clip stood in for the cutscene; false when it could not play (the live one then runs).
  */
-export async function playArrival(scenes) {
+export async function playArrival(scenes, report = {}) {
   const g = scenes.g, d = scenes.d, ui = d.ui;
-  if (!recordedSceneryMatches() || !canPlay()) return false;
+  const no = why => { report.reason = why; return false; };
+  if (!recordedSceneryMatches()) return no('tropical trees on');
+  if (!canPlay()) return no('browser cannot play the clip');
   const clip = await clipFor(`intro-${storyId()}`);
-  if (!clip || !recordedSceneryMatches()) return false;
+  if (!clip) return no('no clip for this screen');
+  if (!recordedSceneryMatches()) return no('tropical trees on');
+  report.prefetched = early.get(clip.url)?.done ?? false;
+  const t0 = performance.now();      // the clip's start time counts from here: the screen goes dark
   g.titleLoop?.stop();
   await ui.fade(true, 10);
-  if (!recordedSceneryMatches()) return false;
+  if (!recordedSceneryMatches()) return no('tropical trees on');
   const layer = VideoLayer.of(g), v = layer.el, owner = {};
   // pictures first: if the clip cannot start, nothing has been changed and the live cutscene takes over
-  const ok = await layer.show(clip, { owner, timeout: 7000 });
-  if (!ok) return false;
-  if (!recordedSceneryMatches()) { layer.hide(owner); return false; }
-  g.renderer.hold = false;                           // the valley is drawn under the clip for its first second: warm-up
+  let note = null;
+  const noteT = setTimeout(() => { note = waitNote(); }, 2000);
+  const ok = await layer.show(clip, { owner, timeout: START_TIMEOUT });
+  clearTimeout(noteT); note?.remove();
+  if (!ok) return no(performance.now() - t0 >= START_TIMEOUT - 50 ? 'clip too slow to start' : 'clip failed to start');
+  if (!recordedSceneryMatches()) { layer.hide(owner); return no('tropical trees on'); }
+  // hold the clip on its first picture while the platform the scene ends on is drawn once behind the dark screen
+  v.pause();
+  try { v.currentTime = 0; } catch { /* ignore */ }
   arrivalEndState(scenes);
+  g.renderer.hold = false;
+  await frames(3);
+  g.renderer.hold = true;
+  g.clipPlaying = true;
+  try { await v.play(); } catch { g.clipPlaying = false; layer.hide(owner); return no('autoplay refused'); }
+  report.firstMs = performance.now() - t0;
+  const watch = new GapWatch().watch();
   ui.cinema(true);
   let skipped = false, ended = false;
   const told = Promise.all(CAPTIONS.arrival.map(c => ui.caption(c, 4300)));
@@ -223,12 +295,15 @@ export async function playArrival(scenes) {
     requestAnimationFrame(tick);
   });
   await ui.fade(false, 1600);
-  if (!ended) g.renderer.hold = true;
   await finish;
   skip.remove();
-  // back to live: draw the platform again under the last picture, then dissolve
+  report.scene = watch.stop();
+  const q = v.getVideoPlaybackQuality?.();
+  if (q) { report.dropped = q.droppedVideoFrames; report.total = q.totalVideoFrames; }
+  // back to live: the valley updates and draws again under the last picture; dissolve once it runs smoothly
+  g.clipPlaying = false;
   g.renderer.hold = false;
-  await frames(3);
+  report.handover = await settle();
   layer.hide(owner, true);
   if (skipped) ui.clearCaptions?.(); else await told;
   ui.cinema(false);
