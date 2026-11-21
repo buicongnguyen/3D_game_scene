@@ -150,11 +150,13 @@ class Anim:
         th = interp([(0, tha), (0.45, -4), (0.8, thb * 0.7), (1.0, thb)], s)
         return V((A0.x, y, z)), th
 
-    def gait_setup(self, speed, frames, beta, lift, th_hs, th_to, bob, reach=0.965, yc=0.0, arc=0.05):
+    def gait_setup(self, speed, frames, beta, lift, th_hs, th_to, bob, reach=0.965, yc=0.0, arc=0.05, level=False):
         """Plan a gait. The hips do not ride at one height (that has to be the lowest the whole stride needs, which
         leaves the knee bent even over the standing leg: a crouched walk). They follow what the legs allow at each
         phase, up to `arc` x leg length above the lowest point, smoothed: low at heel strike, high over the standing leg.
-        `bob` is added on top where the legs still reach."""
+        `bob` is added on top where the legs still reach.
+        `level` (the walk): the knees never lower the body. The hips stay at the height the standing leg reaches
+        nearly straight (never above rest), with only the style's small bob; the swinging leg does the bending."""
         T = frames / 30.0
         S_len = speed * T
         g = dict(S=S_len, beta=beta, lift=lift, th_hs=th_hs, th_to=th_to, yc=yc, frames=frames)
@@ -177,13 +179,23 @@ class Anim:
             lim.append(z)
         known = [z for z in lim if z < 1e8]
         low = min(known)
+        if level:
+            stand = min(max(known), 0.0)
+            zl = [stand + 0.5 * bob(i / N) for i in range(N)]
+            g['z'] = lambda p: zl[int((p % 1) * N) % N] * (1 - ((p % 1) * N % 1)) + zl[(int((p % 1) * N) + 1) % N] * ((p % 1) * N % 1)
+            g['drop'] = -stand
+            return g
         top = low + arc * self.l_leg
         z = [min(v, top) for v in lim]            # (a run's flight phase has no foot down: the cap is its height)
         for _ in range(8):                        # smooth around the loop
             z = [(z[i - 4] + z[i - 2] + 2 * z[i] + z[(i + 2) % N] + z[(i + 4) % N]) / 6 for i in range(N)]
         z = [z[i] + 0.5 * bob(i / N) for i in range(N)]
-        over = max(max(z[i] - lim[i] for i in range(N)), 0.0)
-        z = [v - over for v in z]
+        # keep the hips under what the planted legs reach, phase by phase. (Lowering the whole curve by its worst
+        # overshoot, as before, sank the hips everywhere: the knees stayed bent even over the standing leg.)
+        for _ in range(6):
+            z = [min(v, lim[i]) for i, v in enumerate(z)]
+            z = [(z[i - 1] + 2 * z[i] + z[(i + 1) % N]) / 4 for i in range(N)]
+        z = [min(v, lim[i]) for i, v in enumerate(z)]
 
         def hips_z(p):
             x = (p % 1) * N
@@ -212,7 +224,9 @@ class Anim:
 
         def bob(p):
             return bob_a * (-cs(p, 2, -0.1))
-        g = self.gait_setup(st['walk_speed'], frames, 0.6, 0.075 * leg * st['walk_lift'], 16, 34, bob, reach=0.985)
+        # level: the knees never lower the body while walking (owner, 2026-11-21: a dipping, bent-knee walk reads as a
+        # crouch); the standing leg stays nearly straight and the swinging leg does the bending
+        g = self.gait_setup(st['walk_speed'], frames, 0.6, 0.075 * leg * st['walk_lift'], 16, 34, bob, reach=0.985, level=True)
         self._walk_g = g
         sway = 0.012 * self.k * st['sway'] * (1 + st['stout'])
         yaw = 5.0 * e
