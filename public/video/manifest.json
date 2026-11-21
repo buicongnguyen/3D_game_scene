@@ -128,21 +128,22 @@
    "posterBytes": 70664
   },
   "intro-grandma-wide": {
-   "frames": 789,
-   "duration": 26.3,
+   "frames": 1609,
+   "duration": 26.816666666666666,
+   "fps": 60,
    "story": "grandma",
    "lampStyle": "electric",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
    },
-   "poster": 120,
+   "poster": 240,
    "file": "intro-grandma-wide.mp4",
    "posterFile": "intro-grandma-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 1735194,
-   "posterBytes": 74451
+   "bytes": 3346345,
+   "posterBytes": 73467
   },
   "tour-summer-wide": {
    "frames": 2285,
@@ -583,55 +584,58 @@
    "posterBytes": 43149
   },
   "intro-grandma-tall": {
-   "frames": 789,
-   "duration": 26.3,
+   "frames": 1609,
+   "duration": 26.816666666666666,
+   "fps": 60,
    "story": "grandma",
    "lampStyle": "electric",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
    },
-   "poster": 120,
+   "poster": 240,
    "file": "intro-grandma-tall.mp4",
    "posterFile": "intro-grandma-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 1716426,
-   "posterBytes": 64223
+   "bytes": 3343598,
+   "posterBytes": 61722
   },
   "intro-classic-wide": {
-   "frames": 789,
-   "duration": 26.3,
+   "frames": 1609,
+   "duration": 26.816666666666666,
+   "fps": 60,
    "story": "classic",
    "lampStyle": "flame",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
    },
-   "poster": 120,
+   "poster": 240,
    "file": "intro-classic-wide.mp4",
    "posterFile": "intro-classic-wide.jpg",
    "width": 960,
    "height": 540,
-   "bytes": 1734476,
-   "posterBytes": 74309
+   "bytes": 3345836,
+   "posterBytes": 73100
   },
   "intro-classic-tall": {
-   "frames": 789,
-   "duration": 26.3,
+   "frames": 1609,
+   "duration": 26.816666666666666,
+   "fps": 60,
    "story": "classic",
    "lampStyle": "flame",
    "marks": {
     "whistle": 5.8,
     "platform": 25.25
    },
-   "poster": 120,
+   "poster": 240,
    "file": "intro-classic-tall.mp4",
    "posterFile": "intro-classic-tall.jpg",
    "width": 540,
    "height": 960,
-   "bytes": 1715130,
-   "posterBytes": 64055
+   "bytes": 3342082,
+   "posterBytes": 61251
   },
   "title-tall": {
    "frames": 420,

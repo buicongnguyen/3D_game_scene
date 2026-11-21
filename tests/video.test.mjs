@@ -53,10 +53,12 @@ test('video: every clip and poster in the manifest exists, and nothing else is l
       total += bytes;
     }
     assert.equal(c.width, CUTS[n.cut].w); assert.equal(c.height, CUTS[n.cut].h);
-    assert.ok(Math.abs(c.duration - c.frames / FPS) < 1e-6 && c.duration > 5, `${n.name}: duration`);
+    assert.equal(c.fps || FPS, n.fps || FPS, `${n.name}: filmed at the clip's own frame rate`);
+    assert.ok(Math.abs(c.duration - c.frames / (c.fps || FPS)) < 1e-6 && c.duration > 5, `${n.name}: duration`);
     assert.ok(c.posterBytes < 160_000, `${n.name}: the poster shows at once (${c.posterBytes} bytes)`);
-    // a phone on mobile data: no clip above ~1 Mbps
-    assert.ok(c.bytes * 8 / c.duration < 1_000_000, `${n.name}: ${Math.round(c.bytes * 8 / c.duration / 1000)} kbps`);
+    // a phone on mobile data: no clip above ~1 Mbps; the 60 fps opening (fetched early, while the valley loads) ~1.4
+    const cap = (n.fps || FPS) > FPS ? 1_400_000 : 1_000_000;
+    assert.ok(c.bytes * 8 / c.duration < cap, `${n.name}: ${Math.round(c.bytes * 8 / c.duration / 1000)} kbps`);
   }
   assert.deepEqual(fs.readdirSync(DIR).sort(), [...expected].sort());
   assert.ok(total <= TOTAL_VIDEO_BYTES, `${(total / 1e6).toFixed(1)} MB of video > ${TOTAL_VIDEO_BYTES / 1e6} MB`);
@@ -73,9 +75,10 @@ test('video: every clip is an H.264 MP4 with its index in front (it starts befor
     const at = head.indexOf('avcC', 0, 'latin1');
     assert.ok(head.includes('avc1', 0, 'latin1') && at > 0, `${c.file}: H.264 (avc1) video`);
     assert.ok(!head.includes('mp4a', 0, 'latin1'), `${c.file}: no audio track`);
-    // avcC: version, profile, compatibility, level. Main (77) or High (100) at level 3.1 or lower plays on every phone.
-    const profile = head[at + 5], level = head[at + 7];
-    assert.ok([66, 77, 100].includes(profile) && level <= 31, `${c.file}: profile ${profile} level ${level}`);
+    // avcC: version, profile, compatibility, level. Main (77) or High (100) at level 3.1 or lower plays on every phone;
+    // 60 fps at 540x960 needs 3.2 (the game's canPlay asks the browser for avc1.640020, High at 3.2, before any clip)
+    const profile = head[at + 5], level = head[at + 7], top = (n.fps || FPS) > FPS ? 32 : 31;
+    assert.ok([66, 77, 100].includes(profile) && level <= top, `${c.file}: profile ${profile} level ${level}`);
     // the picture size in the track header matches the cut
     const tkhd = head.indexOf('tkhd', 0, 'latin1'), ver = head[tkhd + 4], wAt = tkhd + 4 + (ver === 1 ? 88 : 76);
     assert.equal(head.readUInt32BE(wAt) >>> 16, CUTS[n.cut].w, `${c.file}: width`);

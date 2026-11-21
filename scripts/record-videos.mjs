@@ -24,7 +24,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import path from 'path';
 import { TOURS, timeline, stopTime } from '../src/content/tour.js';
-import { CLIPS, CUTS, FPS, clipFile, TITLE_LOOP } from '../src/content/video.js';
+import { CLIPS, CUTS, FPS, fpsOf, clipFile, TITLE_LOOP } from '../src/content/video.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = Object.fromEntries(process.argv.slice(2).map(a => a.replace(/^--/, '').split('=')));
@@ -100,16 +100,19 @@ async function open(browser, clip, query) {
 }
 
 /** Advance the page by one video frame and return its picture (base64 JPEG). */
-async function frame(page) {
+async function frame(page, fps = FPS) {
   await page.evaluate(() => { window.__cap.want = true; window.__cap.out = null; });
-  await page.clock.runFor(1000 / FPS);
+  // whole milliseconds that add up exactly (60 fps: 17, 17, 16, ...)
+  const due = (page.clockAcc = (page.clockAcc || 0) + 1000 / fps), step = Math.round(due);
+  page.clockAcc = due - step;
+  await page.clock.runFor(step);
   const out = await page.evaluate(() => window.__cap.out);
   if (!out) throw new Error('no frame was rendered in this step');
   return Buffer.from(out.slice(out.indexOf(',') + 1), 'base64');
 }
 const run = (page, secs) => page.clock.runFor(secs * 1000);
 
-async function take(page, dir, count, each) {
+async function take(page, dir, count, each, fps = FPS) {
   fs.rmSync(dir, { recursive: true, force: true });
   fs.mkdirSync(dir, { recursive: true });
   for (let i = 0; i < count; i++) {
@@ -117,7 +120,7 @@ async function take(page, dir, count, each) {
     if (stop) return i;
     // a step that never comes back (a lost GPU context, a stuck page) must not hang the whole run
     let timer;
-    const pic = await Promise.race([frame(page), new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`frame ${i + 1} did not arrive within 90 s`)), 90000); })]);
+    const pic = await Promise.race([frame(page, fps),new Promise((_, rej) => { timer = setTimeout(() => rej(new Error(`frame ${i + 1} did not arrive within 90 s`)), 90000); })]);
     clearTimeout(timer);
     fs.writeFileSync(path.join(dir, `f${String(i + 1).padStart(5, '0')}.jpg`), pic);
     if (i % 300 === 299) log(`    ${i + 1} / ${count} frames`);
@@ -165,14 +168,14 @@ async function recordIntro(browser, clip, dir) {
   // the chapter card, then the arrival begins
   for (let i = 0; i < 600; i++) { await run(page, 0.1); if (await page.evaluate(() => window.__STARLINE__.director?.scenes?.active === 'arrival' && window.__STARLINE__.director.scenes.arrivalT !== undefined)) break; }
   await assertLook(page, clip);
-  const marks = {};
-  const count = await take(page, dir, 60 * FPS, async i => {
+  const marks = {}, fps = fpsOf(clip);
+  const count = await take(page, dir, 60 * fps, async i => {
     const s = await page.evaluate(() => { const sc = window.__STARLINE__.director.scenes; return { on: sc.active === 'arrival', marks: sc.arrivalMarks || {} }; });
     for (const [k, v] of Object.entries(s.marks)) marks[k] ??= +(v).toFixed(2);
-    return !s.on && i > 30;
-  });
+    return !s.on && i > fps;
+  }, fps);
   await ctx.close();
-  return { frames: count, duration: count / FPS, story: clip.story, lampStyle: clip.lampStyle, marks, poster: Math.round(4 * FPS) };
+  return { frames: count, duration: count / fps, ...(fps !== FPS ? { fps } : {}), story: clip.story, lampStyle: clip.lampStyle, marks, poster: Math.round(4 * fps) };
 }
 
 /** Record provenance from an asserted live state, so a future title-boot regression cannot silently produce flame cuts. */
@@ -306,7 +309,8 @@ function encode(clip, dir, meta) {
   const { w, h } = CUTS[clip.cut], tmp = path.join(WORK, `${clip.name}.mp4`), py = path.join(WORK, 'encode.py');
   fs.writeFileSync(py, BLENDER_PY);
   fs.rmSync(tmp, { force: true });
-  const r = spawnSync(BLENDER, ['-b', '--factory-startup', '--python', py, '--', dir, tmp, String(FPS), String(w), String(h), String(args.kbps || clip.kbps || CRF), String(FPS * 2)], { encoding: 'utf8', maxBuffer: 1 << 28 });
+  const fps = meta.fps || fpsOf(clip);
+  const r = spawnSync(BLENDER, ['-b', '--factory-startup', '--python', py, '--', dir, tmp, String(fps), String(w), String(h), String(args.kbps || clip.kbps || CRF), String(fps * 2)], { encoding: 'utf8', maxBuffer: 1 << 28 });
   if (!fs.existsSync(tmp)) throw new Error(`Blender did not write ${tmp}\n${(r.stdout || '').slice(-1500)}\n${r.stderr || ''}`);
   const out = faststart(fs.readFileSync(tmp));
   fs.writeFileSync(path.join(OUT, clipFile(clip.id, clip.cut)), out);

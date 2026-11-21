@@ -79,9 +79,15 @@ that the clips look out of date.
 
 ## Size
 
-Both orientations remain available, targeting 450 kbps for tours/intros and 400 for the title, below the 60 MB
+Both orientations remain available, targeting 450 kbps for tours and 400 for the title, below the 60 MB
 budget. No clip is downloaded unless it is played; one tour is about 4–5 MB. The budget is `TOTAL_VIDEO_BYTES` in
 `tests/asset-contracts.mjs`, separate from the model library's.
+
+**The arrival is filmed at 60 fps** (`fps: 60` in `src/content/video.js`; the recorder steps the clock 17/17/16 ms):
+at 30 the train crossing the screen juddered. It targets 880 kbps (the encoder lands near 1,000), 3.3 MB a cut,
+H.264 High at level 3.2. A phone fetches it as soon as New Game is chosen, while the valley loads
+(`prefetchArrival`), so its size costs no waiting. Measuring how it plays: `tests/arrival-browser.mjs` (built site,
+Edge) and the "opening:" line of Settings > Copy performance report (docs/OPENING-LAG-PLAN.md).
 
 ## Playback (`src/game/video.js`)
 

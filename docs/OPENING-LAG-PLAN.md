@@ -130,3 +130,19 @@ Choose by the report's reason:
 | Dropped video frames | 1 of 789 in the test | under 2 % on the phone |
 | Stalls over 100 ms during the scene | 0 (clip) / 1–113 (live) | 0 |
 | Worst gap at the hand-over | not measured | under 100 ms |
+
+## 6. Status (2026-11-21)
+
+| Task | State |
+|---|---|
+| T0 report | Done: "opening:" line + phone / saved tier / tropical trees in Settings > Copy performance report; `qa.arrival()` |
+| T1 never fall back by accident | Done: clip fetched when New Game is chosen; the service worker keeps that one download; start timeout 12 s with a "Loading the opening…" note |
+| T2 smoother clip | Done: intro clips at 60 fps, ~1,000 kbit/s, 3.3 MB each (level 3.2); video total 57.6 MB of 60. Not done: separate 30 fps files for Data Saver (the clip is fetched during the valley's 27 MB load anyway) |
+| T3 nothing under the clip | Done: platform drawn once behind the dark screen; `game.clipPlaying` skips all valley updates and drawing |
+| T4 clean hand-over | Done: dissolve after two frames under 50 ms (max 1.5 s) |
+| T5 phones on the live path | Waiting for the owner's report from a real phone |
+| T6 lock it in | Done: `tests/arrival-browser.mjs` |
+
+Measured on the built site, phone screen, Low tier (CPU 1× / 4×): the clip starts 316 / 607 ms after the screen goes
+dark, 0 draws under it, worst frame gap 33 / 67 ms, hand-over worst gap 17 / 33 ms, dropped video frames under 1 %,
+the clip's bytes downloaded once.

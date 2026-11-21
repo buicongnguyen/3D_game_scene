@@ -14,14 +14,18 @@ export const CUTS = {
   tall: { w: 540, h: 960 },
 };
 
-// kbps: the encoder's target bitrate for the clip (both cuts)
+// kbps: the encoder's target bitrate for the clip (both cuts); fps: frames a second when not FPS. The arrival is
+// filmed at 60: a train crossing the screen judders at 30 (docs/OPENING-LAG-PLAN.md T2), and it is the first thing
+// a new player sees. More frames need more bits to stay as sharp.
 export const CLIPS = [
   ...TOURS.map(t => ({ id: `tour-${t.id}`, kind: 'tour', tour: t.id, story: 'grandma', lampStyle: 'electric', kbps: 450 })),
-  { id: 'intro-grandma', kind: 'intro', story: 'grandma', lampStyle: 'electric', kbps: 450 },
-  { id: 'intro-classic', kind: 'intro', story: 'classic', lampStyle: 'flame', kbps: 450 },
+  { id: 'intro-grandma', kind: 'intro', story: 'grandma', lampStyle: 'electric', kbps: 880, fps: 60 },
+  { id: 'intro-classic', kind: 'intro', story: 'classic', lampStyle: 'flame', kbps: 880, fps: 60 },
   { id: 'title', kind: 'title', story: 'grandma', lampStyle: 'electric', kbps: 400 },
 ];
 
+/** Frames a second of a clip (a CLIPS entry or a manifest entry). */
+export const fpsOf = c => c?.fps || FPS;
 export const clipFile = (id, cut, ext = 'mp4') => `${id}-${cut}.${ext}`;
 /** The cut for a screen: portrait screens take the tall one. */
 export const cutFor = (w, h) => (h > w ? 'tall' : 'wide');
