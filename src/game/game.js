@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { Renderer, isMobile } from '../engine/renderer.js';
-import { getTropicalTrees } from '../world/tree-theme.js';
+import { getTropicalTrees as tropicalTreesOn } from '../world/tree-theme.js';
 import { Assets } from '../engine/assets.js';
 import { trimModels } from '../engine/trim.js';
 import { peopleSet } from '../engine/people.js';
@@ -172,7 +172,7 @@ export class Game {
       build: [...document.scripts].map(x => x.src.split('/').pop()).find(n => /^index-/.test(n)) || 'dev',
       ua: nav.userAgent, screen: innerWidth + 'x' + innerHeight, dpr: +(devicePixelRatio || 1).toFixed(2), cores: nav.hardwareConcurrency, memory: nav.deviceMemory,
       tier: r.qualityName, level: r.governor?.level ?? 0, scale: +r.scale.toFixed(2), pace: this.pacer?.pace || 0, slowMarked,
-      mobile: isMobile(), savedTier, tropical: getTropicalTrees(), arrival: this.arrivalReport,
+      mobile: isMobile(), savedTier, tropical: tropicalTreesOn(), arrival: this.arrivalReport,
       frames: this.ring?.summary(), calls: this.lastInfo?.calls, tris: this.lastInfo?.tris, geometries: info.memory.geometries, textures: info.memory.textures,
       heapMB: mem ? mem.usedJSHeapSize / 1048576 : undefined, heapLimitMB: mem ? mem.jsHeapSizeLimit / 1048576 : undefined,
       place: p ? '(' + Math.round(p.x) + ', ' + Math.round(p.z) + '), ' + (this.shownSeason || this.time.season) + ', ' + Math.floor(this.shownHour()) + ' h' + (this.zone ? ', zone ' + this.zone.id : '') : undefined,

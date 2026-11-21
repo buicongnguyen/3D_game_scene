@@ -85,6 +85,12 @@ body.touch #yardStop kbd{display:none}
  #yardHint{top:calc(112px + env(safe-area-inset-top,0px));font-size:13.5px;max-width:78vw;padding:6px 11px}
  #yardStop{top:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px));left:12px}#yardCam{top:auto;bottom:calc(250px + env(safe-area-inset-bottom,0px));left:12px}
  #yardPad{bottom:calc(30px + env(safe-area-inset-bottom,0px))}}
+/* an upright phone: the camera button joins the top-left column (stop square, then "How to play", ui/howto.js), out
+   of the left middle where the game is; the hint keeps to the middle, clear of that column */
+@media (orientation:portrait) and (max-width:560px){
+ #yardCam{top:calc(152px + env(safe-area-inset-top,0px));bottom:auto;left:calc(12px + env(safe-area-inset-left,0px));padding:8px 12px;font-size:13px}
+ #yardHint{max-width:calc(100vw - 150px)}
+ body:has(#howTo:not(.shut):not(.hidden)) #yardHint{left:auto;right:calc(10px + env(safe-area-inset-right,0px));transform:none;max-width:calc(100vw - 212px)}}
 body.touch.yard-pad #tAct,body.touch.yard-pad #tJump{display:none}
 #yardCard{position:fixed;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;background:rgba(10,14,30,.35)}
 #yardCard .box{width:min(420px,92vw);max-height:90vh;overflow:auto;padding:20px 22px 16px;border-radius:24px;background:#fff8ea;box-shadow:0 14px 40px rgba(0,0,0,.35);

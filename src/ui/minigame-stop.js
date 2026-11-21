@@ -39,14 +39,15 @@ const CSS = `
 #minigameStop.hidden{display:none}#minigameStop:focus-visible{outline:3px solid #f28b35;outline-offset:3px}#minigameStop:hover{background:#fff}
 #minigameStop .stop-icon{width:12px;height:12px;background:currentColor;border-radius:2px}
 body.touch #minigameStop{left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(196px + env(safe-area-inset-bottom,0px));font-size:15px}
-/* an upright phone: above the teacher's hint bubble (which sits 150 px up), not on top of its first words */
-@media (orientation:portrait){body.touch.trick-round:not(.yard-round) #minigameStop{bottom:calc(232px + env(safe-area-inset-bottom,0px))}}
 body #minigameStop[data-kind="workshop"]{top:calc(112px + env(safe-area-inset-top,0px));bottom:auto}
 body #minigameStop[data-kind="sky"]{top:calc(16px + env(safe-area-inset-top,0px));bottom:auto}
-/* archery on an upright phone: the camera frames Mika low on the left, right where the button sat (on a 360x640 screen it
-   hid her head): a stop square in the free top-left corner instead (its label stays for screen readers) */
-@media (orientation:portrait){body.touch.trick-round.arch-round #minigameStop{top:calc(14px + env(safe-area-inset-top,0px));bottom:auto;padding:0;width:48px;justify-content:center}
-body.touch.arch-round #minigameStop>span:not(.stop-icon){display:none}body.touch.arch-round #minigameStop .stop-icon{width:16px;height:16px}}
+/* an upright phone: the left middle is where the game happens (Mika, the hens, the targets): the way out is a small stop
+   square in the free top-left corner, above the "How to play" button (ui/howto.js) and the yard's camera button
+   (game/yard/say.js) in one narrow column. Its label stays for screen readers. */
+@media (orientation:portrait) and (max-width:560px){
+body.touch #minigameStop,body.touch #minigameStop[data-kind]{top:calc(14px + env(safe-area-inset-top,0px));bottom:auto;left:calc(12px + env(safe-area-inset-left,0px));padding:0;width:48px;justify-content:center}
+body.touch #minigameStop>span:not(.stop-icon){display:none}body.touch #minigameStop .stop-icon{width:16px;height:16px}
+body.touch.minigame-stoppable #objective{visibility:hidden}}
 body.minigame-stoppable #yardStop,body.minigame-stoppable #archLeave,body.minigame-stoppable #fishLeave,
 body.minigame-stoppable #wsLeave,body.minigame-stoppable #swimLesson .leave,body.minigame-stoppable #skyGaze .down{display:none}
 `;

@@ -244,6 +244,18 @@ const CSS = `
  #howTo .hd{padding:4px 8px 2px 6px}
  #howTo ol{padding:0 6px 6px}
 }
+/* an upright phone: the left middle is where the game happens, so the card (and the "?" it folds to) lives top-left,
+   under the stop square (ui/minigame-stop.js) and the egg counter's row, narrower and over the yard's camera button */
+@media (orientation:portrait) and (max-width:560px){
+ #howTo{top:calc(98px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));width:176px;z-index:18;transform-origin:left top}
+ #howTo .hd{padding:5px 8px 3px 6px}
+ #howTo .hd .q{width:26px;height:26px;line-height:26px;font-size:17px}
+ #howTo .hd b{font-size:15px}
+ #howTo li{grid-template-columns:30px 1fr;padding:4px 5px;margin-top:3px}
+ #howTo li svg{width:30px;height:30px}
+ #howTo li p{font-size:12px;line-height:1.15}
+ #howTo ol{padding:0 6px 6px}
+}
 #howTo svg *{transform-box:fill-box;transform-origin:center}
 #howTo .hp-a{animation:hpStepA 1.2s steps(1) infinite}
 #howTo .hp-b{animation:hpStepA 1.2s steps(1) -.6s infinite}
