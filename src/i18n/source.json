@@ -17946,6 +17946,12 @@
   ]
  },
  {
+  "s": "Go inside: {name}",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Go inside",
   "ctx": [
    "UI (src/game/director.js)"

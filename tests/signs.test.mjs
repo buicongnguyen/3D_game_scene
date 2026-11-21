@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import { SIGNS, BOARD, signPlace, signFor, boardOptions } from '../src/content/signs.js';
+import { SIGNS, BOARD, WALL_SPOTS, boardSize, signPlace, signFor, boardOptions } from '../src/content/signs.js';
 import { BUILDINGS, PADDIES, PATHS } from '../src/world/layout.js';
 import { FOOTPRINT } from '../src/world/structures.js';
 import { INTERIORS, DOOR_SPOTS } from '../src/world/interiors.js';
@@ -18,9 +18,10 @@ const place = s => { const b = s.building ? building(s.building) : null; return 
 /** The board's centre and the feet of its posts. */
 function feet(s) {
   const p = place(s), [w] = BOARD[s.kind], ax = Math.cos(p.yaw), az = -Math.sin(p.yaw);
-  const offs = s.mount === 'hang' ? [w / 2 + 0.36] : [-(w / 2 + 0.1), w / 2 + 0.1];
+  const offs = [-(w / 2 + 0.1), w / 2 + 0.1];
   return [[p.x, p.z], ...offs.map(o => [p.x + ax * o, p.z + az * o])];
 }
+const onWall = s => s.mount === 'plate' || s.mount === 'kanban';
 function segDist(ax, az, bx, bz, px, pz) {
   const vx = bx - ax, vz = bz - az, t = Math.max(0, Math.min(1, ((px - ax) * vx + (pz - az) * vz) / (vx * vx + vz * vz || 1e-9)));
   return Math.hypot(ax + vx * t - px, az + vz * t - pz);
@@ -31,7 +32,8 @@ test('signs: ids are unique, every board has a kind, a mount and a name, and the
   assert.ok(SIGNS.length <= 35, 'the board texture has 35 face cells');
   for (const s of SIGNS) {
     assert.ok(BOARD[s.kind], `${s.id}: kind`);
-    assert.ok(['stand', 'hang'].includes(s.mount), `${s.id}: mount`);
+    assert.ok(['stand', 'plate', 'kanban'].includes(s.mount), `${s.id}: mount`);
+    if (onWall(s)) assert.ok(WALL_SPOTS[building(s.building)?.model]?.[s.mount], `${s.id}: a measured ${s.mount} spot on ${building(s.building)?.model}`);
     assert.ok(s.building ? building(s.building) : s.at, `${s.id}: a building or a place`);
     for (const story of ['classic', 'grandma']) {
       const v = signFor(s, story);
@@ -75,8 +77,24 @@ test('signs: every board text is translated into Vietnamese, Korean and Japanese
   }
 });
 
+test('signs: houses, shops and workplaces carry their names on their own walls, out of the player\'s way', () => {
+  for (const s of SIGNS.filter(q => q.building && building(q.building) && WALL_SPOTS[building(q.building).model])) {
+    assert.ok(onWall(s), `${s.id}: a board beside the path again (it should be on the wall of ${s.building})`);
+    const p = place(s), b = building(s.building), [w, h] = boardSize(s, b.model);
+    assert.ok(p.wall && p.top > h / 2 + 1.2, `${s.id}: at ${p.top} m, over head height`);
+    // flat on the building's front, a few centimetres in front of the measured wall spot
+    const r = b.rot * Math.PI / 180, dx = p.x - b.x, dz = p.z - b.z;
+    const lx = dx * Math.cos(r) - dz * Math.sin(r), lz = dx * Math.sin(r) + dz * Math.cos(r);
+    const spot = WALL_SPOTS[b.model][s.mount];
+    assert.ok(Math.abs(lx - spot.x) < 1e-6 && Math.abs(Math.abs(lz) - Math.abs(spot.z) - 0.03) < 1e-6, `${s.id}: on the measured spot (${lx.toFixed(2)}, ${lz.toFixed(2)})`);
+    assert.ok(w <= 1.4 && h <= 0.5, `${s.id}: small (${w} x ${h} m)`);
+  }
+  // the stands that remain are small
+  for (const s of SIGNS.filter(q => q.mount === 'stand')) assert.ok(BOARD[s.kind][0] <= 1.8, `${s.id}: stand board ${BOARD[s.kind][0]} m wide`);
+});
+
 test('signs: boards stand on dry open ground, clear of walls, doors, roads, meeting spots and trick places', () => {
-  for (const s of SIGNS) {
+  for (const s of SIGNS.filter(q => !onWall(q))) {
     const pts = feet(s);
     for (const [x, z] of pts) {
       if (s.top === undefined) assert.deepEqual(placeProblems(x, z), [], `${s.id} at ${x.toFixed(1)}, ${z.toFixed(1)}`);

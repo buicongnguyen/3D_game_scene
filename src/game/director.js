@@ -3,6 +3,7 @@ import { Quest } from './quest.js';
 import { storyId } from './stories/index.js';
 import { DIALOGUE, ITEMS, STEPS, STEP_INDEX, FISH, CHAPTERS, CAST, FRIENDS, KEEPSAKES, TREASURES, SKY_LETTERS, GIFTS, HUNT, huntProgress } from './story.js';
 import { tx, N_ } from '../i18n/i18n.js';
+import { SIGNS, signFor } from '../content/signs.js';
 import { NPC } from '../actors/npc.js';
 import { Tamo } from '../actors/tamo.js';
 import { Wildlife } from '../actors/animals.js';
@@ -401,7 +402,10 @@ export class Director {
     if (!I) return;
     this.spawnResidents();
     for (const d of I.doors) {
-      this.interact(`door:${d.id}`, d.outside, N_('Go inside'), () => !I.active && !I.busy && !this.game.kite?.active, () => this.enterHome(d.id), 1.8, null, 0.5);
+      // the prompt names the house (its board is a small plate on the wall now: content/signs.js)
+      const sign = SIGNS.find(s => s.building === d.building) || SIGNS.find(s => s.near === d.building);
+      const goIn = sign ? () => tx('Go inside: {name}', { name: tx(signFor(sign, storyId()).text) }) : N_('Go inside');
+      this.interact(`door:${d.id}`, d.outside, goIn,() => !I.active && !I.busy && !this.game.kite?.active, () => this.enterHome(d.id), 1.8, null, 0.5);
       this.interact(`exit:${d.id}`, d.exit, N_('Go outside'), () => I.active === d.id && !I.busy, () => this.leaveHome(), 1.8, null, 0.5);
     }
     for (const it of I.items) {

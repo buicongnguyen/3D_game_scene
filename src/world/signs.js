@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { patchMaterial } from '../engine/effects.js';
 import { tx, getLang, onLangChange } from '../i18n/i18n.js';
 import { storyId } from '../game/stories/index.js';
-import { SIGNS, BOARD, signPlace, signFor, boardOptions } from '../content/signs.js';
+import { SIGNS, boardSize, signPlace, signFor, boardOptions } from '../content/signs.js';
 import { DOOR_SPOTS } from './interiors.js';
 
 /*
@@ -140,6 +140,13 @@ function box(w, h, d, x, y, z, swatch, glow = 0.15) {
   return b;
 }
 
+/** The front face only (a board flat on a wall: its back is against the plaster). */
+function frontFace(w, h, cell, glow) {
+  const [front, back] = faces(w, h, 0, cell, glow);
+  back.dispose();
+  return front;
+}
+
 /** The two faces of a board (front looks along +Z, the back is the same text for people on the other side). */
 function faces(w, h, y, cell, glow) {
   const col = cell % COLS, row = Math.floor(cell / COLS);
@@ -155,24 +162,23 @@ function faces(w, h, y, cell, glow) {
   });
 }
 
-/** One board's geometry in its own space: stands on y = 0 at the origin, front face looking along +Z. */
-function boardGeometry(sign, cell) {
-  const [w, h] = BOARD[sign.kind] || BOARD.home;
+/**
+ * One board's geometry in its own space, front face looking along +Z. A stand stands on y = 0 at the origin; a wall
+ * plate or shop sign is centred on the origin, its back against the wall (z = 0), and shows its front face only.
+ */
+function boardGeometry(sign, cell, model) {
+  const [w, h] = boardSize(sign, model);
   const glow = sign.kind === 'shop' ? 1.7 : 1;
   const parts = [];
-  if (sign.mount === 'hang') {
-    // a tall post on the +X side, an arm over the path side, the board hanging from two straps, a little shop lantern
-    const top = 3.12, cy = top - 0.2 - h / 2, px = w / 2 + 0.36;
-    parts.push(box(0.15, top + 0.5, 0.15, px, (top + 0.5) / 2 - 0.3, 0, 'wood'));
-    parts.push(box(0.22, 0.07, 0.22, px, top + 0.23, 0, 'dark'));
-    parts.push(box(w + 0.9, 0.11, 0.11, 0.05, top, 0, 'wood'));
-    parts.push(box(0.09, 0.62, 0.09, px - 0.3, top - 0.34, 0, 'wood'));
-    for (const sx of [-1, 1]) parts.push(box(0.035, 0.2, 0.035, sx * w * 0.36, top - 0.13, 0, 'dark'));
-    parts.push(box(w + 0.1, h + 0.1, 0.06, 0, cy, 0, 'dark'));
-    parts.push(...faces(w, h, cy, cell, glow));
-    parts.push(box(0.03, 0.16, 0.03, -w / 2 - 0.26, top - 0.12, 0, 'dark'));
-    parts.push(box(0.2, 0.26, 0.2, -w / 2 - 0.26, top - 0.32, 0, 'lantern', 5));
-    parts.push(box(0.24, 0.04, 0.24, -w / 2 - 0.26, top - 0.18, 0, 'dark'));
+  if (sign.mount === 'plate') {
+    // a small wooden nameplate (表札): a dark backing a little larger than the face
+    parts.push(box(w + 0.06, h + 0.06, 0.04, 0, 0, 0.012, 'dark'));
+    parts.push(frontFace(w, h, cell, glow));
+  } else if (sign.mount === 'kanban') {
+    // a shop sign (看板) flat on the wall: a dark frame and a little cap of light wood over it
+    parts.push(box(w + 0.1, h + 0.1, 0.05, 0, 0, 0.01, 'dark'));
+    parts.push(box(w + 0.22, 0.05, 0.1, 0, h / 2 + 0.08, 0.03, 'light'));
+    parts.push(frontFace(w, h, cell, glow));
   } else {
     // two posts, the board between them, a small plank roof against the rain
     const cy = 1.42, topY = cy + h / 2;
@@ -234,7 +240,7 @@ export class Signs {
       if (sign.building && !rec) return;
       const p = signPlace(sign, rec, rec?.fp, rec ? DOOR_SPOTS[rec.name] : null);
       const y = p.top !== null && rec ? rec.y + p.top : world.heightAt(p.x, p.z);
-      const g = boardGeometry(sign, cell);
+      const g = boardGeometry(sign, cell, rec?.name);
       g.rotateY(p.yaw).translate(p.x, y, p.z);
       placed.push({ sign, x: p.x, y, z: p.z, yaw: p.yaw, g });
     });
