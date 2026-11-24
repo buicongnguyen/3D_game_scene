@@ -242,7 +242,7 @@ const LEVELS = {
     const S = g.structures;
     const W = { kw1: [3.2, 3.7], kw2: [3.5, 3.4], kw3: [3.2, 3.7], kw4: [3.7, 3.4], kw8: [3.5, 3.4], kw5: [3.2, 3.7], kw6: [3.7, 3.4], kw7: [3.2, 3.7], otaHouse: [3.7, 3.4] };
     const A = (id, side = 0) => facade(S, id, W[id][0] + 0.5, W[id][1], side);
-    const cross = [['kw1', 'kw5', 1.5, 2.5], ['kw1', 'kw5', -2.2, -1], ['kw3', 'kw6', 2.2, 3.4], ['kw3', 'kw6', -1.8, -1.2], ['kw8', 'kw7', 0.6, -2.4], ['kw8', 'kw7', -2.2, 0.8]];
+    const cross = [['kw1', 'kw5', 3, -3], ['kw1', 'kw5', -3, 3], ['kw3', 'kw6', 2.2, 3.4], ['kw3', 'kw6', -1.8, -1.2], ['kw8', 'kw7', 0.6, -2.4], ['kw8', 'kw7', -2.2, 0.8]];
     for (const [w, e, sw, se] of cross) { const a = A(w, sw), b = A(e, se); if (a && b) k.string(a, b, { sag: 1.3 }); }
     // zig-zags between the gaps (house corner to house corner diagonally across the street)
     for (const [w, e, sw, se] of [['kw2', 'kw5', 2.2, -2.5], ['kw2', 'kw6', -2.2, 3.2], ['kw4', 'kw6', 3.8, -2.5], ['kw4', 'kw7', -3.8, 2.5]]) {
@@ -285,7 +285,7 @@ const LEVELS = {
       const ends = [
         [facade(S, 'tk1', 4.2, 4.6), 1, 1], [facade(S, 'tk3', 4.2, 4.6), 1, -1], [facade(S, 'tk2', 3.9, 4.0), -1, -1],
         [facade(S, 'bakery', 4.1, 4.6), -1, 1], [facade(S, 'tk4', 3.9, 4.0), 1, 1], [facade(S, 'tk4', 3.9, 4.0, 2.2), -1, 1],
-        [v3(108, k.ground(108, 0) + 3.3, 0), -1, 1], [v3(122, k.ground(122, 12) + 3.3, 12), 1, 1],
+        [v3(108, k.ground(108, 0) + 3.3, 0), -1, 1], [v3(122, k.ground(122, 16) + 3.3, 16), 1, 1],
       ];
       for (const [e, sx, sz] of ends) if (e) k.string(corner(sx, sz), e, { sag: 1.6, step: 1.45 });
       // bunting round the gallery

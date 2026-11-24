@@ -1,5 +1,6 @@
 import { mergeSkinnedParts } from '../engine/skin-merge.js';
 import { Silhouette } from './silhouette.js';
+import { HUMAN_GAIT } from './gait.js';
 import * as THREE from 'three';
 import { Animator } from './animator.js';
 import { WORLD, WATER_Y } from '../world/layout.js';
@@ -10,8 +11,6 @@ export const MOVE = {
   radius: 0.32, height: 1.45, step: 0.46, gravity: 26, jumpV: 8.4,
   walk: 1.6, run: 4.4, sprint: 6.8, accel: 16, airAccel: 5, turn: 11, maxSlope: 47,
 };
-// the ground speeds her Walk and Run clips are made for at 1x (art/blender/anims.py WALK_SPEED, RUN_SPEED)
-const WALK_CLIP = 1.6, RUN_CLIP = 4.2;
 
 /** The speed leap, a little hack: tap jump quickly while running forward. 2 taps x4, 3 taps x8, 4 taps x16. */
 export const LEAP = { window: 0.42, hold: 1.4, max: 4 };
@@ -195,6 +194,7 @@ export class Player {
     this.vel.z += (dz * target - this.vel.z) * k;
 
     // horizontal move with steep-slope blocking, in short steps so a fast leap never tunnels through a wall
+    const startX = this.pos.x, startZ = this.pos.z;
     const sub = Math.max(1, Math.ceil(Math.hypot(this.vel.x, this.vel.z) * dt / 0.35));
     for (let i = 0; i < sub; i++) {
       const sdt = dt / sub;
@@ -279,7 +279,8 @@ export class Player {
 
     this.root.position.copy(this.pos);
     this.root.rotation.y = this.facing;
-    this.animate(dt, hs);
+    const groundSpeed = dt > 0 ? Math.hypot(this.pos.x - startX, this.pos.z - startZ) / dt : 0;
+    this.animate(dt, groundSpeed);
   }
 
   // ------------------------------------------------------------------ water
@@ -403,12 +404,10 @@ export class Player {
       if (!this.grounded && this.airTime > 0.22 && this.vel.y < 0) a.play('Fall', { fade: 0.2 });
       else if (this.grounded) {
         if (this.aiming) a.play('Aim', { fade: 0.15 });
-        // speed-true: each clip plays at her ground speed over the speed it was made for (art/blender/anims.py: Walk
-        // 1.6 m/s, Run 4.2 m/s), so her feet stay planted. (A floor of 0.6x on the walk and 0.85x on the run made
-        // the legs outrun the body when starting, stopping or just past the switch to running: she slid.)
+        // Pace the feet from the distance the collision solver actually allowed.
         else if (hs < 0.12) a.play('Idle', { fade: 0.25 });
-        else if (hs < 2.7) a.play('Walk', { speed: hs / WALK_CLIP, fade: 0.2 });
-        else a.play('Run', { speed: Math.min(1.8, hs / RUN_CLIP), fade: 0.18 });   // (a speed leap may outrun even 1.8x)
+        else if (hs < 2.7) a.play('Walk', { speed: hs / HUMAN_GAIT.mika.walk, fade: 0.2 });
+        else a.play('Run', { speed: hs / HUMAN_GAIT.mika.run, fade: 0.18 });
       }
     }
     a.update(dt);

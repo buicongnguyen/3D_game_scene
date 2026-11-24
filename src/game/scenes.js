@@ -714,11 +714,12 @@ export class Scenes {
     mid.y = front.y;
     const cam = mid.clone().addScaledVector(fwd, 5.6).add(V(0, 2.2, 0));
     await this.shot(cam, front.clone().add(V(0, 1.3, 0)), 1.6, 200);
-    await d.sayNow(null, DIALOGUE.c4_photo.slice(0, 5));
+    const photoBreak = storyId() === 'grandma' ? 4 : 5;
+    await d.sayNow(null, DIALOGUE.c4_photo.slice(0, photoBreak));
     stop();
     for (const n of party) { n.setIdle('Idle'); n.lookAt(cam.x, cam.z); }
     g.player.facing = Math.atan2(fwd.x, fwd.z);
-    await d.sayNow(null, DIALOGUE.c4_photo.slice(5));
+    await d.sayNow(null, DIALOGUE.c4_photo.slice(photoBreak));
     await this.groupPhoto('c4', party, cam.clone().add(V(0, -0.3, 0)), mid.clone().add(V(0, 1.25, 0)).addScaledVector(fwd, -1.4), { tamo: false });
     C?.sparkleBurst?.(front.clone().add(V(0, 2.5, 0)));
     const stop2 = this.partyLoop(party);

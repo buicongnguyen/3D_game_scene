@@ -38,6 +38,7 @@ export const GUIDE_CSS = `
  #archHelp .btns{margin-top:10px}
 }
 #archCue{position:absolute;left:50%;top:50%;transform:translate(-50%,0);margin-top:44px;padding:5px 14px;border-radius:16px;background:rgba(255,247,232,.95);box-shadow:0 4px 14px rgba(40,20,0,.28);font:600 18px Fredoka,Nunito,sans-serif;color:#c2541c;white-space:nowrap;pointer-events:none;zoom:var(--ui-scale,1);opacity:0;transition:opacity .2s}
+body.touch #archCue{top:auto!important;left:auto!important;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(146px + env(safe-area-inset-bottom,0px));transform:none;margin:0;max-width:50vw;white-space:normal;font-size:14px}
 #archCue.on{opacity:1}
 #archCue.go{color:#2f8a2a}
 #archCue kbd{margin:0 3px;font-size:15px}
@@ -67,7 +68,8 @@ export const GUIDE_CSS = `
 @media (max-width:620px){#archNote{bottom:calc(150px + env(safe-area-inset-bottom,0px));max-width:88vw;font-size:16px}}
 @media (max-height:500px) and (min-width:621px){#archNote{left:calc(10px + env(safe-area-inset-left,0px));top:calc(152px + env(safe-area-inset-top,0px));bottom:auto;transform:none;max-width:236px;font-size:15px;padding:6px 12px;text-align:left}}
 #archHelpBtn{position:absolute;left:calc(10px + env(safe-area-inset-left,0px));top:calc(106px + env(safe-area-inset-top,0px));width:40px;height:40px;border-radius:50%;padding:0;background:rgba(90,58,34,.82);font:700 22px/40px Fredoka,Nunito,sans-serif;text-align:center;zoom:var(--ui-scale,1)}
-@media (max-width:520px){#archHelpBtn{top:calc(112px + env(safe-area-inset-top,0px));left:calc(90px + env(safe-area-inset-left,0px))}}
+@media (orientation:portrait) and (max-width:560px){#archHelpBtn{top:calc(66px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));width:44px;height:44px;zoom:1}}
+@media (orientation:landscape) and (max-width:520px){#archHelpBtn{top:calc(112px + env(safe-area-inset-top,0px));left:calc(90px + env(safe-area-inset-left,0px))}}
 `;
 
 // ------------------------------------------------------------------------------------------------ words

@@ -455,6 +455,27 @@ export class UI {
     t.className = 'toast';
     t.innerHTML = `${icon ? `<img alt="" src="${this.icon(icon)}" onerror="this.remove()">` : ''}<span></span>`;
     t.querySelector('span').textContent = text;
+    const host = $('toasts');
+    if (this.touch && document.body.classList.contains('minigame-stoppable') &&
+        matchMedia('(max-width: 600px), (max-height: 500px)').matches) {
+      this.toastQueue ??= [];
+      if (this.toastQueue.some(pending => pending.textContent === text)) return;
+      this.toastQueue.push(t);
+      if (this.toastQueue.length === 1) {
+        const showNext = () => {
+          const next = this.toastQueue[0];
+          if (!next) return;
+          host.appendChild(next);
+          setTimeout(() => {
+            next.remove();
+            this.toastQueue.shift();
+            showNext();
+          }, 3300);
+        };
+        showNext();
+      }
+      return;
+    }
     $('toasts').appendChild(t);
     setTimeout(() => t.remove(), 3300);
     while ($('toasts').children.length > 4) $('toasts').firstChild.remove();

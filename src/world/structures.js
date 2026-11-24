@@ -472,7 +472,7 @@ export class Structures {
       ['street-lamp', -47.5, 40, 90], ['street-lamp', -47.5, 5, 90], ['street-lamp', -42.5, -20, -90], ['street-lamp', -84, 94, 40],
       ['bench', -50, 26, 90], ['postbox', -49.5, 24, 90], ['well', -40, 22, 0], ['market-stall', -49, -24, 90], ['market-stall', -41, 40, -90],
       ['barrel', -27, -38, 0], ['barrel', -26, -39.2, 0], ['sacks', -24.5, -38.5, 30], ['cart', -30, -48, 70], ['noren-lantern', -52, 33, 0],
-      ['street-lamp', 108, 0, 0], ['street-lamp', 122, 12, 180], ['bench', 112, 12, 180], ['bench', 118, 12, 180], ['flowerpot', 103, 8, 0],
+      ['street-lamp', 108, 0, 0], ['street-lamp', 122, 16, 180], ['bench', 112, 12, 180], ['bench', 118, 12, 180], ['flowerpot', 103, 8, 0],
       ['flowerpot', 103, 20, 0], ['festival-stall', 108, 20, 180], ['haybale', 140, -48, 20], ['haybale', 142, -46, 50], ['signpost', 26, 25, 90],
       ['signpost', -44, 64, 0], ['laundry-line', -60, 10, 90], ['bench', -92, 118.5, 0], ['bench', -104, 118.5, 0], ['street-lamp', -110, 118, 0],
       ['street-lamp', 140, 69, 0], ['bench', 144, 70, -120], ['stone-lantern', 58.5, -118, 0], ['stone-lantern', 65.5, -118, 0],

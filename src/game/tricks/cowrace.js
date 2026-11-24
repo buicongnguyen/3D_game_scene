@@ -101,6 +101,10 @@ body.cow-race #inventory{visibility:hidden}
  #cowRace .chip{padding:0 6px 0 4px;gap:3px;font-size:10.5px}#cowRace .chip .bar{width:26px}
  #cowRace .helpbtn{width:40px;height:40px;line-height:40px}
  #cowRace .say{top:calc(190px + env(safe-area-inset-top,0px))}#cowRace .beat{left:34%}}
+@media (orientation:portrait) and (max-width:560px){
+ #cowRace .strip{left:calc(76px + env(safe-area-inset-left,0px));width:calc(100% - 208px - env(safe-area-inset-left,0px) - env(safe-area-inset-right,0px))}
+ #cowRace .helpbtn{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));top:calc(66px + env(safe-area-inset-top,0px));width:44px;height:44px}
+}
 `;
 
 // ---------------------------------------------------------------------------------------------------------- geometry
@@ -758,7 +762,8 @@ export default {
       let lastBeatN = -1, mudShown = false, tiredShown = false, said = 0, lineAt = 0, popLeft = 0, finishedMe = false, lastPlace = 0, ribbonT = 0, hintLevel = 0;
       let taps = 0, goodRow = 0, ghostEnd = -99, ghostUntil = -1, ghostOn = false, puddleSaid = false, surgeSaid = false;
       const B = race.balance, U = race.course.bumps;    // a bareback heat: left / right leans the rider (the cows keep their lanes); the ridges
-      const practice = practiceLap;                     // (the first heat of a first try: a word for every tap, the teacher's tips)      el.sayLeft = Math.min(el.sayLeft || 0, 0.6);
+      const practice = practiceLap;                     // (the first heat of a first try: a word for every tap, the teacher's tips)
+      el.sayLeft = Math.min(el.sayLeft || 0, 0.6);
       const kidSay = [N_('Come on, cow! Come ON!'), N_('Slow and steady, Moo-moo!'), N_('Look at her go!'), N_('Mud ahead! Mind your socks!'), N_('Yeah, Mika! Yeah!')];
       const TONE = { good: '#bff5c2', ok: '#ffe9a0', bad: '#ffb3a8' };
       const pop = (text, color, life = 0.5) => { el.pop.textContent = text; el.pop.style.color = color || '#fff'; el.pop.style.transition = 'none'; el.pop.style.opacity = '1'; el.pop.style.transform = 'translateX(-50%) translateY(0)'; popLeft = life; };

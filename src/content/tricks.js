@@ -368,7 +368,7 @@ export function trickOpen(t, { season, hour, frozen = true, raining = false }) {
  */
 export function recordRound(prev, t, score, level = 'normal') {
   const s = starsFor(score, levelSpec(t, level).stars);
-  const rec = { learned: true, best: 0, stars: 0, plays: 0, ...(prev || {}) };
+  const rec = { best: 0, stars: 0, plays: 0, ...(prev || {}), learned: true };
   const L = recordLevel(prev, level, score, s);
   rec.best = Math.max(rec.best, score);
   rec.stars = Math.max(rec.stars, s);

@@ -9,6 +9,7 @@
 // the find costs at most two draws; ?stamps=off fetches nothing and keeps the old objective line.
 import { chromium } from 'playwright';
 import fs from 'node:fs';
+import { drawCard, playCandidates } from '../src/game/stamps-rules.js';
 import path from 'node:path';
 
 const url = process.env.GAME_URL || 'http://127.0.0.1:5932/';
@@ -95,12 +96,13 @@ try {
   await boot();
 
   // ---------------------------------------------------------------- the card
-  const first = await page.evaluate(async day => {
-    const R = await import('/src/game/stamps-rules.js'), C = await import('/src/content/stamps.js');
-    const d = window.__STARLINE__.director, plays = R.playCandidates(d.minigameMenu.catalogue);
-    return { want: R.drawCard(day, C.TABLES, d.q.state, plays).map(t => [t.k, t.id, t.spot ?? null]), state: window.__STARLINE_QA__.stamps.state(), tab: d.ui._tab, obj: document.getElementById('objText').textContent };
-  }, DAY);
-  check(first.state.day === DAY && JSON.stringify(first.state.tasks.map(t => [t.k, t.id, t.spot ?? null])) === JSON.stringify(first.want), `the card is drawCard's for ${DAY} (${JSON.stringify(first.state.tasks)})`);
+  const first = await page.evaluate(() => {
+    const d = window.__STARLINE__.director;
+    return { catalogue: d.minigameMenu.catalogue.map(({ id, kind }) => ({ id, kind })), state: window.__STARLINE_QA__.stamps.state(),
+      tab: d.ui._tab, obj: document.getElementById('objText').textContent };
+  });
+  const expected = drawCard(DAY, undefined, null, playCandidates(first.catalogue)).map(t => [t.k, t.id, t.spot ?? null]);
+  check(first.state.day === DAY && JSON.stringify(first.state.tasks.map(t => [t.k, t.id, t.spot ?? null])) === JSON.stringify(expected), `the card is drawCard's for ${DAY} (${JSON.stringify(first.state.tasks)})`);
   check(/^Stamp card 0\/3: Take .+ to .+/.test(first.obj), `the objective reads the card ("${first.obj}")`);
   check(first.tab === 'folk', `the next journal opens on Neighbours (${first.tab})`);
   await page.waitForFunction(() => [...document.querySelectorAll('#toasts .toast')].some(t => /stamp card came in the post/.test(t.textContent)), null, { timeout: 8000 }).then(() => check(true, 'the new-card toast shows'), () => check(false, 'the new-card toast shows'));
@@ -141,7 +143,10 @@ try {
   await settle();
 
   // ---------------------------------------------------------------- the Neighbours tab: four languages, upright and sideways
-  const setLang = l => page.evaluate(async l => { const m = await import('/src/i18n/i18n.js'); await m.setLang(l); }, l);
+  const setLang = async lang => {
+    await page.locator('#optLang').selectOption(lang, { force: true });
+    await page.waitForFunction(l => document.documentElement.lang.split('-')[0] === l, lang);
+  };
   await page.evaluate(() => window.__STARLINE__.ui.openJournal());
   await page.waitForTimeout(400);
   for (const [w, h] of [[390, 844], [844, 390]]) {

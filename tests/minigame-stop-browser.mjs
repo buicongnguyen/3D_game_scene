@@ -84,6 +84,20 @@ try {
       const before = await page.evaluate(read);
       const layout = await page.locator('#minigameStop').evaluate(b => { const r = b.getBoundingClientRect(); return { label: b.getAttribute('aria-label'), x: r.x, y: r.y, right: r.right, bottom: r.bottom, w: r.width, h: r.height, topmost: document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)?.closest('#minigameStop') === b, vw: innerWidth, vh: innerHeight }; });
       assert(layout.label && layout.w >= 44 && layout.h >= 44 && layout.x >= 0 && layout.y >= 0 && layout.right <= layout.vw && layout.bottom <= layout.vh && layout.topmost, `${id}: visible accessible Stop target ${JSON.stringify(layout)}`);
+      if (phone) {
+        const selector = { 'trick:swimming': '#swimLesson .help', 'trick:archery': '#archHelpBtn',
+          'yard:oanquan': '#oanHelpBtn', 'trick:cowrace': '#cowRace .helpbtn' }[id];
+        const help = page.locator(selector);
+        const box = await help.boundingBox();
+        assert(box && Math.abs(box.x - layout.x) < 2 && box.y >= layout.bottom && box.y < layout.bottom + 14,
+          `${id}: Help must sit below Stop (${JSON.stringify(box)})`);
+        if (id === 'trick:swimming') {
+          await help.tap();
+          assert(await page.locator('#swimLesson .instruction').isHidden());
+          await help.tap();
+          assert(await page.locator('#swimLesson .instruction').isVisible());
+        }
+      }
       await page.screenshot({ path: `${OUT}/${device}-${id.replace(':', '-')}-active.png` });
       if (id === 'yard:oanquan') {
         await hit('#oanHelpBtn'); await page.waitForSelector('#minigameStop', { state: 'hidden' });

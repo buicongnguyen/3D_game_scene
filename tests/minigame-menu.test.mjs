@@ -149,3 +149,38 @@ test('borrowed story mini games restore the room before player position and pres
     if(originalRoom)assert.ok(calls.findIndex(c=>c[0]==='enter')<calls.length-1,'enter precedes exact saved placement');
   }
 });
+
+test('opening the picker twice keeps the original pause and selection', async () => {
+  let resolve;
+  const g = { paused: false, togglePause(on) { this.paused = on; } };
+  const picker = { open() { return new Promise(r => { this.resolve = resolve = r; }); } };
+  const menu = Object.assign(Object.create(MinigameMenu.prototype), {
+    g: { ...g, player: {} }, d: { quest: {} }, picker, ui: {},
+  });
+  const first = menu.open();
+  assert.equal(await menu.open(), false);
+  assert.equal(menu.g.paused, true);
+  picker.resolve = null;
+  resolve(null);
+  assert.equal(await first, false);
+  assert.equal(menu.g.paused, false);
+});
+
+test('a second launch waits for the first round to give the valley back', async () => {
+  const finished = Promise.withResolvers(), restoring = Promise.withResolvers();
+  let rounds = 0;
+  const entry = list.find(e => e.kind === 'workshop');
+  const menu = Object.assign(Object.create(MinigameMenu.prototype), {
+    d: { explore: true }, g: { input: {} }, ui: {}, setLook() {},
+    async run() { rounds++; },
+    async finishLaunch() { restoring.resolve(); await finished.promise; },
+  });
+  const first = menu.launch(entry, { fromTitle: true });
+  await restoring.promise;
+  try {
+    assert.equal(menu.running, true);
+    await menu.launch(entry, { fromTitle: true });
+    assert.equal(rounds, 1);
+  } finally { finished.resolve(); await first; }
+  assert.equal(menu.running, false);
+});

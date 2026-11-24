@@ -83,6 +83,11 @@ kbd { font-family: var(--head); font-weight: 600; background: var(--ink); color:
 #toasts { position: absolute; left: 50%; top: calc(18px + var(--safe-t)); transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .toast { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 99px; background: rgba(28, 35, 64, 0.9); color: #fff; font-weight: 800; box-shadow: var(--shadow); animation: toast 3.2s ease forwards; }
 .toast img { width: 26px; height: 26px; object-fit: contain; }
+@media (max-width:600px), (max-height:500px) {
+  body.touch #toasts { top:auto; bottom:calc(8px + var(--safe-b)); width:max-content; max-width:calc(100% - 32px); pointer-events:none; }
+  body.touch .toast { padding:5px 12px; font-size:13px; line-height:1.25; }
+  body.touch .toast img { width:20px; height:20px; }
+}
 @keyframes toast { 0% { opacity: 0; transform: translateY(-10px); } 10%, 80% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-6px); } }
 .iconbtn { pointer-events: auto; position: absolute; width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(255, 247, 232, 0.88); box-shadow: var(--shadow); font-size: 20px; color: var(--ink); }
 #btnMenu { right: 16px; bottom: calc(16px + var(--safe-b)); }

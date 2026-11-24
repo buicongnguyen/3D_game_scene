@@ -261,7 +261,7 @@ export class Yard {
       n.pos.x += dx / (d || 1) * step; n.pos.z += dz / (d || 1) * step; n.pos.y = this.ground(n.pos.x, n.pos.z);
       n.targetFacing = Math.atan2(dx, dz);
       if (d < 0.1) it.yPath.shift();
-      if (a && !a.busy) { if (a.has('Run')) a.play('Run', { speed: 1.1 }); }
+      if (a && !a.busy) { if (a.has('Run')) a.play('Run', { speed: dt > 0 ? step / dt / n.runRef : 0 }); }
       return;
     }
     const dx = w.x - n.pos.x, dz = w.z - n.pos.z, moved = Math.hypot(dx, dz);
@@ -270,7 +270,7 @@ export class Yard {
     if (pl.moving && moved > 1e-4) n.targetFacing = Math.atan2(dx, dz);
     else { const l = this.lookAt(G, pl, sim, S); if (l && Math.hypot(l.x - w.x, l.z - w.z) > 0.6) n.targetFacing = Math.atan2(l.x - w.x, l.z - w.z); }
     if (!a || a.busy) return;
-    if (pl.moving && a.has('Run') && G.moves) a.play('Run', { speed: Math.min(1.2, Math.max(0.55, moved / Math.max(dt, 1e-3) / 4.2)) });
+    if (pl.moving && a.has('Run') && G.moves) a.play('Run', { speed: dt > 0 ? moved / dt / n.runRef : 0 });
     else a.play('Idle');
   }
 

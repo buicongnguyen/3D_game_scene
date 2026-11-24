@@ -112,7 +112,7 @@ const CSS = `
 body.dance-round #trickHint,body.dance-round #touch,body.dance-round .bark{display:none!important}
 body.dance-round #trickHud{top:calc(10px + env(safe-area-inset-top,0px))}
 body.dance-pick #touch{display:none!important}
-body.dance-pick #minigameStop{top:auto!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important}
+@media (orientation:landscape),(min-width:561px){body.dance-pick #minigameStop{top:auto!important;bottom:calc(14px + env(safe-area-inset-bottom,0px))!important}}
 #danceCard{position:fixed;left:50%;top:calc(64px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:16;display:flex;align-items:center;gap:10px;
  width:min(430px,calc(100vw - 20px));box-sizing:border-box;padding:7px 12px 7px 7px;border-radius:22px;background:rgba(255,248,234,.95);box-shadow:0 6px 20px rgba(40,20,0,.25);
  font:700 14px Nunito,system-ui,sans-serif;color:#4a3020;zoom:var(--ui-scale,1);pointer-events:none;transition:background .2s}

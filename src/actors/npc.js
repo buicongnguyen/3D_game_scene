@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { ANIMAL_GAIT, HUMAN_GAIT } from './gait.js';
 import { Animator } from './animator.js';
 import { placeholder } from '../engine/assets.js';
 import { mergeSkinnedParts } from '../engine/skin-merge.js';
@@ -10,12 +11,6 @@ const LAZY_MARGIN = 20;      // metres past a zone's edge where people and anima
 
 const SHIRTS = ['#e0567a', '#3a8fd8', '#f2b53a', '#5fae3e', '#8a5ad8', '#e2702a', '#1fa5a0'];
 const TROUSERS = ['#2d3a5a', '#5a3a2a', '#3a4a3a', '#6a6a7a', '#2a2a3a'];
-const RUN_SPEED = 4.2;       // m/s a Run clip is authored for at 1.0x (art/CONTRACTS.md)
-// m/s a Walk clip is authored for at 1.0x (art/blender/anims.py WALK_SPEED; Grandma's slow walk: npcs.py SORA_WALK).
-// Playing a walk at the wrong rate makes the feet slide: Grandma walked at 1/1.6 of her stride and glided.
-const WALK_SPEED = 1.6, WALK_REF = { sora: 1.0 };
-// while turning toward the next point a walker slows down (a full speed step sideways reads as sliding)
-const TURN_SLOW = 0.25;
 const HAIR = ['#2a1d16', '#4a3020', '#1a1a1a', '#6a4a2a', '#d8d0c0', '#8a8a8a'];
 const KID_HAIR = 4;          // the first four are a child's colours; white and grey are for the grown-ups
 
@@ -28,7 +23,11 @@ export class NPC {
     this.id = id;
     this.world = world;
     this.name = name || id;
-    this.walkRef = WALK_REF[model] || WALK_SPEED;    // the ground speed its Walk clip is made for
+    const gait = HUMAN_GAIT[model] ?? ANIMAL_GAIT[model];
+    this.walkRef = gait?.walk ?? 1.6;
+    this.runRef = gait?.run ?? 4.2;
+    this.walkAxis = model === 'crab' ? Math.PI / 2 : 0;
+    this.defaultWalk = model === 'rabbit' ? 'Hop' : 'Walk';
     // children are never grey: the shared villager palette gave Nao, Sumi and two Kawabe kids an old woman's white hair
     if (tint && model === 'villager-kid') tint = NPC.kidTint(tint, id);
     // a play zone (world/zone.js): someone who starts well outside it gets a body only when they come into view
@@ -124,9 +123,7 @@ export class NPC {
     this.unseen = false;                          // (the new body is shown; the next frame decides again)
     if (!this.shadow) this.model.traverse(o => { if (o.isMesh) o.castShadow = false; });
     if (this.path?.length) {
-      const run = (this.walkClip ? this.walkClip === 'Run' : this.speed > 3) && this.anim?.has('Run');
-      this.gaitRate = run ? this.speed / RUN_SPEED : this.speed / this.walkRef;
-      this.anim?.play(run ? 'Run' : 'Walk', { speed: this.gaitRate });
+      this.startGait();
     } else this.anim?.play(this.loopGesture || this.idleClip);
   }
 
@@ -190,9 +187,14 @@ export class NPC {
     this.speed = speed;
     this.onPathDone = done;
     this.walkClip = clip;
-    const run = (clip ? clip === 'Run' : speed > 3) && this.anim?.has('Run');
-    this.gaitRate = run ? speed / RUN_SPEED : speed / this.walkRef;
-    this.anim?.play(run ? 'Run' : 'Walk', { speed: this.gaitRate });
+    this.startGait();
+  }
+
+  startGait() {
+    const run = (this.walkClip ? this.walkClip === 'Run' : this.speed > 3) && this.anim?.has('Run');
+    this.pathClip = run ? 'Run' : this.defaultWalk;
+    this.pathRef = (run ? this.runRef : this.walkRef) * this.root.scale.z;
+    this.anim?.play(this.pathClip, { speed: this.speed / this.pathRef });
   }
 
   update(dt, colliders) {
@@ -211,17 +213,20 @@ export class NPC {
         }
       } else {
         // turning toward this point: go slower until facing it, so nobody slides sideways round a corner
-        let turn = Math.atan2(dx, dz) - this.facing;
+        const heading = Math.atan2(dx, dz) - this.walkAxis;
+        let turn = heading - this.facing;
         turn = Math.abs(Math.atan2(Math.sin(turn), Math.cos(turn)));
-        const ease = Math.max(TURN_SLOW, Math.cos(Math.min(turn, Math.PI / 2)));
+        const ease = Math.max(0, Math.cos(turn));
         const step = Math.min(d, this.speed * ease * dt);
         // the legs keep pace with the body (a full-rate step while barely moving slides the feet too)
-        if (this.gaitRate && this.anim?.current && !this.anim.oneShot && (this.anim.currentName === 'Walk' || this.anim.currentName === 'Run')) this.anim.current.timeScale = this.gaitRate * ease;
+        if (this.anim?.current && !this.anim.oneShot && this.anim.currentName === this.pathClip) {
+          this.anim.current.timeScale = dt > 0 ? step / dt / this.pathRef : 0;
+        }
         this.pos.x += dx / d * step; this.pos.z += dz / d * step;
         this.pos.y = this.world.heightAt(this.pos.x, this.pos.z);
         const g = this.far ? null : colliders?.groundAt(this.pos.x, this.pos.z, this.pos.y + 0.6, 0.8);
         if (g && g.y > this.pos.y) this.pos.y = g.y;
-        this.targetFacing = Math.atan2(dx, dz);
+        this.targetFacing = heading;
       }
     }
     let df = this.targetFacing - this.facing;

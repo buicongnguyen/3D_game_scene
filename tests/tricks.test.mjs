@@ -129,3 +129,12 @@ test('the trick modules export play (and the firefly an ambient look); rules are
   assert.deepEqual(stars.gazePlan('easy').steps, ['dipper', 'polaris']);
   assert.ok(stars.starScore({ joined: 7, polaris: true, wish: true, seconds: 30 }) >= levelSpec(TRICK.stars, 'easy').stars[2]);
 });
+
+test('finishing a previously unlearned trick marks it learned and preserves its record', () => {
+  const previous = { learned: false, best: 45, plays: 3, stars: 2, intro: true };
+  const { rec } = recordRound(previous, TRICK.frogs, 10, 'easy');
+  assert.equal(rec.learned, true);
+  assert.equal(rec.plays, 4);
+  assert.equal(rec.best, 45);
+  assert.equal(rec.intro, true);
+});

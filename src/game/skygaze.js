@@ -77,6 +77,7 @@ const CSS = `
 #skyGaze{position:fixed;inset:0;z-index:15;pointer-events:none;font:700 16px Nunito,system-ui,sans-serif;zoom:var(--ui-scale,1)}
 #skyGaze .line{position:absolute;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);width:max-content;max-width:min(520px,88vw);
  padding:10px 16px;border-radius:18px;background:rgba(20,26,54,.78);color:#fff;text-align:center;box-shadow:0 6px 18px rgba(0,0,0,.3);transition:opacity .4s}
+body.touch.sky-gaze.minigame-stoppable #tJump{visibility:hidden}
 #skyGaze .line.wish{background:rgba(255,214,107,.95);color:#3b1c05}
 #skyGaze .count{position:absolute;left:50%;top:calc(16px + env(safe-area-inset-top,0px));transform:translateX(-50%);padding:6px 14px;border-radius:999px;
  background:rgba(20,26,54,.7);color:#ffe9a8;font:600 17px Fredoka,Nunito,sans-serif;white-space:nowrap}

@@ -45,7 +45,7 @@ export class MinigameMenu {
   /** Can the menu open now? Not inside a dialogue, a cutscene, a round or a launch. */
   canOpen() {
     const d = this.d;
-    return !!d.quest && !this.running && !d.busy && !d.minigame && !d.scenes?.active && !d.tricks?.round && !d.yard?.round && !d.workshop?.active
+    return !!d.quest && !this.picker?.resolve && !this.running && !d.busy && !d.minigame && !d.scenes?.active && !d.tricks?.round && !d.yard?.round && !d.workshop?.active
       && !d.tourLock && !this.g.sky?.active && !d.sky?.active && !this.g.player.mounted && !this.g.kite?.active;   // (the kite's swoop-in comes before she is mounted)
   }
 
@@ -53,6 +53,7 @@ export class MinigameMenu {
   /** Open the picker (from the chip or the pause menu). Resolves when a game was chosen and has finished, or at once on cancel. */
   async open() {
     if (!this.canOpen()) return false;
+    clearTimeout(this.hintT);
     const g = this.g, wasPaused = g.paused;
     if (!wasPaused) g.togglePause?.(true, true);        // the game stands still behind the picker
     const e = await this.picker.open({ st: this.st, current: this.current?.id });
@@ -163,10 +164,11 @@ export class MinigameMenu {
   async launch(e, { fromTitle = false } = {}) {
     const d = this.d, g = this.g, ui = this.ui;
     if (this.running || !e) return;
+    const plan = launchPlan(e);
+    clearTimeout(this.hintT);
     this.running = true;
     this.current = e;
     this.hideChip();
-    const plan = launchPlan(e);
     let borrowed = false;
     this.failed = false;
     try {
@@ -191,31 +193,39 @@ export class MinigameMenu {
       this.failed = true;
       ui.toast?.(tx('{name} is not ready yet', { name: tx(e.name) }), e.icon);
     } finally {
-      this.running = false;
-      d.actCooldown = Math.max(d.actCooldown || 0, 0.5);
-      if (borrowed || this.session?.story) {
-        await ui.fade(true, 300);
-        g.roundLight?.release('menu');
-        await this.giveBack();
-        this.current = null;
-        await ui.fade(false, 420);
-        // back in the story, the list opens once more: play another, or close it and carry on (a QA run asks with ?autolist=1)
-        const qa = typeof window !== 'undefined' && !!window.__STARLINE_QA__ && g.params?.get?.('autolist') !== '1';
-        clearTimeout(this.hintT);
-        if (!qa && !this.failed) this.hintT = setTimeout(() => { if (!this.running && !this.session && this.canOpen()) this.open(); }, 700);
-      } else {
-        // an Explore session: Mika stays in the valley. A game that moved her far (the river wade, a kite run) or left her in the
-        // cottage puts her back at its place under the fade.
-        const p = g.player;
-        if (g.interiors?.active || Math.hypot(p.pos.x - plan.stand.x, p.pos.z - plan.stand.z) > 14 || this.failed) {
-          await ui.fade(true, 250);
-          if (g.interiors?.active) { try { await g.interiors.exit(); } catch { /* ignore */ } }
-          this.place(plan.stand);
-        }
-        await ui.fade(false, 300);
-        g.roundLight?.releaseLater('menu');     // the next game is probably picked in a moment: no switching twice
-        this.afterGame(e);
+      try {
+        await this.finishLaunch(e, plan, borrowed);
+      } finally {
+        this.running = false;
       }
+    }
+  }
+
+  async finishLaunch(e, plan, borrowed) {
+    const d = this.d, g = this.g, ui = this.ui;
+    d.actCooldown = Math.max(d.actCooldown || 0, 0.5);
+    if (borrowed || this.session?.story) {
+      await ui.fade(true, 300);
+      g.roundLight?.release('menu');
+      await this.giveBack();
+      this.current = null;
+      await ui.fade(false, 420);
+      // back in the story, the list opens once more: play another, or close it and carry on (a QA run asks with ?autolist=1)
+      const qa = typeof window !== 'undefined' && !!window.__STARLINE_QA__ && g.params?.get?.('autolist') !== '1';
+      clearTimeout(this.hintT);
+      if (!qa && !this.failed) this.hintT = setTimeout(() => { if (!this.session && !g.paused && !ui.overlay && !ui.dialogueOpen && this.canOpen()) this.open(); }, 700);
+    } else {
+      // an Explore session: Mika stays in the valley. A game that moved her far (the river wade, a kite run) or left her in the
+      // cottage puts her back at its place under the fade.
+      const p = g.player;
+      if (g.interiors?.active || Math.hypot(p.pos.x - plan.stand.x, p.pos.z - plan.stand.z) > 14 || this.failed) {
+        await ui.fade(true, 250);
+        if (g.interiors?.active) { try { await g.interiors.exit(); } catch { /* ignore */ } }
+        this.place(plan.stand);
+      }
+      await ui.fade(false, 300);
+      g.roundLight?.releaseLater('menu');     // the next game is probably picked in a moment: no switching twice
+      this.afterGame(e);
     }
   }
 
@@ -228,7 +238,7 @@ export class MinigameMenu {
     // A QA run keeps the chip and a hint unless it asks for the list with ?autolist=1: the browser suites press the chip.
     const qa = typeof window !== 'undefined' && !!window.__STARLINE_QA__ && this.g.params?.get?.('autolist') !== '1';
     this.hintT = setTimeout(() => {
-      if (!this.session || this.session.story || this.running) return;
+      if (!this.session || this.session.story || this.running || this.g.paused || this.ui.overlay || this.ui.dialogueOpen) return;
       if (qa || !this.canOpen()) this.ui.toast?.(tx('Menu → Mini games to pick another'), e?.icon);
       else this.open();
     }, qa ? 2600 : 900);
@@ -241,7 +251,7 @@ export class MinigameMenu {
       const t = TRICK[e.ref];
       if (!t) throw new Error(`no trick ${e.ref}`);
       const st = this.st;
-      const rec = (st.tricks[t.id] = { learned: true, best: 0, stars: 0, plays: 0, ...(st.tricks[t.id] || {}) });
+      const rec = (st.tricks[t.id] = { best: 0, stars: 0, plays: 0, ...(st.tricks[t.id] || {}), learned: true });
       await ui.fade(false, 420);
       // the teacher is not here: the intro plays as a short local scene, once
       if (!rec.intro) {

@@ -4753,43 +4753,19 @@
   ]
  },
  {
-  "s": "Mi-chan! There she is! Genzo, look at her, she's enormous!",
+  "s": "Mi-chan! A whole year together. Come here and let me hug you before Genzo puts you to work.",
   "ctx": [
    "dialogue p_arrive, spoken by Grandma Sora"
   ]
  },
  {
-  "s": "Hi, Grandma. I'm the same height as at New Year.",
+  "s": "Careful with that case, Grandma. Mum packed light bulbs. I wrapped each one in a sock.",
   "ctx": [
    "dialogue p_arrive, spoken by Mika"
   ]
  },
  {
-  "s": "Then I've shrunk. Come here. Hugs first, complaints later.",
-  "ctx": [
-   "dialogue p_arrive, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Hoshi Station. End of the line, and the end of my back. Whose idea were three suitcases? This one clinks.",
-  "ctx": [
-   "dialogue p_arrive, spoken by Genzo"
-  ]
- },
- {
-  "s": "That one's light bulbs. Mum packed it. She says Grandma's letters look like they were written in the dark.",
-  "ctx": [
-   "dialogue p_arrive, spoken by Mika"
-  ]
- },
- {
-  "s": "Light whats? Hah. You're Sora's, all right. She says I cheat at shogi, by the way. That part is slander.",
-  "ctx": [
-   "dialogue p_arrive, spoken by Genzo"
-  ]
- },
- {
-  "s": "He cheats. I cheat better. Up the bluff, Mi-chan. I'll go ahead and put the kettle on.",
+  "s": "Then we'll have bright lamps and very warm feet. Come up to the cottage. I've made your favourite soup.",
   "ctx": [
    "dialogue p_arrive, spoken by Grandma Sora"
   ]
@@ -4831,195 +4807,63 @@
   ]
  },
  {
-  "s": "My lantern. Inside lives the friend I had when I was your age. Let's see if he remembers how to wake up.",
-  "ctx": [
-   "dialogue p_chest, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "A little gold light tumbles out of the lantern. It is… snoring?",
-  "ctx": [
-   "dialogue p_chest, spoken by narrator"
-  ]
- },
- {
-  "s": "Sora! It's you! You got… taller? No. Wrinklier! Definitely wrinklier!",
+  "s": "Five more minutes, Sora... Oh! There's two of you!",
   "ctx": [
    "dialogue p_chest, spoken by Tamo"
   ]
  },
  {
-  "s": "A whole year asleep, and the first thing he does is insult me. Hello, Tamo.",
+  "s": "This is my granddaughter, Mika. Mi-chan, meet Tamo. We used to light the lamps together.",
   "ctx": [
    "dialogue p_chest, spoken by Grandma Sora"
   ]
  },
  {
-  "s": "I'm a hoshibi! A star-fire! I'm Tamo! I light the lamp wicks! And who are YOU? You've got Sora's chin.",
-  "ctx": [
-   "dialogue p_chest, spoken by Tamo"
-  ]
- },
- {
-  "s": "This is Mika, my granddaughter. She's staying the whole year.",
-  "ctx": [
-   "dialogue p_chest, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "A whole year? Then she's my new partner! You climbed all the lamp ladders last time, Sora. Her turn!",
-  "ctx": [
-   "dialogue p_chest, spoken by Tamo"
-  ]
- },
- {
-  "s": "My knees agree with him. For once.",
-  "ctx": [
-   "dialogue p_chest, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Now listen, both of you. The valley has four big Star Lamps: Forest, Mill, Orchard and Viaduct.",
-  "ctx": [
-   "dialogue p_letter, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Oil lamps. Every evening somebody climbs the ladder with a match, and Tamo gives the wick a tickle.",
-  "ctx": [
-   "dialogue p_letter, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Last autumn the river came up for a visit. Nobody hurt! We sat on the station hill with my rice balls and watched it tidy up.",
-  "ctx": [
-   "dialogue p_letter, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "It took the lamp oil, three of Ōta's cogs and the middle of the viaduct. And the young folk are all off working in the city.",
-  "ctx": [
-   "dialogue p_letter, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "So nothing is mended, the lamps are dark, and the Star Train missed star-fall. Genzo sulked until March.",
-  "ctx": [
-   "dialogue p_letter, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Why oil, Grandma? Use electric bulbs. The mill wheel could make the power. We built a dynamo lamp in science club.",
+  "s": "What if the mill wheel powered electric bulbs? We made a dynamo lamp in science club, Grandma.",
   "ctx": [
    "dialogue p_letter, spoken by Mika"
   ]
  },
  {
-  "s": "The what-tricity? Dear, I understood 'mill' and 'lamp'. Good enough. One lamp a season. Mill Lamp first, in Kawabe.",
+  "s": "Four Star Lamps, one for each season. Shall we try your idea at the mill this spring?",
   "ctx": [
    "dialogue p_letter, spoken by Grandma Sora"
   ]
  },
  {
-  "s": "Me? Grandma, I've been here twenty minutes.",
+  "s": "Your turn, Mika! Come to the porch lamp and press {act}. I'll bring the spark.",
   "ctx": [
-   "dialogue p_letter, spoken by Mika"
+   "dialogue p_spark_tutorial, spoken by Tamo"
   ]
  },
  {
-  "s": "Twenty-one. Plenty. You'll meet everyone on the way. That's half the job anyway.",
-  "ctx": [
-   "dialogue p_letter, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "No wicks? Then I'll carry the bulbs up! No ladder needed! I'm very good with lamps. I think. It's been a while.",
-  "ctx": [
-   "dialogue p_letter, spoken by Tamo"
-  ]
- },
- {
-  "s": "Then practise on a small one. First job: the porch lamp, dear. The last of my oil is in it. Tamo listens to you now.",
-  "ctx": [
-   "dialogue p_spark_tutorial, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Look at that. Supper, then bed. Tomorrow, Kawabe. I have written you a list.",
+  "s": "First, supper. Tomorrow you can meet Rin at the Kawabe dock. She knows the way to the mill.",
   "ctx": [
    "dialogue p_spark_done, spoken by Grandma Sora"
   ]
  },
  {
-  "s": "Of course you have. What comes first?",
-  "ctx": [
-   "dialogue p_spark_done, spoken by Mika"
-  ]
- },
- {
-  "s": "Rin, at the Kawabe dock. She's about your age, and she knows everyone. Tell her I sent you.",
-  "ctx": [
-   "dialogue p_spark_done, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "No rush, mind. Have a wander round the village first. Say hello, peek in the shops. A list is not a race.",
-  "ctx": [
-   "dialogue p_spark_done, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Kawabe! The river village! …Which way is Kawabe?",
-  "ctx": [
-   "dialogue p_spark_done, spoken by Tamo"
-  ]
- },
- {
-  "s": "Downhill, Tamo. Everything is downhill from here. That's why I need her.",
-  "ctx": [
-   "dialogue p_spark_done, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Sorry. I'm Mika. My grandma said to find you. She said, 'Tell her I sent you.'",
+  "s": "Hi, I'm Mika. Grandma said I'd find you here. What are you watching?",
   "ctx": [
    "dialogue c1_rin_meet, spoken by Mika"
   ]
  },
  {
-  "s": "…Oh. YOU'RE Sora's Mika. She's told me about you. Fourteen times. Not that I was counting.",
+  "s": "Trout. See how they face upriver? You're Sora's Mika! Here, there's room beside me.",
   "ctx": [
    "dialogue c1_rin_meet, spoken by Rin"
   ]
  },
  {
-  "s": "She says we're going to be friends. I said I'd decide that myself. So. Still deciding.",
-  "ctx": [
-   "dialogue c1_rin_meet, spoken by Rin"
-  ]
- },
- {
-  "s": "Fair. Meanwhile, I'm supposed to get the Mill Lamp working. Who do I ask?",
+  "s": "Thanks. If I follow the river up from here, will I find the mill wheel? I want to see how fast it turns.",
   "ctx": [
    "dialogue c1_rin_meet, spoken by Mika"
   ]
  },
  {
-  "s": "My grandpa, Ōta. He's at the mill, upriver. He'll say no. He says no to everything before lunch.",
+  "s": "You will. It's quiet these days, though. Ask my grandpa Ōta at the mill. He still listens to that wheel like it might start singing again.",
   "ctx": [
    "dialogue c1_rin_meet, spoken by Rin"
-  ]
- },
- {
-  "s": "(whispering) She likes you. I can tell. She's still talking.",
-  "ctx": [
-   "dialogue c1_rin_meet, spoken by Tamo"
-  ]
- },
- {
-  "s": "Hm? A city girl in a raincoat. The mill is closed. The lamp is closed. Everything is closed.",
-  "ctx": [
-   "dialogue c1_ota_refuse, spoken by Grandpa Ōta"
   ]
  },
  {
@@ -5029,21 +4873,9 @@
   ]
  },
  {
-  "s": "Elec-what? Sora sent you. Of course she did. That woman gives orders like a general.",
-  "ctx": [
-   "dialogue c1_ota_refuse, spoken by Grandpa Ōta"
-  ]
- },
- {
   "s": "The lamp's out on the island, and the drawbridge only comes down when the wheel turns. The wheel is resting.",
   "ctx": [
    "dialogue c1_ota_refuse, spoken by Grandpa Ōta"
-  ]
- },
- {
-  "s": "Resting?",
-  "ctx": [
-   "dialogue c1_ota_refuse, spoken by Mika"
   ]
  },
  {
@@ -5089,12 +4921,6 @@
   ]
  },
  {
-  "s": "The old axle groans, shudders… and the great wheel turns. Something small begins to hum.",
-  "ctx": [
-   "dialogue c1_wheel, spoken by narrator"
-  ]
- },
- {
   "s": "…It turns. Hah! Listen to her sing. And what is that buzzing box, girl?",
   "ctx": [
    "dialogue c1_wheel, spoken by Grandpa Ōta"
@@ -5104,12 +4930,6 @@
   "s": "A dynamo. Genzo lent it. The wheel spins it, and it pushes light down the wire. We made a tiny one in science club.",
   "ctx": [
    "dialogue c1_wheel, spoken by Mika"
-  ]
- },
- {
-  "s": "I gave it the first spark! To wake it up! Now it hums MY note!",
-  "ctx": [
-   "dialogue c1_wheel, spoken by Tamo"
   ]
  },
  {
@@ -5191,13 +5011,13 @@
   ]
  },
  {
-  "s": "Grandma's list says: help Hana, peaches for the jam, new bulb for the Orchard Lamp. In that order. Underlined.",
+  "s": "I can smell peaches already. Wait, that's warm bread. Is Hana baking peaches into her buns?",
   "ctx": [
    "dialogue c2_arrive, spoken by Mika"
   ]
  },
  {
-  "s": "Sora always underlines. Once she underlined a whole page. It just said 'NO.'",
+  "s": "Let's ask at the bakery. Sora wants two peaches for her jam. I volunteer to taste the buns.",
   "ctx": [
    "dialogue c2_arrive, spoken by Tamo"
   ]
@@ -5359,7 +5179,7 @@
   ]
  },
  {
-  "s": "A shrine bib, stitched 'Kon'. So YOU'RE Kon. Grandma sent you a rice ball.",
+  "s": "His bib says Kon. Grandma packed this rice ball for you! Where are you taking us?",
   "ctx": [
    "dialogue c3_fox, spoken by Mika"
   ]
@@ -5443,13 +5263,13 @@
   ]
  },
  {
-  "s": "One lamp left, on a bridge with a hole in it. And Sora's list says: help Genzo.",
+  "s": "Snow on the viaduct, snow on the sleepers. Mika, where does Genzo keep a whole train warm?",
   "ctx": [
    "dialogue c4_start, spoken by Tamo"
   ]
  },
  {
-  "s": "Grandma says he's polished Kobo every day for a month and won't say why. In this snow he'll be in the engine shed.",
+  "s": "The engine shed. Grandma takes him tea when he works on Kobo. Come on, I know the way.",
   "ctx": [
    "dialogue c4_start, spoken by Mika"
   ]
@@ -5457,8 +5277,7 @@
  {
   "s": "Sora's girl. And that little light. Come in, shut the door, Kobo hates a draught.",
   "ctx": [
-   "dialogue c4_confront, spoken by Genzo",
-   "dialogue c4_shed, spoken by Genzo"
+   "dialogue c4_confront, spoken by Genzo"
   ]
  },
  {
@@ -5493,43 +5312,11 @@
   ]
  },
  {
-  "s": "Snow falls on Hoshi Station. Kawabe stands on one side of the platform, Takamori on the other, stamping their feet.",
-  "ctx": [
-   "dialogue c4_meeting_alone, spoken by narrator",
-   "dialogue c4_meeting_together, spoken by narrator",
-   "dialogue c4_meeting, spoken by narrator"
-  ]
- },
- {
-  "s": "Well? Go on, Genzo. We're all freezing in a very supportive way.",
-  "ctx": [
-   "dialogue c4_meeting_alone, spoken by Grandma Sora",
-   "dialogue c4_meeting_together, spoken by Grandma Sora",
-   "dialogue c4_meeting, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Right. Everyone. I have something to say. It's… hard. Hm.",
+  "s": "The viaduct needs three beams. I can get Kobo ready, but I could use a hand with the bridge.",
   "ctx": [
    "dialogue c4_meeting_alone, spoken by Genzo",
    "dialogue c4_meeting_together, spoken by Genzo",
    "dialogue c4_meeting, spoken by Genzo"
-  ]
- },
- {
-  "s": "The viaduct needs three new beams by tomorrow night, and I can't do it alone. …Please. Help me.",
-  "ctx": [
-   "dialogue c4_meeting_alone, spoken by Genzo",
-   "dialogue c4_meeting_together, spoken by Genzo",
-   "dialogue c4_meeting, spoken by Genzo"
-  ]
- },
- {
-  "s": "Seventy years, and you finally said please. Somebody write down the date.",
-  "ctx": [
-   "dialogue c4_meeting_alone, spoken by Grandma Sora",
-   "dialogue c4_meeting_together, spoken by Grandma Sora",
-   "dialogue c4_meeting, spoken by Grandma Sora"
   ]
  },
  {
@@ -5542,30 +5329,6 @@
   "s": "Takamori's smithy has the bolts. AND we'll carry the beams. More of them.",
   "ctx": [
    "dialogue c4_meeting_after, spoken by Hana"
-  ]
- },
- {
-  "s": "You will not. Kawabe carries two.",
-  "ctx": [
-   "dialogue c4_meeting_after, spoken by Grandpa Ōta"
-  ]
- },
- {
-  "s": "Takamori carries two. Kawabe can carry the third and complain about it.",
-  "ctx": [
-   "dialogue c4_meeting_after, spoken by Hana"
-  ]
- },
- {
-  "s": "That's three beams and about forty beams' worth of arguing. Classic.",
-  "ctx": [
-   "dialogue c4_meeting_after, spoken by Rin"
-  ]
- },
- {
-  "s": "Everybody's helping! That's the BEST kind of arguing!",
-  "ctx": [
-   "dialogue c4_meeting_after, spoken by Tamo"
   ]
  },
  {
@@ -5605,27 +5368,9 @@
   ]
  },
  {
-  "s": "The Star Train rolls in under a falling sky—one star, then ten, then a thousand.",
-  "ctx": [
-   "dialogue c4_finale, spoken by narrator"
-  ]
- },
- {
   "s": "Mika. Sora. I've decided. Somebody has to keep an eye on all these bulbs. I'm moving into the Viaduct Lamp!",
   "ctx": [
    "dialogue c4_finale, spoken by Tamo"
-  ]
- },
- {
-  "s": "You're moving out? Into a lamp?",
-  "ctx": [
-   "dialogue c4_finale, spoken by Mika"
-  ]
- },
- {
-  "s": "He's wanted a place of his own for sixty years, dear. The oil-house is empty now. Let him have it.",
-  "ctx": [
-   "dialogue c4_finale, spoken by Grandma Sora"
   ]
  },
  {
@@ -5647,6 +5392,12 @@
   ]
  },
  {
+  "s": "A year after Mika stepped off the train, she and Grandma sit on the porch shelling peas. This time Mika fills both bowls before Grandma can ask.",
+  "ctx": [
+   "dialogue epilogue, spoken by narrator"
+  ]
+ },
+ {
   "s": "Spring comes back to Hoshi Valley. The Star Train runs every Sunday now, and Genzo lets Mika blow the whistle.",
   "ctx": [
    "dialogue epilogue, spoken by narrator"
@@ -5654,12 +5405,6 @@
  },
  {
   "s": "Mum and Dad went back to work with a jar of jam each. Their letters come every Friday. They've promised: next star-fall.",
-  "ctx": [
-   "dialogue epilogue, spoken by narrator"
-  ]
- },
- {
-  "s": "Kawabe and Takamori share one festival on the viaduct, and argue about the buns. Nobody wants them to stop.",
   "ctx": [
    "dialogue epilogue, spoken by narrator"
   ]
@@ -5715,12 +5460,6 @@
   ]
  },
  {
-  "s": "To Takamori. That's next on Grandma's list.",
-  "ctx": [
-   "dialogue c1_party, spoken by Mika"
-  ]
- },
- {
   "s": "Underlined twice. Peaches. Jam. Get some sleep, Mi-chan. I need you rested.",
   "ctx": [
    "dialogue c1_party, spoken by Grandma Sora"
@@ -5745,12 +5484,6 @@
   ]
  },
  {
-  "s": "Down on the river, one small lantern boat drifts over from Kawabe, carrying one jar of jam with a very large label.",
-  "ctx": [
-   "dialogue c2_party, spoken by narrator"
-  ]
- },
- {
   "s": "'ŌTA'S JAM. THE BEST.' …It's runny, Sora.",
   "ctx": [
    "dialogue c2_party, spoken by Hana"
@@ -5769,19 +5502,7 @@
   ]
  },
  {
-  "s": "Grandma has made it up the shrine path, one slow step at a time, with an enormous pot of soup.",
-  "ctx": [
-   "dialogue c3_party, spoken by narrator"
-  ]
- },
- {
   "s": "Soup for everyone! Kon showed me where the chestnuts were. Ōkuma, you've had yours.",
-  "ctx": [
-   "dialogue c3_party, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Bears at the back, foxes at the front. Everybody gets a bowl.",
   "ctx": [
    "dialogue c3_party, spoken by Grandma Sora"
   ]
@@ -5826,18 +5547,6 @@
   "s": "You'll have three. You always have three.",
   "ctx": [
    "dialogue c4_photo, spoken by Hana"
-  ]
- },
- {
-  "s": "Is it always like this here?",
-  "ctx": [
-   "dialogue c4_photo, spoken by Dad"
-  ]
- },
- {
-  "s": "Every year. You'll get used to it. Now squash in, everybody, in front of Kobo!",
-  "ctx": [
-   "dialogue c4_photo, spoken by Grandma Sora"
   ]
  },
  {
@@ -6654,25 +6363,7 @@
   ]
  },
  {
-  "s": "But?",
-  "ctx": [
-   "dialogue c4_shed, spoken by Mika"
-  ]
- },
- {
   "s": "But the viaduct. Three beams, where the flood borrowed the middle. That's a job for two villages, not one old man.",
-  "ctx": [
-   "dialogue c4_shed, spoken by Genzo"
-  ]
- },
- {
-  "s": "So ask them!",
-  "ctx": [
-   "dialogue c4_shed, spoken by Tamo"
-  ]
- },
- {
-  "s": "Ask. Hah. I haven't asked anyone for anything in seventy years. Except Sora, for a shogi rematch. She said no.",
   "ctx": [
    "dialogue c4_shed, spoken by Genzo"
   ]
@@ -6702,18 +6393,6 @@
   ]
  },
  {
-  "s": "The door of the last coach opens. Two people climb down, stiff from the ride, waving like they mean it.",
-  "ctx": [
-   "dialogue ending_parents, spoken by narrator"
-  ]
- },
- {
-  "s": "…Mum? DAD?",
-  "ctx": [
-   "dialogue ending_parents, spoken by Mika"
-  ]
- },
- {
   "s": "Surprise! Hello, sweetheart. Oh, look at you. You've grown. You've got snow in your hair.",
   "ctx": [
    "dialogue ending_parents, spoken by Mum"
@@ -6726,44 +6405,19 @@
   ]
  },
  {
-  "s": "You were supposed to be away until spring!",
-  "ctx": [
-   "dialogue ending_parents, spoken by Mika"
-  ]
- },
- {
   "s": "I wrote to them in autumn. Four pages. Three were recipes. The fourth said: come for star-fall.",
   "ctx": [
    "dialogue ending_parents, spoken by Grandma Sora"
   ]
  },
  {
-  "s": "We saw it all from the train. Four lamps, and every window lit. You did that with one suitcase of bulbs?",
-  "ctx": [
-   "dialogue ending_parents, spoken by Mum"
-  ]
- },
- {
-  "s": "And a star called Tamo, the letters say. Where is he?",
-  "ctx": [
-   "dialogue ending_parents, spoken by Dad"
-  ]
- },
- {
-  "s": "Up there, in the Viaduct Lamp. He's the night watchman now. He gave himself the job.",
+  "s": "Mum! Dad! Come see Grandma's porch. She still tries to blow the bulb out at bedtime.",
   "ctx": [
    "dialogue ending_parents, spoken by Mika"
   ]
  },
  {
   "s": "Sit, sit. Tea. No, the other cup. That one's Tamo's. He won't drink it. It's the thought.",
-  "ctx": [
-   "dialogue porch_talk, spoken by Grandma Sora",
-   "dialogue porch_talk_solo, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "I have a secret, Mi-chan. A small one. Don't tell Genzo.",
   "ctx": [
    "dialogue porch_talk, spoken by Grandma Sora",
    "dialogue porch_talk_solo, spoken by Grandma Sora"
@@ -6788,20 +6442,6 @@
   "ctx": [
    "dialogue porch_talk, spoken by Grandma Sora",
    "dialogue porch_talk_solo, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "And I wanted you to meet everyone, and everyone to meet you. Now the valley is yours too.",
-  "ctx": [
-   "dialogue porch_talk, spoken by Grandma Sora",
-   "dialogue porch_talk_solo, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "…Grandma, that's the sneakiest nice thing anyone has ever done for me.",
-  "ctx": [
-   "dialogue porch_talk, spoken by Mika",
-   "dialogue porch_talk_solo, spoken by Mika"
   ]
  },
  {
@@ -20000,8 +19640,8 @@
   "s": "How to play",
   "ctx": [
    "UI (src/game/tricks/cowrace.js)",
-   "UI (src/ui/howto.js)",
-   "UI (src/ui/oanquan-guide.js)"
+   "UI (src/game/tricks/swimming.js)",
+   "UI (src/ui/howto.js)"
   ]
  },
  {

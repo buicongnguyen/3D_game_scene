@@ -248,7 +248,7 @@ const CSS = `
    under the stop square (ui/minigame-stop.js) and the egg counter's row, narrower and over the yard's camera button */
 @media (orientation:portrait) and (max-width:560px){
  #howTo{top:calc(98px + env(safe-area-inset-top,0px));left:calc(12px + env(safe-area-inset-left,0px));width:176px;z-index:18;transform-origin:left top}
- #howTo .hd{padding:5px 8px 3px 6px}
+ #howTo .hd{min-height:44px;min-width:44px;padding:5px 8px 3px 6px}
  #howTo .hd .q{width:26px;height:26px;line-height:26px;font-size:17px}
  #howTo .hd b{font-size:15px}
  #howTo li{grid-template-columns:30px 1fr;padding:4px 5px;margin-top:3px}
@@ -423,7 +423,9 @@ export function showHowTo(id, { input = null, touch = false, first = true } = {}
   cur = { id, rows, input, touch, dev: deviceOf(input, touch) };
   draw();
   el.classList.remove('hidden');
-  if (small()) {
+  if (touch && small()) {
+    setShut(true);
+  } else if (small()) {
     setShut(!first);
     if (first) timer = setTimeout(() => { if (cur) { setShut(true); el.classList.add('nudge'); } }, OPEN_FOR * 1000);
   } else setShut(pref() === '0');

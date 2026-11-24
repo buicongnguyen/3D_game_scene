@@ -382,11 +382,11 @@ export class Wildlife {
     if (d < 6 && player.speed > 3.2 && !a.path) {
       const dx = a.pos.x - player.pos.x, dz = a.pos.z - player.pos.z, l = Math.hypot(dx, dz) || 1;
       const tx = a.pos.x + dx / l * 7, tz = a.pos.z + dz / l * 7;
-      if (this.world.heightAt(tx, tz) > 0.8) { a.walk([[tx, tz]], null, 3.5); a.anim?.play('Hop', { speed: 1.6 }); }
+      if (this.world.heightAt(tx, tz) > 0.8) { a.walk([[tx, tz]], null, 3.5); }
     } else if (!a.path && Math.random() < dt * 0.1) {
       const ang = Math.random() * 6.28;
       const tx = a.pos.x + Math.cos(ang) * 3, tz = a.pos.z + Math.sin(ang) * 3;
-      if (this.world.heightAt(tx, tz) > 0.8) { a.walk([[tx, tz]], null, 1.2); a.anim?.play('Hop'); }
+      if (this.world.heightAt(tx, tz) > 0.8) { a.walk([[tx, tz]], null, 1.2); }
     }
   }
 
@@ -398,7 +398,6 @@ export class Wildlife {
       const tx = a.pos.x + dx / l * 9, tz = a.pos.z + dz / l * 9;
       a.fleeing = true;
       a.walk([[tx, tz]], () => { a.fleeing = false; a.setIdle('Graze'); }, 4.5);
-      a.anim?.play('Walk', { speed: 2.2 });
       return;
     }
     if (!a.path && Math.random() < dt * 0.06) {
@@ -431,12 +430,15 @@ export class Wildlife {
     // terrain and fences
     if (this.world.heightAt(x, z) < 0.6 || this.world.grid.slopeAt(x, z) > 38) { x = s.x; z = s.z; n.vx *= -0.5; n.vz *= -0.5; }
     const r = this.colliders.resolve(x, z, 0.45, this.world.heightAt(x, z), 1.0, 0.3);
+    const dx = r.x - s.x, dz = r.z - s.z;
+    const relocated = x !== n.x || z !== n.z;
+    const groundSpeed = dt > 0 && !relocated ? Math.hypot(dx, dz) / dt : 0;
     Object.assign(s, n, { x: r.x, z: r.z });
     if (s.penned && !was) this.onPenned?.(s);
     s.pos.set(s.x, this.world.heightAt(s.x, s.z), s.z);
-    if (n.speed > 0.15) s.targetFacing = Math.atan2(n.vx, n.vz);
-    const clip = n.speed > 2 ? 'Run' : n.speed > 0.2 ? 'Walk' : 'Idle';
-    if (!s.anim?.busy) s.anim?.play(clip, { speed: clip === 'Run' ? n.speed / 3.5 : clip === 'Walk' ? Math.max(0.6, n.speed / 0.8) : 1 });
+    if (groundSpeed > 0.15) s.targetFacing = Math.atan2(dx, dz);
+    const clip = groundSpeed > 2 ? 'Run' : groundSpeed > 0.02 ? 'Walk' : 'Idle';
+    if (!s.anim?.busy) s.anim?.play(clip, { speed: clip === 'Run' ? groundSpeed / s.runRef : clip === 'Walk' ? groundSpeed / s.walkRef : 1 });
     if (Math.random() < dt * 0.05) s.anim?.once('Bleat', { then: clip });
   }
 

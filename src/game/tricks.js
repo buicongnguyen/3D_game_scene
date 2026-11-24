@@ -179,7 +179,7 @@ export class Tricks {
     if (!st || !this.ready() || this.round || this.d.q.step.talk?.[who]) return false;
     for (const t of TRICKS) {
       if (this.teacherOf(t) !== who || this.rec(t.id)?.intro || !this.open(t) || !DIALOGUE[t.intro]) continue;
-      st.tricks[t.id] = { learned: true, best: 0, stars: 0, plays: 0, ...(st.tricks[t.id] || {}), intro: true };
+      st.tricks[t.id] = { best: 0, stars: 0, plays: 0, ...(st.tricks[t.id] || {}), learned: true, intro: true };
       this.d.say(t.intro).then(() => {
         this.d.ui.toast(tx('New trick: {name} (see the journal)', { name: tx(t.name) }), t.icon);
         this.d.audio.chime(2);
@@ -217,7 +217,7 @@ export class Tricks {
       const mod = await this.module(id);
       if (!mod?.play) { d.ui.toast(tx('{name} is not ready yet', { name: tx(t.name) }), t.icon); return null; }
       const st = this.st;
-      st.tricks[id] = { learned: true, best: 0, stars: 0, plays: 0, ...(st.tricks[id] || {}) };
+      st.tricks[id] = { best: 0, stars: 0, plays: 0, ...(st.tricks[id] || {}), learned: true };
       let again = true;
       while (again) {
         const first = !st.tricks[id].plays;

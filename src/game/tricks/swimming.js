@@ -87,6 +87,11 @@ body.swim-round #toasts{visibility:hidden}
 #swimLesson .act.held{background:#bf672b;transform:translateY(3px);box-shadow:0 1px 0 #713d1b}
 #swimLesson .leave{position:absolute;right:calc(24px + env(safe-area-inset-right,0px));bottom:calc(184px + env(safe-area-inset-bottom,0px));min-height:44px;min-width:72px;font-size:13px;background:#edf8f2;color:#325955;box-shadow:0 3px 0 #c1d9d3}
 @media(max-width:560px){#swimLesson .lesson{top:calc(112px + env(safe-area-inset-top,0px));padding:8px 12px 9px}#swimLesson .cue{font-size:19px}#swimLesson .instruction{font-size:13px}#swimLesson .feedback{font-size:12px}#swimLesson .safe{font-size:10px}#swimLesson .leave{bottom:calc(181px + env(safe-area-inset-bottom,0px))}}
+#swimLesson .help{display:none}
+@media(orientation:portrait) and (max-width:560px){
+ #swimLesson .help{display:block;position:absolute;left:calc(12px + env(safe-area-inset-left,0px));top:calc(66px + env(safe-area-inset-top,0px));min-height:44px;padding:4px 10px;font-size:13px}
+ #swimLesson.hide-instructions .instruction,#swimLesson.hide-instructions .controls{display:none}
+}
 @media(max-height:540px){body.touch.swim-round #minigameStop{top:calc(12px + env(safe-area-inset-top,0px));bottom:auto}#swimLesson .lesson{left:18px;transform:none;width:310px;top:70px;font-size:12px}#swimLesson .safe{left:16px;transform:none;max-width:65vw}#swimLesson .instruction{font-size:12px}#swimLesson .cue{font-size:17px}#swimLesson .frog svg{height:22px}#swimLesson .frog{margin:4px 0 1px}}
 `;
 
@@ -225,7 +230,7 @@ export function makeSwimPose(player) {
 function makeUi(ctx) {
   addCss('swimCss', CSS);
   const el = document.createElement('div'); el.id = 'swimLesson';
-  el.innerHTML = '<section class="lesson"><div class="step"></div><div class="cue" aria-live="polite"></div><div class="instruction"></div><div class="track"><div class="progress"></div></div><div class="frog">' + FROG_HTML + '</div><div class="rhythm"><i class="zone"></i><i class="pulse"></i></div><div class="feedback"></div><div class="controls"></div></section><button class="leave"></button><button class="act"></button><div class="safe"></div>';
+  el.innerHTML = '<button class="help" type="button" aria-expanded="true" aria-controls="swimInstruction"></button><section class="lesson"><div class="step"></div><div class="cue" aria-live="polite"></div><div class="instruction" id="swimInstruction"></div><div class="track"><div class="progress"></div></div><div class="frog">' + FROG_HTML + '</div><div class="rhythm"><i class="zone"></i><i class="pulse"></i></div><div class="feedback"></div><div class="controls"></div></section><button class="leave"></button><button class="act"></button><div class="safe"></div>';
   document.body.append(el); document.body.classList.add('swim-round');
   const nodes = Object.fromEntries(['step', 'instruction', 'cue', 'progress', 'frog', 'rhythm', 'zone', 'pulse', 'feedback', 'controls', 'safe', 'leave', 'act'].map(c => [c, el.querySelector(`.${c}`)]));
   nodes.parts = FROG_PARTS.map(k => el.querySelector(`.frog [data-part="${k}"]`) || null);
@@ -241,6 +246,12 @@ function makeUi(ctx) {
   });
   const end = e => { if (e.pointerId === pointer) { e.preventDefault(); release(); } };
   on(nodes.act, 'pointerup', end); on(nodes.act, 'pointercancel', end); on(nodes.act, 'lostpointercapture', release);
+  const help = el.querySelector('.help');
+  help.textContent = tx('How to play');
+  on(help, 'click', () => {
+    const folded = el.classList.toggle('hide-instructions');
+    help.setAttribute('aria-expanded', String(!folded));
+  });
   on(nodes.leave, 'click', () => { release(); ctx.quit = true; });
   on(window, 'blur', release); on(window, 'pagehide', release); on(window, 'mobile-game-interruption', release);
   on(document, 'visibilitychange', () => { if (document.hidden) release(); });
