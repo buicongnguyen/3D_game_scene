@@ -12,7 +12,7 @@ import { freshState, migrate } from '../src/game/quest.js';
 const SEASONS = ['spring', 'summer', 'autumn', 'winter'];
 
 test('every trick is well formed', () => {
-  for (const id of ['beetles', 'dew', 'firefly', 'frogs', 'kite', 'river', 'roast', 'stars']) assert.ok(TRICK[id], id);   // the originals stay; new rows are checked below like any other
+  for (const id of ['beetles', 'firefly', 'frogs', 'kite', 'river', 'roast', 'stars']) assert.ok(TRICK[id], id);   // the originals stay; new rows are checked below like any other
   assert.equal(new Set(TRICKS.map(t => t.id)).size, TRICKS.length, 'unique ids');
   const MODULELESS = [];            // a trick with no game module must be listed here on purpose
   for (const t of TRICKS) if (!MODULELESS.includes(t.id)) assert.ok(fs.existsSync(new URL(`../src/game/tricks/${t.id}.js`, import.meta.url)), `${t.id} has a module`);

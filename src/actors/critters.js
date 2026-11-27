@@ -1,4 +1,4 @@
-// The valley's small living things: crickets singing in the grass, spiders on their webs under the eaves, on fences and
+// The valley's small living things: crickets singing in the grass,
 // between forest trees, ladybugs on flowers and bushes, dragonflies darting over the river and the rice paddies, and
 // butterflies drifting over meadows and gardens, and frogs on the paddy bunds and the river banks that sing at dusk
 //   in spring and summer and plop into the water when Mika runs up. Grasshoppers sit in the long grass by day and crouch
@@ -9,7 +9,6 @@
 // - Each kind draws from a small pool of model clones. A few times a second the pool is handed to the nearest present
 //   critters within DRAW m of Mika; everything else is just numbers. So the draw-call cost is capped by the pools,
 //   however many critters live in the valley. Clones animate only within ANIM m and never cast shadows.
-// - The webs are static: one InstancedMesh per web part, refilled with the webs near Mika.
 // - Season and hour decide who is out (game.shownSeason / game.shownHour()): crickets sing at dusk and at night,
 //   ladybugs, dragonflies and butterflies keep to the day, and in winter everyone is tucked away.
 // - No allocation per frame. A model that is not there yet (art in progress) is simply skipped.
@@ -17,14 +16,12 @@ import * as THREE from 'three';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Animator } from './animator.js';
 import { rng } from '../engine/spline.js';
-import { BUILDINGS, PADDIES, PLACES, ORCHARD_FENCE, river, riverHalfWidth } from '../world/layout.js';
-import { FOOTPRINT } from '../world/structures.js';
-import { placeProblems, doorPoint } from '../world/roads.js';
+import { PADDIES, PLACES, river, riverHalfWidth } from '../world/layout.js';
+import { placeProblems } from '../world/roads.js';
 import { isFlooded } from '../world/fields.js';
 
 export const DRAW = 45;          // critters are drawn within this distance of Mika (m): a 15 cm bug is a few pixels there
 export const ANIM = 32;          // ...and move and animate within this one
-const WEB_DRAW = 55;
 
 /**
  * Who lives here: model, pool size (most clones drawn at once), size, and how present they are by season and hour.
@@ -33,7 +30,6 @@ const WEB_DRAW = 55;
  */
 export const CRITTER_KINDS = {
   cricket: { model: 'cricket', pool: 5, scale: 2.4, seasons: { spring: 0.4, summer: 1, autumn: 0.9, winter: 0 }, day: 0.45, night: 1 },
-  spider: { model: 'spider', web: 'spider-web', pool: 4, scale: 2.6, seasons: { spring: 0.8, summer: 1, autumn: 1, winter: 0 }, day: 1, night: 1 },
   ladybug: { model: 'ladybug', pool: 4, scale: 6, seasons: { spring: 1, summer: 1, autumn: 0.6, winter: 0 }, day: 1, night: 0 },
   dragonfly: { model: 'dragonfly', pool: 4, scale: 2.6, seasons: { spring: 0.3, summer: 1, autumn: 0.9, winter: 0 }, day: 1, night: 0 },
   butterfly: { model: 'butterfly', pool: 6, scale: 2.8, seasons: { spring: 1, summer: 1, autumn: 0.4, winter: 0 }, day: 1, night: 0 },
@@ -67,20 +63,18 @@ export function presence(kind, season, hour) {
 const MEADOWS = [[-70, -20, 22], [-74, 62, 16], [-40, 70, 14], [60, 10, 18], [84, 30, 12], [140, -30, 16], [-58, 126, 10],
   [70, -55, 16], [-30, -70, 14], [-100, 92, 14]];
 const VILLAGES = [[-45, 20, 70], [115, 6, 60], [-60, 140, 30], [72, -48, 34], [-98, 112, 26], [-15, -40, 20]];
-const EAVES = ['kw1', 'kw3', 'kw5', 'kw7', 'kw8', 'otaHouse', 'tk1', 'tk3', 'tk5', 'tk6', 'cottage'];
-const FOREST_TRAILS = [[-44, -92], [-30, -106], [-48, -62], [62, -122], [53, -121], [100, -96], [-50, -140]];
 
 const near = (x, z, list) => list.some(([cx, cz, r]) => Math.hypot(x - cx, z - cz) < r);
 
 /**
  * Plan every critter's home (pure; the same valley every time). placed: the scenery plan ({ flowers, bushes, trees });
  * grid: { heightAt, slopeAt }; topOf(model) → height of a flower or bush model at scale 1 (for perching on top).
- * Returns { cricket: [...], spider: [...], ladybug: [...], dragonfly: [...], butterfly: [...] } of plain slots.
+ * Returns { cricket: [...], ladybug: [...], dragonfly: [...], butterfly: [...] } of plain slots.
  */
 export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
   const R = rng(seed);
   const ok = (x, z) => !placeProblems(x, z, grid).length;
-  const out = { cricket: [], spider: [], ladybug: [], dragonfly: [], butterfly: [], frog: [], grasshopper: [], mantis: [] };
+  const out = { cricket: [], ladybug: [], dragonfly: [], butterfly: [], frog: [], grasshopper: [], mantis: [] };
   const slot = (kind, x, y, z, extra) => {
     const s = { kind, i: out[kind].length, hx: x, hy: y, hz: z, x, y, z, face: R() * Math.PI * 2, luck: R(), ph: R() * 10,
       st: 'idle', t: R() * 3, u: 0, dur: 0, fx: 0, fy: 0, fz: 0, tx: 0, ty: 0, tz: 0, arc: 0, d: 1e9, want: false, vis: null, hold: 0, ...extra };
@@ -94,46 +88,6 @@ export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
       if (!ok(x, z)) continue;
       slot('cricket', x, grid.heightAt(x, z), z, { pitch: 0.92 + R() * 0.16 });
       n++;
-    }
-  }
-  // spider webs: across a front corner under the eaves (away from the door), on fences, and between forest trees
-  for (const id of EAVES) {
-    const b = BUILDINGS.find(q => q.id === id), fp = FOOTPRINT[b?.model];
-    if (!fp) continue;
-    const door = doorPoint(id), r = b.rot * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
-    const front = Math.cos(door.face - r) > 0 ? 1 : -1;
-    let best = null;
-    for (const side of [-1, 1]) {
-      const lx = side * (fp[0] / 2 + 0.25), lz = front * (fp[1] / 2 + 0.25);
-      const x = b.x + lx * c + lz * s, z = b.z - lx * s + lz * c;
-      const dd = Math.hypot(x - door.x, z - door.z);
-      if (!best || dd > best.dd) best = { x, z, dd, lx, lz };
-    }
-    const { x, z } = best;
-    const h = grid.heightAt(x, z);
-    if (h < 0.8) continue;
-    // the web spans the corner diagonally: its face looks out along the corner's diagonal
-    const ox = Math.sign(best.lx) * c + front * s, oz = -Math.sign(best.lx) * s + front * c;
-    slot('spider', x, h + 1.9, z, { ry: Math.atan2(ox, oz), webR: 0.42 });
-  }
-  const F = ORCHARD_FENCE;
-  for (const x of [21, 47, 121, 163]) {
-    const h = grid.heightAt(x, F.z);
-    if (h > 0.8) slot('spider', x, h + 0.72, F.z, { ry: 0, webR: 0.3 });
-  }
-  slot('spider', -64, grid.heightAt(-64, 133) + 0.7, 133, { ry: Math.PI / 2, webR: 0.3 });  // the bamboo fence by the cottage
-  const trees = (placed.trees || []).filter(t => !t.far && !t.orchard && !t.story && near(t.x, t.z, FOREST_TRAILS.map(([x, z]) => [x, z, 22])));
-  let pairs = 0;
-  for (let a = 0; a < trees.length && pairs < 6; a++) {
-    for (let b = a + 1; b < trees.length; b++) {
-      const A = trees[a], B = trees[b], gap = Math.hypot(A.x - B.x, A.z - B.z);
-      if (gap < 2.2 || gap > 3.6) continue;
-      const x = (A.x + B.x) / 2, z = (A.z + B.z) / 2, h = grid.heightAt(x, z);
-      if (h < 0.8 || out.spider.some(w => Math.hypot(w.hx - x, w.hz - z) < 14)) continue;
-      // the web hangs across the gap: its face looks across the line between the trunks
-      slot('spider', x, h + 1.4, z, { ry: Math.atan2(B.z - A.z, -(B.x - A.x)), webR: 0.42 });
-      pairs++;
-      break;
     }
   }
   // ladybugs on the flowers and bushes round the villages; each knows two neighbouring perches to fly to
@@ -207,8 +161,6 @@ export function planCritters(placed, grid, topOf = () => 0.6, seed = 5150) {
 }
 
 const V = () => new THREE.Vector3();
-const _m = new THREE.Matrix4(), _q = new THREE.Quaternion(), _s = new THREE.Vector3(), _p = V();
-const _x = V(), _y = V(), _z = V();
 const byD = (a, b) => a.d - b.d;
 const ease = u => 1 - (1 - u) * (1 - u);
 
@@ -232,7 +184,6 @@ export class Critters {
     this.nearCrickets = 0;
     this.nearestCricket = 1e9;
     this.visitor = null;
-    this.webs = null;
   }
 
   /** How tall a scatter model stands (for perching on its top). */
@@ -250,8 +201,7 @@ export class Critters {
     game.foliage?.protectBushPerches([...this.slots.ladybug, ...this.slots.butterfly].flatMap(s => s.perches));
     for (const [kind, def] of Object.entries(CRITTER_KINDS)) {
       const models = (def.models || [def.model]).filter(m => this.assets.has(m));
-      if (!models.length || (def.web && !this.assets.has(def.web))) continue;
-      if (def.web && !this.makeWebs(def)) continue;
+      if (!models.length) continue;
       const quality = game.renderer?.q?.name === 'Low' ? 0.6 : 1;
       const pool = this.pools[kind] = [];
       const size = quality < 1 && def.low !== undefined ? def.low : Math.max(2, Math.round(def.pool * quality));
@@ -335,68 +285,13 @@ export class Critters {
     return v;
   }
 
-  /** One InstancedMesh per part of the (static) web model; filled with the webs near Mika in assign(). */
-  makeWebs(def) {
-    const parts = this.assets.parts(def.web);
-    if (!parts.length) return false;
-    const box = new THREE.Box3();
-    for (const p of parts) { p.geometry.computeBoundingBox(); box.union(p.geometry.boundingBox.clone().applyMatrix4(p.matrix)); }
-    const size = box.getSize(V()), centre = box.getCenter(V());
-    // the web's thinnest axis is its face normal: turn it to +Z, centre it, and size it to the slot's radius
-    const axis = size.x <= size.y && size.x <= size.z ? 'x' : size.y <= size.z ? 'y' : 'z';
-    const pre = new THREE.Matrix4();
-    if (axis === 'x') pre.makeRotationY(-Math.PI / 2);
-    else if (axis === 'y') pre.makeRotationX(Math.PI / 2);
-    const plane = axis === 'x' ? Math.min(size.y, size.z) : axis === 'y' ? Math.min(size.x, size.z) : Math.min(size.x, size.y);
-    const base = new THREE.Matrix4().makeTranslation(-centre.x, -centre.y, -centre.z);
-    const n = this.slots.spider.length;
-    const meshes = parts.map(p => {
-      const im = new THREE.InstancedMesh(p.geometry, p.material, n);
-      im.name = 'critter:spider-web';
-      im.castShadow = false;
-      im.receiveShadow = false;
-      im.count = 0;
-      im.frustumCulled = true;
-      im.userData.local = pre.clone().multiply(base).multiply(p.matrix);
-      this.scene.add(im);
-      return im;
-    });
-    this.webs = { meshes, plane: plane / 2 || 0.4, shown: -1 };
-    return true;
-  }
-
-  /** Fill the web instances with the webs within WEB_DRAW m (only when the set changes). */
-  showWebs(p, on) {
-    const W = this.webs;
-    if (!W) return;
-    let key = 0, n = 0;
-    if (on) for (const s of this.slots.spider) if (Math.hypot(s.hx - p.x, s.hz - p.z) < WEB_DRAW) key += 1 << (s.i % 30), n++;
-    if (key === W.shown && n === W.n) return;
-    W.shown = key; W.n = n;
-    for (const im of W.meshes) {
-      let k = 0;
-      if (on) for (const s of this.slots.spider) {
-        if (Math.hypot(s.hx - p.x, s.hz - p.z) >= WEB_DRAW) continue;
-        const sc = s.webR / W.plane;
-        _q.setFromAxisAngle(_y.set(0, 1, 0), s.ry);
-        _m.compose(_p.set(s.hx, s.hy, s.hz), _q, _s.set(sc, sc, sc)).multiply(im.userData.local);
-        im.setMatrixAt(k++, _m);
-      }
-      im.count = k;
-      im.instanceMatrix.needsUpdate = true;
-      im.boundingSphere = null;
-      if (k) im.computeBoundingSphere();
-      im.visible = k > 0;
-    }
-  }
-
   // ---------------------------------------------------------------- pooling
   bind(v, s) {
     v.slot = s; s.vis = v;
     v.root.visible = true;
     v.clip = '';
     if (v.kind === 'butterfly' && this.wingMats) for (const w of v.wings) w.material = this.wingMats[s.tint];
-    if (v.kind === 'spider') this.placeSpider(v, s); else this.place(v, s);
+    this.place(v, s);
     this.play(v, this.restClip(v.kind, s));
   }
 
@@ -412,7 +307,6 @@ export class Critters {
     if (kind === 'dragonfly') return 'Fly';
     if (kind === 'butterfly') return s.st === 'rest' ? 'Rest' : 'Fly';
     if (kind === 'ladybug') return s.st === 'fly' ? 'Fly' : 'Idle';
-    if (kind === 'spider') return s.st === 'walk' ? 'Walk' : 'Idle';
     if (kind === 'frog') return s.st === 'swim' ? 'Swim' : 'Idle';
     return 'Idle';
   }
@@ -453,7 +347,6 @@ export class Critters {
       }
       for (const v of pool) v.near = !!v.slot && v.slot.d < ANIM;
     }
-    this.showWebs(p, !indoor && (CRITTER_KINDS.spider.seasons[season] ?? 0) > 0);
   }
 
   // ---------------------------------------------------------------- per frame
@@ -475,7 +368,6 @@ export class Critters {
       if (v.kind === 'cricket') this.cricket(v, s, dt, startled, dx, dz, d, night, audio);
       else if (v.kind === 'grasshopper') this.grasshopper(v, s, dt, startled, dx, dz, d);
       else if (v.kind === 'mantis') this.mantis(v, s, dt, startled || d < 3 && player.speed > 2.4, dx, dz, d);
-      else if (v.kind === 'spider') this.spider(v, s, dt);
       else if (v.kind === 'ladybug') this.ladybug(v, s, dt, startled);
       else if (v.kind === 'dragonfly') this.dragonfly(v, s, dt, player);
       else if (v.kind === 'frog') this.frog(v, s, dt, startled || d < 2.2 && player.speed > 2.2, d, audio, g);
@@ -623,37 +515,6 @@ export class Critters {
     this.launch(s, tx, ty, tz, into ? 0.45 : 0.32, into ? 0.4 : 0.18);
     s.st = 'hop'; s.into = into;
     if (v.anim?.has('Hop')) { v.anim.once('Hop', { then: into ? 'Swim' : 'Idle', speed: 1.3 }); v.clip = into ? 'Swim' : 'Idle'; }
-  }
-
-  /** The spider sits on its web, now and then walks a little way across it. */
-  spider(v, s, dt) {
-    s.wu ??= 0; s.wv ??= 0; s.dir ??= -Math.PI / 2;
-    if (s.st === 'walk') {
-      const ex = s.tx - s.wu, ey = s.ty - s.wv, l = Math.hypot(ex, ey), step = 0.07 * dt;
-      if (l <= step) { s.wu = s.tx; s.wv = s.ty; s.st = 'idle'; s.t = 3 + Math.random() * 7; this.play(v, 'Idle'); }
-      else { s.wu += ex / l * step; s.wv += ey / l * step; s.dir = Math.atan2(ey, ex); }
-    } else if ((s.t -= dt) <= 0) {
-      const a = Math.random() * 6.28, r = Math.random() * s.webR * 0.55;
-      s.tx = Math.cos(a) * r; s.ty = Math.sin(a) * r;
-      s.st = 'walk';
-      this.play(v, 'Walk');
-    }
-    this.placeSpider(v, s);
-  }
-
-  placeSpider(v, s) {
-    s.wu ??= 0; s.wv ??= 0; s.dir ??= -Math.PI / 2;
-    const n = _z.set(Math.sin(s.ry), 0, Math.cos(s.ry));            // web face normal
-    const right = _x.set(Math.cos(s.ry), 0, -Math.sin(s.ry));       // across the web
-    // position on the web's face, a hair in front of it
-    s.x = s.hx + right.x * s.wu + n.x * 0.02; s.y = s.hy + s.wv; s.z = s.hz + right.z * s.wu + n.z * 0.02;
-    v.root.position.set(s.x, s.y, s.z);
-    // belly to the web: the spider's up is the web normal, its forward is the way it walks in the web's plane
-    const cu = Math.cos(s.dir), cv = Math.sin(s.dir);
-    const fwd = _p.set(right.x * cu, cv, right.z * cu);
-    const side = _y.crossVectors(n, fwd);
-    _m.makeBasis(side, n, fwd);
-    v.root.quaternion.setFromRotationMatrix(_m);
   }
 
   /** On a flower or bush top, turning slowly; flies to a neighbouring perch when startled (or after a hello). */

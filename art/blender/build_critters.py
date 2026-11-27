@@ -17,7 +17,6 @@ cost no extra materials. Heads and eyes are a little oversized so they read at a
 
   cricket    5 cm long   Idle, Chirp (0.8 s: the two forewings lift and scissor in three bursts), Hop (once, in-place arc 4 cm),
                          Walk (loop 0.6 s, claws planted), Sing (loop 0.267 s: the wings held up and rubbing)
-  spider     3.3 cm body Idle (legs shift), Walk (~0.05 m/s)        + static 'spider-web' (0.6 m)
   ladybug    1 cm        Idle, Fly (once: wing cases open, wings unfold and buzz)
   dragonfly  7 cm span   Fly (loop: wing buzz)
   butterfly  6 cm span   Fly (loop flap), Rest (wings slowly open/close); 'Butterfly wing' is tinted
@@ -35,12 +34,12 @@ from bug_kit import (make_legs, leg_bones, solve_legs, stride_target, to_body, s
 from mathutils import Quaternion, noise
 
 ARGV = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-ALL = ['cricket', 'spider', 'spider-web', 'ladybug', 'dragonfly', 'butterfly', 'frog-tree', 'frog-pond', 'firefly']
+ALL = ['cricket', 'ladybug', 'dragonfly', 'butterfly', 'frog-tree', 'frog-pond', 'firefly']
 ONLY = ALL
 if '--only' in ARGV:
     ONLY = [n.strip() for n in ARGV[ARGV.index('--only') + 1].split(',') if n.strip()]
 NO_SAVE = '--no-save' in ARGV
-BUDGET = {'cricket': 340, 'spider': 300, 'spider-web': 400, 'ladybug': 300, 'dragonfly': 300, 'butterfly': 300, 'frog-tree': 300, 'frog-pond': 300,
+BUDGET = {'cricket': 340, 'ladybug': 300, 'dragonfly': 300, 'butterfly': 300, 'frog-tree': 300, 'frog-pond': 300,
           'firefly': 300}
 RESULTS = {}
 Xv, Yv, Zv = Vector((1, 0, 0)), Vector((0, 1, 0)), Vector((0, 0, 1))
@@ -369,175 +368,6 @@ def build_cricket():
     clip(arm, 'Hop', 18, ch, loop=False)
     CLAMPED[0] = 0
     export_critter('cricket', arm)
-
-# ====================================================================== SPIDER
-
-
-def heart(a):
-    """Heart outline in the unit square, sampled by angle (for the spider's marking)."""
-    t = a
-    x = 16 * math.sin(t) ** 3
-    y = 13 * math.cos(t) - 5 * math.cos(2 * t) - 2 * math.cos(3 * t) - math.cos(4 * t)
-    return x / 17, y / 17
-
-
-def build_spider():
-    """Garden spider, cute not scary: a round warm-brown body with a little orange heart on its back,
-    two body parts (legs on the front one), eight eyes (two big friendly ones with dark pupils plus six
-    small beads), eight short banded legs and no antennae."""
-    reset()
-    body_m = mat('Spider body', '#94532c', rough=.6)
-    mark_m = mat('Spider marking', '#ff8a24', rough=.45)
-    eye_m = mat('Spider eye', '#fbf8f0', rough=.1)
-    H, Hr = V(0, -.0082, .0122), (.0078, .0074, .0070)
-    A, Ar = V(0, .0068, .0152), (.0105, .0108, .0096)
-
-    bones = [('root', (0, 0, 0), (0, 0, .004), None),
-             ('body', (0, 0, .0125), (0, -.010, .0125), 'root')]
-    legs = []
-    for s, sd in ((1, 'L'), (-1, 'R')):
-        for i, beta in enumerate((-48, -16, 16, 46)):
-            h = V(s * math.cos(math.radians(beta)), math.sin(math.radians(beta)), 0)
-            J0 = H + V(h.x * .0050, h.y * .0042 + .0005, -.0024)
-            knee = J0 + h * .0092 + V(0, 0, .0066)
-            foot = J0 + h * .0190
-            foot.z = .0004
-            nm = f'leg{i + 1}_{sd}'
-            bones.append((nm, J0, knee, 'body'))
-            legs.append((nm, s, h, J0, knee, foot))
-    arm = build_armature('Spider', bones)
-
-    P = Parts()
-    P.add(sphere('Spider head', Hr, H, body_m, seg=7, rings=4), 'body', lambda co: .8 if co.z < .009 else 1.0)
-    P.add(sphere('Spider abdomen', Ar, A, body_m, seg=8, rings=4), 'body',
-          lambda co: .72 if co.z < .010 else (1.0 if co.z > .018 else .9))
-    P.add(surface_disc('Spider heart', A, Ar, V(0, .05, 1.0), .0052, mark_m, count=10, off=.0002,
-                       shape=heart), 'body')
-    for s, sd in ((1, 'L'), (-1, 'R')):
-        ec = sx(V(.0036, -.0136, .0158), s)
-        P.add(sphere(f'Spider eye {sd}', .0034, ec, eye_m, seg=6, rings=4, rot=(math.radians(90), 0, 0)), 'body')
-        P.add(surface_disc(f'Spider pupil {sd}', ec, (.0034,) * 3, sx(V(.12, -1, -.08), s), .0019, eye_m, count=6,
-                           off=.00012), 'body', .06)
-        # spiders have eight eyes: the two big front ones plus six small dark beads (a pair below, two pairs
-        # up the sides of the head). Three triangles each, painted on the eye material.
-        for k, (d, r) in enumerate(((V(.17, -1, .06), .00105), (V(.80, -.62, .50), .00095), (V(.78, -.20, .78), .00085))):
-            P.add(surface_disc(f'Spider small eye {sd}{k}', H, Hr, sx(d, s), r, eye_m, count=3, off=.00016), 'body', .05)
-    for nm, s, h, J0, knee, foot in legs:
-        P.add(stick(f'Spider {nm}', [J0, knee, foot], .00145, body_m, taper=.6), nm,
-              lambda co: .55 if co.z < .0035 else (.8 if co.z > .0145 else 1.0))
-    finish('spider', arm, P, dict(rays=32, distance=.01, strength=.55, ground=0.0))
-
-    group_a = {'leg1_L', 'leg3_L', 'leg2_R', 'leg4_R'}
-
-    def leg_rot(s, h, yaw, lift):
-        return rot((Zv, s * yaw), (h.cross(Zv), lift))
-
-    # Idle (3 s): breathing, the body sways, legs shift and tap one after another
-    def idle_ch():
-        ch = {'body@loc': lambda p: (0, 0, .0003 * S(p, 2)),
-              'body': lambda p: (1.5 * S(p, 2, .1), 2 * S(p, 1, .3), 4 * S(p, 1))}
-        taps = {'leg1_L': .12, 'leg1_R': .3, 'leg2_L': .55, 'leg3_R': .72, 'leg4_L': .86, 'leg2_R': .45}
-        for nm, s, h, *_ in legs:
-            at = taps.get(nm)
-            ch[nm] = (lambda s, h, at: lambda p: leg_rot(s, h, 5 * S(p, 1, .2) + (6 * pulse(p, at, .05) if at else 0),
-                                                         (22 * pulse(p, at, .05) if at else 0)))(s, h, at)
-        return ch
-    clip(arm, 'Idle', 90, idle_ch())
-
-    # Walk (loop, 0.4 s): alternating tetrapod, rigid legs sweep +/-14 degrees; ~0.05 m/s at 1x
-    def walk_ch():
-        ch = {'body@loc': lambda p: (0, 0, .0005 * C(p, 2)),
-              'body': lambda p: (0, 2.5 * S(p, 1), 0)}
-        A_ = 14
-        for nm, s, h, *_ in legs:
-            off = 0 if nm in group_a else .5
-
-            def fn(p, s=s, h=h, off=off):
-                ph = (p + off) % 1.0
-                if ph < .5:
-                    yaw, lift = lerp(-A_, A_, ph / .5), 0.0
-                else:
-                    u = (ph - .5) / .5
-                    yaw, lift = lerp(A_, -A_, smooth(u)), 26 * math.sin(math.pi * u)
-                return leg_rot(s, h, yaw, lift)
-            ch[nm] = fn
-        return ch
-    clip(arm, 'Walk', 12, walk_ch())
-    export_critter('spider', arm)
-
-
-def web_parts(width=1.0, bead=1.0):
-    """The orb web's two meshes (no reset): silk ribbons and the joined dew drops. width / bead scale the
-    ribbon width and the drop radius (the trick-dew icon scene uses fatter ones so they read at 48 px)."""
-    silk = mat('Web silk', '#f3f1ff', rough=.35, emit=.35, emit_color='#fff6e8', double=True)
-    dew = mat('Web dew', '#c8ecff', rough=.04, emit=.6, emit_color='#eaf8ff')
-    rng = random.Random(11)
-    spokes = 9
-    ang = [math.radians(90 + 360 * k / spokes + rng.uniform(-9, 9)) for k in range(spokes)]
-    rad = [rng.uniform(.27, .30) for _ in range(spokes)]
-
-    def P2(a, r):
-        return Vector((math.cos(a) * r, 0, math.sin(a) * r))
-
-    bm = bmesh.new()
-
-    def ribbon(a, b, w):
-        a, b = Vector(a), Vector(b)
-        d = (b - a).normalized()
-        n = d.cross(Yv).normalized() * w * width / 2
-        vs = [bm.verts.new(a - n), bm.verts.new(b - n), bm.verts.new(b + n), bm.verts.new(a + n)]
-        f = bm.faces.new(vs)
-        f.normal_update()
-        if f.normal.dot(-Yv) < 0:
-            f.normal_flip()
-
-    tips = [P2(a, r) for a, r in zip(ang, rad)]
-    for k in range(spokes):                                   # radials from the hub
-        ribbon(P2(ang[k], .012), tips[k], .0034)
-        ribbon(tips[k], tips[(k + 1) % spokes], .0040)       # frame
-    for k in (0, 3, 6):                                      # anchor threads out of frame
-        ribbon(tips[k], tips[k] * 1.28, .0034)
-    rings = [.2, .33, .46, .58, .70, .82]
-    ring_pts = []
-    for j, f in enumerate(rings):                             # spiral: each ring creeps outward around the hub
-        pts = []
-        for k in range(spokes):
-            fk = f + .045 * k / spokes
-            pts.append(P2(ang[k], rad[k] * fk) + Vector((0, 0, -.006 * fk)))
-        ring_pts.append(pts)
-        for k in range(spokes):
-            ribbon(pts[k], pts[(k + 1) % spokes], .0028)
-    web = from_bmesh('Web silk', bm, silk, smooth_angle=10)
-    drops, placed = [], []
-    while len(drops) < 12:                                    # twelve drops, none touching another
-        j, k = rng.randrange(1, len(rings)), rng.randrange(spokes)
-        a, b = ring_pts[j][k], ring_pts[j][(k + 1) % spokes]
-        p = a.lerp(b, rng.uniform(.25, .75)) + Vector((0, 0, -.003))
-        if any((p - q).length < .045 for q in placed):
-            continue
-        placed.append(p)
-        r = rng.uniform(.0075, .0110) * bead
-        drops.append(sphere(f'Web dew {len(drops)}', (r, r, r * 1.1), p, dew, seg=5, rings=3))
-    d = join(drops, 'dew')
-    d.data.transform(Matrix.Translation(d.location))        # the node's origin is the web's hub, not the first drop
-    d.location = (0, 0, 0)
-    return web, d
-
-
-def build_web():
-    """Static orb web, 0.6 m across, origin at its hub, lying in the XZ plane (faces -Y in Blender = +Z
-    in three.js, where it lies in XY). Thin double-sided silk ribbons (the root mesh 'spider_web') plus dew
-    drops that catch the light on their own child node 'dew' (material 'Web dew'), so the Dew Webs trick
-    can make the drops sparkle or hide them without touching the silk."""
-    reset()
-    web, d = web_parts()
-    paint(web, 1.0)
-    ensure_color([web, d])
-    web.name = web.data.name = 'spider_web'
-    set_parent(d, web)
-    info = export('spider-web', [web])
-    RESULTS['spider-web'] = dict(tris=info['tris'], kb=info['bytes'] / 1024, clips=[], mats=info['materials'])
-    assert info['tris'] <= BUDGET['spider-web'], info
 
 # ====================================================================== LADYBUG
 
@@ -1009,7 +839,7 @@ def build_firefly():
     export_critter('firefly', arm)
 
 
-BUILDERS = {'cricket': build_cricket, 'spider': build_spider, 'spider-web': build_web, 'ladybug': build_ladybug,
+BUILDERS = {'cricket': build_cricket, 'ladybug': build_ladybug,
             'dragonfly': build_dragonfly, 'butterfly': build_butterfly,
             'frog-tree': build_frog_tree, 'frog-pond': build_frog_pond, 'firefly': build_firefly}
 

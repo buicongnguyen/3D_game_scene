@@ -1297,16 +1297,6 @@ What Mika hears when she tries a way that is not open yet.
 
 **Rin:** Then throw it gently and level. Three throws, the best one counts. And we pick them all up after.
 
-*`trick_dew_intro`:*
-
-**Rin:** Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.
-
-**Mika:** Hundreds of spiders. At sunrise. You keep making this place sound worse.
-
-**Rin:** You can't even see the webs by day. At dawn the dew lights them up like strings of glass beads.
-
-**Rin:** Keep the sun behind you and look low. Take pictures. Don't touch: that's somebody's house.
-
 *`trick_roast_intro`:*
 
 **Rin:** Harvest's in, so the straw's dry. You know what that means? Roast sweet potatoes out in the meadow.
@@ -1680,7 +1670,7 @@ one keepsake for the journal. All of this can happen at any point in the story.
 
 ## Appendix G · Valley friends
 
-Mika can say hello to 23 kinds of creature with E. The journal's Friends page shows the hint until she has
+Mika can say hello to 22 kinds of creature with E. The journal's Friends page shows the hint until she has
 met one, then its entry. The first hello with each plays a short scene.
 
 | Friend | Prompt | Hint (before meeting) | Journal entry |
@@ -1699,7 +1689,6 @@ met one, then its entry. The first hello with each plays a short scene.
 | Hillside goat | Pat the goat | On the grassy slopes below Kawabe and above Takamori. | Climbs anything, eats everything, and looks very sorry about both. |
 | Kinako the dog | Pet the dog | In Kawabe, in Takamori and in Sora's garden. She will find you first. | A curly-tailed shiba who walks with anyone who looks a little lost. Barks hello, wags goodbye. |
 | Field cricket | Listen to the cricket | In the long grass round the villages, on summer and autumn evenings. Follow the chirping, and walk softly. | Sings all night with his back legs and never once runs out of song. Very shy up close. |
-| Garden spider | Watch the spider | On her web under the eaves in Kawabe and Takamori, on the fences, and between trees in the forest. Not in winter. | Mends her web every evening and lets the morning dew decorate it. Eats the mosquitoes, so everybody likes her. |
 | Ladybug | Let the ladybug climb on your finger | On flowers and bushes near the villages, on warm days. Walk up slowly or she'll fly away. | Seven spots, all of them lucky. Climbs to the very top of whatever she is on, and then flies off. |
 | River dragonfly | Hold still for the dragonfly | Over the river and the rice paddies on summer and autumn days. Stand still by the water and it will come to you. | Darts over the water like a little blue needle, then stops dead in the air to have a look at you. |
 | Meadow butterfly | Follow the butterfly | Over the meadows and gardens on spring and summer days. | Never flies in a straight line. Rests on a flower just long enough to be admired. |
@@ -1809,16 +1798,6 @@ met one, then its entry. The first hello with each plays a short scene.
 
 *Mika crouches in the grass and holds her breath. The cricket looks her over, then chirps three times: hello, hello, hello.*
 
-### Garden spider
-
-**Tamo:** Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.
-
-*The spider plucks one thread, and the whole web shivers like a little harp.*
-
-*When Tamo isn't with Mika (before she opens the chest, or after he goes home):*
-
-*The spider plucks one thread, and the whole web shivers like a little harp. Mika decides that was a wave.*
-
 ### Ladybug
 
 *The ladybug climbs Mika's finger all the way to the tip, thinks it over, and flies off somewhere better.*
@@ -1903,7 +1882,7 @@ met one, then its entry. The first hello with each plays a short scene.
 
 ### Every friend made
 
-*After the last of the 23 first hellos:*
+*After the last of the 22 first hellos:*
 
 **Tamo:** That's everyone! Every creature in the valley knows your name now.
 

@@ -26,9 +26,7 @@ test('crickets sit on dry, gentle ground; dragonflies hover over water; webs and
     const overRiver = w && w.d < riverHalfWidth(w.z), overPaddy = PADDIES.some(p => Math.abs(s.hx - p.x) < p.w / 2 && Math.abs(s.hz - p.z) < p.d / 2);
     assert.ok(overRiver || overPaddy, `dragonfly at ${s.hx.toFixed(1)}, ${s.hz.toFixed(1)}`);
   }
-  for (const s of [...plan.spider, ...plan.ladybug, ...plan.butterfly]) assert.ok(grid.heightAt(s.hx, s.hz) > 0.8, `${s.kind} at ${s.hx.toFixed(1)}, ${s.hz.toFixed(1)}`);
-  // webs hang low enough for Mika to meet the spider
-  for (const s of plan.spider) assert.ok(s.hy - grid.heightAt(s.hx, s.hz) < 2.2, 'web too high');
+  for (const s of [...plan.ladybug, ...plan.butterfly]) assert.ok(grid.heightAt(s.hx, s.hz) > 0.8, `${s.kind} at ${s.hx.toFixed(1)}, ${s.hz.toFixed(1)}`);
 });
 
 test('season and hour decide who is out; everyone can be met at some time of year', () => {

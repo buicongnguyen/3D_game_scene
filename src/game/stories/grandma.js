@@ -61,12 +61,6 @@ export const STORY = {
       ['sora', "Then we fold slowly. A corner to the middle line, the left the same as the right, a nail along every crease."],
       ['sora', "And throw it as if you were handing it to the wind: gently and level. Three throws, and the best one counts."],
     ],
-    trick_dew_intro: [
-      ['sora', "Up before the sun tomorrow, Mi-chan. The forest edge on the west trail wears its jewellery at dawn.", 'Talk'],
-      ['mika', "Jewellery. In a forest. At five in the morning."],
-      ['sora', "Spider webs, strung with dew. By day you'd walk straight past them. At sunrise every thread shines."],
-      ['sora', "Keep the sun at your back and look low between the stems. Take your pictures, and leave each one be."],
-    ],
     trick_roast_intro: [
       ['sora', "The rice is in and the straw is dry, Mi-chan. That means sweet potatoes out in the meadow.", 'Talk'],
       ['mika', "We have a microwave at home. It takes four minutes."],

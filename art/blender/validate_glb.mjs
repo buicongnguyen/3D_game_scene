@@ -28,7 +28,7 @@ const opt = k => { const i = argv.indexOf(k); return i >= 0 ? argv.splice(i, 2)[
 const DIR = path.resolve(ROOT, opt('--dir') || 'public/models');
 const JSON_OUT = opt('--json');
 const CLIPS_ONLY = opt('--clips-only')?.split(','); // Focused animation audit; geometry remains covered by the default invocation.
-const NAMES = argv.length ? argv : ['beetle-rhino', 'beetle-stag', 'moth', 'kite-paper', 'sweet-potato', 'straw-pile', 'spider-web'];
+const NAMES = argv.length ? argv : ['beetle-rhino', 'beetle-stag', 'moth', 'kite-paper', 'sweet-potato', 'straw-pile'];
 // Large single-sided sheets that are fine because their back can never be seen (reason shown in the report).
 // Overlaps that are decals by design: [model, regex of the pair key, reason]. The game separates static decals at load
 // (engine/coplanar.js); a skinned model keeps them a few millimetres proud, which holds up to ~60 m.

@@ -117,9 +117,6 @@ export const CONTRACTS = {
   mantis: { family: 'critters', tris: 400, icon: true, clips: ['Idle', 'Walk', 'Look', 'LookR', 'Strike', 'Threat', 'Struggle'],
     nodes: ['body', 'head', 'antenna_L', 'antenna_R', 'wing_L', 'wing_R', 'hind_L', 'hind_R', 'leg1_L', 'leg2_L', 'leg3_L', 'leg1_R', 'leg2_R', 'leg3_R', 'shin1_L', 'shin2_L', 'shin3_L', 'shin1_R', 'shin2_R', 'shin3_R'], mats: ['Mantis body', 'Mantis wing', 'Mantis eye'] },
   'bug-cage': { family: 'tricks', tris: 300, icon: true, nodes: ['lid'], mats: ['Cage bamboo', 'Cage wood', 'Cage leaf'] },
-  spider: { family: 'critters', tris: 300, clips: ['Idle', 'Walk'], icon: true },
-  // The dew drops are the child node 'dew' (material 'Web dew') so the Dew Webs trick can sparkle or hide them.
-  'spider-web': { family: 'critters', tris: 400, nodes: ['dew'], mats: ['Web silk', 'Web dew'] },
   ladybug: { family: 'critters', tris: 300, clips: ['Idle', 'Fly'], icon: true },
   dragonfly: { family: 'critters', tris: 300, clips: ['Fly'], mats: ['Dragonfly wing'], icon: true },
   butterfly: { family: 'critters', tris: 300, clips: ['Fly', 'Rest'], mats: ['Butterfly wing'], icon: true },

@@ -130,19 +130,6 @@ export const TRICKS = [
     levels: { easy: { stars: [8, 16, 24], length: 70 }, normal: { stars: [12, 24, 34], length: 100 }, hard: { stars: [14, 28, 40], length: 130 } },
   },
   {
-    id: 'dew', name: 'Dew webs at dawn', icon: 'trick-dew',
-    place: { x: -52, z: -97, face: 0 }, where: 'the forest edge on the west trail, north of the mill',
-    seasons: ['spring', 'summer', 'autumn'], hours: [5, 7.5], night: false, when: 'Spring to autumn, at dawn',
-    teacher: { grandma: 'sora', classic: 'rin' }, intro: 'trick_dew_intro',
-    howReal: 'Get up at sunrise after a cool, still night. Walk slowly along a hedge with the sun behind you and look low between the stems.',
-    why: 'Webs are almost invisible until dew or mist hangs tiny drops on every thread. Each drop shines like a little lens.',
-    safety: 'Look, don\'t touch: a web is a spider\'s home and its dinner table.',
-    // levels (tricks/rules-dew.js DEW_LEVELS): 5 webs on Easy; 8 on Normal, drying from the middle of the round on; 10 on
-    // Difficult with two old webs that cost 5 and perfect photos worth 5 more. 10 a web, a point per 3 s left when all are found
-    stars: [40, 70, 88], length: 110, firstLength: 70, unit: 'points',
-    levels: { easy: { stars: [20, 40, 55], length: 80 }, normal: { stars: [40, 70, 88], length: 110 }, hard: { stars: [60, 105, 140], length: 130 } },
-  },
-  {
     id: 'roast', name: 'Sweet potato roast', icon: 'trick-roast',
     place: { x: -19, z: 51, face: -Math.PI / 2 }, where: 'the open meadow south of Kawabe, past the dock lane',
     seasons: ['autumn'], hours: [15, 19], night: false, when: 'Autumn, late afternoon',

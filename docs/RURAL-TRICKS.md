@@ -1,5 +1,8 @@
 # Grandma's Countryside Tricks: plan
 
+> **Removed (2026-11):** the "Dew webs at dawn" game, the spiders and webs on the map, and the Garden spider friend were
+> taken out at the owner's request. Passages about them below are history: do not rebuild them.
+
 Status: **plan**. Goal: a game a city kid would love before (or after) a visit to the countryside. Each real rural
 activity becomes a **short game that Grandma teaches once** ("Grandma's trick"). After that the player can do it
 any time it is in season. Each trick learned is kept in a new journal page with the **real-world fact**, so the
