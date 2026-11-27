@@ -19,8 +19,11 @@ const KEEP_NODES = new Set(['Wheel', 'Bell', 'ChestLid', 'Chest', 'PorchFlame', 
 export const BUILD_MERGE = !(typeof location !== 'undefined' && /[?&]buildMerge=off/.test(location.search));
 let pbr = null;
 export function mergedPbrMaterial() {
-  if (pbr) return pbr;
-  pbr = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, name: 'Merged PBR' });
+  return pbr ??= newPbrMaterial();
+}
+/** A material of that kind of one's own (one the world's snow patch does not reach: railway.js, the sleepers). */
+export function newPbrMaterial() {
+  const pbr = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0, name: 'Merged PBR' });
   pbr.userData.pbr = true;
   pbr.onBeforeCompile = sh => {
     sh.vertexShader = sh.vertexShader
@@ -75,7 +78,7 @@ function bake(mesh, toRoot, rm) {
  * Merge `root`'s plain parts (see above). `noShadow`: material names whose parts cast no shadow. -> parts merged
  * (0 when there was nothing worth merging: fewer than three such parts).
  */
-export function mergeStatic(root, { glow = new Set(), noShadow = new Set() } = {}) {
+export function mergeStatic(root, { glow = new Set(), noShadow = new Set(), exact = false } = {}) {
   root.updateMatrixWorld(true);
   const inv = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const pick = {};          // 'cast|quiet:roughness' -> meshes
@@ -87,12 +90,16 @@ export function mergeStatic(root, { glow = new Set(), noShadow = new Set() } = {
     const metal = Math.round((m.metalness ?? 0) * 4) / 4;
     (pick[BUILD_MERGE ? (noShadow.has(m.name) ? 'quiet' : 'cast') : `${noShadow.has(m.name) ? 'quiet' : 'cast'}:${Math.round((m.roughness ?? 0.85) * 4) / 4}:${metal}`] ??= []).push(o);
   });
-  if (Object.values(pick).reduce((a, l) => a + l.length, 0) < 3) return 0;
+  // (one material: two parts are worth one draw too; a model merged for the first time that way, or listed as exact,
+  // keeps its exact roughness and metalness: the ones merged before keep their quarters, so nothing changes on screen)
+  const parts = Object.values(pick).reduce((a, l) => a + l.length, 0);
+  if (parts < (BUILD_MERGE ? 2 : 3)) return 0;
+  if (parts < 3) exact = true;
   let n = 0;
   for (const [key, list] of Object.entries(pick)) {
     if (!list.length) continue;
     // (one material: each part's quartered roughness and metalness on its vertices)
-    const q = v => Math.round(v * 4) / 4, rmOf = o => BUILD_MERGE ? [q(o.material.roughness ?? 0.85), q(o.material.metalness ?? 0)] : null;
+    const q = v => exact ? v : Math.round(v * 4) / 4, rmOf = o => BUILD_MERGE ? [q(o.material.roughness ?? 0.85), q(o.material.metalness ?? 0)] : null;
     const geo = mergeGeometries(list.map(o => bake(o, new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld), rmOf(o))));
     if (!geo) continue;
     geo.computeBoundingBox(); geo.computeBoundingSphere();
