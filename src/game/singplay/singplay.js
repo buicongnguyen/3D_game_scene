@@ -2,7 +2,7 @@
 // is flat and open, villagers gather to watch, an automatic camera films it and Record saves the take with the song.
 // Loaded only when the mode starts (src/main.js). Mika's own save is untouched: the mode keeps Kotone's place apart.
 import * as THREE from 'three';
-import { tx, N_ } from '../../i18n/i18n.js';
+import { tx, N_, getLang } from '../../i18n/i18n.js';
 import { Animator } from '../../actors/animator.js';
 import { Face } from '../../actors/face.js';
 import { Silhouette } from '../../actors/silhouette.js';
@@ -10,7 +10,7 @@ import { HUMAN_GAIT } from '../../actors/gait.js';
 import { SWIM } from '../../actors/player.js';
 import { prepareMoves, lendClips } from '../tricks/exercise-moves.js';
 import { SHOW } from '../kotone-show.js';
-import { KOTONE_SONGS, songFromParam } from '../../content/kotone-songs.js';
+import { KOTONE_SONGS, songFromParam, songsFor } from '../../content/kotone-songs.js';
 import { Performer } from '../perform/performer.js';
 import { planShots, createCameraMan } from '../perform/camera-man.js';
 import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js';
@@ -116,7 +116,7 @@ export class SingPlay {
     this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec));
     this.btnCam.textContent = tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free'));
     this.btnCam.setAttribute('aria-disabled', String(!p));
-    this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? '' : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
+    this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
   }
 
   // ---------------------------------------------------------------- performing
@@ -124,7 +124,9 @@ export class SingPlay {
     const g = this.g, p = g.player;
     if (this.perf || !this.songs?.length) return;
     if (!this.allowed.ok) { this.ui.toast?.(tx(REASONS[this.allowed.reason] || REASONS.room)); return; }
-    const song = this.songs[this.songIx++ % this.songs.length];
+    // the song in the game's language (content/kotone-songs.js songsFor: English where she has none in it); the next one each time
+    const want = new Set(songsFor(this.songs.map(x => x.song), getLang())), pool = this.songs.filter(x => want.has(x.song));
+    const song = pool[this.songIx++ % pool.length];
     p.locked = true; p.vel.set(0, 0, 0);
     this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot });
     this.perf.start(0);

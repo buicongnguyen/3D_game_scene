@@ -404,3 +404,10 @@ export const TOTAL_PACKED_BYTES = 29_400_000;      // (all together)
 // 60 MB: ten tour clips (five tours, a landscape and a portrait cut each, 540p at ~500 kbps), four arrival clips and two
 // title loops, with a poster each. A 45 MB set would need ~390 kbps; grass and falling petals already soften at 500.
 export const TOTAL_VIDEO_BYTES = 60_000_000;
+
+// Kotone's songs (public/songs, content/kotone-songs.js) are budgeted on their own too: none of it is part of a first
+// visit or of the service worker's stored files; a song streams when she starts it, the hum loop is fetched near her.
+// 2.6 MB (2026-11-28, 2,432,117 B measured): "Golden Rails" in English and Vietnamese (0.90 MB .m4a each, AAC 80 kbps,
+// plus 0.08 MB of beats / lyrics / mouth data each) and her hum loop (0.22 MB .ogg + 0.24 MB .m4a for Safari: one or
+// the other is fetched). The instrumentals are not shipped (far from her the same song plays quieter).
+export const TOTAL_SONG_BYTES = 2_600_000;

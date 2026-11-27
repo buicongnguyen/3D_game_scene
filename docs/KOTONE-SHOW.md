@@ -49,8 +49,28 @@ per body by src/moves-v2/core.js bakeMove (targets in body frames scaled by the 
 - **Runtime:** `perform/performer.js` (actions on her own mixer, times and weights from the song beat every frame, the mic
   layer after the mixer, face.sing, eyes to the camera on sung lines; the audio is the clock, followed with a 0.35 s time
   constant), `perform/mic-prop.js` (the hand mic), `game/kotone-show.js` (a song every third number when Mika is near).
-- **Songs:** `src/content/kotone-songs.js` (empty until her song lands). A test page can add one with
-  `?kotoneSong=<folder>/<id>` (same origin); the test fixture (an Avatar Studio song) lives only in `.tools/test-song`.
+- **Songs:** `src/content/kotone-songs.js`. A test page can add one with `?kotoneSong=<folder>/<id>` (same origin); the
+  test fixture (an Avatar Studio song) lives only in `.tools/test-song`.
+
+## Her song: "Golden Rails" (2026-11-28)
+The owner's picks from the song round (`.tools/kotone-song`, ACE-Step 1.5 XL sft, original lyrics): EN-C (English) and
+VI-B (Vietnamese, "Đường Ray Vàng"), one tune, 86.7 / 85 BPM, 88 s, 32 bars; and HUM-A, her wordless 8-bar hum loop.
+- Files in `public/songs/kotone/`: `golden-rails-en.*`, `golden-rails-vi.*` (`.m4a` + beats / lyrics / mouth json) and
+  `kotone-hum.{ogg,m4a}` + its beats / mouth json; 2.43 MB together (`TOTAL_SONG_BYTES` 2.6 MB in tests/asset-contracts.mjs).
+  No instrumentals ship: far from her the same song plays quieter. The service worker does not store `songs/` (they load
+  on demand: stamp-sw lists models, icons, portraits, zones and assets only).
+- **Language:** `songsFor(list, getLang())`: the show and Sing & Play sing the Vietnamese take when the game is in
+  Vietnamese, the English one otherwise (ko / ja too). The title ("Golden Rails", translated) shows under the Sing & Play
+  bar while she performs.
+- **The hum** (`src/game/kotone-hum.js`): on one day walk in three (06:00-17:00, at least 40 s apart), with Mika within
+  15 m, she hums HUM-A: an AudioBufferSourceNode looping between loopStart and loopEnd on the music bus, gain by distance
+  (full within 4 m), starting on a phrase (bar 0, 2, 4 or 6), one loop cycle at most, her lips from its mouth curve. It
+  stops when she stops walking, Mika walks off, or dialogue, a scene, a mini game, the pause menu, Sing & Play or her show
+  begins; a dead man's switch on the gain fades it out when frames stop coming. Silent with Voices "Off", Music at 0 or
+  `?mute`. The valley's tune holds while she hums. `.ogg` where Vorbis plays, else `.m4a` (Safari); both seams line up
+  (`.tools/seam-check.mjs` in Chromium and Edge: lag 0, correlation 0.99).
+- Tests: `tests/kotone-songs.test.mjs` (files, budget, data read by the clock / plan / face, language choice, hum rules
+  with a fake Web Audio).
 
 ## Plug in Kotone's song
 Put `<id>.m4a` (or .mp3) and whichever of `<id>.beats.json`, `<id>.stage.json`, `<id>.lyrics.json`, `<id>.mouth.json`

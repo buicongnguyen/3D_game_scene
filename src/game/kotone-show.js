@@ -13,7 +13,8 @@
 // A song number starts only when Mika is near (its audio and data load then); she hears it louder the closer she stands.
 import { prepareMoves, lendClips } from './tricks/exercise-moves.js';
 import { SPOTS } from '../content/townsfolk.js';
-import { KOTONE_SONGS, songFromParam } from '../content/kotone-songs.js';
+import { KOTONE_SONGS, songFromParam, songsFor } from '../content/kotone-songs.js';
+import { getLang } from '../i18n/i18n.js';
 import { Performer } from './perform/performer.js';
 
 export const SHOW = {
@@ -97,6 +98,12 @@ export class KotoneShow {
     return this.songsLoading;
   }
 
+  /** The loaded songs she sings in the game's language now. */
+  songPool() {
+    const want = new Set(songsFor((this.songs || []).map(x => x.song), getLang()));
+    return (this.songs || []).filter(x => want.has(x.song));
+  }
+
   /** Is this person performing now? */
   on(it) { return !!it && this.it === it; }
 
@@ -160,13 +167,14 @@ export class KotoneShow {
     const a = this.act;
     if (this.t < a.t) return;
     // the next number (the dances only once her pack is in; a song only with Mika near enough to hear it)
-    const songs = this.give && this.songs?.length && this.mikaDist() < SHOW.near ? this.songs.length : 0;
+    // (her songs in the game's language: content/kotone-songs.js songsFor; English where she has none in it)
+    const pool = this.give && this.songs?.length && this.mikaDist() < SHOW.near ? this.songPool() : [], songs = pool.length;
     let next = nextAct(this.state, Math.random, songs);
     if (next.kind === 'song') {
       this.state.last = 'song';
       this.act = next; this.t = 0;
       n.face?.quiet(); n.anim.cancelOneShot();
-      this.perf = new Performer(n, this.clips, this.songs[next.song], { audio: this.g.audio, restRoot: this.g.assets.gltf?.(SHOW.pack)?.scene });
+      this.perf = new Performer(n, this.clips, pool[next.song % songs], { audio: this.g.audio, restRoot: this.g.assets.gltf?.(SHOW.pack)?.scene });
       this.perf.start(0);
       n.targetFacing = this.spot?.face ?? n.targetFacing;
       return;

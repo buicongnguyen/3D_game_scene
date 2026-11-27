@@ -15925,6 +15925,12 @@
   ]
  },
  {
+  "s": "Golden Rails",
+  "ctx": [
+   "UI (src/content/kotone-songs.js)"
+  ]
+ },
+ {
   "s": "Easy",
   "ctx": [
    "UI (src/content/levels.js)",

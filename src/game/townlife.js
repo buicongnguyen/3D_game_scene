@@ -18,6 +18,7 @@ import { inStory, forStory, storyId } from './stories/index.js';
 import { YARD_GAME } from './yard/index.js';
 import { yardAt, leavePath } from '../content/yard.js';
 import { KotoneShow, SHOW } from './kotone-show.js';
+import { KotoneHum } from './kotone-hum.js';
 
 /** A neighbour as the chosen story tells them: Grandma-story stage lines and chatter where they differ. */
 const storyPerson = p => (storyId() !== 'grandma' ? p : { ...p, story: (p.story || []).map(forStory), chatter: p.chatterGrandma || p.chatter, role: p.roleGrandma || p.role });
@@ -57,6 +58,7 @@ export class TownLife {
     this.pairs = new Map();   // 'a|b' -> { a, b, t (cooldown) }
     this.t = 0;
     this.show = new KotoneShow(this);   // the visitor's evening show at the station (game/kotone-show.js)
+    this.hum = new KotoneHum(this);     // ... and her hum on a day walk (game/kotone-hum.js)
   }
 
   // ------------------------------------------------------------------ setup
@@ -190,6 +192,7 @@ export class TownLife {
     }
     if (!frozen) { this.updateGames(dt); this.keepApart(dt); }
     this.show.update(frozen ? 0 : dt, hour);
+    this.hum.update(frozen ? 0 : dt, hour, frozen);
     // Mika's game ended (the kids went home) or she wandered off: she is no longer playing
     const mg = this.mikaPlays;
     if (mg && (!this.games.has(mg.key) || Math.hypot(mg.at[0] - g.player.pos.x, mg.at[1] - g.player.pos.z) > 12)) {

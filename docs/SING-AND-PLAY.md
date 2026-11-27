@@ -13,7 +13,8 @@ Builds on Kotone's song performance (`src/game/perform/`, docs/KOTONE-SHOW.md).
    ground heights over a 1.6 m ring (12 samples + centre) within 0.25 m and no slope over 12 deg; not in or by water; no
    collider within 1.4 m; inside a room only if that clear radius fits. When not allowed the button stays visible but
    dimmed, with one short reason (`Too steep here`, `Too close to the water`, `Not enough room here`).
-4. Pressing it: the song plays (content/kotone-songs.js; the first song, then the next each time), she performs it
+4. Pressing it: the song plays (content/kotone-songs.js: "Golden Rails" in the game's language, Vietnamese or English;
+   the next one each time when there are more), she performs it
    (perform/performer.js on the player), up to 4 villagers nearby (2 on Low) walk over, stand in a half ring, face her and
    cheer / wave on the choruses and at the end (Town Life's own people, held from their plan meanwhile).
 5. **Auto camera** (perform/camera-man.js): shots planned from the song's sections and bars, after Avatar Studio Club

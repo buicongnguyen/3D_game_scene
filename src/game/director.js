@@ -227,7 +227,7 @@ export class Director {
     for (const [id, n] of this.barkSpeakers()) {
       const d = n.pos.distanceTo(p.pos);
       if (d > BARK_RANGE) continue;
-      if (n.poser) continue;                                    // mid-song (game/perform/): she sings, no remarks
+      if (n.poser || n.humming) continue;                       // mid-song (game/perform/) or humming (game/kotone-hum.js): no remarks
       if (!B.clock.next.has(id)) { B.clock.prime(id, 0.6 + Math.random() * 6); continue; } // a beat before the first remark of a new face
       if (B.clock.canSpeak(id) && d < bd) { bd = d; best = [id, n]; }
     }
