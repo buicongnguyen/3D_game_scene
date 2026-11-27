@@ -31,6 +31,9 @@ export function patchMaterial(material, { wind = 0, snow = 1 } = {}) {
           #ifdef USE_INSTANCING
             im = instanceMatrix;
           #endif
+          #ifdef USE_BATCHING
+            im = batchingMatrix;   // (the far trees' BatchedMesh: each tree its own phase and snow, world/foliage.js)
+          #endif
           vec3 base = (modelMatrix * im * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
           vSnowN = normalize(mat3(modelMatrix * im) * objectNormal);
           vSnowH = (modelMatrix * im * vec4(transformed, 1.0)).y;
