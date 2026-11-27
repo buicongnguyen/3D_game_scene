@@ -321,7 +321,7 @@ export const EXERCISE_CLIPS = ['ExStretch', 'ExArmSwing', 'ExArmCircle', 'ExSide
   'ExChild', 'ExChildIn', 'ExMountain', ...['Tree', 'Warrior', 'Bird'].flatMap(n => [`Ex${n}L`, `Ex${n}R`, `Ex${n}InL`, `Ex${n}InR`])];
 for (const who of ['rin', 'mika', 'villager-kid', 'villager-man']) CONTRACTS[`exercise-${who}`] = { family: 'clips', of: who, clips: EXERCISE_CLIPS };
 
-export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru'];
+export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru', 'kotone'];
 // Raw GLBs are the editable, uncompressed sources; production ships meshopt-packed copies (tests/pack.test.mjs).
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
