@@ -13,7 +13,7 @@ import { exploreState } from '../src/game/fastforward.js';
 const args = new Set(process.argv.slice(2));
 const url = process.env.GAME_URL || 'http://127.0.0.1:5897/';
 const FILE = new URL('./perf/budget.json', import.meta.url);
-const SPOTS = { kawabe: [-26, 20, -20, 37], takamori: [110, -16, 123, 12], station: [-98, 104, -60, 140] };
+const SPOTS = { kawabe: [-26, 20, -20, 37], takamori: [110, -16, 123, 12], station: [-98, 104, -60, 140], meadow: [-66, 10, -40, 20] };
 const HEADROOM = { draws: 1.08, tris: 1.1, visible: 1.1 };
 const SAVE = JSON.stringify({ v: 1, quest: exploreState(), player: { x: -45, y: 4, z: 27, facing: Math.PI }, at: 1760000000000 });
 
@@ -34,7 +34,10 @@ try {
         const g = window.__STARLINE__, R = g.renderer.renderer, orig = R.renderBufferDirect;
         let n = 0, draws = 0, tris = 0;
         R.renderBufferDirect = function (cam, scene, geometry, material, object) {
-          draws++; tris += ((geometry.index ? geometry.index.count : geometry.attributes.position?.count || 0) / 3) * (object.isInstancedMesh ? object.count : 1);
+          draws++;
+          // (instanced geometry times its instanceCount: the grass; a BatchedMesh counts its sub-draws, not its whole index)
+          if (object.isBatchedMesh) { for (let i = 0; i < object._multiDrawCount; i++) tris += object._multiDrawCounts[i] / 3; return orig.apply(this, arguments); }
+          tris += ((geometry.index ? geometry.index.count : geometry.attributes.position?.count || 0) / 3) * (object.isInstancedMesh ? object.count : geometry.isInstancedBufferGeometry ? geometry.instanceCount : 1);
           return orig.apply(this, arguments);
         };
         const tick = () => {

@@ -4,33 +4,43 @@
  "limits": {
   "low:kawabe": {
    "draws": 158,
-   "tris": 444258,
+   "tris": 668464,
    "visible": 838
   },
   "low:takamori": {
    "draws": 166,
-   "tris": 467965,
+   "tris": 668386,
    "visible": 824
   },
   "low:station": {
    "draws": 125,
-   "tris": 301185,
+   "tris": 519575,
    "visible": 662
+  },
+  "low:meadow": {
+   "draws": 184,
+   "tris": 790743,
+   "visible": 977
   },
   "high:kawabe": {
    "draws": 451,
-   "tris": 1306018,
+   "tris": 2596949,
    "visible": 1225
   },
   "high:takamori": {
-   "draws": 401,
-   "tris": 1290071,
+   "draws": 397,
+   "tris": 2565724,
    "visible": 1154
   },
   "high:station": {
    "draws": 294,
-   "tris": 1066827,
+   "tris": 2406653,
    "visible": 1007
+  },
+  "high:meadow": {
+   "draws": 604,
+   "tris": 2964909,
+   "visible": 1447
   }
  }
 }

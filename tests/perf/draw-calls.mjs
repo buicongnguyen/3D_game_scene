@@ -23,6 +23,13 @@ for (const q of (args.quality || 'low,high').split(',')) {
     await page.waitForTimeout(4000);
     const r = await page.evaluate(() => new Promise(done => {
       const g = window.__STARLINE__, R = g.renderer.renderer, orig = R.renderBufferDirect;
+      // triangles of one draw: instanced geometry times its instanceCount (the grass: 181k-1.2M triangles, not 36), a
+      // BatchedMesh its sub-draws (not the whole batch's index)
+      const trisOf = (geometry, object) => {
+        if (object.isBatchedMesh) { let k = 0; for (let i = 0; i < object._multiDrawCount; i++) k += object._multiDrawCounts[i] / 3; return k; }
+        const n = (geometry.index ? geometry.index.count : geometry.attributes.position?.count || 0) / 3;
+        return n * (object.isInstancedMesh ? object.count : geometry.isInstancedBufferGeometry ? geometry.instanceCount : 1);
+      };
       const rows = new Map(), groups = new Map(), pass = { main: 0, shadow: 0, post: 0 };
       let frames = 0, tris = 0;
       R.renderBufferDirect = function (camera, scene, geometry, material, object, group) {
@@ -33,8 +40,7 @@ for (const q of (args.quality || 'low,high').split(',')) {
         groups.set(gname, (groups.get(gname) || 0) + 1);
         const key = `${p.padEnd(6)} ${gname} / ${(object.name || object.type).replace(/\d+/g, '#')} [${material.name || material.type}]${object.isInstancedMesh ? ` x${object.count}` : ''}`;
         rows.set(key, (rows.get(key) || 0) + 1);
-        const n = (geometry.index ? geometry.index.count : geometry.attributes.position?.count || 0) / 3;
-        tris += n * (object.isInstancedMesh ? object.count : 1);
+        tris += trisOf(geometry, object);
         return orig.apply(this, arguments);
       };
       const tick = () => { if (++frames < 30) requestAnimationFrame(tick); else { R.renderBufferDirect = orig; done({ pass, tris, frames, fps: g.fps, rows: [...rows].sort((a, b) => b[1] - a[1]), groups: [...groups].sort((a, b) => b[1] - a[1]) }); } };
