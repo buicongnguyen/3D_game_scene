@@ -11,7 +11,7 @@ export const HUMAN_GAIT = {
   byeol: { walk: 1.6, run: 4.195 },
   hoa: { walk: 1.6, run: 4.195 },
   nabi: { walk: 1.6, run: 4.195 },
-  kotone: { walk: 0.958, run: 4.077 },   // her Mixamo Walking / Running, from the planted feet (art/blender/vroid_mixamo.py)
+  kotone: { walk: 0.902, run: 3.835 },   // her Mixamo Walking / Running, from the planted feet (art/blender/vroid_mixamo.py; 1.52 m tall)
   'villager-kid': { walk: 1.567, run: 4.2 },
   'villager-man': { walk: 1.587, run: 4.2 },
   'villager-woman': { walk: 1.586, run: 4.196 },

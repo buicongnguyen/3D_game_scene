@@ -34,7 +34,7 @@ export class Animator {
 
   /** Loop a clip (no-op if already playing). speed scales playback. */
   play(name, { fade = 0.22, speed = 1 } = {}) {
-    if (this.oneShot) return;
+    if (this.oneShot || this.locked) return;          // (locked: a performer drives the mixer, game/perform/performer.js)
     const a = this.action(name);
     if (!a) return;
     a.timeScale = speed;
@@ -47,7 +47,7 @@ export class Animator {
 
   /** Play a clip once, then return to `then` (or hold the last frame when hold=true). */
   once(name, { fade = 0.15, speed = 1, then = 'Idle', hold = false, onDone } = {}) {
-    const a = this.action(name);
+    const a = this.locked ? null : this.action(name);
     if (!a) { onDone?.(); return false; }
     a.reset();
     a.timeScale = speed;

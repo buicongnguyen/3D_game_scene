@@ -180,6 +180,7 @@ export class TownLife {
       this.updateKeeper(it);
       if (frozen) continue;
       if (it.yardHold) continue;                    // playing a round with Mika at the yard (game/yard/round.js)
+      if (this.show.perf && this.show.on(it)) continue;   // mid-song (game/kotone-show.js): her plan waits for the song's end
       if (this.courtesy(it, dt)) continue;          // stopped to say hello: the day plan waits
       if (it.game && it.game === this.mikaPlays) continue;   // nobody leaves a game Mika is playing in
       // a scene moved them (place() drops the walk): the planner takes it as arrived and carries on from there

@@ -1,4 +1,5 @@
 // Machine-readable mirror of art/CONTRACTS.md. Keep both in sync.
+import { PERFORM_CLIPS } from '../src/content/kotone-club.js';
 // tris: triangle budget. nodes: node names the runtime looks up. mats: material names.
 // clips: animation clips (rigged models). family: generator script.
 
@@ -21,7 +22,9 @@ const PERFORMER_BONES = [...HUMAN_BONES, ...FINGER_BONES];
 const MIXAMO_FINGERS = ['L', 'R'].flatMap(s => ['thumb', 'index', 'middle', 'ring', 'pinky'].flatMap(f => [1, 2, 3, 4].map(i => `${f}${i}_${s}`)));
 export const MIXAMO_BONES = [...HUMAN_BONES, 'spine1', 'head_end', 'shoulder_L', 'shoulder_R', 'toe_L', 'toe_R', 'toe_end_L', 'toe_end_R', ...MIXAMO_FINGERS];
 const VROID_CLIPS = ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cheer', 'Bow', 'LookAround', 'Point'];
-export const KOTONE_SHOW_CLIPS = ['DanceHipHop', 'DanceArms', 'DanceHouse', 'DanceRunningMan', 'DanceSamba', 'DanceYmca', 'DanceWave', 'Sing', 'SingUpper'];
+export const KOTONE_SHOW_CLIPS = ['DanceHipHop', 'DanceArms', 'DanceHouse', 'DanceRunningMan', 'DanceSamba', 'DanceYmca', 'DanceWave', 'Sing', 'SingUpper',
+  // her song performances (game/perform/): Avatar Studio Club-mode moves baked on her (scripts/kotone-club-bake.mjs)
+  ...PERFORM_CLIPS];
 const VROID_MORPHS = ['blink', 'mouthA', 'mouthO'];
 export const SHAPE_KEYS = ['shape_chest', 'shape_waist', 'shape_hips', 'shape_thigh', 'shape_arm', 'shape_build'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
@@ -368,7 +371,9 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +0.47 MB: Kotone on the 65-bone Mixamo skeleton with Mixamo moves (kotone.glb 1.11 MB, kotone.lite.glb 0.79 MB) and
 // her evening-show pack moves-kotone.glb (0.44 MB: seven dances and the singing, fetched only near her show;
 // 69,922,920 B measured).
-export const TOTAL_RAW_BYTES = 70_000_000;      // (the dance game, the exercise packs and the visitor)
+// +0.49 MB: her song performances (moves-kotone.glb 0.44 -> 0.93 MB: 23 Avatar Studio Club-mode moves baked on her by
+// scripts/kotone-club-bake.mjs; fetched only with her show pack, near her evening show; 70,414,420 B measured).
+export const TOTAL_RAW_BYTES = 71_000_000;      // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -391,7 +396,8 @@ export const TOTAL_RAW_BYTES = 70_000_000;      // (the dance game, the exercise
 // +0.91 MB: Kotone, packed (kotone.glb 0.52 MB, kotone.lite.glb 0.39 MB; 28.19 MB measured): one or the other is loaded.
 // +0.49 MB: Kotone on the Mixamo skeleton, packed (kotone.glb 0.58 MB, kotone.lite.glb 0.45 MB; one or the other is
 // loaded) and her show pack (0.37 MB, fetched on demand); 28,684,576 B measured.
-export const TOTAL_PACKED_BYTES = 28_800_000;      // (all together)
+// +0.43 MB: her song performances (moves-kotone.glb packed 0.37 -> 0.80 MB, fetched on demand; 29.11 MB measured).
+export const TOTAL_PACKED_BYTES = 29_400_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

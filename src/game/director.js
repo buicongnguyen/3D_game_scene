@@ -227,6 +227,7 @@ export class Director {
     for (const [id, n] of this.barkSpeakers()) {
       const d = n.pos.distanceTo(p.pos);
       if (d > BARK_RANGE) continue;
+      if (n.poser) continue;                                    // mid-song (game/perform/): she sings, no remarks
       if (!B.clock.next.has(id)) { B.clock.prime(id, 0.6 + Math.random() * 6); continue; } // a beat before the first remark of a new face
       if (B.clock.canSpeak(id) && d < bd) { bd = d; best = [id, n]; }
     }
@@ -712,6 +713,7 @@ export class Director {
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
   canSave() {
     if (this.tourLock) return false;   // the scene tour borrows the valley: nothing it shows may reach a save file (game/tour.js)
+    if (this.singplay) return false;   // Sing & Play: Kotone walks the valley, the Explore save keeps Mika's place (game/singplay/)
     return !!this.quest && !this.scenes.active && !this.minigame && !this.tricks?.round && !this.yard?.round && !this.cows?.riding && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
   }
 

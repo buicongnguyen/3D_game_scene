@@ -81,6 +81,8 @@ PACK_CLIPS = [
     ('Sing', 'Talking (1)', {'range': (5.0, 10.2)}),
     ('SingUpper', 'Talking (1)', {'range': (5.0, 10.2), 'upper': True}),
 ]
+# her height (m, the top of the hair to the soles): 1.62 in the source; 1.52 stands well beside Mika (1.44), owner 2026-11-28
+HEIGHT = 1.52
 PACK_TOL = 2.4          # the dances' keys are thinned more (1.2 deg body, 4.8 deg fingers): she is seen from a few metres
 SOURCE = ('VRoid Project sample character (nu-2), VRoid Hub licence: anyone, commercial use, modification and redistribution '
           'allowed; credit "VRoid Project". Moves: Mixamo animations.')
@@ -111,7 +113,25 @@ def import_source(path):
     sc.render.fps = FPS; sc.render.fps_base = 1
     va, meshes = VL.import_vroid(path)
     va.name = 'Armature'
+    fit_height(va, meshes, HEIGHT)
     return va, meshes
+
+
+def body_height(meshes):
+    zs = [(m.matrix_world @ Vector(c)).z for m in meshes for c in m.bound_box]
+    return max(zs) - min(zs)
+
+
+def fit_height(va, meshes, height):
+    """Scale the whole import (armature, skin, shape keys) so she stands `height` metres tall, and apply it: the rest pose,
+    the bones' lengths and the hips' travel (retarget scales it by the hip heights) all follow, so every file agrees."""
+    h0 = body_height(meshes); k = height / h0
+    va.scale = va.scale * k
+    bpy.context.view_layer.update()
+    select_only([va] + meshes, va)
+    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+    bpy.context.view_layer.update()
+    print('HEIGHT', json.dumps({'before': round(h0, 4), 'scale': round(k, 4), 'after': round(body_height(meshes), 4)}))
 
 
 def fold_target(parent_of, skirt):

@@ -262,10 +262,13 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   `thumb1_L`..`pinky4_L`, `thigh_L`, `shin_L`, `foot_L`, `toe_L`, `toe_end_L`, and `_R`), plus `root`, `grip_R`,
   `eye_L`, `eye_R` (69 bones). Rest pose: the source's T-pose. Skirt bones fold half into the hips, half into the thigh.
 - Clips in both models (Mixamo, retargeted in world space, root motion out, keys thinned by `trim_clips.mjs`, rotations
-  stored as normalised 16-bit): Idle, Walk (0.958 m/s), Run (4.077 m/s), Talk, Wave, Cheer, Bow, LookAround, Point.
+  stored as normalised 16-bit): Idle, Walk (0.902 m/s), Run (3.835 m/s; 1.52 m tall, HEIGHT in the script), Talk, Wave, Cheer, Bow, LookAround, Point.
 - `moves-kotone.glb`: her armature (same joints, order and rest as the models) with the evening show's clips and no
   mesh, fetched by `game/kotone-show.js` only near her show: DanceHipHop, DanceArms, DanceHouse, DanceRunningMan,
   DanceSamba, DanceYmca, DanceWave, Sing, SingUpper (Sing's upper body only, to lay over Walk / Run / Idle).
+  Plus her song performances (docs/KOTONE-SHOW.md): 23 Avatar Studio Club-mode moves solved on her body and appended by
+  `node scripts/kotone-club-bake.mjs` (run it again after a rebuild): Club* (14 beat-locked loops, 8 beats at 120 BPM),
+  Mic* (3 mic moves, upper body laid over the dance), Moment* (6 one-shots); joint rules R1-R11 checked by the script.
 - Rebuild all three together (one Blender session): `blender -b --factory-startup --python art/blender/vroid_mixamo.py`
   (`-- --only full,lite,pack`); then `art/blender/kotone_portrait.py`.
 

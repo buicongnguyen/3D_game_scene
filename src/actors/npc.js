@@ -79,7 +79,7 @@ export class NPC {
     if (un === this.unseen) return true;
     this.unseen = un;
     this.model.visible = !un;
-    if (!un && this.animAcc > 0) { this.anim?.update(this.animAcc); this.animAcc = 0; }
+    if (!un && this.animAcc > 0) { this.poser?.before(); this.anim?.update(this.animAcc); this.poser?.after(this.animAcc); this.animAcc = 0; }
     return true;
   }
 
@@ -243,11 +243,14 @@ export class NPC {
     // (not when frames are already slow or paced to 30 a second: a pose every third of those is 10 a second, and people
     // glide over the ground between poses instead of walking)
     if (++this.animTick % (dt > 0.028 ? 1 : this.animEvery)) return;
+    // a performer (game/perform/performer.js) poses the body from its song's clock around the mixer's update
+    this.poser?.before();
     this.anim?.update(this.animAcc);
+    this.poser?.after(this.animAcc);
     // a model with a face rig (actors/face.js): blinks, lips and eyes, only at full detail (near and animated every frame)
     if (this.face) {
       this.face.setEnabled(this.animEvery === 1 && Face.on);
-      this.face.lookAt(NPC.gaze);
+      this.face.lookAt(this.gaze || NPC.gaze);
       this.face.update(this.animAcc);
     }
     this.animAcc = 0;

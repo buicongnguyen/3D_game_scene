@@ -1,5 +1,5 @@
 // Thin the clips of a GLB that art/blender/vroid_mixamo.py wrote (the glTF exporter keys every bone on every frame).
-//   node art/blender/trim_clips.mjs <file.glb> [tolerance factor, default 1]
+//   node art/blender/trim_clips.mjs <file.glb> [tolerance factor, default 1] [clip name pattern: only these clips]
 // Per clip: only rotations and the hips' position are kept (no bone grows or moves away from its parent); a rotation
 // track that never leaves the bone's rest (< 0.05 deg) is dropped (the mixer then leaves the bone at rest, the same
 // pose); the keys left are thinned greedily: a key goes when the line between its neighbours stays within TOL of every
@@ -15,6 +15,7 @@ const TOL = name => K * (/^(thumb|index|middle|ring|pinky)\d|^toe/.test(name) ? 
 const POS_TOL = 0.0015;
 
 const file = process.argv[2];
+const ONLY = process.argv[4] ? new RegExp(process.argv[4]) : null;   // (scripts/kotone-club-bake.mjs thins only the clips it added)
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc = await io.read(file);
 const root = doc.getRoot();
@@ -48,6 +49,7 @@ function thin(times, n, err, tol) {
 const stats = { tracksBefore: 0, tracksAfter: 0, keysBefore: 0, keysAfter: 0 };
 const q = [0, 0, 0, 0];
 for (const anim of root.listAnimations()) {
+  if (ONLY && !ONLY.test(anim.getName())) continue;
   for (const ch of anim.listChannels()) {
     const node = ch.getTargetNode(), path = ch.getTargetPath(), s = ch.getSampler();
     stats.tracksBefore++;
