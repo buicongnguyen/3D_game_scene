@@ -57,8 +57,9 @@ const show = m => { m.visible = (m.userData.parts ? m.userData.parts.some(p => p
 // ---- One draw per foliage model instead of one per material (phone speed plan, round 3, step R3-1).
 // A tree was two instanced meshes (Bark + Leaves), a flower clump four or five, a rock two. The parts of one model
 // that draw alike (same side, maps and attributes) become one instanced mesh whose vertices carry their part number
-// (`aPart`); the shader puts each part back exactly where it was (its part matrix, per part in a uniform: the
-// quantized models keep their part-local coordinates, so wind and snow read the same numbers as before) and reads that
+// (`aPart`); the shader puts each part back exactly where it was (its part matrix, per part in a uniform: parts keep
+// their own coordinates, so wind and snow read the same numbers as before; swaying sets' parts are in metres, see
+// metreParts) and reads that
 // part's colour, emissive, roughness, metalness, wind weight and season switch from small uniform arrays, copied
 // each frame from the part materials. Those materials stay the ones the game talks to: the seasons tint them, the
 // peach orchard lights them, the sakura glow patches them. `?foliageMerge=off` (or Foliage.setMerge(false)): as before.
@@ -193,22 +194,64 @@ const plainMatrix = m => {
     [e[1], e[2], e[4], e[6], e[8], e[9]].every(v => v === 0);
 };
 
+// ---- Swaying parts in metres. The wind patch (engine/effects.js) measures height and pushes in the part's own
+// coordinates: 1.4 m up a tree before its crown moves, the grass bending with the square of its height. The built game's
+// models are quantized (scripts/pack-models.mjs): positions of about -1..1 with a dequantizing part matrix (a scale and
+// the model's middle as its move), so that test never passed, the push came out scaled, and the phase "origin" was the
+// middle of the crown: no tree ever swayed in the built game, though they did on the dev server (plain float models).
+// A swaying set gets its parts with that matrix applied: one float copy of the positions per source geometry (the
+// asset's own geometry stays as it is: single trees on the landslide scar draw it with their node matrices) and an
+// identity part matrix, so the shader sees metres, exactly as in dev.
+const IDENTITY = new THREE.Matrix4();
+const metreCache = new WeakMap();   // source geometry -> Map(part matrix -> geometry in model space)
+const isIdentity = m => m.elements.every((v, i) => v === IDENTITY.elements[i]);
+function metreGeometry(src, matrix) {
+  let byMatrix = metreCache.get(src);
+  if (!byMatrix) metreCache.set(src, byMatrix = new Map());
+  const key = matrix.elements.join(',');
+  if (byMatrix.has(key)) return byMatrix.get(key);
+  const geo = new THREE.BufferGeometry();
+  for (const name of Object.keys(src.attributes)) geo.setAttribute(name, src.attributes[name]);   // (shared: uv, colour)
+  const pos = src.attributes.position, out = new Float32Array(pos.count * 3), v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) v.fromBufferAttribute(pos, i).applyMatrix4(matrix).toArray(out, i * 3);
+  geo.setAttribute('position', new THREE.BufferAttribute(out, 3));
+  // a uniform scale and a move leave the normals' directions alone (three normalizes them): only a turn needs new ones
+  const nrm = src.attributes.normal;
+  if (nrm && !plainMatrix(matrix)) {
+    const nm = new THREE.Matrix3().getNormalMatrix(matrix), n = new Float32Array(nrm.count * 3);
+    for (let i = 0; i < nrm.count; i++) v.fromBufferAttribute(nrm, i).applyMatrix3(nm).normalize().toArray(n, i * 3);
+    geo.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+  }
+  if (src.index) geo.setIndex(src.index);
+  for (const g of src.groups) geo.addGroup(g.start, g.count, g.materialIndex);
+  geo.computeBoundingBox(); geo.computeBoundingSphere();
+  geo.userData.metreSource = src;
+  byMatrix.set(key, geo);
+  return geo;
+}
+/** Parts of a swaying set with their part matrices applied (parts already in metres are returned as they are). */
+export const metreParts = parts => parts.map(p => isIdentity(p.matrix) || !p.geometry.attributes.position ? p :
+  { ...p, geometry: metreGeometry(p.geometry, p.matrix), matrix: IDENTITY });
+
 class InstanceSet {
   constructor(parent, assets, model, records, opts, merge = false) {
     this.model = model;
     this.records = records;
     this.opts = opts;
     this.merge = merge;
-    const lodParts = opts.lod && assets.has(opts.lod) ? assets.parts(opts.lod) : null;
+    // (wind: the parts in metres, see metreParts; the shadow proxies use the same copies, so no third copy is made)
+    const partsOf = name => opts.wind ? metreParts(assets.parts(name)) : assets.parts(name);
+    const lodParts = opts.lod && assets.has(opts.lod) ? partsOf(opts.lod) : null;
     // Shadows come from proxies (the cheap LOD mesh when there is one) chosen by the sun's shadow box, not by
     // the camera: the full-detail trees are drawn once, not twice, distant trees never enter the shadow pass,
     // and a bush or rock just outside the view still casts the shadow that falls into it (frustum-culled
     // casters made shadows pop in and out at the screen edges while the camera turned).
     // near/far: one mesh per part (what the seasons and the festivals talk to); nearDraw/farDraw: what is drawn (the
     // merged meshes and the parts that stay alone; the same lists when nothing merges)
-    [this.near, this.nearDraw] = this.build(parent, assets.parts(model), records.length, false, opts.wind);
+    const parts = partsOf(model);
+    [this.near, this.nearDraw] = this.build(parent, parts, records.length, false, opts.wind);
     [this.far, this.farDraw] = lodParts ? this.build(parent, lodParts, records.length, false, opts.wind) : [null, null];
-    this.shadow = opts.castShadow ? this.buildShadow(parent, lodParts || assets.parts(model), records.length) : null;
+    this.shadow = opts.castShadow ? this.buildShadow(parent, lodParts || parts, records.length) : null;
     this.state = new Uint8Array(records.length); // bit 0: using the far mesh, bit 1: beyond the cut-off
     // bounding radius from the model
     const box = new THREE.Box3();
