@@ -18374,6 +18374,90 @@
   ]
  },
  {
+  "s": "Too close to the water",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Too steep here",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Not enough room here",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Kotone couldn't be loaded",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Perform",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Record",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Photo",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Camera: Auto",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Stop",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Camera: Free",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "No songs yet",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Video saved",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "This browser can't record video",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Leave Sing & Play",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Quick, a wish! …Done. I'm not telling.",
   "ctx": [
    "UI (src/game/skygaze.js)"
@@ -29927,6 +30011,12 @@
  },
  {
   "s": "Light the four Star Lamps. Bring the Star Train home.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sing & Play",
   "ctx": [
    "menu / screen text"
   ]

@@ -297,7 +297,8 @@ export class Game {
         const now = performance.now();
         if (now - (this.wallToldAt || -1e9) > 9000) { this.wallToldAt = now; this.ui?.toast(tx('The game is this way')); }
       }
-      this.follow.update(dt, this.player, this.input, this.player.aiming);
+      // (an automatic camera may hold the view: Sing & Play's camera man, game/perform/camera-man.js)
+      if (!this.cameraOverride?.(dt)) this.follow.update(dt, this.player, this.input, this.player.aiming);
       for (const s of this.systems) s.update(dt, this);
       this.moments?.update(dt);     // (after the Director, before the sky: a shower's cloud cover shows this frame)
       const L =this.world.update(dt, this.viewFocus || this.player.pos);

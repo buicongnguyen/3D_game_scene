@@ -212,7 +212,8 @@ function titleLook() {
     document.getElementById('title').classList.add('hidden');
   }
   while (!picked) {
-    picked = auto ? { mode: auto, slot: autoSlot, story: params.get('story') || undefined } : await ui.title(saveSlots(), lastSlot());
+    picked = auto === 'singplay' ? { mode: 'explore', slot: 'explore', singplay: true, season: 'spring', hour: 17.5 }
+      : auto ? { mode: auto, slot: autoSlot, story: params.get('story') || undefined } : await ui.title(saveSlots(), lastSlot());
     const launch = ui.pendingLaunch;
     if (valleyP || !launch?.quick) break;
     // A game that needs no valley, picked from the title's Mini games list: the quick-start runtime plays it, and the
@@ -254,6 +255,7 @@ function titleLook() {
   if (choice === 'explore') {
     // Explore mode: its own save; the first time (or "start over") it begins in a valley where the story is done
     director.explore = true;
+    director.singplay = !!picked.singplay;   // (Sing & Play writes no Explore save: game/singplay/)
     if (!saved || picked.fresh) saved = { v: 1, quest: exploreState(), player: { x: -45, y: 4, z: 27, facing: Math.PI }, at: Date.now() };
     game.seasonOverride = picked.season || null;
     game.timeOverride = picked.hour ?? null;
@@ -271,4 +273,6 @@ function titleLook() {
   window.__STARLINE_PLAYING__ = true;
   await started;
   game.wakeMoments();
+  // Sing & Play: the player becomes Kotone (loaded only now)
+  if (picked.singplay) await import('./game/singplay/singplay.js').then(m => m.startSingPlay(game, director, ui)).catch(e => console.error('[singplay]', e));
 })().catch(e => { console.error('[start]', e); showError(e?.message || String(e)); });

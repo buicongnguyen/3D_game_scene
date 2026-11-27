@@ -134,7 +134,11 @@ export class UI {
       const onExplore = async () => { const v = await this.pickExplore(); if (v && await noted()) done({ mode: 'explore', slot: 'explore', ...v }); };
       // Mini games: pick a game and play it at once (an Explore session: the game starts when the world is ready, see game/minigame-menu.js)
       const onMini = async () => { const r = await this.pickMinigame(); if (r) { this.pendingLaunch = { id: r.e.id, quick: !!r.e.quick }; done({ mode: 'explore', slot: 'explore', season: r.plan?.season, hour: r.plan?.hour, fresh: false }); } };
-      const cleanup = () => { $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); $('btnTitleMini')?.removeEventListener('click', onMini); };
+      // Sing & Play (game/singplay/): Kotone walks the valley and performs her songs; an Explore session of its own kind
+      const onSing = async () => { if (await noted()) done({ mode: 'explore', slot: 'explore', singplay: true, season: 'spring', hour: 17.5, fresh: false }); };
+      const sing = $('btnSingPlay');
+      if (sing) { sing.classList.toggle('hidden', this.game.params?.get?.('singplay') === 'off'); sing.addEventListener('click', onSing); }
+      const cleanup = () => { sing?.removeEventListener('click', onSing); $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); $('btnTitleMini')?.removeEventListener('click', onMini); };
       $('btnTitleMini')?.addEventListener('click', onMini);
       $('btnNew').addEventListener('click', onNew);
       $('btnContinue').addEventListener('click', onCont);

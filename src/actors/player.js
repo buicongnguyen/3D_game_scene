@@ -53,6 +53,7 @@ export class Player {
     this.leapMul = 1;
     this.leapT = 0;
     this.taps = 0;
+    this.gait = HUMAN_GAIT.mika;   // the body's own walk / run speeds (Sing & Play swaps in Kotone's: game/singplay/)
 
     this.root = new THREE.Group();
     this.root.name = 'player';
@@ -406,11 +407,14 @@ export class Player {
         if (this.aiming) a.play('Aim', { fade: 0.15 });
         // Pace the feet from the distance the collision solver actually allowed.
         else if (hs < 0.12) a.play('Idle', { fade: 0.25 });
-        else if (hs < 2.7) a.play('Walk', { speed: hs / HUMAN_GAIT.mika.walk, fade: 0.2 });
-        else a.play('Run', { speed: hs / HUMAN_GAIT.mika.run, fade: 0.18 });
+        else if (hs < 2.7) a.play('Walk', { speed: hs / this.gait.walk, fade: 0.2 });
+        else a.play('Run', { speed: hs / this.gait.run, fade: 0.18 });
       }
     }
+    // a performer (game/perform/performer.js) poses the body from its song's clock around the mixer's update
+    this.poser?.before();
     a.update(dt);
+    this.poser?.after(dt);
   }
 
   /** Play a one-shot gesture (Interact, Cheer, Wave, ...). Movement is locked while it plays if lock=true. */
