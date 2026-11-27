@@ -81,8 +81,9 @@ PACK_CLIPS = [
     ('Sing', 'Talking (1)', {'range': (5.0, 10.2)}),
     ('SingUpper', 'Talking (1)', {'range': (5.0, 10.2), 'upper': True}),
 ]
-# her height (m, the top of the hair to the soles): 1.62 in the source; 1.52 stands well beside Mika (1.44), owner 2026-11-28
-HEIGHT = 1.52
+# her height (m, the top of the hair to the soles), or None for the source's own (1.616 m). Owner 2026-11-28: 1.52 was
+# tried and taken back (her moves looked wrong to the owner); the source height is kept.
+HEIGHT = None
 PACK_TOL = 2.4          # the dances' keys are thinned more (1.2 deg body, 4.8 deg fingers): she is seen from a few metres
 SOURCE = ('VRoid Project sample character (nu-2), VRoid Hub licence: anyone, commercial use, modification and redistribution '
           'allowed; credit "VRoid Project". Moves: Mixamo animations.')
@@ -113,7 +114,8 @@ def import_source(path):
     sc.render.fps = FPS; sc.render.fps_base = 1
     va, meshes = VL.import_vroid(path)
     va.name = 'Armature'
-    fit_height(va, meshes, HEIGHT)
+    if HEIGHT: fit_height(va, meshes, HEIGHT)
+    else: print('HEIGHT', json.dumps({'source': round(body_height(meshes), 4)}))
     return va, meshes
 
 

@@ -262,7 +262,7 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   `thumb1_L`..`pinky4_L`, `thigh_L`, `shin_L`, `foot_L`, `toe_L`, `toe_end_L`, and `_R`), plus `root`, `grip_R`,
   `eye_L`, `eye_R` (69 bones). Rest pose: the source's T-pose. Skirt bones fold half into the hips, half into the thigh.
 - Clips in both models (Mixamo, retargeted in world space, root motion out, keys thinned by `trim_clips.mjs`, rotations
-  stored as normalised 16-bit): Idle, Walk (0.902 m/s), Run (3.835 m/s; 1.52 m tall, HEIGHT in the script), Talk, Wave, Cheer, Bow, LookAround, Point.
+  stored as normalised 16-bit): Idle, Walk (0.958 m/s), Run (4.077 m/s; 1.62 m tall, the source's height: HEIGHT in the script), Talk, Wave, Cheer, Bow, LookAround, Point.
 - `moves-kotone.glb`: her armature (same joints, order and rest as the models) with the evening show's clips and no
   mesh, fetched by `game/kotone-show.js` only near her show: DanceHipHop, DanceArms, DanceHouse, DanceRunningMan,
   DanceSamba, DanceYmca, DanceWave, Sing, SingUpper (Sing's upper body only, to lay over Walk / Run / Idle).

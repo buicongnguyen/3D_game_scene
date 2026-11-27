@@ -12,6 +12,7 @@ import { createBeatClock } from './beat-clock.js';
 import { planPerformance, blockAt, momentAt, micShown, PLAN } from './plan.js';
 import { micLayer, leadTarget, micClipFor, micFold, SINGING } from './mic-layer.js';
 import { makeMic } from './mic-prop.js';
+import { createFootHold } from './foot-hold.js';
 import { MIC_MOVES } from '../../content/kotone-club.js';
 
 const follow = (cur, target, dt, up, down) => cur + (target - cur) * (1 - Math.exp(-dt / Math.max(1e-3, target > cur ? up : down)));
@@ -84,6 +85,7 @@ export class Performer {
     const mics = new Map([MIC_MOVES.verse, ...MIC_MOVES.chorus].filter(id => this.clips.has(id)).map(id => [id, this.clips.get(id)]));
     this.layer = mics.size === 3 ? micLayer(n.model, mics, this.restRoot) : null;
     this.mic = this.layer ? makeMic(n.model) : null;
+    this.feet = createFootHold(n.model);
     const track = this.data.mouth?.open ? this.data.mouth : this.data.lyrics;
     if (track) n.face?.sing(track, () => this.t);
     n.poser = this;
@@ -94,7 +96,7 @@ export class Performer {
     const n = this.n, anim = n.anim;
     if (!this.on) return;
     this.on = false;
-    this.layer?.restore();
+    this.layer?.restore(); this.feet?.restore();
     for (const a of this.actions.values()) { a.stop(); anim.mixer.uncacheAction(a.getClip(), anim.root); }
     this.actions.clear(); this.layer = null;
     this.mic?.dispose(); this.mic = null;
@@ -127,16 +129,17 @@ export class Performer {
   /** Before the mixer: the dance pose of this song time (action times and weights). */
   before() {
     if (!this.on) return;
-    this.layer?.restore();
+    this.layer?.restore(); this.feet?.restore();
     const P = this.plan, c = this.clock, t = Math.min(this.t, P.end), b = c.beatAt(t), bar = b / P.meter, m = P.rate.m;
     const i = blockAt(P, bar), blk = P.blocks[i], prev = P.blocks[i - 1];
     const clipTime = (a, beat0) => { const L = a.getClip().duration; const x = Math.max(0, b - beat0) * m * .5; return ((x % L) + L) % L; };
     const mo = this.momentNow(bar), mw = mo ? mo.w : 0;
     for (const a of this.actions.values()) a.setEffectiveWeight(0);
-    const x = prev ? smooth((b - blk.b0 * P.meter) / PLAN.fadeBeats) : 1;
+    const x = prev ? smooth((b - blk.b0 * P.meter) / (blk.fade || PLAN.fadeBeats)) : 1;   // (two beats between stances that differ)
     const ca = this.actions.get(blk.clip);
     if (ca) { ca.time = clipTime(ca, blk.b0 * P.meter); ca.setEffectiveWeight((1 - mw) * x); }
     if (prev && x < 1) { const pa = this.actions.get(prev.clip); if (pa && pa !== ca) { pa.time = clipTime(pa, prev.b0 * P.meter); pa.setEffectiveWeight((1 - mw) * (1 - x)); } }
+    this.fading = (prev && x < 1) || (mo && mo.w < 1);
     if (mo) { const a = this.actions.get(mo.clip); if (a) { const L = a.getClip().duration; a.time = Math.min(L - 1e-3, Math.max(0, b - mo.b0 * P.meter) * m * .5); a.setEffectiveWeight(mw); } }
   }
 
@@ -146,7 +149,7 @@ export class Performer {
     for (const mo of M) {
       const beat = bar * P.meter, s = mo.b0 * P.meter, e = mo.b1 * P.meter, last = mo.b1 >= P.lastBar;
       if (beat < s - 1e-6 || (!last && beat > e)) continue;
-      const w = Math.min(smooth((beat - s) / PLAN.fadeBeats), last ? 1 : smooth((e - beat) / PLAN.fadeBeats));
+      const f = mo.fade || PLAN.fadeBeats, w = Math.min(smooth((beat - s) / f), last ? 1 : smooth((e - beat) / f));
       if (!best || w > best.w) best = { ...mo, w };
     }
     return best && best.w > 1e-3 ? best : null;
@@ -157,6 +160,7 @@ export class Performer {
     if (!this.on) return;
     const P = this.plan, t = Math.min(this.t, P.end), c = this.clock, lines = P.lines;
     const want = lines ? leadTarget(lines, t) : 0;
+    this.feet?.update(dt, this.fading);   // planted feet held through a cross-fade (foot-hold.js)
     this.w = follow(this.w, want, dt, SINGING.up, SINGING.down);
     this.g = micShown(P, t);
     this.mic?.show(this.g);

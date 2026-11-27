@@ -103,3 +103,16 @@ test('with a song the show performs it after a rest, then two numbers before the
   for (let i = 1; i < songs.length; i++) assert.ok(kinds.slice(songs[i - 1] + 1, songs[i]).filter(k => k === 'dance').length >= 1);
   assert.ok(!kinds.includes('sing'), 'the old Sing number is not used with songs');
 });
+
+test('order: no turning or jumping loop under the mic; stances that differ cross-fade over two beats', async () => {
+  const { STANCE } = await import('../src/content/kotone-club-fit.js');
+  const { stanceGap, PLAN } = await import('../src/game/perform/plan.js');
+  for (const b of plan.blocks) {
+    if (b.sung) { const s = STANCE[b.clip]; assert.ok(s.hipYaw <= PLAN.singTurn && s.chestYaw <= PLAN.singTurn && s.lift <= PLAN.singLift, `${b.clip} under the mic`); }
+  }
+  for (let i = 1; i < plan.blocks.length; i++) {
+    const a = plan.blocks[i - 1], b = plan.blocks[i];
+    assert.equal(b.fade, stanceGap(a.clip, b.clip) > PLAN.sameStance ? 2 : 1, `${a.clip} -> ${b.clip}`);
+  }
+  for (const m of plan.moments) assert.ok(m.fade === 1 || m.fade === 2);
+});

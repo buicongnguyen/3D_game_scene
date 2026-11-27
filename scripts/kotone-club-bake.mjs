@@ -22,6 +22,10 @@ import { CLUB_BAKE } from '../src/content/kotone-club.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SOLVER = path.join(ROOT, '.tools', 'club-solver');
 const arg = n => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : null; };
+// key thinning (art/blender/trim_clips.mjs factor) for arms, fingers, spine and head; hips and legs stay exact (thinned, the
+// planted feet skated: 9-58 cm/s at factors 0.4-2.4; exact: 0.1-1.6 cm/s, the solver's own)
+const TRIM_DEFAULT = 2.4, EXACT_BONES = '^(hips|thigh_[LR]|shin_[LR]|foot_[LR]|toe_[LR])$';
+const TRIM = Number(arg('trim') ?? TRIM_DEFAULT);
 
 if (arg('vendor')) {
   const studio = arg('vendor'), files = ['src/moves-v2/core.js', 'src/moves-v2/kit.js', 'src/moves-v2/club-kit.js', 'src/authored-clap.js', 'src/motion-provenance.js',
@@ -63,7 +67,10 @@ const rg = rig(root); if (!rg) throw new Error('Kotone: the solver does not reco
 const rest = new Map([...rg.all.values()].map(b => [b.name, { q: b.quaternion.clone(), p: b.position.clone() }]));
 const cacheMap = new Map(), cache = { has: k => cacheMap.has(k), get: k => cacheMap.get(k), set: (k, v) => cacheMap.set(k, v) };
 const chk = createAnatomyCheck(root); if (!chk.supported) throw new Error(`joint check: ${chk.reason}`);
-const baked = [], failing = [], report = {};
+const baked = [], failing = [], report = {}, stance = {};
+const restYaw = n => root.getObjectByName(n).getWorldQuaternion(new Quaternion()).invert();
+const yawRest = { hips: restYaw(rg.hips.name), chest: restYaw('chest') };
+const yawNow = n => { const f = new Vector3(0, 0, 1).applyQuaternion(root.getObjectByName(n).getWorldQuaternion(new Quaternion()).multiply(yawRest[n])); return Math.abs(Math.atan2(f.x, f.z)) * 180 / Math.PI; };
 for (const [name, id] of Object.entries(CLUB_BAKE)) {
   const move = (await imp(`src/moves-v2/moves/${id}.js`)).default, clip = bakeMove(root, move, { rig: rg, cache, hz: 30 });
   if (!clip) throw new Error(`${id}: no bake`);
@@ -82,6 +89,12 @@ for (const [name, id] of Object.entries(CLUB_BAKE)) {
     const c = cW.clone().applyMatrix4(toGrip), up = cW.clone().add(upW).applyMatrix4(toGrip).sub(c), scale = up.length(); up.normalize();
     report.micFit = { centre: c.toArray().map(x => +x.toFixed(5)), up: up.toArray().map(x => +x.toFixed(5)), scale: +scale.toFixed(5), radius: +Hd.r.toFixed(4), half: +Hd.half.toFixed(4) };
   }
+  // the stance it starts in (feet, metres from her rest centre) and how much it turns and lifts: plan.js orders loops by it
+  { const st = { hipYaw: 0, chestYaw: 0, lift: 0 }, ys = [];
+    for (let i = 0; i <= 60; i++) { mixer.setTime(i / 60 * clip.duration); root.updateMatrixWorld(true);
+      if (i === 0) st.feet = ['foot_L', 'foot_R'].map(n => root.getObjectByName(n).getWorldPosition(new Vector3())).map(p => [+p.x.toFixed(3), +p.z.toFixed(3)]);
+      st.hipYaw = Math.max(st.hipYaw, yawNow('hips')); st.chestYaw = Math.max(st.chestYaw, yawNow('chest')); ys.push(rg.hips.getWorldPosition(new Vector3()).y); }
+    st.hipYaw = +st.hipYaw.toFixed(1); st.chestYaw = +st.chestYaw.toFixed(1); st.lift = +(Math.max(...ys) - Math.min(...ys)).toFixed(3); stance[name] = st; }
   a.stop(); mixer.uncacheRoot(root);
   for (const [b, r] of rest) { const o = root.getObjectByName(b); o.quaternion.copy(r.q); o.position.copy(r.p); } root.updateMatrixWorld(true);
   // keep only what moves: a track that never leaves the rest pose is dropped (the mixer leaves that bone at rest)
@@ -125,7 +138,7 @@ for (const b of baked) {
 await io.write(packFile, doc);
 // thinned like the pack's other dances (art/blender/vroid_mixamo.py PACK_TOL 2.4: 1.2 deg body, 4.8 deg fingers; rotations 16-bit)
 { const { execFileSync } = await import('node:child_process');
-  console.log(execFileSync(process.execPath, [path.join(ROOT, 'art/blender/trim_clips.mjs'), packFile, '2.4', `^(${[...names].join('|')})$`], { encoding: 'utf8' }).trim()); }
+  if (TRIM > 0) console.log(execFileSync(process.execPath, [path.join(ROOT, 'art/blender/trim_clips.mjs'), packFile, String(TRIM), `^(${[...names].join('|')})$`, EXACT_BONES], { encoding: 'utf8' }).trim()); }
 // the joint rules again on the thinned, 16-bit clips as the game reads them
 { const pack = await new GLTFLoader().parseAsync((b => b.buffer.slice(b.byteOffset, b.byteOffset + b.length))(await fs.readFile(packFile)), ''), bad = [];
   for (const clip of pack.animations.filter(c => names.has(c.name))) {
@@ -140,5 +153,8 @@ const fit = report.micFit;
 await fs.writeFile(path.join(ROOT, 'src/content/kotone-club-fit.js'), `// Written by scripts/kotone-club-bake.mjs: the hand mic's handle in Kotone's grip_R space (the Moves v2 solver's own
 // micGrip handle on her right fist, at Mic sway's first frame). centre / up in grip_R units, scale = units per metre.
 export const MIC_FIT = Object.freeze(${JSON.stringify(fit)});
+// Each move's start stance (feet x / z, metres, her model space at rest centre), its largest hip and chest turn (deg) and its
+// hip lift (m): game/perform/plan.js puts loops of matching stances next to each other and keeps turns and jumps off sung lines.
+export const STANCE = Object.freeze(${JSON.stringify(stance)});
 `);
 console.log('pack', (await fs.stat(packFile)).size, 'bytes; mic fit', JSON.stringify(fit));

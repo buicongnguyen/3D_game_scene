@@ -1,5 +1,6 @@
 // Thin the clips of a GLB that art/blender/vroid_mixamo.py wrote (the glTF exporter keys every bone on every frame).
 //   node art/blender/trim_clips.mjs <file.glb> [tolerance factor, default 1] [clip name pattern: only these clips]
+//     [bone pattern: keys kept exact (only still tracks dropped): legs of moves solved with planted feet]
 // Per clip: only rotations and the hips' position are kept (no bone grows or moves away from its parent); a rotation
 // track that never leaves the bone's rest (< 0.05 deg) is dropped (the mixer then leaves the bone at rest, the same
 // pose); the keys left are thinned greedily: a key goes when the line between its neighbours stays within TOL of every
@@ -16,6 +17,9 @@ const POS_TOL = 0.0015;
 
 const file = process.argv[2];
 const ONLY = process.argv[4] ? new RegExp(process.argv[4]) : null;   // (scripts/kotone-club-bake.mjs thins only the clips it added)
+// thinning each bone on its own lets a planted foot wander (the errors of hips, thigh, shin and foot add up at the sole:
+// Kotone's Club loops skated 25-58 cm/s at factors 1-2.4, 0.1-1.6 cm/s unthinned), so those bones can be kept exact
+const EXACT = process.argv[5] ? new RegExp(process.argv[5]) : null;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
 const doc = await io.read(file);
 const root = doc.getRoot();
@@ -75,7 +79,7 @@ for (const anim of root.listAnimations()) {
         for (let c = 0; c < 3; c++) { const x = v[a * 3 + c] + (v[b * 3 + c] - v[a * 3 + c]) * t - v[k * 3 + c]; d += x * x; }
         return Math.sqrt(d);
       };
-    const keep = thin(times, n, err, path === 'rotation' ? TOL(name) : POS_TOL);
+    const keep = EXACT?.test(name) ? times.map((_, i) => i) : thin(times, n, err, path === 'rotation' ? TOL(name) : POS_TOL);
     const nt = new Float32Array(keep.length), nv = new Float32Array(keep.length * size);
     keep.forEach((k, i) => { nt[i] = times[k]; for (let c = 0; c < size; c++) nv[i * size + c] = v[k * size + c]; });
     s.setInput(doc.createAccessor().setType('SCALAR').setArray(nt).setBuffer(input.getBuffer()));

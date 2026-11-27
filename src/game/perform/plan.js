@@ -15,10 +15,20 @@
 //
 // planPerformance(song, clock, lyrics) -> { seed, rate, lines, spans, blocks, moments, kind, summary }
 import { CLUB_LOOPS, MOMENTS } from '../../content/kotone-club.js';
+import { STANCE } from '../../content/kotone-club-fit.js';
 import { beatRate, normalizeKind } from './beat-clock.js';
 import { vocalLines, SINGING } from './mic-layer.js';
 
-export const PLAN = Object.freeze({ blockBars: 8, slowBlockBars: 4, slowBar: 2.8, spanGapBars: 2, fadeBeats: 1 });
+export const PLAN = Object.freeze({ blockBars: 8, slowBlockBars: 4, slowBar: 2.8, spanGapBars: 2, fadeBeats: 1, longFadeBeats: 2,
+  sameStance: .06,      // m: two loops whose feet start within this of each other cross-fade in one beat, others in two
+  singTurn: 10,         // deg: no loop turning the hips or chest more than this under the mic (the mic moves turn the head)
+  singLift: .1 });      // m: no jumping loop under the mic (jumps are for the instrumental bars)
+/** How far apart two moves' start stances are (m, both feet). Unknown: far. */
+export function stanceGap(a, b) {
+  const A = STANCE[a]?.feet, B = STANCE[b]?.feet; if (!A || !B) return 1;
+  return Math.hypot(A[0][0] - B[0][0], A[0][1] - B[0][1]) + Math.hypot(A[1][0] - B[1][0], A[1][1] - B[1][1]);
+}
+const calmTorso = d => { const s = STANCE[d.clip]; return !s || (s.hipYaw <= PLAN.singTurn && s.chestYaw <= PLAN.singTurn && s.lift <= PLAN.singLift); };
 const TIERS = ['calm', 'mid', 'big'];
 const TIER_OF = Object.freeze({
   lively: { intro: 'mid', verse: 'calm', prechorus: 'mid', chorus: 'big', drop: 'big', bridge: 'calm', break: 'mid', outro: 'calm' },
@@ -39,7 +49,7 @@ const up = (tier, cap = 'big') => TIERS[Math.min(TIERS.indexOf(cap), TIERS.index
 
 /** Dances for a block: its tier (nearest tier when empty), groove-only when sung, no hand contact with the mic. */
 export function dancePool(tier, { sung = false, mic = false, chorus = false } = {}) {
-  const ok = d => (!mic || !d.contact) && (!sung || chorus || d.groove);
+  const ok = d => (!mic || !d.contact) && (!sung || chorus || d.groove) && (!sung || calmTorso(d));
   for (const t of { calm: ['calm', 'mid', 'big'], mid: ['mid', 'calm', 'big'], big: ['big', 'mid', 'calm'] }[tier]) {
     const p = CLUB_LOOPS.filter(d => d.tier === t && ok(d)); if (p.length) return p;
   }
@@ -86,11 +96,17 @@ export function planPerformance(song = {}, clock, lyrics = null) {
     const sung = sungIn(timeOf(s.b0), timeOf(s.b1)), chorus = s.kind === 'chorus' || s.kind === 'drop';
     for (let b = s.b0; b < s.b1; b += blockBars) {
       const b1 = Math.min(s.b1, b + blockBars), mic = Array.from({ length: b1 - b }, (_, k) => micAtBar(b + k)).some(Boolean);
+      // sung: a line sung inside this block (not only its lead-in into the next part)
+      const bsung = sung && Boolean(lines) && Array.from(lines.t).some((t, i) => t < timeOf(b1) - barSec / 2 && lines.e[i] > timeOf(b));
       // a short tail (under 2 bars) joins the block before it
       if (b1 - b < 2 && blocks.length && blocks.at(-1).section === s.index) { blocks.at(-1).b1 = b1; continue; }
-      let pool = dancePool(tier, { sung, mic, chorus }); if (pool.length > 1) pool = pool.filter(d => d.clip !== prev);
+      let pool = dancePool(tier, { sung: bsung, mic, chorus }); if (pool.length > 1) pool = pool.filter(d => d.clip !== prev);
+      // neighbours whose stances match first: every loop starting within sameStance of the last one, else the three nearest
+      if (prev && pool.length > 2) { const near = pool.filter(d => stanceGap(prev, d.clip) <= PLAN.sameStance);
+        pool = near.length >= 2 ? near : pool.slice().sort((x, y) => stanceGap(prev, x.clip) - stanceGap(prev, y.clip) || (x.clip < y.clip ? -1 : 1)).slice(0, 3); }
       const d = pool[hash(seed, b, tier) % pool.length];
-      blocks.push({ b0: b, b1, clip: d.clip, tier, section: s.index, kind: s.kind, sung, mic, final });
+      const fade = prev && stanceGap(prev, d.clip) > PLAN.sameStance ? PLAN.longFadeBeats : PLAN.fadeBeats;
+      blocks.push({ b0: b, b1, clip: d.clip, tier, section: s.index, kind: s.kind, sung: bsung, mic, final, fade });
       prev = d.clip;
     }
     // moments (Club clubMoment, for one singer)
@@ -98,16 +114,17 @@ export function planPerformance(song = {}, clock, lyrics = null) {
     const add = (id, b0, n) => {
       const t0 = timeOf(b0), t1 = timeOf(b0 + n), withMic = micAtBar(b0) || micAtBar(b0 + n - 1), [free, mc] = MOMENTS[id], clip = withMic ? mc : free;
       if (!clip || sungIn(t0, t1)) return false;
-      moments.push({ id, b0, b1: b0 + n, t0, t1, clip, mic: withMic }); return true;
+      const under = blocks.findLast(x => x.b0 <= b0)?.clip, fade = under && stanceGap(under, clip) > PLAN.sameStance ? PLAN.longFadeBeats : PLAN.fadeBeats;
+      moments.push({ id, b0, b1: b0 + n, t0, t1, clip, mic: withMic, fade }); return true;
     };
     if (last && bars >= 4) { if (bars >= 6) add('cheer', s.b1 - 4, 2); add('bow', s.b1 - 2, 2); }
     else if ((s.kind === 'bridge' || s.kind === 'break') && bars >= 4) add('wave', s.b0, 2);
     else if ((next === 'chorus' || next === 'drop') && s.kind !== next && bars >= 4) add('hop', s.b1 - 1, 1);
   });
   // the song's end without a final section of 4+ bars: still a bow after the last line
-  if (!moments.some(m => m.id === 'bow') && lastBar >= 2) { const b0 = lastBar - 2, t0 = timeOf(b0); if (!sungIn(t0, timeOf(lastBar))) moments.push({ id: 'bow', b0, b1: lastBar, t0, t1: timeOf(lastBar), clip: micAtBar(b0) ? MOMENTS.bow[1] : MOMENTS.bow[0], mic: micAtBar(b0) }); }
+  if (!moments.some(m => m.id === 'bow') && lastBar >= 2) { const b0 = lastBar - 2, t0 = timeOf(b0); if (!sungIn(t0, timeOf(lastBar))) moments.push({ id: 'bow', b0, b1: lastBar, t0, t1: timeOf(lastBar), clip: micAtBar(b0) ? MOMENTS.bow[1] : MOMENTS.bow[0], mic: micAtBar(b0), fade: PLAN.longFadeBeats }); }
   blocks.forEach(b => { b.t0 = timeOf(b.b0); b.t1 = timeOf(b.b1); });
-  const summary = blocks.map(b => `${b.t0.toFixed(1)}s ${b.kind}${b.final ? '*' : ''} ${b.clip}${b.mic ? ' +mic' : ''}`)
+  const summary = blocks.map(b => `${b.t0.toFixed(1)}s ${b.kind}${b.final ? '*' : ''} ${b.clip}${b.mic ? ' +mic' : ''}${b.sung ? ' sung' : ''} fade ${b.fade || 1}`)
     .concat(moments.map(m => `${m.t0.toFixed(1)}s moment ${m.clip}`)).sort((a, b) => parseFloat(a) - parseFloat(b));
   return { seed, kind, rate, meter, blockBars, lastBar, end, lines, spans, blocks, moments, summary };
 }

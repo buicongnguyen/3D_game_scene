@@ -44,7 +44,8 @@ per body by src/moves-v2/core.js bakeMove (targets in body frames scaled by the 
   mic moves hold a mic at her own lips, and the joint rules pass on her body; Mixamo dances would need beat warping and
   have no mic moves. The bake is fast (35-200 ms a move) and needs no Blender.
 - **Joint rules** (the Studio's src/anatomy-joint-check.js, R1-R11, 60 Hz, at 1.2x): 0 hits on all 23 clips, before and
-  after key thinning (art/blender/trim_clips.mjs at the pack's 2.4 tolerance, 16-bit rotations).
+  after key thinning (art/blender/trim_clips.mjs at the pack's 2.4 tolerance for arms, fingers, spine and head; hips, thighs,
+  shins, feet and toes keep every key: see "Fix: skating feet" below).
 - **Runtime:** `perform/performer.js` (actions on her own mixer, times and weights from the song beat every frame, the mic
   layer after the mixer, face.sing, eyes to the camera on sung lines; the audio is the clock, followed with a 0.35 s time
   constant), `perform/mic-prop.js` (the hand mic), `game/kotone-show.js` (a song every third number when Mika is near).
@@ -56,6 +57,29 @@ Put `<id>.m4a` (or .mp3) and whichever of `<id>.beats.json`, `<id>.stage.json`, 
 exist into `public/songs/kotone/`, then add one line to `KOTONE_SONGS`:
 `{ id: '<id>', title: '<title>', base: 'songs/kotone/', audio: '<id>.m4a', bpm: <bpm>, offset: <first downbeat s>, duration: <s>, mood: 'uplifting', language: 'en+vi' }`.
 Without lyrics she dances and the mouth stays shut; without mouth.json the lips follow the lyric word timings.
+
+## Fix: skating feet (2026-11-28)
+Owner, watching the first sample: "sometimes the upper body moves a lot but the legs don't move ... spinning and almost
+falling over" (first blamed on the 1.52 m resize). Measured over the whole test song, posed exactly as the game does
+(`.tools/motion-check.mjs`: toe joints within 4 mm of the floor = planted; chest turn against the feet, lean, chest over
+the feet):
+
+| | planted-foot slide p95 (cm/s) | fastest planted slide | slides > 1.5 cm | chest-vs-feet turn p95 / max | lean p95 | sink |
+|---|---|---|---|---|---|---|
+| before (1.52 m, legs thinned) | 36-38 | 76 cm/s | 430 | 2.0 / 3.1 deg | 5.7 deg | 0.7 cm |
+| after (1.62 m, legs exact, stance order, foot hold) | 1.1-1.2 | 30 cm/s (a cross-fade) | 17 | 2.0 / 2.7 deg | 5.8 deg | 0.9 cm |
+
+(Lean over 15 deg only in the closing bow, by design.) The torso never turned against the legs: the mic layer moves only the
+neck, head, shoulders, arms, hands and fingers (no spine, hips or legs; weight 1, no SingUpper over-driving). The cause was
+the **key thinning**: each bone's keys were thinned on their own within 1.2 deg, and the small errors of hips, thigh, shin and
+foot add up at the sole, so the planted feet swam 25-58 cm/s under a steady upper body (the in-memory bake: 0.1-1.6 cm/s;
+the same at both heights, so the resize was not it). Fixes:
+- `trim_clips.mjs` takes a bone pattern kept exact; the bake keeps hips and legs exact (pack 0.93 -> 1.14 MB raw, 0.80 -> 0.86 MB packed).
+- The order (plan.js): no loop turning the hips or chest over 10 deg or lifting over 10 cm (Body roll, Jump point) under the
+  mic; a loop's neighbour is one starting in the same stance where possible (the bake measures each move's start stance,
+  turn and lift: `STANCE` in kotone-club-fit.js); stances more than 6 cm apart cross-fade over two beats, others one.
+- `perform/foot-hold.js`: a planted foot is held on its spot through a cross-fade (two-bone leg solve), let go over 0.8 s.
+- Her height is the source's again (1.62 m; owner).
 
 ## Numbers
 See the commit message and the report: pack sizes, frame times near her on Low at 4x CPU, contact sheets.

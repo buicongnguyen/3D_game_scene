@@ -26,8 +26,8 @@ const POSE = {
   orbit: u => ({ d: 4.4, h: 1.7, aim: 1.0, yaw: -.9 + 1.8 * u }),
   reveal: u => ({ d: 3.8 + 9 * u * u * (3 - 2 * u), h: 1.5 + 4.5 * u * u * (3 - 2 * u), aim: 1.0 + .3 * u, yaw: .2 }),
 };
-/** The performer's height the shot poses are written for (Kotone, art/blender/vroid_mixamo.py HEIGHT). */
-export const BODY_H = 1.52;
+/** The performer's height the shot poses are written for (Kotone: the source's 1.62 m, art/blender/vroid_mixamo.py). */
+export const BODY_H = 1.62;
 /** Phones (portrait): a little further back so her whole body fits a tall frame. */
 export const PORTRAIT = Object.freeze({ dist: 1.35, close: 1.25 });
 
@@ -44,7 +44,8 @@ export function planShots(plan, clock) {
   for (const b of mergeSections(plan)) {
     const t0 = bar(b.b0), t1 = Math.min(bar(b.b1), revealAt);
     if (t1 <= t0) continue;
-    if (b.kind === 'intro') { push(t0, t1, 'wide'); continue; }
+    // the intro: the establishing wide for 4 bars at most, then in to her (a long intro stayed far away)
+    if (b.kind === 'intro') { const m = Math.min(t1, bar(b.b0 + 4)); push(t0, m, 'wide'); if (t1 - m > .8) push(m, t1, 'medium'); continue; }
     if (b.kind === 'bridge' || b.kind === 'break') { push(t0, t1, 'orbit'); continue; }
     if (b.kind === 'prechorus') { push(t0, t1, 'push'); continue; }
     if (b.kind === 'chorus' || b.kind === 'drop') {
@@ -90,7 +91,7 @@ export function damp(x, v, goal, omega, dt) {
 /** The pose a shot wants at song time t: { pos, look } around the subject (position, facing). */
 export function shotPose(shot, t, subject, { portrait = false } = {}, out = { pos: new THREE.Vector3(), look: new THREE.Vector3() }) {
   const u = Math.min(1, Math.max(0, (t - shot.t0) / Math.max(.5, shot.t1 - shot.t0))), p = POSE[shot.kind](u);
-  // (poses are written for a 1.52 m performer, Kotone: another height scales them)
+  // (poses are written for a 1.62 m performer, Kotone: another height scales them)
   const s = (subject.h || BODY_H) / BODY_H, k = (portrait ? (shot.kind === 'close' ? PORTRAIT.close : PORTRAIT.dist) : 1) * s, yaw = subject.facing + p.yaw * shot.side, d = p.d * k;
   out.pos.set(subject.x + Math.sin(yaw) * d, subject.y + p.h * s, subject.z + Math.cos(yaw) * d);
   out.look.set(subject.x, subject.y + (p.aim - (portrait && shot.kind !== 'close' ? .1 : 0)) * s, subject.z);

@@ -371,8 +371,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +0.47 MB: Kotone on the 65-bone Mixamo skeleton with Mixamo moves (kotone.glb 1.11 MB, kotone.lite.glb 0.79 MB) and
 // her evening-show pack moves-kotone.glb (0.44 MB: seven dances and the singing, fetched only near her show;
 // 69,922,920 B measured).
-// +0.49 MB: her song performances (moves-kotone.glb 0.44 -> 0.93 MB: 23 Avatar Studio Club-mode moves baked on her by
-// scripts/kotone-club-bake.mjs; fetched only with her show pack, near her evening show; 70,414,420 B measured).
+// +0.70 MB: her song performances (moves-kotone.glb 0.44 -> 1.14 MB: 23 Avatar Studio Club-mode moves baked on her by
+// scripts/kotone-club-bake.mjs; fetched only with her show pack, near her evening show; hips and legs keyed exactly: thinned, her planted feet skated; 70,621,996 B measured).
 export const TOTAL_RAW_BYTES = 71_000_000;      // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
@@ -396,7 +396,7 @@ export const TOTAL_RAW_BYTES = 71_000_000;      // (the dance game, the exercise
 // +0.91 MB: Kotone, packed (kotone.glb 0.52 MB, kotone.lite.glb 0.39 MB; 28.19 MB measured): one or the other is loaded.
 // +0.49 MB: Kotone on the Mixamo skeleton, packed (kotone.glb 0.58 MB, kotone.lite.glb 0.45 MB; one or the other is
 // loaded) and her show pack (0.37 MB, fetched on demand); 28,684,576 B measured.
-// +0.43 MB: her song performances (moves-kotone.glb packed 0.37 -> 0.80 MB, fetched on demand; 29.11 MB measured).
+// +0.49 MB: her song performances (moves-kotone.glb packed 0.37 -> 0.86 MB, fetched on demand; 29.17 MB measured).
 export const TOTAL_PACKED_BYTES = 29_400_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
