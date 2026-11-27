@@ -43,6 +43,7 @@ def build_mika():
         scarf=mat('Scarf', '#d8342c', .8), boots=mat('Boots', '#3c9c47', .32), leather=mat('Leather', '#7b4a2b', .58),
         brass=mat('Brass', '#e0ac45', .28, .85))
     M['lash'] = M['dark']
+    M['sock'] = M['eye']   # cream socks share the eye-white material (characters may carry at most 10 materials)
     b = Body(1.45, arm_out=14.0, sh_x=0.145, sh_z=1.0, upper=0.2, fore=0.185, hand=0.08)
     c = b.head_c
     b.extra = [
@@ -253,8 +254,17 @@ def build_mika():
         sh_ = limb([hip + V((0, 0, 0.05)), hip.lerp(knee, 0.42)], M['dark'], lambda t: 0.066 + 0.004 * t, n=14,
                    name='shorts', cap0='round', cap1='flat')
         parts.append(weigh(sh_, leg_weights(s, b)))
-        bt = boot(b, s, M['boots'], M['dark'], shaft_top=0.31, shaft_r=0.05, width=0.05, cuff=0.012, flare=1.14)
+        # green ankle shoes (were mid-shin rain boots) with a short cream sock peeping over the rim
+        bt = boot(b, s, M['boots'], M['dark'], shaft_top=0.15, shaft_r=0.058, width=0.05, cuff=0.009, flare=1.06,
+                  tab=False)
         parts.append(weigh(bt, leg_weights(s, b)))
+        lo, mid = ank + V((0, 0, 0.04)), knee.lerp(ank, 0.5)
+
+        def on_shin(z, lo=lo, mid=mid):
+            return lo.lerp(mid, (z - lo.z) / (mid.z - lo.z))
+        sk = limb([on_shin(0.138), on_shin(0.186)], M['sock'], lambda t: interp([(0, 0.05), (0.8, 0.049), (1, 0.0505)], t),
+                  n=14, name='sock', cap0='flat', cap1='flat')
+        parts.append(weigh(sk, leg_weights(s, b)))
 
     # ---- scarf: two wraps, knot, short front end, long trailing end (scarf_1/2)
     sc = MB('scarf')

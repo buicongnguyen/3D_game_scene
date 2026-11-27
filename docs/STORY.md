@@ -67,7 +67,7 @@ brighter with each lamp that is lit.
 
 | Character | Who they are | Their part in the story |
 |---|---|---|
-| **Mika** (13) | The player. Sora's granddaughter, from the city. Mustard raincoat, red scarf, green boots. Curious, dry, brave when it counts. | Comes to clear out a house; stays as the new Viaduct Lamp keeper. |
+| **Mika** (13) | The player. Sora's granddaughter, from the city. Mustard raincoat, red scarf, green ankle shoes. Curious, dry, brave when it counts. | Comes to clear out a house; stays as the new Viaduct Lamp keeper. |
 | **Tamo** | A hoshibi: a small, round gold star who lives in Sora's lantern. Excitable and forgetful. | Remembers the flood night one lamp at a time, and goes home to the Viaduct Lamp at the end. |
 | **Sora** | Mika's late grandmother, keeper of the Viaduct Lamp. Heard only through her letter and journal pages. | Stopped the train, forgave Genzo, and left her journal in pieces with the people who needed to read it. |
 | **Genzo** (Genzo Kuroda, 70) | Kobo's driver and Sora's oldest friend. Huge white moustache, navy cap. Gruff, kind, jokes to dodge questions. | Was driving the Star Train that night, and has let the villages blame each other for ten years. |
