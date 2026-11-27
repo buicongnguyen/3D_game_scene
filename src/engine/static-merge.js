@@ -1,7 +1,7 @@
 // One draw for a building instead of eight (docs/play-zones and the draw-call pass of 2026-10-25): a static model's
 // plain, opaque, single-coloured parts are merged into one mesh per roughness whose vertex colours carry each part's
 // colour (times the baked shading already in COLOR_0), with one material per roughness shared by every merged model. Parts that must stay
-// themselves stay: lit panes and lamps (driven at night by name), metal (it shines differently), see-through ones,
+// themselves stay: lit panes and lamps (driven at night by name), see-through ones,
 // textured ones, and everything under a node the game looks up by name (the mill wheel, the bell, the chest lid...).
 // The small details that cast no shadow (engine/assets.js NO_SHADOW_MATERIALS) merge into a second mesh that casts none.
 import * as THREE from 'three';
@@ -12,11 +12,15 @@ const KEEP_NODES = new Set(['Wheel', 'Bell', 'ChestLid', 'Chest', 'PorchFlame', 
   'Garland', 'Inside', 'Scaffold', 'Smoke', 'Hive', 'lid', 'embers', 'straw_pile', 'Tip', 'Rod']);
 
 const shared = new Map();
-/** The material of every merged part with this roughness (in quarters: glossy roof tiles keep their night sheen). */
-function mergedMaterial(rough = 0.85) {
-  const r = Math.round(rough * 4) / 4;
-  if (!shared.has(r)) shared.set(r, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: r, metalness: 0, name: `Merged ${r}` }));
-  return shared.get(r);
+/**
+ * The material of every merged part with this roughness and metalness (both in quarters: glossy roof tiles keep their
+ * night sheen, iron and brass keep their shine). Metal parts merge too, among themselves (phone speed plan, step 7:
+ * a lantern's brass, a viaduct's iron beams were a draw each).
+ */
+function mergedMaterial(rough = 0.85, metal = 0) {
+  const r = Math.round(rough * 4) / 4, m = Math.round(metal * 4) / 4, key = `${r}|${m}`;
+  if (!shared.has(key)) shared.set(key, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: r, metalness: m, name: m ? `Merged metal ${m} ${r}` : `Merged ${r}` }));
+  return shared.get(key);
 }
 
 const kept = o => { for (let a = o; a; a = a.parent) if (KEEP_NODES.has(a.name)) return true; return false; };
@@ -52,9 +56,10 @@ export function mergeStatic(root, { glow = new Set(), noShadow = new Set() } = {
   root.traverse(o => {
     if (!o.isMesh || o.isSkinnedMesh || o.isInstancedMesh || Array.isArray(o.material)) return;
     const m = o.material;
-    if (glow.has(m.name) || m.map || m.alphaMap || m.transparent || m.alphaTest > 0 || (m.metalness ?? 0) > 0.3 || (m.emissiveIntensity > 0 && m.emissive?.getHex())) return;
+    if (glow.has(m.name) || m.map || m.alphaMap || m.transparent || m.alphaTest > 0 || (m.emissiveIntensity > 0 && m.emissive?.getHex())) return;
     if (!o.geometry.attributes.position || kept(o)) return;
-    (pick[`${noShadow.has(m.name) ? 'quiet' : 'cast'}:${Math.round((m.roughness ?? 0.85) * 4) / 4}`] ??= []).push(o);
+    const metal = Math.round((m.metalness ?? 0) * 4) / 4;
+    (pick[`${noShadow.has(m.name) ? 'quiet' : 'cast'}:${Math.round((m.roughness ?? 0.85) * 4) / 4}:${metal}`] ??= []).push(o);
   });
   if (Object.values(pick).reduce((a, l) => a + l.length, 0) < 3) return 0;
   let n = 0;
@@ -63,7 +68,7 @@ export function mergeStatic(root, { glow = new Set(), noShadow = new Set() } = {
     const geo = mergeGeometries(list.map(o => bake(o, new THREE.Matrix4().multiplyMatrices(inv, o.matrixWorld))));
     if (!geo) continue;
     geo.computeBoundingBox(); geo.computeBoundingSphere();
-    const [kind, rough] = key.split(':'), mesh = new THREE.Mesh(geo, mergedMaterial(+rough));
+    const [kind, rough, metal] = key.split(':'), mesh = new THREE.Mesh(geo, mergedMaterial(+rough, +metal));
     mesh.name = kind === 'cast' ? 'merged' : 'merged-details';
     mesh.castShadow = kind === 'cast'; mesh.receiveShadow = true;
     for (const o of list) o.removeFromParent();

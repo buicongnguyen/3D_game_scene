@@ -26,7 +26,9 @@ export const ALL_MODELS = [...CHARACTERS, ...ANIMALS, ...ARCHITECTURE, ...RAILWA
 // twice with its shadow. Not the drawbridge (it swings), nor anything rigged or riding the railway.
 export const MERGE_MODELS = [...ARCHITECTURE.filter(n => n !== 'drawbridge'), 'platform', 'viaduct-span', 'viaduct-abutment', 'viaduct-broken', 'viaduct-repair',
   'lamp-viaduct', 'tunnel-portal', 'dock', 'crate', 'barrel', 'sacks', 'bench', 'well', 'market-stall', 'festival-stall', 'postbox', 'cart', 'street-lamp',
-  'signpost', 'scarecrow', 'haybale', 'flowerpot', 'sheep-pen', 'fence-wood', 'fence-bamboo', 'wall-stone'];
+  'signpost', 'scarecrow', 'haybale', 'flowerpot', 'sheep-pen', 'fence-wood', 'fence-bamboo', 'wall-stone',
+  // carried and story props drawn every frame near Mika (phone speed plan, step 7)
+  'hand-lantern', 'music-box', 'fallen-star', 'cog', 'journal-page', 'ball'];
 // Not needed for the first frame, fetched when something asks for them: the room models (world/interiors.js fetches a room
 // when the player comes near its door or walks in) and the tropical trees (only when that scenery option is on).
 export const TROPICAL_MODELS = [...TROPICAL_TREES, ...TROPICAL_TREES.map(t => `${t}-lod`), ...TROPICAL_BUSHES];
