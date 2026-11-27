@@ -17,6 +17,7 @@ import { tx, N_ } from '../i18n/i18n.js';
 import { inStory, forStory, storyId } from './stories/index.js';
 import { YARD_GAME } from './yard/index.js';
 import { yardAt, leavePath } from '../content/yard.js';
+import { KotoneShow, SHOW } from './kotone-show.js';
 
 /** A neighbour as the chosen story tells them: Grandma-story stage lines and chatter where they differ. */
 const storyPerson = p => (storyId() !== 'grandma' ? p : { ...p, story: (p.story || []).map(forStory), chatter: p.chatterGrandma || p.chatter, role: p.roleGrandma || p.role });
@@ -41,6 +42,8 @@ const V = new THREE.Vector3();
 const GREET = 2.2;            // a walker who meets Mika this close (and her not running) stops and says hello
 const SPACE = 0.7;            // people keep this far apart when they pass
 // what the kids call out while Mika plays ball with them
+// what the visitor says when Mika talks to her during her evening show
+const SHOW_LINES = [N_('Want to learn the steps? Maybe tomorrow! Tonight I just dance.'), N_("Oh, you're watching! Clap on two and four, it helps me.")];
 const BALL_LINES = [N_('Catch, Mika!'), N_('Over here! Over here!'), N_('Nice throw!'), N_('Again! Again!'), N_('You throw like Rin!'), N_('Mika is on our team!')];
 
 export class TownLife {
@@ -53,6 +56,7 @@ export class TownLife {
     this.convo = null;        // the conversation now running { pair, lines, i, t, convo }
     this.pairs = new Map();   // 'a|b' -> { a, b, t (cooldown) }
     this.t = 0;
+    this.show = new KotoneShow(this);   // the visitor's evening show at the station (game/kotone-show.js)
   }
 
   // ------------------------------------------------------------------ setup
@@ -184,6 +188,7 @@ export class TownLife {
       for (const c of cmds) this.exec(it, c);
     }
     if (!frozen) { this.updateGames(dt); this.keepApart(dt); }
+    this.show.update(frozen ? 0 : dt, hour);
     // Mika's game ended (the kids went home) or she wandered off: she is no longer playing
     const mg = this.mikaPlays;
     if (mg && (!this.games.has(mg.key) || Math.hypot(mg.at[0] - g.player.pos.x, mg.at[1] - g.player.pos.z) > 12)) {
@@ -198,6 +203,16 @@ export class TownLife {
   exec(it, c) {
     const n = it.n;
     if (c.type !== 'chat' && c.type !== 'play') this.leaveGame(it);
+    const show = c.type === 'clip' && c.clip === 'Show' && it.p.id === SHOW.who;
+    if (this.show.on(it) && !show) this.show.end();
+    if (show) {
+      n.path = null;
+      if (c.face !== undefined) n.targetFacing = c.face;
+      this.setProp(it, null);
+      this.show.begin(it);
+      it.cmd = c; it.chatWith = null; n.sitting = false;
+      return;
+    }
     switch (c.type) {
       case 'walk': {
         // what they were carrying comes along, hanging from the hand (a broom or hoe goes back in the shed)
@@ -287,6 +302,7 @@ export class TownLife {
     if (!it) return;
     const n = it.n, P = it.plan;
     this.leaveGame(it);
+    if (this.show.on(it)) this.show.end();
     this.setProp(it, null);
     n.path = null; n.onPathDone = null; n.sitting = false;
     n.setHidden(false);
@@ -689,6 +705,8 @@ export class TownLife {
     const r = talkTo(storyPerson(it.p), st, this.storyNeeds());
     let lines = r.lines;
     if (!lines.length) lines = [[it.p.id, tx('Lovely day for it.')]];
+    // mid-show (game/kotone-show.js): one line about the dancing first
+    if (this.show.on(it)) lines = [[it.p.id, tx(SHOW_LINES[Math.floor(Math.random() * SHOW_LINES.length)]), 'Wave'], ...lines];
     await this.d.dialogueBody(lines, { local: true });
     this.apply(r.effects);
   }

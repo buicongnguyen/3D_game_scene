@@ -1,6 +1,6 @@
 """Dialogue portrait of Kotone, the visitor at Hoshi Station (a VRoid Project sample character made light by
-vroid_lite.py), made exactly like the cast's (portraits.py: Cycles, warm key, rim, her colour behind) from her full
-model public/models/kotone.glb. She stands on Hoa's skeleton, so Hoa's portrait pose fits her.
+vroid_mixamo.py), made exactly like the cast's (portraits.py: Cycles, warm key, rim, her colour behind) from her full
+model public/models/kotone.glb, posed by her own Idle (Mixamo's Happy Idle).
 
 blender -b --factory-startup --python art/blender/kotone_portrait.py
 """

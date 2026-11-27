@@ -1,7 +1,8 @@
 # Kotone on the Mixamo skeleton: dancing, singing, walking and running
 
-Status: **plan, not started** (written 2026-11-27). Owner's request: "make the character like Kotone can dance and use
-Mixamo walking, running and singing, hip hop dance and maybe several other dances like Avatar Studio".
+Status: **built on branch `kotone-mixamo` (2026-11-28), not pushed**; section 8 has what was built and measured.
+Written 2026-11-27. Owner's request: "make the character like Kotone can dance and use Mixamo walking, running and
+singing, hip hop dance and maybe several other dances like Avatar Studio".
 
 ## 1. Where we are
 
@@ -120,3 +121,50 @@ commit on the branch, do not push (pushing to `main` deploys; the owner says whe
 `.tools/`. Stop servers by their own PID. Preserve each file's line endings. Licences: VRoid Project sample (VRoid Hub
 licence: commercial use, modification and redistribution allowed; credited in the game's Credits); Mixamo animations
 (usable in the owner's games per the owner).
+
+## 8. What was built (2026-11-28, branch `kotone-mixamo`)
+
+Decisions taken for section 6 (the owner had not chosen): (1) an evening show at the station forecourt (no stage exists
+west of the river: the festival dance is on the Takamori square, across the river from her road network; the exercise
+stage is built only during a round); (2) seven Mixamo dances picked from contact sheets of twenty; (3) only Kotone;
+(4) Blender 4.5.11 LTS.
+
+**Script:** `art/blender/vroid_mixamo.py` (one Blender session builds `kotone.glb`, `kotone.lite.glb`, `moves-kotone.glb`
+from one import and one rig step, so the joints match: tests check it) + `art/blender/trim_clips.mjs` (drops tracks that
+do nothing, thins keys within 0.5 deg body / 2 deg fingers, x2.4 for the dances; rotations as normalised 16-bit).
+Retarget: world-space delta from each bone's rest, her rest swung onto the source's rest direction (both T-poses);
+Mixamo FBX are sampled at 30 Hz in time (the FBX importer sets the scene to 60 fps).
+
+| | Before (31 bones) | Now (69 bones) | Target |
+|---|---|---|---|
+| Bones | 31 | 69 (65 Mixamo + root, grip_R, eye_L, eye_R) | 65 + eyes |
+| Triangles PC / phone | 13,843 / 7,979 | 13,878 / 7,995 | ~14k / ~8k |
+| `kotone.glb` raw / packed | 1.07 / 0.51 MB | 1.11 / 0.58 MB | <= 0.60 packed |
+| `kotone.lite.glb` raw / packed | 0.75 / 0.38 MB | 0.79 / 0.45 MB (447,784 B) | <= 0.45 packed |
+| `moves-kotone.glb` raw / packed | - | 0.44 / 0.37 MB | <= 0.40 packed |
+| Draws | 1 + shadow | 1 + shadow | same |
+
+Clips in both models: Idle (Happy Idle), Walk (Walking: 0.958 m/s), Run (Running: 4.077 m/s), Talk (Talking (1)
+0.6-5 s), Wave (Waving (1) x3), Cheer (Cheering), Bow (Quick Informal Bow), LookAround (Look Around), Point (Pointing):
+56 KB packed together. In the pack: DanceHipHop (Hip Hop Dancing (3)), DanceArms (Arms Hip Hop Dance), DanceHouse (House
+Dancing), DanceRunningMan (Dancing Running Man), DanceSamba (Samba Dancing), DanceWave (Dancing (2)), 7 s loops cut from
+the long takes with a 0.5 s crossfaded seam, DanceYmca (3.5 s), Sing (Talking (1) 5-10.2 s), SingUpper (the same, upper
+body only, to lay over Walk / Run / Idle). Each clip's keys are 4-7 KB packed; most of the pack's 0.37 MB is glTF JSON
+(1,030 accessors for 582 tracks): sharing key times per clip is the next lever if it must shrink.
+Dropped after building: Gangnam Style (the high knee lifts push the thigh through the short skirt). Left out on the
+sheets: Booty Hip Hop, Hip Hop Dancing (1) (bends over), Locking / Macarena (squats), Jazz (stiff T arms), Dancing (jumps).
+
+**Game:** `game/kotone-show.js` (17:00-19:00 at `hoshi.stage` (-91, 101.5), back to the station: dance once or twice
+through, rest, now and then Sing with her lips moving, a bow every third dance; pack fetched when Mika is within 45 m
+from 16:30, or when the show starts; clips lent with `exercise-moves.js` `lendClips` and taken back when she leaves);
+Town Life `do: 'Show'`; mid-show talk adds one line; her day adds LookAround and Point; she strolls at 1 m/s.
+`actors/face.js` gained `sing(track, clock)` (Avatar Studio `<song>.mouth.json` v2 open/pucker curves or
+`<song>.lyrics.json` word timings drive mouthA / mouthO) and `speak(text, secs)`.
+
+**Checks:** joint rules (Avatar Studio checker, copied read-only into `.tools`, her rig passed explicitly): Idle, Bow,
+Point clean; the rest mostly finger knuckle back-bends and spreads from the Mixamo takes (R3), wrist radial deviation
+(R5) in Cheer / RunningMan, thigh~thigh contact in DanceArms / DanceHipHop (R11, knees together), one hand-in-torso
+moment in DanceHouse (5 frames). Foot slip at the measured speeds: Walk 1.45 cm, Run 3.1 cm (ankle-based; running
+contact is short). npm test 1100/1100; perf budget all six places within limits. Frame time near her (phone tier, 4x
+CPU, uncapped): 11.9 ms at 16:12 without the pack vs 12.7 ms at 17:18 dancing with it (different hours: lighting and
+draws differ, 148 vs 154); PC 11.95 vs 12.78 ms avg, median 2.6 vs 2.9 ms. Not an A/B against the old 31-bone model.
