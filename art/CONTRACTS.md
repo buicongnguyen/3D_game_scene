@@ -283,7 +283,8 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   -b --factory-startup --python art/blender/vroid_mixamo.py -- --member nam-1`): Blender 5.x's exporter orders the roots
   by name, so a model and its pack from different runs may not match (tests/assets.test.mjs checks joints and rest).
 - Loaded only by a group performance (`content/troupe.js`, `game/perform/troupe.js`): the models of the group and one
-  pack (`moves-vroid-nam1`, the back row's source); the other packs are for later use.
+  pack (`moves-vroid-nam1`, the back row's source). Only that pack ships: the other six were dropped from the deploy
+  (owner, 2026-11-28); `--member <id>` rebuilds a member's pack when it is needed.
 
 #### Kotone (round 1, replaced) — `vroid_lite.py` (imported, textured)
 

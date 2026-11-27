@@ -64,6 +64,10 @@ export class SingPlay {
   async start() {
     const g = this.g, a = g.assets, low = g.renderer.qualityName === 'low', body = low ? 'kotone.lite' : 'kotone';
     this.d.singplay = true;
+    this.d.refreshObjective?.();
+    // the song stops with the game: pause (menu, photo mode) pauses her audio; the next frame after resume plays it on
+    const tp = g.togglePause?.bind(g);
+    if (tp) g.togglePause = (...args) => { const r = tp(...args); if (g.paused) this.perf?.sound?.el?.pause(); return r; };
     await a.loadLater([body, SHOW.pack]);
     if (!a.has(body)) { this.ui.toast?.(tx("Kotone couldn't be loaded")); return false; }
     this.swapBody(body);
@@ -180,6 +184,7 @@ export class SingPlay {
     p.locked = true; p.vel.set(0, 0, 0);
     this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot });
     this.perf.start(0);
+    this.d.performing = true;   // (director.updateBarks: the villagers' bubbles hidden, no new ones, until she stops)
     if (this.group > 1) this.makeTroupe();
     g.audio?.holdMusic?.('singplay', true);
     this.cam = createCameraMan(planShots(this.perf.plan, this.perf.clock, { group: !!this.troupe }), { portrait: innerHeight > innerWidth });
@@ -192,6 +197,7 @@ export class SingPlay {
     if (this.rec) this.toggleRecord();
     this.dropTroupe();
     this.perf?.dispose(); this.perf = null; this.cam = null;
+    this.d.performing = false;
     g.player.locked = false; g.follow.first = true;
     g.audio?.holdMusic?.('singplay', false);
     this.release();

@@ -218,7 +218,8 @@ export class Director {
       if (n && B.lit.delete(id) && !n.path) n.setIdle(n.idleClip); // back to what they were doing
     }
     // while something owns the screen the bubbles are hidden (they keep their time), and nobody starts a new one
-    const hushed = !!(this.busy || this.scenes.active || this.minigame || this.ui.dialogueOpen || this.ui.overlay || g.paused);
+    // (and while Kotone performs in Sing & Play: no remarks over her song)
+    const hushed = !!(this.busy || this.scenes.active || this.minigame || this.ui.dialogueOpen || this.ui.overlay || g.paused || this.performing);
     B.ui.update(dt, g.camera, hushed);
     B.scan -= dt;
     if (hushed || B.scan > 0) return;
@@ -1033,6 +1034,7 @@ export class Director {
 
   refreshObjective(pulse = false) {
     if (!this.quest) return;
+    if (this.singplay) { this.ui.setObjective(-1, tx('Sing & Play: find flat open ground, pick Solo or a group, then press Perform.'), pulse); this.refreshHud(); return; }
     if (this.explore) { this.ui.setObjective(-1, this.stamps?.objective() || tx('Explore Hoshi Valley: wander, shop, play ball and visit the neighbours.'), pulse); this.refreshHud(); return; }
     this.ui.setObjective(this.q.state.chapter, this.q.objective(tx), pulse);
     this.refreshHud();

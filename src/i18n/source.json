@@ -17728,6 +17728,12 @@
   ]
  },
  {
+  "s": "Sing & Play: find flat open ground, pick Solo or a group, then press Perform.",
+  "ctx": [
+   "UI (src/game/director.js)"
+  ]
+ },
+ {
   "s": "Explore Hoshi Valley: wander, shop, play ball and visit the neighbours.",
   "ctx": [
    "UI (src/game/director.js)"

@@ -111,8 +111,12 @@ draw budget past its limit (84 + 11 > 91). So the third step applies: **Low show
   a 26 s PC recording of the eight: `.tools/group/final/pc-8-performance.webm` (local only).
 
 ## Owner decisions
-1. Keep the six packs nobody fetches yet (moves-vroid-nu1/nu3/nu4/nu5/nam2/nam3, 5.2 MB packed in the deploy) or drop
-   them until a member needs a solo show? (The group needs only nam-1's.)
-2. Names for the seven (the files are vroid-<id>; the game shows no names yet).
+1. **Done (2026-11-28):** the six packs nobody fetched (moves-vroid-nu1/nu3/nu4/nu5/nam2/nam3, 5.2 MB packed) are
+   dropped; only nam-1's ships. `vroid_mixamo.py --member <id>` rebuilds one when a member gets a solo show.
+   Also fixed then: the villagers' bubbles are hidden while she performs (`director.performing`), the song pauses with
+   the game (pause menu, photo mode), and the objective card says what Sing & Play is about.
+2. Names for the seven (the files are vroid-<id>; the game shows no names yet). Proposed (Kotone's art-club friends from
+   the city, on a summer trip to sing at the station; none taken by a villager): nu-3 Saki, nu-1 Mio, nu-4 Yuna, nu-5 Aoi,
+   nam-1 Riku, nam-3 Kai, nam-2 Ren. Waiting for the owner's pick before they show in the game.
 3. Group of 8 on phones: off (measured); allow it on a strong phone (Medium tier is already 8)?
 4. Golden Rails: Kotone's own planted-foot slide is 1.68 cm/s p95 (the gate is 1.5); a plan-side fix is hers to make.
