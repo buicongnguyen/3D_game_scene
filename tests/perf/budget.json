@@ -1,36 +1,36 @@
 {
  "note": "limits = the numbers measured when recorded, plus headroom (draws 8%, tris and visible objects 10%); tests/perf-budget-browser.mjs --record to tighten",
- "recorded": "2026-10-29",
+ "recorded": "2026-11-27",
  "limits": {
   "low:kawabe": {
-   "draws": 184,
+   "draws": 162,
    "tris": 444258,
-   "visible": 2043
+   "visible": 838
   },
   "low:takamori": {
-   "draws": 191,
+   "draws": 182,
    "tris": 467965,
-   "visible": 2706
+   "visible": 835
   },
   "low:station": {
-   "draws": 137,
+   "draws": 129,
    "tris": 301185,
-   "visible": 1698
+   "visible": 662
   },
   "high:kawabe": {
-   "draws": 496,
+   "draws": 451,
    "tris": 1306018,
-   "visible": 3159
+   "visible": 1225
   },
   "high:takamori": {
-   "draws": 430,
+   "draws": 401,
    "tris": 1290071,
-   "visible": 3715
+   "visible": 1154
   },
   "high:station": {
-   "draws": 315,
+   "draws": 294,
    "tris": 1066827,
-   "visible": 2631
+   "visible": 1007
   }
  }
 }

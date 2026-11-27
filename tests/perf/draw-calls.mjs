@@ -43,7 +43,7 @@ for (const q of (args.quality || 'low,high').split(',')) {
     const f = r.frames, per = v => (v / f).toFixed(1);
     console.log(`\n=== ${q} @ ${s}: ${per(r.pass.main + r.pass.shadow + r.pass.post)} calls/frame (main ${per(r.pass.main)}, shadow ${per(r.pass.shadow)}, post ${per(r.pass.post)}), ${Math.round(r.tris / f / 1000)}k tris, fps ${r.fps}`);
     console.log('  by group: ' + r.groups.slice(0, 14).map(([k, v]) => `${k} ${per(v)}`).join(' | '));
-    for (const [k, v] of r.rows.filter(([k]) => !args.pass || k.startsWith(args.pass)).slice(0, 22)) console.log(`  ${per(v).padStart(6)}  ${k}`);
+    for (const [k, v] of r.rows.filter(([k]) => !args.pass || k.startsWith(args.pass)).slice(0, +(args.rows || 22))) console.log(`  ${per(v).padStart(6)}  ${k}`);
   }
   await ctx.close();
 }
