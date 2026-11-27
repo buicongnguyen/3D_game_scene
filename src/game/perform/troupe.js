@@ -11,8 +11,9 @@
 // hips' travel scaled by the ratio of the leg lengths, so a taller body bounces as far as its legs reach and its planted
 // feet stay put (scripts/troupe-check.mjs measures it). The sing-along: each member's face follows the song's mouth on
 // chorus lines only (actors/face.js sing(..., when)), and only while the camera is near; blinks stay their own.
-// Limits for slow phones (measured: docs/GROUP-PERFORMANCE.md): the back row at half rate, the back row's faces off, the
-// back row without shadows; Sing & Play shows at most four on Low when that is still too slow.
+// The draws: each row's followers are drawn as ONE skinned mesh (row-merge.js: one view draw, one shadow draw, one bone
+// texture a row instead of one a member). Limits for slow phones (measured: docs/GROUP-PERFORMANCE.md): the back row
+// at half rate, its faces off, no shadows, or the back row left out (setSize(4): Sing & Play's fallback during a show).
 import * as THREE from 'three';
 import { poseDance } from './performer.js';
 import { planBacking } from './plan.js';
@@ -20,6 +21,7 @@ import { createFootHold } from './foot-hold.js';
 import { lineIndexAt, SINGING } from './mic-layer.js';
 import { Face } from '../../actors/face.js';
 import { TROUPE_LIMITS } from '../../content/troupe.js';
+import { RowMesh, canMerge } from './row-merge.js';
 
 const NOT_COPIED = /^(root|grip_R|eye_[LR])$/;   // (the eyes are each face's own; the grip is a prop handle)
 
@@ -158,10 +160,13 @@ export class Troupe {
   /**
    * lead: Kotone's Performer (started); leadModel: her model; leadRest: her rig at rest (her pack's armature);
    * members: [{ m (content/troupe.js entry), model (a fresh clone, at rest), clips (Map, the back row's source only) }];
-   * opts: { backHalf, backFaces, backShadows } (the phone limits).
+   * opts: { backHalf, backFaces, backShadows } (the phone limits), merge (default true: a row drawn as one mesh),
+   * parent (where the joined meshes hang: the formation; default the first member's parent).
    */
   constructor(lead, leadModel, leadRest, members, opts = {}) {
-    this.lead = lead; this.members = members; this.opts = { backHalf: false, backFaces: true, backShadows: true, ...opts };
+    this.lead = lead; this.members = members; this.all = members.slice();
+    this.opts = { backHalf: false, backFaces: true, backShadows: true, merge: true, ...opts };
+    this.frontOn = true; this.backOn = true;
     this.frame = 0; this.ms = 0; this.msN = 0;
     const rest = new Map(members.map(e => [e, restPose(e.model)]));
     const leadR = restPose(leadRest), leadLeg = legLength(leadRest);
@@ -179,32 +184,68 @@ export class Troupe {
       e.face = Face.attach(e.model);
       if (e.face && track) e.face.sing(track, () => lead.t, t => chorusAt(lines, t));
     }
+    // each row's followers as one mesh (Kotone stays her own: she is the player's body)
+    this.rows = [];
+    const parent = opts.parent || members[0]?.model.parent;
+    if (this.opts.merge && parent) for (const r of [0, 1]) {
+      const meshes = members.filter(e => e.m.row === r).map(e => skinnedOf(e.model)).filter(Boolean);
+      if (meshes.length === members.filter(e => e.m.row === r).length && canMerge(meshes)) {
+        try { const rm = new RowMesh(meshes, parent); rm.row = r; this.rows.push(rm); } catch (err) { console.warn(`troupe row ${r} left unmerged`, err); }
+      }
+    }
     this.applyShadows();
     // at half rate the back row's bones stand still every other frame: their skeletons skip three's per-frame bone
     // matrices and bone-texture upload then too (same pose, same matrices; at full rate the tick moves every frame)
     this.backTick = 0;
-    for (const e of back) e.model.traverse(o => {
-      if (!o.isSkinnedMesh || o.skeleton.userData?.troupeHalf) return;
-      const sk = o.skeleton, own = sk.update.bind(sk); let seen = -1;
+    const halfRate = sk => {
+      if (sk.userData?.troupeHalf) return;
+      const own = sk.update.bind(sk); let seen = -1;
       sk.userData = { ...(sk.userData || {}), troupeHalf: true };
       sk.update = () => { if (seen !== this.backTick || !sk.boneTexture) { seen = this.backTick; own(); } };
-    });
-    lead.onPose = (dt, t) => this.pose(dt, t);
+    };
+    for (const e of back) e.model.traverse(o => { if (o.isSkinnedMesh) halfRate(o.skeleton); });
+    for (const r of this.rows) if (r.row === 1) halfRate(r.mesh.skeleton);
+    this.onPose = (dt, t) => this.pose(dt, t);
+    lead.onPose = this.onPose;
   }
+
+  /** Rows drawn as one mesh each (true) or every member its own (false; an A/B switch for measuring). */
+  setMerged(on) { for (const r of this.rows) r.setMerged(on); }
+  get merged() { return this.rows.some(r => r.merged); }
+
+  /**
+   * Show 1 (Kotone alone), 4 (the front row) or 8 (both rows) of this troupe: the members left out are neither posed
+   * nor drawn, their faces off. Sing & Play drops the back row with setSize(4) when the frame budget breaks during a
+   * show; the measurement (tests/perf/troupe-perf.mjs --ab) switches sizes inside one page.
+   */
+  setSize(n) {
+    this.frontOn = n >= 4; this.backOn = n >= 8 && !!this.back;
+    for (const e of this.all) {
+      const on = e.m.row === 0 ? this.frontOn : this.backOn;
+      e.model.visible = on;
+      if (!on || (!this.opts.backFaces && e.m.row === 1)) e.face?.setEnabled(false);
+    }
+    for (const r of this.rows) r.show(r.row === 0 ? this.frontOn : this.backOn);
+    this.members = this.all.filter(e => e.model.visible);
+    this.lead.onPose = n > 1 ? this.onPose : null;
+  }
+  get size() { return this.backOn ? 8 : this.frontOn ? 4 : 1; }
 
   get count() { return this.members.length + 1; }
   get plans() { return { front: this.lead.plan, back: this.back?.dancer.plan || null }; }
 
   applyShadows() {
-    for (const e of this.members) { const cast = e.m.row === 0 || (this.opts.backShadows && TROUPE_LIMITS.shadowRows > 1); e.model.traverse(o => { if (o.isMesh) o.castShadow = cast; }); }
+    const cast = row => row === 0 || (this.opts.backShadows && TROUPE_LIMITS.shadowRows > 1);
+    for (const e of this.all) e.model.traverse(o => { if (o.isMesh) o.castShadow = cast(e.m.row); });
+    for (const r of this.rows) r.castShadow = cast(r.row);
   }
 
   /** From the lead's performer, after her dance pose: both rows posed for song time t (one evaluation each). */
   pose(dt, t) {
     const t0 = performance.now();
-    for (const c of this.front) c.copy();
+    if (this.frontOn) for (const c of this.front) c.copy();
     const b = this.back;
-    if (b && (!this.opts.backHalf || (this.frame & 1) === 0)) {
+    if (b && this.backOn && (!this.opts.backHalf || (this.frame & 1) === 0)) {
       b.dancer.pose(this.opts.backHalf ? dt * 2 : dt, t);
       for (const c of b.copiers) c.copy();
       this.backTick++;
@@ -224,6 +265,7 @@ export class Troupe {
       if (!on) continue;
       f.lookAt(cam); f.update(dt);
     }
+    for (const r of this.rows) r.sync();
     this.ms += performance.now() - t0;
   }
 
@@ -233,7 +275,10 @@ export class Troupe {
   dispose() {
     if (this.lead.onPose) this.lead.onPose = null;
     this.back?.dancer.dispose();
-    for (const e of this.members) e.face?.sing(null);
+    for (const r of this.rows) r.dispose();
+    this.rows = [];
+    for (const e of this.all) e.face?.sing(null);
   }
 }
+const skinnedOf = model => { let m = null; model.traverse(o => { if (!m && o.isSkinnedMesh) m = o; }); return m; };
 const _cam = new THREE.Vector3(), _p = new THREE.Vector3();

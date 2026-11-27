@@ -17,6 +17,8 @@ import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js'
 import { canPerform, canGroup, gameEnv } from './flat.js';
 import { Troupe } from '../perform/troupe.js';
 import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset } from '../../content/troupe.js';
+import { strongPhone, BudgetWatch, dropNow, shotIndex, STRONG_KEY } from './strong-phone.js';
+import { deviceFacts } from '../../engine/device-note.js';
 
 export const SAVE_KEY = 'starline:singplay:v1';
 export const GROUP_KEY = 'starline:singplay:group';   // the group size last picked (per device: 1, 4 or 8)
@@ -28,22 +30,29 @@ const loadPlace = () => { try { const v = JSON.parse(localStorage.getItem(SAVE_K
 const savePlace = p => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(p)); } catch { /* per-device convenience */ } };
 const loadGroup = () => { try { const n = Number(localStorage.getItem(GROUP_KEY)); return GROUP_SIZES.includes(n) ? n : 1; } catch { return 1; } };
 const saveGroup = n => { try { localStorage.setItem(GROUP_KEY, String(n)); } catch { /* per-device convenience */ } };
+const loadStrong = () => { try { return localStorage.getItem(STRONG_KEY); } catch { return null; } };
+const saveStrong = v => { try { localStorage.setItem(STRONG_KEY, v); } catch { /* measured again next time */ } };
 /**
  * The phone limits of a group (measured: docs/GROUP-PERFORMANCE.md): the largest group the tier shows and what the back
- * row gives up. URL switches for measuring: ?troupeMax=1|4|8, ?troupeHalf=0|1, ?troupeBackFaces=0|1, ?troupeBackShadows=0|1.
+ * row gives up. URL switches for measuring: ?troupeMax=1|4|8, ?troupeHalf=0|1, ?troupeBackFaces=0|1, ?troupeBackShadows=0|1,
+ * ?troupeMerge=0|1.
  */
-// Low (phones): a group of 4 at most. Measured on a built preview, 390x844, 4x CPU (docs/GROUP-PERFORMANCE.md): 4 adds
-// +0.7 / +1.5 ms p50 (fixed / moving camera), 8 adds +1.3 / +4.5 ms; the back row at half rate and without faces did
-// not bring 8 under the +2 ms line with a moving camera, so the third step applies: Low shows Solo and 4, PC 8.
+// Low (phones): a group of 4, and 8 on a strong phone (strong-phone.js: its own measured frames have room; it falls back
+// to the front row mid-show, at a camera cut, when the budget breaks). Each row is drawn as one mesh (perform/row-merge.js),
+// which is what makes 8 affordable on Low (measured: docs/GROUP-PERFORMANCE.md).
+// ?troupeMax= fixes the largest group (no strong-phone rule, no fallback: for measuring); ?troupeMerge=0 draws every
+// member as its own mesh.
 export const GROUP_LIMITS = Object.freeze({
-  low: Object.freeze({ max: 4, backHalf: false, backFaces: true, backShadows: true }),
-  other: Object.freeze({ max: 8, backHalf: false, backFaces: true, backShadows: true }),
+  low: Object.freeze({ max: 4, strongMax: 8, backHalf: false, backFaces: true, backShadows: true, merge: true }),
+  other: Object.freeze({ max: 8, strongMax: 8, backHalf: false, backFaces: true, backShadows: true, merge: true }),
 });
 export function groupLimits(low, params = null) {
   const q = (k, d) => { const v = params?.get?.(k); if (v === null || v === undefined || v === '') return d; if (typeof d === 'boolean') return v === '1' || v === 'on'; return Number(v) || d; };
-  const L = low ? GROUP_LIMITS.low : GROUP_LIMITS.other;
-  return { max: q('troupeMax', L.max), backHalf: q('troupeHalf', L.backHalf), backFaces: q('troupeBackFaces', L.backFaces), backShadows: q('troupeBackShadows', L.backShadows) };
+  const L = low ? GROUP_LIMITS.low : GROUP_LIMITS.other, forced = !!params?.get?.('troupeMax');
+  return { max: q('troupeMax', L.max), strongMax: forced ? q('troupeMax', L.max) : L.strongMax, forced, backHalf: q('troupeHalf', L.backHalf), backFaces: q('troupeBackFaces', L.backFaces), backShadows: q('troupeBackShadows', L.backShadows), merge: q('troupeMerge', L.merge) };
 }
+/** The largest group this device shows now: limits from groupLimits, strong from strongPhone(). */
+export const groupMax = (limits, strong) => (limits.forced ? limits.max : strong?.ok ? Math.max(limits.max, limits.strongMax) : limits.max);
 
 /** Fetch a song's data files: { song, beats, lyrics, mouth, stage, url } or null. */
 export async function loadSong(e) {
@@ -77,8 +86,9 @@ export class SingPlay {
     const list = [...KOTONE_SONGS, songFromParam(g.params?.get?.('kotoneSong'))].filter(Boolean);
     this.songs = (await Promise.all(list.map(loadSong))).filter(Boolean);
     this.limits = groupLimits(low, g.params);
+    this.judgeStrong();
     this.hud();
-    this.setGroup(Math.min(loadGroup(), this.limits.max), false);
+    this.setGroup(Math.min(loadGroup(), this.max()), false);
     this.pauseLeave();
     // the visitor herself steps out of Town Life while the player is her (no second Kotone at the station)
     const town = this.d.town, k = town?.people.find(it => it.p.id === SHOW.who);
@@ -123,7 +133,7 @@ export class SingPlay {
     this.btnCam = mk('spCam', N_('Camera: Auto'), () => { this.auto = !this.auto; this.freeUntil = 0; this.label(); });
     // the group: three flat choices in a row of their own, always visible (no menu)
     const row = this.groupRow = document.createElement('div'); row.className = 'singplay-group'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', tx(N_('Group')));
-    this.btnGroup = GROUP_SIZES.filter(n => n <= this.limits.max).map(n => {
+    this.btnGroup = GROUP_SIZES.filter(n => n <= Math.max(this.limits.max, this.limits.strongMax)).map(n => {
       const b = document.createElement('button'); b.type = 'button'; b.id = `spGroup${n}`; b.className = 'singplay-btn singplay-seg'; b.textContent = tx(GROUP_LABELS[n]); b.dataset.n = String(n);
       b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); if (!this.perf) this.setGroup(n); });
       row.appendChild(b); return b;
@@ -154,14 +164,15 @@ export class SingPlay {
     this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec));
     this.btnCam.textContent = tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free'));
     this.btnCam.setAttribute('aria-disabled', String(!p));
-    for (const b of this.btnGroup || []) { b.setAttribute('aria-pressed', String(Number(b.dataset.n) === this.group)); b.setAttribute('aria-disabled', String(!!p)); }
+    // (Group of 8 shows on a phone once it has measured strong: strong-phone.js)
+    for (const b of this.btnGroup || []) { b.hidden = Number(b.dataset.n) > this.max(); b.setAttribute('aria-pressed', String(Number(b.dataset.n) === this.group)); b.setAttribute('aria-disabled', String(!!p)); }
     this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
   }
 
   // ---------------------------------------------------------------- performing
   /** Pick the group size (1, 4, 8): its members' models (and the back row's pack) start loading now. */
   setGroup(n, save = true) {
-    this.group = Math.min(n, this.limits?.max ?? 8);
+    this.group = Math.min(n, this.limits ? this.max() : 8);
     if (save) saveGroup(this.group);
     this.checkT = 0;
     const files = troupeFiles(this.group, this.g.renderer.qualityName === 'low'), a = this.g.assets;
@@ -187,7 +198,11 @@ export class SingPlay {
     this.d.performing = true;   // (director.updateBarks: the villagers' bubbles hidden, no new ones, until she stops)
     if (this.group > 1) this.makeTroupe();
     g.audio?.holdMusic?.('singplay', true);
-    this.cam = createCameraMan(planShots(this.perf.plan, this.perf.clock, { group: !!this.troupe }), { portrait: innerHeight > innerWidth });
+    this.shots = planShots(this.perf.plan, this.perf.clock, { group: !!this.troupe });
+    this.cam = createCameraMan(this.shots, { portrait: innerHeight > innerWidth });
+    // a phone showing 8: its frame budget is watched; broken, the back row leaves at the next cut (strong-phone.js)
+    this.watch = this.troupe?.size === 8 && g.renderer.qualityName === 'low' && !this.limits.forced ? new BudgetWatch() : null;
+    this.dropAt = null;
     this.gather();
     this.label();
   }
@@ -196,6 +211,7 @@ export class SingPlay {
     const g = this.g;
     if (this.rec) this.toggleRecord();
     this.dropTroupe();
+    this.watch = null; this.dropAt = null;
     this.perf?.dispose(); this.perf = null; this.cam = null;
     this.d.performing = false;
     g.player.locked = false; g.follow.first = true;
@@ -227,6 +243,7 @@ export class SingPlay {
     p.face?.setEnabled(Face.on); p.face?.lookAt(p.gaze || null); p.face?.update(dt);
     if (this.perf) {
       this.perf.update(dt, { listen: 1, camera: g.camera });
+      if (this.watch) this.budget();
       this.troupe?.update(dt, g.camera);
       // the audience: a cheer or a wave now and then, more on the choruses, all of them at the end
       this.cheerT -= dt;
@@ -242,7 +259,9 @@ export class SingPlay {
     } else {
       this.checkT -= dt;
       if (this.checkT <= 0) {
-        this.checkT = .3; const was = this.allowed.ok + this.allowed.reason, env = gameEnv(g);
+        this.checkT = .3;
+        if ((this.strongT = (this.strongT || 0) + 1) % 4 === 0) this.judgeStrong(true);   // (about once a second)
+        const was = this.allowed.ok + this.allowed.reason, env = gameEnv(g);
         this.allowed = p.grounded ? canPerform(p.pos, env) : { ok: false, reason: 'steep' };
         if (this.allowed.ok && this.group > 1) this.allowed = canGroup(p.pos, p.facing, this.spots(), env);
         if (was !== this.allowed.ok + this.allowed.reason) this.label();
@@ -257,7 +276,7 @@ export class SingPlay {
     if (!this.perf || !this.cam || !this.auto) return false;
     if (g.input.dragging || g.input.touch?.look?.moved) this.freeUntil = now + 4000;
     if (now < this.freeUntil) { this.camWas = false; return false; }
-    if (!this.camWas) { this.cam = createCameraMan(planShots(this.perf.plan, this.perf.clock, { group: !!this.troupe }), { portrait: innerHeight > innerWidth }); this.camWas = true; }
+    if (!this.camWas) { this.cam = createCameraMan(this.shots, { portrait: innerHeight > innerWidth }); this.camWas = true; }
     this.cam.portrait = innerHeight > innerWidth;
     const clear = (a, b) => g.colliders.raycast(a.x, a.y, a.z, b.x, b.y, b.z);
     const subject = { x: p.pos.x, y: p.pos.y, z: p.pos.z, facing: p.facing };
@@ -265,6 +284,38 @@ export class SingPlay {
     this.cam.update(dt, this.perf.t, subject, g.camera, clear);
     p.silhouette?.show?.(false);
     return true;
+  }
+
+  // ---------------------------------------------------------------- strong phones (strong-phone.js)
+  /** The largest group shown now. */
+  max() { return groupMax(this.limits, this.strong); }
+
+  /** Is this phone strong enough for 8 now? (Medium and High always are.) live: the HUD follows a change. */
+  judgeStrong(live = false) {
+    const g = this.g, r = g.renderer, was = this.limits ? this.max() : 0;
+    this.strong = strongPhone({ ...deviceFacts(r.qualityName), level: r.governor?.level ?? 0, pace: g.pacer?.pace || 0, frames: g.ring?.summary?.() || null, saved: loadStrong() });
+    if (this.strong.ok && this.strong.why === 'measured' && loadStrong() !== '1') saveStrong('1');
+    if (!live || this.max() === was) return;
+    if (this.group > this.max()) this.setGroup(this.max(), false);
+    this.label();
+  }
+
+  /** During a show of 8 on a phone: the frame budget, and the back row leaving when it breaks. */
+  budget() {
+    const g = this.g, ring = g.ring, w = this.watch;
+    if ((g.renderer.governor?.level ?? 0) > 0 || (g.pacer?.pace || 0) > 0) w.trip();
+    else if (ring?.count) { const i = (ring.i - 1 + ring.n) % ring.n; w.feed(ring.work[i], ring.gap[i]); }
+    if (!w.broken || !this.troupe) return;
+    const t = this.perf.t;
+    this.dropAt ??= { since: t, shot: shotIndex(this.shots, t) };
+    if (!dropNow(this.shots, t, this.dropAt)) return;
+    this.troupe.setSize(4);
+    const xs = troupeOf(4).map(m => m.x), zs = troupeOf(4).map(m => m.z);
+    this.groupW = Math.max(...xs) - Math.min(...xs); this.groupD = Math.max(...zs) - Math.min(...zs);
+    saveStrong('0'); this.strong = { ok: false, why: 'fell back' };
+    this.group = 4; saveGroup(4);
+    this.watch = null; this.dropAt = null;
+    this.label();
   }
 
   // ---------------------------------------------------------------- the group (content/troupe.js, perform/troupe.js)
@@ -300,7 +351,7 @@ export class SingPlay {
     g.scene.add(root); root.updateMatrixWorld(true);
     const xs = cast.map(m => m.x), zs = cast.map(m => m.z);
     this.groupW = Math.max(...xs) - Math.min(...xs); this.groupD = Math.max(...zs) - Math.min(...zs);
-    this.troupe = new Troupe(this.perf, p.model, this.restRoot, members, { backHalf: L.backHalf, backFaces: L.backFaces, backShadows: L.backShadows });
+    this.troupe = new Troupe(this.perf, p.model, this.restRoot, members, { backHalf: L.backHalf, backFaces: L.backFaces, backShadows: L.backShadows, merge: L.merge, parent: root });
   }
 
   dropTroupe() {
