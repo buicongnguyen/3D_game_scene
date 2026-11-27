@@ -70,6 +70,33 @@ async function checkVroid(name, c) {
   }
 }
 
+// The visitor's clip pack (vroid_mixamo.py): her armature with no mesh, the same joints in the same order with the same
+// parents and rest pose as her model, every clip, keys only on her bones.
+async function checkVroidClips(name, c) {
+  const { NodeIO } = await import('@gltf-transform/core');
+  const { ALL_EXTENSIONS } = await import('@gltf-transform/extensions');
+  const read = async n => (await new NodeIO().registerExtensions(ALL_EXTENSIONS).read(fileURLToPath(new URL(`${n}.glb`, MODELS)))).getRoot();
+  const pack = await read(name), person = await read(c.of);
+  assert.equal(pack.listMeshes().length, 0, 'a clip pack carries no mesh');
+  const parentOf = r => { const m = new Map(); for (const n of r.listNodes()) for (const k of n.listChildren()) m.set(k, n.getName()); return m; };
+  const pp = parentOf(pack), hp = parentOf(person);
+  const mine = new Map(pack.listNodes().map(n => [n.getName(), n]));
+  const joints = person.listSkins()[0].listJoints();
+  for (const j of joints) {
+    const o = mine.get(j.getName());
+    assert.ok(o, `the pack lacks bone ${j.getName()}`);
+    assert.equal(pp.get(o), hp.get(j), `${j.getName()}: same parent`);
+    for (const k of ['getTranslation', 'getRotation', 'getScale']) assert.deepEqual(o[k](), j[k](), `${j.getName()}: same rest (${k})`);
+  }
+  const names = new Set(joints.map(j => j.getName()));
+  const clips = pack.listAnimations().map(a => a.getName());
+  for (const clip of c.clips) assert.ok(clips.includes(clip), `missing clip ${clip}`);
+  for (const a of pack.listAnimations()) for (const ch of a.listChannels()) {
+    assert.ok(names.has(ch.getTargetNode().getName()), `${a.getName()} moves ${ch.getTargetNode().getName()}, which ${c.of} does not have`);
+    assert.ok(['rotation', 'translation'].includes(ch.getTargetPath()), `${a.getName()}: rotations and the hips only`);
+  }
+}
+
 // The top-level node of each wardrobe part (Top_*, Bottom_*, Shoes_*, Hat_*) and the body, by name.
 const PART = /^(Body|Top_|Bottom_|Shoes_|Hat_)/;
 function partNodes(root) {
@@ -245,6 +272,7 @@ for (const name of names) {
       return;
     }
     if (c.family === 'vroid') { await checkVroid(name, c); return; }
+    if (c.family === 'vroid-clips') { await checkVroidClips(name, c); return; }
     const gltf = await load(name);
     const root = gltf.scene;
     if (c.lite) { await checkLite(name, c, gltf); return; }

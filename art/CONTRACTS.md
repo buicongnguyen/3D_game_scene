@@ -255,7 +255,21 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
 - Props on `grip_R`, modelled in grip space (`build_dance_props.py`): `non-la`, `mic`, `light-stick`.
 - Budgets: default look ≤ 34-39.5k tris and ≤ 14 draws (seen up close in focus mode); light files ≤ 11.4-14k.
 
-#### Kotone, the visitor at Hoshi Station — `vroid_lite.py` (imported, textured)
+#### Kotone, the visitor at Hoshi Station — `vroid_mixamo.py` (imported, textured; since 2026-11-28)
+
+- Same source and licence as below; now on the full Mixamo skeleton: the 65 Mixamo bones under game names (`hips`,
+  `spine`, `spine1`, `chest`, `neck`, `head`, `head_end`, `shoulder_L`, `upperarm_L`, `forearm_L`, `hand_L`,
+  `thumb1_L`..`pinky4_L`, `thigh_L`, `shin_L`, `foot_L`, `toe_L`, `toe_end_L`, and `_R`), plus `root`, `grip_R`,
+  `eye_L`, `eye_R` (69 bones). Rest pose: the source's T-pose. Skirt bones fold half into the hips, half into the thigh.
+- Clips in both models (Mixamo, retargeted in world space, root motion out, keys thinned by `trim_clips.mjs`, rotations
+  stored as normalised 16-bit): Idle, Walk (0.958 m/s), Run (4.077 m/s), Talk, Wave, Cheer, Bow, LookAround, Point.
+- `moves-kotone.glb`: her armature (same joints, order and rest as the models) with the evening show's clips and no
+  mesh, fetched by `game/kotone-show.js` only near her show: DanceHipHop, DanceArms, DanceHouse, DanceRunningMan,
+  DanceSamba, DanceYmca, DanceWave, Sing, SingUpper (Sing's upper body only, to lay over Walk / Run / Idle).
+- Rebuild all three together (one Blender session): `blender -b --factory-startup --python art/blender/vroid_mixamo.py`
+  (`-- --only full,lite,pack`); then `art/blender/kotone_portrait.py`.
+
+#### Kotone (round 1, replaced) — `vroid_lite.py` (imported, textured)
 
 - Source: the VRoid Project sample character "nu-2" (VRoid Hub licence in its VRM meta: anyone, commercial use,
   modification and redistribution allowed, credit unnecessary; credited on the Credits screen anyway), as converted by

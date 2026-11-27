@@ -16,7 +16,12 @@ export const CROWD_CLIPS = ['Clap', 'StickWave'];
 const PERFORMER_CLIPS = ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cheer', 'Bow'];
 export const FINGER_BONES = ['L', 'R'].flatMap(s => ['thumb', 'index', 'index2', 'fingers', 'fingers2'].map(f => `${f}_${s}`));
 const PERFORMER_BONES = [...HUMAN_BONES, ...FINGER_BONES];
-const VROID_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Bow', 'Turn'];
+// Kotone on the full Mixamo skeleton (art/blender/vroid_mixamo.py): the 65 Mixamo bones under game names, root, grip_R
+// and the eyes. Her everyday moves are Mixamo moves; the dances and the singing are in her pack (moves-kotone).
+const MIXAMO_FINGERS = ['L', 'R'].flatMap(s => ['thumb', 'index', 'middle', 'ring', 'pinky'].flatMap(f => [1, 2, 3, 4].map(i => `${f}${i}_${s}`)));
+export const MIXAMO_BONES = [...HUMAN_BONES, 'spine1', 'head_end', 'shoulder_L', 'shoulder_R', 'toe_L', 'toe_R', 'toe_end_L', 'toe_end_R', ...MIXAMO_FINGERS];
+const VROID_CLIPS = ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cheer', 'Bow', 'LookAround', 'Point'];
+export const KOTONE_SHOW_CLIPS = ['DanceHipHop', 'DanceArms', 'DanceHouse', 'DanceRunningMan', 'DanceSamba', 'DanceYmca', 'DanceWave', 'Sing', 'SingUpper'];
 const VROID_MORPHS = ['blink', 'mouthA', 'mouthO'];
 export const SHAPE_KEYS = ['shape_chest', 'shape_waist', 'shape_hips', 'shape_thigh', 'shape_arm', 'shape_build'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
@@ -55,11 +60,13 @@ export const CONTRACTS = {
   'villager-man.lite': { family: 'characters', lite: 'villager-man', tris: 4750, parts: VILLAGER_MATS },
   'villager-woman.lite': { family: 'characters', lite: 'villager-woman', tris: 4600, parts: VILLAGER_MATS },
   'villager-kid.lite': { family: 'characters', lite: 'villager-kid', tris: 4450, parts: VILLAGER_MATS },
-  // The visitor at Hoshi Station (art/blender/vroid_lite.py from the VRoid Project sample character "nu-2"): textured, so
-  // ONE skinned mesh with ONE material (a baked atlas, alpha MASK); Hoa's skeleton and clips moved onto her joints, plus
-  // eye_L / eye_R and three face morphs (actors/face.js). The light file: fewer triangles and a 512 px atlas.
-  kotone: { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...PERFORMER_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
-  'kotone.lite': { family: 'vroid', vroidOf: 'kotone', tris: 8300, atlas: 512, nodes: [...PERFORMER_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
+  // The visitor at Hoshi Station (art/blender/vroid_mixamo.py from the VRoid Project sample character "nu-2"): textured, so
+  // ONE skinned mesh with ONE material (a baked atlas, alpha MASK); the full Mixamo skeleton (69 bones) with Mixamo moves,
+  // plus eye_L / eye_R and three face morphs (actors/face.js). The light file: fewer triangles and a 512 px atlas.
+  kotone: { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
+  'kotone.lite': { family: 'vroid', vroidOf: 'kotone', tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
+  // her evening show (game/kotone-show.js): her armature and the dances and singing, no mesh, fetched only for the show
+  'moves-kotone': { family: 'vroid-clips', of: 'kotone', clips: KOTONE_SHOW_CLIPS },
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
 
   // The dance game's performers (art/blender/build_performers.py on the graceful body, docs/PERFORMERS.md). Seen up
@@ -358,7 +365,10 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // people in it (two on Easy, four on Difficult) when it begins. The people's own files did not grow at all.
 // +1.83 MB: Kotone, the visitor at Hoshi Station (kotone.glb 1.07 MB with a 1024 atlas, kotone.lite.glb 0.75 MB with a
 // 512 one; 69,411,404 B measured, 207 models). A player downloads one of the two: the light one on the Low tier.
-export const TOTAL_RAW_BYTES = 69_450_000;      // (the dance game, the exercise packs and the visitor)
+// +0.47 MB: Kotone on the 65-bone Mixamo skeleton with Mixamo moves (kotone.glb 1.11 MB, kotone.lite.glb 0.79 MB) and
+// her evening-show pack moves-kotone.glb (0.44 MB: seven dances and the singing, fetched only near her show;
+// 69,922,920 B measured).
+export const TOTAL_RAW_BYTES = 70_000_000;      // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -379,7 +389,9 @@ export const TOTAL_RAW_BYTES = 69_450_000;      // (the dance game, the exercise
 // +1.10 MB: the Morning exercise clip packs, packed (0.25-0.30 MB each; 21,616,828 B measured). Fetched only when a round
 // starts, never at the valley's start.
 // +0.91 MB: Kotone, packed (kotone.glb 0.52 MB, kotone.lite.glb 0.39 MB; 28.19 MB measured): one or the other is loaded.
-export const TOTAL_PACKED_BYTES = 28_250_000;      // (all together)
+// +0.49 MB: Kotone on the Mixamo skeleton, packed (kotone.glb 0.58 MB, kotone.lite.glb 0.45 MB; one or the other is
+// loaded) and her show pack (0.37 MB, fetched on demand); 28,684,576 B measured.
+export const TOTAL_PACKED_BYTES = 28_800_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

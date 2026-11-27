@@ -44,6 +44,8 @@ export const SPOTS = {
   // ---- Hoshi Station (the visitor's corner: she draws the station from the forecourt and the lane)
   'hoshi.forecourt': { x: -94, z: 101, face: Math.PI },
   'hoshi.lane': { x: -86, z: 98, face: -Math.PI * 0.75 },
+  // her evening show (game/kotone-show.js): her back to the station, facing the lane up from the valley
+  'hoshi.stage': { x: -91, z: 101.5, face: Math.PI },
 };
 
 // every home has a quiet night: walk to the door, stay in till morning
@@ -789,7 +791,10 @@ export const PEOPLE = [
   {
     id: 'kotone', name: 'Kotone', role: 'Visitor from the city', model: 'kotone', barkKind: 'woman', village: 'kawabe', home: 'station',
     plan: [
-      { from: 6, tasks: [{ go: 'hoshi.forecourt' }, { do: 'Idle', t: 45 }, { go: 'hoshi.lane' }, { do: 'Idle', t: 30 }, { go: 'hoshi.forecourt' }, { do: 'Wave', t: 3 }] },
+      { from: 6, tasks: [{ go: 'hoshi.forecourt', speed: 1 }, { do: 'Idle', t: 40 }, { do: 'LookAround', t: 9 }, { go: 'hoshi.lane', speed: 1 }, { do: 'Idle', t: 25 },
+        { do: 'Point', t: 3.6 }, { go: 'hoshi.forecourt', speed: 1 }, { do: 'Wave', t: 3 }] },
+      // the evening show: dances and songs on the forecourt until she goes in (the dances come in a pack of their own)
+      { from: 17, tasks: [{ go: 'hoshi.stage', speed: 1 }, { do: 'Show', t: 150, face: Math.PI }, { do: 'Idle', t: 12, face: Math.PI }] },
       { from: 19, tasks: [{ go: 'door:station' }, { inside: 0 }] },
     ],
     story: [
@@ -805,7 +810,8 @@ export const PEOPLE = [
         ['kotone', "You never stand still. That's all right. Next time I'll draw you running."] ] },
     ],
     chatter: ["Hold still a moment... no, the light's gone.", "The trains here wait for you. In the city they never wait.",
-      "My sketchbook smells of tea and coal now. I like it.", "I'm humming a festival song. Don't listen yet!"],
+      "My sketchbook smells of tea and coal now. I like it.", "I'm humming a festival song. Don't listen yet!",
+      "Come by the station after five. I dance there until it gets dark."],
   },
 ];
 

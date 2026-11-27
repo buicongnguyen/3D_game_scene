@@ -11451,6 +11451,12 @@
   ]
  },
  {
+  "s": "Come by the station after five. I dance there until it gets dark.",
+  "ctx": [
+   "Kotone, small talk"
+  ]
+ },
+ {
   "s": "Kawabe rice, a pickled plum in the middle, wrapped in a leaf.",
   "ctx": [
    "shop goods description"
@@ -18717,6 +18723,18 @@
    "UI (src/game/tour.js)",
    "UI (src/ui/minigames-ui.js)",
    "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Want to learn the steps? Maybe tomorrow! Tonight I just dance.",
+  "ctx": [
+   "UI (src/game/townlife.js)"
+  ]
+ },
+ {
+  "s": "Oh, you're watching! Clap on two and four, it helps me.",
+  "ctx": [
+   "UI (src/game/townlife.js)"
   ]
  },
  {
@@ -30233,6 +30251,12 @@
  },
  {
   "s": "VRoid Project (sample characters, VRoid Hub licence)",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Mixamo (animations)",
   "ctx": [
    "menu / screen text"
   ]
