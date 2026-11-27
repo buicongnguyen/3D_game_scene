@@ -255,6 +255,23 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
 - Props on `grip_R`, modelled in grip space (`build_dance_props.py`): `non-la`, `mic`, `light-stick`.
 - Budgets: default look ≤ 34-39.5k tris and ≤ 14 draws (seen up close in focus mode); light files ≤ 11.4-14k.
 
+#### Kotone, the visitor at Hoshi Station — `vroid_lite.py` (imported, textured)
+
+- Source: the VRoid Project sample character "nu-2" (VRoid Hub licence in its VRM meta: anyone, commercial use,
+  modification and redistribution allowed, credit unnecessary; credited on the Credits screen anyway), as converted by
+  the ktvgo tools to a Mixamo skeleton (`desktop-mixamo65-candidates`, read only).
+- `kotone.glb` (PC tiers): ≤ 14.5k tris, 1024 px atlas. `kotone.lite.glb` (Low tier, `people.js` `LITE_ON_LOW`):
+  ≤ 8.3k tris, 512 px atlas. Both: ONE skinned mesh, ONE material (baked atlas, alpha MASK, double sided) = one draw.
+- Skeleton: Hoa's (`hoa.glb`: humanoid rig + five finger bones a hand + `grip_R`) moved onto her joints with Hoa's exact
+  rest orientations, so Hoa's clips play unchanged (Idle, Walk, Talk, Wave, Cheer, Bow, Turn); the hips' position keys
+  are scaled by her hip height (×1.083; Walk reference 1.733 m/s in `actors/gait.js`). Plus `eye_L` / `eye_R` (gaze).
+- Face: morphs `blink`, `mouthA`, `mouthO` (the authored VRoid shapes), driven by `src/actors/face.js`.
+- Hair, skirt and accessory bones are folded into the body bones (hair rides the head rigidly; a skirt half on the hips,
+  half on the thigh). Body skin hidden under the clothes is cut; the face is never decimated.
+- Rebuild: `blender -b --factory-startup --python art/blender/vroid_lite.py -- --names nu-2 --name kotone --out public/models
+  --tris 14000 --atlas 1024` and again with `--suffix .lite --tris 8000 --atlas 512`. Contact sheet of any GLBs at true
+  scale: `art/blender/vroid_sheet.py -- <out.png> <a.glb> ...`.
+
 ### Animal rigs
 
 Bone names are free, but every clip listed must exist.

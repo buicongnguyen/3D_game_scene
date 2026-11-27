@@ -1068,14 +1068,14 @@ export class Director {
       this.frameTalk(npc);
     }
     const choice = await this.ui.dialogue(lines, {
-      onLine: (who, anim) => {
+      onLine: (who, anim, text) => {
         const n = this.npcs[who];
-        if (n) n.gesture(anim || 'Talk');
+        if (n) { n.gesture(anim || 'Talk'); n.face?.speak(text); }
         else if (who === 'mika') g.player.anim?.once(anim || 'Talk', { then: 'Idle' });
         else if (who === 'tamo') this.tamo.react(anim || 'Talk');
       },
     });
-    for (const s of speakers) if (this.npcs[s]) this.npcs[s].setIdle(this.npcs[s].idleClip);
+    for (const s of speakers) if (this.npcs[s]) { this.npcs[s].setIdle(this.npcs[s].idleClip); this.npcs[s].face?.quiet(); }
     if (!this.scenes.active) g.follow.clearCutscene(false);
     // the key press that closed the dialogue must not also start the next interaction
     g.input.edges.clear();
@@ -1410,6 +1410,7 @@ export class Director {
     }
     this.updateResidents();
     this.updateDetail(dt);
+    (NPC.gaze ||= new THREE.Vector3()).copy(p.pos).y += 1.25;                       // faces look at Mika's eyes (actors/face.js)
     for (const n of new Set(Object.values(this.npcs))) n.update(dt, g.colliders);   // a shopkeeper can be listed twice while talking
     this.updateVillagers(dt);
     // during a mini game round Town Life plans every few frames only (game/round-light.js); people walk on every frame

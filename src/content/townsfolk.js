@@ -41,6 +41,9 @@ export const SPOTS = {
   'takamori.orchard': { x: 84, z: -50 },
   'takamori.pastureFence': { x: 140, z: -30 },
   'takamori.pasture': { x: 146, z: -28 },
+  // ---- Hoshi Station (the visitor's corner: she draws the station from the forecourt and the lane)
+  'hoshi.forecourt': { x: -94, z: 101, face: Math.PI },
+  'hoshi.lane': { x: -86, z: 98, face: -Math.PI * 0.75 },
 };
 
 // every home has a quiet night: walk to the door, stay in till morning
@@ -780,11 +783,36 @@ export const PEOPLE = [
     chatter: ["Score: us 4, wind 2.", "Hiro owes me three buns.", "I like the bell steps. You can see everything and nobody sees you.",
       "Sumi runs fast. I aim better."],
   },
+  // ============================================================== THE VISITOR (Hoshi Station)
+  // A young woman from the city who came up on the train to draw the valley and stays for the lamps. Her model is one of
+  // the VRoid Project sample characters, made light by art/blender/vroid_lite.py; it has a small face rig (actors/face.js).
+  {
+    id: 'kotone', name: 'Kotone', role: 'Visitor from the city', model: 'kotone', barkKind: 'woman', village: 'kawabe', home: 'station',
+    plan: [
+      { from: 6, tasks: [{ go: 'hoshi.forecourt' }, { do: 'Idle', t: 45 }, { go: 'hoshi.lane' }, { do: 'Idle', t: 30 }, { go: 'hoshi.forecourt' }, { do: 'Wave', t: 3 }] },
+      { from: 19, tasks: [{ go: 'door:station' }, { inside: 0 }] },
+    ],
+    story: [
+      { when: { chapter: [0, 5] }, lines: [
+        ['kotone', "Oh! Hello. I'm Kotone. I came up on the train to draw the valley. I've drawn this station four times already.", 'Wave'],
+        ['mika', "Only four?"],
+        ['kotone', "The light keeps changing! In the city it's the same grey all day. Here even the rails turn gold at noon."],
+        ['mika', "Wait till you see the lamps at night."],
+        ['kotone', "Everyone says that. Mr. Genzo lets me sleep in the station's spare room, so I'm staying until I've seen them."] ] },
+      { when: { chapter: [1, 5] }, lines: [
+        ['kotone', "Look, I drew you! The yellow coat was easy. The face took eleven tries.", 'Cheer'],
+        ['mika', "Eleven?"],
+        ['kotone', "You never stand still. That's all right. Next time I'll draw you running."] ] },
+    ],
+    chatter: ["Hold still a moment... no, the light's gone.", "The trains here wait for you. In the city they never wait.",
+      "My sketchbook smells of tea and coal now. I like it.", "I'm humming a festival song. Don't listen yet!"],
+  },
 ];
 
 // dialogue UI cast entries for the townsfolk (merged with story.js CAST)
 export const FOLK_CAST = {
   t1: { name: 'Mr. Fujita', color: '#b5652a', pitch: 0.85 },
+  kotone: { name: 'Kotone', color: '#3d5a8a', pitch: 1.2, voice: 'f' },
   t2: { name: 'Mrs. Komori', color: '#d0587e', pitch: 1.12 },
   v1: { name: 'Mr. Hirano', color: '#3f6fb0', pitch: 0.9 },
   v2: { name: 'Mrs. Nakano', color: '#3a9a8a', pitch: 1.08 },

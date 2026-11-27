@@ -13,7 +13,10 @@ import { paletteMaterial, MAX_PARTS } from './skin-merge.js';
 
 export const PEOPLE = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid',
   // the dance game's performers (art/blender/build_performers.py): their light file is the default look in one mesh
-  'hoa', 'nabi', 'byeol', 'haru'];
+  'hoa', 'nabi', 'byeol', 'haru',
+  // the visitor at Hoshi Station (art/blender/vroid_lite.py): textured, one mesh in both files; the light one has fewer
+  // triangles and a 512 px atlas instead of 1024 (no palette: prepareLite leaves it as it is)
+  'kotone'];
 export const PEOPLE_CHOICES = ['auto', 'std', 'lite'];
 const KEY = 'starline-opt-people';
 const LITE = '.lite';
@@ -55,6 +58,8 @@ export function peopleSet(qualityName, params, dev) {
  * stands in Takamori: 12 draws there). A player who chose Standard keeps the full models. -> 'lite' | 'std'
  */
 export const PERFORMERS = ['hoa', 'nabi', 'byeol', 'haru'];
+/** Who follows that rule (light on Low with Automatic): the performers and the textured visitor. */
+export const LITE_ON_LOW = [...PERFORMERS, 'kotone'];
 export function performersSet(qualityName, params, choice = getPeopleChoice()) {
   const url = params?.get?.('people');
   if (url === 'std' || url === 'standard') return 'std';

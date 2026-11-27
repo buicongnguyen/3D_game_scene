@@ -11,6 +11,7 @@ export const HUMAN_GAIT = {
   byeol: { walk: 1.6, run: 4.195 },
   hoa: { walk: 1.6, run: 4.195 },
   nabi: { walk: 1.6, run: 4.195 },
+  kotone: { walk: 1.733 },               // Hoa's Walk on legs 1.083x as long (art/blender/vroid_lite.py walkScale)
   'villager-kid': { walk: 1.567, run: 4.2 },
   'villager-man': { walk: 1.587, run: 4.2 },
   'villager-woman': { walk: 1.586, run: 4.196 },

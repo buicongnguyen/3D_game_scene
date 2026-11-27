@@ -1,7 +1,8 @@
 import { TROPICAL_TREES, TROPICAL_BUSHES } from '../world/tree-theme.js';
 
 // Every model the runtime may load (see art/CONTRACTS.md). Missing files fall back to placeholders.
-export const CHARACTERS = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid'];
+// ('kotone': the visitor at Hoshi Station, a VRoid Project sample character made light by art/blender/vroid_lite.py)
+export const CHARACTERS = ['mika', 'tamo', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-man', 'villager-woman', 'villager-kid', 'kotone'];
 export const ANIMALS = ['fox', 'bear', 'sheep', 'chicken', 'crow', 'rabbit', 'crab', 'fish-trout', 'fish-koi', 'fish-starfin', 'cat', 'duck', 'deer', 'cow', 'pig', 'goat', 'dog',
   'cricket', 'ladybug', 'dragonfly', 'butterfly', 'frog-pond', 'frog-tree', 'firefly', 'grasshopper', 'mantis'];
 export const ARCHITECTURE = ['kawabe-house-a', 'kawabe-house-b', 'kawabe-shop', 'boathouse', 'mill', 'drawbridge', 'star-lamp', 'star-lamp-grand',

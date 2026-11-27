@@ -711,7 +711,7 @@ export class UI {
       row.appendChild(bub);
       box.appendChild(row);
       // gestures and voice blips follow the rows as they appear
-      if (onLine) later(() => onLine(who, anim), k * 420);
+      if (onLine) later(() => onLine(who, anim, text), k * 420);
       if (who !== 'narrator' && blips) later(() => { if (this.voice?.mode !== 'off') this.audio?.blip(c.pitch); }, k * 140);
     });
     box.scrollTop = 0;

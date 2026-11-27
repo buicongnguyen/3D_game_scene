@@ -94,6 +94,13 @@
   ]
  },
  {
+  "s": "Kotone",
+  "ctx": [
+   "character name (kotone)",
+   "a neighbour's name"
+  ]
+ },
+ {
   "s": "Mrs. Komori",
   "ctx": [
    "character name (t2)",
@@ -11363,6 +11370,84 @@
   "s": "Sumi runs fast. I aim better.",
   "ctx": [
    "Nao, small talk"
+  ]
+ },
+ {
+  "s": "Visitor from the city",
+  "ctx": [
+   "what Kotone does (journal)"
+  ]
+ },
+ {
+  "s": "Oh! Hello. I'm Kotone. I came up on the train to draw the valley. I've drawn this station four times already.",
+  "ctx": [
+   "Kotone's story, said by Kotone"
+  ]
+ },
+ {
+  "s": "Only four?",
+  "ctx": [
+   "Kotone's story, said by Mika"
+  ]
+ },
+ {
+  "s": "The light keeps changing! In the city it's the same grey all day. Here even the rails turn gold at noon.",
+  "ctx": [
+   "Kotone's story, said by Kotone"
+  ]
+ },
+ {
+  "s": "Wait till you see the lamps at night.",
+  "ctx": [
+   "Kotone's story, said by Mika"
+  ]
+ },
+ {
+  "s": "Everyone says that. Mr. Genzo lets me sleep in the station's spare room, so I'm staying until I've seen them.",
+  "ctx": [
+   "Kotone's story, said by Kotone"
+  ]
+ },
+ {
+  "s": "Look, I drew you! The yellow coat was easy. The face took eleven tries.",
+  "ctx": [
+   "Kotone's story, said by Kotone"
+  ]
+ },
+ {
+  "s": "Eleven?",
+  "ctx": [
+   "Kotone's story, said by Mika"
+  ]
+ },
+ {
+  "s": "You never stand still. That's all right. Next time I'll draw you running.",
+  "ctx": [
+   "Kotone's story, said by Kotone"
+  ]
+ },
+ {
+  "s": "Hold still a moment... no, the light's gone.",
+  "ctx": [
+   "Kotone, small talk"
+  ]
+ },
+ {
+  "s": "The trains here wait for you. In the city they never wait.",
+  "ctx": [
+   "Kotone, small talk"
+  ]
+ },
+ {
+  "s": "My sketchbook smells of tea and coal now. I like it.",
+  "ctx": [
+   "Kotone, small talk"
+  ]
+ },
+ {
+  "s": "I'm humming a festival song. Don't listen yet!",
+  "ctx": [
+   "Kotone, small talk"
   ]
  },
  {
@@ -28320,7 +28405,8 @@
   "s": "Map",
   "ctx": [
    "UI (src/ui/map.js)",
-   "menu / screen text"
+   "menu / screen text",
+   "button label (screen readers)"
   ]
  },
  {
@@ -30135,6 +30221,18 @@
  },
  {
   "s": "Built with",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Kotone, the visitor",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "VRoid Project (sample characters, VRoid Hub licence)",
   "ctx": [
    "menu / screen text"
   ]

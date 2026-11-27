@@ -16,6 +16,8 @@ export const CROWD_CLIPS = ['Clap', 'StickWave'];
 const PERFORMER_CLIPS = ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cheer', 'Bow'];
 export const FINGER_BONES = ['L', 'R'].flatMap(s => ['thumb', 'index', 'index2', 'fingers', 'fingers2'].map(f => `${f}_${s}`));
 const PERFORMER_BONES = [...HUMAN_BONES, ...FINGER_BONES];
+const VROID_CLIPS = ['Idle', 'Walk', 'Talk', 'Wave', 'Cheer', 'Bow', 'Turn'];
+const VROID_MORPHS = ['blink', 'mouthA', 'mouthO'];
 export const SHAPE_KEYS = ['shape_chest', 'shape_waist', 'shape_hips', 'shape_thigh', 'shape_arm', 'shape_build'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
@@ -53,6 +55,11 @@ export const CONTRACTS = {
   'villager-man.lite': { family: 'characters', lite: 'villager-man', tris: 4750, parts: VILLAGER_MATS },
   'villager-woman.lite': { family: 'characters', lite: 'villager-woman', tris: 4600, parts: VILLAGER_MATS },
   'villager-kid.lite': { family: 'characters', lite: 'villager-kid', tris: 4450, parts: VILLAGER_MATS },
+  // The visitor at Hoshi Station (art/blender/vroid_lite.py from the VRoid Project sample character "nu-2"): textured, so
+  // ONE skinned mesh with ONE material (a baked atlas, alpha MASK); Hoa's skeleton and clips moved onto her joints, plus
+  // eye_L / eye_R and three face morphs (actors/face.js). The light file: fewer triangles and a 512 px atlas.
+  kotone: { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...PERFORMER_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
+  'kotone.lite': { family: 'vroid', vroidOf: 'kotone', tris: 8300, atlas: 512, nodes: [...PERFORMER_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
 
   // The dance game's performers (art/blender/build_performers.py on the graceful body, docs/PERFORMERS.md). Seen up
@@ -349,7 +356,9 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +1.77 MB: the Morning exercise clip packs (exercise-rin/-mika/-villager-kid/-villager-man.glb: 34 clips each and no
 // mesh; 49,963,952 B measured, 205 models). They are NOT part of the valley's start: a round fetches the packs of the
 // people in it (two on Easy, four on Difficult) when it begins. The people's own files did not grow at all.
-export const TOTAL_RAW_BYTES = 67_700_000;      // (both together: the dance game and the exercise packs)
+// +1.83 MB: Kotone, the visitor at Hoshi Station (kotone.glb 1.07 MB with a 1024 atlas, kotone.lite.glb 0.75 MB with a
+// 512 one; 69,411,404 B measured, 207 models). A player downloads one of the two: the light one on the Low tier.
+export const TOTAL_RAW_BYTES = 69_450_000;      // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -369,7 +378,8 @@ export const TOTAL_RAW_BYTES = 67_700_000;      // (both together: the dance gam
 
 // +1.10 MB: the Morning exercise clip packs, packed (0.25-0.30 MB each; 21,616,828 B measured). Fetched only when a round
 // starts, never at the valley's start.
-export const TOTAL_PACKED_BYTES = 27_400_000;      // (both together)
+// +0.91 MB: Kotone, packed (kotone.glb 0.52 MB, kotone.lite.glb 0.39 MB; 28.19 MB measured): one or the other is loaded.
+export const TOTAL_PACKED_BYTES = 28_250_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

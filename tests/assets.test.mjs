@@ -4,6 +4,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CONTRACTS, PORTRAITS, TOTAL_RAW_BYTES, SHAPE_KEYS } from './asset-contracts.mjs';
@@ -29,6 +30,44 @@ function triangles(root) {
     tris += (g.index ? g.index.count : g.attributes.position.count) / 3;
   });
   return tris;
+}
+
+// The visitor (art/blender/vroid_lite.py): read with glTF-Transform, since her atlas is a WebP image (no decoder in Node).
+// One skinned mesh, one primitive, one MASK material with its atlas at the contract's size; the face morphs, eye bones and
+// clips; standing on the ground. A light file has exactly its standard file's skeleton (names, order) and clips.
+async function readVroid(name) {
+  const { NodeIO } = await import('@gltf-transform/core');
+  const { ALL_EXTENSIONS } = await import('@gltf-transform/extensions');
+  const { ImageUtils } = await import('@gltf-transform/core');
+  const doc = await new NodeIO().registerExtensions(ALL_EXTENSIONS).read(fileURLToPath(new URL(`${name}.glb`, MODELS)));
+  const r = doc.getRoot();
+  const prims = r.listMeshes().flatMap(m => m.listPrimitives());
+  const tris = prims.reduce((a, p) => a + (p.getIndices() ? p.getIndices().getCount() : p.getAttribute('POSITION').getCount()) / 3, 0);
+  const mat = prims[0]?.getMaterial(), tex = mat?.getBaseColorTexture();
+  return {
+    meshes: r.listMeshes().length, prims: prims.length, tris, mat, size: tex && ImageUtils.getSize(tex.getImage(), tex.getMimeType()),
+    morphs: r.listMeshes()[0]?.getExtras()?.targetNames || [], skinned: r.listNodes().some(n => n.getMesh() && n.getSkin()),
+    joints: r.listSkins()[0]?.listJoints().map(j => j.getName()) || [], nodes: new Set(r.listNodes().map(n => n.getName())),
+    clips: r.listAnimations().map(a => a.getName()), minY: prims[0]?.getAttribute('POSITION').getMin([])[1],
+  };
+}
+async function checkVroid(name, c) {
+  const v = await readVroid(name);
+  assert.equal(v.meshes, 1, 'one mesh'); assert.equal(v.prims, 1, 'one primitive (one draw call)');
+  assert.ok(v.skinned, 'skinned');
+  assert.ok(v.tris <= c.tris, `${v.tris} tris exceeds budget ${c.tris}`);
+  assert.equal(v.mat.getAlphaMode(), 'MASK', 'alpha MASK (no sorting, one pass)');
+  assert.deepEqual(v.size, [c.atlas, c.atlas], 'the atlas size');
+  for (const m of c.morphs) assert.ok(v.morphs.includes(m), `morph ${m}`);
+  for (const n of c.nodes) assert.ok(v.nodes.has(n), `missing node ${n}`);
+  for (const clip of c.clips) assert.ok(v.clips.includes(clip), `missing clip ${clip}`);
+  assert.ok(Math.abs(v.minY) < 0.05, `stands on the ground (min y ${v.minY.toFixed(3)})`);
+  if (c.vroidOf) {
+    const s = await readVroid(c.vroidOf);
+    assert.deepEqual(v.joints, s.joints, 'same skeleton as the standard file');
+    assert.deepEqual(v.clips, s.clips, 'same clips as the standard file');
+    assert.ok(v.tris < s.tris * 0.72, 'much lighter than the standard file');
+  }
 }
 
 // The top-level node of each wardrobe part (Top_*, Bottom_*, Shoes_*, Hat_*) and the body, by name.
@@ -205,6 +244,7 @@ for (const name of names) {
       }
       return;
     }
+    if (c.family === 'vroid') { await checkVroid(name, c); return; }
     const gltf = await load(name);
     const root = gltf.scene;
     if (c.lite) { await checkLite(name, c, gltf); return; }

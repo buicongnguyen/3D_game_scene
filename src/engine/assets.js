@@ -5,7 +5,7 @@ import { hideBoneTrees } from './matrices.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { separateCoplanar } from './coplanar.js';
 import { mergeStatic } from './static-merge.js';
-import { peopleFile, prepareLite, PERFORMERS } from './people.js';
+import { peopleFile, prepareLite, LITE_ON_LOW } from './people.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
 export const GLOW_MATERIALS = ['Window glow', 'Lamp glass', 'Lamp star', 'Lantern glow', 'Street glow', 'Porch glass', 'Headlamp glass', 'Tamo glow', 'Garland glow'];
@@ -32,7 +32,7 @@ export class Assets {
   }
 
   /** The set (std | lite) the model `name` comes from. */
-  setOf(name) { return this.performers && PERFORMERS.includes(name) ? this.performers : this.people; }
+  setOf(name) { return this.performers && LITE_ON_LOW.includes(name) ? this.performers : this.people; }
 
   async load(names, onProgress) {
     let done = 0;

@@ -37,6 +37,19 @@ test('packed model library fits the download budget and every model still loads 
         }
         continue;
       }
+      if (c?.family === 'vroid') {
+        // (a WebP atlas: GLTFLoader cannot decode it in Node, so read the packed file with glTF-Transform)
+        const { NodeIO } = await import('@gltf-transform/core');
+        const { ALL_EXTENSIONS } = await import('@gltf-transform/extensions');
+        const { MeshoptDecoder: Dec } = await import('meshoptimizer');
+        await Dec.ready;
+        const doc = await new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': Dec }).readBinary(new Uint8Array(b));
+        const names = new Set(doc.getRoot().listNodes().map(n => n.getName())), clips = doc.getRoot().listAnimations().map(a => a.getName());
+        for (const clip of c.clips) assert.ok(clips.includes(clip), `${f} lost clip ${clip}`);
+        for (const n of c.nodes) assert.ok(names.has(n), `${f} lost node ${n}`);
+        assert.equal(doc.getRoot().listTextures().length, 1, `${f} keeps its atlas`);
+        continue;
+      }
       const gltf = await new Promise((res, rej) => loader.parse(b.buffer.slice(b.byteOffset, b.byteOffset + b.byteLength), '', res, rej));
       for (const clip of c?.clips ?? []) assert.ok(gltf.animations.some(a => a.name === clip), `${f} lost clip ${clip}`);
       for (const n of c?.nodes ?? []) assert.ok(gltf.scene.getObjectByName(n), `${f} lost node ${n}`);

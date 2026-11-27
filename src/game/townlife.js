@@ -68,7 +68,7 @@ export class TownLife {
       if (!n) {
         n = d.npcs[p.id] = new NPC(g.scene, g.assets, g.world, p.id, p.model, { x: 0, z: 0, tint: NPC.villagerTint(seed++), cull: true });
         n.villager = true;
-        n.barkKind = p.model.slice(9);
+        n.barkKind = p.barkKind || p.model.slice(9);
       }
       delete d.routes?.[p.id];                     // the old stroll loops give way to the day plan
       n.folk = p;

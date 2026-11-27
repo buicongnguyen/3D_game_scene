@@ -6,6 +6,7 @@ import { mergeSkinnedParts } from '../engine/skin-merge.js';
 import { tintLite } from '../engine/people.js';
 import { outside } from '../world/zone-shape.js';
 import { View } from '../engine/view.js';
+import { Face } from './face.js';
 
 const LAZY_MARGIN = 20;      // metres past a zone's edge where people and animals still get their body at once
 
@@ -89,6 +90,7 @@ export class NPC {
     this.anim = m ? new Animator(m) : null;
     // a light person is one mesh already: the tint goes into its palette, by the same part names
     const lite = m ? tintLite(m, tint) : false;
+    this.face = m ? Face.attach(m) : null;
     this.model.traverse(o => {
       if (!o.isMesh) return;
       o.castShadow = true; o.receiveShadow = true;
@@ -242,6 +244,15 @@ export class NPC {
     // glide over the ground between poses instead of walking)
     if (++this.animTick % (dt > 0.028 ? 1 : this.animEvery)) return;
     this.anim?.update(this.animAcc);
+    // a model with a face rig (actors/face.js): blinks, lips and eyes, only at full detail (near and animated every frame)
+    if (this.face) {
+      this.face.setEnabled(this.animEvery === 1 && Face.on);
+      this.face.lookAt(NPC.gaze);
+      this.face.update(this.animAcc);
+    }
     this.animAcc = 0;
   }
 }
+
+/** Where the faces look (Mika's head: the director moves it every frame); null = straight ahead. */
+NPC.gaze = null;
