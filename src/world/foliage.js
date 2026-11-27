@@ -63,6 +63,10 @@ const show = m => { m.visible = (m.userData.parts ? m.userData.parts.some(p => p
 // each frame from the part materials. Those materials stay the ones the game talks to: the seasons tint them, the
 // peach orchard lights them, the sakura glow patches them. `?foliageMerge=off` (or Foliage.setMerge(false)): as before.
 export const FOLIAGE_MERGE = !(typeof location !== 'undefined' && /[?&]foliageMerge=off/.test(location.search));
+// The far (LOD) trees of every species in one BatchedMesh (R3-6), when the merge is on and the browser has WEBGL_multi_draw
+// (without it three draws each tree on its own: then the per-species meshes stay). `?treeBatch=off` or setBatch(false).
+const batchMaterials = new Map();
+export const TREE_BATCH = !(typeof location !== 'undefined' && /[?&]treeBatch=off/.test(location.search));
 const MAX_PARTS = 16;
 const mergedCache = new WeakMap();   // first part's geometry -> Map(group key -> { geometry, material })
 const attrKey = g => Object.keys(g.attributes).sort().map(n => { const a = g.attributes[n]; return `${n}:${a.itemSize}:${a.array.constructor.name}:${a.normalized}`; }).join(',');
@@ -137,9 +141,17 @@ function mergedMaterial(model, parts, lead) {
       .replace('void main() {', `void main() {
         int fPart = int(aPart + 0.5);
         vec4 pts = uPartTS[fPart];
-        ipm = instanceMatrix * mat4(pts.w, 0.0, 0.0, 0.0, 0.0, pts.w, 0.0, 0.0, 0.0, 0.0, pts.w, 0.0, pts.xyz, 1.0);
-        #define instanceMatrix ipm
+        mat4 partM = mat4(pts.w, 0.0, 0.0, 0.0, 0.0, pts.w, 0.0, 0.0, 0.0, 0.0, pts.w, 0.0, pts.xyz, 1.0);
+        #ifdef USE_INSTANCING
+          ipm = instanceMatrix * partM;
+          #define instanceMatrix ipm
+        #endif
         vPartCol = uPartCol[fPart]; vPartEmi = uPartEmi[fPart]; vPartPBR = uPartPBR[fPart];`)
+      // (the far trees' BatchedMesh, R3-6: the same, on the batch's own matrix)
+      .replace('#include <batching_vertex>', `#include <batching_vertex>
+        #ifdef USE_BATCHING
+          batchingMatrix = batchingMatrix * partM;
+        #endif`)
       .replace('float amt = ', 'float amt = vPartPBR.z * ')
       // a part out of season (bare winter branches, peaches out of summer): all its corners on one point outside the view
       .replace('#include <project_vertex>', `#include <project_vertex>
@@ -336,6 +348,7 @@ class InstanceSet {
     const nearIn = nearDist - bandNear, maxIn = max - bandMax;
     if (this.cellsWereOn !== this.cellsOn) { this.distanceStates.fill(-1); this.cellsWereOn = this.cellsOn; }
     const cells = this.cellsOn ? this.cells : this.whole;
+    this.batch?.vis.fill(0);
     for (let c = 0; c < cells.length; c++) {
       const cell = cells[c];
       // a whole square past the cut-off or outside the view has nothing to draw (cells.js)
@@ -371,6 +384,7 @@ class InstanceSet {
         _sphere.radius = this.radius * r.s * Math.max(1, r.sy ?? 1) + Math.hypot(r.x - cam.x, r.y - cam.y, r.z - cam.z) * VIEW_SLACK + 0.6;
         if (!frustum.intersectsSphere(_sphere)) continue;
         const useNear = !(s & 1) || !this.far || r.story;
+        if (!useNear && this.batch) { this.batch.vis[i] = 1; continue; }   // (drawn by the trees' BatchedMesh)
         const set = useNear ? this.nearDraw : this.farDraw;
         const counts = useNear ? nearCount : farCount;
         const M = this.matrices[i];
@@ -384,6 +398,8 @@ class InstanceSet {
     }
     this.nearDraw.forEach((m, k) => { m.count = nearCount[k]; show(m); });
     this.farDraw?.forEach((m, k) => { m.count = farCount[k]; show(m); });
+    const b = this.batch;
+    if (b) for (let i = 0; i < b.vis.length; i++) if (b.vis[i] !== b.shown[i]) { b.shown[i] = b.vis[i]; b.mesh.setVisibleAt(b.ids[i], b.vis[i] === 1); }
   }
 
   /** The per-part meshes (their materials and season flags are what the game sets; merged parts are drawn by drawn()). */
@@ -395,7 +411,7 @@ class InstanceSet {
   shadowMeshes() { return this.shadow ?? []; }
 
   dispose() {
-    for (const mesh of new Set([...this.meshes(), ...this.drawn(), ...this.shadowMeshes()])) {
+    for (const mesh of new Set([...this.meshes(), ...this.drawn(), ...this.shadowMeshes(), ...(this.batchSource ? [this.batchSource] : [])])) {
       mesh.removeFromParent();
       mesh.dispose(); // instance buffers belong to this set; asset geometry/materials are shared (and the merged ones are cached)
     }
@@ -405,6 +421,8 @@ class InstanceSet {
 
 export class Foliage {
   constructor(scene, assets, placed, quality) {
+    this.multiDraw = quality.multiDraw === true;   // (game.js: the renderer has WEBGL_multi_draw)
+    this.batchOn = TREE_BATCH;
     this.group = new THREE.Group();
     this.group.name = 'foliage';
     scene.add(this.group);
@@ -460,6 +478,66 @@ export class Foliage {
       records, typeof opts === 'function' ? opts(model) : opts, this.merge));
   }
 
+  /**
+   * The far trees of every species as one BatchedMesh (R3-6). Each species' merged far geometry is one geometry of the
+   * batch (its part numbers moved past the species before it), each tree record one instance, shown or hidden by the
+   * sets' own culling (setVisibleAt on the records that changed); three's per-instance culling and sorting are off
+   * (they cost ~0.8 ms a frame for 2,511 trees on a phone). The parts' looks come from one table, as in a merged mesh.
+   */
+  buildBatch() {
+    if (this.batch) { this.batch.removeFromParent(); this.batch.dispose(); this.batch = null; }
+    for (const s of this.treeSets) s.batch = null;
+    if (!this.merge || !this.batchOn || !this.multiDraw) return;
+    const sets = this.treeSets.filter(s => s.farDraw?.length === 1 && s.farDraw[0].userData.parts && !s.farDraw[0].material.map &&
+      s.farDraw[0].material.customProgramCacheKey() === this.treeSets.find(t => t.farDraw?.[0]?.userData.parts)?.farDraw[0].material.customProgramCacheKey());
+    const sig = sets.length ? attrKey(sets[0].farDraw[0].geometry) : '';
+    sets.splice(0, sets.length, ...sets.filter(s => attrKey(s.farDraw[0].geometry) === sig));   // (one vertex layout in a batch)
+    if (sets.length < 2) return;
+    let nV = 0, nI = 0, nN = 0;
+    for (const s of sets) { const g = s.farDraw[0].geometry; nV += g.attributes.position.count; nI += g.index.count; nN += s.records.length; }
+    const parts = sets.flatMap(s => s.farDraw[0].userData.parts);
+    // (one material per set of species, kept: the sakura glow patches it once, world/cel-wave.js)
+    const key = sets.map(s => s.model).join(',');
+    let mat = batchMaterials.get(key);
+    if (!mat) {
+      mat = mergedMaterial('trees', parts.map(p => ({ material: p.material })), sets[0].farDraw[0].userData.parts.find(p => p.userData.windWeight)?.material ?? parts[0].material);
+      mat.name = 'trees:batched';
+      batchMaterials.set(key, mat);
+    }
+    const bm = new THREE.BatchedMesh(nN, nV, nI, mat);
+    bm.perObjectFrustumCulled = false; bm.sortObjects = false; bm.frustumCulled = false;
+    bm.castShadow = false; bm.receiveShadow = true; bm.name = 'trees:batched';
+    bm.userData.parts = parts;
+    let base = 0;
+    for (const s of sets) {
+      const src = s.farDraw[0], geo = src.geometry.clone();
+      const ap = geo.attributes.aPart; for (let i = 0; i < ap.count; i++) ap.array[i] += base;
+      base += src.userData.parts.length;
+      const gid = bm.addGeometry(geo);
+      geo.dispose();
+      const ids = new Int32Array(s.records.length);
+      for (let i = 0; i < s.records.length; i++) { ids[i] = bm.addInstance(gid); bm.setMatrixAt(ids[i], s.matrices[i]); bm.setVisibleAt(ids[i], false); }
+      // the species' own far mesh leaves the scene: the batch draws its trees
+      src.removeFromParent(); src.count = 0; src.visible = false;
+      s.farDraw = [];
+      s.batch = { mesh: bm, ids, vis: new Uint8Array(s.records.length), shown: new Uint8Array(s.records.length) };
+      s.batchSource = src;
+    }
+    const before = bm.onBeforeRender.bind(bm);
+    bm.onBeforeRender = (...a) => { syncParts(bm); before(...a); };
+    this.group.add(bm);
+    this.batch = bm;
+    this.lastPos.set(1e9, 0, 0);
+  }
+
+  /** The far trees' BatchedMesh on or off at run time (A/B pictures). */
+  setBatch(on) {
+    if (this.batchOn === on) return;
+    this.batchOn = on;
+    this.theme = null;
+    this.setTheme(getTropicalTrees());
+  }
+
   /** Merged foliage on or off at run time (A/B pictures: the same frozen frame both ways). Rebuilds every set. */
   setMerge(on) {
     if (this.merge === on) return;
@@ -495,6 +573,7 @@ export class Foliage {
     this.treeSets = next;
     this.bushSets = nextBushes;
     this.theme = theme;
+    this.buildBatch();
     if (this.season) this.setSeason(this.season);
     // Even a stationary, paused camera must populate the new instance and shadow buffers.
     this.lastPos.set(1e9, 0, 0);
@@ -524,6 +603,7 @@ export class Foliage {
 
   dispose() {
     this.unsubscribeTheme?.();
+    if (this.batch) { this.batch.removeFromParent(); this.batch.dispose(); this.batch = null; }
     for (const set of this.sets) set.dispose();
     this.sets = [];
     this.treeSets = [];

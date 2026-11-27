@@ -3,44 +3,44 @@
  "recorded": "2026-11-27",
  "limits": {
   "low:kawabe": {
-   "draws": 113,
+   "draws": 108,
    "tris": 602015,
-   "visible": 691
+   "visible": 687
   },
   "low:takamori": {
-   "draws": 125,
+   "draws": 119,
    "tris": 594041,
-   "visible": 713
+   "visible": 709
   },
   "low:station": {
-   "draws": 96,
+   "draws": 91,
    "tris": 453126,
-   "visible": 577
+   "visible": 572
   },
   "low:meadow": {
-   "draws": 138,
+   "draws": 133,
    "tris": 724294,
-   "visible": 813
+   "visible": 810
   },
   "high:kawabe": {
-   "draws": 319,
+   "draws": 315,
    "tris": 2593741,
-   "visible": 1055
+   "visible": 1051
   },
   "high:takamori": {
-   "draws": 303,
+   "draws": 297,
    "tris": 2565724,
-   "visible": 1019
+   "visible": 1015
   },
   "high:station": {
-   "draws": 218,
+   "draws": 212,
    "tris": 2406653,
-   "visible": 857
+   "visible": 852
   },
   "high:meadow": {
-   "draws": 417,
+   "draws": 411,
    "tris": 2964909,
-   "visible": 1247
+   "visible": 1240
   }
  }
 }

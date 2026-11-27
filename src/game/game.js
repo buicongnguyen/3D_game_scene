@@ -87,7 +87,7 @@ export class Game {
     this.placed = (plan && await plan) || scatter((x, z) => this.world.heightAt(x, z), isFree, this.renderer.q.trees);
     if (Z) this.placed = Z.zonePlaced(this.placed, zone, zone.margin, !backdrop);
     for (const t of this.placed.trees) if (!t.far) this.world.splat.paintDisc(t.x, t.z, 2.4 * t.s, 2, 0.75, 2);
-    this.foliage = new Foliage(this.scene, this.assets, this.placed, this.renderer.q);
+    this.foliage = new Foliage(this.scene, this.assets, this.placed, { ...this.renderer.q, multiDraw: this.renderer.renderer.extensions.has('WEBGL_multi_draw') });
     this.grass = new Grass(this.scene, this.world.heightTex, this.world.splat, this.world.terrain.noise, this.renderer.q);
     for (const t of this.placed.trees) if (!t.far && t.s > 0.7) this.colliders.cylinder(t.x, t.z, 0.38 * t.s, t.y - 1, t.y + 5, { id: 'tree' });
     onProgress(0.94, 'Waking Mika');

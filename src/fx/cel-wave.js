@@ -90,6 +90,8 @@ export class BlossomGlow {
       uCelColor: { value: new THREE.Color(1.0, 0.3, 0.6) },
     };
     this.mats = [];
+    // (the far trees' BatchedMesh holds the far sakura's blossom too)
+    if (foliage?.batch?.material.userData.blossom) { this.patch(foliage.batch.material); this.mats.push(foliage.batch.material); }
     for (const s of foliage?.sets ?? []) {
       if (!/^tree-sakura/.test(s.model)) continue;
       // (merged foliage, world/foliage.js: the tree's one material glows only on its blossom parts, CEL_MASK)
@@ -115,6 +117,9 @@ export class BlossomGlow {
             mat4 cim = mat4(1.0);
             #ifdef USE_INSTANCING
               cim = instanceMatrix;
+            #endif
+            #ifdef USE_BATCHING
+              cim = batchingMatrix;
             #endif
             vCelBase = (modelMatrix * cim * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
             vCelBase.y = (modelMatrix * cim * vec4(transformed, 1.0)).y - vCelBase.y;
