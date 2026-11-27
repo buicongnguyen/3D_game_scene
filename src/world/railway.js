@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { placeholder } from '../engine/assets.js';
 import { batchCopies } from './static-batch.js';
 import { patchMaterial } from '../engine/effects.js';
@@ -104,17 +105,17 @@ export class Railway {
     // rails: separate meshes west/east of the broken span so the gap can be bridged later
     const gapS0 = rail.nearest(VIADUCT.brokenSpan[0], VIADUCT.z).s, gapS1 = rail.nearest(VIADUCT.brokenSpan[1], VIADUCT.z).s;
     const railMat = new THREE.MeshStandardMaterial({ color: '#8e8a86', metalness: 0.75, roughness: 0.38 });
-    this.rails = [railGeometry(s0, gapS0), railGeometry(gapS1, s1)].map(g => new THREE.Mesh(g, railMat));
+    // (both sides of the gap never change: one mesh, one draw and one shadow draw instead of two)
+    this.rails = [new THREE.Mesh(mergeGeometries([railGeometry(s0, gapS0), railGeometry(gapS1, s1)]), railMat)];
     this.gapRails = new THREE.Mesh(railGeometry(gapS0, gapS1), railMat);
     this.gapRails.visible = false;
     for (const m of [...this.rails, this.gapRails]) { m.castShadow = true; m.receiveShadow = true; this.group.add(m); }
     const ballastMat = new THREE.MeshStandardMaterial({ color: '#8d857b', roughness: 0.95, vertexColors: true });
     patchMaterial(ballastMat);
-    for (const [a, b] of [[s0, gapS0 - 1], [gapS1 + 1, s1]]) {
-      const bm = new THREE.Mesh(ballastGeometry(a, b, onViaduct), ballastMat);
-      bm.receiveShadow = true;
-      this.group.add(bm);
-    }
+    // the track bed on both sides of the gap: one mesh
+    const bm = new THREE.Mesh(mergeGeometries([[s0, gapS0 - 1], [gapS1 + 1, s1]].map(([a, b]) => ballastGeometry(a, b, onViaduct))), ballastMat);
+    bm.receiveShadow = true;
+    this.group.add(bm);
     this.placeSleepers(s0, s1, inGap);
     this.placeViaduct();
     // the whole spans and the abutments drawn together (the broken span and its repair stay themselves)

@@ -88,6 +88,7 @@ function decorMaterial(uGlow) {
   return m;
 }
 
+const WHITE = new THREE.Color(1, 1, 1);
 const PAPER = ['#ff4a3d', '#ff7a2e', '#ffd04a', '#ff5f9e', '#ffffff', '#ff3b30'].map(h => new THREE.Color(h));
 const SHRINE = ['#ff3b2f', '#ffffff', '#ff3b2f', '#ffefc8'].map(h => new THREE.Color(h));
 const BUNTING = ['#ff4455', '#ffcf3a', '#2fb7ff', '#46d16a', '#ff7ac8', '#ff8a2a', '#9a6bff'].map(h => new THREE.Color(h));
@@ -183,16 +184,25 @@ class Kit {
   bake(mat, lineMat) {
     const group = new THREE.Group();
     const M = new THREE.Matrix4(), Q = new THREE.Quaternion(), S = new THREE.Vector3(), E = new THREE.Euler();
+    // Every ornament of the level baked into ONE mesh (they never move): five instanced draws were five draws a frame
+    // (phone speed plan, step 4). Each copy's colour is multiplied into its vertex colours, as the instance colour was.
+    const parts = [];
     const inst = (geo, list, fill) => {
       if (!list.length) return;
-      const m = new THREE.InstancedMesh(geo, mat, list.length);
-      list.forEach((o, i) => { fill(o, M); m.setMatrixAt(i, M); m.setColorAt(i, o.c || new THREE.Color(1, 1, 1)); });
-      m.instanceMatrix.needsUpdate = true;
-      if (m.instanceColor) m.instanceColor.needsUpdate = true;
-      m.computeBoundingSphere();
-      m.castShadow = false;
-      m.receiveShadow = true;
-      group.add(m);
+      const src = geo.index ? geo.toNonIndexed() : geo, n = src.attributes.position.count;
+      const col = src.attributes.color, glow = src.attributes.aGlow, nm = new THREE.Matrix3();
+      for (const o of list) {
+        fill(o, M);
+        const g = new THREE.BufferGeometry();
+        g.setAttribute('position', src.attributes.position.clone().applyMatrix4(M));
+        g.setAttribute('normal', src.attributes.normal ? src.attributes.normal.clone().applyNormalMatrix(nm.getNormalMatrix(M)) : new THREE.Float32BufferAttribute(new Float32Array(n * 3), 3));
+        const c = o.c || WHITE, C = new Float32Array(n * 3);
+        for (let i = 0; i < n; i++) { C[i * 3] = (col ? col.getX(i) : 1) * c.r; C[i * 3 + 1] = (col ? col.getY(i) : 1) * c.g; C[i * 3 + 2] = (col ? col.getZ(i) : 1) * c.b; }
+        g.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+        g.setAttribute('aGlow', glow ? glow.clone() : new THREE.Float32BufferAttribute(new Float32Array(n), 1));
+        parts.push(g);
+      }
+      if (src !== geo) src.dispose();
     };
     inst(GEO.lantern(), this.lanterns, (o, m) => m.compose(o.p, Q.setFromAxisAngle(UP, o.yaw), S.setScalar(o.s)));
     inst(GEO.flag(), this.flags, (o, m) => {
@@ -203,6 +213,14 @@ class Kit {
     inst(GEO.star(), this.stars, (o, m) => m.compose(o.p, Q.setFromAxisAngle(UP, o.yaw), S.setScalar(o.s)));
     const poleCol = new THREE.Color('#5a2a22');
     inst(GEO.pole(), this.poles, (o, m) => { o.c = poleCol; m.compose(v3(o.x, o.y - 0.2, o.z), Q.identity(), S.set(1, o.h + 0.2, 1)); });
+    if (parts.length) {
+      const m = new THREE.Mesh(mergeGeometries(parts), mat);
+      for (const g of parts) g.dispose();
+      m.geometry.computeBoundingSphere();
+      m.castShadow = false;
+      m.receiveShadow = true;
+      group.add(m);
+    }
     if (this.cables.length) {
       const pos = [];
       for (const [a, b] of this.cables) pos.push(a.x, a.y, a.z, b.x, b.y, b.z);
@@ -410,10 +428,9 @@ export class Decor {
   /** The paper-lantern geometry (shared with the orchard lanterns). */
   lanternGeometry() { return GEO.lantern(); }
 
-  /** A throw-away instanced mesh so the decor material can be compiled up front. */
+  /** A throw-away mesh so the decor material can be compiled up front (a plain mesh, as the levels are baked). */
   probe() {
-    const m = new THREE.InstancedMesh(GEO.lantern(), this.mat, 1);
-    m.setColorAt(0, new THREE.Color(1, 1, 1));
+    const m = new THREE.Mesh(GEO.lantern(), this.mat);
     m.receiveShadow = true;
     const l = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints([v3(), v3(0, 1, 0)]), this.lineMat);
     const g = new THREE.Group();
