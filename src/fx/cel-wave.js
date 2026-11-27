@@ -92,9 +92,10 @@ export class BlossomGlow {
     this.mats = [];
     for (const s of foliage?.sets ?? []) {
       if (!/^tree-sakura/.test(s.model)) continue;
-      for (const mesh of s.meshes()) {
+      // (merged foliage, world/foliage.js: the tree's one material glows only on its blossom parts, CEL_MASK)
+      for (const mesh of [...s.meshes(), ...(s.drawn?.() ?? [])]) {
         const m = mesh.material;
-        if (m?.name !== 'Blossom' || this.mats.includes(m)) continue;
+        if ((m?.name !== 'Blossom' && !m?.userData.blossom) || this.mats.includes(m)) continue;
         this.patch(m);
         this.mats.push(m);
       }
@@ -123,7 +124,10 @@ export class BlossomGlow {
           uniform vec4 uCelWave, uCelDir;
           uniform vec2 uCelGlow;
           uniform vec3 uCelColor;
-          varying vec3 vCelBase;`)
+          varying vec3 vCelBase;
+          #ifndef CEL_MASK
+            #define CEL_MASK 1.0
+          #endif`)
         .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
           {
             vec2 dd = vCelBase.xz - uCelWave.xy;
@@ -132,7 +136,7 @@ export class BlossomGlow {
             float passed = smoothstep(10.0, -10.0, dot(dd, dir)) * smoothstep(-12.0, 4.0, dot(rel, dir));
             float near = smoothstep(uCelGlow.y, uCelGlow.y * 0.6, abs(rel.x * dir.y - rel.y * dir.x));
             float lift = 0.65 + 0.35 * smoothstep(1.5, 5.5, vCelBase.y);
-            totalEmissiveRadiance += uCelColor * (uCelGlow.x * passed * near + flash) * lift * (0.55 + 0.45 * diffuseColor.g);
+            totalEmissiveRadiance += uCelColor * (uCelGlow.x * passed * near + flash) * lift * (0.55 + 0.45 * diffuseColor.g) * CEL_MASK;
           }`);
     };
     m.customProgramCacheKey = () => `${prevKey ? prevKey() : ''}-celbloom`;
