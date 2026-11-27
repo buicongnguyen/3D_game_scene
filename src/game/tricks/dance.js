@@ -629,7 +629,7 @@ function stageCard(ctx, want, step) {
   addCss('danceCss', CSS);
   const g = ctx.game;
   // a light person (People: Light) is one mesh in its default look: no outfits to choose then
-  const liteOf = id => g.assets?.people === 'lite' && peopleFile(id, 'lite') !== id;
+  const liteOf = id => (g.assets?.setOf?.(id) ?? g.assets?.people) === 'lite' && peopleFile(id, 'lite') !== id;
   // the chosen dance's performers start loading while the card is up (a performer is a few MB)
   const prefetch = mode => { for (const id of mode === 'kpop' ? ['nabi', 'byeol', 'haru'] : ['hoa']) g.assets?.get?.(MODEL[id][0]); };
   const touch = !!ctx.ui.touch;

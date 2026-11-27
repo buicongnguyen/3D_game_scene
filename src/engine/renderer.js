@@ -7,7 +7,21 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { updateWorldMatrices } from './matrices.js';
 import { View } from './view.js';
 import { Cells } from './cell-grid.js';
-import { Governor, settingsAt, ladderFor } from './governor.js';
+import { Governor, settingsAt, ladderFor, LOW_SLOW } from './governor.js';
+
+/**
+ * Phone tier (bloomHalf): the glow blurs 3 mip levels instead of 5 (phone speed plan, step 1, owner OK 2026-11-27).
+ * The two smallest mips are the wide, faint halo; they cost 4 of the 15 post draws. Their tints go to black (a factor
+ * of 0 is not enough: the composite mixes each factor with its mirror by the radius), and the strength is raised a
+ * little so the lights keep their brightness. The pass's own render loops honour nMips.
+ */
+export const LIGHT_BLOOM = { mips: 3, strengthK: 1.2 };
+function lightenBloom(pass) {
+  pass.nMips = LIGHT_BLOOM.mips;
+  const tints = pass.compositeMaterial.uniforms.bloomTintColors.value;
+  for (let i = LIGHT_BLOOM.mips; i < tints.length; i++) tints[i] = new THREE.Vector3(0, 0, 0);
+  pass.strength *= LIGHT_BLOOM.strengthK;
+}
 import { pickQuality } from './quality-pick.js';
 import { markSlow, SLOW_LEVEL } from './device-note.js';
 
@@ -100,7 +114,7 @@ export class Renderer {
     const gl = this.renderer.getContext();
     this.qualityName = qualityName || detectQuality(gl);
     this.q = QUALITY[this.qualityName];
-    this.governor = this.q.governor ? new Governor({ levels: ladderFor(this.qualityName).length }) : null;
+    this.governor = this.q.governor ? this.makeGovernor(this.qualityName) : null;
     const r = this.renderer;
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.toneMapping = THREE.NeutralToneMapping;
@@ -145,7 +159,7 @@ export class Renderer {
     this.q = QUALITY[name];
     // back from a governor step that had made the shadow map smaller: the tier's own size again
     if (this.q.shadow !== was.shadow && this.q.shadowRange === was.shadowRange) this.onShadowChange?.(this.q);
-    this.governor = this.q.governor ? new Governor({ levels: ladderFor(name).length }) : null; this.appliedLevel = 0;
+    this.governor = this.q.governor ? this.makeGovernor(name) : null; this.appliedLevel = 0;
     if (!this.fixedScale) this.scale = 1;
     try { localStorage.setItem('starline-quality', name); } catch { /* ignore */ }
     this.buildComposer();
@@ -165,6 +179,7 @@ export class Renderer {
     this.composer.addPass(this.renderPass);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), BLOOM.strength, BLOOM.radius, BLOOM.threshold);
     this.bloom.enabled = q.bloom;
+    if (q.bloomHalf) lightenBloom(this.bloom);
     this.composer.addPass(this.bloom);
     this.grade = new ShaderPass(GradeShader);
     this.composer.addPass(this.grade);
@@ -187,14 +202,21 @@ export class Renderer {
     this.onResize?.(w, h);
   }
 
-  /** Adaptive quality: step down the tier's ladder (governor.js) when frames are consistently slow. */
+  makeGovernor(name) {
+    return new Governor({ levels: ladderFor(name).length, ...(name === 'low' ? { slow: LOW_SLOW } : {}) });
+  }
+
+  /**
+   * Adaptive quality: step down the tier's ladder (governor.js) when frames are consistently slow. While the game paces
+   * frames (game.js sets `pacedWork`: the last frame's own work in seconds), the Low governor judges that instead.
+   */
   track(dt) {
     if (this.fixedScale) return;
     if (this.governor) {
       // Low tier: a ladder of small steps (people and prop distances, shadow rate, then resolution) instead of
       // resolution alone, because a phone is usually short of CPU, which a smaller picture does not help
       if (this.hold) return;                     // a video is showing: nothing is drawn, so there is nothing to judge
-      if (this.governor.frame(dt) !== null) this.applyLevel();
+      if (this.governor.frame(this.pacedWork ?? dt) !== null) this.applyLevel();
       return;
     }
     this.frameTimes.push(dt);
@@ -225,6 +247,7 @@ export class Renderer {
     this.q = q;
     if (q.shadow !== was.shadow) this.onShadowChange?.(q);       // a smaller shadow map (the sky makes a new one)
     if (q.msaa !== was.msaa) this.buildComposer();               // another sample count needs another render target
+    else if (q.bloom !== was.bloom && this.bloom) this.bloom.enabled = !!q.bloom;   // (round-light.js reads q.bloom too)
     if (scale !== this.scale) { this.scale = scale; this.resize(); }
     else if (q.msaa !== was.msaa) this.resize();
   }

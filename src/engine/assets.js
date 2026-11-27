@@ -5,7 +5,7 @@ import { hideBoneTrees } from './matrices.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { separateCoplanar } from './coplanar.js';
 import { mergeStatic } from './static-merge.js';
-import { peopleFile, prepareLite } from './people.js';
+import { peopleFile, prepareLite, PERFORMERS } from './people.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
 export const GLOW_MATERIALS = ['Window glow', 'Lamp glass', 'Lamp star', 'Lantern glow', 'Street glow', 'Porch glass', 'Headlamp glass', 'Tamo glow', 'Garland glow'];
@@ -28,7 +28,11 @@ export class Assets {
     this.glow = new Map(); // material name -> Set<Material>, for night / lamp control
     this.merge = null;     // names of the static models whose plain parts are merged into one mesh (engine/static-merge.js)
     this.people = 'std';   // which set of people a name such as 'mika' means: 'std' | 'lite' (engine/people.js)
+    this.performers = null; // the dance performers' own set ('std' | 'lite'), or null to follow `people`
   }
+
+  /** The set (std | lite) the model `name` comes from. */
+  setOf(name) { return this.performers && PERFORMERS.includes(name) ? this.performers : this.people; }
 
   async load(names, onProgress) {
     let done = 0;
@@ -41,7 +45,7 @@ export class Assets {
   get(name) {
     if (!this.cache.has(name)) {
       this.cache.set(name, new Promise(resolve => {
-        this.loader.load(`${this.base}${peopleFile(name, this.people)}.glb`, gltf => {
+        this.loader.load(`${this.base}${peopleFile(name, this.setOf(name))}.glb`, gltf => {
           this.prepare(name, gltf);
           resolve(gltf);
         }, undefined, () => { this.missing.add(name); resolve(null); });

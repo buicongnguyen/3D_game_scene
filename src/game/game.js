@@ -3,7 +3,7 @@ import { Renderer, isMobile } from '../engine/renderer.js';
 import { getTropicalTrees as tropicalTreesOn } from '../world/tree-theme.js';
 import { Assets } from '../engine/assets.js';
 import { trimModels } from '../engine/trim.js';
-import { peopleSet } from '../engine/people.js';
+import { peopleSet, performersSet } from '../engine/people.js';
 import { Input } from '../engine/input.js';
 import { FX } from '../engine/effects.js';
 import { PALETTES } from '../world/seasons.js';
@@ -39,6 +39,7 @@ export class Game {
     this.input = new Input(canvas);
     this.assets = new Assets();
     this.assets.people = peopleSet(this.renderer.qualityName, params);
+    this.assets.performers = performersSet(this.renderer.qualityName, params);
     this.time = { hour: 10, speed: 0, season: 'spring' };
     this.systems = [];
     this.paused = false;
@@ -206,6 +207,7 @@ export class Game {
       this.frame();
       const work = performance.now() - t0;
       this.ring.push(work, gap);
+      this.renderer.pacedWork = pace ? work / 1000 : null;     // paced: the governor judges the work (renderer.js track)
       // a phone that has to be paced is a slow one: remember it (engine/device-note.js), so the notice card can show next time
       // (the governor alone no longer reaches that: even 33 ms frames sit under its step-down line)
       if (this.pacer?.feed(work)) markSlow();

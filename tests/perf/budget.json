@@ -3,17 +3,17 @@
  "recorded": "2026-11-27",
  "limits": {
   "low:kawabe": {
-   "draws": 162,
+   "draws": 158,
    "tris": 444258,
    "visible": 838
   },
   "low:takamori": {
-   "draws": 182,
+   "draws": 166,
    "tris": 467965,
-   "visible": 835
+   "visible": 824
   },
   "low:station": {
-   "draws": 129,
+   "draws": 125,
    "tris": 301185,
    "visible": 662
   },

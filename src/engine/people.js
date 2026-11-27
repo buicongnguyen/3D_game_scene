@@ -49,6 +49,19 @@ export function peopleSet(qualityName, params, dev) {
   return peopleSetFor(getPeopleChoice(), qualityName, dev);
 }
 
+/**
+ * The dance game's four performers on the Low tier (phone speed plan, step 6, owner OK 2026-11-27): with People on
+ * Automatic they come as their light model whatever the device, because the standard one is drawn part by part (Hoa
+ * stands in Takamori: 12 draws there). A player who chose Standard keeps the full models. -> 'lite' | 'std'
+ */
+export const PERFORMERS = ['hoa', 'nabi', 'byeol', 'haru'];
+export function performersSet(qualityName, params, choice = getPeopleChoice()) {
+  const url = params?.get?.('people');
+  if (url === 'std' || url === 'standard') return 'std';
+  if (url === 'lite' || url === 'light') return 'lite';
+  return choice === 'std' ? 'std' : choice === 'lite' || qualityName === 'low' ? 'lite' : 'std';
+}
+
 /** The file (without .glb) that holds `name` in this set. */
 export const peopleFile = (name, set) => set === 'lite' && PEOPLE.includes(name) ? name + LITE : name;
 

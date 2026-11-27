@@ -9,14 +9,21 @@
 //   - a step up that has to be taken back within `regret` seconds makes the lower level the ceiling for good, so
 //     the picture never bounces between two levels.
 
+// Low: a phone is short of CPU (draws and the scene walk), which a smaller picture does not help, so every step but
+// the last cuts drawing (phone speed plan, step 11, owner OK 2026-11-27). Steps 2+ also mean "slow device" elsewhere
+// (device-note.js SLOW_LEVEL: no ambient effects, no moments).
 export const LADDER = [
   {},                                                                                       // 0: the tier as designed
   { npcDraw: 58, npcAnim: 20, npcShadow: 12, propDist: 66, midDist: 115, shadowEvery: 3 },  // 1: fewer far people and props
-  { scale: 0.85 },                                                                          // 2: a little softer
+  { bloom: false },                                                                         // 2: no glow (its 11 post draws)
   { npcDraw: 46, npcAnim: 16, npcShadow: 0, propDist: 55, midDist: 95, shadowEvery: 4 },    // 3: only the nearest people; shadows redrawn every 4th frame
-  { scale: 0.72 },                                                                          // 4
-  { scale: 0.62 },                                                                          // 5
+  { shadowEvery: 8 },                                                                       // 4: shadows redrawn every 8th frame
+  { scale: 0.85 },                                                                          // 5: a little softer, last
 ];
+
+// Low tier's step-down line: 31 ms. Paced to 30 fps (game.js), the governor is fed the frame's own work, not the gap
+// between frames (always ~33 ms when paced, so the old 38 ms line was never crossed and a struggling phone never helped).
+export const LOW_SLOW = 0.031;
 
 // Medium and High (desktops and laptops): the picture's cost is the pixels, then the extra passes, then how far the world is
 // drawn, so the steps go in that order. `shadowK` and `distK` scale what the tier has, so every tier loses something at every
@@ -83,7 +90,7 @@ export function settingsAt(base, level, ladder = LADDER) {
     if (s) scale = s;
     if (shadowK) q.shadow = Math.max(1024, Math.round(base.shadow * shadowK));      // (of what the tier has: a later step replaces an earlier one)
     if (distK) for (const k of DISTANCES) if (base[k]) q[k] = Math.max(Math.round(base[k] * distK), k === 'npcShadow' ? 0 : 30);
-    for (const [k, v] of Object.entries(rest)) q[k] = k === 'shadowEvery' ? Math.max(v, base[k] ?? 1) : Math.min(v, base[k] ?? v);
+    for (const [k, v] of Object.entries(rest)) q[k] = typeof v === 'boolean' ? base[k] && v : k === 'shadowEvery' ? Math.max(v, base[k] ?? 1) : Math.min(v, base[k] ?? v);
   }
   return { q, scale };
 }
