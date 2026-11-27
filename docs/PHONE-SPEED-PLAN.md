@@ -62,3 +62,60 @@ quarter to a third off the frame. Steps 8–10 aim at a further 10–15 %. These
 - Keep a URL switch for each step (like `?cells=off`) so it can be A/B tested on the real phone.
 - After a real gain, record it in `tests/perf/budget.json` (`perf-budget-browser.mjs --record`) so it cannot slip back.
 - Steps 1, 6 and 11 change the look a little: the owner decides.
+
+## 4. Round 3: trees and other scenery (researched 2026-11-27, not started)
+
+Measured on a built preview, summer 11:00, frozen world (`g.paused = true`, `readPixels` right after `render`: pixel-diff
+noise floor 0 px). Cost per draw on Low: ~0.055 ms at 4x CPU, ~0.11 ms at 8x, so **10 draws ~ 1.1 ms ~ 4 % of a phone
+frame**; people cost ~2x per draw. Scratch scripts, JSON and pictures: `.tools/scene-research/` (ignored).
+
+### Low (phone) per view: draws / k triangles
+
+| Group | Kawabe | Takamori | Station | Meadow |
+|---|---:|---:|---:|---:|
+| trees | 10 / 34 | 10 / 34 | 10 / 38 | 10 / 43 |
+| rocks + bushes | 7 / 9 | 10 / 10 | 8 / 6 | 7 / 11 |
+| flowers / reeds / lilies | 10 / 5 | – | – | – |
+| grass | 1 / **181** | 1 / **181** | 1 / **181** | 1 / **181** |
+| buildings | 5 / 16 | 24 / 49 | 21 / 32 | **46** / 52 |
+| props (structures + loose) | 13 / 6 | 14 / 6 | 8 / 2 | 10 / 4 |
+| festival decor | 7 / 96 | 9 / 52 | 4 / 20 | 11 / 128 |
+| people / animals | 14 / 37 | 26 / 110 | 19 / 64 | 29 / 80 |
+| railway | **22** / 88 | 6 / 37 | 10 / 49 | 10 / 55 |
+| shadow pass | 27 / 83 | 15 / 66 | 5 / 28 | 5 / 66 |
+| **total** | **146 / 606** | **155 / 614** | **115 / 471** | **170 / 717** |
+
+- Trees: 8 species, 2,511 records, untextured, vertex colours, opaque (no alphaTest); on Low every tree in view is the
+  344-tri LOD, 150-400 m away, over 64 px tall on screen, none hidden behind terrain. Their cost is draws (2 a species:
+  Bark + Leaves), not triangles.
+- Grass is the largest triangle item (30 % of Low, 49 % of High); `tests/perf/draw-calls.mjs` showed it as 36 triangles
+  because it ignores `InstancedBufferGeometry.instanceCount`.
+
+### Prototypes (measured, all four spots)
+
+| Variant | Low draws (K / T / S / M) | High draws | Pixels changed (> 8) |
+|---|---|---|---|
+| M: one vertex-coloured mesh per foliage model (roughness, wind weight and original part height per vertex) | -15 / -9 / -7 / -12 | -23 / -21 / -26 / -23 | Low 0-11 of 329k; High 16-420 of 922k at reed/lily bank edges (group parts by `side`) |
+| B: then all far trees in one `BatchedMesh` | -4 / -4 / -4 / -4 | -4 to -6 | 0 |
+| G: grass blades with 2 segments instead of 3 | 0 (-60k tris Low, -385k High) | 0 | Low 0.7-1.6 % (same by eye); High 4-7 % (keep 3 there) |
+
+### Steps (each with a URL switch, a frozen-world pixel A/B and a budget record after a gain)
+
+| Step | What | Low draws saved (K / T / S / M) | Look | Effort | Files |
+|---|---|---|---|---|---|
+| R3-0 | Tool: count `instanceCount` in `draw-calls.mjs`; baseline at 4 spots x 2 tiers | – | – | S | `tests/perf/draw-calls.mjs` |
+| R3-1 | Foliage part merge (`?foliageMerge=off`): per-vertex `color`, `aRough`, `aWind`, `aY` (part-local height before the dequantizing part matrix), `aPart`; season tint/bare/fruit through uniforms + part mask | -15 / -9 / -7 / -12 | 0-11 px; test every season | M | `src/world/foliage.js`, `src/engine/effects.js` |
+| R3-2 | Grass 2 segments on Low and Medium (`?grassSegs=3`) | 0 (-60k tris) | 0.7-1.6 % px; owner eye check | S | `src/world/grass.js` |
+| R3-3 | Buildings: one PBR material (per-vertex roughness/metalness), then merge static buildings per 64 m cell (`?buildMerge=off`); story-toggled houses and kept nodes stay separate; glow panes one mesh per cell | ~ -2 / -12 / -10 / -22 (est.) | 0 px expected; check noon and night | M | `src/engine/static-merge.js`, `src/engine/cell-grid.js`, `src/world/structures.js` |
+| R3-4 | Small props: ferry, laundry line, bench into the merge list; NPC tools merged (keep the rod tip node) | ~ -5 / -6 / -4 / -15 | 0 px | S-M | `src/content/models.js`, `src/engine/static-merge.js` |
+| R3-5 | Railway: Iron + Sleeper wood as one vertex-coloured instanced mesh per chunk | -3 to -6 at Kawabe | 0 px | S | `src/world/railway.js` |
+| R3-6 | Trees in one `BatchedMesh` (`?treeBatch=off`, off without `WEBGL_multi_draw`): `perObjectFrustumCulled = false`, `sortObjects = false`, cells drive `setVisibleAt`/`setGeometryIdAt`; wind reads `batchingMatrix` | -4 each | 0 px | M (after R3-1) | `src/world/foliage.js` |
+| R3-7 | Optional, owner decides: festival lanterns 12 -> 8 segments, puffs detail 1 -> 0 | 0 (-30 to -60 % of decor tris) | lanterns a bit less round up close | S | `src/fx/cel-decor.js` |
+
+Expected after R3-1..R3-6 on Low: Kawabe 146 -> ~120, Takamori 155 -> ~120, Station 115 -> ~90, Meadow 170 -> ~115
+draws (about -2.5 to -5.5 ms per frame at 8x), plus -60k grass triangles.
+
+Not recommended here (measured): tree impostors or a third far level (trees are > 64 px tall at 150-400 m; at most -30k
+tris, 0 draws), baking the far forest into the terrain (loses the rim silhouettes), terrain occlusion for foliage (0
+trees hidden at all four spots), alphaTest/card foliage (breaks hidden-surface removal on tile GPUs), KTX2 for foliage
+(it has no textures). People (14-29 draws at 2x cost) are the next big item: a round 4.
