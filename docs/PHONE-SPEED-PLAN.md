@@ -63,7 +63,7 @@ quarter to a third off the frame. Steps 8–10 aim at a further 10–15 %. These
 - After a real gain, record it in `tests/perf/budget.json` (`perf-budget-browser.mjs --record`) so it cannot slip back.
 - Steps 1, 6 and 11 change the look a little: the owner decides.
 
-## 4. Round 3: trees and other scenery (researched 2026-11-27, not started)
+## 4. Round 3: trees and other scenery (researched 2026-11-27, R3-0..R3-6 done 2026-11-28, results in 4.1)
 
 Measured on a built preview, summer 11:00, frozen world (`g.paused = true`, `readPixels` right after `render`: pixel-diff
 noise floor 0 px). Cost per draw on Low: ~0.055 ms at 4x CPU, ~0.11 ms at 8x, so **10 draws ~ 1.1 ms ~ 4 % of a phone
@@ -119,3 +119,62 @@ Not recommended here (measured): tree impostors or a third far level (trees are 
 tris, 0 draws), baking the far forest into the terrain (loses the rim silhouettes), terrain occlusion for foliage (0
 trees hidden at all four spots), alphaTest/card foliage (breaks hidden-surface removal on tile GPUs), KTX2 for foliage
 (it has no textures). People (14-29 draws at 2x cost) are the next big item: a round 4.
+
+### 4.1 Results (2026-11-28, branch `phone-speed-r3`)
+
+Measured on built previews, summer 11:00, governor off. Draws and triangles per frame (the budget tool, whole scene,
+main + shadow + full-screen passes); people and animals move between page loads, so whole-scene draws carry ±1-2 of
+noise. Pixel A/Bs: run-time switches were compared in the same page with a frozen world (noise floor 0 px); load-time
+switches (`?buildMerge=off`) across two page loads with `Math.random` seeded and only the static scene shown (people,
+animals, particles, the train and the grass hidden; noise floor 0 px > 8 except 633 px of one far tree near its LOD
+band at High Kawabe). "px" = pixels changed by more than 8 of 255.
+
+| Step | Switch | Low draws K / T / S / M | High draws K / T / S / M | Pixels (Low; High) |
+|---|---|---|---|---|
+| R3-0 baseline (tool counts `instanceCount`) | – | 146 / 153 / 115 / 170 | 418 / 367 / 274 / 559 | – |
+| R3-1 foliage part merge | `?foliageMerge=off` | -12 / -9 / -14 / -10 | -20 / -19 / -22 / -19 | 0-1; 1-8 (all four seasons, wind at three times; 0 on the dev server) |
+| R3-2 grass 2 segments on Low/Medium | `?grassSegs=3` | 0 (-60k triangles) | 0 (High keeps 3) | 0.7-1.5 %; 0 |
+| R3-3 one merged material + one draw call per map square | `?buildMerge=off` | -20 / -18 / -12 / -16 | -67 / -47 / -37 / -108 | 0 / 60 / 0 / 174; 636 / 86 / 10 / 111 (edge seams); night and winter alike |
+| R3-4 ferry, laundry line, bench, NPC tools | `?buildMerge=off` | -7 / -7 / -5.5 / -15.5 | -33 / -22 / -10 / -45 | 15 / 0 / 41 / 0; 1 / 0 / 170 / 0 |
+| R3-5 sleepers one instanced mesh a stretch | `?buildMerge=off` | -3 / -2 / -2 / -3 | -5 / -3 / -5 / -6 | 0; 0 |
+| R3-6 far trees in one BatchedMesh | `?treeBatch=off` | -4 / -4 / -4 / -4 | -4 / -5 / -5 / -6 | 0; 0 (summer and winter) |
+| **after R3-6** (budget record) | | **100 / 110 / 84 / 123** | **291 / 275 / 196 / 380** | |
+
+Low triangles: 608k / 608k / 472k / 719k -> 547k / 540k / 412k / 659k (grass). Draws on Low: -27 to -32 % at the four
+spots (the plan expected -18 to -32 %); on High -25 to -32 %. `tests/perf/budget.json` now has the meadow too and was
+tightened after every step (the lower of the old and new limit; triangle limits re-based once in R3-0, when the tool
+started counting the grass).
+
+How each step was done, and what changed from the plan:
+- **R3-1.** Not baked: the merged mesh keeps each part's local (quantized) coordinates and rebuilds the part matrix in
+  the shader from a per-part uniform table (`aPart`), so the wind, snow and sakura-glow patches run unchanged. The
+  per-part meshes stay as handles (not drawn): the seasons, the peach orchard lights and BlossomGlow still change their
+  materials, and the merged material copies colour, emissive, roughness, metalness and the season switch from them each
+  frame. Better pixels than the prototype (0-8 instead of 16-420 px).
+- **R3-3.** The plan's "merge per 64 m cell" first folded culled buildings away in the shader: that drew +49k to +131k
+  triangles a Low view (hidden buildings still vertex-shaded), so it became one BatchedMesh per square (each model's
+  geometry once, each building an instance, three's per-instance view culling on, the distance culling synced into
+  `setVisibleAt`). Same draws, equal triangles. Needs `WEBGL_multi_draw`; without it squares are not joined (the
+  one-material merge still applies). Glow panes were **not** joined per square (0-1 draws a spot; they would need the
+  same per-building switch). A follow-up fix (7fda9ac) makes the snow/wind patch read `batchingMatrix`: without it
+  batched buildings would have had winter snow on the wrong faces.
+- **R3-4.** Models merged for the first time (`MERGE_EXACT` and two-part models like the bench) keep their exact
+  roughness and metalness; the ones merged before keep their quarters, so nothing changes on screen. The tools people
+  carry are not in the static picture (people hidden): their merge was checked by counts only.
+- **R3-6.** Only with `WEBGL_multi_draw` (passed in from game.js); the batch is rebuilt with the tree sets on a theme
+  switch.
+- **R3-7** (festival decor) not done: the owner decides.
+
+Found on the way, not changed: the built (quantized) trees never sway. The wind patch compares the part-local height
+(-1..1 after meshopt quantization) with 1.4 m, so `hgt` is always 0; in dev (unquantized models) they sway. Pictures
+at two times: tree pixels identical. Fixing it changes the look (owner decides).
+
+Checks on the final build: `npm test` 1100/1100; perf budget (built preview, 8 places) within the tightened limits;
+minigame-menu browser suite passed; moments browser suite passed on a rerun (the first run failed only its wall-clock
+"in the running game at 8x" ceiling, idle 348 µs with idle slower than a shower: machine load; rerun idle 91 µs);
+Grandma story autopilot on Low finished in 9.7 min (all four lamps, menus work).
+
+Open: the real phone's numbers (Settings -> Copy performance report) for the ms per frame; Safari's support of
+`WEBGL_multi_draw` decides whether R3-3/R3-6 apply on iPhones (they fall back to the per-building / per-species draws).
+Scripts: `.tools/r3/` (ignored): `ab.mjs` (frozen-world A/B with variants and `--static`), `diff.cjs`, `cross.sh`,
+`vsprev.sh`, `budget-merge.mjs`.
