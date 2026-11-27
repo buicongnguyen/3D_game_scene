@@ -9,7 +9,10 @@
 //   outro    medium, then the reveal: a pull back and up over the last bars (after the bow starts)
 // No shot twice in a row. No handheld shake at all (owner rule for phones). Shot poses are in her frame (her position and
 // facing), so a shot follows her wherever she performs.
-//   planShots(plan, clock) -> [{ t0, t1, kind, side, cut }]      (pure)
+// A group (game/perform/troupe.js): every shot but a close-up frames the whole formation (its centre, far enough back for
+// its width); choruses are group shots (wide and medium in turn on each chorus line, everyone sings), close-ups go to
+// Kotone's own lines in the verses.
+//   planShots(plan, clock, { group }) -> [{ t0, t1, kind, side, cut }]      (pure)
 //   createCameraMan(shots) -> { update(dt, t, subject, cam, clear?) }   cam: a THREE camera; clear(from, to) -> 0..1 (walls)
 import * as THREE from 'three';
 import { hash } from './plan.js';
@@ -31,7 +34,7 @@ export const BODY_H = 1.62;
 /** Phones (portrait): a little further back so her whole body fits a tall frame. */
 export const PORTRAIT = Object.freeze({ dist: 1.35, close: 1.25 });
 
-export function planShots(plan, clock) {
+export function planShots(plan, clock, { group = false } = {}) {
   const shots = [], seed = plan.seed, bar = b => clock.barTime(b), lines = plan.lines;
   let last = '';
   const push = (t0, t1, kind, cut = true) => {
@@ -48,6 +51,28 @@ export function planShots(plan, clock) {
     if (b.kind === 'intro') { const m = Math.min(t1, bar(b.b0 + 4)); push(t0, m, 'wide'); if (t1 - m > .8) push(m, t1, 'medium'); continue; }
     if (b.kind === 'bridge' || b.kind === 'break') { push(t0, t1, 'orbit'); continue; }
     if (b.kind === 'prechorus') { push(t0, t1, 'push'); continue; }
+    if (group && (b.kind === 'chorus' || b.kind === 'drop')) {
+      // everyone sings: the whole group, wide and medium in turn, a new shot on each chorus line
+      const starts = lines ? Array.from(lines.t).filter(t => t >= t0 - .01 && t < t1 - 1) : [];
+      let at = t0, k = shots.at(-1)?.kind === 'wide' ? 1 : 0;
+      for (const ls of starts.length ? starts : [t0]) { const s = Math.max(at, ls - .25); if (s - at > .8) { push(at, s, k++ % 2 ? 'medium' : 'wide'); at = s; } }
+      push(at, t1, k % 2 ? 'medium' : 'wide');
+      continue;
+    }
+    if (group && b.kind === 'verse' && lines) {
+      // her own lines: a close-up on each, the group between them
+      const starts = Array.from(lines.t).filter(t => t >= t0 - .01 && t < t1 - 1);
+      let at = t0, k = 0;
+      for (const ls of starts) {
+        const s = Math.max(at, ls - .25);
+        if (s - at > 2 * clock.barLength) { push(at, s, ['medium', 'low', 'side'][k++ % 3]); at = s; }
+        const next = starts.find(x => x > ls + .5) ?? t1, e = Math.min(t1, next - .25);
+        push(at, e, 'close'); at = e;
+      }
+      if (!starts.length) push(t0, t1, 'medium');
+      else if (t1 - at > .8) push(at, t1, 'medium');
+      continue;
+    }
     if (b.kind === 'chorus' || b.kind === 'drop') {
       // a close-up on each chorus line, medium / side between lines of 2+ bars
       const starts = lines ? Array.from(lines.t).filter(t => t >= t0 - .01 && t < t1 - 1) : [];
@@ -89,13 +114,27 @@ export function damp(x, v, goal, omega, dt) {
 }
 
 /** The pose a shot wants at song time t: { pos, look } around the subject (position, facing). */
-export function shotPose(shot, t, subject, { portrait = false } = {}, out = { pos: new THREE.Vector3(), look: new THREE.Vector3() }) {
+export function shotPose(shot, t, subject, { portrait = false, tanHalf = 0 } = {}, out = { pos: new THREE.Vector3(), look: new THREE.Vector3() }) {
   const u = Math.min(1, Math.max(0, (t - shot.t0) / Math.max(.5, shot.t1 - shot.t0))), p = POSE[shot.kind](u);
   // (poses are written for a 1.62 m performer, Kotone: another height scales them)
-  const s = (subject.h || BODY_H) / BODY_H, k = (portrait ? (shot.kind === 'close' ? PORTRAIT.close : PORTRAIT.dist) : 1) * s, yaw = subject.facing + p.yaw * shot.side, d = p.d * k;
-  out.pos.set(subject.x + Math.sin(yaw) * d, subject.y + p.h * s, subject.z + Math.cos(yaw) * d);
-  out.look.set(subject.x, subject.y + (p.aim - (portrait && shot.kind !== 'close' ? .1 : 0)) * s, subject.z);
+  const s = (subject.h || BODY_H) / BODY_H, k = (portrait ? (shot.kind === 'close' ? PORTRAIT.close : PORTRAIT.dist) : 1) * s, yaw = subject.facing + p.yaw * shot.side;
+  // a group: every shot but a close-up aims at the formation's centre, back far enough for its width and depth (the
+  // camera a little higher in proportion, so the back row shows over the front)
+  const G = shot.kind !== 'close' ? subject.group : null, c = G || subject;
+  const d0 = p.d * k, d = G ? Math.max(d0, groupDist(G, portrait, tanHalf) * (shot.kind === 'wide' || shot.kind === 'reveal' ? 1.1 : 1) + d0 - POSE[shot.kind](0).d * k) : d0;
+  // (a group: half the shot's angle off the front and half a metre higher, so the back row shows between the front)
+  const hk = G ? Math.max(1, d / d0) ** .5 : 1, gy = G ? subject.facing + p.yaw * shot.side * .5 : yaw, up = G ? .5 : 0;
+  out.pos.set(c.x + Math.sin(gy) * d, subject.y + p.h * s * hk + up, c.z + Math.cos(gy) * d);
+  out.look.set(c.x, subject.y + (p.aim - (portrait && shot.kind !== 'close' ? .1 : 0)) * s, c.z);
   return out;
+}
+
+/** How far back a camera must stand to hold a group of width w and depth (m), a shoulder's margin each side. tanHalf:
+ *  tan of half the camera's view across (from its fov and aspect; without it about 50 deg landscape, 33 portrait). A
+ *  portrait frame may lose the outer shoulders (x1.1), or the group would be small. */
+export function groupDist(G, portrait = false, tanHalf = 0) {
+  const half = (G.w || 0) / 2 + .7, th = (tanHalf || (portrait ? .3 : .48)) * (portrait ? 1.1 : 1);
+  return half / th + (G.depth || 0) / 2;
 }
 
 export function createCameraMan(shots, { portrait = false } = {}) {
@@ -108,7 +147,8 @@ export function createCameraMan(shots, { portrait = false } = {}) {
     /** dt s, t the song time, subject { x, y, z, facing, h? (her height) }, cam a THREE camera, clear(from, to) -> 0..1 the free share of the way. */
     update(dt, t, subject, cam, clear = null) {
       const s = shotAt(shots, t);
-      shotPose(s, t, subject, { portrait }, want);
+      const th = cam.isPerspectiveCamera ? Math.tan(cam.fov * Math.PI / 360) * (cam.aspect || 1) : 0;
+      shotPose(s, t, subject, { portrait, tanHalf: th }, want);
       // walls and trees: come in front of what hides her
       if (clear) { const k = clear(want.look, want.pos); if (k < 1) want.pos.lerpVectors(want.look, want.pos, Math.max(.25, k - .05)); }
       if (s !== shot || !ready) { const cut = !ready || s.cut; shot = s; if (cut) { pos.copy(want.pos); look.copy(want.look); vp.set(0, 0, 0); vl.set(0, 0, 0); ready = true; } }

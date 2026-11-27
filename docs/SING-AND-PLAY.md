@@ -49,3 +49,8 @@ Builds on Kotone's song performance (`src/game/perform/`, docs/KOTONE-SHOW.md).
   2 Mbps); captions `.srt` saved beside it.
 - Frame time while performing, phone Low at 4x CPU: p50 18.7 / p95 40.2 ms; while recording 41.1 / 72 ms (headless
   Chromium encodes in software on the throttled CPU; a real phone's encoder is hardware, still to be measured on a device).
+
+## Group of 4 / 8 (2026-11-28)
+A flat **Solo / Group of 4 / Group of 8** row under the bar: Kotone performs with three girls (front row) or with all seven
+other VRoid samples in two rows; each row dances in unison from ONE animation evaluation. Phones (Low) offer Solo and 4.
+See docs/GROUP-PERFORMANCE.md.

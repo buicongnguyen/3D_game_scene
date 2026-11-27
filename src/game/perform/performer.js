@@ -52,6 +52,37 @@ export class SongAudio {
   stop() { if (this.el) { this.el.pause(); this.el.removeAttribute('src'); this.el.load?.(); this.el = null; } }
 }
 
+/** The moment at bar position `bar` and its weight (in and out over a beat; the song's last moment holds to the end). */
+export function momentWeight(P, bar) {
+  const M = P.moments; let best = null;
+  for (const mo of M) {
+    const beat = bar * P.meter, s = mo.b0 * P.meter, e = mo.b1 * P.meter, last = mo.b1 >= P.lastBar;
+    if (beat < s - 1e-6 || (!last && beat > e)) continue;
+    const f = mo.fade || PLAN.fadeBeats, w = Math.min(smooth((beat - s) / f), last ? 1 : smooth((e - beat) / f));
+    if (!best || w > best.w) best = { ...mo, w };
+  }
+  return best && best.w > 1e-3 ? best : null;
+}
+
+/**
+ * The dance of song time t on a mixer's actions (Map clip name -> AnimationAction, all playing at timeScale 0): the
+ * block's loop at the beat, a cross-fade from the block before over its first beat or two, a moment over both. A pure
+ * function of t (a skipped frame never puts the dancer off the beat). -> true while a cross-fade runs (foot-hold.js).
+ */
+export function poseDance(P, c, actions, songT) {
+  const t = Math.min(songT, P.end), b = c.beatAt(t), bar = b / P.meter, m = P.rate.m;
+  const i = blockAt(P, bar), blk = P.blocks[i], prev = P.blocks[i - 1];
+  const clipTime = (a, beat0) => { const L = a.getClip().duration; const x = Math.max(0, b - beat0) * m * .5; return ((x % L) + L) % L; };
+  const mo = momentWeight(P, bar), mw = mo ? mo.w : 0;
+  for (const a of actions.values()) a.setEffectiveWeight(0);
+  const x = prev ? smooth((b - blk.b0 * P.meter) / (blk.fade || PLAN.fadeBeats)) : 1;   // (two beats between stances that differ)
+  const ca = actions.get(blk.clip);
+  if (ca) { ca.time = clipTime(ca, blk.b0 * P.meter); ca.setEffectiveWeight((1 - mw) * x); }
+  if (prev && x < 1) { const pa = actions.get(prev.clip); if (pa && pa !== ca) { pa.time = clipTime(pa, prev.b0 * P.meter); pa.setEffectiveWeight((1 - mw) * (1 - x)); } }
+  if (mo) { const a = actions.get(mo.clip); if (a) { const L = a.getClip().duration; a.time = Math.min(L - 1e-3, Math.max(0, b - mo.b0 * P.meter) * m * .5); a.setEffectiveWeight(mw); } }
+  return Boolean((prev && x < 1) || (mo && mo.w < 1));
+}
+
 export class Performer {
   /**
    * npc: the performer (actors/npc.js: model, anim, face); clips: Map name -> AnimationClip (her pack, made ready for her
@@ -67,6 +98,7 @@ export class Performer {
     this.w = 0; this.g = 0; this.cur = ''; this.prevMic = ''; this.xfAt = -99;
     this.actions = new Map(); this.layer = null; this.mic = null;
     this.camera = null;
+    this.onPose = null;   // (dt, song time) after her dance pose, before the mic layer (game/perform/troupe.js)
   }
 
   get state() { const bar = this.clock.barAt(this.t), b = this.plan.blocks[blockAt(this.plan, bar)], m = momentAt(this.plan, bar), s = this.clock.sectionAt(this.t);
@@ -130,30 +162,11 @@ export class Performer {
   before() {
     if (!this.on) return;
     this.layer?.restore(); this.feet?.restore();
-    const P = this.plan, c = this.clock, t = Math.min(this.t, P.end), b = c.beatAt(t), bar = b / P.meter, m = P.rate.m;
-    const i = blockAt(P, bar), blk = P.blocks[i], prev = P.blocks[i - 1];
-    const clipTime = (a, beat0) => { const L = a.getClip().duration; const x = Math.max(0, b - beat0) * m * .5; return ((x % L) + L) % L; };
-    const mo = this.momentNow(bar), mw = mo ? mo.w : 0;
-    for (const a of this.actions.values()) a.setEffectiveWeight(0);
-    const x = prev ? smooth((b - blk.b0 * P.meter) / (blk.fade || PLAN.fadeBeats)) : 1;   // (two beats between stances that differ)
-    const ca = this.actions.get(blk.clip);
-    if (ca) { ca.time = clipTime(ca, blk.b0 * P.meter); ca.setEffectiveWeight((1 - mw) * x); }
-    if (prev && x < 1) { const pa = this.actions.get(prev.clip); if (pa && pa !== ca) { pa.time = clipTime(pa, prev.b0 * P.meter); pa.setEffectiveWeight((1 - mw) * (1 - x)); } }
-    this.fading = (prev && x < 1) || (mo && mo.w < 1);
-    if (mo) { const a = this.actions.get(mo.clip); if (a) { const L = a.getClip().duration; a.time = Math.min(L - 1e-3, Math.max(0, b - mo.b0 * P.meter) * m * .5); a.setEffectiveWeight(mw); } }
+    this.fading = poseDance(this.plan, this.clock, this.actions, this.t);
   }
 
   /** The moment now and its weight (in and out over a beat; the song's last moment holds to the end). */
-  momentNow(bar) {
-    const P = this.plan, M = P.moments; let best = null;
-    for (const mo of M) {
-      const beat = bar * P.meter, s = mo.b0 * P.meter, e = mo.b1 * P.meter, last = mo.b1 >= P.lastBar;
-      if (beat < s - 1e-6 || (!last && beat > e)) continue;
-      const f = mo.fade || PLAN.fadeBeats, w = Math.min(smooth((beat - s) / f), last ? 1 : smooth((e - beat) / f));
-      if (!best || w > best.w) best = { ...mo, w };
-    }
-    return best && best.w > 1e-3 ? best : null;
-  }
+  momentNow(bar) { return momentWeight(this.plan, bar); }
 
   /** After the mixer: the mic layer over the dance, the mic in her hand, her eyes. */
   after(dt) {
@@ -161,6 +174,7 @@ export class Performer {
     const P = this.plan, t = Math.min(this.t, P.end), c = this.clock, lines = P.lines;
     const want = lines ? leadTarget(lines, t) : 0;
     this.feet?.update(dt, this.fading);   // planted feet held through a cross-fade (foot-hold.js)
+    this.onPose?.(dt, t);                  // her dance pose, before the mic: a group's front row copies it (troupe.js)
     this.w = follow(this.w, want, dt, SINGING.up, SINGING.down);
     this.g = micShown(P, t);
     this.mic?.show(this.g);

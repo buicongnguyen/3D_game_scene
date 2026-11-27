@@ -43,3 +43,24 @@ export function gameEnv(g) {
     solid: (x, z, r, footY, h) => { const c = g.colliders.resolve(x, z, r, footY, h, .35); return !!c.hit; },
   };
 }
+
+/** The group's places (content/troupe.js): every member needs the ground under it level with hers, dry and clear. */
+export const GROUP_ROOM = Object.freeze({ rise: .35, clear: .45 });
+/**
+ * p: her feet, facing: her turn (rad), spots: [{ x, z }] the members' places in her frame (x across, z forward), env as
+ * canPerform. -> { ok: true } or { ok: false, reason: 'group' | 'water' }
+ */
+export function canGroup(p, facing, spots, env) {
+  const s = Math.sin(facing), c = Math.cos(facing), h0 = env.room ? p.y : env.heightAt(p.x, p.z);
+  for (const o of spots) {
+    const x = p.x + o.x * c + o.z * s, z = p.z - o.x * s + o.z * c;
+    if (env.room) { const r = env.room; if (x - r.min.x < GROUP_ROOM.clear || r.max.x - x < GROUP_ROOM.clear || z - r.min.z < GROUP_ROOM.clear || r.max.z - z < GROUP_ROOM.clear) return { ok: false, reason: 'group' }; }
+    else {
+      const h = env.heightAt(x, z);
+      if (h < env.waterY + FLAT.waterGap) return { ok: false, reason: 'water' };
+      if (Math.abs(h - h0) > GROUP_ROOM.rise) return { ok: false, reason: 'group' };
+    }
+    if (env.solid(x, z, GROUP_ROOM.clear, h0, FLAT.height)) return { ok: false, reason: 'group' };
+  }
+  return { ok: true };
+}

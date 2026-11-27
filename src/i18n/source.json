@@ -18398,6 +18398,30 @@
   ]
  },
  {
+  "s": "Not enough room for the group here",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Solo",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Group of 4",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Group of 8",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Kotone couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18428,6 +18452,12 @@
   ]
  },
  {
+  "s": "Group",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Stop",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18441,6 +18471,18 @@
  },
  {
   "s": "No songs yet",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Getting the group ready…",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "The group couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]

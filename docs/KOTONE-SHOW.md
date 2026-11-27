@@ -103,3 +103,8 @@ the same at both heights, so the resize was not it). Fixes:
 
 ## Numbers
 See the commit message and the report: pack sizes, frame times near her on Low at 4x CPU, contact sheets.
+
+## Group performance
+In Sing & Play she can lead a group of 4 or 8 (docs/GROUP-PERFORMANCE.md): the front row copies her dance pose (taken
+after her foot hold, before her mic layer: `Performer.onPose`), the back row runs a second routine (`planBacking`).
+The station evening show stays solo.

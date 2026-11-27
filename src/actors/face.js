@@ -62,8 +62,9 @@ export class Face {
    * `clock()` -> the song's time in seconds (an <audio> element's currentTime, or a WebAudio start time). sing(null) stops.
    * open drives mouthA, pucker mouthO.
    */
-  sing(track, clock) {
-    this.song = track && clock ? { track, clock, words: track.lines ? track.lines.flatMap(l => l.words?.length ? l.words : [{ t: l.t, e: l.e }]) : null, wi: 0 } : null;
+  sing(track, clock, when = null) {
+    // when(t) -> bool: sing only then (a group's members sing along on the choruses: game/perform/troupe.js)
+    this.song = track && clock ? { track, clock, when, words: track.lines ? track.lines.flatMap(l => l.words?.length ? l.words : [{ t: l.t, e: l.e }]) : null, wi: 0 } : null;
     if (!this.song) this.talkT = 0;
   }
 
@@ -72,7 +73,7 @@ export class Face {
     const s = this.song;
     if (!s) return null;
     const t = s.clock(), tr = s.track;
-    if (!(t >= 0)) return [0, 0];
+    if (!(t >= 0) || (s.when && !s.when(t))) return [0, 0];
     if (tr.open) {
       const i = Math.min(tr.open.length - 1, Math.max(0, t * (tr.fps || 25))), a = Math.floor(i), b = Math.min(tr.open.length - 1, a + 1), f = i - a, k = 1 / (tr.scale || 99);
       const at = arr => (arr ? (arr[a] * (1 - f) + arr[b] * f) * k : 0);

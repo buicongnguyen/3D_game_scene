@@ -129,6 +129,39 @@ export function planPerformance(song = {}, clock, lyrics = null) {
   return { seed, kind, rate, meter, blockBars, lastBar, end, lines, spans, blocks, moments, summary };
 }
 
+/**
+ * A second routine for the same song (the back row of a group, game/perform/troupe.js): the lead plan's blocks (the same
+ * bar lines, tiers and sections, so both rows change together), a different dance in every block where the pool allows
+ * (never the lead's dance of that block, never the same twice in a row, stances matched like the lead's), free of the
+ * singer's limits (the back row does not hold the mic: bigger dances under the sung verses, one tier up from calm).
+ * noContact: no hand-contact dance or moment (claps, the heart; a follower with narrower shoulders would put its hands
+ * through each other). Moments: the lead's, without the mic (a clap hop only when contact is allowed).
+ */
+export function planBacking(lead, { salt = 'back', noContact = false } = {}) {
+  const seed = hash(lead.seed, salt), blocks = [];
+  let prev = null;
+  for (const b of lead.blocks) {
+    const tier = b.sung && b.tier === 'calm' ? 'mid' : b.tier;
+    let pool = dancePool(tier, { chorus: b.kind === 'chorus' || b.kind === 'drop' }).filter(d => !noContact || !d.contact);
+    if (!pool.length) pool = CLUB_LOOPS.filter(d => !noContact || !d.contact);
+    const others = pool.filter(d => d.clip !== b.clip && d.clip !== prev); if (others.length) pool = others;
+    if (prev && pool.length > 2) { const near = pool.filter(d => stanceGap(prev, d.clip) <= PLAN.sameStance);
+      pool = near.length >= 2 ? near : pool.slice().sort((x, y) => stanceGap(prev, x.clip) - stanceGap(prev, y.clip) || (x.clip < y.clip ? -1 : 1)).slice(0, 3); }
+    const d = pool[hash(seed, b.b0, tier) % pool.length];
+    const fade = prev && stanceGap(prev, d.clip) > PLAN.sameStance ? PLAN.longFadeBeats : PLAN.fadeBeats;
+    blocks.push({ ...b, clip: d.clip, tier, mic: false, fade });
+    prev = d.clip;
+  }
+  const moments = [];
+  for (const m of lead.moments) {
+    const clip = MOMENTS[m.id]?.[0]; if (!clip || (noContact && m.id === 'hop')) continue;
+    const under = blocks.findLast(x => x.b0 <= m.b0)?.clip;
+    moments.push({ ...m, clip, mic: false, fade: under && stanceGap(under, clip) > PLAN.sameStance ? PLAN.longFadeBeats : PLAN.fadeBeats });
+  }
+  return { ...lead, seed, blocks, moments, spans: [], backing: true,
+    summary: blocks.map(b => `${b.t0.toFixed(1)}s ${b.kind} ${b.clip} fade ${b.fade}`).concat(moments.map(m => `${m.t0.toFixed(1)}s moment ${m.clip}`)).sort((a, b) => parseFloat(a) - parseFloat(b)) };
+}
+
 /** The block and moment at bar position `bar` (continuous). */
 export function blockAt(plan, bar) {
   const B = plan.blocks; let lo = 0, hi = B.length - 1, i = 0;
