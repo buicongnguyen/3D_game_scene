@@ -4,22 +4,22 @@
  "limits": {
   "low:kawabe": {
    "draws": 145,
-   "tris": 668464,
+   "tris": 602015,
    "visible": 824
   },
   "low:takamori": {
-   "draws": 156,
-   "tris": 668386,
-   "visible": 815
+   "draws": 155,
+   "tris": 594041,
+   "visible": 809
   },
   "low:station": {
    "draws": 116,
-   "tris": 519575,
+   "tris": 453126,
    "visible": 657
   },
   "low:meadow": {
    "draws": 175,
-   "tris": 790743,
+   "tris": 724294,
    "visible": 971
   },
   "high:kawabe": {
