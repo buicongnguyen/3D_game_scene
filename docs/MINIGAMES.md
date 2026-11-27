@@ -1,5 +1,8 @@
 # Starline mini games: design
 
+> **Removed (2026-11):** the "Dew webs at dawn" game, the spiders and webs on the map, and the Garden spider friend were
+> taken out at the owner's request. Passages about them below are history: do not rebuild them.
+
 Companion to `docs/FARMING-PLAN.md`, which covers trees, garden, Harvest board and build phases. This document covers
 the **ten mini games**: why they exist, what they share, and how each one plays.
 

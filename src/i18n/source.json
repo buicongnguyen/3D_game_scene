@@ -2524,24 +2524,6 @@
   ]
  },
  {
-  "s": "Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.",
-  "ctx": [
-   "dialogue friend_spider, spoken by Tamo"
-  ]
- },
- {
-  "s": "The spider plucks one thread, and the whole web shivers like a little harp.",
-  "ctx": [
-   "dialogue friend_spider, spoken by narrator"
-  ]
- },
- {
-  "s": "The spider plucks one thread, and the whole web shivers like a little harp. Mika decides that was a wave.",
-  "ctx": [
-   "dialogue friend_spider_solo, spoken by narrator"
-  ]
- },
- {
   "s": "The ladybug climbs Mika's finger all the way to the tip, thinks it over, and flies off somewhere better.",
   "ctx": [
    "dialogue friend_ladybug, spoken by narrator"
@@ -2828,30 +2810,6 @@
   "s": "Then throw it gently and level. Three throws, the best one counts. And we pick them all up after.",
   "ctx": [
    "dialogue trick_planes_intro, spoken by Rin"
-  ]
- },
- {
-  "s": "Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Rin"
-  ]
- },
- {
-  "s": "Hundreds of spiders. At sunrise. You keep making this place sound worse.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Mika"
-  ]
- },
- {
-  "s": "You can't even see the webs by day. At dawn the dew lights them up like strings of glass beads.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Rin"
-  ]
- },
- {
-  "s": "Keep the sun behind you and look low. Take pictures. Don't touch: that's somebody's house.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Rin"
   ]
  },
  {
@@ -4040,30 +3998,6 @@
  },
  {
   "s": "In the long grass round the villages, on summer and autumn evenings. Follow the chirping, and walk softly.",
-  "ctx": [
-   "animal friend: where to find it"
-  ]
- },
- {
-  "s": "Garden spider",
-  "ctx": [
-   "animal friend name"
-  ]
- },
- {
-  "s": "Watch the spider",
-  "ctx": [
-   "interaction prompt shown next to the E key"
-  ]
- },
- {
-  "s": "Mends her web every evening and lets the morning dew decorate it. Eats the mosquitoes, so everybody likes her.",
-  "ctx": [
-   "animal friend: description"
-  ]
- },
- {
-  "s": "On her web under the eaves in Kawabe and Takamori, on the fences, and between trees in the forest. Not in winter.",
   "ctx": [
    "animal friend: where to find it"
   ]
@@ -5976,30 +5910,6 @@
   "s": "And throw it as if you were handing it to the wind: gently and level. Three throws, and the best one counts.",
   "ctx": [
    "dialogue trick_planes_intro, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Up before the sun tomorrow, Mi-chan. The forest edge on the west trail wears its jewellery at dawn.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Jewellery. In a forest. At five in the morning.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Mika"
-  ]
- },
- {
-  "s": "Spider webs, strung with dew. By day you'd walk straight past them. At sunrise every thread shines.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Grandma Sora"
-  ]
- },
- {
-  "s": "Keep the sun at your back and look low between the stems. Take your pictures, and leave each one be.",
-  "ctx": [
-   "dialogue trick_dew_intro, spoken by Grandma Sora"
   ]
  },
  {
@@ -14236,42 +14146,6 @@
   ]
  },
  {
-  "s": "Dew webs at dawn",
-  "ctx": [
-   "countryside trick name (journal, sign prompt, results card)"
-  ]
- },
- {
-  "s": "the forest edge on the west trail, north of the mill",
-  "ctx": [
-   "where a countryside trick is played (journal)"
-  ]
- },
- {
-  "s": "Spring to autumn, at dawn",
-  "ctx": [
-   "when a countryside trick can be played (journal, sign)"
-  ]
- },
- {
-  "s": "Get up at sunrise after a cool, still night. Walk slowly along a hedge with the sun behind you and look low between the stems.",
-  "ctx": [
-   "countryside trick: how to do it for real (journal card, 1-2 short sentences for kids)"
-  ]
- },
- {
-  "s": "Webs are almost invisible until dew or mist hangs tiny drops on every thread. Each drop shines like a little lens.",
-  "ctx": [
-   "countryside trick: why it works, a true fun fact for kids"
-  ]
- },
- {
-  "s": "Look, don't touch: a web is a spider's home and its dinner table.",
-  "ctx": [
-   "countryside trick: safety line for kids"
-  ]
- },
- {
   "s": "Sweet potato roast",
   "ctx": [
    "countryside trick name (journal, sign prompt, results card)"
@@ -16067,12 +15941,6 @@
  },
  {
   "s": "Fold a paper plane and throw it far down the hill.",
-  "ctx": [
-   "UI (src/content/minigames.js)"
-  ]
- },
- {
-  "s": "Find the dew-covered spider webs before the sun dries them.",
   "ctx": [
    "UI (src/content/minigames.js)"
   ]
@@ -20363,126 +20231,6 @@
   "s": "K-pop dancers practise the same moves again and again in front of a mirror. At a show the crowd sings a fan chant back and waves light sticks on the beat.",
   "ctx": [
    "UI (src/game/tricks/dance.js)"
-  ]
- },
- {
-  "s": "Photo: {act}",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Sun behind you!",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Perfect spot! {act}",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Six webs hide between the dry stems. Keep the sun behind you and they light up. Then press {act} for a photo.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "{n} dew webs, and old ones with no dew: leave those! In line with the sun, a photo is perfect.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Find the {n} dew webs. Sun behind you, then {act} for a photo.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Part 2: the sun is climbing! The webs on the sunny side dry first.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "A web has dried away. Hurry to the ones still in the shade!",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "An old web: no dew",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "No dew on that one: an old, empty web. Look for the sparkle first!",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Web {n} of {total}",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Got it! Every drop is a tiny lens. Five more to find.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "All six! By noon the dew is gone and they vanish again.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Every web found! By noon the dew is gone and they vanish again.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "A perfect photo! Right in line with the sun.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "Too faint from this side. Walk round until the sun is behind you.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "No web close enough. Look for a glint low between two dry stems.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "There: something glinted. Go and look, with the sun at your back.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "The sun is up and the dew is drying. The rest will keep for another dawn.",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
-  ]
- },
- {
-  "s": "every web found",
-  "ctx": [
-   "UI (src/game/tricks/dew.js)"
   ]
  },
  {
@@ -28263,18 +28011,6 @@
  },
  {
   "s": "Gentle and level flies furthest.",
-  "ctx": [
-   "UI (src/ui/howto.js)"
-  ]
- },
- {
-  "s": "Walk round until the sun is behind you.",
-  "ctx": [
-   "UI (src/ui/howto.js)"
-  ]
- },
- {
-  "s": "The web shines? Take a photo.",
   "ctx": [
    "UI (src/ui/howto.js)"
   ]

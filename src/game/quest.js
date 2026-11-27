@@ -65,6 +65,8 @@ export function migrate(saved) {
   s.yard = cleanYard(s.yard);
   s.workshop = cleanWorkshop(s.workshop);
   s.stamps = cleanStamps(s.stamps);
+  // the garden spider and its Dew webs game were removed: an old save must not count it among the friends
+  if ('spider' in s.friends) { const { spider, ...rest } = s.friends; s.friends = rest; }
   // The Star Train ride is one uninterrupted scene: a save taken during it resumes at boarding.
   if (s.step === 'c4.ride') { s.step = 'c4.board'; s.inv = { ...s.inv, lanterns: 0 }; }
   s.v = SAVE_VERSION;

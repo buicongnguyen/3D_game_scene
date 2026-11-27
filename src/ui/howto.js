@@ -60,10 +60,6 @@ export const HOWTO = {
     { in: 'hold', pic: 'fill', text: N_('Hold to wind up. Let go to throw!') },
     { in: null, pic: 'glide', text: N_('Gentle and level flies furthest.') },
   ],
-  'trick:dew': [
-    { in: 'move', pic: 'walk', text: N_('Walk round until the sun is behind you.') },
-    { in: 'act', pic: 'camera', text: N_('The web shines? Take a photo.') },
-  ],
   'trick:beetles': [
     { in: 'move', pic: 'walk', text: N_('Walk up to a tree and read its name.') },
     { in: 'act', pic: 'mark', text: N_('Press when the marker is in the green.') },

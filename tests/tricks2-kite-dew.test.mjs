@@ -9,7 +9,6 @@ import { sunDirection } from '../src/world/seasons.js';
 import { PADDIES, BUILDINGS } from '../src/world/layout.js';
 import { FARM } from '../src/content/farm.js';
 import { KITE, rng, sweepAt, buildQuality, buildGrade, buildResult, makeWind, gustAt, windPush, newFlight, stepFlight, kiteScore, simulateFlight, flightPlan, windCentre, ringAt, kiteBot } from '../src/game/tricks/rules-kite.js';
-import { DEW, sunSide, webVisibility, photoCheck, webSpots, nearestWeb, dewScore, DEW_LEVELS, dewLevel, photoPerfect, dryTimes, dryness } from '../src/game/tricks/rules-dew.js';
 import { LEVELS, levelSpec } from '../src/content/levels.js';
 
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) <= eps;
@@ -17,16 +16,14 @@ const near = (a, b, eps = 1e-9) => Math.abs(a - b) <= eps;
 // ------------------------------------------------------------------------------------------------ data and places
 test('phase 2 tricks: seasons, hours and room to play', () => {
   const ids = TRICKS.map(t => t.id);
-  for (const id of ['kite', 'dew', 'roast', 'beetles']) assert.ok(ids.includes(id), id);          // (later tricks may follow: new rows need no edit here)
-  assert.ok(ids.indexOf('kite') < ids.indexOf('dew') && ids.indexOf('dew') < ids.indexOf('roast') && ids.indexOf('roast') < ids.indexOf('beetles'));
+  for (const id of ['kite', 'roast', 'beetles']) assert.ok(ids.includes(id), id);          // (later tricks may follow: new rows need no edit here)
+  assert.ok(ids.indexOf('kite') < ids.indexOf('roast') && ids.indexOf('roast') < ids.indexOf('beetles'));
   assert.deepEqual(TRICK.kite.seasons, ['autumn', 'winter']);
-  assert.deepEqual(TRICK.dew.seasons, ['spring', 'summer', 'autumn']);
   assert.deepEqual(TRICK.roast.seasons, ['autumn']);
   assert.deepEqual(TRICK.beetles.seasons, ['summer']);
-  // a running clock: kites by day, dew webs only at dawn, the roast in the afternoon, the sap trap is set at dusk
+  // a running clock: kites by day, the roast in the afternoon, the sap trap is set at dusk
   assert.ok(trickOpen(TRICK.kite, { season: 'autumn', hour: 12, frozen: false }) && !trickOpen(TRICK.kite, { season: 'autumn', hour: 21, frozen: false }));
-  assert.ok(trickOpen(TRICK.dew, { season: 'spring', hour: 6, frozen: false }) && !trickOpen(TRICK.dew, { season: 'spring', hour: 9, frozen: false }));
-  assert.ok(!trickOpen(TRICK.dew, { season: 'winter', hour: 6 }) && !trickOpen(TRICK.kite, { season: 'summer', hour: 12 }));
+  assert.ok(!trickOpen(TRICK.kite, { season: 'summer', hour: 12 }));
   assert.ok(trickOpen(TRICK.roast, { season: 'autumn', hour: 16, frozen: false }) && trickOpen(TRICK.beetles, { season: 'summer', hour: 18, frozen: false }));
   assert.match(TRICK.roast.safety, /Fires are for grown-ups/);
   // no two trick signs stand on top of each other, on a paddy, in a building, or where the farm animals graze
@@ -38,21 +35,10 @@ test('phase 2 tricks: seasons, hours and room to play', () => {
   assert.ok(PADDIES.length);
 });
 
-test('the kite meadow and the dew webs\' ring are walkable ground', () => {
+test('the kite meadow is walkable ground', () => {
   // the kite: Mika stands 7 m downwind of the sign (kite.js STAND / WIND_HEADING), the camera up to 15 m behind her
   const k = TRICK.kite.place, h = 0.3;
   for (const along of [-8, -4, 0, 7]) assert.deepEqual(placeProblems(k.x + Math.sin(h) * along, k.z + Math.cos(h) * along), [], `kite ${along}`);
-  // dew: most of the ring round the sign must be good ground, so six webs always find a place
-  const d = TRICK.dew.place;
-  const ok = (x, z) => !placeProblems(d.x + x, d.z + z).length;
-  for (let seed = 1; seed <= 40; seed++) assert.equal(webSpots(seed, DEW.webs, ok).length, DEW.webs, `seed ${seed}`);
-  // ...and the bigger patches of the Normal and Difficult levels hold all their webs too (the old ones included)
-  for (const [l, L] of Object.entries(DEW_LEVELS)) {
-    for (let seed = 1; seed <= 40; seed++) {
-      const s = webSpots(seed, L.webs + L.decoys, ok, { rMax: L.rMax, gap: L.rMax > DEW.rMax ? 5 : DEW.gap });
-      assert.equal(s.length, L.webs + L.decoys, `${l} seed ${seed}`);
-    }
-  }
 });
 
 // ------------------------------------------------------------------------------------------------ kite: the build
@@ -173,124 +159,8 @@ test('kite flight: the grass, the relaunch, the tug, the tail and the window', (
   assert.equal(kiteScore(0, null), 0);
 });
 
-// ------------------------------------------------------------------------------------------------ dew webs
-test('dew webs show only up close with the sun behind Mika', () => {
-  const [sx, sz] = [1, 0];                                   // the sun in the east
-  assert.equal(sunSide(3, 0, sx, sz), 1);
-  assert.equal(sunSide(-3, 0, sx, sz), 0);
-  assert.ok(sunSide(0, 3, sx, sz) > 0 && sunSide(0, 3, sx, sz) < 0.5);
-  // close, on the sunward side: bright. Same distance on the shaded side: nearly nothing
-  assert.ok(webVisibility(2.5, 0, sx, sz) > 0.95);
-  assert.ok(webVisibility(-2.5, 0, sx, sz) < 0.15);
-  // far away it is a hair-thin glint whatever the side, and nothing at all beyond that
-  assert.ok(webVisibility(14, 0, sx, sz) <= DEW.faint + 1e-9 && webVisibility(14, 0, sx, sz) > 0);
-  assert.equal(webVisibility(30, 0, sx, sz), 0);
-  // it fades in smoothly on the way (no pop)
-  let last = 0;
-  for (let d = 12; d >= 2; d -= 0.5) { const v = webVisibility(d, 0, sx, sz); assert.ok(v >= last - 1e-9 && v - last < 0.2, `at ${d} m`); last = v; }
-  // the guided try sees further
-  assert.ok(webVisibility(11, 0, sx, sz, DEW.farFirst) > webVisibility(11, 0, sx, sz) + 0.2);
-  assert.equal(photoCheck(2, 0, sx, sz), 'ok');
-  assert.equal(photoCheck(-2, 0, sx, sz), 'side');
-  assert.equal(photoCheck(6, 0, sx, sz), 'far');
-  // the real dawn sun (east, a little south) works the same way in every dew season
-  for (const season of TRICK.dew.seasons) {
-    const s = sunDirection(6, season), l = Math.hypot(s.x, s.z);
-    assert.ok(s.x / l > 0.8, 'the dawn sun is in the east');
-    assert.equal(photoCheck(s.x / l * 2.2, s.z / l * 2.2, s.x / l, s.z / l), 'ok');
-  }
-});
-
-test('dew web spots are seeded, spread out and respect the ground', () => {
-  const a = webSpots(42), b = webSpots(42);
-  assert.deepEqual(a, b);
-  assert.notDeepEqual(a, webSpots(43));
-  for (let seed = 1; seed <= 50; seed++) {
-    const s = webSpots(seed);
-    assert.equal(s.length, DEW.webs);
-    for (const w of s) {
-      const r = Math.hypot(w.x, w.z);
-      assert.ok(r >= DEW.rMin - 1e-9 && r <= DEW.rMax + 1e-9 && w.h >= 0.75 && w.h <= 1.2);
-      for (const o of s) if (o !== w) assert.ok(Math.hypot(o.x - w.x, o.z - w.z) >= DEW.gap);
-    }
-    // they lie all round the sign, not in one corner
-    const quads = new Set(s.map(w => (w.x > 0 ? 1 : 0) + (w.z > 0 ? 2 : 0)));
-    assert.ok(quads.size >= 3, `seed ${seed}`);
-  }
-  // blocked ground is never used; with no room at all it gives up quietly
-  const east = webSpots(9, DEW.webs, x => x > 0);
-  assert.ok(east.length >= 3 && east.every(w => w.x > 0));
-  assert.deepEqual(webSpots(9, DEW.webs, () => false), []);
-});
-
-test('dew round from a recorded walk: find, wrong side, photograph, score', () => {
-  const sun = [1, 0];
-  const webs = webSpots(7).map(w => ({ ...w, found: false }));
-  // recorded: Mika walks to each web's shaded side first (no photo), then round to the sunny side (photo)
-  let seconds = 0, found = 0;
-  const log = [];
-  for (let k = 0; k < 4; k++) {
-    const i = nearestWeb(webs, k ? webs[log[k - 1]].x + 2.2 : 0, k ? webs[log[k - 1]].z : 0);
-    const w = webs[i];
-    assert.equal(photoCheck(-2.2, 0.3, ...sun), 'side');
-    assert.equal(photoCheck(2.2, 0.3, ...sun), 'ok');
-    w.found = true; found++; seconds += 9; log.push(i);
-  }
-  assert.equal(new Set(log).size, 4, 'a found web is never offered again');
-  assert.equal(nearestWeb(webs.map(w => ({ ...w, found: true })), 0, 0), -1);
-  assert.equal(dewScore({ found, total: 6, seconds, length: 90 }), 40);
-  // all six: 60 points and a point for every 3 s left
-  assert.equal(dewScore({ found: 6, total: 6, seconds: 54, length: 90 }), 72);
-  // the stars of every level: half the webs are one star, all of them two, all of them with time to spare three
-  for (const l of LEVELS) {
-    const L = dewLevel(l), { stars, length } = levelSpec(TRICK.dew, l), n = L.webs;
-    assert.ok(starsFor(dewScore({ found: Math.ceil(n / 2), total: n, seconds: length, length, perfect: L.grade ? 2 : 0 }), stars) >= 1, `${l}: half the webs`);
-    assert.equal(starsFor(dewScore({ found: n - 1, total: n, seconds: length, length }), stars), l === 'hard' ? 1 : 2, `${l}: all but one`);
-    const slow = dewScore({ found: n, total: n, seconds: length - 2, length, perfect: 0 });
-    assert.equal(starsFor(slow, stars), l === 'hard' ? 1 : 2, `${l}: every web at the last moment (${slow})`);
-    const good = dewScore({ found: n, total: n, seconds: length * 0.72, length, perfect: L.grade ? n - 2 : 0 });
-    assert.equal(starsFor(good, stars), 3, `${l}: every web with time to spare (${good})`);
-    // Difficult: plain photos of every web are two stars; three want most of them perfect and no old web
-    if (L.grade) {
-      assert.equal(starsFor(dewScore({ found: n, total: n, seconds: length * 0.8, length, perfect: 1 }), stars), 2);
-      assert.ok(dewScore({ found: n, total: n, seconds: length * 0.72, length, perfect: n - 2, decoys: 2 }) < good);
-    }
-  }
-  assert.equal(dewScore({ found: 5, total: 6, seconds: 10, length: 90 }), 50, 'no speed bonus before the last web');
-  assert.equal(dewScore({}), 0);
-  assert.equal(dewScore({ found: 1, total: 10, decoys: 3 }), 0, 'never under zero');
-  assert.equal(dewScore({ found: 4, total: 10, perfect: 3, decoys: 1 }), 40 + 15 - 5);
-});
-
-test('dew levels: more webs over a bigger patch, webs that dry (the sunny side first), old webs and perfect photos', () => {
-  const { first, easy, normal, hard } = DEW_LEVELS;
-  assert.equal(dewLevel('hard', true), first);
-  assert.ok(easy.webs < first.webs && first.webs < normal.webs && normal.webs < hard.webs);
-  assert.ok(hard.webs + hard.decoys <= DEW.maxWebs && easy.rMax < normal.rMax && normal.rMax <= hard.rMax);
-  assert.ok(easy.far > normal.far && !easy.dry && normal.dry > 0.3 && hard.dry > 0.3 && !normal.decoys && hard.decoys === 2 && hard.grade && !normal.grade);
-  // drying: never on Easy; on Normal the sunny side goes first, one web after the other, the last as the round ends
-  const webs = [{ x: 6, z: 0 }, { x: -8, z: 2 }, { x: 0, z: 9 }, { x: 12, z: -3 }, { x: 3, z: 3, decoy: true }];
-  assert.ok(dryTimes(webs, 1, 0, 110, 0).every(t => t === Infinity));
-  const dry = dryTimes(webs, 1, 0, 110, 0.5);
-  assert.equal(dry[4], Infinity, 'an old web is dry already');
-  assert.ok(dry[3] < dry[0] && dry[0] < dry[2] && dry[2] < dry[1], `sunny side first: ${dry}`);
-  assert.ok(dry[3] > 55 && Math.abs(dry[1] - 110) < 1e-9);
-  assert.equal(dryness(10, dry[3]), 0);
-  assert.ok(dryness(dry[3] - DEW.dryWarn / 2, dry[3]) > 0.4 && dryness(dry[3] - DEW.dryWarn / 2, dry[3]) < 0.6, 'its drops fade first: a warning');
-  assert.equal(dryness(dry[3] + 1, dry[3]), 1);
-  assert.equal(dryness(500, Infinity), 0);
-  // a dried web is not offered any more
-  assert.equal(nearestWeb([{ x: 1, z: 0, dry: true }, { x: 5, z: 0 }], 0, 0), 1);
-  // a perfect photo: in line with the sun and at the right distance
-  assert.ok(photoPerfect(2.2, 0, 1, 0));
-  assert.ok(photoPerfect(2.2, 0.6, 1, 0) && !photoPerfect(2.2, 1.6, 1, 0), 'a little off the line is fine, well off it is not');
-  assert.ok(!photoPerfect(1.2, 0, 1, 0) && !photoPerfect(3.2, 0, 1, 0), 'too close, too far');
-  assert.ok(!photoPerfect(-2.2, 0, 1, 0));
-  assert.equal(photoCheck(2.2, 1.6, 1, 0), 'ok', '...though it is still a photo');
-});
-
-test('kite and dew modules: play() and no rule code in three.js land', async () => {
-  for (const id of ['kite', 'dew']) {
+test('kite module: play() and no rule code in three.js land', async () => {
+  for (const id of ['kite']) {
     const m = (await import(`../src/game/tricks/${id}.js`)).default;
     assert.equal(m.id, id);
     assert.equal(typeof m.play, 'function');

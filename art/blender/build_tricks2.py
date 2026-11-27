@@ -4,7 +4,7 @@ blender -b --factory-startup --python-exit-code 1 --python art/blender/build_tri
     [--review <dir>]   also writes sweet-potato-raw / sweet-potato-roasted there (one variant each, for review renders)
 blender -b --factory-startup --python art/blender/build_tricks2.py -- --icons
     -> .tools/review/trick-scenes/trick-{kite,dew,roast,beetles}.glb (review-only scenes), then render them with
-       render_icons.py -- --models .tools/review/trick-scenes trick-kite trick-dew trick-roast trick-beetles
+       render_icons.py -- --models .tools/review/trick-scenes trick-kite trick-roast trick-beetles
        and the item icons with render_icons.py -- beetle-rhino beetle-stag sweet-potato
 Afterwards: node art/blender/validate_glb.mjs   (flipped faces, z-fighting, openings, skin, loop seams, skating feet)
 
@@ -21,7 +21,6 @@ Conventions as build_critters.py / build_tricks.py (real size, colour painted in
   straw-pile    1.1 m heap. Root 'straw' (an empty) with two children: 'straw_pile' (the heap and its sheaves; the
                 game shrinks this node as the fire burns) and 'embers' (material 'Straw embers'), a bed of coals on
                 the ground under the heap that is left when the straw has gone.
-The dew web is build_critters.py's 'spider-web' (its drops are the child node 'dew').
 """
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +28,7 @@ from kit import *  # noqa: F401,F403
 from kit import ROOT
 from rig import build_armature, clip, export_rigged
 from animal_kit import S, C, pulse, smooth, lerp, tri_count
-from build_critters import (paint, bake_paint, fan, wing, stick, ell_patch, rot, Parts, finish, web_parts,
+from build_critters import (paint, bake_paint, fan, wing, stick, ell_patch, rot, Parts, finish,
                             V, sx, Xv, Yv, Zv)
 from mathutils import Matrix, Quaternion, Euler
 
@@ -811,44 +810,6 @@ def scene_kite():
     finish_static('trick-kite', parts, 'trick_kite', ao=dict(rays=16, distance=.03, strength=.25), out_dir=SCENES)
 
 
-def scene_dew():
-    """A dew-hung web at sunrise: a round dawn-sky medallion (deep blue above, so the white silk stands off it),
-    the sun coming up, fat silk and a few big bright drops with a white glint each."""
-    reset()
-    sky = mat('Dawn sky', '#ffffff', rough=.8)
-    sun_m = mat('Dawn sun', '#ffd23a', emit=.9, emit_color='#ffb81f')
-    twig = mat('Twig', '#8a5a33', rough=.7)
-    leaf = mat('Leaf', '#4fbf3f', rough=.5, double=True)
-    glint = mat('Glint', '#ffffff', emit=1.2, emit_color='#ffffff')
-    mat('Web dew', '#58c8ff', rough=.05, emit=.7, emit_color='#8fe0ff')     # bluer drops than the model's, to read on white silk
-    disc = cyl('Sky', .37, .02, (0, .03, -.01), sky, verts=36, rot=(math.radians(90), 0, 0))
-    lo, hi = srgb('#ff8a4e'), srgb('#2f6fd8')
-
-    def dawn(co):
-        t = smooth((co.z + .34) / .46)
-        return tuple(lerp(lo[k], hi[k], t) for k in range(3))
-    paint(disc, dawn)
-    parts = [disc]
-    parts.append(paint(sphere('Sun', (.12, .02, .12), (.0, .022, -.31), sun_m, seg=14, rings=6), 1.0))
-    web, d = web_parts(width=2.6, bead=1.0)
-    bpy.data.objects.remove(d, do_unlink=True)             # the model's twelve small drops: too fine for a 48 px icon
-    parts.append(paint(web, 1.0))
-    dew_m = mat('Web dew', '#58c8ff')
-    for k, (x, z, r) in enumerate(((-.115, .075, .034), (.085, .125, .030), (.150, -.040, .036), (-.040, -.120, .032),
-                                   (-.175, -.070, .026), (.020, .015, .028))):
-        parts.append(paint(sphere(f'Drop {k}', (r, r * .8, r * 1.12), (x, -.012, z), dew_m, seg=10, rings=6),
-                           lambda co, z=z, r=r: (.62, .8, 1.0) if co.z < z - r * .3 else 1.0))
-        parts.append(paint(sphere(f'Glint {k}', r * .26, (x - r * .34, -.012 - r * .78, z + r * .42), glint, seg=6, rings=4), 1.0))
-    tw = tube('Twig', [V(-.40, .0, .20), V(-.20, 0, .30), V(.04, 0, .345), V(.30, 0, .30)], .016, twig, verts=5, caps=True,
-              radius_fn=lambda t: lerp(1.0, .55, t))
-    parts.append(paint(tw, 1.0))
-    for k, (x, z, a) in enumerate(((-.30, .285, 2.4), (.19, .345, .5))):
-        c = V(x, -.004, z)
-        u, w = V(math.cos(a), 0, math.sin(a)), V(-math.sin(a), 0, math.cos(a))
-        lf = fan(f'Leaf {k}', c + u * .05, [c, c + u * .05 + w * .034, c + u * .12, c + u * .05 - w * .034], leaf, up=-Yv)
-        parts.append(paint(lf, lambda co, c=c: .78 if (co - c).length < .03 else 1.0))
-    finish_static('trick-dew', parts, 'trick_dew', ao=dict(rays=16, distance=.03, strength=.2), out_dir=SCENES)
-
 
 def scene_roast():
     """The straw fire burning, and a roasted sweet potato broken open in front of it."""
@@ -920,7 +881,7 @@ BUILDERS = {'beetle-rhino': build_beetle_rhino, 'beetle-stag': build_beetle_stag
 if __name__ == '__main__':
     if '--icons' in ARGV:
         os.makedirs(SCENES, exist_ok=True)
-        for fn in (scene_kite, scene_dew, scene_roast, scene_beetles):
+        for fn in (scene_kite, scene_roast, scene_beetles):
             fn()
     else:
         for nm in ONLY:

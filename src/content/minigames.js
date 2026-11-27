@@ -41,7 +41,6 @@ export const META = {
   'trick:frogs': { cat: 'country', desc: N_('Walk while the frogs sing and freeze when they stop.'), season: 'summer', hour: 19 },
   'trick:kite': { cat: 'country', desc: N_('Tie a bamboo kite and fly it high in the wind.'), season: 'autumn', hour: 13 },
   'trick:planes': { cat: 'country', desc: N_('Fold a paper plane and throw it far down the hill.'), season: 'spring', hour: 11, isNew: true },
-  'trick:dew': { cat: 'country', desc: N_('Find the dew-covered spider webs before the sun dries them.'), season: 'summer', hour: 6 },
   'trick:roast': { cat: 'country', desc: N_('Bury sweet potatoes in the ash and take them out just right.'), season: 'autumn', hour: 17 },
   'trick:firedrill': { cat: 'country', desc: N_('Practise with a fire extinguisher: pull, aim, squeeze, sweep.'), season: 'spring', hour: 10, isNew: true },
   'trick:beetles': { cat: 'country', desc: N_('Paint sap on the bark and welcome the night visitors.'), season: 'summer', hour: 18.5 },

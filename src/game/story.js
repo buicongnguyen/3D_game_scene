@@ -597,11 +597,6 @@ export const DIALOGUE = {
     ['narrator', 'The stag beetle opens its jaws wide, decides Mika is not a rival, and folds them again like a pair of scissors.'],
   ],
   friend_beetleStag_solo: [['narrator', 'The stag beetle lifts its jaws at Mika once, to be polite, and walks back to the sap without hurrying.']],
-  friend_spider: [
-    ['tamo', 'Eight legs, and she still finds time to knit. I have NO legs and I can barely tidy up.'],
-    ['narrator', 'The spider plucks one thread, and the whole web shivers like a little harp.'],
-  ],
-  friend_spider_solo: [['narrator', 'The spider plucks one thread, and the whole web shivers like a little harp. Mika decides that was a wave.']],
   friend_ladybug: [
     ['narrator', "The ladybug climbs Mika's finger all the way to the tip, thinks it over, and flies off somewhere better."],
     ['tamo', 'Seven spots! I counted twice. It was seven both times!', 'Happy'],
@@ -681,12 +676,6 @@ export const DIALOGUE = {
     ['mika', "Paper planes? I've made those. They dive straight into the nearest desk."],
     ['rin', "Because you fold fast and throw hard. Match the left side to the right, and press every crease flat."],
     ['rin', "Then throw it gently and level. Three throws, the best one counts. And we pick them all up after."],
-  ],
-  trick_dew_intro: [
-    ['rin', "Ever been up at sunrise, city girl? The forest edge up the west trail is hung with spider webs. Hundreds.", 'Talk'],
-    ['mika', "Hundreds of spiders. At sunrise. You keep making this place sound worse."],
-    ['rin', "You can't even see the webs by day. At dawn the dew lights them up like strings of glass beads."],
-    ['rin', "Keep the sun behind you and look low. Take pictures. Don't touch: that's somebody's house."],
   ],
   trick_roast_intro: [
     ['rin', "Harvest's in, so the straw's dry. You know what that means? Roast sweet potatoes out in the meadow.", 'Talk'],
@@ -896,8 +885,6 @@ export const FRIENDS = [
   // the little ones: only out in their seasons and at their hours
   { id: 'cricket', name: 'Field cricket', icon: 'cricket', verb: 'Listen to the cricket',
     desc: 'Sings all night with his back legs and never once runs out of song. Very shy up close.', hint: 'In the long grass round the villages, on summer and autumn evenings. Follow the chirping, and walk softly.' },
-  { id: 'spider', name: 'Garden spider', icon: 'spider', verb: 'Watch the spider',
-    desc: 'Mends her web every evening and lets the morning dew decorate it. Eats the mosquitoes, so everybody likes her.', hint: 'On her web under the eaves in Kawabe and Takamori, on the fences, and between trees in the forest. Not in winter.' },
   { id: 'ladybug', name: 'Ladybug', icon: 'ladybug', verb: 'Let the ladybug climb on your finger',
     desc: 'Seven spots, all of them lucky. Climbs to the very top of whatever she is on, and then flies off.', hint: "On flowers and bushes near the villages, on warm days. Walk up slowly or she'll fly away." },
   { id: 'dragonfly', name: 'River dragonfly', icon: 'dragonfly', verb: 'Hold still for the dragonfly',
