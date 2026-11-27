@@ -13,6 +13,8 @@ import { Pacer } from '../engine/pacer.js';
 import { View } from '../engine/view.js';
 import { Cells, CellGrid } from '../engine/cell-grid.js';
 import { mergeCellShadows } from '../world/shadow-merge.js';
+import { mergeCellBuildings } from '../engine/cell-merge.js';
+import { BUILD_MERGE } from '../engine/static-merge.js';
 import { markSlow } from '../engine/device-note.js';
 import { FrameRing, buildReport } from '../engine/perf-report.js';
 import { canEnter, photoState } from './photo.js';
@@ -116,6 +118,8 @@ export class Game {
         const buildings = new Set(this.structures.cullList.filter(c => !c.prop && !c.mid).map(c => c.obj));
         this.shadowMerged = mergeCellShadows(this.cellGrids[0], o => buildings.has(o));
       }
+      // ...and are drawn with one call per square (engine/cell-merge.js, with WEBGL_multi_draw); ?buildMerge=off: one or two draws a building
+      if (BUILD_MERGE && this.renderer.renderer.extensions.has('WEBGL_multi_draw')) { const b = new Set(this.structures.cullList.filter(c => !c.prop && !c.mid).map(c => c.obj)); this.structures.cellMeshes = mergeCellBuildings(this.cellGrids[0], o => b.has(o)); }
       Cells.sun = this.world.sky?.sun || null;
     }
     this.cells = Cells;                     // (a handle for tests and the console: game.cells.enabled)

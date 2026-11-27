@@ -54,7 +54,9 @@ export function patchMaterial(material, { wind = 0, snow = 1 } = {}) {
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(0.93, 0.96, 1.0), s * 0.92);
         }` : ''}`);
   };
-  material.customProgramCacheKey = () => `fx${wind}${snow}`;
+  // (a material with its own shader changes keeps them apart from the plain ones: its key goes first)
+  const own = Object.prototype.hasOwnProperty.call(material, 'customProgramCacheKey') ? material.customProgramCacheKey.bind(material) : null;
+  material.customProgramCacheKey = own ? () => `${own()}-fx${wind}${snow}` : () => `fx${wind}${snow}`;
   material.needsUpdate = true;
   return material;
 }
