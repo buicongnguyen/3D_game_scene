@@ -12,6 +12,7 @@ import { zoneFromParam } from '../world/zone-shape.js';
 import { Pacer } from '../engine/pacer.js';
 import { View } from '../engine/view.js';
 import { Cells, CellGrid } from '../engine/cell-grid.js';
+import { mergeCellShadows } from '../world/shadow-merge.js';
 import { markSlow } from '../engine/device-note.js';
 import { FrameRing, buildReport } from '../engine/perf-report.js';
 import { canEnter, photoState } from './photo.js';
@@ -109,6 +110,11 @@ export class Game {
         Cells.add(new CellGrid(this.railway.group, { skip: o => cars.has(o) })),
       ];
       for (const g of this.cellGrids) g.adopt();
+      // the buildings of a square throw their shadows as one mesh (world/shadow-merge.js); ?shadowmerge=off: as before
+      if (this.params.get('shadowmerge') !== 'off') {
+        const buildings = new Set(this.structures.cullList.filter(c => !c.prop && !c.mid).map(c => c.obj));
+        this.shadowMerged = mergeCellShadows(this.cellGrids[0], o => buildings.has(o));
+      }
       Cells.sun = this.world.sky?.sun || null;
     }
     this.cells = Cells;                     // (a handle for tests and the console: game.cells.enabled)
