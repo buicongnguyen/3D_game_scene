@@ -253,6 +253,11 @@ export class Foliage {
     this.shadowFocus = new THREE.Vector3(1e9, 0, 0);
     this.shadowDir = new THREE.Vector3(0, 1, 0);
     this.shadowRange = quality.shadowRange;
+    // The tree, bush and rock shadow proxies (SHADOW_ONLY layer) were never drawn before three r182: the shadow pass
+    // tested layers against the view camera, so this valley has always looked and run without them. Since the upgrade
+    // three would draw them: new shadows and new work on every tier. The game switches them each frame (game.js): off
+    // unless a quality tier says foliageShadows: true, or ?treeShadows=on to look.
+    this.proxyShadows = true;
     this.scene = scene;
     this.lastPos = new THREE.Vector3(1e9, 0, 0);
     this.lastQuat = new THREE.Quaternion();
@@ -345,7 +350,7 @@ export class Foliage {
     this.sun ??= this.scene.children.find(o => o.isDirectionalLight && o.castShadow) || this.scene.children.find(o => o.isDirectionalLight) || null;
     // shadows switched off (Settings → Shadows, light mode): no casters. Without a light direction the box test let
     // every tree in the valley through, each drawn again (invisibly) by the main pass: ~1 M triangles on the Low tier
-    if (!this.sun?.castShadow) {
+    if (!this.sun?.castShadow || !this.proxyShadows) {
       if (this.shadowFocus.x !== 1e9) { for (const s of this.sets) s.shadow?.forEach(m => { m.count = 0; show(m); }); this.shadowFocus.set(1e9, 0, 0); }
       return;
     }

@@ -23,6 +23,7 @@ import { momentsWanted } from '../ui/moments-option.js';
 export class Game {
   constructor(canvas, params = new URLSearchParams()) {
     this.params = params;
+    this.treeShadows = params.get('treeShadows') === 'on';   // preview of the tree shadow proxies (world/foliage.js)
     this.canvas = canvas;
     this.renderer = new Renderer(canvas, params.get('quality'));
     this.view = View;                                               // (a handle for tests and the console: game.view.enabled)
@@ -180,7 +181,9 @@ export class Game {
   }
 
   start() {
-    this.clock = new THREE.Clock();
+    // THREE.Timer (THREE.Clock is deprecated since r183): update() once a frame, then getDelta()
+    this.clock = new THREE.Timer();
+    this.clock.update();
     // phones (Low tier) that cannot keep 60 draw every other display frame, evenly (engine/pacer.js); ?pace=off|30
     const pq = this.params.get('pace');
     this.pacer = pq === 'off' || (this.renderer.qualityName !== 'low' && pq !== '30') ? null : new Pacer();
@@ -251,6 +254,7 @@ export class Game {
     info.autoReset = false;
     this.lastInfo = { calls: info.render.calls, tris: info.render.triangles };
     info.reset();
+    this.clock.update();
     const raw = this.clock.getDelta();
     const dt = Math.min(raw, 1 / 20);
     this.renderer.track(raw);
@@ -309,6 +313,8 @@ export class Game {
     this.cullT = (this.cullT || 0) - raw;
     if (this.cullT <= 0) { this.cullT = 0.3; this.structures.cull(this.camera.position, this.renderer.q); }
     this.foliage.update(this.camera);
+    // read every frame, so changing the graphics setting takes effect at once
+    this.foliage.proxyShadows = this.treeShadows || this.renderer.q.foliageShadows === true;
     this.foliage.updateShadows(this.player.pos);
     this.grass.update(this.camera.position, this.player.pos);
     this.renderer.grade.uniforms.uNight.value = this.night || 0;

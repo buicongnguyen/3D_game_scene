@@ -29,6 +29,10 @@ export function programFirst(properties) {
     || a.material.id - b.material.id || a.z - b.z || a.id - b.id;
 }
 
+// Bloom. Fitted to the look the valley had before three r186, whose rewritten bloom spreads about twice as much light at
+// the old 0.42 / 0.55: night lanterns and sunlit snow washed out. These two numbers match night, dusk, day and snow.
+export const BLOOM = { strength: 0.2, radius: 0.4, threshold: 0.92 };
+
 export function isMobile() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1100);
 }
@@ -102,7 +106,11 @@ export class Renderer {
     r.toneMapping = THREE.NeutralToneMapping;
     r.toneMappingExposure = 1.0;
     r.shadowMap.enabled = true;
-    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    // PCF is the soft filter since three r182 (PCFSoftShadowMap is gone). Name it here, before anything is compiled:
+    // three only swaps the old name over when it first draws a shadow map, and a tier that skips the shadow pass on its
+    // first frame then keeps shaders that read the map as a plain texture: the GPU refuses those draws and the ground,
+    // houses and people vanish (seen on the Low tier).
+    r.shadowMap.type = THREE.PCFShadowMap;
     this.scale = 1; // adaptive resolution factor (0.6 .. 1)
     this.frameTimes = [];
     this.composer = null;
@@ -155,7 +163,7 @@ export class Renderer {
     this.composer = new EffectComposer(this.renderer, rt);
     this.renderPass = new RenderPass(null, null);
     this.composer.addPass(this.renderPass);
-    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.42, 0.55, 0.92);
+    this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), BLOOM.strength, BLOOM.radius, BLOOM.threshold);
     this.bloom.enabled = q.bloom;
     this.composer.addPass(this.bloom);
     this.grade = new ShaderPass(GradeShader);

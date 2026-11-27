@@ -15,7 +15,7 @@
     "i18n:check": "node scripts/i18n-extract.mjs --check"
   },
   "dependencies": {
-    "three": "0.180.0"
+    "three": "0.187.0"
   },
   "devDependencies": {
     "@gltf-transform/core": "^4.5.0",
