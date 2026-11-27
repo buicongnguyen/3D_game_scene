@@ -3,6 +3,7 @@ import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 import { JournalMap } from './map.js';
 import { TOUCH_LINES } from '../content/touch-lines.js';
+import { MiniMap } from './minimap.js';
 import { starGroupsHtml } from './stargroups.js';
 import { STORIES, DEFAULT_STORY, storyId, storyStep } from '../game/stories/index.js';
 import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
@@ -489,6 +490,9 @@ export class UI {
   /** Screen-space objective marker; target in world space or null. */
   /** The yellow guide: a pin over the target when it is on screen, an arrow at the screen edge when not. from = Mika. */
   marker(camera, target, from) {
+    // the little map, top right (ui/minimap.js): where Mika is and which way the goal lies
+    try { (this.mini ??= new MiniMap(this.game, $('miniMap'))).update(performance.now(), camera, target); }
+    catch (e) { if (!this.miniWarned) { this.miniWarned = true; console.warn('mini map:', e); } }
     const m = $('marker');
     if (!target || this.dialogueOpen) { m.classList.add('hidden'); return; }
     const v = target.clone().project(camera);
@@ -768,6 +772,7 @@ export class UI {
     $('btnCredits').addEventListener('click', () => this.open('credits'));
     $('btnMenu').addEventListener('click', () => this.game.togglePause?.(true));
     $('btnJournal').addEventListener('click', () => this.openJournal());
+    $('clock').addEventListener('click', () => { this._tab = 'map'; this.openJournal(); });   // the little map opens the big one
     $('btnResume').addEventListener('click', () => this.game.togglePause?.(false));
     $('btnPauseJournal').addEventListener('click', () => this.openJournal());
     $('btnPauseSettings').addEventListener('click', () => this.open('settings'));

@@ -402,6 +402,129 @@ const SVG = {
   found: `<svg viewBox="-12 -12 24 24"><path d="${starD(8)}" fill="#f3ead2" stroke="#a08a5a" stroke-width="1.2" opacity=".6"/><circle cx="5" cy="5" r="5" fill="#1fa5a0" stroke="#fff"/><path d="M2.4 5.2L4.3 7L7.6 3.4" fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
 };
 
+/**
+ * The drawn layer of the map: paddies and fields, paths, the ferry, stepping stones, docks, the railway and the viaduct,
+ * and the roofs. S(x, z) -> [px, py] in the context's units; s: those units per metre. Shared by the journal's Map
+ * page and the HUD's little map (ui/minimap.js).
+ */
+export function paintVectors(ctx, game, season, S, s) {
+    const line = (pts, width, colour, dash) => {
+      ctx.beginPath();
+      pts.forEach(([x, z], i) => { const [a, b] = S(x, z); if (i) ctx.lineTo(a, b); else ctx.moveTo(a, b); });
+      ctx.lineWidth = width; ctx.strokeStyle = colour; ctx.setLineDash(dash || []); ctx.stroke();
+    };
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // rice paddies
+    const paddy = { spring: ['#9fd39a', '#5f9a4e'], summer: ['#7cc443', '#4f8f2e'], autumn: ['#e8c253', '#a8822a'], winter: ['#e6edf4', '#b3c2d2'] }[season] || ['#7cc443', '#4f8f2e'];
+    for (const p of PADDIES) {
+      const [a, b] = S(p.x - p.w / 2, p.z - p.d / 2);
+      const veg = VEG_BEDS.has(p.id), wheat = WHEAT_FIELDS.has(p.id);
+      ctx.fillStyle = veg ? (season === 'winter' ? '#d9d3cc' : '#9a6a40') : wheat ? { spring: '#8fca4f', summer: '#ecc04a', autumn: '#b08a5c', winter: '#dfe6e0' }[season] || '#ecc04a' : paddy[0];
+      ctx.fillRect(a, b, p.w * s, p.d * s);
+      if (wheat && (season === 'autumn' || season === 'winter')) {
+        // the wheat field, just sown: fine green drill rows on bare earth (it is golden in summer, when the rice is green)
+        ctx.fillStyle = season === 'winter' ? '#8fb87c' : '#9fd66a';
+        const rw = Math.max(0.5, 0.25 * s);
+        for (let k = 0; k < 9; k++) ctx.fillRect(a + (1 + k * (p.w - 2) / 8) * s - rw / 2, b + 0.8 * s, rw, (p.d - 1.6) * s);
+      }
+      if (veg) {
+        // a vegetable bed: brown earth with green rows running north-south
+        ctx.fillStyle = season === 'winter' ? '#9fb89a' : season === 'spring' ? '#a9d67a' : '#5fae3c';
+        const rw = Math.max(0.8, 0.5 * s);
+        for (let k = 0; k < 5; k++) ctx.fillRect(a + (1.3 + k * (p.w - 2.6) / 4) * s - rw / 2, b + 0.9 * s, rw, (p.d - 1.8) * s);
+      }
+      ctx.lineWidth = Math.max(0.8, 0.5 * s); ctx.strokeStyle = veg ? '#6f4a2a' : wheat ? '#a8822a' : paddy[1]; ctx.setLineDash([]); ctx.strokeRect(a, b, p.w * s, p.d * s);
+    }
+    // footpaths: a warm sand band with a darker edge
+    for (const p of PATHS) line(p.pts, Math.max(2.6, (p.w + 0.9) * s), 'rgba(150, 104, 60, 0.55)');
+    for (const p of PATHS) line(p.pts, Math.max(1.5, p.w * s), season === 'winter' ? '#d9c3a2' : '#f1d9a4');
+    // Rin's ferry and the stepping stones
+    if (season !== 'winter') line([[FERRY.from.x, FERRY.from.z], [FERRY.to.x, FERRY.to.z]], Math.max(1, 0.35 * s), 'rgba(255, 255, 255, 0.9)', [3, 3]);
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#8f8a82';
+    for (const [x, z] of STONES) { const [a, b] = S(x, z); ctx.beginPath(); ctx.arc(a, b, Math.max(0.9, 0.55 * s), 0, Math.PI * 2); ctx.fill(); }
+    for (const dk of DOCKS) {
+      const r = dk.rot * Math.PI / 180, len = 3.2 * dk.n + 1;
+      const [a, b] = S(dk.x, dk.z);
+      ctx.save(); ctx.translate(a, b); ctx.rotate(-r);
+      ctx.fillStyle = '#9a6a3c'; ctx.fillRect(-1.3 * s, 0, 2.6 * s, len * s);
+      ctx.restore();
+    }
+    // the railway: tunnels dotted, the viaduct as a stone bridge, the line itself dark with pale sleepers
+    const pts = rail.pts, L = rail.len;
+    const west = L.findIndex(v => v >= RAIL_PORTALS.west), eastI = L.findIndex(v => v >= RAIL_PORTALS.east);
+    const east = eastI < 0 ? pts.length - 1 : eastI;
+    line(pts.slice(0, west + 1), Math.max(1.4, 1.2 * s), 'rgba(80, 60, 44, 0.45)', [2, 4]);
+    line(pts.slice(east), Math.max(1.4, 1.2 * s), 'rgba(80, 60, 44, 0.45)', [2, 4]);
+    ctx.setLineDash([]);
+    {
+      const [a, b] = S(VIADUCT.x0 - 1, VIADUCT.z - 3.4), w = (VIADUCT.x1 - VIADUCT.x0 + 2) * s, h = 6.8 * s;
+      ctx.fillStyle = 'rgba(40, 30, 20, 0.28)'; ctx.fillRect(a + 1.5, b + 2, w, h);
+      ctx.fillStyle = '#d8c6a2'; ctx.fillRect(a, b, w, h);
+      ctx.lineWidth = 1; ctx.strokeStyle = '#7d6446'; ctx.strokeRect(a, b, w, h);
+      ctx.fillStyle = '#9c8566';
+      for (const c of [...VIADUCT_SPANS.map(x => x - 7), VIADUCT_SPANS[VIADUCT_SPANS.length - 1] + 7]) {
+        const [px, py] = S(c - 1.2, VIADUCT.z - 4.4);
+        ctx.fillRect(px, py, 2.4 * s, 8.8 * s);
+      }
+    }
+    const main = pts.slice(west, east + 1);
+    line(main, Math.max(2.4, 2.3 * s), '#5a4030');
+    line(main, Math.max(0.9, 0.8 * s), '#f6ead0', [4, 4]);
+    ctx.setLineDash([]);
+    // roofs, with a soft shadow to the south-east
+    for (const b of BUILDINGS) {
+      const rec = game.structures?.byId.get(b.id);
+      const fp = rec?.fp || [6, 6], r = (b.rot || 0) * Math.PI / 180;
+      const w = (fp[0] + 1) * s, d = (fp[1] + 1) * s, [a, c] = S(b.x, b.z);
+      const colour = ROOF[b.model] || '#a0643c';
+      ctx.save(); ctx.translate(a + 1.2 + 0.3 * s, c + 1.6 + 0.4 * s); ctx.rotate(-r);
+      ctx.fillStyle = 'rgba(30, 20, 10, 0.3)'; ctx.fillRect(-w / 2, -d / 2, w, d);
+      ctx.restore();
+      ctx.save(); ctx.translate(a, c); ctx.rotate(-r);
+      ctx.fillStyle = colour; ctx.fillRect(-w / 2, -d / 2, w, d);
+      ctx.lineWidth = Math.max(0.8, 0.18 * s); ctx.strokeStyle = css(rgb(colour), 0.6); ctx.strokeRect(-w / 2, -d / 2, w, d);
+      if (b.model !== 'platform' && b.model !== 'torii' && Math.min(w, d) > 4) {
+        // ridge along the long side, the lit half a touch lighter
+        const along = w >= d;
+        ctx.fillStyle = css(mix3(rgb(colour), [255, 240, 210], 0.22));
+        if (along) ctx.fillRect(-w / 2, -d / 2, w, d / 2); else ctx.fillRect(-w / 2, -d / 2, w / 2, d);
+        ctx.beginPath();
+        if (along) { ctx.moveTo(-w / 2, 0); ctx.lineTo(w / 2, 0); } else { ctx.moveTo(0, -d / 2); ctx.lineTo(0, d / 2); }
+        ctx.strokeStyle = css(rgb(colour), 0.55); ctx.stroke();
+      }
+      ctx.restore();
+    }
+}
+
+/** A place on the valley map: rooms hang high above the valley (y >= ROOM_Y), so a point in one maps to its door. */
+export function outdoorsOf(game, p) {
+  if (!p) return null;
+  if (p.y === undefined || p.y < ROOM_Y) return p;
+  const I = game.interiors;
+  let best = null, bd = Infinity;
+  for (const [id, room] of I?.rooms || []) {
+    const r = room.root.position, d = (r.x - p.x) ** 2 + (r.z - p.z) ** 2;
+    if (d < bd) { bd = d; best = id; }
+  }
+  return I?.doors.find(d => d.id === best)?.outside || null;
+}
+
+/** Where Mika is on the map: { x, z, inside } (inside a home: at its door). */
+export function mikaOnMap(game) {
+  const I = game.interiors, p = game.player.pos;
+  if (I?.active) {
+    const door = I.doors.find(d => d.id === I.active)?.outside;
+    if (door) return { x: door.x, z: door.z, inside: I.active };
+  }
+  const o = outdoorsOf(game, p) || p;
+  return { x: o.x, z: o.z, inside: p.y >= ROOM_Y ? 'home' : null };
+}
+
+/** The valley's land picture (painting itself in over a few calls: step(ms) while !done), for the HUD's little map. */
+export const valleyLand = game => landFor(game);
+export const MAP_CROP = CROP;
+
 // ------------------------------------------------------------------ the page
 export class JournalMap {
   constructor(game) {
@@ -540,27 +663,9 @@ export class JournalMap {
   toWorld(sx, sy) { return [(sx - this.W / 2) / VIEW.s + VIEW.cx, (sy - this.H / 2) / VIEW.s + VIEW.cz]; }
 
   /** Any point, brought outdoors: things inside a home (rooms hang high above the valley) go to its front door. */
-  outdoors(p) {
-    if (!p) return null;
-    if (p.y === undefined || p.y < ROOM_Y) return p;
-    const I = this.game.interiors;
-    let best = null, bd = Infinity;
-    for (const [id, room] of I?.rooms || []) {
-      const r = room.root.position, d = (r.x - p.x) ** 2 + (r.z - p.z) ** 2;
-      if (d < bd) { bd = d; best = id; }
-    }
-    return I?.doors.find(d => d.id === best)?.outside || null;
-  }
+  outdoors(p) { return outdoorsOf(this.game, p); }
 
-  mikaAt() {
-    const g = this.game, I = g.interiors, p = g.player.pos;
-    if (I?.active) {
-      const door = I.doors.find(d => d.id === I.active)?.outside;
-      if (door) return { x: door.x, z: door.z, inside: I.active };
-    }
-    const o = this.outdoors(p) || p;
-    return { x: o.x, z: o.z, inside: p.y >= ROOM_Y ? 'home' : null };
-  }
+  mikaAt() { return mikaOnMap(this.game); }
 
   // ---------------------------------------------------------------- input
   bindZoom() {
@@ -710,95 +815,7 @@ export class JournalMap {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
     ctx.drawImage(land.canvas, lx, ly, (CROP.x1 - CROP.x0) * s, (CROP.z1 - CROP.z0) * s);
-    const season = land.season;
-    const S = (x, z) => this.toScreen(x, z);
-    const line = (pts, width, colour, dash) => {
-      ctx.beginPath();
-      pts.forEach(([x, z], i) => { const [a, b] = S(x, z); if (i) ctx.lineTo(a, b); else ctx.moveTo(a, b); });
-      ctx.lineWidth = width; ctx.strokeStyle = colour; ctx.setLineDash(dash || []); ctx.stroke();
-    };
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    // rice paddies
-    const paddy = { spring: ['#9fd39a', '#5f9a4e'], summer: ['#7cc443', '#4f8f2e'], autumn: ['#e8c253', '#a8822a'], winter: ['#e6edf4', '#b3c2d2'] }[season] || ['#7cc443', '#4f8f2e'];
-    for (const p of PADDIES) {
-      const [a, b] = S(p.x - p.w / 2, p.z - p.d / 2);
-      const veg = VEG_BEDS.has(p.id), wheat = WHEAT_FIELDS.has(p.id);
-      ctx.fillStyle = veg ? (season === 'winter' ? '#d9d3cc' : '#9a6a40') : wheat ? { spring: '#8fca4f', summer: '#ecc04a', autumn: '#b08a5c', winter: '#dfe6e0' }[season] || '#ecc04a' : paddy[0];
-      ctx.fillRect(a, b, p.w * s, p.d * s);
-      if (wheat && (season === 'autumn' || season === 'winter')) {
-        // the wheat field, just sown: fine green drill rows on bare earth (it is golden in summer, when the rice is green)
-        ctx.fillStyle = season === 'winter' ? '#8fb87c' : '#9fd66a';
-        const rw = Math.max(0.5, 0.25 * s);
-        for (let k = 0; k < 9; k++) ctx.fillRect(a + (1 + k * (p.w - 2) / 8) * s - rw / 2, b + 0.8 * s, rw, (p.d - 1.6) * s);
-      }
-      if (veg) {
-        // a vegetable bed: brown earth with green rows running north-south
-        ctx.fillStyle = season === 'winter' ? '#9fb89a' : season === 'spring' ? '#a9d67a' : '#5fae3c';
-        const rw = Math.max(0.8, 0.5 * s);
-        for (let k = 0; k < 5; k++) ctx.fillRect(a + (1.3 + k * (p.w - 2.6) / 4) * s - rw / 2, b + 0.9 * s, rw, (p.d - 1.8) * s);
-      }
-      ctx.lineWidth = Math.max(0.8, 0.5 * s); ctx.strokeStyle = veg ? '#6f4a2a' : wheat ? '#a8822a' : paddy[1]; ctx.setLineDash([]); ctx.strokeRect(a, b, p.w * s, p.d * s);
-    }
-    // footpaths: a warm sand band with a darker edge
-    for (const p of PATHS) line(p.pts, Math.max(2.6, (p.w + 0.9) * s), 'rgba(150, 104, 60, 0.55)');
-    for (const p of PATHS) line(p.pts, Math.max(1.5, p.w * s), season === 'winter' ? '#d9c3a2' : '#f1d9a4');
-    // Rin's ferry and the stepping stones
-    if (season !== 'winter') line([[FERRY.from.x, FERRY.from.z], [FERRY.to.x, FERRY.to.z]], Math.max(1, 0.35 * s), 'rgba(255, 255, 255, 0.9)', [3, 3]);
-    ctx.setLineDash([]);
-    ctx.fillStyle = '#8f8a82';
-    for (const [x, z] of STONES) { const [a, b] = S(x, z); ctx.beginPath(); ctx.arc(a, b, Math.max(0.9, 0.55 * s), 0, Math.PI * 2); ctx.fill(); }
-    for (const dk of DOCKS) {
-      const r = dk.rot * Math.PI / 180, len = 3.2 * dk.n + 1;
-      const [a, b] = S(dk.x, dk.z);
-      ctx.save(); ctx.translate(a, b); ctx.rotate(-r);
-      ctx.fillStyle = '#9a6a3c'; ctx.fillRect(-1.3 * s, 0, 2.6 * s, len * s);
-      ctx.restore();
-    }
-    // the railway: tunnels dotted, the viaduct as a stone bridge, the line itself dark with pale sleepers
-    const pts = rail.pts, L = rail.len;
-    const west = L.findIndex(v => v >= RAIL_PORTALS.west), eastI = L.findIndex(v => v >= RAIL_PORTALS.east);
-    const east = eastI < 0 ? pts.length - 1 : eastI;
-    line(pts.slice(0, west + 1), Math.max(1.4, 1.2 * s), 'rgba(80, 60, 44, 0.45)', [2, 4]);
-    line(pts.slice(east), Math.max(1.4, 1.2 * s), 'rgba(80, 60, 44, 0.45)', [2, 4]);
-    ctx.setLineDash([]);
-    {
-      const [a, b] = S(VIADUCT.x0 - 1, VIADUCT.z - 3.4), w = (VIADUCT.x1 - VIADUCT.x0 + 2) * s, h = 6.8 * s;
-      ctx.fillStyle = 'rgba(40, 30, 20, 0.28)'; ctx.fillRect(a + 1.5, b + 2, w, h);
-      ctx.fillStyle = '#d8c6a2'; ctx.fillRect(a, b, w, h);
-      ctx.lineWidth = 1; ctx.strokeStyle = '#7d6446'; ctx.strokeRect(a, b, w, h);
-      ctx.fillStyle = '#9c8566';
-      for (const c of [...VIADUCT_SPANS.map(x => x - 7), VIADUCT_SPANS[VIADUCT_SPANS.length - 1] + 7]) {
-        const [px, py] = S(c - 1.2, VIADUCT.z - 4.4);
-        ctx.fillRect(px, py, 2.4 * s, 8.8 * s);
-      }
-    }
-    const main = pts.slice(west, east + 1);
-    line(main, Math.max(2.4, 2.3 * s), '#5a4030');
-    line(main, Math.max(0.9, 0.8 * s), '#f6ead0', [4, 4]);
-    ctx.setLineDash([]);
-    // roofs, with a soft shadow to the south-east
-    for (const b of BUILDINGS) {
-      const rec = this.game.structures?.byId.get(b.id);
-      const fp = rec?.fp || [6, 6], r = (b.rot || 0) * Math.PI / 180;
-      const w = (fp[0] + 1) * s, d = (fp[1] + 1) * s, [a, c] = S(b.x, b.z);
-      const colour = ROOF[b.model] || '#a0643c';
-      ctx.save(); ctx.translate(a + 1.2 + 0.3 * s, c + 1.6 + 0.4 * s); ctx.rotate(-r);
-      ctx.fillStyle = 'rgba(30, 20, 10, 0.3)'; ctx.fillRect(-w / 2, -d / 2, w, d);
-      ctx.restore();
-      ctx.save(); ctx.translate(a, c); ctx.rotate(-r);
-      ctx.fillStyle = colour; ctx.fillRect(-w / 2, -d / 2, w, d);
-      ctx.lineWidth = Math.max(0.8, 0.18 * s); ctx.strokeStyle = css(rgb(colour), 0.6); ctx.strokeRect(-w / 2, -d / 2, w, d);
-      if (b.model !== 'platform' && b.model !== 'torii' && Math.min(w, d) > 4) {
-        // ridge along the long side, the lit half a touch lighter
-        const along = w >= d;
-        ctx.fillStyle = css(mix3(rgb(colour), [255, 240, 210], 0.22));
-        if (along) ctx.fillRect(-w / 2, -d / 2, w, d / 2); else ctx.fillRect(-w / 2, -d / 2, w / 2, d);
-        ctx.beginPath();
-        if (along) { ctx.moveTo(-w / 2, 0); ctx.lineTo(w / 2, 0); } else { ctx.moveTo(0, -d / 2); ctx.lineTo(0, d / 2); }
-        ctx.strokeStyle = css(rgb(colour), 0.55); ctx.stroke();
-      }
-      ctx.restore();
-    }
+    paintVectors(ctx, this.game, land.season, (x, z) => this.toScreen(x, z), s);
     this.paintLabels(ctx);
     this.paintCompass(ctx);
     // a soft vignette, like the edge of an old page

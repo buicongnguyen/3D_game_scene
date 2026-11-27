@@ -49,7 +49,15 @@ kbd { font-family: var(--head); font-weight: 600; background: var(--ink); color:
 #objective .text { font-weight: 800; font-size: 16px; line-height: 1.3; }
 #objective.pulse { animation: pulse 0.9s ease; }
 @keyframes pulse { 0% { transform: scale(1); } 30% { transform: scale(1.05); background: #fff; } 100% { transform: scale(1); } }
-#clock { position: absolute; right: 16px; top: calc(14px + var(--safe-t)); padding: 7px 14px; display: flex; align-items: center; gap: 8px; font-family: var(--head); font-weight: 600; font-size: 17px; }
+/* the little map with the time under it (ui/minimap.js); a tap opens the journal's Map page */
+#clock { position: absolute; right: 12px; top: calc(12px + var(--safe-t)); width: 112px; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; pointer-events: auto; cursor: pointer; font-family: var(--head); -webkit-tap-highlight-color: transparent; }
+#miniMap { display: block; width: 112px; height: 112px; border-radius: 50%; border: 3px solid rgba(255, 247, 232, 0.92); box-shadow: var(--shadow); background: #f4e6c6; box-sizing: border-box; }
+#clock .time { margin-top: -11px; display: flex; align-items: center; gap: 3px; padding: 1px 8px 1px 5px; border-radius: 99px; background: rgba(28, 35, 64, 0.72); color: #fff; font-weight: 700; font-size: 12px; line-height: 17px; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
+#clock .time #seasonIcon svg { width: 14px; height: 14px; }
+body.touch #clock { width: 72px; }
+body.touch #miniMap { width: 72px; height: 72px; }
+/* the objective leaves room for the buttons beside the little map */
+body.touch #objective { max-width: min(420px, calc(100vw - 152px)); }
 #seasonIcon svg { width: 22px; height: 22px; display: block; }
 #inventory { position: absolute; right: 16px; top: calc(64px + var(--safe-t)); display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
 .inv { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px; border-radius: 99px; background: rgba(255, 247, 232, 0.9); box-shadow: var(--shadow); font-weight: 800; font-size: 14px; animation: pop 0.35s ease; }
@@ -92,8 +100,12 @@ kbd { font-family: var(--head); font-weight: 600; background: var(--ink); color:
 .iconbtn { pointer-events: auto; position: absolute; width: 44px; height: 44px; border-radius: 14px; border: 0; background: rgba(255, 247, 232, 0.88); box-shadow: var(--shadow); font-size: 20px; color: var(--ink); }
 #btnMenu { right: 16px; bottom: calc(16px + var(--safe-b)); }
 #btnJournal { right: 68px; bottom: calc(16px + var(--safe-b)); }
-body.touch #btnMenu { top: calc(62px + var(--safe-t)); bottom: auto; }
-body.touch #btnJournal { top: calc(62px + var(--safe-t)); bottom: auto; right: 68px; }
+/* phones: the two buttons stacked beside the little map (the sky under them stays clear for the weather moments'
+   birds), drawn small (34 px) inside their 44 px touch area */
+body.touch #btnJournal { top: calc(10px + var(--safe-t)); bottom: auto; right: 86px; }
+body.touch #btnMenu { top: calc(54px + var(--safe-t)); bottom: auto; right: 86px; }
+body.touch .iconbtn { background: none; box-shadow: none; font-size: 16px; isolation: isolate; }
+body.touch .iconbtn::before { content: ''; position: absolute; inset: 5px; z-index: -1; border-radius: 50%; background: rgba(255, 247, 232, 0.84); box-shadow: 0 2px 6px rgba(12, 16, 40, 0.28); }
 body.touch #inventory { top: calc(114px + var(--safe-t)); }
 
 /* ---------- dialogue ---------- */
