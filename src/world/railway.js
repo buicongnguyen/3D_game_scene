@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { placeholder } from '../engine/assets.js';
 import { batchCopies } from './static-batch.js';
 import { patchMaterial } from '../engine/effects.js';
+import { newPbrMaterial } from '../engine/static-merge.js';
+
+let sleeperMaterial = null;
 import { rail, RAIL_Y, DECK_Y, VIADUCT, VIADUCT_SPANS, RAIL_PORTALS, PLACES } from './layout.js';
 
 const GAUGE = 0.7175; // rail centre offset from the track axis (standard gauge, matches the sleeper tie plates)
@@ -132,7 +135,9 @@ export class Railway {
   }
 
   placeSleepers(s0, s1, inGap) {
-    const parts = this.assets.parts('sleeper');
+    // (merged into one part, engine/static-merge.js R3-5: its own copy of the material, so the snow patch the buildings'
+    // shared one carries does not reach the sleepers, which never had it)
+    const parts = this.assets.parts('sleeper').map(p => p.material.userData.pbr ? { ...p, material: sleeperMaterial ??= newPbrMaterial() } : p);
     const list = [];
     for (let s = s0; s <= s1; s += 0.62) {
       const p = rail.at(s);
