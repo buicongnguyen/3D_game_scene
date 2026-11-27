@@ -8,6 +8,9 @@
 // morph for the lip centre): this script applies them when it copies.
 //   node scripts/kotone-club-bake.mjs --vendor <Avatar Studio folder>   (copy + patch the solver into .tools/club-solver)
 //   node scripts/kotone-club-bake.mjs                                    (bake, check, write the pack and the fit)
+//   node scripts/kotone-club-bake.mjs --who vroid-nu1 [--dir <models folder>]
+//        (one of the other VRoid samples, art/blender/vroid_mixamo.py --member: its own model and pack; its mic fit and
+//         stances go to .tools/club-fit-<who>.json, the game's src/content/kotone-club-fit.js stays Kotone's)
 // Run it again after art/blender/vroid_mixamo.py rebuilds kotone.glb / moves-kotone.glb (the rig and the pack).
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -26,6 +29,7 @@ const arg = n => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? proc
 // planted feet skated: 9-58 cm/s at factors 0.4-2.4; exact: 0.1-1.6 cm/s, the solver's own)
 const TRIM_DEFAULT = 2.4, EXACT_BONES = '^(hips|thigh_[LR]|shin_[LR]|foot_[LR]|toe_[LR])$';
 const TRIM = Number(arg('trim') ?? TRIM_DEFAULT);
+const WHO = arg('who') || 'kotone', DIR = path.resolve(ROOT, arg('dir') || 'public/models'), KOTONE = WHO === 'kotone';
 
 if (arg('vendor')) {
   const studio = arg('vendor'), files = ['src/moves-v2/core.js', 'src/moves-v2/kit.js', 'src/moves-v2/club-kit.js', 'src/authored-clap.js', 'src/motion-provenance.js',
@@ -62,8 +66,8 @@ async function loadGlb(file) {   // textures stripped (Node has no image decoder
   return new GLTFLoader().parseAsync(bin.buffer.slice(bin.byteOffset, bin.byteOffset + bin.length), '');
 }
 
-const g = await loadGlb(path.join(ROOT, 'public/models/kotone.glb')), root = g.scene; root.updateMatrixWorld(true);
-const rg = rig(root); if (!rg) throw new Error('Kotone: the solver does not recognise the skeleton');
+const g = await loadGlb(path.join(DIR, `${WHO}.glb`)), root = g.scene; root.updateMatrixWorld(true);
+const rg = rig(root); if (!rg) throw new Error(`${WHO}: the solver does not recognise the skeleton`);
 const rest = new Map([...rg.all.values()].map(b => [b.name, { q: b.quaternion.clone(), p: b.position.clone() }]));
 const cacheMap = new Map(), cache = { has: k => cacheMap.has(k), get: k => cacheMap.get(k), set: (k, v) => cacheMap.set(k, v) };
 const chk = createAnatomyCheck(root); if (!chk.supported) throw new Error(`joint check: ${chk.reason}`);
@@ -113,13 +117,13 @@ for (const [name, id] of Object.entries(CLUB_BAKE)) {
   console.log(name.padEnd(16), id.padEnd(22), `${tracks.length} tracks`, Object.keys(worst).length ? `JOINTS ${JSON.stringify(report[name])}` : 'joints ok');
 }
 await fs.mkdir(path.join(ROOT, '.tools'), { recursive: true });
-await fs.writeFile(path.join(ROOT, '.tools/kotone-club-joints.json'), JSON.stringify(report, null, 1));
+await fs.writeFile(path.join(ROOT, `.tools/${WHO}-club-joints.json`), JSON.stringify(report, null, 1));
 if (failing.length) { console.error('joint rules broken:', failing.join(', ')); process.exit(1); }
 
 // append to the pack (replacing an earlier bake of the same names)
 await MeshoptDecoder.ready; await MeshoptEncoder.ready;
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder, 'meshopt.encoder': MeshoptEncoder });
-const packFile = path.join(ROOT, 'public/models/moves-kotone.glb'), doc = await io.read(packFile), docRoot = doc.getRoot(), buf = docRoot.listBuffers()[0];
+const packFile = path.join(DIR, `moves-${WHO}.glb`), doc = await io.read(packFile), docRoot = doc.getRoot(), buf = docRoot.listBuffers()[0];
 const names = new Set(baked.map(b => b.name));
 for (const an of docRoot.listAnimations()) if (names.has(an.getName())) { for (const s of an.listSamplers()) { s.getInput()?.dispose(); s.getOutput()?.dispose(); } an.dispose(); }
 const nodes = new Map(docRoot.listNodes().map(n => [n.getName(), n]));
@@ -150,7 +154,8 @@ await io.write(packFile, doc);
   console.log(bad.length ? `thinned clips break joint rules: ${bad.join(', ')}` : `thinned clips: joints ok (${names.size} clips, 60 Hz, 1.2x)`);
   if (bad.length) process.exitCode = 1; }
 const fit = report.micFit;
-await fs.writeFile(path.join(ROOT, 'src/content/kotone-club-fit.js'), `// Written by scripts/kotone-club-bake.mjs: the hand mic's handle in Kotone's grip_R space (the Moves v2 solver's own
+if (!KOTONE) await fs.writeFile(path.join(ROOT, `.tools/club-fit-${WHO}.json`), JSON.stringify({ micFit: fit, stance }, null, 1));
+else await fs.writeFile(path.join(ROOT, 'src/content/kotone-club-fit.js'), `// Written by scripts/kotone-club-bake.mjs: the hand mic's handle in Kotone's grip_R space (the Moves v2 solver's own
 // micGrip handle on her right fist, at Mic sway's first frame). centre / up in grip_R units, scale = units per metre.
 export const MIC_FIT = Object.freeze(${JSON.stringify(fit)});
 // Each move's start stance (feet x / z, metres, her model space at rest centre), its largest hip and chest turn (deg) and its

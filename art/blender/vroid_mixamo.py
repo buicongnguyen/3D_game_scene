@@ -2,7 +2,10 @@
 (the ktvgo "desktop-mixamo65" GLB, read only) and Mixamo FBX moves (read only).
 
     blender -b --factory-startup --python art/blender/vroid_mixamo.py -- [--only full,lite,pack] [--out public/models]
-        [--src <nu-2-mixamo65.glb>] [--moves <Mixamo FBX folder>] [--clips Idle,Walk]
+        [--src <nu-2-mixamo65.glb>] [--moves <Mixamo FBX folder>] [--clips Idle,Walk] [--member nu-1]
+
+--member <id>: one of the other seven samples (MEMBERS) instead of Kotone, built the same way into vroid-<id>.glb,
+vroid-<id>.lite.glb and moves-vroid-<id>.glb (always all three in one run: Blender 5.x's exporter orders the roots by name).
 
 Writes kotone.glb (PC: <= 14k tris, 1024 px atlas), kotone.lite.glb (phone: <= 8k tris, 512 px atlas) and
 moves-kotone.glb (her armature, no mesh, the dances and the singing: fetched by the game only for her evening show).
@@ -84,9 +87,18 @@ PACK_CLIPS = [
 # her height (m, the top of the hair to the soles), or None for the source's own (1.616 m). Owner 2026-11-28: 1.52 was
 # tried and taken back (her moves looked wrong to the owner); the source height is kept.
 HEIGHT = None
+SCALE = None            # (a member's whole-body scale instead of a height: MEMBERS below)
 PACK_TOL = 2.4          # the dances' keys are thinned more (1.2 deg body, 4.8 deg fingers): she is seen from a few metres
-SOURCE = ('VRoid Project sample character (nu-2), VRoid Hub licence: anyone, commercial use, modification and redistribution '
-          'allowed; credit "VRoid Project". Moves: Mixamo animations.')
+SOURCE_OF = lambda sid: (f'VRoid Project sample character ({sid}), VRoid Hub licence: anyone, commercial use, modification and '
+                         'redistribution allowed; credit "VRoid Project". Moves: Mixamo animations.')
+SOURCE = SOURCE_OF('nu-2')
+# The other seven VRoid Project samples, built exactly like Kotone for the group performance (game/perform/troupe.js) and
+# for later use: `--member nu-1` writes vroid-nu1.glb, vroid-nu1.lite.glb, moves-vroid-nu1.glb. The girls keep the
+# source's height (1.60-1.74 m); the boys are scaled to one skull height (1.66 m, the cast's 1.71-1.76 m with hair):
+# nam-1 and nam-3 share one body (skull 1.703 m), nam-2 is taller (1.827 m). Scaling is applied in the build, so the rest
+# pose, the bones and the hips' travel all follow and the feet stay on the ground.
+MEMBERS = {'nam-1': 0.975, 'nam-2': 0.909, 'nam-3': 0.975, 'nu-1': None, 'nu-3': None, 'nu-4': None, 'nu-5': None}
+member_stem = lambda sid: 'vroid-' + sid.replace('-', '')
 
 
 def cli():
@@ -98,6 +110,10 @@ def cli():
     for x in a:
         if x.startswith('--'): k = x[2:]
         elif k: o[k] = x; k = None
+    if o.get('member'):
+        sid = o['member']; assert sid in MEMBERS, f'unknown member {sid} (one of {", ".join(MEMBERS)})'
+        o['src'] = o['src'].replace('nu-2-mixamo65', f'{sid}-mixamo65'); o['name'] = member_stem(sid)
+        o['work'] = os.path.join(o['work'], o['name'])
     for p in ('src', 'moves', 'out', 'work'): o[p] = os.path.abspath(o[p])
     os.makedirs(o['work'], exist_ok=True); os.makedirs(o['out'], exist_ok=True)
     return o
@@ -115,6 +131,7 @@ def import_source(path):
     va, meshes = VL.import_vroid(path)
     va.name = 'Armature'
     if HEIGHT: fit_height(va, meshes, HEIGHT)
+    elif SCALE: fit_height(va, meshes, body_height(meshes) * SCALE)
     else: print('HEIGHT', json.dumps({'source': round(body_height(meshes), 4)}))
     return va, meshes
 
@@ -499,6 +516,7 @@ def patch_extras(path, extras):
 if __name__ == '__main__':
     O = cli()
     MOVES = O['moves']
+    if O.get('member'): SCALE = MEMBERS[O['member']]; SOURCE = SOURCE_OF(O['member'])
     if O['packlist']: PACK_CLIPS = [tuple(x) for x in json.load(open(O['packlist']))]
     if O['list']: MODEL_CLIPS = [tuple(x) for x in json.load(open(O['list']))]     # (trying other moves: [[name, file, opts], ...])
     run(O)

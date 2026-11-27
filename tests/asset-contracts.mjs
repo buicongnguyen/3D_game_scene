@@ -26,6 +26,8 @@ export const KOTONE_SHOW_CLIPS = ['DanceHipHop', 'DanceArms', 'DanceHouse', 'Dan
   // her song performances (game/perform/): Avatar Studio Club-mode moves baked on her (scripts/kotone-club-bake.mjs)
   ...PERFORM_CLIPS];
 const VROID_MORPHS = ['blink', 'mouthA', 'mouthO'];
+/** The other seven VRoid samples, built like Kotone (vroid_mixamo.py --member) for the group performance (content/troupe.js). */
+export const VROID_MEMBERS = ['vroid-nu1', 'vroid-nu3', 'vroid-nu4', 'vroid-nu5', 'vroid-nam1', 'vroid-nam2', 'vroid-nam3'];
 export const SHAPE_KEYS = ['shape_chest', 'shape_waist', 'shape_hips', 'shape_thigh', 'shape_arm', 'shape_build'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
@@ -70,6 +72,11 @@ export const CONTRACTS = {
   'kotone.lite': { family: 'vroid', vroidOf: 'kotone', tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
   // her evening show (game/kotone-show.js): her armature and the dances and singing, no mesh, fetched only for the show
   'moves-kotone': { family: 'vroid-clips', of: 'kotone', clips: KOTONE_SHOW_CLIPS },
+  // the other seven, the same contract; fetched only when a group performs (game/perform/troupe.js), never at the start
+  ...Object.fromEntries(VROID_MEMBERS.flatMap(m => [
+    [m, { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }],
+    [`${m}.lite`, { family: 'vroid', vroidOf: m, tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }],
+    [`moves-${m}`, { family: 'vroid-clips', of: m, clips: KOTONE_SHOW_CLIPS }]])),
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
 
   // The dance game's performers (art/blender/build_performers.py on the graceful body, docs/PERFORMERS.md). Seen up
@@ -373,7 +380,11 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // 69,922,920 B measured).
 // +0.70 MB: her song performances (moves-kotone.glb 0.44 -> 1.14 MB: 23 Avatar Studio Club-mode moves baked on her by
 // scripts/kotone-club-bake.mjs; fetched only with her show pack, near her evening show; hips and legs keyed exactly: thinned, her planted feet skated; 70,621,996 B measured).
-export const TOTAL_RAW_BYTES = 71_000_000;      // (the dance game, the exercise packs and the visitor)
+// +20.63 MB: the other seven VRoid samples for the group performance (vroid-<id>.glb 0.93-1.12 MB, .lite 0.72-0.81 MB,
+// moves-vroid-<id>.glb 1.13-1.14 MB; 91,250,196 B measured). Fetched only when a group of 4 or 8 performs in Sing & Play:
+// the models of that group (one set: light on Low) and one pack (the back row's source, nam-1); the other six packs are
+// ready for later use and never fetched now.
+export const TOTAL_RAW_BYTES = 91_500_000;      // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -397,7 +408,9 @@ export const TOTAL_RAW_BYTES = 71_000_000;      // (the dance game, the exercise
 // +0.49 MB: Kotone on the Mixamo skeleton, packed (kotone.glb 0.58 MB, kotone.lite.glb 0.45 MB; one or the other is
 // loaded) and her show pack (0.37 MB, fetched on demand); 28,684,576 B measured.
 // +0.49 MB: her song performances (moves-kotone.glb packed 0.37 -> 0.86 MB, fetched on demand; 29.17 MB measured).
-export const TOTAL_PACKED_BYTES = 29_400_000;      // (all together)
+// +13.06 MB: the seven VRoid members, packed (a model 0.53-0.59 MB, a light one 0.43-0.47 MB, a pack 0.86 MB; 42.25 MB
+// measured). A group of 8 on Low fetches 3.1 MB of models + 0.86 MB (nam-1's pack); on PC 3.96 + 0.86 MB.
+export const TOTAL_PACKED_BYTES = 42_500_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).
