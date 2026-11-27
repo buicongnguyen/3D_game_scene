@@ -48,7 +48,7 @@ const CSS = `
 #trickHud .s{font:600 18px Fredoka,Nunito,sans-serif}
 #trickHud.hidden,#trickHint.hidden,#trickCard.hidden{display:none}
 #trickHint{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:16;max-width:min(520px,90vw);
- padding:10px 16px;border-radius:18px;background:rgba(255,253,246,.96);box-shadow:0 6px 18px rgba(40,20,0,.25);font:700 16px Nunito,system-ui,sans-serif;color:#4a3020;
+ padding:10px 16px;border-radius:18px;background:rgba(255,253,246,.8);box-shadow:0 6px 18px rgba(40,20,0,.25);font:700 16px Nunito,system-ui,sans-serif;color:#4a3020;
  text-align:center;transition:opacity .3s;zoom:var(--ui-scale,1);pointer-events:none;width:max-content}
 #trickHint.top{bottom:auto;top:calc(76px + env(safe-area-inset-top,0px))}
 #trickHint b{color:#c2541c;margin-right:6px}

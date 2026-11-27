@@ -16670,6 +16670,24 @@
   ]
  },
  {
+  "s": "Sora built a FLYING machine! Tap Kite to fly: hold Jump to climb, hold Dive to go down, and tap Kite again to land.",
+  "ctx": [
+   "UI (src/content/touch-lines.js)"
+  ]
+ },
+ {
+  "s": "Tap Kite to whistle for the kite. Hold Jump to climb, hold Dive to go down, tap Kite again to land. Genzo need never know.",
+  "ctx": [
+   "UI (src/content/touch-lines.js)"
+  ]
+ },
+ {
+  "s": "Sora built a FLYING machine! No what-tricity, just wind and stubbornness. Tap Kite to fly, hold Jump to climb, hold Dive to go down.",
+  "ctx": [
+   "UI (src/content/touch-lines.js)"
+  ]
+ },
+ {
   "s": "Kawabe",
   "ctx": [
    "UI (src/content/tour.js)",

@@ -2,6 +2,7 @@ import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRI
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
 import { JournalMap } from './map.js';
+import { TOUCH_LINES } from '../content/touch-lines.js';
 import { starGroupsHtml } from './stargroups.js';
 import { STORIES, DEFAULT_STORY, storyId, storyStep } from '../game/stories/index.js';
 import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/tree-theme.js';
@@ -443,10 +444,14 @@ export class UI {
     this._prompt = text;
     this._promptKey = key;
     const p = $('prompt');
+    // phones: no key chip in the message (a gold "Do it" chip looked like a second button to tap, owner 2026-11-27);
+    // the real Do it button glows instead while there is something to do
+    $('tAct').classList.toggle('ready', !!text && this.touch);
     if (!text) { p.classList.add('hidden'); $('tAct').textContent = tx('Do it'); return; }
     p.classList.remove('hidden');
     $('promptText').textContent = text;
     $('promptKey').textContent = key || (this.touch ? tx('Do it') : 'E');
+    $('promptKey').hidden = this.touch;
     $('tAct').textContent = tx('Do it');
   }
 
@@ -637,7 +642,7 @@ export class UI {
   async dialogueInner(lines, { onLine } = {}) {
     this.dialogueOpen = true;
     this.prompt(null);
-    const local = lines.map(l => (l.choice ? { choice: l.choice.map(o => ({ ...o, text: tx(o.text) })) } : [l[0], tx(l[1]), l[2]]));
+    const local = lines.map(l => (l.choice ? { choice: l.choice.map(o => ({ ...o, text: tx(o.text) })) } : [l[0], tx((this.touch && TOUCH_LINES[l[1]]) || l[1]), l[2]]));   // phones: lines that name keys, said with buttons (content/touch-lines.js)
     const pages = UI.paginate(local, isCJK(), innerWidth < 640 || innerHeight < 520);
     $('dialogue').classList.remove('hidden');
     let result = null, i = 0;
