@@ -4,7 +4,8 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import { hideBoneTrees } from './matrices.js';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { separateCoplanar } from './coplanar.js';
-import { mergeStatic } from './static-merge.js';
+import { mergeStatic, BUILD_MERGE } from './static-merge.js';
+import { MERGE_EXACT } from '../content/models.js';
 import { peopleFile, prepareLite, LITE_ON_LOW } from './people.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
@@ -86,8 +87,9 @@ export class Assets {
       try { gltf.scene.userData.coplanarFixed = separateCoplanar(gltf.scene); } catch (e) { console.warn(`coplanar fix skipped for ${name}`, e); }
       this.coplanarMs = (this.coplanarMs || 0) + performance.now() - t0;
       // buildings and props: their plain parts become one mesh (engine/static-merge.js), for every copy of them
-      if (this.merge?.has(name)) {
-        try { gltf.scene.userData.merged = mergeStatic(gltf.scene, { glow: GLOW_SET, noShadow: NO_SHADOW_MATERIALS }); } catch (e) { console.warn(`merge skipped for ${name}`, e); }
+      const exact = BUILD_MERGE && MERGE_EXACT.includes(name);
+      if (this.merge && (this.merge.has(name) || exact)) {
+        try { gltf.scene.userData.merged = mergeStatic(gltf.scene, { glow: GLOW_SET, noShadow: NO_SHADOW_MATERIALS, exact }); } catch (e) { console.warn(`merge skipped for ${name}`, e); }
       }
     }
   }

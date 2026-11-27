@@ -13,6 +13,8 @@ import { Pacer } from '../engine/pacer.js';
 import { View } from '../engine/view.js';
 import { Cells, CellGrid } from '../engine/cell-grid.js';
 import { mergeCellShadows } from '../world/shadow-merge.js';
+import { mergeCellBuildings } from '../engine/cell-merge.js';
+import { BUILD_MERGE } from '../engine/static-merge.js';
 import { markSlow } from '../engine/device-note.js';
 import { FrameRing, buildReport } from '../engine/perf-report.js';
 import { canEnter, photoState } from './photo.js';
@@ -85,7 +87,7 @@ export class Game {
     this.placed = (plan && await plan) || scatter((x, z) => this.world.heightAt(x, z), isFree, this.renderer.q.trees);
     if (Z) this.placed = Z.zonePlaced(this.placed, zone, zone.margin, !backdrop);
     for (const t of this.placed.trees) if (!t.far) this.world.splat.paintDisc(t.x, t.z, 2.4 * t.s, 2, 0.75, 2);
-    this.foliage = new Foliage(this.scene, this.assets, this.placed, this.renderer.q);
+    this.foliage = new Foliage(this.scene, this.assets, this.placed, { ...this.renderer.q, multiDraw: this.renderer.renderer.extensions.has('WEBGL_multi_draw') });
     this.grass = new Grass(this.scene, this.world.heightTex, this.world.splat, this.world.terrain.noise, this.renderer.q);
     for (const t of this.placed.trees) if (!t.far && t.s > 0.7) this.colliders.cylinder(t.x, t.z, 0.38 * t.s, t.y - 1, t.y + 5, { id: 'tree' });
     onProgress(0.94, 'Waking Mika');
@@ -116,6 +118,8 @@ export class Game {
         const buildings = new Set(this.structures.cullList.filter(c => !c.prop && !c.mid).map(c => c.obj));
         this.shadowMerged = mergeCellShadows(this.cellGrids[0], o => buildings.has(o));
       }
+      // ...and are drawn with one call per square (engine/cell-merge.js, with WEBGL_multi_draw); ?buildMerge=off: one or two draws a building
+      if (BUILD_MERGE && this.renderer.renderer.extensions.has('WEBGL_multi_draw')) { const b = new Set(this.structures.cullList.filter(c => !c.prop && !c.mid).map(c => c.obj)); this.structures.cellMeshes = mergeCellBuildings(this.cellGrids[0], o => b.has(o)); }
       Cells.sun = this.world.sky?.sun || null;
     }
     this.cells = Cells;                     // (a handle for tests and the console: game.cells.enabled)

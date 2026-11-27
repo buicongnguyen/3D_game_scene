@@ -3,16 +3,29 @@ import { AFTER_ORDER } from '../actors/silhouette.js';
 import { FX } from '../engine/effects.js';
 import { PALETTES } from './seasons.js';
 
+/** The blades of one clump: angle, distance from the root, height, width and lean of each (random once per game). */
+function clumpBlades(blades = 6) {
+  return Array.from({ length: blades }, (_, b) => {
+    const a = (b / blades) * Math.PI * 2 + Math.random() * 0.8;
+    return { a, r: 0.04 + Math.random() * 0.1, h: 0.22 + Math.random() * 0.22, w: 0.035 + Math.random() * 0.02, lean: 0.08 + Math.random() * 0.16 };
+  });
+}
+
+/**
+ * Blade segments per tier (phone speed plan, round 3, step R3-2): 2 on Low and Medium (24 triangles a clump instead of
+ * 36: -60k triangles a frame on Low, 0.7-1.6 % of pixels changed, the same by eye), 3 on High where the blades are
+ * seen larger (4-7 % changed there). `?grassSegs=3` (or 2) overrides the tier, for an A/B on the phone.
+ */
+export function grassSegments(quality, search = typeof location !== 'undefined' ? location.search : '') {
+  const m = /[?&]grassSegs=([23])\b/.exec(search);
+  return m ? +m[1] : quality.grass >= 1 ? 3 : 2;
+}
+
 /** One clump of curved, tapered blades (model space, root at origin). */
-function clumpGeometry(blades = 6, segs = 3) {
+function clumpGeometry(blades, segs = 3) {
   const pos = [], uv = [], idx = [];
   let base = 0;
-  for (let b = 0; b < blades; b++) {
-    const a = (b / blades) * Math.PI * 2 + Math.random() * 0.8;
-    const r = 0.04 + Math.random() * 0.1;
-    const h = 0.22 + Math.random() * 0.22;
-    const w = 0.035 + Math.random() * 0.02;
-    const lean = 0.08 + Math.random() * 0.16;
+  for (const { a, r, h, w, lean } of blades) {
     const ox = Math.cos(a) * r, oz = Math.sin(a) * r;
     const dx = Math.cos(a), dz = Math.sin(a);
     const sx = -dz, sz = dx;
@@ -41,7 +54,9 @@ export class Grass {
   constructor(scene, heightTex, splat, noiseTex, quality) {
     const tile = quality.grass >= 1 ? 72 : quality.grass >= 0.6 ? 60 : 44;
     const count = Math.round(tile * tile * (quality.grass >= 1 ? 6.2 : quality.grass >= 0.6 ? 4.2 : 2.6));
-    const geo = new THREE.InstancedBufferGeometry().copy(clumpGeometry());
+    this.blades = clumpBlades();
+    this.segments = grassSegments(quality);
+    const geo = new THREE.InstancedBufferGeometry().copy(clumpGeometry(this.blades, this.segments));
     const offs = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       offs[i * 3] = Math.random() * tile;
@@ -108,6 +123,15 @@ export class Grass {
     this.mesh.name = 'grass';
     this.mesh.renderOrder = AFTER_ORDER;   // after Mika: blades at her feet are not cover for her silhouette (actors/silhouette.js)
     scene.add(this.mesh);
+  }
+
+  /** Blade segments at run time (A/B pictures: the same blades, 2 or 3 segments). */
+  setSegments(n) {
+    if (n === this.segments) return;
+    this.segments = n;
+    const src = clumpGeometry(this.blades, n), geo = this.mesh.geometry;
+    for (const name of ['position', 'uv', 'normal']) geo.setAttribute(name, src.attributes[name]);
+    geo.setIndex(src.index);
   }
 
   setSeason(season) {

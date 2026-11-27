@@ -508,6 +508,7 @@ export class Structures {
       const d2 = (c.x - camPos.x) ** 2 + (c.z - camPos.z) ** 2;
       c.obj.visible = c.obj.visible ? d2 < (c.prop ? p2 : c.mid ? m2 : b2) : d2 < (c.prop ? p2in : c.mid ? m2in : b2in);
     }
+    for (const m of this.cellMeshes ?? []) m.userData.sync();   // (the squares' joined buildings follow: engine/cell-merge.js)
     this.signs?.cull(camPos, q);
     if (!q.propShadows && !this.propShadowsOff) {
       this.propShadowsOff = true;

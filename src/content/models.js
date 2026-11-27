@@ -31,6 +31,9 @@ export const MERGE_MODELS = [...ARCHITECTURE.filter(n => n !== 'drawbridge'), 'p
   'signpost', 'scarecrow', 'haybale', 'flowerpot', 'sheep-pen', 'fence-wood', 'fence-bamboo', 'wall-stone',
   // carried and story props drawn every frame near Mika (phone speed plan, step 7)
   'hand-lantern', 'music-box', 'fallen-star', 'cog', 'journal-page', 'ball'];
+// ...and with one material for all merged parts (engine/static-merge.js, phone speed round 3, R3-4), these too: the ferry,
+// the laundry line, the tools people carry and the railway sleeper (R3-5: Iron + Sleeper wood, one instanced mesh a stretch). Their roughness and metalness stay exact (not in quarters), so they look the same.
+export const MERGE_EXACT = ['sleeper', 'ferry', 'laundry-line', 'fishing-rod', 'hammer', 'broom', 'hoe', 'bucket', 'basket', 'bug-net'];
 // Not needed for the first frame, fetched when something asks for them: the room models (world/interiors.js fetches a room
 // when the player comes near its door or walks in) and the tropical trees (only when that scenery option is on).
 export const TROPICAL_MODELS = [...TROPICAL_TREES, ...TROPICAL_TREES.map(t => `${t}-lod`), ...TROPICAL_BUSHES];
