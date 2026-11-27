@@ -203,7 +203,8 @@ Character looks:
 
 - **Mika:** mustard-yellow hooded raincoat (`#f2b53a`) with toggles, red
   scarf (`#d8342c`) with a trailing end (`scarf_1`, `scarf_2` bones), dark
-  brown bob with a star hair clip, a satchel on a strap, green rubber boots.
+  brown bob with a star hair clip, a satchel on a strap, green ankle-high rubber
+  shoes over short cream socks (bare shins above).
   The prop is the brass hand lantern (separate `hand-lantern` model).
 - **Genzo:** stout, navy engineer cap and overalls (`#2d4a7a`), red
   neckerchief, huge white walrus moustache, bushy white brows, soot smudge,
