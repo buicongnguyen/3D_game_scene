@@ -27,10 +27,12 @@ export const MOOD = Object.freeze({ intro: .6, verse: .55, prechorus: .65, choru
   other: .6, moment: .9, cheer: 1, bow: .95 });
 export const moodAt = (section, moment = null) => (moment ? MOOD[moment] ?? MOOD.moment : MOOD[section] ?? MOOD.other);
 
-/** The song's audio: an <audio> element through the game's music bus when WebAudio is up (else its own volume). */
+/** The song's audio: an <audio> element through the game's music bus when WebAudio is up (else its own volume).
+ *  gainDb: the song's own level (a library song's catalog gainDb: every song as loud as -16 LUFS). */
 export class SongAudio {
-  constructor(url, audio) {
+  constructor(url, audio, gainDb = 0) {
     this.audio = audio; this.el = null; this.url = url; this.gain = null; this.vol = 0;
+    this.level = Number.isFinite(gainDb) ? 10 ** (Math.max(-12, Math.min(6, gainDb)) / 20) : 1;
   }
   ensure() {
     if (this.el || !this.url || typeof window === 'undefined' || !window.Audio) return this.el;
@@ -46,8 +48,8 @@ export class SongAudio {
     if (k <= 0.001 || !playing || !(t >= 0)) { if (!el.paused) el.pause(); return; }
     if (Math.abs(el.currentTime - t) > .3 || el.paused) { try { el.currentTime = t; } catch { /* not seekable yet */ } }
     if (el.paused) el.play()?.catch?.(() => {});
-    if (this.gain) this.gain.gain.setTargetAtTime(k * 2, this.audio.ctx.currentTime, .1);   // (the music bus is at half the music volume)
-    else el.volume = Math.min(1, k * (this.audio?.musicVol ?? .55) * 1.6);
+    if (this.gain) this.gain.gain.setTargetAtTime(k * 2 * this.level, this.audio.ctx.currentTime, .1);   // (the music bus is at half the music volume)
+    else el.volume = Math.min(1, k * (this.audio?.musicVol ?? .55) * 1.6 * this.level);
   }
   /** The song's sound as a MediaStream (Record): a tap on its gain node, else the element's own capture. */
   stream() {
@@ -102,7 +104,7 @@ export class Performer {
     // (style: the Dance choice; avoid: clips this singer never dances, content/troupe.js GUESTS)
     this.plan = planPerformance(song.song, this.clock, song.lyrics, { style, avoid: avoid?.length ? avoid : null });
     this.mood = moodAt('intro');
-    this.sound = new SongAudio(song.url, audio);
+    this.sound = new SongAudio(song.url, audio, song.song?.gainDb);
     this.restRoot = restRoot;
     this.ground = ground;   // (x, z) -> y: her feet fitted to a hillside (ground-fit.js); null on level stages
     this.t = 0; this.on = false; this.done = false;

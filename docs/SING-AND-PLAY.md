@@ -204,3 +204,39 @@ fireworks are night-only, petals and bubbles day-only; Stella sings at night; th
     buttons on 1280x720, 390x844, 360x780 and 844x390 (on its side the scrolling lines' clipped buttons pass under the
     touch buttons' boxes, hidden by the line's own clip, as before). Pictures: `.tools/time/` (local).
 
+## Songs from the library (2026-11-28, branch songs-remote)
+Owner: Starline's songs move to their own public repo, served by GitHub Pages, and the game loads them from there.
+- **The library**: github.com/buicongnguyen/starline-songs, served at https://buicongnguyen.github.io/starline-songs/
+  (the game's own origin: Web Audio `createMediaElementSource` and Record's `captureStream` keep working).
+  `index.json` (version 1) lists every song; `songs/<id>/<id>.<ver>.{m4a,beats.json,lyrics.json,mouth.json,stage.json}`
+  are immutable (the version is a hash of the song's files). Audio: AAC-LC 160 kbps 44.1 kHz from the WAV master; the
+  Avatar Studio songs are copied byte for byte (SHA-256 checked). Golden Rails EN/VI + the hum are there too; the game
+  keeps its own copy of them (`public/songs/kotone/`) as the offline set.
+- **Reading it** (`content/song-catalog.js`): Sing & Play starts with the built-in songs and asks for the catalog at once;
+  it comes in within 4 s or not at all (the row keeps the built-in songs). `?songsBase=<url>` reads another copy (a local
+  server of the songs repo, with CORS), `?songsBase=off` none; `?qa` pages read none unless given one. A library song with
+  a built-in id replaces it (keeps its translated title; the built-in copy is its fallback).
+- **Song row**: the songs of the game's language (`songsFor`: Korean now has its own; Japanese hears English) plus the
+  instrumentals, in the order dance songs (bpm 90 and up), slow songs, instrumentals; one flat row after Lyrics On/Off,
+  sideways scroll where it does not fit. Picking a song brings its dance style (`songStyle`: the catalog's `style`, else
+  Cute for a slow song); the Dance row still changes it. The choice is data plus handlers (`songChoices()`,
+  `currentSong()`, `chooseSong(id)`, `onSongs`) so another picker can host it.
+- **Lazy files**: nothing of a song loads before Perform. Perform fetches its json files and its whole audio (shown as
+  "Getting the song ready…"), then plays a blob: copy (one download; Record and Web Audio take it as before). A failure:
+  the built-in copy when there is one, else a toast.
+- **Instrumentals** (`instrumental: true`, no lyrics or mouth): danced only, no mic span, no singing mouth, no caption.
+- **Level**: the catalog's `gainDb` (to -16 LUFS) scales the song on the music bus (`SongAudio.level`).
+- **Service worker**: nothing of the library is precached. index.json is network first (the kept copy offline); a song's
+  files are kept in `starline-songs` once played (range answers from the kept copy; the oldest go past 120 MB); `?qa` and
+  `?nosw` pages keep nothing. Settings' "Clear downloaded game data" clears it with the rest.
+- **Titles**: a library song's title is shown as its catalog writes it (its own language); a built-in one stays translated.
+- **Caption**: a line still being sung keeps the caption until its end (a short line right before the next one was cut
+  off by the next one's 0.6 s lead and its last word never lit: Tay Trong Tay).
+- **Checked on every song** (`.tools/songs/library-check.mjs`, 2026-11-28): beat clock from beats.json, the plan in all four
+  styles (a dance for every section, mic spans only on sung songs), solo and group camera plans to the end, every caption
+  line shown at its own time with its words lit in order, the singing mouth open on 89-98 % of the sung word time. Six
+  slow songs sing into their last two bars, so their plan has no closing bow (the plan's rule: no moment over a sung
+  line). troupe-check (group of 8): Mơ Thật Xa (mix) and 별까지 자라나 (K-pop): no joint-rule frames, planted-foot slide
+  p95 0.8-1.4 cm/s, p99 under 3.2 cm/s.
+- **Credits**: "Songs © 2026 Bui Cong Nguyen, made with ACE-Step 1.5; from the Avatar Studio library."
+- Tests: `tests/song-catalog.test.mjs` (fixture `tests/fixtures/songs-index.json`, no network; the service worker run in a vm).

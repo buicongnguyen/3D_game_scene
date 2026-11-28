@@ -18770,6 +18770,12 @@
   ]
  },
  {
+  "s": "Instrumental: dance only",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Stop",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18812,7 +18818,19 @@
   ]
  },
  {
+  "s": "Getting the song ready…",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Getting the group ready…",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "The song couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
@@ -28549,6 +28567,12 @@
  },
  {
   "s": "Kotone's song “Golden Rails”: original lyrics, music made with ACE-Step 1.5.",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "Songs © 2026 Bui Cong Nguyen, made with ACE-Step 1.5; from the Avatar Studio library.",
   "ctx": [
    "UI (src/ui/brand.js)"
   ]

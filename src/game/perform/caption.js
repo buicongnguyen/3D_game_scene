@@ -23,12 +23,14 @@ export function captionLines(lyrics) {
 /**
  * The caption at song time t: { i (line index), k (the lit word: -1 before the first, words.length after the last) } or
  * null between lines. A line shows from CAPTION.lead before it until CAPTION.hold after it, or until the next one
- * starts showing.
+ * starts showing; a line still being sung keeps the caption until its end (a short line right before the next one is
+ * not cut off by the next one's lead).
  */
 export function captionAt(lines, t) {
   if (!lines?.length || !(t >= 0)) return null;
   let lo = 0, hi = lines.length - 1, i = -1;
   while (lo <= hi) { const mid = (lo + hi) >> 1; if (lines[mid].t - CAPTION.lead <= t) { i = mid; lo = mid + 1; } else hi = mid - 1; }
+  if (i > 0 && t < lines[i].t && t < lines[i - 1].e) i--;
   if (i < 0) return null;
   const l = lines[i];
   if (t > l.e + CAPTION.hold) return null;
