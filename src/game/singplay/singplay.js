@@ -315,6 +315,7 @@ export class SingPlay {
     saveStrong('0'); this.strong = { ok: false, why: 'fell back' };
     this.group = 4; saveGroup(4);
     this.watch = null; this.dropAt = null;
+    this.ui.toast?.(tx(N_('The back row is taking a break')));
     this.label();
   }
 

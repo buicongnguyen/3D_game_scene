@@ -220,6 +220,8 @@ On the strong-phone path that is still inside the frame: a phone is offered 8 on
 less, so 8 lands near 13 ms at worst, under the 15 ms fall-back line and the 16.7 ms of 60 fps; a phone that cannot hold
 it drops the back row at the next cut. The next steps, if wanted, trade looks: the back row at half rate (about -1 ms,
 inside the noise, moves at half the frame rate) or no back-row shadows.
+**Owner (2026-11-28):** +3.1 ms on the fixed full-group view accepted (no look trade); when the back row leaves, a short
+toast says "The back row is taking a break" (vi/ko/ja).
 
 ## Checks
 - `npm test` (troupe.test.mjs: cast, back routine, copy maths, leg solve, sing-along gate, room check, group shots,

@@ -18494,6 +18494,12 @@
   ]
  },
  {
+  "s": "The back row is taking a break",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Video saved",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
