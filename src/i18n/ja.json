@@ -5097,5 +5097,9 @@
   "Leave Sing & Play": "うたって遊ぶをやめる",
   "Sing & Play": "うたって遊ぶ",
   "Sing & Play: find flat open ground, pick Solo or a group, then press Perform.": "うたって遊ぶ：平らで広い場所を見つけて、ソロかグループを選び、パフォーマンスを押そう。",
-  "The back row is taking a break": "後ろの列はひと休み中"
+  "The back row is taking a break": "後ろの列はひと休み中",
+  "Items": "持ち物",
+  "Items: {list}": "持ち物：{list}",
+  "+{n} {item}": "{item} +{n}",
+  "The names of your items (gamepad LB)": "持ち物の名前を見る（ゲームパッド LB）"
 }

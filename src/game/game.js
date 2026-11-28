@@ -276,6 +276,7 @@ export class Game {
       if (this.input.pressed('pause')) { if (this.ui.overlay) this.ui.closeOverlay(); else this.togglePause(true); }
       else if (this.input.pressed('journal') && !this.paused) this.ui.openJournal();
       else if (this.input.pressed('photo') && !this.paused) this.openPhoto('key');
+      else if (this.input.pressed('items') && !this.paused && !this.ui.overlay) this.ui.toggleInvCard();
     }
     this.input.enabled = !this.paused && !this.ui.dialogueOpen;
     // a recorded clip covers the whole screen (game/video.js, the phone's opening): none of the valley is seen, so none

@@ -407,6 +407,7 @@ export class UI {
   }
 
   showHud(on) {
+    if (!on) { this._invCounts = null; this.invCard(false); }   // (the next bag is a new baseline: no gain notices for it)
     $('hud').classList.toggle('hidden', !on);
     $('touch').classList.toggle('hidden', !on || !this.touch);
   }
@@ -428,20 +429,107 @@ export class UI {
 
   icon(name) { return `./icons/${name}.webp`; }
 
+  /** The items strip: icons with a count; a gain flashes its name, a tap lists every name (style.css #inventory). */
   setInventory(inv) {
     const shown = Object.entries(inv).filter(([k, n]) => n > 0 && ITEMS[k]);
-    const key = JSON.stringify(shown);
+    const key = getLang() + JSON.stringify(shown);
     if (key === this._inv) return;
     this._inv = key;
-    const el = $('inventory');
-    el.innerHTML = '';
-    for (const [k, n] of shown) {
-      const it = ITEMS[k];
-      const d = document.createElement('div');
-      d.className = 'inv';
-      d.innerHTML = `<img alt="" src="${this.icon(it.icon)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph'}))"><span>${tx(it.name)}${n > 1 || k === 'mon' ? ` ×${n}` : ''}</span>`;
-      el.appendChild(d);
-    }
+    // a gain shows its name for a moment - not the bag a save loads with, nor while the HUD is away (tours, cut-scenes)
+    const prev = this._invCounts, live = !$('hud').classList.contains('hidden');
+    this._invCounts = Object.fromEntries(shown);
+    this._invShown = shown;
+    this._renderInv();
+    if (prev && live) for (const [k, n] of shown) if (n > (prev[k] || 0)) this._invGain(k, n - (prev[k] || 0));
+  }
+
+  _invImg(it) { return `<img alt="" src="${this.icon(it.icon)}" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'ph'}))">`; }
+
+  _invName(k, n) { return `${tx(ITEMS[k].name)}${n > 1 || k === 'mon' ? ` ×${n}` : ''}`; }
+
+  _renderInv() {
+    const strip = $('invStrip'), shown = this._invShown || [];
+    if (!this._invBound) this._bindInv();
+    strip.hidden = !shown.length;
+    if (!shown.length) { strip.innerHTML = ''; this.invCard(false); return; }
+    // two rows at most (the row length is the layout's: 6 on a PC, 3 on a phone), then "+N" for the rest
+    const cap = 2 * (parseInt(getComputedStyle($('inventory')).getPropertyValue('--inv-per-row'), 10) || 6);
+    const vis = shown.length > cap ? shown.slice(0, cap - 1) : shown;
+    // (PC: a hovered icon names itself at once; the row ends with the I key that lists them all)
+    strip.innerHTML = vis.map(([k, n]) => `<span class="inv" data-k="${esc(k)}">${this._invImg(ITEMS[k])}${n > 1 || k === 'mon' ? `<b class="c">${n}</b>` : ''}` +
+      `<span class="tip" aria-hidden="true">${esc(this._invName(k, n))}</span></span>`).join('') +
+      (vis.length < shown.length ? `<span class="inv more">+${shown.length - vis.length}</span>` : '') +
+      (this.touch ? '' : '<kbd class="inv-key" aria-hidden="true">I</kbd>');
+    const label = tx('Items: {list}', { list: shown.map(([k, n]) => this._invName(k, n)).join(', ') });
+    strip.setAttribute('aria-label', label);
+    strip.title = label;
+    if (this._invOpen) this._fillInvCard();
+    this._showInvFlash();
+  }
+
+  _bindInv() {
+    this._invBound = true;
+    const strip = $('invStrip');
+    strip.setAttribute('aria-controls', 'invCard');
+    strip.setAttribute('aria-expanded', 'false');
+    strip.addEventListener('click', e => { this.invCard(!this._invOpen); if (e.detail) strip.blur(); });   // (no focus left behind for Space)
+    // a tap anywhere else closes the card (and still does what it does)
+    addEventListener('pointerdown', e => { if (this._invOpen && !$('inventory').contains(e.target)) this.invCard(false); }, true);
+    $('invCard').addEventListener('scroll', () => { if (this._invOpen) this._invCardTimer(); }, { passive: true });
+    $('invCard').addEventListener('click', () => this.invCard(false));   // (a tap on the card too; a drag only scrolls it)
+  }
+
+  /** The names card: open (true) or closed; it closes itself after 5 s. */
+  invCard(open) {
+    open = !!open && !!this._invShown?.length;
+    if (!open && !this._invOpen) return;
+    this._invOpen = open;
+    $('invCard').hidden = !open;
+    $('invStrip').setAttribute('aria-expanded', String(open));
+    $('invStrip').classList.toggle('open', open);
+    clearTimeout(this._invCardT);
+    if (open) { this._fillInvCard(); this._invCardTimer(); }
+  }
+
+  /** I / gamepad LB (game.js): open or close the names card. */
+  toggleInvCard() { this.invCard(!this._invOpen); }
+
+  _invCardTimer() { clearTimeout(this._invCardT); this._invCardT = setTimeout(() => this.invCard(false), 5000); }
+
+  _fillInvCard() {
+    $('invCard').innerHTML = `<div class="h">${esc(tx('Items'))}</div><ul>${(this._invShown || []).map(([k, n]) =>
+      `<li>${this._invImg(ITEMS[k])}<span>${esc(tx(ITEMS[k].name))}</span>${n > 1 || k === 'mon' ? `<b>×${n}</b>` : ''}</li>`).join('')}</ul>`;
+  }
+
+  // gains wait their turn: one name at a time, 2.5 s each (at most three waiting)
+  _invGain(k, d) {
+    (this._invQ ||= []).push([k, d]);
+    if (this._invQ.length > 3) this._invQ.shift();
+    if (!this._invFlashT) this._invNext();
+  }
+
+  _invNext() {
+    clearTimeout(this._invFlashT);
+    const q = this._invQ?.shift();
+    this._invFlash = q ? { k: q[0], text: tx('+{n} {item}', { n: q[1], item: tx(ITEMS[q[0]].name) }) } : null;
+    this._showInvFlash();
+    this._invFlashT = q ? setTimeout(() => {
+      this._invFlash = null; this._showInvFlash();
+      this._invFlashT = setTimeout(() => this._invNext(), 300);
+    }, 2500) : 0;
+  }
+
+  _showInvFlash() {
+    const strip = $('invStrip'), f = this._invFlash;
+    strip.querySelectorAll('.inv.flash').forEach(e => e.classList.remove('flash'));
+    if (!f) return;
+    const chip = strip.querySelector(`.inv[data-k="${f.k}"]`) || strip.querySelector('.inv.more');
+    if (!chip) return;
+    let lab = chip.querySelector('.lab');
+    if (!lab) { lab = document.createElement('span'); lab.className = 'lab'; lab.setAttribute('aria-hidden', 'true'); chip.appendChild(lab); }
+    lab.textContent = f.text;
+    void lab.offsetWidth;                    // (so a fresh pill grows in rather than appearing)
+    chip.classList.add('flash');
   }
 
   prompt(text, key) {
@@ -1146,7 +1234,7 @@ export class UI {
       row(['C'], N_('Dive while swimming')), row(['W', 'Space', 'Space'], N_('Run forward and tap Space twice for a ×4 speed leap (four taps: ×16)')),
       row([tx('Mouse')], N_('Drag to look · wheel to zoom')),
       head(N_('Doing things')), row(['E'], N_('Talk, pick up, light lamps — anything nearby')), row(['E', 'Q'], N_('Next / back in conversations')),
-      row(['J'], N_('Journal')), row(['Esc'], N_('Pause')),
+      row(['J'], N_('Journal')), row(['I'], N_('The names of your items (gamepad LB)')), row(['Esc'], N_('Pause')),
       head(N_('Flying the Star Kite')), row(['G'], N_('Take off, or land the kite')), row(['W', 'A', 'S', 'D'], N_('Steer')),
       row(['Space'], N_('Climb (hold)')), row(['C', 'N'], N_('Descend (hold)')), row(['Shift'], N_('Fly faster')),
       ...(motors ? [row(['Shift'], N_('With motors: a stronger boost while the battery lasts')), row([], hover)] : [row([], bench)]),

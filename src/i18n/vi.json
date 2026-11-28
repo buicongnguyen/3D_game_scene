@@ -5097,5 +5097,9 @@
   "Leave Sing & Play": "Rời Hát & Chơi",
   "Sing & Play": "Hát & Chơi",
   "Sing & Play: find flat open ground, pick Solo or a group, then press Perform.": "Hát & Chơi: tìm chỗ đất bằng rộng rãi, chọn Đơn ca hoặc một nhóm, rồi bấm Biểu diễn.",
-  "The back row is taking a break": "Hàng sau nghỉ một chút"
+  "The back row is taking a break": "Hàng sau nghỉ một chút",
+  "Items": "Đồ mang theo",
+  "Items: {list}": "Đồ mang theo: {list}",
+  "+{n} {item}": "+{n} {item}",
+  "The names of your items (gamepad LB)": "Tên các món đồ bạn mang (tay cầm: LB)"
 }

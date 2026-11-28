@@ -29531,6 +29531,24 @@
   ]
  },
  {
+  "s": "Items: {list}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Items",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "+{n} {item}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Graphics setting saved — reload to apply fully",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -29969,6 +29987,12 @@
  },
  {
   "s": "Next / back in conversations",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "The names of your items (gamepad LB)",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]

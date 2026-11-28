@@ -59,9 +59,47 @@ body.touch #miniMap { width: 72px; height: 72px; }
 /* the objective leaves room for the buttons beside the little map */
 body.touch #objective { max-width: min(420px, calc(100vw - 152px)); }
 #seasonIcon svg { width: 22px; height: 22px; display: block; }
-#inventory { position: absolute; right: 16px; top: calc(64px + var(--safe-t)); display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-.inv { display: flex; align-items: center; gap: 6px; padding: 4px 10px 4px 5px; border-radius: 99px; background: rgba(255, 247, 232, 0.9); box-shadow: var(--shadow); font-weight: 800; font-size: 14px; animation: pop 0.35s ease; }
-.inv img, .inv .ph { width: 30px; height: 30px; object-fit: contain; border-radius: 50%; background: #fdecd0; }
+/* The items Mika carries (ui.js setInventory): small icons with a count, never over the little map - in a slim row
+   right under it on a PC, under it and its two buttons on a phone - in at most two rows (then a "+N" chip). A gain
+   shows its name for a moment ("+1 Peach"). PC: hovering an icon names it, I (gamepad LB) or a click on the row lists
+   every name in a small card; phone: a tap on the strip (one 44 px target) opens that card. */
+#inventory { position: absolute; right: 12px; top: calc(136px + var(--safe-t)); z-index: 4; display: flex; flex-direction: column; align-items: flex-end; --inv-size: 32px; --inv-per-row: 8; --inv-key: 26px; }
+body.touch #inventory { top: calc(100px + var(--safe-t)); --inv-per-row: 3; --inv-key: 0px; }
+#invStrip { pointer-events: auto; position: relative; display: flex; flex-direction: row-reverse; flex-wrap: wrap; align-content: flex-start; gap: 4px; box-sizing: border-box; min-width: 44px; min-height: 44px;
+  max-width: calc(var(--inv-per-row) * (var(--inv-size) + 4px) + 6px + var(--inv-key, 0px)); padding: 5px; margin: 0; border: 0; border-radius: 22px; background: rgba(255, 247, 232, 0.3); color: var(--ink); cursor: pointer; font: inherit; -webkit-tap-highlight-color: transparent; }
+#invStrip[hidden] { display: none; }
+#invStrip:focus-visible { outline: 3px solid var(--gold-deep); outline-offset: 2px; }
+.inv { position: relative; isolation: isolate; flex: none; width: var(--inv-size); height: var(--inv-size); border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(255, 247, 232, 0.92); box-shadow: 0 2px 6px rgba(12, 16, 40, 0.28); animation: pop 0.35s ease; }
+.inv img, .inv .ph { width: 86%; height: 86%; object-fit: contain; border-radius: 50%; background: #fdecd0; }
+.inv .c { position: absolute; right: -4px; bottom: -3px; min-width: 18px; height: 18px; box-sizing: border-box; padding: 0 4px; border-radius: 9px; background: var(--ink); color: #fff; font: 800 11px/18px var(--ui); text-align: center; z-index: 1; }
+.inv.more { font: 800 13px var(--ui); color: var(--ink); }
+/* PC: the key that opens the names card, at the row's end; a hovered icon says its name and count at once */
+.inv-key { flex: none; align-self: center; min-width: 18px; height: 18px; box-sizing: border-box; padding: 0 4px; border-radius: 5px; background: rgba(28, 35, 64, 0.72); color: #fff; font: 800 11px/18px var(--ui); text-align: center; }
+body.touch .inv-key, body.touch .inv .tip { display: none; }
+.inv .tip { display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 3; padding: 3px 9px; border-radius: 8px; background: rgba(28, 35, 64, 0.88); color: #fff; font: 700 13px/1.3 var(--ui); white-space: nowrap; pointer-events: none; }
+.inv:hover { z-index: 3; }
+.inv:hover .tip { display: block; }
+#invStrip.open .tip { display: none; }   /* (the card says it all while it is open) */
+/* the gain notice: the chip grows to the left into a pill with the name, then shrinks back to the icon */
+.inv .lab { position: absolute; right: 0; top: 0; height: 100%; z-index: -1; display: flex; align-items: center; box-sizing: border-box; padding: 0 calc(var(--inv-size) + 6px) 0 12px; border-radius: 99px;
+  background: rgba(255, 247, 232, 0.97); box-shadow: var(--shadow); white-space: nowrap; font: 800 14px var(--ui); color: var(--ink); opacity: 0; transform: scaleX(0.3); transform-origin: right center; transition: opacity 0.25s, transform 0.3s ease; pointer-events: none; }
+.inv.flash { z-index: 2; }
+.inv.flash .lab { opacity: 1; transform: none; }
+#invCard { position: absolute; top: 100%; right: 0; margin-top: 6px; pointer-events: auto; box-sizing: border-box; min-width: 170px; max-width: min(280px, calc(100vw - 32px)); max-height: calc(100vh - 200px); overflow-y: auto;
+  padding: 8px 12px 10px; border-radius: 16px; background: rgba(255, 247, 232, 0.96); box-shadow: var(--shadow); color: var(--ink); animation: pop 0.25s ease; }
+#invCard[hidden] { display: none; }
+#invCard .h { font-family: var(--head); font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold-deep); font-weight: 700; margin-bottom: 4px; }
+#invCard ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+#invCard li { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; line-height: 1.25; }
+#invCard li img, #invCard li .ph { flex: none; width: 26px; height: 26px; object-fit: contain; border-radius: 50%; background: #fdecd0; }
+#invCard li span { flex: 1 1 auto; min-width: 0; }
+#invCard li b { flex: none; font-size: 13px; color: var(--ink-soft); }
+/* a phone held sideways: the card opens to the left of the strip, in two columns, so it fits the short screen */
+@media (max-height: 520px) {
+  #invCard { top: 0; right: 100%; margin: 0 6px 0 0; max-width: calc(100vw - 180px); max-height: calc(100vh - 112px); }
+  #invCard ul { grid-template-columns: repeat(2, max-content); column-gap: 18px; }
+  #invCard li span { white-space: nowrap; }
+}
 @keyframes pop { 0% { transform: scale(0.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 #prompt { position: absolute; left: 50%; bottom: calc(96px + var(--safe-b)); transform: translateX(-50%); display: flex; gap: 10px; align-items: center; padding: 9px 18px; border-radius: 99px; background: rgba(28, 35, 64, 0.66); color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55); font-weight: 800; font-size: 17px; box-shadow: var(--shadow); white-space: nowrap; }
 #leap { position: absolute; left: 50%; bottom: calc(150px + var(--safe-b)); transform: translateX(-50%); padding: 6px 16px; border-radius: 99px; font-family: var(--head); font-weight: 700; font-size: 22px; color: #3b1c05; background: linear-gradient(180deg, #ffe38a, #f2a33a); box-shadow: 0 0 22px rgba(255, 196, 70, 0.8), var(--shadow); animation: leapPulse 0.5s ease-in-out infinite alternate; }
@@ -106,7 +144,6 @@ body.touch #btnJournal { top: calc(10px + var(--safe-t)); bottom: auto; right: 8
 body.touch #btnMenu { top: calc(54px + var(--safe-t)); bottom: auto; right: 86px; }
 body.touch .iconbtn { background: none; box-shadow: none; font-size: 16px; isolation: isolate; }
 body.touch .iconbtn::before { content: ''; position: absolute; inset: 5px; z-index: -1; border-radius: 50%; background: rgba(255, 247, 232, 0.84); box-shadow: 0 2px 6px rgba(12, 16, 40, 0.28); }
-body.touch #inventory { top: calc(114px + var(--safe-t)); }
 
 /* ---------- dialogue ---------- */
 #dialogue { position: fixed; left: 50%; bottom: calc(10px + var(--safe-b)); transform: translateX(-50%); width: min(760px, 92vw); display: flex; align-items: flex-end; gap: 0; z-index: 20; animation: rise 0.25s ease; }
