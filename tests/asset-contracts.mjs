@@ -417,6 +417,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +0.05 MB: the boys' atlases re-packed (square texels, hair cards sharing their sheet: vroid-nam1/2/3 and their light
 // files +50,688 B together; faces at a distance, round 2); 91,242,852 B measured.
 // +0.49 MB: the Explore moves pack (moves-explore.glb, 17 clips on Saki's skeleton for every singer body; Play as).
+// -0.05 MB: the girls, Kotone, the Night Star and the visitors re-packed the same way, and every VRoid mouth tinted in its
+// atlas (faces round 3: the 16 models and light files -49,028 B together); 91,193,824 B measured.
 export const TOTAL_RAW_BYTES = 91_950_000;     // (the dance game, the exercise packs, the visitors, the Night Star and Play as)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
@@ -451,6 +453,7 @@ export const TOTAL_RAW_BYTES = 91_950_000;     // (the dance game, the exercise 
 // +0.01 MB: the boys' atlases re-packed (+10,656 B packed: the PC group set +39 KB, the phone set -29 KB); 40,777,576 B measured.
 // +0.23 MB: the Explore moves pack packed (moves-explore.glb, every singer body's Explore moves; fetched the first time a
 // singer is played, Play as; 41.03 MB measured).
+// -0.08 MB: the girls' atlases re-packed and the mouths tinted (-82,556 B packed; faces round 3); 40,695,020 B measured.
 export const TOTAL_PACKED_BYTES = 41_150_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
