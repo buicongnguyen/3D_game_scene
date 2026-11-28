@@ -26,8 +26,9 @@ What the script does, per character:
    the face and eyes get extra; texels stay square (u by the source's width, v by its height), islands of one material
    that read the same texels share them (hair cards), and the packer is kept from "correcting" for a picture's aspect
    (build_atlas: the boys' faces came out 16 : 1 before 2026-11-28).
-5. The mouth (MOUTH, 2026-11-28): the lips tinted and the mouth's inside darkened in the atlas, so a face reads as
-   singing from a few metres (pink-coral lips for the girls, a faint rose for the boys; mouth_masks / mouth_look).
+5. The mouth (MOUTH, 2026-11-28): the lips tinted and the mouth's inside painted a deep rose (a lighter tongue toward its
+   bottom) in the atlas, so a face reads as singing from a few metres (pink-coral lips for the girls, a faint rose for
+   the boys; mouth_masks / mouth_look).
 """
 import bpy, bmesh, sys, os, json, math, struct
 import numpy as np
@@ -342,22 +343,35 @@ def find_source(mat):
 # gone by ~6 m, and the open mouth's inside (a mid red) is close to the skin's brightness. Two masks over the atlas:
 #   lips    the face skin within a few mm of the mouth's slit (the skin edges along the mouth's inside), upper lip thinner
 #           than the lower, fading toward the corners
-#   inside  the mouth's own sheet (FaceMouth: teeth, tongue, throat)
-# and per character kind a soft multiply: lips toward a pink-coral (girls) or a faint natural rose (boys), the inside
-# darker except the teeth. Both in the picture: no draws, materials or shader work, the same on PC and Low.
+#   inside  the mouth's own sheet (FaceMouth: teeth, tongue, throat), and its lower part (the tongue: by rest height)
+# and per character kind a soft multiply: lips toward a pink-coral (girls) or a faint natural rose (boys); the inside
+# painted rose except the teeth (round 4, below). In the picture: no draws, materials or shader work, the same on PC and Low.
 # Measured (round 3, frozen Sing & Play frames, 2-12 m): with the inside darker, singing changes the mouth's pixels
 # 14-29 % more for the girls and 42-55 % for the boys at 2-6 m than with the shipped atlas (the open mouth reads as a dark
 # shape instead of a red one at the skin's brightness); a lip band of a few mm changed a closed mouth by only 1-2 CIE76 units (unseen), the wider one
 # below by 3-4.5 at 2-6 m (just seen: soft pink lips, no lipstick). The narrow band stays for the boys (a faint tint).
+# The inside (owner 2026-11-28, after round 3: "inside the character's mouth it should be a dark pink tongue colour;
+# currently it is dark and doesn't look good"): no longer the picture made darker (a dark red-brown, near black at
+# night) but painted toward a deep rose with a lighter tongue rose toward the bottom, the picture's own shading kept,
+# the teeth white. Picked from nine variants on frozen Sing & Play frames (0.8-6 m, day and night; docs/GROUP-
+# PERFORMANCE.md "Faces at a distance", round 4): singing changes the mouth's pixels as much as round 3's dark inside
+# or more (the rose differs from the skin in hue as well as in lightness), and the open mouth stays 26-36 L darker than
+# the skin (round 3: 28-43, the plain picture: 19-28); a lighter pink (0.5, 0.14, 0.22) read as a pale hole by day.
 MOUTH = {
     # tint: multiply colour at full lip weight; lip: its strength; up / down: the lip band above / below the slit as
-    # (share of the mouth's width, at most metres: the slits are 16-40 mm wide); inner: how much darker the inside gets
-    # (teeth kept)
-    'girl': {'tint': (1.0, 0.62, 0.64), 'lip': 0.88, 'up': (0.15, 0.0032), 'down': (0.32, 0.0068), 'inner': 0.6},
-    'boy': {'tint': (1.0, 0.82, 0.80), 'lip': 0.35, 'up': (0.08, 0.002), 'down': (0.15, 0.004), 'inner': 0.6},
+    # (share of the mouth's width, at most metres: the slits are 16-40 mm wide); inside / tongue: the colours (sRGB 0..1)
+    # the mouth's inside is painted toward (the tongue's toward its bottom: MOUTH_TONGUE), at `inner` strength, keeping
+    # the picture's own shading (its luminance over the inside's median, to the power `shade`); teeth kept
+    'girl': {'tint': (1.0, 0.62, 0.64), 'lip': 0.88, 'up': (0.15, 0.0032), 'down': (0.32, 0.0068),
+             'inner': 1.0, 'inside': (0.33, 0.055, 0.15), 'tongue': (0.60, 0.21, 0.32), 'shade': 0.6},
+    # (the boys: the same rose, a little less saturated)
+    'boy': {'tint': (1.0, 0.82, 0.80), 'lip': 0.35, 'up': (0.08, 0.002), 'down': (0.15, 0.004),
+            'inner': 1.0, 'inside': (0.33, 0.075, 0.155), 'tongue': (0.58, 0.24, 0.33), 'shade': 0.6},
 }
+MOUTH_TONGUE = (0.2, 0.55)   # the tongue's share: 1 below this share of the mouth's height (rest z), 0 above the second
 MOUTH_KIND = 'girl'                                         # (set per character by the caller: vroid_mixamo.py)
 MOUTH_ON = os.environ.get('VROID_MOUTH', 'on') != 'off'     # off: the atlas as baked
+MOUTH_SAVE = bool(os.environ.get('VROID_MOUTH_SAVE'))       # also write the plain atlas and the masks beside it (measuring)
 # measuring (env VROID_MOUTH_VARIANTS=1): each choice written beside the atlas as <stem>.atlas.<name>.png
 MOUTH_VARIANTS = {'none': {'lip': 0, 'inner': 0}, 'a': {'lip': 1, 'inner': 0}, 'b': {'lip': 0, 'inner': 1},
                   'c': {'lip': 1, 'inner': 1}, 'a2': {'lip': 1.6, 'inner': 0}, 'c2': {'lip': 1.6, 'inner': 1.3}}
@@ -411,7 +425,8 @@ def mouth_masks(o, size, names):
             if t.material_index in s: tex[k] += area
     rep = {'texels': {k: int(round(v)) for k, v in tex.items()}}
     LAST_ATLAS.clear(); LAST_ATLAS.update(rep)
-    if not mouth or not skin: rep['mouth'] = None; print('MOUTH none', names); return lip, inner
+    low = np.zeros(size * size, np.float32)
+    if not mouth or not skin: rep['mouth'] = None; print('MOUTH none', names); return lip, inner, low
     co = np.array([v.co[:] for v in me.vertices])      # rest positions (the shape keys' basis)
     uvl = np.array([l.uv[:] for l in au])
 
@@ -440,7 +455,7 @@ def mouth_masks(o, size, names):
         if not any(f.material_index in mouth for f in fs) and not (len(fs) == 1 and all(inbox(v) for v in e.verts)): continue
         segs.append((e.verts[0].co[:], e.verts[1].co[:]))
     bm.free()
-    if not segs: rep['mouth'] = None; print('MOUTH no slit'); return lip, inner
+    if not segs: rep['mouth'] = None; print('MOUTH no slit'); return lip, inner, low
     A = np.array([s[0] for s in segs]); B = np.array([s[1] for s in segs]); AB = B - A; L2 = np.maximum((AB * AB).sum(1), 1e-12)
     ends = np.concatenate([A, B]); cx = (ends[:, 0].min() + ends[:, 0].max()) / 2; hw = (ends[:, 0].max() - ends[:, 0].min()) / 2
     width = 2 * hw
@@ -460,6 +475,9 @@ def mouth_masks(o, size, names):
     near = (np.array([cx - hw - reach, lo[1] - reach, lo[2] - reach]), np.array([cx + hw + reach, hi[1] + reach, hi[2] + reach]))
     raster(skin, lip, lambda P: lip_weight(P, up, down), near)
     ni = raster(mouth, inner)
+    # the tongue: the lower part of the mouth's inside (by the texel's rest height in the mouth's own box), a lighter rose
+    z0, z1 = mv[:, 2].min(), mv[:, 2].max(); zh = max(z1 - z0, 1e-4)
+    raster(mouth, low, lambda P: (1 - smoothstep(z0 + MOUTH_TONGUE[0] * zh, z0 + MOUTH_TONGUE[1] * zh, P[:, 2])).astype(np.float32))
     # the inside's bake margin (4 px around the sheet) darkened with it, where no other sheet's triangles are
     other = np.zeros(size * size, np.float32)
     ilo, ihi = uvl[[li for t in tris if t.material_index in mouth for li in t.loops]].min(0) - 6 / size, uvl[[li for t in tris if t.material_index in mouth for li in t.loops]].max(0) + 6 / size
@@ -469,30 +487,40 @@ def mouth_masks(o, size, names):
         if (U3.max(0) < ilo).any() or (U3.min(0) > ihi).any(): continue
         ix, _ = tri_texels(U3, co[list(t.vertices)], size)
         if ix is not None: other[ix] = 1
-    g = inner.reshape(size, size).copy()
-    for _ in range(4):
-        h = g.copy()
-        h[1:] = np.maximum(h[1:], g[:-1]); h[:-1] = np.maximum(h[:-1], g[1:]); h[:, 1:] = np.maximum(h[:, 1:], g[:, :-1]); h[:, :-1] = np.maximum(h[:, :-1], g[:, 1:])
-        g = h
-    inner = np.where(other > 0, inner, g.ravel()).astype(np.float32)
+    def grow(m):
+        g = m.reshape(size, size).copy()
+        for _ in range(4):
+            h = g.copy()
+            h[1:] = np.maximum(h[1:], g[:-1]); h[:-1] = np.maximum(h[:-1], g[1:]); h[:, 1:] = np.maximum(h[:, 1:], g[:, :-1]); h[:, :-1] = np.maximum(h[:, :-1], g[:, 1:])
+            g = h
+        return np.where(other > 0, m, g.ravel()).astype(np.float32)
+    inner, low = grow(inner), grow(low)
     rep['mouth'] = {'widthMm': round(width * 1000, 1), 'lipUpMm': round(up * 1000, 1), 'lipDownMm': round(down * 1000, 1), 'slitEdges': len(segs), 'lipTexels': int((lip > 0.05).sum()), 'insideTexels': ni}
     LAST_ATLAS.update(rep)
     print('MOUTH', json.dumps(rep))
-    return lip, inner
+    return lip, inner, low
 
 
-def mouth_look(c, lip, inner, kind, k=None):
-    """The atlas's pixels (n x 4, sRGB 0..1) with the lips tinted and the inside darkened for this kind ('girl' / 'boy') or
-    measuring variant (MOUTH_VARIANTS name: the kind's strengths scaled)."""
-    m = MOUTH[MOUTH_KIND] if kind in MOUTH_VARIANTS else MOUTH[kind]
+def mouth_look(c, lip, inner, kind, low=None, m=None):
+    """The atlas's pixels (n x 4, sRGB 0..1) with the lips tinted and the inside painted rose (the tongue lighter toward
+    the bottom: low, 0..1 a texel) for this kind ('girl' / 'boy') or measuring variant (MOUTH_VARIANTS name: the kind's
+    strengths scaled); m: the look itself instead of MOUTH[kind] (measuring)."""
+    m = m or (MOUTH[MOUTH_KIND] if kind in MOUTH_VARIANTS else MOUTH[kind])
     s = MOUTH_VARIANTS.get(kind, {'lip': 1, 'inner': 1})
     T = np.array(m['tint'], np.float32)
     wl = np.clip(lip * m['lip'] * s['lip'], 0, 1)[:, None]
     c[:, :3] *= 1 - wl * (1 - T[None])
     rgb = c[:, :3]; lum = rgb @ np.array([0.2126, 0.7152, 0.0722], np.float32); sat = rgb.max(1) - rgb.min(1)
     teeth = smoothstep(0.55, 0.75, lum) * (1 - smoothstep(0.12, 0.25, sat))
-    wi = np.clip(inner * m['inner'] * s['inner'], 0, 0.9) * (1 - teeth)
-    c[:, :3] *= (1 - wi)[:, None]
+    wi = np.clip(inner * m['inner'] * s['inner'], 0, 1) * (1 - teeth)
+    if not (wi > 0.01).any(): return c
+    # the picture's own shading inside the mouth (the roof, the tongue's groove, the throat), relative to its median
+    sel = (inner > 0.5) & (teeth < 0.5)
+    ref = max(float(np.median(lum[sel])) if sel.any() else float(lum[wi > 0.01].mean()), 1e-3)
+    shade = np.clip((np.maximum(lum, 1e-4) / ref) ** m['shade'], 0.55, 1.35)[:, None]
+    t = (np.zeros_like(inner) if low is None else np.clip(low, 0, 1))[:, None]
+    rose = (np.array(m['inside'], np.float32)[None] * (1 - t) + np.array(m['tongue'], np.float32)[None] * t) * shade
+    c[:, :3] = c[:, :3] * (1 - wi)[:, None] + np.clip(rose, 0, 1) * wi[:, None]
     return c
 
 
@@ -546,8 +574,8 @@ def build_atlas(o, size, face_boost, out_png):
     bpy.data.materials.remove(plain)
     U = np.array([l.uv[:] for l in o.data.uv_layers['atlas'].data])
     assert U.min() > -0.01 and U.max() < 1.01, f'atlas UVs outside the picture: {U.min(0)} .. {U.max(0)}'
-    # the mouth's two masks (lips, inside), read off the source materials before the bake replaces them
-    lip, inner = mouth_masks(o, size, [m.name for m in keep])
+    # the mouth's masks (lips, inside, the inside's lower part: the tongue), read off the source materials before the bake
+    lip, inner, low = mouth_masks(o, size, [m.name for m in keep])
     # bake: each source material as emission (colour, then alpha) into the atlas
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 4
@@ -608,12 +636,14 @@ def build_atlas(o, size, face_boost, out_png):
                 sp = px[int(v % 1 * img.size[1]) % img.size[1], int(u % 1 * img.size[0]) % img.size[0]]
                 bp = c.reshape(size, size, 4)[min(int(y * size), size - 1), min(int(x * size), size - 1)]
                 print('PIX', s.material.name[-14:], 'src', (round(u, 3), round(v, 3)), sp.round(2), 'atlas', (round(x, 3), round(y, 3)), bp.round(2))
+    if MOUTH_SAVE or os.environ.get('VROID_MOUTH_VARIANTS'):   # (measuring: the plain atlas and the masks: R lips, G inside, B tongue)
+        save_png(c, size, out_png.replace('.atlas.png', '.atlas.plain.png'))
+        save_png(np.stack([lip, inner, low, np.ones_like(lip)], 1), size, out_png.replace('.atlas.png', '.mouthmask.png'))
     if os.environ.get('VROID_MOUTH_VARIANTS'):   # (measuring: each choice written beside the atlas, the atlas left as baked)
         for v in MOUTH_VARIANTS:
-            save_png(mouth_look(c.copy(), lip, inner, v), size, out_png.replace('.atlas.png', f'.atlas.{v}.png'))
-        save_png(np.repeat(np.stack([lip, inner, np.zeros_like(lip), np.ones_like(lip)], 1), 1, 0), size, out_png.replace('.atlas.png', '.mouthmask.png'))
+            save_png(mouth_look(c.copy(), lip, inner, v, low), size, out_png.replace('.atlas.png', f'.atlas.{v}.png'))
     elif MOUTH_ON:
-        c = mouth_look(c, lip, inner, MOUTH_KIND)
+        c = mouth_look(c, lip, inner, MOUTH_KIND, low)
     final = bpy.data.images.new('VRoid atlas', size, size, alpha=True)
     final.pixels = c.ravel().tolist()
     final.filepath_raw = out_png; final.file_format = 'PNG'; final.save()

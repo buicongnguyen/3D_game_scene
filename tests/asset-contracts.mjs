@@ -366,7 +366,7 @@ export const EXERCISE_CLIPS = ['ExStretch', 'ExArmSwing', 'ExArmCircle', 'ExSide
   'ExChild', 'ExChildIn', 'ExMountain', ...['Tree', 'Warrior', 'Bird'].flatMap(n => [`Ex${n}L`, `Ex${n}R`, `Ex${n}InL`, `Ex${n}InR`])];
 for (const who of ['rin', 'mika', 'villager-kid', 'villager-man']) CONTRACTS[`exercise-${who}`] = { family: 'clips', of: who, clips: EXERCISE_CLIPS };
 
-export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru', 'kotone'];
+export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru', 'kotone', 'nu-3'];   // (nu-3: Saki, 2026-11-28)
 // Raw GLBs are the editable, uncompressed sources; production ships meshopt-packed copies (tests/pack.test.mjs).
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
@@ -429,6 +429,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +2.32 MB: the dance sequences (docs/SING-AND-PLAY.md "Dance sequences"): 10 lazy clip packs, one per sequence style and
 // body (moves-seq-<style>-kotone 0.06-0.50 MB, -nam1 0.12-0.46 MB; 2,323,696 B together), fetched only when that style is
 // picked in Sing & Play (a player downloads one style's one or two packs); 94,009,844 B measured.
+// +0.01 MB: the mouths' inside a dark rose instead of dark brown (faces round 4, texture only: the 22 VRoid files
+// +12,816 B together); 91,698,964 B measured.
 export const TOTAL_RAW_BYTES = 94_100_000;     // (the dance game, the exercise packs, the visitors, the Night Star, Play as, the dance sequences)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
@@ -466,6 +468,7 @@ export const TOTAL_RAW_BYTES = 94_100_000;     // (the dance game, the exercise 
 // -0.08 MB: the girls' atlases re-packed and the mouths tinted (-82,556 B packed; faces round 3); 40,695,020 B measured.
 // +1.57 MB: the dance sequence packs packed (0.04-0.32 MB each, 1,574,884 B together; one style's one or two are fetched);
 // 42.53 MB measured for the whole library (main at 8b6e36f + these packs).
+// +0.01 MB: the mouths' rose inside (faces round 4: the 22 VRoid files +12,808 B packed, the pictures only).
 export const TOTAL_PACKED_BYTES = 42_650_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
