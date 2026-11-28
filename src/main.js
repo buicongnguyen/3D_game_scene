@@ -277,6 +277,8 @@ function titleLook() {
   window.__STARLINE_PLAYING__ = true;
   await started;
   game.wakeMoments();
+  // the Night Star at the shrine on starry nights (game/nightstar/watch.js; off under ?qa unless &nightstar=on, or ?nightstar=off)
+  if (!picked.singplay && (params.has('qa') ? params.get('nightstar') === 'on' : params.get('nightstar') !== 'off')) import('./game/nightstar/watch.js').then(m => m.watchNightStar(game, director)).catch(e => console.warn('[nightstar]', e));
   // Sing & Play: the player becomes Kotone (loaded only now)
   if (picked.singplay) await import('./game/singplay/singplay.js').then(m => m.startSingPlay(game, director, ui)).catch(e => console.error('[singplay]', e));
 })().catch(e => { console.error('[start]', e); showError(e?.message || String(e)); });

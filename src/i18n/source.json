@@ -7903,6 +7903,42 @@
   ]
  },
  {
+  "s": "A girl sings at the shrine when the stars come out.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "The Night Star? She sings by the shrine on clear nights.",
+  "ctx": [
+   "bark by woman"
+  ]
+ },
+ {
+  "s": "A girl in a dark dress by the torii! Then poof, gone!",
+  "ctx": [
+   "bark by a child"
+  ]
+ },
+ {
+  "s": "Lights by the shrine last night. And a song, not ours.",
+  "ctx": [
+   "bark by man"
+  ]
+ },
+ {
+  "s": "Stars are out. Hurry to the shrine and you may hear her.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
+  "s": "Shh. Can you hear it? Someone is singing under the stars.",
+  "ctx": [
+   "bark by any villager"
+  ]
+ },
+ {
   "s": "Splash! Nothing to see. Just a fish with ambition.",
   "ctx": [
    "bark by man"
@@ -15931,6 +15967,12 @@
   ]
  },
  {
+  "s": "Night Star",
+  "ctx": [
+   "UI (src/content/kotone-songs.js)"
+  ]
+ },
+ {
   "s": "Easy",
   "ctx": [
    "UI (src/content/levels.js)",
@@ -18264,6 +18306,24 @@
   ]
  },
  {
+  "s": "Watch the Night Star",
+  "ctx": [
+   "UI (src/game/nightstar/night-star.js)"
+  ]
+ },
+ {
+  "s": "Stop watching",
+  "ctx": [
+   "UI (src/game/nightstar/night-star.js)"
+  ]
+ },
+ {
+  "s": "{name}, the Night Star, can sing in Sing & Play now",
+  "ctx": [
+   "UI (src/game/nightstar/night-star.js)"
+  ]
+ },
+ {
   "s": "The album holds {n} photos. Delete one in the Journal to keep more.",
   "ctx": [
    "UI (src/game/photo-mode.js)"
@@ -18632,6 +18692,18 @@
  },
  {
   "s": "Lyrics: Off",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Show effects: On",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Show effects: Off",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
@@ -30777,6 +30849,18 @@
  },
  {
   "s": "Mixamo (animations)",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Stella, the Night Star",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "VRoid Project (AvatarSample_D, CC0)",
   "ctx": [
    "menu / screen text"
   ]

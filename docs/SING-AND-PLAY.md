@@ -144,3 +144,15 @@ a Song row ready for the songs being made.
   0.11 ms besides, as before), 0.08-0.14 ms on the phone views (Low, solo, no CPU throttle). Kotone leading: no change
   (no rig, no copy). Every bar button 44 px+, text 11 px+, no overlaps with the minimap / menu / touch buttons, no
   sideways page scroll on 1280x720, 390x844, 360x780, 844x390; the caption 16 px PC / 14 px phones, one line.
+
+## Show effects and the Night Star (2026-11-28, branch show-fx)
+- **Show effects** (docs/SHOW-EFFECTS.md): on Perform a festival stage set unfolds behind the performers and the song
+  drives fake show lighting: colour washes per section, beams and lasers at night, chorus bursts (confetti at night;
+  petals, bubbles and balloons by day), fireworks over the last chorus at night, the watchers' glow sticks waving on the
+  beat (they clap on the beat by day). No lights, no extra pass: 4-6 draws at night, 2-3 by day. **Show effects: On /
+  Off** after Lyrics in the Song row (remembered per device, `starline:singplay:showfx`; `?showfx=off|on`).
+- **The Night Star** (docs/NIGHT-STAR.md): once her show at the shrine was seen, Stella joins the Singer row at its end
+  (`public/faces/night-star.webp`); she leads at the lead's place, Kotone takes the outer front place (a group of 8 then
+  leaves one girl out), and in any Dance choice she skips the moves her long dress cannot take. `?nightstar=1` shows her
+  in the row for testing.
+

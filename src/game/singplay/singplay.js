@@ -17,7 +17,10 @@ import { planShots, createCameraMan, fromCamera } from '../perform/camera-man.js
 import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js';
 import { canPerform, canGroup, gameEnv } from './flat.js';
 import { Troupe, leadSource } from '../perform/troupe.js';
-import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset, KOTONE, SINGERS, NAMES, nameOf, member, facePic } from '../../content/troupe.js';
+import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset, KOTONE, SINGERS, NAMES, nameOf, member, facePic, singersWith, avoidOf, NIGHT_STAR } from '../../content/troupe.js';
+import { nightStarSeen } from '../../content/night-star.js';
+import { ShowFX } from '../../fx/show-fx.js';
+import { SHOW_KEY, showDefault } from '../perform/show-cues.js';
 import { captionLines, captionAt } from '../perform/caption.js';
 import { strongPhone, BudgetWatch, dropNow, shotIndex, STRONG_KEY } from './strong-phone.js';
 import { deviceFacts } from '../../engine/device-note.js';
@@ -31,6 +34,7 @@ export const DANCE_KEY = 'starline:singplay:dance';   // the Dance choice last p
 export const SINGER_KEY = 'starline:singplay:singer';   // the singer last picked (per device: content/troupe.js SINGERS)
 export const SONG_KEY = 'starline:singplay:song';       // the song last picked (per device: a content/kotone-songs.js id)
 export const LYRICS_KEY = 'starline:singplay:lyrics';   // the lyric caption on ('1', the default) or off ('0')
+export { SHOW_KEY };                                     // the show effects on ('1') or off ('0'): perform/show-cues.js showDefault
 export const STAGE = Object.freeze({ x: -92, z: 101, facing: Math.PI });   // first visit: the station stage (facing: the camera's view, content/stages.js)
 const REASONS = { water: N_('Too close to the water'), steep: N_('Too steep here'), room: N_('Not enough room here'), group: N_('Not enough room for the group here') };
 const GROUP_LABELS = { 1: N_('Solo'), 4: N_('Group of 4'), 8: N_('Group of 8') };
@@ -39,11 +43,15 @@ export const loadDance = (store = globalThis.localStorage) => { try { const v = 
 const saveDance = v => { try { localStorage.setItem(DANCE_KEY, v); } catch { /* per-device convenience */ } };
 const load = (k, ok, d, store = globalThis.localStorage) => { try { const v = store?.getItem(k); return v !== null && v !== undefined && ok(v) ? v : d; } catch { return d; } };
 const keep = (k, v) => { try { localStorage.setItem(k, v); } catch { /* per-device convenience */ } };
-export const loadSinger = store => load(SINGER_KEY, v => SINGERS.includes(v), KOTONE, store);
+/** The Singer row: the eight, and the Night Star once her show was seen (content/night-star.js; ?nightstar=1 for testing). */
+export const singerList = (store = globalThis.localStorage, params = null) => singersWith(nightStarSeen(store) || params?.get?.('nightstar') === '1' ? [NIGHT_STAR] : []);
+export const loadSinger = (store, params = null) => load(SINGER_KEY, v => singerList(store, params).includes(v), KOTONE, store);
 /** The model file of a singer's body (the lite one on Low). */
 export const bodyFile = (id, low) => { const m = member(id) || member(KOTONE); return low ? `${m.file}.lite` : m.file; };
 /** A singer's label: her name once she has one (content/troupe.js NAMES), else "Singer n" in the row's order. */
 export const singerLabel = id => nameOf(id, getLang()) || tx(N_('Singer {n}'), { n: SINGERS.indexOf(id) + 1 });
+/** The show effects' switch as stored (per device), else the default for this device. */
+export const loadShow = (store = globalThis.localStorage, facts = {}) => { const v = load(SHOW_KEY, x => x === '1' || x === '0', '', store); return v ? v === '1' : showDefault(facts); };
 /** The song to sing from a pool (the songs in the game's language): the picked one when it is there, else the first. */
 export const pickSong = (pool, id) => pool.find(x => x.song.id === id) || pool[0] || null;
 /** The formation's layouts, tried in turn when the group checks its room (a hillside: the closer one keeps the whole
@@ -98,8 +106,9 @@ export class SingPlay {
     this.dance = loadDance();
     this.group = 1; this.groupReady = null; this.groupWait = false; this.troupe = null; this.formation = null; this.limits = null; this.layout = LAYOUTS[0];
     this.viewYaw = null; this.from = null;
-    this.singer = loadSinger(); this.singerWait = false; this.songId = load(SONG_KEY, () => true, ''); this.lyricsOn = load(LYRICS_KEY, () => true, '1') !== '0';
+    this.singers = singerList(undefined, game.params); this.singer = loadSinger(undefined, game.params); this.singerWait = false; this.songId = load(SONG_KEY, () => true, ''); this.lyricsOn = load(LYRICS_KEY, () => true, '1') !== '0';
     this.rig = null; this.capLines = null; this.capKey = '';
+    this.show = null; this.showOn = true;   // (the show effects: fx/show-fx.js, the switch read in start())
   }
 
   async start() {
@@ -122,6 +131,8 @@ export class SingPlay {
     this.songs = (await Promise.all(list.map(loadSong))).filter(Boolean);
     this.limits = groupLimits(low, g.params);
     this.judgeStrong();
+    this.showOn = g.params?.get?.('showfx') ? g.params.get('showfx') !== 'off' : loadShow(undefined, { tier: g.renderer.qualityName, strong: this.strong });
+    if (this.showOn) this.makeShow();
     this.hud();
     this.setGroup(Math.min(loadGroup(), this.max()), false);
     this.pauseLeave();
@@ -168,7 +179,7 @@ export class SingPlay {
 
   /** The Singer row: she becomes the player's body and the lead (her model loads first; never during a song). */
   async pickSinger(id) {
-    if (this.perf || this.singerWait || id === this.singer || !SINGERS.includes(id)) return;
+    if (this.perf || this.singerWait || id === this.singer || !this.singers.includes(id)) return;
     const a = this.g.assets, name = bodyFile(id, this.g.renderer.qualityName === 'low');
     keep(SINGER_KEY, id);
     if (!a.has(name)) { this.singerWait = true; this.label(); await a.loadLater([name]).catch(() => {}); this.singerWait = false; }
@@ -219,7 +230,7 @@ export class SingPlay {
     line(row, drow);
     // the singer: the eight members' faces in a flat row (no menu); she becomes the player and sings lead
     const srow = this.singerRow = document.createElement('div'); srow.className = 'singplay-group singplay-scroll singplay-singers'; srow.setAttribute('role', 'group'); srow.setAttribute('aria-label', tx(N_('Singer')));
-    this.btnSinger = SINGERS.map(id => {
+    this.btnSinger = this.singers.map(id => {
       const b = document.createElement('button'); b.type = 'button'; b.id = `spSinger-${id}`; b.className = 'singplay-btn singplay-seg singplay-face'; b.dataset.singer = id;
       b.setAttribute('aria-label', singerLabel(id)); b.title = singerLabel(id);
       const img = document.createElement('img'); img.src = facePic(id); img.alt = ''; img.width = 40; img.height = 40; img.decoding = 'async'; img.draggable = false;
@@ -238,6 +249,11 @@ export class SingPlay {
     this.btnLyrics = document.createElement('button'); this.btnLyrics.type = 'button'; this.btnLyrics.id = 'spLyrics'; this.btnLyrics.className = 'singplay-btn singplay-seg';
     this.btnLyrics.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); this.lyricsOn = !this.lyricsOn; keep(LYRICS_KEY, this.lyricsOn ? '1' : '0'); this.capKey = '-'; this.label(); });
     qrow.appendChild(this.btnLyrics);
+    // the show effects (fx/show-fx.js: the stage set, lights, bursts, glow sticks, fireworks): a switch of their own,
+    // remembered per device (owner rule: every costly feature can be switched off in the game)
+    this.btnShow = document.createElement('button'); this.btnShow.type = 'button'; this.btnShow.id = 'spShow'; this.btnShow.className = 'singplay-btn singplay-seg';
+    this.btnShow.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); if (this.perf) return; this.showOn = !this.showOn; keep(SHOW_KEY, this.showOn ? '1' : '0'); if (this.showOn) this.makeShow(); this.label(); });
+    qrow.appendChild(this.btnShow);
     line(srow, qrow);
     // the lyric caption over the view while she sings (a DOM line: recorded videos stay clean, the .srt has the words)
     const cap = this.capEl = document.createElement('div'); cap.id = 'spCaption'; cap.className = 'singplay-caption'; cap.hidden = true; cap.setAttribute('aria-hidden', 'true');
@@ -294,6 +310,7 @@ body.singplay #inventory{display:none}
     const song = pickSong(this.pool(), this.songId)?.song.id;
     for (const b of this.btnSongs || []) { b.setAttribute('aria-pressed', String(b.dataset.song === song)); b.setAttribute('aria-disabled', String(!!p)); }
     if (this.btnLyrics) { this.btnLyrics.textContent = tx(this.lyricsOn ? N_('Lyrics: On') : N_('Lyrics: Off')); this.btnLyrics.setAttribute('aria-pressed', String(this.lyricsOn)); }
+    if (this.btnShow) { this.btnShow.textContent = tx(this.showOn ? N_('Show effects: On') : N_('Show effects: Off')); this.btnShow.setAttribute('aria-pressed', String(this.showOn)); this.btnShow.setAttribute('aria-disabled', String(!!p)); }
     this.stages?.refresh();
     this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
   }
@@ -329,7 +346,7 @@ body.singplay #inventory{display:none}
     this.viewYaw = f - Math.PI; p.facing = f; p.root.rotation.y = f;
     this.from = fromCamera(g.camera.position, { x: p.pos.x, y: p.pos.y, z: p.pos.z, facing: f });
     const ground = this.ground();
-    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: this.dance, ground });
+    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: this.dance, ground, avoid: avoidOf(this.singer) });
     // another singer: the group's Kotone (or a hidden Kotone under her in a solo) dances and the lead copies her
     const members = this.group > 1 ? this.makeFormation() : null;
     if (this.singer !== KOTONE) {
@@ -339,6 +356,11 @@ body.singplay #inventory{display:none}
     }
     if (members) this.makeTroupe(members);
     this.perf.start(0);
+    // the show effects behind them (the stage set unfolds, the lights play the song: fx/show-fx.js)
+    if (this.showOn && this.makeShow()) {
+      const c = this.formation ? this.groupCentre() : p.pos;
+      this.show.start(this.perf, { spot: { x: c.x, z: c.z, y: this.formation ? undefined : p.pos.y, facing: f }, group: this.formation ? { w: this.groupW, depth: this.groupD } : null, n: this.troupe?.count || 1, ground: this.ground() || (() => p.pos.y) });
+    }
     this.d.performing = true;   // (director.updateBarks: the villagers' bubbles hidden, no new ones, until she stops)
     this.capLines = captionLines(song.lyrics); this.capKey = '-';
     g.audio?.holdMusic?.('singplay', true);
@@ -354,6 +376,7 @@ body.singplay #inventory{display:none}
   stopSong() {
     const g = this.g;
     if (this.rec) this.toggleRecord();
+    this.show?.stop();
     this.dropTroupe();
     this.watch = null; this.dropAt = null;
     this.perf?.dispose(); this.perf = null; this.cam = null;
@@ -383,6 +406,8 @@ body.singplay #inventory{display:none}
       this.audience.push(it);
     });
     this.cheerT = 3;
+    // with the show effects: they wave glow sticks on the beat at night, clap on the beat by day (fx/show-fx.js)
+    if (this.show?.on && this.show.items.particles) this.show.setCrowd(this.audience);
   }
   release() { for (const it of this.audience) { it.yardHold = false; it.singHold = false; it.n.path = null; it.n.setIdle('Idle'); } this.audience = []; }
 
@@ -398,7 +423,7 @@ body.singplay #inventory{display:none}
       // the audience: a cheer or a wave now and then, more on the choruses, all of them at the end
       this.cheerT -= dt;
       const st = this.perf.state;
-      if (this.cheerT <= 0 && this.audience.length) {
+      if (this.cheerT <= 0 && this.audience.length && (!this.show?.crowd.length || st.moment)) {
         const it = this.audience[Math.floor(Math.random() * this.audience.length)];
         if (!it.n.path) { it.n.lookAt(p.pos.x, p.pos.z); it.n.gesture(st.section === 'chorus' || st.moment ? 'Cheer' : Math.random() < .5 ? 'Wave' : 'Cheer'); }
         this.cheerT = st.section === 'chorus' ? 1.6 + Math.random() * 1.5 : 3.5 + Math.random() * 3;
@@ -423,7 +448,15 @@ body.singplay #inventory{display:none}
         if (was !== this.allowed.ok + this.allowed.reason) this.label(); else this.stages?.refresh();
       }
     }
+    this.show?.update(dt, g.camera);   // (after the song too: the set folds away)
     this.saveT -= dt; if (this.saveT <= 0) { this.saveT = 5; this.keepPlace(); }
+  }
+
+  /** The show effects, made once (their shaders compiled at once, not at the first chorus). -> the ShowFX or null */
+  makeShow() {
+    if (this.show) return this.show;
+    try { this.show = new ShowFX(this.g); this.show.warm(this.g.camera).catch(() => {}); } catch (e) { console.warn('[show] effects not available', e); this.show = null; }
+    return this.show;
   }
 
   /** The automatic camera while she performs (true: it holds the view this frame). A drag gives the view back for 4 s. */

@@ -5157,5 +5157,19 @@
   "Voices and songs": "声と歌",
   "The voices in the language homes are synthetic (made by computer, not recorded people): Kokoro (English), VieNeu-TTS (Vietnamese), Supertonic (Korean).": "言葉を学ぶ家の声は合成音声です(人の録音ではなく、コンピューターで作った声): Kokoro(英語)、VieNeu-TTS(ベトナム語)、Supertonic(韓国語)。",
   "Kotone's song “Golden Rails”: original lyrics, music made with ACE-Step 1.5.": "琴音の歌「Golden Rails」: オリジナルの歌詞、音楽は ACE-Step 1.5 で制作。",
-  "Story, code and the Blender-made models: {who}.": "物語、コード、Blender で作ったモデル: {who}。"
+  "Story, code and the Blender-made models: {who}.": "物語、コード、Blender で作ったモデル: {who}。",
+  "A girl sings at the shrine when the stars come out.": "星が出ると、神社で女の子が歌うんだって。",
+  "The Night Star? She sings by the shrine on clear nights.": "夜の星? 晴れた夜に神社のそばで歌うのよ。",
+  "A girl in a dark dress by the torii! Then poof, gone!": "鳥居のそばに黒いドレスのお姉さん! それでパッと消えたの!",
+  "Lights by the shrine last night. And a song, not ours.": "昨夜、神社の方に明かりが。知らない歌も聞こえたよ。",
+  "Stars are out. Hurry to the shrine and you may hear her.": "星が出たよ。急いで神社へ行けば、あの歌が聞けるかも。",
+  "Shh. Can you hear it? Someone is singing under the stars.": "しーっ。聞こえる? 誰かが星の下で歌ってる。",
+  "Night Star": "夜の星",
+  "Watch the Night Star": "夜の星を見る",
+  "Stop watching": "見るのをやめる",
+  "{name}, the Night Star, can sing in Sing & Play now": "夜の星・{name}が、うたって遊ぶで歌えるようになりました",
+  "Show effects: On": "ステージ演出: オン",
+  "Show effects: Off": "ステージ演出: オフ",
+  "Stella, the Night Star": "夜の星・ステラ",
+  "VRoid Project (AvatarSample_D, CC0)": "VRoid Project(AvatarSample_D、CC0)"
 }

@@ -163,6 +163,13 @@ export const BARKS = [
   { who: 'woman', text: "Tall cedars and a quiet hill. Good for the soul.", when: {place:'shrine'} },
   { who: 'any', text: "Lanterns in the moss. Someone cares for this place.", when: {place:'shrine'} },
   { who: 'any', text: "Tread softly. Up here, even the wind whispers.", when: {place:'shrine'} },
+  // the Night Star (game/nightstar/, docs/NIGHT-STAR.md): hints that a girl sings at the shrine when the stars are out
+  { who: 'any', text: "A girl sings at the shrine when the stars come out.", when: {} },
+  { who: 'woman', text: "The Night Star? She sings by the shrine on clear nights.", when: {} },
+  { who: 'kid', text: "A girl in a dark dress by the torii! Then poof, gone!", when: {} },
+  { who: 'man', text: "Lights by the shrine last night. And a song, not ours.", when: {night:false} },
+  { who: 'any', text: "Stars are out. Hurry to the shrine and you may hear her.", when: {night:true} },
+  { who: 'any', text: "Shh. Can you hear it? Someone is singing under the stars.", when: {night:true, place:'shrine'} },
   { who: 'man', text: "Splash! Nothing to see. Just a fish with ambition.", when: {place:'river'} },
   { who: 'woman', text: "The ferry rope sings when it's pulled. Listen.", when: {place:'river'} },
   { who: 'any', text: "The ducks think the river's theirs. We let them.", when: {place:'river'} },

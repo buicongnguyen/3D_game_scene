@@ -5157,5 +5157,19 @@
  "Voices and songs": "목소리와 노래",
  "The voices in the language homes are synthetic (made by computer, not recorded people): Kokoro (English), VieNeu-TTS (Vietnamese), Supertonic (Korean).": "언어를 배우는 집의 목소리는 합성 음성입니다(사람의 녹음이 아니라 컴퓨터가 만든 목소리): Kokoro(영어), VieNeu-TTS(베트남어), Supertonic(한국어).",
  "Kotone's song “Golden Rails”: original lyrics, music made with ACE-Step 1.5.": "코토네의 노래 “Golden Rails”: 오리지널 가사, 음악은 ACE-Step 1.5로 제작.",
- "Story, code and the Blender-made models: {who}.": "이야기, 코드, Blender로 만든 모델: {who}."
+ "Story, code and the Blender-made models: {who}.": "이야기, 코드, Blender로 만든 모델: {who}.",
+ "A girl sings at the shrine when the stars come out.": "별이 뜨면 신사에서 어떤 소녀가 노래한대요.",
+ "The Night Star? She sings by the shrine on clear nights.": "밤의 별? 맑은 밤이면 신사 옆에서 노래한단다.",
+ "A girl in a dark dress by the torii! Then poof, gone!": "도리이 옆에 까만 드레스 입은 언니가! 그러고는 휙, 사라졌어!",
+ "Lights by the shrine last night. And a song, not ours.": "어젯밤 신사 쪽에 불빛이 있었어요. 낯선 노래도요.",
+ "Stars are out. Hurry to the shrine and you may hear her.": "별이 떴어요. 서둘러 신사에 가면 그 노래를 들을지도 몰라요.",
+ "Shh. Can you hear it? Someone is singing under the stars.": "쉿. 들려요? 누군가 별빛 아래에서 노래하고 있어요.",
+ "Night Star": "밤의 별",
+ "Watch the Night Star": "밤의 별 보기",
+ "Stop watching": "그만 보기",
+ "{name}, the Night Star, can sing in Sing & Play now": "밤의 별 {name}, 이제 노래하고 놀기에서 노래할 수 있어요",
+ "Show effects: On": "무대 효과: 켬",
+ "Show effects: Off": "무대 효과: 끔",
+ "Stella, the Night Star": "밤의 별 은하",
+ "VRoid Project (AvatarSample_D, CC0)": "VRoid Project (AvatarSample_D, CC0)"
 }
