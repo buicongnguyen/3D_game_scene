@@ -77,3 +77,70 @@ A third flat row under the bar: **Mixed / K-pop / Cute / Hip-hop** (44 px+, alwa
 while performing like the group row; remembered per device). It picks the plan's dance loops, mic moves and moments
 (docs/KOTONE-SHOW.md "The Dance choice"); a group dances the same style. Phone layout: the hint moved down to 152 px under
 the three rows.
+
+## Face the camera, Record from idle, the camera grammar, hillsides (2026-11-28, branch sing-camera)
+Owner: "when I press Perform the group should turn 180 deg to face the camera so we see that background behind them";
+"there is no Record button yet"; "learn the camera from Avatar Studio"; the phone bar covered the view; "make it perform
+in a little steep spot".
+- **Face the camera** (`singplay.js` performFacing / faceCamera): on Perform Kotone and the formation turn to the camera's
+  view direction + pi, so the view the player framed is the backdrop; Stop turns her back and puts the follow camera behind
+  her again. The idle room checks (canGroup) use that turned facing. Stages (`content/stages.js`): `facing` is now the
+  camera's view after a jump (each stage keeps its spot and its old backdrop: the stored facing turned half round), except
+  Star hill, which now films the valley (checked at the new turn); the place saved for the next visit keeps the view.
+- **Record** works before a song: it starts the performance and the take together (label "Record", "● 0:12" while it
+  records); Stop ends both and saves the video + captions as before.
+- **Phone bar**: during a song the setup rows (group, dance, stages) hide; Stop / Record / Photo / Camera stay in one
+  row with the song line under it (390x844: the bar 194 px tall idle, 44 px performing); they come back after Stop.
+- **Camera grammar** (`perform/camera-man.js`, from Avatar Studio `club/club-director.js`: cuts on bar lines, a new shot
+  per section, never the same shot twice, short close-ups, calm long moves in verses, a crane after the loud parts, the
+  ending crane-out): open (starts at the player's own camera, then eases in), wide, crane, landscape (far and high,
+  aimed 30 m past the group: the chosen view fills the frame), medium, side, low hero (opens every chorus), push, orbit,
+  close (Kotone's sung lines: a verse line every 6 bars at most, a chorus line every 4, never two in a row, 4 bars at
+  most), reveal. No shot shorter than 2 bars; the camera stays in front of walls and trees (collider ray to her) and over
+  the ground between it and her (terrain samples), portrait frames stand back. No extra render passes.
+- **Hillsides** (`singplay/flat.js`): her ring may slope up to 20 deg (0.6 m over 1.6 m; banks/cliffs past 30 deg between
+  samples still refuse), a group's whole ground within 0.6 m of height and each member's ground under 20 deg (reasons:
+  "Too steep here"); a closer layout (x 0.85, z 0.75) is tried when the first one does not fit. Feet: `perform/ground-fit.js`
+  drops the pelvis to the lower planted foot and turns each planted foot by the slope about its toe joint onto the ground
+  (two-bone leg solve), for Kotone and every member. Measured (`scripts/troupe-check.mjs --slope 15|20 [--across]`, 8
+  dancers, golden-rails-en): planted toe/ankle within 0.55 cm of the dance's height over the ground (0 sink), slide p95
+  1.01 cm/s (the same as level), joint rules 0. New stage **Orchard slope** (80, -85; a 12 deg hillside, the valley below).
+
+## Singer, Song and the lyric caption (2026-11-28, branch singer-pick)
+Owner: "Can we change the singer to other characters in the group?"; "Add a small caption to see what she is singing";
+a Song row ready for the songs being made.
+- **Singer row** (`singplay.js` pickSinger / swapBody, `content/troupe.js` SINGERS / castOf): a flat row of the eight
+  members' faces (48 px buttons, 44 on phones; `public/faces/<id>.webp`, 64 px, 1.2-1.6 KB each, baked once by
+  `node scripts/bake-singer-faces.mjs` from each model's head), aria-label "Singer 1..8" (names: `NAMES` in
+  content/troupe.js, empty until they have them). Idle only (hidden while performing, like the other setup rows);
+  remembered per device (`starline:singplay:singer`). The picked one becomes the player's body (her model, `.lite` on
+  Low; her own Idle / Walk / Run from her GLB at her own gait, `TROUPE[].gait` from the build) and the lead: her face sings
+  the song's mouth, the mic sits on her own grip_R, the close-ups and camera follow her.
+- **Her dance, no new downloads** (`perform/troupe.js` leadSource, `performer.js` source): Kotone's moves pack plays on a
+  Kotone rig (her place in the formation, or a hidden clone under the lead in a solo: one mixer, her foot hold) and the
+  lead copies it with the followers' maths (hips by the leg ratio, the leg solve, then her own ground fit); the mic layer
+  goes on top on the lead. The front row copies the same Kotone rig.
+- **The cast** (`castOf(lead)`): the singer takes the lead's place, Kotone the singer's own place; a back-row singer:
+  Kotone takes the outer front place and its girl the singer's place, so Kotone is in every group of 4 and 8. The places
+  never change (the stage and room checks hold for every singer); whoever stands at nam-1's place plays nam-1's pack,
+  made ready for her own body. Files: only the built models and the two packs there are.
+- **Song row** (idle only, remembered per device `starline:singplay:song`): the songs in the game's language
+  (`songsFor`); a new song is an entry in `content/kotone-songs.js` and shows up here. Perform sings the picked one (no
+  more cycling). The row ends with **Lyrics: On / Off** (`starline:singplay:lyrics`, default On).
+- **Lyric caption** (`perform/caption.js`, pure; DOM `#spCaption`): the line being sung from `<id>.lyrics.json` in a
+  semi-transparent dark pill, the sung word lit (gold), the sung ones white, the rest dimmed; from 0.6 s before the line to
+  0.9 s after it; one line (two at most). PC: lower third, 17 px; phones: above the touch buttons, 14 px; phones on their
+  side: above the one-row bar. Not in recorded videos (the DOM is not the canvas; the `.srt` has the lines).
+- **Layout**: setup rows share lines: [Group | Dance] and [Singer | Song + Lyrics], so the idle bar keeps its four rows
+  (390x844: 194 px tall as before); on phones a line scrolls sideways when it does not fit.
+- **Stage backdrops** (owner, 2026-11-28: "choose the best backdrop for each stage"): each stage's framed view was drawn
+  both ways at 17:30 (PC 1280x720) and the more open one kept: Station stage, Shrine yard and Kite meadow turned round
+  (the valley and Kawabe's roofs, the torii and the valley, the stream and a cherry tree, instead of the station wall, the
+  shrine hall and a stand of trees); Riverside, Village square, Star hill and Orchard slope kept. The station spot moved
+  to (-92, 101) and the shrine spot to (62.5, -149) so a group of 8 fits at the new turn. Room for Solo / 4 / 8 at every chosen turn, 0.6 m off and 0.1 rad
+  turned, checked again with the game's own colliders.
+- **Measured** (dev server, Chromium + real GPU, `.tools/singer/final.mjs`): the lead copy (Kotone's rig: mixer, foot
+  hold, matrices, the copy with the leg solve) 0.10 ms a frame on PC (group of 4 led by nu-3; the front row's copies
+  0.11 ms besides, as before), 0.08-0.14 ms on the phone views (Low, solo, no CPU throttle). Kotone leading: no change
+  (no rig, no copy). Every bar button 44 px+, text 11 px+, no overlaps with the minimap / menu / touch buttons, no
+  sideways page scroll on 1280x720, 390x844, 360x780, 844x390; the caption 16 px PC / 14 px phones, one line.

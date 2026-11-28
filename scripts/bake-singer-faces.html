@@ -1,0 +1,40 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Singer faces</title></head>
+<body style="margin:0;background:#222">
+<script type="module">
+// scripts/bake-singer-faces.mjs opens this page: each singer's model is drawn once, framed on her head, into a 128 px
+// square, scaled to 64 px; window.__faces gets { id: data:image/webp } (the script writes public/faces/<id>.webp).
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { TROUPE, SINGERS } from '/src/content/troupe.js';
+
+const S = 128;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: false });
+renderer.setSize(S, S); renderer.setPixelRatio(1);
+renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.05;
+document.body.appendChild(renderer.domElement);
+const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
+const out = {};
+for (const id of SINGERS) {
+  const m = TROUPE.find(x => x.id === id);
+  const gltf = await loader.loadAsync(`/models/${m.file}.glb`);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#f6e7d2');
+  scene.add(new THREE.HemisphereLight('#fff6ea', '#c9b6a0', 1.6));
+  const key = new THREE.DirectionalLight('#ffffff', 2.2); key.position.set(.6, 1.2, 1.5); scene.add(key);
+  scene.add(gltf.scene); gltf.scene.updateMatrixWorld(true);
+  const head = gltf.scene.getObjectByName('head'), eyes = ['eye_L', 'eye_R'].map(n => gltf.scene.getObjectByName(n)).filter(Boolean);
+  const c = new THREE.Vector3();
+  if (eyes.length) { for (const e of eyes) c.add(e.getWorldPosition(new THREE.Vector3())); c.divideScalar(eyes.length); c.y += .01; }
+  else head.getWorldPosition(c).add(new THREE.Vector3(0, .08, 0));
+  const cam = new THREE.PerspectiveCamera(22, 1, .05, 10);
+  cam.position.set(c.x, c.y + .03, c.z + .95); cam.lookAt(c.x, c.y, c.z);
+  renderer.render(scene, cam);
+  const small = document.createElement('canvas'); small.width = small.height = S / 2;
+  const cx = small.getContext('2d'); cx.imageSmoothingQuality = 'high'; cx.drawImage(renderer.domElement, 0, 0, S / 2, S / 2);
+  out[id] = small.toDataURL('image/webp', .82);
+}
+window.__faces = out;
+</script>
+</body></html>

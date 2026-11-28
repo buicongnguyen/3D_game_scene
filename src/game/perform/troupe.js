@@ -17,7 +17,8 @@
 import * as THREE from 'three';
 import { poseDance } from './performer.js';
 import { planBacking } from './plan.js';
-import { createFootHold } from './foot-hold.js';
+import { createFootHold, legSolve } from './foot-hold.js';
+import { createGroundFit } from './ground-fit.js';
 import { lineIndexAt, SINGING } from './mic-layer.js';
 import { Face } from '../../actors/face.js';
 import { TROUPE_LIMITS } from '../../content/troupe.js';
@@ -45,7 +46,7 @@ export function legLength(root) {
  * A copier from the source rig to one follower (same bone names). restSrc / restDst: restPose() of each. ->
  * { copy(), bones, corrected } (corrected: how many bones need the per-bone rest turn).
  */
-export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, legSrc = legLength(srcRest), legDst = legLength(dst), feet = 'auto' } = {}) {
+export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, dstRest = dst, legSrc = legLength(srcRest), legDst = legLength(dstRest), feet = 'auto' } = {}) {
   const pairs = [], srcBones = new Map();
   src.traverse(o => { if (o.isBone && !srcBones.has(o.name)) srcBones.set(o.name, o); });
   let corrected = 0, hips = null;
@@ -68,9 +69,9 @@ export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, legSrc =
   }).filter(l => l.s.foot && l.d.foot);
   const seg = (r, a, b) => restLen(r, a, b);
   const split = r => seg(r, 'thigh_L', 'shin_L') / Math.max(1e-4, seg(r, 'shin_L', 'foot_L'));
-  const mismatch = Math.abs(split(dst) / split(src) - 1);
+  const mismatch = Math.abs(split(dstRest) / split(srcRest) - 1);
   const ik = feet === 'auto' ? mismatch > IK_SPLIT : !!feet;
-  if (ik) for (const l of legs) { l.restS = restAnkle(srcRest, l.s.foot.name); l.restD = restAnkle(dst, l.d.foot.name); }
+  if (ik) for (const l of legs) { l.restS = restAnkle(srcRest, l.s.foot.name); l.restD = restAnkle(dstRest, l.d.foot.name); }
   const k = hips?.k ?? 1, hipsD = dst.getObjectByName('hips');
   return {
     bones: pairs.length, corrected, hips, ik, mismatch,
@@ -96,31 +97,6 @@ const IK_SPLIT = .01;   // a thigh : shin split 1 % off the source's: the legs a
 const LEG_SOLVE = Object.freeze({ low: .03, ease: .05 });   // m: an ankle up to 3 cm over its rest height is solved fully, none past 8 cm
 const _inv = new THREE.Matrix4(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
 const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
-const _H = new THREE.Vector3(), _K = new THREE.Vector3(), _A = new THREE.Vector3(), _n = new THREE.Vector3(), _u = new THREE.Vector3(), _w = new THREE.Vector3();
-const _qf = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _q = new THREE.Quaternion(), _qr = new THREE.Quaternion(), _m = new THREE.Matrix4();
-const chain = (...bones) => { for (const b of bones) { b.updateMatrix(); b.matrixWorld.multiplyMatrices(b.parent.matrixWorld, b.matrix); } };
-const worldTurn = (b, out) => out.setFromRotationMatrix(_m.extractRotation(b.matrixWorld));
-/** Turn `bone` by the world rotation q (its parent's world matrix is current). */
-const turn = (bone, q) => { worldTurn(bone.parent, _qp); bone.quaternion.premultiply(_q.copy(_qp).invert().multiply(q).multiply(_qp)); };
-/**
- * Two-bone leg solve without walking the scene (foot-hold.js reach does a full world update per call): only this leg's
- * chain is recomposed from the hips down (the bones above stand still, their matrices are this frame's). The ankle goes
- * w of the way to `target`, the knee stays in its own bend plane, the foot keeps its world turn.
- */
-function legSolve(hips, thigh, shin, foot, target, w = 1) {
-  chain(hips, thigh, shin, foot);
-  worldTurn(foot, _qf);
-  _H.setFromMatrixPosition(thigh.matrixWorld); _K.setFromMatrixPosition(shin.matrixWorld); _A.setFromMatrixPosition(foot.matrixWorld);
-  const T = w < 1 ? _w.copy(_A).lerp(target, w) : _w.copy(target);
-  const l1 = _H.distanceTo(_K), l2 = _K.distanceTo(_A), d = Math.min(l1 + l2 - 1e-4, Math.max(Math.abs(l1 - l2) + 1e-4, _H.distanceTo(T)));
-  const ang = x => Math.acos(Math.min(1, Math.max(-1, (l1 * l1 + l2 * l2 - x * x) / (2 * l1 * l2))));
-  _n.subVectors(_H, _K).cross(_u.subVectors(_A, _K));
-  if (_n.lengthSq() > 1e-12) { turn(shin, _qr.setFromAxisAngle(_n.normalize(), ang(d) - ang(_H.distanceTo(_A)))); chain(shin, foot); }
-  _A.setFromMatrixPosition(foot.matrixWorld).sub(_H).normalize();
-  turn(thigh, _qr.setFromUnitVectors(_A, _u.copy(T).sub(_H).normalize()));
-  chain(thigh, shin);
-  worldTurn(shin, _qp); foot.quaternion.copy(_qp.invert().multiply(_qf));
-}
 function restLen(root, a, b) {
   root.updateWorldMatrix(true, true);
   const A = root.getObjectByName(a), B = root.getObjectByName(b);
@@ -135,8 +111,8 @@ export function chorusAt(lines, t) {
   return i >= 0 && lines.chorus[i] === 1 && t <= lines.e[i] + SINGING.post;
 }
 
-/** The back row's source: one mixer, the second routine, the foot hold. */
-class RowDancer {
+/** A row's source: one mixer, a routine (the lead's plan or the back row's), the foot hold. */
+export class RowDancer {
   constructor(model, clips, plan, clock) {
     this.model = model; this.plan = plan; this.clock = clock;
     this.mixer = new THREE.AnimationMixer(model); this.actions = new Map();
@@ -156,6 +132,34 @@ class RowDancer {
   dispose() { this.feet.restore(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model); }
 }
 
+/**
+ * The lead's dance when she is not Kotone (Sing & Play's Singer row): Kotone's rig (`rig`: a member of the formation, or
+ * a hidden clone under the player in a solo) plays her moves pack on the lead's plan (one mixer, her foot hold), and the
+ * lead's body copies it with the followers' maths (hips by the leg ratio, the leg solve, then her own ground fit:
+ * performer.js). rigRest: Kotone's pack armature at rest; body / bodyRest: the lead's model and its file's scene at rest.
+ * -> the Performer's `source` ({ pose(dt, t), fit, model, ms(), dispose() }); `fit` is the rig's own ground fit when it
+ * stands in the formation (troupe.js sets it: put back before her mixer writes).
+ */
+export function leadSource(perf, rig, clips, rigRest, body, bodyRest) {
+  const dancer = new RowDancer(rig, clips, perf.plan, perf.clock);
+  const cp = makeCopier(rig, body, restPose(rigRest), restPose(bodyRest), { srcRest: rigRest, dstRest: bodyRest });
+  let ms = 0, n = 0;
+  return {
+    model: rig, fit: null, copier: cp,
+    pose(dt, t) {
+      const t0 = performance.now();
+      this.fit?.restore();
+      dancer.pose(dt, t);
+      rig.updateWorldMatrix(true, true);   // (the leg solves read its ankles from its world matrices: the lead's and the row's)
+      cp.copy();
+      ms += performance.now() - t0; n++;
+    },
+    /** Mean ms a frame for the rig's dance and the copy (and resets). */
+    ms() { const v = n ? ms / n : 0; ms = 0; n = 0; return v; },
+    dispose() { dancer.dispose(); },
+  };
+}
+
 export class Troupe {
   /**
    * lead: Kotone's Performer (started); leadModel: her model; leadRest: her rig at rest (her pack's armature);
@@ -169,14 +173,20 @@ export class Troupe {
     this.frontOn = true; this.backOn = true;
     this.frame = 0; this.ms = 0; this.msN = 0;
     const rest = new Map(members.map(e => [e, restPose(e.model)]));
+    // a hillside (opts.ground (x, z) -> y): every member's planted feet fitted to the ground under its own spot (ground-fit.js)
+    if (opts.ground) for (const e of members) e.fit = createGroundFit(e.model, opts.ground);
     const leadR = restPose(leadRest), leadLeg = legLength(leadRest);
-    const front = members.filter(e => e.m.row === 0), back = members.filter(e => e.m.row === 1);
-    this.front = front.map(e => makeCopier(leadModel, e.model, leadR, rest.get(e), { srcRest: leadRest, legSrc: leadLeg, feet: opts.feet ?? 'auto' }));
+    // the front row copies Kotone's evaluated rig: the lead's body when she sings, else the performer's source (her rig
+    // in the formation, posed by leadSource before this; it is not copied, its feet are fitted with the row's)
+    const srcModel = lead.source?.model || leadModel, srcE = members.find(e => e.model === srcModel);
+    if (srcE && lead.source) lead.source.fit = srcE.fit || null;
+    const front = members.filter(e => e.m.row === 0 && e !== srcE), back = members.filter(e => e.m.row === 1);
+    this.front = front.map(e => makeCopier(srcModel, e.model, leadR, rest.get(e), { srcRest: leadRest, legSrc: leadLeg, feet: opts.feet ?? 'auto' }));
     const src = back.find(e => e.m.source);
     this.back = null;
     if (src?.clips?.size) {
       const plan = planBacking(lead.plan, { noContact: true });
-      this.back = { dancer: new RowDancer(src.model, src.clips, plan, lead.clock), copiers: back.filter(e => e !== src).map(e => makeCopier(src.model, e.model, rest.get(src), rest.get(e), { feet: opts.feet ?? 'auto' })) };
+      this.back = { src, dancer: new RowDancer(src.model, src.clips, plan, lead.clock), copiers: back.filter(e => e !== src).map(e => makeCopier(src.model, e.model, rest.get(src), rest.get(e), { feet: opts.feet ?? 'auto' })) };
     }
     // faces: blink of their own; the mouth on chorus lines
     const lines = lead.plan.lines, track = lead.data.mouth?.open ? lead.data.mouth : lead.data.lyrics;
@@ -243,11 +253,13 @@ export class Troupe {
   /** From the lead's performer, after her dance pose: both rows posed for song time t (one evaluation each). */
   pose(dt, t) {
     const t0 = performance.now();
-    if (this.frontOn) for (const c of this.front) c.copy();
+    if (this.frontOn) { for (const c of this.front) c.copy(); for (const e of this.all) if (e.m.row === 0) e.fit?.apply(); }
     const b = this.back;
     if (b && this.backOn && (!this.opts.backHalf || (this.frame & 1) === 0)) {
+      b.src.fit?.restore();   // (the source's own mixer writes next: its bones back to the dance first)
       b.dancer.pose(this.opts.backHalf ? dt * 2 : dt, t);
       for (const c of b.copiers) c.copy();
+      for (const e of this.all) if (e.m.row === 1) e.fit?.apply();   // after the copies: they copy the level-ground dance
       this.backTick++;
     }
     this.frame++;

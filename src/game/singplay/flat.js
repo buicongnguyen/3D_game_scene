@@ -1,8 +1,11 @@
-// Where Kotone may perform in Sing & Play (pure; tests/singplay.test.mjs): flat, walkable, open ground with room around
-// her. Not on a hillside (the ground over a ring round her stays within FLAT.rise of her feet and no step between
-// neighbouring samples is steeper than FLAT.slopeDeg), not in or next to water, not against a wall, a tree trunk or a
-// fence (no solid within FLAT.room), and inside a room only when that clear radius fits between its walls.
-export const FLAT = Object.freeze({ ring: 1.6, samples: 12, rise: .25, slopeDeg: 12, room: 1.4, waterGap: .3, height: 1.6 });
+// Where Kotone may perform in Sing & Play (pure; tests/singplay.test.mjs): walkable, open ground with room around her -
+// level ground or a gentle hillside (owner 2026-11-28: "make it perform in a little steep spot"; her feet are fitted to
+// the slope, game/perform/ground-fit.js). Not on a steep hillside (the ground over a ring round her stays within
+// FLAT.rise of her feet, no half-ring slope steeper than FLAT.slopeDeg and no step between neighbouring samples steeper
+// than FLAT.stepDeg: a bank or a cliff edge), not in or next to water, not against a wall, a tree trunk or a fence (no
+// solid within FLAT.room), and inside a room only when that clear radius fits between its walls.
+// (Until 2026-11-28: rise .25 m, 12 deg, steps 2 x tan 12 deg.)
+export const FLAT = Object.freeze({ ring: 1.6, samples: 12, rise: .6, slopeDeg: 20, stepDeg: 30, room: 1.4, waterGap: .3, height: 1.6 });
 
 /**
  * p: { x, y, z } her feet. env: { heightAt(x, z), waterY, solid(x, z, r, footY, h) -> bool (a solid within r),
@@ -11,7 +14,7 @@ export const FLAT = Object.freeze({ ring: 1.6, samples: 12, rise: .25, slopeDeg:
  */
 export function canPerform(p, env) {
   if (env.swimming) return { ok: false, reason: 'water' };
-  const R = FLAT.ring, n = FLAT.samples, h0 = env.room ? p.y : env.heightAt(p.x, p.z), tan = Math.tan(FLAT.slopeDeg * Math.PI / 180);
+  const R = FLAT.ring, n = FLAT.samples, h0 = env.room ? p.y : env.heightAt(p.x, p.z), tan = Math.tan(FLAT.slopeDeg * Math.PI / 180), step = Math.tan(FLAT.stepDeg * Math.PI / 180);
   if (!env.room) {
     if (h0 < env.waterY + FLAT.waterGap) return { ok: false, reason: 'water' };
     let prev = null, first = null;
@@ -20,8 +23,8 @@ export function canPerform(p, env) {
       if (h < env.waterY + FLAT.waterGap) return { ok: false, reason: 'water' };
       if (Math.abs(h - h0) > FLAT.rise || Math.abs(h - h0) / R > tan) return { ok: false, reason: 'steep' };
       const half = env.heightAt(p.x + Math.sin(a) * R / 2, p.z + Math.cos(a) * R / 2);
-      if (Math.abs(half - h0) / (R / 2) > tan) return { ok: false, reason: 'steep' };
-      if (prev !== null && Math.abs(h - prev) / (2 * R * Math.sin(Math.PI / n)) > 2 * tan) return { ok: false, reason: 'steep' };
+      if (Math.abs(half - h0) / (R / 2) > tan * 1.15 || Math.abs(h - half) / (R / 2) > step) return { ok: false, reason: 'steep' };
+      if (prev !== null && Math.abs(h - prev) / (2 * R * Math.sin(Math.PI / n)) > step) return { ok: false, reason: 'steep' };
       prev = h; if (first === null) first = h;
     }
   } else {
@@ -44,21 +47,29 @@ export function gameEnv(g) {
   };
 }
 
-/** The group's places (content/troupe.js): every member needs the ground under it level with hers, dry and clear. */
-export const GROUP_ROOM = Object.freeze({ rise: .35, clear: .45 });
+/**
+ * The group's places (content/troupe.js): every member needs dry, clear ground; on a hillside the whole formation's
+ * ground (hers included) spans no more than `range` m of height and the ground under each member is no steeper than
+ * `slopeDeg` (sampled `foot` m round its spot): a back row a little uphill stands tiered, every face showing.
+ * (Until 2026-11-28: each member within .35 m of her feet.)
+ */
+export const GROUP_ROOM = Object.freeze({ range: .6, slopeDeg: 20, foot: .45, clear: .45 });
 /**
  * p: her feet, facing: her turn (rad), spots: [{ x, z }] the members' places in her frame (x across, z forward), env as
- * canPerform. -> { ok: true } or { ok: false, reason: 'group' | 'water' }
+ * canPerform. -> { ok: true } or { ok: false, reason: 'group' | 'water' | 'steep' }
  */
 export function canGroup(p, facing, spots, env) {
-  const s = Math.sin(facing), c = Math.cos(facing), h0 = env.room ? p.y : env.heightAt(p.x, p.z);
+  const s = Math.sin(facing), c = Math.cos(facing), h0 = env.room ? p.y : env.heightAt(p.x, p.z), tan = Math.tan(GROUP_ROOM.slopeDeg * Math.PI / 180), f = GROUP_ROOM.foot;
+  let lo = h0, hi = h0;
   for (const o of spots) {
     const x = p.x + o.x * c + o.z * s, z = p.z - o.x * s + o.z * c;
     if (env.room) { const r = env.room; if (x - r.min.x < GROUP_ROOM.clear || r.max.x - x < GROUP_ROOM.clear || z - r.min.z < GROUP_ROOM.clear || r.max.z - z < GROUP_ROOM.clear) return { ok: false, reason: 'group' }; }
     else {
       const h = env.heightAt(x, z);
       if (h < env.waterY + FLAT.waterGap) return { ok: false, reason: 'water' };
-      if (Math.abs(h - h0) > GROUP_ROOM.rise) return { ok: false, reason: 'group' };
+      lo = Math.min(lo, h); hi = Math.max(hi, h);
+      if (hi - lo > GROUP_ROOM.range) return { ok: false, reason: 'steep' };
+      for (const [dx, dz] of [[f, 0], [-f, 0], [0, f], [0, -f]]) if (Math.abs(env.heightAt(x + dx, z + dz) - h) / f > tan) return { ok: false, reason: 'steep' };
     }
     if (env.solid(x, z, GROUP_ROOM.clear, h0, FLAT.height)) return { ok: false, reason: 'group' };
   }
