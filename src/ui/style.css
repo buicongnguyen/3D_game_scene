@@ -211,6 +211,14 @@ body.touch #dialogue .nav .k { display: none; }
 .form label { display: flex; justify-content: space-between; align-items: center; gap: 14px; }
 .form label.check { justify-content: flex-start; }
 .form select, .form input[type=range] { flex: 0 0 52%; accent-color: var(--gold-deep); font: inherit; }
+/* Settings > Resolution: one flat row of three (engine/resolution.js); it takes a line of its own when the box is narrow */
+.form .seg-row { display: flex; justify-content: space-between; align-items: center; gap: 8px 14px; flex-wrap: wrap; }
+.seg { display: flex; flex: 1 1 250px; max-width: 100%; border: 2px solid var(--gold-deep); border-radius: 12px; overflow: hidden; background: #fff; }
+.seg button { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 4px 2px; border: 0; background: transparent; font: 800 14px/1.15 var(--ui); color: var(--ink); cursor: pointer; }
+.seg button + button { border-left: 2px solid var(--gold-deep); }
+.seg button[aria-pressed="true"] { background: var(--gold); color: #3b1c05; }
+.seg button:focus-visible { outline: 3px solid var(--teal); outline-offset: -3px; }
+.form .note.res-info { margin-top: -8px; font-variant-numeric: tabular-nums; }
 .credits p { font-size: 16px; line-height: 1.5; }
 .credits .thanks { font-style: italic; color: var(--ink-soft); }
 

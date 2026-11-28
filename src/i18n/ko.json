@@ -5216,5 +5216,11 @@
  "The words she sings, on screen": "부르는 가사를 화면에 보여 줘요",
  "Show effects": "무대 효과",
  "Lights, confetti and fireworks around the show": "공연을 빛내는 조명, 색종이, 불꽃놀이",
- "Show setup": "공연 준비"
+ "Show setup": "공연 준비",
+ "Resolution": "해상도",
+ "Sharp": "선명",
+ "Balanced": "균형",
+ "Low": "낮음",
+ "Render {w}×{h} · {pct} % · {tier}": "렌더링 {w}×{h} · {pct} % · {tier}",
+ "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "선명은 화면 해상도보다 낮게 그리지 않습니다. 균형은 바쁜 그래픽 카드에 더 가볍습니다."
 }

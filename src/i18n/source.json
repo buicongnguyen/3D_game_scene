@@ -16425,6 +16425,7 @@
   "s": "Medium",
   "ctx": [
    "UI (src/content/performers.js)",
+   "UI (src/ui/ui.js)",
    "menu / screen text"
   ]
  },
@@ -18620,7 +18621,8 @@
   "s": "Auto",
   "ctx": [
    "UI (src/game/singplay/pickers.js)",
-   "UI (src/game/singplay/singplay.js)"
+   "UI (src/game/singplay/singplay.js)",
+   "menu / screen text"
   ]
  },
  {
@@ -30186,6 +30188,25 @@
   ]
  },
  {
+  "s": "Low",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "High",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Render {w}×{h} · {pct} % · {tier}",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
   "s": "Enable tropical trees",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -30851,7 +30872,25 @@
   ]
  },
  {
-  "s": "High",
+  "s": "Resolution",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sharp",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Balanced",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.",
   "ctx": [
    "menu / screen text"
   ]

@@ -30,7 +30,7 @@ export class Game {
     this.params = params;
     this.treeShadows = params.get('treeShadows') === 'on';   // preview of the tree shadow proxies (world/foliage.js)
     this.canvas = canvas;
-    this.renderer = new Renderer(canvas, params.get('quality'));
+    this.renderer = new Renderer(canvas, params.get('quality'), { res: params.get('res') });   // ?res=auto|sharp|balanced: this page only
     this.view = View;                                               // (a handle for tests and the console: game.view.enabled)
     if (params.get('view') === 'off') View.enabled = false;      // ?view=off: people and animals out of the camera's view stay shown (engine/view.js)
     this.renderer.setProgramSort(params.get('sort') !== 'off');  // ?sort=off: three.js's own order of opaque draws (engine/renderer.js programFirst)
@@ -191,7 +191,7 @@ export class Game {
       at: new Date().toISOString().slice(0, 16).replace('T', ' '), page: location.search || '(no switches)', params: [...this.params.keys()].filter(k => !['mute'].includes(k)).join(' ') || undefined,
       build: [...document.scripts].map(x => x.src.split('/').pop()).find(n => /^index-/.test(n)) || 'dev',
       ua: nav.userAgent, screen: innerWidth + 'x' + innerHeight, dpr: +(devicePixelRatio || 1).toFixed(2), cores: nav.hardwareConcurrency, memory: nav.deviceMemory,
-      tier: r.qualityName, level: r.governor?.level ?? 0, scale: +r.scale.toFixed(2), pace: this.pacer?.pace || 0, slowMarked,
+      tier: r.qualityName, level: r.governor?.level ?? 0, scale: +r.scale.toFixed(2), pace: this.pacer?.pace || 0, slowMarked, res: r.resolutionInfo(), gpu: r.gpuName,
       mobile: isMobile(), savedTier, tropical: tropicalTreesOn(), arrival: this.arrivalReport,
       frames: this.ring?.summary(), calls: this.lastInfo?.calls, tris: this.lastInfo?.tris, geometries: info.memory.geometries, textures: info.memory.textures,
       heapMB: mem ? mem.usedJSHeapSize / 1048576 : undefined, heapLimitMB: mem ? mem.jsHeapSizeLimit / 1048576 : undefined,
@@ -342,7 +342,7 @@ export class Game {
     this.foliage.updateShadows(this.player.pos);
     this.grass.update(this.camera.position, this.player.pos);
     this.renderer.grade.uniforms.uNight.value = this.night || 0;
-    if (this.fpsShown !== this.fps) { this.fpsShown = this.fps; this.ui?.fpsText(`${this.fps} fps · ${this.renderer.qualityName} · ${Math.round(this.renderer.scale * 100)}%`); }
+    if (this.fpsShown !== this.fps) { this.fpsShown = this.fps; const ri = this.renderer.resolutionInfo(); this.ui?.fpsText(`${this.fps} fps · ${this.renderer.qualityName} · ${ri.w}×${ri.h} ${ri.pct}%`); }
     this.renderer.render(this.scene, this.camera);
     if (this.snapWaiters?.length) this.takeSnapshot();
     this.player.events.length = 0;

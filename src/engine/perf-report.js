@@ -55,6 +55,9 @@ export function buildReport(s = {}) {
   L.push(`device: ${s.ua || '?'}`);
   L.push(`screen: ${s.screen || '?'} @${s.dpr ?? '?'}x   cores: ${s.cores ?? '?'}   memory: ${s.memory ?? '?'} GB`);
   L.push(`graphics: ${s.tier || '?'}   governor step: ${s.level ?? '?'}   render scale: ${s.scale ?? '?'}   paced to 30 fps: ${s.pace ? 'yes' : 'no'}${s.slowMarked ? '   remembered as slow' : ''}`);
+  // the render resolution (engine/resolution.js): what is drawn, against the screen's own pixels
+  if (s.res) L.push(`render: ${s.res.w}x${s.res.h} = ${s.res.pct}% of the screen's ${s.res.nativeW}x${s.res.nativeH}   resolution: ${s.res.mode}${s.res.fixed ? ' (a fixed % from Advanced)' : ''}   chip class: ${s.res.gpu || '?'}`);
+  if (s.gpu) L.push(`gpu: ${s.gpu}`);
   if (s.mobile != null || s.savedTier !== undefined) L.push(`phone: ${s.mobile ? 'yes' : 'no'}   tier saved in Settings: ${s.savedTier || 'none'}${s.tropical ? '   tropical trees: on' : ''}`);
   if (s.arrival) L.push(arrivalLine(s.arrival));
   const f = s.frames;

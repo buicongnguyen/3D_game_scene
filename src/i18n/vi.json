@@ -5216,5 +5216,11 @@
   "The words she sings, on screen": "Lời cô ấy hát, hiện trên màn hình",
   "Show effects": "Hiệu ứng sân khấu",
   "Lights, confetti and fireworks around the show": "Đèn, pháo giấy và pháo hoa quanh buổi diễn",
-  "Show setup": "Chuẩn bị buổi diễn"
+  "Show setup": "Chuẩn bị buổi diễn",
+  "Resolution": "Độ phân giải",
+  "Sharp": "Sắc nét",
+  "Balanced": "Cân bằng",
+  "Low": "Thấp",
+  "Render {w}×{h} · {pct} % · {tier}": "Kết xuất {w}×{h} · {pct} % · {tier}",
+  "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "Sắc nét không bao giờ vẽ thấp hơn độ phân giải màn hình của bạn. Cân bằng nhẹ hơn cho card đồ họa đang bận."
 }

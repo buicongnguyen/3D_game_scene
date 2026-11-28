@@ -130,6 +130,9 @@
         <label><span data-i18n>Difficulty</span> <select id="optDifficulty"><option value="easy" data-i18n>Easy</option><option value="normal" data-i18n>Normal</option><option value="hard" data-i18n>Hard (aim and spark)</option></select></label>
         <p class="note" data-i18n>Easy: Tamo reaches lamps and bells from much farther away, and fish bite for longer.</p>
         <label><span data-i18n>Graphics</span> <select id="optQuality"><option value="low" data-i18n>Low (phones)</option><option value="medium" data-i18n>Medium</option><option value="high" data-i18n>High</option></select></label>
+        <div class="seg-row" role="group" aria-labelledby="optResLabel"><span id="optResLabel" data-i18n>Resolution</span> <div id="optRes" class="seg"><button type="button" data-res="auto" aria-pressed="true" data-i18n>Auto</button><button type="button" data-res="sharp" aria-pressed="false" data-i18n>Sharp</button><button type="button" data-res="balanced" aria-pressed="false" data-i18n>Balanced</button></div></div>
+        <p class="note res-info" id="optResInfo" aria-live="polite"></p>
+        <p class="note" id="optResNote" data-i18n>Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.</p>
         <label><span data-i18n>Camera sensitivity</span> <input id="optSens" type="range" min="0.3" max="2" step="0.05" value="1" /></label>
         <label class="check"><input id="optInvert" type="checkbox" /> <span data-i18n>Invert camera Y</span></label>
         <label><span data-i18n>Music</span> <input id="optMusic" type="range" min="0" max="1" step="0.05" value="0.55" /></label>
