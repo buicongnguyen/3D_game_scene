@@ -11,7 +11,7 @@ song plan for the price of two evaluations:
 
 | | front row (group A) | back row (group B) |
 |---|---|---|
-| members | nu-3, **Kotone** (lead, mic), nu-1, nu-4 | nu-5, **nam-1** (source), nam-3, nam-2 |
+| members | Saki (nu-3), **Kotone** (lead, mic), Aoi (nu-5), Yuna (nu-4) — the group of 4 (owner 2026-11-28: the two girls in white in, Mio's blue-green hair out) | Mio (nu-1), **Riku (nam-1)** (source), Kai (nam-3), Ren (nam-2) |
 | evaluated | Kotone's own performer (performer.js, unchanged) | ONE mixer on nam-1 (his own Club bake) |
 | routine | her plan (plan.js) | `planBacking`: the same bar lines and sections, another dance in every block, no hand contact, the same cheer and bow |
 | the others | copy her bones after her dance pose, before her mic layer | copy his bones |

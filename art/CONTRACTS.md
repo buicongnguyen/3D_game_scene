@@ -286,6 +286,15 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   pack (`moves-vroid-nam1`, the back row's source). Only that pack ships: the other six were dropped from the deploy
   (owner, 2026-11-28); `--member <id>` rebuilds a member's pack when it is needed.
 
+#### The Night Star (Stella) — VRoid CC0 alpha sample AvatarSample_D_Darkness (since 2026-11-28, docs/NIGHT-STAR.md)
+
+- `vroid-nightstar.glb`, `vroid-nightstar.lite.glb`: the same contract as the members (69 bones, one mesh, one MASK
+  material, 1024 / 512 px atlas, 13.6k / 8.0k tris, the seven face morphs, the nine everyday clips; 1.73 m; gait Walk
+  1.059 / Run 4.5 m/s in the asset extras), built by `vroid_mixamo.py` from the CC0 VRM
+  (`E:\repo\ktvgo_live\characters\cc0\AvatarSample_D_Darkness`) into `.tools/vroid-cc0/models/vroid-cc0ddarkness*.glb` and copied under this name. No
+  pack: she dances Kotone's moves (perform/troupe.js leadSource) with her dress's avoid list (content/troupe.js GUESTS).
+- Fetched only at night near the shrine (game/nightstar/) or when Sing & Play's Singer row picks her.
+
 #### Kotone (round 1, replaced) — `vroid_lite.py` (imported, textured)
 
 - Source: the VRoid Project sample character "nu-2" (VRoid Hub licence in its VRM meta: anyone, commercial use,

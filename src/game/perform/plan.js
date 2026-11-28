@@ -17,9 +17,11 @@
 //
 //   style     the Dance choice (content/kotone-club.js DANCE_STYLES: mix / kpop / cute / hiphop): the loops of that style
 //             (the whole set when a tier has none that fits), its mic moves (micSetFor) and its moments (momentsFor)
+//   avoid     clips this singer never dances (the Night Star's long dress: no kicks, jumps or wide steps; content/troupe.js
+//             GUESTS avoid): left out of every pool and moment (an empty list changes nothing: the old plans stay)
 //
-// planPerformance(song, clock, lyrics, { style }) -> { seed, rate, lines, spans, blocks, moments, kind, style, mic, summary }
-import { CLUB_LOOPS, CONTACT_MOMENTS, DANCE_STYLES, DANCE_STYLE, momentsFor, micSetFor } from '../../content/kotone-club.js';
+// planPerformance(song, clock, lyrics, { style, avoid }) -> { seed, rate, lines, spans, blocks, moments, kind, style, mic, summary }
+import { CLUB_LOOPS, CONTACT_MOMENTS, DANCE_STYLES, DANCE_STYLE, MOMENTS, momentsFor, micSetFor } from '../../content/kotone-club.js';
 import { STANCE } from '../../content/kotone-club-fit.js';
 import { beatRate, normalizeKind } from './beat-clock.js';
 import { vocalLines, SINGING } from './mic-layer.js';
@@ -56,17 +58,18 @@ const up = (tier, cap = 'big') => TIERS[Math.min(TIERS.indexOf(cap), TIERS.index
 export const styleLoops = style => (style && style !== 'mix' && DANCE_STYLES.includes(style) ? CLUB_LOOPS.filter(d => d.styles.includes(style)) : CLUB_LOOPS);
 /** Dances for a block: its tier (nearest tier when empty), groove-only when sung, no hand contact with the mic; the style's
  *  own loops first (the whole vocabulary only when the style has none that fits). */
-export function dancePool(tier, { sung = false, mic = false, chorus = false, style = DANCE_STYLE } = {}) {
-  const ok = d => (!mic || !d.contact) && (!sung || chorus || d.groove) && (!sung || calmTorso(d));
+export function dancePool(tier, { sung = false, mic = false, chorus = false, style = DANCE_STYLE, avoid = null } = {}) {
+  const ok = d => (!mic || !d.contact) && (!sung || chorus || d.groove) && (!sung || calmTorso(d)) && !avoid?.includes(d.clip);
   for (const set of style === 'mix' ? [CLUB_LOOPS] : [styleLoops(style), CLUB_LOOPS]) {
     for (const t of { calm: ['calm', 'mid', 'big'], mid: ['mid', 'calm', 'big'], big: ['big', 'mid', 'calm'] }[tier]) {
       const p = set.filter(d => d.tier === t && ok(d)); if (p.length) return p;
     }
   }
-  return CLUB_LOOPS.filter(ok);
+  const any = CLUB_LOOPS.filter(ok);
+  return any.length ? any : CLUB_LOOPS.filter(d => !avoid?.includes(d.clip));
 }
 
-export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE_STYLE } = {}) {
+export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE_STYLE, avoid = null } = {}) {
   if (!DANCE_STYLES.includes(style)) style = DANCE_STYLE;
   // (the seed is the song's alone for 'mix', so a performance without a choice is the one it always was)
   const seed = style === 'mix' ? hash(song.id || song.title || 'song') : hash(song.id || song.title || 'song', style), kind = songKind(song), table = TIER_OF[kind];
@@ -114,7 +117,7 @@ export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE
       const bsung = sung && Boolean(lines) && Array.from(lines.t).some((t, i) => t < timeOf(b1) - barSec / 2 && lines.e[i] > timeOf(b));
       // a short tail (under 2 bars) joins the block before it
       if (b1 - b < 2 && blocks.length && blocks.at(-1).section === s.index) { blocks.at(-1).b1 = b1; continue; }
-      let pool = dancePool(tier, { sung: bsung, mic, chorus, style }); if (pool.length > 1) pool = pool.filter(d => d.clip !== prev);
+      let pool = dancePool(tier, { sung: bsung, mic, chorus, style, avoid }); if (pool.length > 1) pool = pool.filter(d => d.clip !== prev);
       // neighbours whose stances match first: every loop starting within sameStance of the last one, else the three nearest
       if (prev && pool.length > 2) { const near = pool.filter(d => stanceGap(prev, d.clip) <= PLAN.sameStance);
         pool = near.length >= 2 ? near : pool.slice().sort((x, y) => stanceGap(prev, x.clip) - stanceGap(prev, y.clip) || (x.clip < y.clip ? -1 : 1)).slice(0, 3); }
@@ -126,8 +129,10 @@ export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE
     // moments (Club clubMoment, for one singer)
     const bars = s.b1 - s.b0, next = secs[si + 1]?.kind || '', last = si === secs.length - 1;
     const add = (id, b0, n) => {
-      const t0 = timeOf(b0), t1 = timeOf(b0 + n), withMic = micAtBar(b0) || micAtBar(b0 + n - 1), [free, mc] = MOM[id], clip = withMic ? mc : free;
-      if (!clip || sungIn(t0, t1)) return false;
+      const t0 = timeOf(b0), t1 = timeOf(b0 + n), withMic = micAtBar(b0) || micAtBar(b0 + n - 1), [free, mc] = MOM[id];
+      let clip = withMic ? mc : free;
+      if (clip && avoid?.includes(clip)) clip = (withMic ? MOMENTS[id]?.[1] : MOMENTS[id]?.[0]) || null;   // (her style's own moment avoided: the plain one)
+      if (!clip || avoid?.includes(clip) || sungIn(t0, t1)) return false;
       const under = blocks.findLast(x => x.b0 <= b0)?.clip, fade = under && stanceGap(under, clip) > PLAN.sameStance ? PLAN.longFadeBeats : PLAN.fadeBeats;
       moments.push({ id, b0, b1: b0 + n, t0, t1, clip, mic: withMic, fade }); return true;
     };
@@ -143,7 +148,7 @@ export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE
   blocks.forEach(b => { b.t0 = timeOf(b.b0); b.t1 = timeOf(b.b1); });
   const summary = blocks.map(b => `${b.t0.toFixed(1)}s ${b.kind}${b.final ? '*' : ''} ${b.clip}${b.mic ? ' +mic' : ''}${b.sung ? ' sung' : ''} fade ${b.fade || 1}`)
     .concat(moments.map(m => `${m.t0.toFixed(1)}s moment ${m.clip}`)).sort((a, b) => parseFloat(a) - parseFloat(b));
-  return { seed, kind, style, mic: micSetFor(style), rate, meter, blockBars, lastBar, end, lines, spans, blocks, moments, summary };
+  return { seed, kind, style, avoid: avoid || null, mic: micSetFor(style), rate, meter, blockBars, lastBar, end, lines, spans, blocks, moments, summary };
 }
 
 /**

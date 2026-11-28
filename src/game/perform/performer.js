@@ -98,10 +98,11 @@ export class Performer {
    * npc: the performer (actors/npc.js: model, anim, face); clips: Map name -> AnimationClip (her pack, made ready for her
    * model); song: { song (the list entry), beats, lyrics, mouth, stage, url }; restRoot: the pack's armature (rest pose).
    */
-  constructor(npc, clips, song, { audio = null, restRoot = null, style, ground = null } = {}) {
+  constructor(npc, clips, song, { audio = null, restRoot = null, style, ground = null, avoid = null } = {}) {
     this.n = npc; this.clips = clips; this.data = song;
     this.clock = createBeatClock(song.song, { beats: song.beats, sections: song.stage?.sections || null, lyrics: song.lyrics });
-    this.plan = planPerformance(song.song, this.clock, song.lyrics, { style });   // (style: the Dance choice)
+    // (style: the Dance choice; avoid: clips this singer never dances, content/troupe.js GUESTS)
+    this.plan = planPerformance(song.song, this.clock, song.lyrics, { style, avoid: avoid?.length ? avoid : null });
     this.mood = moodAt('intro');
     this.sound = new SongAudio(song.url, audio, song.song?.gainDb);
     this.restRoot = restRoot;

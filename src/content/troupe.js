@@ -28,42 +28,72 @@ export const TROUPE = Object.freeze([
   // front row (group A): Kotone sings lead with the hand mic, the girls copy her dance and sing along on the choruses
   { id: 'nu-3', file: 'vroid-nu3', h: 1.645, gait: { walk: .987, run: 4.203 }, row: 0, x: -2.25, z: 0 },
   { id: 'kotone', file: 'kotone', h: 1.616, gait: { walk: .958, run: 4.077 }, row: 0, x: -.75, z: .35, source: true, lead: true, pack: 'moves-kotone' },
-  { id: 'nu-1', file: 'vroid-nu1', h: 1.598, gait: { walk: .958, run: 4.077 }, row: 0, x: .75, z: 0 },
+  // (owner 2026-11-28: the group of 4 is Kotone, Saki and the two girls in white, Aoi and Yuna; Mio, the blue-green
+  // hair, dances in the back row of the eight)
+  { id: 'nu-5', file: 'vroid-nu5', h: 1.737, gait: { walk: 1.04, run: 4.414 }, row: 0, x: .75, z: 0 },
   { id: 'nu-4', file: 'vroid-nu4', h: 1.668, gait: { walk: .963, run: 4.095 }, row: 0, x: 2.25, z: 0 },
   // back row (group B), 1.8 m behind, between and outside the front row's shoulders so every face shows
-  { id: 'nu-5', file: 'vroid-nu5', h: 1.737, gait: { walk: 1.04, run: 4.414 }, row: 1, x: -3.0, z: -1.8 },
+  { id: 'nu-1', file: 'vroid-nu1', h: 1.598, gait: { walk: .958, run: 4.077 }, row: 1, x: -3.0, z: -1.8 },
   { id: 'nam-1', file: 'vroid-nam1', h: 1.713, gait: { walk: 1.028, run: 4.376 }, row: 1, x: -1.5, z: -1.8, source: true, pack: BACK_PACK },
   { id: 'nam-3', file: 'vroid-nam3', h: 1.761, gait: { walk: 1.028, run: 4.376 }, row: 1, x: 1.5, z: -1.8 },
   { id: 'nam-2', file: 'vroid-nam2', h: 1.735, gait: { walk: 1.099, run: 4.684 }, row: 1, x: 3.0, z: -1.8 },
 ].map(m => Object.freeze({ ...m, gait: Object.freeze(m.gait) })));
 
+/**
+ * Guest singers: not in the formation's eight places; one sings lead at the lead's place (castOf). The Night Star
+ * (2026-11-28, docs/NIGHT-STAR.md): VRoid Project's CC0 alpha sample "AvatarSample_D_Darkness", built like the others
+ * (art/blender/vroid_mixamo.py), who sings at the night festival by the shrine and joins the Singer row once seen.
+ *   avoid   dance loops and moments she never dances (her long, wide dress: no kicks, jumps, wide or forward steps;
+ *           game/perform/plan.js `avoid`)
+ */
+export const NIGHT_STAR = 'night-star';
+export const GUESTS = Object.freeze([
+  Object.freeze({ id: NIGHT_STAR, file: 'vroid-nightstar', h: 1.733, gait: Object.freeze({ walk: 1.059, run: 4.5 }), guest: true,
+    avoid: Object.freeze(['ClubJumpPoint', 'ClubKickBall', 'ClubCutePop', 'ClubTopRock', 'ClubAfroStep', 'ClubSideGroove', 'ClubClapStep', 'ClubBodyRoll', 'ClubFistPump', 'MomentJumpMic']) }),
+]);
+
 /** The singers in the Singer row's order (Kotone first, then the girls, then the boys). */
 export const SINGERS = Object.freeze(['kotone', 'nu-1', 'nu-3', 'nu-4', 'nu-5', 'nam-1', 'nam-2', 'nam-3']);
-/** Their names (owner 2026-11-28; Kotone's art-club friends from the city): the row's labels and the file names. id -> name. */
+/** The Singer row with the guests the player has met (the Night Star once her show was seen), at its end. */
+export const singersWith = (guests = []) => [...SINGERS, ...GUESTS.filter(g => guests.includes(g.id)).map(g => g.id)];
+/** Their names (owner 2026-11-28; Kotone's art-club friends from the city): the row's labels and the file names. id -> name.
+ *  The Night Star is Stella (EN; 은하 Eunha in Korean, "galaxy": 별 Byeol is the dance game's singer; Tinh in Vietnamese). */
 export const NAMES = Object.freeze({
   kotone: 'Kotone', 'nu-3': 'Saki', 'nu-1': 'Mio', 'nu-4': 'Yuna', 'nu-5': 'Aoi', 'nam-1': 'Riku', 'nam-3': 'Kai', 'nam-2': 'Ren',
+  [NIGHT_STAR]: 'Stella',
 });
 /** Their own names in Korean and Vietnamese (owner 2026-11-28: a Korean / Vietnamese name each, not a spelling of the
  *  English one; Kotone keeps hers, written in Hangul). Other languages use NAMES. */
 export const LOCAL_NAMES = Object.freeze({
-  ko: Object.freeze({ kotone: '코토네', 'nu-3': '지유', 'nu-1': '서아', 'nu-4': '하린', 'nu-5': '수아', 'nam-1': '도윤', 'nam-3': '시우', 'nam-2': '준호' }),
-  vi: Object.freeze({ kotone: 'Kotone', 'nu-3': 'Mai', 'nu-1': 'Linh', 'nu-4': 'Thảo', 'nu-5': 'Vy', 'nam-1': 'Minh', 'nam-3': 'Khoa', 'nam-2': 'Huy' }),
+  ko: Object.freeze({ kotone: '코토네', 'nu-3': '지유', 'nu-1': '서아', 'nu-4': '하린', 'nu-5': '수아', 'nam-1': '도윤', 'nam-3': '시우', 'nam-2': '준호', [NIGHT_STAR]: '은하' }),
+  vi: Object.freeze({ kotone: 'Kotone', 'nu-3': 'Mai', 'nu-1': 'Linh', 'nu-4': 'Thảo', 'nu-5': 'Vy', 'nam-1': 'Minh', 'nam-3': 'Khoa', 'nam-2': 'Huy', [NIGHT_STAR]: 'Tinh' }),
 });
 /** A singer's name in a game language (ko / vi: their own names; else the English ones). */
 export const nameOf = (id, lang) => LOCAL_NAMES[lang]?.[id] || NAMES[id] || null;
-/** A member by id (null for an unknown id). */
-export const member = id => TROUPE.find(m => m.id === id) || null;
+/** A member (or a guest) by id (null for an unknown id). */
+export const member = id => TROUPE.find(m => m.id === id) || GUESTS.find(m => m.id === id) || null;
+/** Is this singer a guest (not one of the eight places)? */
+export const isGuest = id => GUESTS.some(m => m.id === id);
+/** The dance loops a singer never dances (her dress: GUESTS avoid), or an empty list. */
+export const avoidOf = id => member(id)?.avoid || [];
 /** A singer's face picture (64 px webp, baked by scripts/bake-singer-faces.mjs from each model's head). */
 export const facePic = id => `faces/${id}.webp`;
 
 const PERSON = ['id', 'file', 'h', 'gait'];
+// the front place Kotone takes when a back-row singer or a guest sings lead: Saki's (the left outer place), so the two
+// girls in white stay in the front row (owner 2026-11-28)
+const OUTER = () => TROUPE.findIndex(m => m.row === 0 && !m.lead);
 /** The whole cast of 8 with `lead` singing at the lead's place (see the top of this file). */
 export function castOf(lead = KOTONE) {
   const who = TROUPE.map(m => m.id), at = id => who.indexOf(id);
   const L = at(KOTONE), S = at(lead);
   if (S >= 0 && S !== L) {
     if (TROUPE[S].row === 0) { who[L] = lead; who[S] = KOTONE; }
-    else { const outer = TROUPE.findLastIndex(m => m.row === 0 && !m.lead); who[L] = lead; who[S] = who[outer]; who[outer] = KOTONE; }
+    else { const outer = OUTER(); who[L] = lead; who[S] = who[outer]; who[outer] = KOTONE; }
+  } else if (S < 0 && isGuest(lead)) {
+    // a guest sings at the lead's place, Kotone takes the outer front place (she is still the front row's source) and
+    // that place's girl sits this one out
+    const outer = OUTER(); who[L] = lead; who[outer] = KOTONE;
   }
   return TROUPE.map((slot, i) => {
     const p = member(who[i]), out = { row: slot.row, x: slot.x, z: slot.z };
