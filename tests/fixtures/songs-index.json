@@ -1,0 +1,26 @@
+{
+ "version": 1,
+ "name": "Starline songs (test fixture: a few rows of the starline-songs repo's index.json)",
+ "author": "© 2026 Bui Cong Nguyen · solluxlabs.com",
+ "songs": [
+  { "id": "golden-rails-en", "ver": "1a2b3c4d", "kind": "song", "title": "Golden Rails", "lang": "en", "instrumental": false, "dance": false, "mood": "uplifting", "style": "cute", "bpm": 86.7, "offset": 0.475, "duration": 88, "bytes": 1814141, "gainDb": 0, "base": "songs/golden-rails-en/",
+    "files": { "audio": "golden-rails-en.1a2b3c4d.m4a", "beats": "golden-rails-en.1a2b3c4d.beats.json", "lyrics": "golden-rails-en.1a2b3c4d.lyrics.json", "mouth": "golden-rails-en.1a2b3c4d.mouth.json" } },
+  { "id": "wake-up-new-day", "ver": "0f0f0f0f", "kind": "song", "title": "Wake Up, New Day", "lang": "en", "instrumental": false, "dance": true, "mood": "uplifting", "style": "mix", "bpm": 104.9986, "offset": 0.0923, "duration": 167.2017, "bytes": 3472717, "gainDb": -1.17, "base": "songs/wake-up-new-day/",
+    "files": { "audio": "wake-up-new-day.0f0f0f0f.m4a", "beats": "wake-up-new-day.0f0f0f0f.beats.json", "lyrics": "wake-up-new-day.0f0f0f0f.lyrics.json", "mouth": "wake-up-new-day.0f0f0f0f.mouth.json", "stage": "wake-up-new-day.0f0f0f0f.stage.json" } },
+  { "id": "softly-brave", "ver": "22223333", "kind": "song", "title": "Softly Brave", "lang": "en", "instrumental": false, "dance": false, "mood": "tender", "style": "cute", "bpm": 83.991, "offset": 0.1, "duration": 157.4468, "bytes": 3300000, "gainDb": 0.05, "base": "songs/softly-brave/",
+    "files": { "audio": "softly-brave.22223333.m4a", "beats": "softly-brave.22223333.beats.json", "lyrics": "softly-brave.22223333.lyrics.json", "mouth": "softly-brave.22223333.mouth.json" } },
+  { "id": "mo-that-xa", "ver": "abcdef01", "kind": "song", "title": "Mơ Thật Xa", "lang": "vi", "instrumental": false, "dance": true, "mood": "uplifting", "style": "mix", "bpm": 104.001, "offset": 1.2903, "duration": 179.231, "bytes": 3680696, "gainDb": -1.93, "base": "songs/mo-that-xa/",
+    "files": { "audio": "mo-that-xa.abcdef01.m4a", "beats": "mo-that-xa.abcdef01.beats.json", "lyrics": "mo-that-xa.abcdef01.lyrics.json", "mouth": "mo-that-xa.abcdef01.mouth.json" } },
+  { "id": "byeolkkaji-jarana", "ver": "99887766", "kind": "song", "title": "별까지 자라나", "lang": "ko", "instrumental": false, "dance": true, "mood": "uplifting", "style": "kpop", "bpm": 96.9935, "offset": 0.839, "duration": 179.2453, "bytes": 3709502, "gainDb": -1.93, "base": "songs/byeolkkaji-jarana/",
+    "files": { "audio": "byeolkkaji-jarana.99887766.m4a", "beats": "byeolkkaji-jarana.99887766.beats.json", "lyrics": "byeolkkaji-jarana.99887766.lyrics.json", "mouth": "byeolkkaji-jarana.99887766.mouth.json" } },
+  { "id": "glow", "ver": "55554444", "kind": "song", "title": "Glow", "instrumental": true, "dance": true, "mood": "upbeat dance pop", "style": "kpop", "bpm": 123.9996, "offset": 0.05, "duration": 89.0795, "bytes": 1558691, "gainDb": -1.81, "base": "songs/glow/",
+    "files": { "audio": "glow.55554444.m4a", "beats": "glow.55554444.beats.json", "stage": "glow.55554444.stage.json", "lyrics": "glow.55554444.lyrics.json" } },
+  { "id": "smooth", "ver": "12121212", "kind": "song", "title": "Smooth", "instrumental": true, "dance": false, "mood": "lo-fi R&B groove", "style": "hiphop", "bpm": 85.0014, "offset": 0.1, "duration": 96.0264, "bytes": 1600000, "gainDb": -1.88, "base": "songs/smooth/",
+    "files": { "audio": "smooth.12121212.m4a", "beats": "smooth.12121212.beats.json" } },
+  { "id": "kotone-hum", "ver": "77776666", "kind": "hum", "title": "Kotone Hum", "instrumental": false, "dance": false, "bpm": 84, "offset": 0.25, "duration": 23.49, "bytes": 491107, "base": "songs/kotone-hum/",
+    "files": { "audio": "kotone-hum.77776666.m4a" } },
+  { "id": "../escape", "ver": "00000000", "title": "Bad id", "bpm": 100, "duration": 60, "files": { "audio": "x.m4a" } },
+  { "id": "bad-file", "ver": "00000000", "title": "Bad file", "bpm": 100, "duration": 60, "files": { "audio": "../x.m4a" } },
+  { "id": "no-bpm", "ver": "00000000", "title": "No bpm", "duration": 60, "files": { "audio": "no-bpm.m4a" } }
+ ]
+}

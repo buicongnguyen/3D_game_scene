@@ -8,6 +8,9 @@
  *   index.html          network first, so a new deploy reaches the player on the next load; the cached page is used
  *                       offline or when the network is slow
  *   video/*.mp4         only after they were asked for, up to a size cap, and served with range support
+ *   ../starline-songs/  the song library (same origin, its own repo: content/song-catalog.js). Nothing is stored ahead:
+ *                       a song's files are kept when it is first played (their names carry their version, so a kept copy
+ *                       is exact; the oldest go past SONGS_MAX_TOTAL), index.json is network first (the kept one offline)
  *
  * `scripts/stamp-sw.mjs` fills in STAMP after the build. Unstamped (the dev server) this worker does nothing.
  * Never cached: other origins, non-GET requests, pages opened with ?nosw or ?qa, and anything when the browser has
@@ -22,9 +25,18 @@ const VIDEO = `${PREFIX}video`;
 const MIN_FREE_MB = 100;
 const VIDEO_MAX_FILE = 6 * 1048576;
 const VIDEO_MAX_TOTAL = 40 * 1048576;
+const SONGS = `${PREFIX}songs`;
+const SONGS_MAX_TOTAL = 120 * 1048576;
 const LIVE = STAMP.build !== 'dev';
 const scope = new URL(self.registration.scope);
 const rel = url => (url.origin === scope.origin && url.pathname.startsWith(scope.pathname) ? url.pathname.slice(scope.pathname.length) : null);
+const songsRoot = new URL('../starline-songs/', scope);
+/** A request into the song library: 'index' (the catalog), 'file' (a song's versioned file) or null. */
+const songKind = url => {
+  if (url.origin !== songsRoot.origin || !url.pathname.startsWith(songsRoot.pathname)) return null;
+  const p = url.pathname.slice(songsRoot.pathname.length);
+  return p === 'index.json' ? 'index' : /^songs\/[a-z0-9-]+\/[A-Za-z0-9._-]+$/.test(p) ? 'file' : null;
+};
 const INDEX = new Request(new URL('index.html', scope).href);
 
 self.addEventListener('install', e => {
@@ -169,10 +181,44 @@ async function video(e) {
   return fetch(e.request);
 }
 
+// ---- the song library: the catalog network first, a song's files kept once played (whole answers only)
+async function songCatalog(e) {
+  const key = e.request.url.split('#')[0].split('?')[0];
+  try {
+    const res = await fetch(e.request);
+    if (res.ok && res.status === 200) e.waitUntil(put(SONGS, key, res.clone()));
+    return res;
+  } catch (err) {
+    const hit = await (await caches.open(SONGS)).match(key, { ignoreVary: true });
+    if (hit) return hit;
+    throw err;
+  }
+}
+async function songFile(e) {
+  const key = e.request.url.split('#')[0].split('?')[0], cache = await caches.open(SONGS);
+  const hit = await cache.match(key, { ignoreVary: true });
+  if (hit) return rangeFrom(hit, e.request.headers.get('range'));
+  const res = await fetch(e.request);
+  if (!e.request.headers.get('range') && res.ok && res.status === 200) e.waitUntil(keepSong(cache, key, res.clone()));
+  return res;
+}
+async function keepSong(cache, key, res) {
+  if (!(await hasRoom())) return;
+  try {
+    const len = +(res.headers.get('content-length') || 0), keys = await cache.keys();
+    let total = 0; const sizes = [];
+    for (const k of keys) { const r = await cache.match(k); const n = +(r?.headers.get('content-length') || 0); sizes.push([k, n]); total += n; }
+    for (const [k, n] of sizes) { if (total + len <= SONGS_MAX_TOTAL) break; if (!k.url.endsWith('/index.json')) { await cache.delete(k); total -= n; } }   // (the oldest first)
+    await cache.put(key, res);
+  } catch { /* not kept: fine */ }
+}
+
 self.addEventListener('fetch', e => {
   const req = e.request;
   if (!LIVE || req.method !== 'GET') return;
   const url = new URL(req.url), path = rel(url);
+  const song = path === null ? songKind(url) : null;
+  if (song) { e.respondWith((async () => ((await bypass(e)) ? fetch(req) : song === 'index' ? songCatalog(e) : songFile(e)))()); return; }
   if (path === null) return;                       // another origin, or outside this site
   const isIndex = req.mode === 'navigate' || path === '' || path === 'index.html';
   const hash = STAMP.files[path];

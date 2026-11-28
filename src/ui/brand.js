@@ -116,6 +116,7 @@ export function mountBrand(ui) {
       v.innerHTML = `<b>${esc(tx(N_('Voices and songs')))}</b><br>` +
         `<span>${esc(tx(N_('The voices in the language homes are synthetic (made by computer, not recorded people): Kokoro (English), VieNeu-TTS (Vietnamese), Supertonic (Korean).')))}</span><br>` +
         `<span>${esc(tx(N_("Kotone's song “Golden Rails”: original lyrics, music made with ACE-Step 1.5.")))}</span><br>` +
+        `<span>${esc(tx(N_('Songs © 2026 Bui Cong Nguyen, made with ACE-Step 1.5; from the Avatar Studio library.')))}</span><br>` +
         `<span>${esc(tx(N_('Story, code and the Blender-made models: {who}.'), { who: COPYRIGHT }))}</span>`;
     }
     // in play: the quiet corner mark (the HUD hides it with itself; photo mode and recordings carry their own)

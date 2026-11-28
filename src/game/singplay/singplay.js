@@ -12,6 +12,7 @@ import { SWIM } from '../../actors/player.js';
 import { prepareMoves, lendClips } from '../tricks/exercise-moves.js';
 import { SHOW } from '../kotone-show.js';
 import { KOTONE_SONGS, songFromParam, songsFor } from '../../content/kotone-songs.js';
+import { songsBase, fetchCatalog, mergeSongs, songOrder, songStyle, songDance } from '../../content/song-catalog.js';
 import { Performer } from '../perform/performer.js';
 import { planShots, createCameraMan, fromCamera } from '../perform/camera-man.js';
 import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js';
@@ -82,12 +83,23 @@ export function groupLimits(low, params = null) {
 /** The largest group this device shows now: limits from groupLimits, strong from strongPhone(). */
 export const groupMax = (limits, strong) => (limits.forced ? limits.max : strong?.ok ? Math.max(limits.max, limits.strongMax) : limits.max);
 
-/** Fetch a song's data files: { song, beats, lyrics, mouth, stage, url } or null. */
-export async function loadSong(e) {
-  const json = url => fetch(url).then(r => (r.ok ? r.json() : null)).catch(() => null);
+/**
+ * Fetch a song's data files: { song, beats, lyrics, mouth, stage, url } or null. A library song (content/song-catalog.js:
+ * `files` names its versioned files, `remote`) also fetches its whole audio first and plays that copy (a blob: URL): one
+ * download, kept by the service worker for the next time, the same sound for Web Audio and Record. null when it fails.
+ */
+export async function loadSong(e, { fetch: get = globalThis.fetch } = {}) {
+  const json = url => Promise.resolve().then(() => get(url)).then(r => (r.ok ? r.json() : null)).catch(() => null);
   const meta = e.meta ? await json(e.base + e.meta) : null, song = { ...(meta || {}), ...e, id: e.id };
-  const [beats, lyrics, mouth, stage] = await Promise.all(['beats', 'lyrics', 'mouth', 'stage'].map(k => json(`${e.base}${e.id}.${k}.json`)));
-  return song.bpm > 0 || beats ? { song, beats, lyrics, mouth, stage, url: e.base + (e.audio || `${e.id}.m4a`) } : null;
+  const file = k => (e.files ? (e.files[k] ? e.base + e.files[k] : null) : `${e.base}${e.id}.${k}.json`);
+  const [beats, lyrics, mouth, stage] = await Promise.all(['beats', 'lyrics', 'mouth', 'stage'].map(k => (file(k) ? json(file(k)) : null)));
+  let url = e.base + (e.audio || `${e.id}.m4a`);
+  if (e.remote) {
+    const blob = await Promise.resolve().then(() => get(url)).then(r => (r.ok ? r.blob() : null)).catch(() => null);
+    if (!blob?.size || typeof URL?.createObjectURL !== 'function') return null;
+    url = URL.createObjectURL(blob.type === 'audio/mp4' ? blob : new Blob([blob], { type: 'audio/mp4' }));   // (Safari goes by the type)
+  }
+  return song.bpm > 0 || beats ? { song, beats, lyrics, mouth, stage, url } : null;
 }
 
 export class SingPlay {
@@ -100,6 +112,7 @@ export class SingPlay {
     this.viewYaw = null; this.from = null;
     this.singer = loadSinger(); this.singerWait = false; this.songId = load(SONG_KEY, () => true, ''); this.lyricsOn = load(LYRICS_KEY, () => true, '1') !== '0';
     this.rig = null; this.capLines = null; this.capKey = '';
+    this.songWait = false; this.loaded = new Map();   // (a song's files, fetched when it is first performed: id -> promise)
   }
 
   async start() {
@@ -118,8 +131,12 @@ export class SingPlay {
     const place = loadPlace() || STAGE;
     g.player.teleport(place.x, place.z, undefined, place.facing);
     g.follow.first = true; g.follow.yaw = place.facing;   // (the camera behind her looks at the view: she turns to it on Perform)
-    const list = [...KOTONE_SONGS, songFromParam(g.params?.get?.('kotoneSong'))].filter(Boolean);
-    this.songs = (await Promise.all(list.map(loadSong))).filter(Boolean);
+    // the songs: the built-in ones now, the library's when its catalog comes in (content/song-catalog.js; at most 4 s, else
+    // the built-in ones stay); a song's own files load when it is performed
+    this.builtIn = [...KOTONE_SONGS, songFromParam(g.params?.get?.('kotoneSong'))].filter(Boolean);
+    this.songs = this.builtIn.map(song => ({ song }));
+    const base = songsBase(g.params);
+    this.catalog = base ? fetchCatalog(base).then(lib => { if (lib) this.setSongs(mergeSongs(this.builtIn, lib)); return lib; }) : Promise.resolve(null);
     this.limits = groupLimits(low, g.params);
     this.judgeStrong();
     this.hud();
@@ -227,17 +244,13 @@ export class SingPlay {
       b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); this.pickSinger(id); });
       srow.appendChild(b); return b;
     });
-    // the song: the songs she can sing in the game's language (new ones: an entry in content/kotone-songs.js), and the
-    // lyric caption's switch at the end of the same row
+    // the song: the lyric caption's switch, then the songs she can sing in the game's language and the instrumentals (the
+    // library's join the row when its catalog comes in: setSongs), one flat row that scrolls sideways where it does not fit
     const qrow = this.songRow = document.createElement('div'); qrow.className = 'singplay-group singplay-scroll singplay-songs'; qrow.setAttribute('role', 'group'); qrow.setAttribute('aria-label', tx(N_('Song')));
-    this.btnSongs = this.pool().map(x => {
-      const b = document.createElement('button'); b.type = 'button'; b.id = `spSong-${x.song.id}`; b.className = 'singplay-btn singplay-seg'; b.textContent = `♪ ${tx(x.song.title || x.song.id)}`; b.dataset.song = x.song.id;
-      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); if (!this.perf) { this.songId = x.song.id; keep(SONG_KEY, x.song.id); this.label(); } });
-      qrow.appendChild(b); return b;
-    });
     this.btnLyrics = document.createElement('button'); this.btnLyrics.type = 'button'; this.btnLyrics.id = 'spLyrics'; this.btnLyrics.className = 'singplay-btn singplay-seg';
     this.btnLyrics.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); this.lyricsOn = !this.lyricsOn; keep(LYRICS_KEY, this.lyricsOn ? '1' : '0'); this.capKey = '-'; this.label(); });
     qrow.appendChild(this.btnLyrics);
+    this.songButtons();
     line(srow, qrow);
     // the lyric caption over the view while she sings (a DOM line: recorded videos stay clean, the .srt has the words)
     const cap = this.capEl = document.createElement('div'); cap.id = 'spCaption'; cap.className = 'singplay-caption'; cap.hidden = true; cap.setAttribute('aria-hidden', 'true');
@@ -276,14 +289,64 @@ body.singplay #inventory{display:none}
     this.label();
   }
 
+  // ---------------------------------------------------------------- the song choice (data + handlers; the row only shows them)
+  /** The songs to choose from now (pool order: dance songs, slow songs, instrumentals), as plain data for any picker. */
+  songChoices() {
+    return this.pool().map(({ song: s }) => ({ id: s.id, title: tx(s.title || s.id), lang: s.language || null, bpm: s.bpm, duration: s.duration || null,
+      dance: songDance(s), instrumental: !!s.instrumental, style: songStyle(s), remote: !!s.remote }));
+  }
+  /** The song Perform sings now (the picked one when it is in the pool, else the first): its choice data, or null. */
+  currentSong() { const id = pickSong(this.pool(), this.songId)?.song.id; return this.songChoices().find(c => c.id === id) || null; }
+  /** Pick a song (remembered per device); it brings its dance (content/song-catalog.js songStyle: Cute for a slow one; the
+   *  Dance row still changes it). false while a song plays or loads, or for a song not in the pool. */
+  chooseSong(id) {
+    const x = this.perf || this.songWait ? null : this.pool().find(e => e.song.id === id);
+    if (!x) return false;
+    this.songId = id; keep(SONG_KEY, id);
+    const st = songStyle(x.song); if (st) { this.dance = st; saveDance(st); }
+    this.label();
+    return true;
+  }
+
+  /** The Song row's song buttons (thin: songChoices + chooseSong). */
+  songButtons() {
+    const qrow = this.songRow; if (!qrow) return;
+    for (const b of this.btnSongs || []) b.remove();
+    this.btnSongs = this.songChoices().map(c => {
+      const b = document.createElement('button'); b.type = 'button'; b.id = `spSong-${c.id}`; b.className = 'singplay-btn singplay-seg'; b.dataset.song = c.id;
+      b.textContent = `${c.instrumental ? '♫' : '♪'} ${c.title}`;
+      if (c.instrumental) b.title = tx(N_('Instrumental: dance only'));
+      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); this.chooseSong(c.id); });
+      qrow.appendChild(b); return b;
+    });
+  }
+
+  /** New songs (the library's catalog came in): the row rebuilt, the picked song kept in view. */
+  setSongs(list) {
+    this.songs = list.map(song => ({ song }));
+    this.onSongs?.(this.songChoices());   // (a picker showing the song choice refreshes here)
+    if (!this.songRow) return;
+    this.songButtons(); this.label();
+    this.btnSongs.find(b => b.getAttribute('aria-pressed') === 'true')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+  }
+
+  /** A song's files (once per song this visit; the library's copy failing: the built-in one it replaced). */
+  songData(e) {
+    if (!this.loaded.has(e.id)) {
+      const p = loadSong(e).then(d => d || (e.fallback ? loadSong(e.fallback) : null));
+      this.loaded.set(e.id, p); p.then(d => { if (!d) this.loaded.delete(e.id); });
+    }
+    return this.loaded.get(e.id);
+  }
+
   label() {
     const p = this.perf, ok = this.allowed.ok || !!p;
     this.btnPerform.textContent = tx(p ? N_('Stop') : N_('Perform'));
-    this.btnPerform.setAttribute('aria-disabled', String(!ok || !this.songs?.length));
+    this.btnPerform.setAttribute('aria-disabled', String(!ok || !this.songs?.length || this.songWait));
     this.btnRecord.textContent = this.rec ? `● ${fmt(this.rec.secs())}` : tx(N_('Record'));
     this.btnRecord.classList.toggle('on', !!this.rec);
     // Record works before a song too: it starts the performance and the recording together
-    this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec && !(ok && this.songs?.length && !this.groupWait)));
+    this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec && !(ok && this.songs?.length && !this.groupWait && !this.songWait)));
     this.bar.classList.toggle('performing', !!p);   // (during a song the setup rows hide: one row of Stop, Record, Photo, Camera)
     this.btnCam.textContent = tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free'));
     this.btnCam.setAttribute('aria-disabled', String(!p));
@@ -292,10 +355,11 @@ body.singplay #inventory{display:none}
     for (const b of this.btnGroup || []) { b.hidden = Number(b.dataset.n) > this.max(); b.setAttribute('aria-pressed', String(Number(b.dataset.n) === this.group)); b.setAttribute('aria-disabled', String(!!p)); }
     for (const b of this.btnSinger || []) { b.setAttribute('aria-pressed', String(b.dataset.singer === this.singer)); b.setAttribute('aria-disabled', String(!!p || this.singerWait)); }
     const song = pickSong(this.pool(), this.songId)?.song.id;
-    for (const b of this.btnSongs || []) { b.setAttribute('aria-pressed', String(b.dataset.song === song)); b.setAttribute('aria-disabled', String(!!p)); }
+    for (const b of this.btnSongs || []) { b.setAttribute('aria-pressed', String(b.dataset.song === song)); b.setAttribute('aria-disabled', String(!!p || this.songWait)); }
     if (this.btnLyrics) { this.btnLyrics.textContent = tx(this.lyricsOn ? N_('Lyrics: On') : N_('Lyrics: Off')); this.btnLyrics.setAttribute('aria-pressed', String(this.lyricsOn)); }
     this.stages?.refresh();
-    this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
+    this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `${p.data.song.instrumental ? '♫' : '♪'} ${tx(p.data.song.title)}` : '')
+      : this.songWait ? tx(N_('Getting the song ready…')) : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
   }
 
   // ---------------------------------------------------------------- performing
@@ -313,15 +377,26 @@ body.singplay #inventory{display:none}
     this.label();
   }
 
-  perform() {
-    const g = this.g, p = g.player;
-    if (this.perf || !this.songs?.length) return;
+  /** Perform the picked song: its files load first (the first time: "Getting the song ready…"), then she starts. */
+  async perform() {
+    if (this.perf || this.songWait || !this.songs?.length) return;
     if (!this.allowed.ok) { this.ui.toast?.(tx(REASONS[this.allowed.reason] || REASONS.room)); return; }
     if (this.groupWait) { this.ui.toast?.(tx(N_('Getting the group ready…'))); return; }
     // the picked song (the Song row) of those in the game's language (content/kotone-songs.js songsFor: English where she
-    // has none in it)
-    const song = pickSong(this.pool(), this.songId);
-    if (!song) return;
+    // has none in it) or an instrumental
+    const pick = pickSong(this.pool(), this.songId);
+    if (!pick) return;
+    this.songWait = true; this.label();
+    const song = await this.songData(pick.song).catch(() => null);
+    this.songWait = false;
+    if (!song) { this.ui.toast?.(tx(N_("The song couldn't be loaded"))); this.label(); return; }
+    // (while it loaded: she may have walked off the flat ground, or the mode closed)
+    if (this.perf || !this.bar?.isConnected || !this.allowed.ok || this.groupWait) { this.label(); return; }
+    this.performWith(song);
+  }
+
+  performWith(song) {
+    const g = this.g, p = g.player;
     p.locked = true; p.vel.set(0, 0, 0);
     // she (and the group) turns to face the camera: the view the player framed becomes the backdrop; the auto camera's
     // first shot starts where the player's camera stood (camera-man.js open)
@@ -506,8 +581,9 @@ body.singplay #inventory{display:none}
     el.hidden = false;
   }
 
-  /** The songs she can sing now: those in the game's language (content/kotone-songs.js songsFor). */
-  pool() { const want = new Set(songsFor((this.songs || []).map(x => x.song), getLang())); return (this.songs || []).filter(x => want.has(x.song)); }
+  /** The songs she can sing now: those in the game's language (content/kotone-songs.js songsFor) and the instrumentals;
+   *  the dance songs first, then the slow ones, then the instrumentals (content/song-catalog.js songOrder). */
+  pool() { const list = this.songs || [], by = new Map(list.map(x => [x.song, x])); return songOrder(songsFor(list.map(x => x.song), getLang())).map(s => by.get(s)); }
 
   /** The members around her (clones of the loaded files; the back row's source gets its pack, made ready for its body). */
   makeFormation() {
@@ -563,8 +639,9 @@ body.singplay #inventory{display:none}
     }
     if (!this.perf) {
       // Record before a song: the performance and the recording start together (Perform's own checks first)
-      this.perform();
-      if (!this.perf) return;
+      if (this.songWait) return;
+      await this.perform();
+      if (!this.perf || this.rec) return;
     }
     // 720p at most on phones and Low (the canvas is what is recorded): the pixel ratio for the take
     const phone = R.qualityName === 'low' || Math.min(innerWidth, innerHeight) < 700, cap = phone ? 1280 : 1920, long = Math.max(innerWidth, innerHeight);
