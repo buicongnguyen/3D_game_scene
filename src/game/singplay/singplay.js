@@ -553,7 +553,7 @@ body.singplay #inventory{display:none}
       const rec = this.rec, at = this.recAt; this.rec = null; this.label();
       const out = await rec.stop();
       R.fixedScale = this.recScale; R.resize();
-      const name = `kotone-${this.recSong}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`;
+      const name = `${(NAMES[this.singer] || 'kotone').toLowerCase()}-${this.recSong}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}`;
       saveBlob(out.blob, `${name}.${out.ext}`);
       const srt = srtFromLyrics(this.recLyrics, at, this.recEnd);
       if (srt) saveBlob(new Blob([srt], { type: 'application/x-subrip' }), `${name}.srt`);
@@ -578,7 +578,7 @@ body.singplay #inventory{display:none}
 
   photo() {
     const g = this.g, R = g.renderer;
-    R.shoot(g.scene, g.camera, R.pixelRatio, canvas => canvas.toBlob(b => { if (b) saveBlob(b, `kotone-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`); }, 'image/png'));
+    R.shoot(g.scene, g.camera, R.pixelRatio, canvas => canvas.toBlob(b => { if (b) saveBlob(b, `${(NAMES[this.singer] || 'kotone').toLowerCase()}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`); }, 'image/png'));
   }
 
   /** The pause menu's way out (next to Photo mode). */

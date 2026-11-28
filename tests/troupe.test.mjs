@@ -45,7 +45,7 @@ test('the cast: Kotone leads the front row, two rows of four, one source a row, 
 
 test('any member sings lead: she takes the lead place, Kotone hers (and stays the front row source), no new files', () => {
   assert.deepEqual([...SINGERS].sort(), TROUPE.map(m => m.id).sort(), 'the Singer row lists all eight');
-  assert.equal(SINGERS[0], KOTONE); assert.deepEqual(NAMES, {}, 'no names yet: labelled by face');
+  assert.equal(SINGERS[0], KOTONE); assert.deepEqual(Object.keys(NAMES).sort(), [...SINGERS].sort(), 'every singer has a name');
   assert.deepEqual(castOf(KOTONE), TROUPE.map(m => ({ ...m })), 'Kotone leading: the cast as it was');
   for (const id of SINGERS) {
     const c = castOf(id), lead = c.find(m => m.lead), kot = c.find(m => m.id === KOTONE);

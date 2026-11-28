@@ -39,8 +39,10 @@ export const TROUPE = Object.freeze([
 
 /** The singers in the Singer row's order (Kotone first, then the girls, then the boys). */
 export const SINGERS = Object.freeze(['kotone', 'nu-1', 'nu-3', 'nu-4', 'nu-5', 'nam-1', 'nam-2', 'nam-3']);
-/** Their names, for later (none yet: the row labels them by face, aria-label "Singer 1..8"). id -> name. */
-export const NAMES = Object.freeze({});
+/** Their names (owner 2026-11-28; Kotone's art-club friends from the city): the row's labels and the file names. id -> name. */
+export const NAMES = Object.freeze({
+  kotone: 'Kotone', 'nu-3': 'Saki', 'nu-1': 'Mio', 'nu-4': 'Yuna', 'nu-5': 'Aoi', 'nam-1': 'Riku', 'nam-3': 'Kai', 'nam-2': 'Ren',
+});
 /** A member by id (null for an unknown id). */
 export const member = id => TROUPE.find(m => m.id === id) || null;
 /** A singer's face picture (64 px webp, baked by scripts/bake-singer-faces.mjs from each model's head). */
