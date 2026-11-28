@@ -54,7 +54,8 @@ export class Player {
     this.leapMul = 1;
     this.leapT = 0;
     this.taps = 0;
-    this.gait = HUMAN_GAIT.mika;   // the body's own walk / run speeds (Sing & Play swaps in Kotone's: game/singplay/)
+    this.gait = HUMAN_GAIT.mika;   // the body's own walk / run speeds (Play as swaps in a singer's: game/play-as.js)
+    this.body = null;              // the body walking now (game/play-as.js: { id, swimFlat, ... }); null: Mika before Play as starts
 
     this.root = new THREE.Group();
     this.root.name = 'player';
@@ -360,7 +361,8 @@ export class Player {
     if (hs > 0.25 && target > 0) this.turnTo(Math.atan2(this.vel.x, this.vel.z), dt, S.turn);
     if (this.swimming) {
       // lie flat to stroke, tip down to dive, stand up to tread water
-      const want = (hs > 0.6 ? 1.2 : 0.12) + (diving ? 0.45 : rising ? -0.35 : 0);
+      // (a body whose Swim clip already lies flat, a singer's Mixamo stroke: game/play-as.js, only tips to dive or rise)
+      const want = (this.body?.swimFlat ? 0 : hs > 0.6 ? 1.2 : 0.12) + (diving ? 0.45 : rising ? -0.35 : 0);
       this.pitch += (want - this.pitch) * (1 - Math.exp(-dt * 4));
       this.pivot.rotation.x = this.pitch;
       if (hs > 0.6 && !this.submerged) {

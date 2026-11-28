@@ -216,7 +216,7 @@ function titleLook() {
     document.getElementById('title').classList.add('hidden');
   }
   while (!picked) {
-    picked = auto === 'singplay' ? { mode: 'explore', slot: 'explore', singplay: true, season: 'spring', hour: 17.5 }
+    picked = auto === 'singplay' ? { mode: 'explore', slot: 'explore', singplay: true }
       : auto ? { mode: auto, slot: autoSlot, story: params.get('story') || undefined } : await ui.title(saveSlots(), lastSlot());
     const launch = ui.pendingLaunch;
     if (valleyP || !launch?.quick) break;
@@ -256,13 +256,16 @@ function titleLook() {
   director.slot = picked.slot;
   director.newStory = picked.story;      // which story a new game plays (the title's story card)
   let saved = loadSave(picked.slot);
+  const firstExplore = choice === 'explore' && (!saved || !!picked.fresh);   // (Sing & Play's first visit starts at the station stage)
   if (choice === 'explore') {
     // Explore mode: its own save; the first time (or "start over") it begins in a valley where the story is done
     director.explore = true;
     director.singplay = !!picked.singplay;   // (Sing & Play writes no Explore save: game/singplay/)
     if (!saved || picked.fresh) saved = { v: 1, quest: exploreState(), player: { x: -45, y: 4, z: 27, facing: Math.PI }, at: Date.now() };
-    game.seasonOverride = picked.season || null;
-    game.timeOverride = picked.hour ?? null;
+    // a mini game from the title borrows its look (display only); Explore's own season and hour are its calendar's, and a
+    // season or time picked on the title is a Go to… once the valley is up (game/goto.js: forward only)
+    game.seasonOverride = picked.look ? picked.season || null : null;
+    game.timeOverride = picked.look || picked.hour === 'cycle-slow' ? picked.hour ?? null : null;
     game.cycleHour = undefined;
     // a play zone: Mika starts in it (nothing elsewhere wakes up for her), and the Explore save keeps its own place
     if (game.zone) { game.zoneHome = saved.player; saved = { ...saved, player: { x: game.zone.x, z: game.zone.z, facing: 0 } }; }
@@ -278,7 +281,12 @@ function titleLook() {
   await started;
   game.wakeMoments();
   // the Night Star at the shrine on starry nights (game/nightstar/watch.js; off under ?qa unless &nightstar=on, or ?nightstar=off)
-  if (!picked.singplay && (params.has('qa') ? params.get('nightstar') === 'on' : params.get('nightstar') !== 'off')) import('./game/nightstar/watch.js').then(m => m.watchNightStar(game, director)).catch(e => console.warn('[nightstar]', e));
-  // Sing & Play: the player becomes Kotone (loaded only now)
-  if (picked.singplay) await import('./game/singplay/singplay.js').then(m => m.startSingPlay(game, director, ui)).catch(e => console.error('[singplay]', e));
+  if (params.has('qa') ? params.get('nightstar') === 'on' : params.get('nightstar') !== 'off') import('./game/nightstar/watch.js').then(m => m.watchNightStar(game, director)).catch(e => console.warn('[nightstar]', e));
+  // Explore (docs/EXPLORE-AND-SHOW.md): the calendar and Go to…, the festival, Play as, the show's door (each fetched now)
+  if (choice === 'explore' && !game.zone) {
+    try {
+      const X = await import('./game/explore-show.js');
+      await X.startExplore(game, director, ui, { singplay: !!picked.singplay, fresh: firstExplore, season: picked.look ? null : picked.season, hour: picked.look ? null : picked.hour });
+    } catch (e) { console.error('[explore]', e); }
+  }
 })().catch(e => { console.error('[start]', e); showError(e?.message || String(e)); });

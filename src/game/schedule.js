@@ -145,7 +145,8 @@ export class Planner {
     const plan = this.person.plan || [];
     if (ctx.ok) this.ok = ctx.ok;
     const bi = blockIndex(plan, hour, this.ok), b = plan[bi];
-    const night = isNight(hour) && !nightOut(b);
+    // (a festival night, game/festival.js: nobody goes home before ctx.late)
+    const night = isNight(hour) && !nightOut(b) && !(ctx.late && hour >= 20 && hour < ctx.late);
     if (night) {
       if (!this.atNight) { this.atNight = true; this.block = -2; this.teleportNext = jump; this.goNight(out, jump); return this.flush(out); }
     } else if (bi !== this.block || this.atNight) {

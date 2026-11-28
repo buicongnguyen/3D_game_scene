@@ -13,7 +13,9 @@ import { exploreState } from '../src/game/fastforward.js';
 const args = new Set(process.argv.slice(2));
 const url = process.env.GAME_URL || 'http://127.0.0.1:5897/';
 const FILE = new URL('./perf/budget.json', import.meta.url);
-const SPOTS = { kawabe: [-26, 20, -20, 37], takamori: [110, -16, 123, 12], station: [-98, 104, -60, 140], meadow: [-66, 10, -40, 20] };
+// festival: the festival stage on the Takamori square (content/stages.js), the festival switched on (its lanterns, the train's
+// garlands: game/festival.js), looking at the backdrop the stage frames
+const SPOTS = { kawabe: [-26, 20, -20, 37], takamori: [110, -16, 123, 12], station: [-98, 104, -60, 140], meadow: [-66, 10, -40, 20], festival: [114.5, -1.5, 114.5, 20, 'festival'] };
 const HEADROOM = { draws: 1.08, tris: 1.1, visible: 1.1 };
 const SAVE = JSON.stringify({ v: 1, quest: exploreState(), player: { x: -45, y: 4, z: 27, facing: Math.PI }, at: 1760000000000 });
 
@@ -27,8 +29,8 @@ try {
     await page.goto(`${url}?mute&qa=1&quality=${q}&start=explore&slot=explore&pace=off`);
     await page.waitForFunction(() => window.__STARLINE_PLAYING__ && window.__STARLINE_QA__?.teleport, null, { timeout: 240000 });
     await page.evaluate(() => { const g = window.__STARLINE__; g.seasonOverride = 'summer'; g.timeOverride = 11; g.weatherOff = true; g.applyLook(); });
-    for (const [name, [x, z, lx, lz]] of Object.entries(SPOTS)) {
-      await page.evaluate(([x, z, lx, lz]) => { const qa = window.__STARLINE_QA__; qa.teleport(x, z); qa.faceToward(lx, lz); }, [x, z, lx, lz]);
+    for (const [name, [x, z, lx, lz, fest]] of Object.entries(SPOTS)) {
+      await page.evaluate(([x, z, lx, lz, fest]) => { const qa = window.__STARLINE_QA__; window.__STARLINE__.director.festival?.set(!!fest); qa.teleport(x, z); qa.faceToward(lx, lz); }, [x, z, lx, lz, fest]);
       await page.waitForTimeout(4000);
       got[`${q}:${name}`] = await page.evaluate(() => new Promise(done => {
         const g = window.__STARLINE__, R = g.renderer.renderer, orig = R.renderBufferDirect;

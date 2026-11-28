@@ -482,7 +482,7 @@ def build_mesh(o, va, meshes, tris, atlas, stem, parent_of):
     select_only([face, body], face); bpy.ops.object.join()
     obj = bpy.context.view_layer.objects.active; obj.name = 'Body'; obj.data.name = 'Body'
     VL.build_atlas(obj, atlas, 1.2, os.path.join(o['work'], f'{stem}.atlas.png'))
-    return obj, {'srcTris': src_tris, 'faceTris': face_tris, 'culledSkin': culled, 'morphs': morphs}
+    return obj, {'srcTris': src_tris, 'faceTris': face_tris, 'culledSkin': culled, 'morphs': morphs, 'atlas': dict(VL.LAST_ATLAS)}
 
 
 def export(path, objs, active):
@@ -562,6 +562,8 @@ if __name__ == '__main__':
     MOVES = O['moves']
     if O.get('member') in CC0: SCALE = CC0[O['member']][1]; SOURCE = SOURCE_CC0(O['member'])
     elif O.get('member'): SCALE = MEMBERS[O['member']]; SOURCE = SOURCE_OF(O['member'])
+    # the mouth's tint (vroid_lite.MOUTH): a faint natural one for the boys, pink-coral for the girls and women
+    VL.MOUTH_KIND = 'boy' if O.get('member', '').startswith('nam-') else 'girl'
     if O['packlist']: PACK_CLIPS = [tuple(x) for x in json.load(open(O['packlist']))]
     if O['list']: MODEL_CLIPS = [tuple(x) for x in json.load(open(O['list']))]     # (trying other moves: [[name, file, opts], ...])
     run(O)

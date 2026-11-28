@@ -23,7 +23,11 @@ What the script does, per character:
    blink, mouthA, mouthO from the authored Fcl_EYE_Close / Fcl_MTH_A / Fcl_MTH_O).
 4. Material. Every source material's base colour and alpha are baked (Cycles, emission) into ONE atlas; one
    material, alpha MASK, double sided -> one draw call. Texel share per material follows its source texture size,
-   the face and eyes get extra.
+   the face and eyes get extra; texels stay square (u by the source's width, v by its height), islands of one material
+   that read the same texels share them (hair cards), and the packer is kept from "correcting" for a picture's aspect
+   (build_atlas: the boys' faces came out 16 : 1 before 2026-11-28).
+5. The mouth (MOUTH, 2026-11-28): the lips tinted and the mouth's inside darkened in the atlas, so a face reads as
+   singing from a few metres (pink-coral lips for the girls, a faint rose for the boys; mouth_masks / mouth_look).
 """
 import bpy, bmesh, sys, os, json, math, struct
 import numpy as np
@@ -332,6 +336,173 @@ def find_source(mat):
     return img, tuple(fac), uses_alpha
 
 
+# ------------------------------------------------------------------------------------------------ the mouth
+# The mouth read from a few metres (2026-11-28, round 3 of the faces; docs/GROUP-PERFORMANCE.md, face-speech-motion
+# references/faces-at-distance.md). The VRoid faces paint the lips as one thin line on pale skin, so a closed mouth is
+# gone by ~6 m, and the open mouth's inside (a mid red) is close to the skin's brightness. Two masks over the atlas:
+#   lips    the face skin within a few mm of the mouth's slit (the skin edges along the mouth's inside), upper lip thinner
+#           than the lower, fading toward the corners
+#   inside  the mouth's own sheet (FaceMouth: teeth, tongue, throat)
+# and per character kind a soft multiply: lips toward a pink-coral (girls) or a faint natural rose (boys), the inside
+# darker except the teeth. Both in the picture: no draws, materials or shader work, the same on PC and Low.
+# Measured (round 3, frozen Sing & Play frames, 2-12 m): with the inside darker, singing changes the mouth's pixels
+# 14-29 % more for the girls and 42-55 % for the boys at 2-6 m than with the shipped atlas (the open mouth reads as a dark
+# shape instead of a red one at the skin's brightness); a lip band of a few mm changed a closed mouth by only 1-2 CIE76 units (unseen), the wider one
+# below by 3-4.5 at 2-6 m (just seen: soft pink lips, no lipstick). The narrow band stays for the boys (a faint tint).
+MOUTH = {
+    # tint: multiply colour at full lip weight; lip: its strength; up / down: the lip band above / below the slit as
+    # (share of the mouth's width, at most metres: the slits are 16-40 mm wide); inner: how much darker the inside gets
+    # (teeth kept)
+    'girl': {'tint': (1.0, 0.62, 0.64), 'lip': 0.88, 'up': (0.15, 0.0032), 'down': (0.32, 0.0068), 'inner': 0.6},
+    'boy': {'tint': (1.0, 0.82, 0.80), 'lip': 0.35, 'up': (0.08, 0.002), 'down': (0.15, 0.004), 'inner': 0.6},
+}
+MOUTH_KIND = 'girl'                                         # (set per character by the caller: vroid_mixamo.py)
+MOUTH_ON = os.environ.get('VROID_MOUTH', 'on') != 'off'     # off: the atlas as baked
+# measuring (env VROID_MOUTH_VARIANTS=1): each choice written beside the atlas as <stem>.atlas.<name>.png
+MOUTH_VARIANTS = {'none': {'lip': 0, 'inner': 0}, 'a': {'lip': 1, 'inner': 0}, 'b': {'lip': 0, 'inner': 1},
+                  'c': {'lip': 1, 'inner': 1}, 'a2': {'lip': 1.6, 'inner': 0}, 'c2': {'lip': 1.6, 'inner': 1.3}}
+LAST_ATLAS = {}                                             # the last build_atlas's numbers (texels, mouth) for reports
+
+
+def smoothstep(a, b, x):
+    t = np.clip((x - a) / (b - a), 0, 1)
+    return t * t * (3 - 2 * t)
+
+
+def tri_texels(uv3, p3, size):
+    """Texel centres inside one atlas triangle (uv3: 3 x 2, 0..1; p3: 3 x 3 rest positions) -> (flat indices, 3D points)."""
+    P = uv3 * size
+    x0, y0 = np.maximum(np.floor(P.min(0)).astype(int), 0); x1, y1 = np.minimum(np.ceil(P.max(0)).astype(int), size - 1)
+    if x1 < x0 or y1 < y0: return None, None
+    xs, ys = np.meshgrid(np.arange(x0, x1 + 1), np.arange(y0, y1 + 1))
+    xs, ys = xs.ravel(), ys.ravel(); X, Y = xs + 0.5, ys + 0.5
+    (ax, ay), (bx, by), (cx, cy) = P
+    d = (by - cy) * (ax - cx) + (cx - bx) * (ay - cy)
+    if abs(d) < 1e-12: return None, None
+    l0 = ((by - cy) * (X - cx) + (cx - bx) * (Y - cy)) / d
+    l1 = ((cy - ay) * (X - cx) + (ax - cx) * (Y - cy)) / d
+    l2 = 1 - l0 - l1
+    ins = (l0 >= -1e-6) & (l1 >= -1e-6) & (l2 >= -1e-6)
+    if not ins.any(): return None, None
+    pts = l0[ins, None] * p3[0] + l1[ins, None] * p3[1] + l2[ins, None] * p3[2]
+    return ys[ins] * size + xs[ins], pts
+
+
+def mouth_masks(o, size, names):
+    """(lips, inside): per texel weights 0..1 over the size x size atlas (rows from the bottom, as Blender's pixels), from
+    the face skin and the mouth sheet's triangles in the 'atlas' UV map; also the atlas's texels per face sheet into
+    LAST_ATLAS. names: the source material of each slot."""
+    me = o.data
+    lip = np.zeros(size * size, np.float32); inner = np.zeros(size * size, np.float32)
+    mouth = {i for i, n in enumerate(names) if 'FaceMouth' in n}
+    skin = {i for i, n in enumerate(names) if 'Face' in n and 'SKIN' in n and 'Body' not in n}
+    # texels per face sheet (UV area x size^2; the hair cards share theirs, so these are the real texels)
+    me.calc_loop_triangles()
+    au = me.uv_layers['atlas'].data
+    sheets = {'skin': skin, 'mouth': mouth}
+    for k, key in (('brow', 'FaceBrow'), ('eyeline', 'FaceEyeline'), ('lash', 'FaceEyelash'), ('iris', 'EyeIris'), ('white', 'EyeWhite')):
+        sheets[k] = {i for i, n in enumerate(names) if key in n}
+    tex = {k: 0.0 for k in sheets}
+    tris = list(me.loop_triangles)
+    for t in tris:
+        a, b, c = (au[li].uv for li in t.loops)
+        area = abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) / 2 * size * size
+        for k, s in sheets.items():
+            if t.material_index in s: tex[k] += area
+    rep = {'texels': {k: int(round(v)) for k, v in tex.items()}}
+    LAST_ATLAS.clear(); LAST_ATLAS.update(rep)
+    if not mouth or not skin: rep['mouth'] = None; print('MOUTH none', names); return lip, inner
+    co = np.array([v.co[:] for v in me.vertices])      # rest positions (the shape keys' basis)
+    uvl = np.array([l.uv[:] for l in au])
+
+    def raster(want, mask, weight=None, near=None):
+        n = 0
+        for t in tris:
+            if t.material_index not in want: continue
+            vi = list(t.vertices)
+            # (a triangle whose box meets the region: the face's triangles round the mouth are larger than the lip band)
+            if near is not None and ((co[vi].max(0) < near[0]).any() or (co[vi].min(0) > near[1]).any()): continue
+            ix, pts = tri_texels(uvl[list(t.loops)], co[vi], size)
+            if ix is None: continue
+            if weight: np.maximum.at(mask, ix, weight(pts))
+            else: mask[ix] = 1.0
+            n += len(ix)
+        return n
+    # the slit: face-skin edges with one skin face that border the mouth's sheet or end the skin inside the mouth's box
+    bm = bmesh.new(); bm.from_mesh(me)
+    mv = np.array([v.co[:] for f in bm.faces if f.material_index in mouth for v in f.verts])
+    lo, hi = mv.min(0) - 0.003, mv.max(0) + 0.003
+    inbox = lambda v: (np.array(v.co[:]) >= lo).all() and (np.array(v.co[:]) <= hi).all()
+    segs = []
+    for e in bm.edges:
+        fs = e.link_faces
+        if sum(f.material_index in skin for f in fs) != 1: continue
+        if not any(f.material_index in mouth for f in fs) and not (len(fs) == 1 and all(inbox(v) for v in e.verts)): continue
+        segs.append((e.verts[0].co[:], e.verts[1].co[:]))
+    bm.free()
+    if not segs: rep['mouth'] = None; print('MOUTH no slit'); return lip, inner
+    A = np.array([s[0] for s in segs]); B = np.array([s[1] for s in segs]); AB = B - A; L2 = np.maximum((AB * AB).sum(1), 1e-12)
+    ends = np.concatenate([A, B]); cx = (ends[:, 0].min() + ends[:, 0].max()) / 2; hw = (ends[:, 0].max() - ends[:, 0].min()) / 2
+    width = 2 * hw
+
+    def lip_weight(P, up, down):
+        t = np.clip(((P[:, None, :] - A[None]) * AB[None]).sum(2) / L2[None], 0, 1)
+        Q = A[None] + t[..., None] * AB[None]
+        d2 = ((P[:, None, :] - Q) ** 2).sum(2); k = d2.argmin(1)
+        q = Q[np.arange(len(P)), k]; d = np.sqrt(d2[np.arange(len(P)), k])
+        R = np.where(P[:, 2] > q[:, 2], up, down)
+        band = 1 - smoothstep(0.25, 1.0, d / R)
+        along = 1 - smoothstep(0.55, 1.0, np.abs(P[:, 0] - cx) / hw)
+        return (band * along).astype(np.float32)
+    k = MOUTH[MOUTH_KIND]
+    up, down = (min(f * width, mx) for f, mx in (k['up'], k['down']))       # metres
+    reach = max(up, down) + 0.002
+    near = (np.array([cx - hw - reach, lo[1] - reach, lo[2] - reach]), np.array([cx + hw + reach, hi[1] + reach, hi[2] + reach]))
+    raster(skin, lip, lambda P: lip_weight(P, up, down), near)
+    ni = raster(mouth, inner)
+    # the inside's bake margin (4 px around the sheet) darkened with it, where no other sheet's triangles are
+    other = np.zeros(size * size, np.float32)
+    ilo, ihi = uvl[[li for t in tris if t.material_index in mouth for li in t.loops]].min(0) - 6 / size, uvl[[li for t in tris if t.material_index in mouth for li in t.loops]].max(0) + 6 / size
+    for t in tris:
+        if t.material_index in mouth: continue
+        U3 = uvl[list(t.loops)]
+        if (U3.max(0) < ilo).any() or (U3.min(0) > ihi).any(): continue
+        ix, _ = tri_texels(U3, co[list(t.vertices)], size)
+        if ix is not None: other[ix] = 1
+    g = inner.reshape(size, size).copy()
+    for _ in range(4):
+        h = g.copy()
+        h[1:] = np.maximum(h[1:], g[:-1]); h[:-1] = np.maximum(h[:-1], g[1:]); h[:, 1:] = np.maximum(h[:, 1:], g[:, :-1]); h[:, :-1] = np.maximum(h[:, :-1], g[:, 1:])
+        g = h
+    inner = np.where(other > 0, inner, g.ravel()).astype(np.float32)
+    rep['mouth'] = {'widthMm': round(width * 1000, 1), 'lipUpMm': round(up * 1000, 1), 'lipDownMm': round(down * 1000, 1), 'slitEdges': len(segs), 'lipTexels': int((lip > 0.05).sum()), 'insideTexels': ni}
+    LAST_ATLAS.update(rep)
+    print('MOUTH', json.dumps(rep))
+    return lip, inner
+
+
+def mouth_look(c, lip, inner, kind, k=None):
+    """The atlas's pixels (n x 4, sRGB 0..1) with the lips tinted and the inside darkened for this kind ('girl' / 'boy') or
+    measuring variant (MOUTH_VARIANTS name: the kind's strengths scaled)."""
+    m = MOUTH[MOUTH_KIND] if kind in MOUTH_VARIANTS else MOUTH[kind]
+    s = MOUTH_VARIANTS.get(kind, {'lip': 1, 'inner': 1})
+    T = np.array(m['tint'], np.float32)
+    wl = np.clip(lip * m['lip'] * s['lip'], 0, 1)[:, None]
+    c[:, :3] *= 1 - wl * (1 - T[None])
+    rgb = c[:, :3]; lum = rgb @ np.array([0.2126, 0.7152, 0.0722], np.float32); sat = rgb.max(1) - rgb.min(1)
+    teeth = smoothstep(0.55, 0.75, lum) * (1 - smoothstep(0.12, 0.25, sat))
+    wi = np.clip(inner * m['inner'] * s['inner'], 0, 0.9) * (1 - teeth)
+    c[:, :3] *= (1 - wi)[:, None]
+    return c
+
+
+def save_png(px, size, path):
+    img = bpy.data.images.new(os.path.basename(path), size, size, alpha=True)
+    img.pixels.foreach_set(np.ascontiguousarray(px, np.float32).ravel())
+    img.filepath_raw = path; img.file_format = 'PNG'; img.save()
+    bpy.data.images.remove(img)
+
+
 def build_atlas(o, size, face_boost, out_png):
     me = o.data
     src = me.uv_layers[0].name
@@ -341,22 +512,42 @@ def build_atlas(o, size, face_boost, out_png):
     if os.environ.get('VROID_DEBUG'):
         for (img, fac, ua), s in zip(info, o.material_slots):
             print('SRC', s.material.name, img.name if img else None, img.size[:] if img else None, [round(x, 3) for x in fac], ua)
+    # each island in source texels: u by the source picture's width, v by its height, so a texel stays square in the atlas
+    # (a 1024 x 256 brow / eye-line / lash sheet scaled by sqrt(w * h) both ways came out 4 : 1, the 1024 x 512 eyes 2 : 1)
     scale = []
     for (img, fac, _), s in zip(info, o.material_slots):
-        px = math.sqrt(img.size[0] * img.size[1]) / 1024 if img and img.size[0] else 0.1
+        w, h = (img.size[0], img.size[1]) if img and img.size[0] else (102.4, 102.4)
         n = s.material.name
         boost = face_boost if any(k in n for k in ('_FACE', '_EYE', 'Face_00_SKIN')) else 1.0
-        scale.append(px * boost)
+        scale.append((w / 1024 * boost, h / 1024 * boost))
+    # Each material on a tile of its own (u + 8 x its slot), so islands of one material that read the same part of its
+    # picture can share their texels (merge_overlap) and two materials never do: nam-2's 83 hair cards each read the whole
+    # hair sheet and took ~85 % of his atlas as ~170 copies of it, his face skin 112 x 112 texels.
     uv = atlas.data
     for p in me.polygons:
-        k = scale[p.material_index]
-        for li in p.loop_indices: uv[li].uv = uv[li].uv * k
+        kx, ky = scale[p.material_index]
+        off = 8.0 * p.material_index
+        for li in p.loop_indices: uv[li].uv = (uv[li].uv.x * kx + off, uv[li].uv.y * ky)
     select_only([o])
+    # The packer corrects islands for the aspect of their material's picture (the boys' first slot is the 1024 x 256 brow
+    # sheet): an island it turned 90 deg came back squashed by that aspect squared, the boys' face skin 16 : 1 in a strip
+    # 60 texels wide, with 36-45 % of the atlas left empty (2026-11-28, face-speech-motion faces-at-distance.md). One
+    # picture-less material on every slot while packing: no correction, the islands keep the square texels set above.
+    keep = [s.material for s in o.material_slots]
+    plain = bpy.data.materials.new('pack_plain')
+    for s in o.material_slots: s.material = plain
     bpy.context.scene.tool_settings.use_uv_select_sync = True
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.pack_islands(rotate=True, scale=True, margin=0.006, merge_overlap=False, shape_method='CONCAVE')
+    # (into the 0..1 square: the default puts each island in the UDIM tile nearest to it, the material tiles above)
+    bpy.ops.uv.pack_islands(udim_source='ACTIVE_UDIM', rotate=True, scale=True, margin=0.006, merge_overlap=True, shape_method='CONCAVE')
     bpy.ops.object.mode_set(mode='OBJECT')
+    for s, m in zip(o.material_slots, keep): s.material = m
+    bpy.data.materials.remove(plain)
+    U = np.array([l.uv[:] for l in o.data.uv_layers['atlas'].data])
+    assert U.min() > -0.01 and U.max() < 1.01, f'atlas UVs outside the picture: {U.min(0)} .. {U.max(0)}'
+    # the mouth's two masks (lips, inside), read off the source materials before the bake replaces them
+    lip, inner = mouth_masks(o, size, [m.name for m in keep])
     # bake: each source material as emission (colour, then alpha) into the atlas
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 4
@@ -417,6 +608,12 @@ def build_atlas(o, size, face_boost, out_png):
                 sp = px[int(v % 1 * img.size[1]) % img.size[1], int(u % 1 * img.size[0]) % img.size[0]]
                 bp = c.reshape(size, size, 4)[min(int(y * size), size - 1), min(int(x * size), size - 1)]
                 print('PIX', s.material.name[-14:], 'src', (round(u, 3), round(v, 3)), sp.round(2), 'atlas', (round(x, 3), round(y, 3)), bp.round(2))
+    if os.environ.get('VROID_MOUTH_VARIANTS'):   # (measuring: each choice written beside the atlas, the atlas left as baked)
+        for v in MOUTH_VARIANTS:
+            save_png(mouth_look(c.copy(), lip, inner, v), size, out_png.replace('.atlas.png', f'.atlas.{v}.png'))
+        save_png(np.repeat(np.stack([lip, inner, np.zeros_like(lip), np.ones_like(lip)], 1), 1, 0), size, out_png.replace('.atlas.png', '.mouthmask.png'))
+    elif MOUTH_ON:
+        c = mouth_look(c, lip, inner, MOUTH_KIND)
     final = bpy.data.images.new('VRoid atlas', size, size, alpha=True)
     final.pixels = c.ravel().tolist()
     final.filepath_raw = out_png; final.file_format = 'PNG'; final.save()
@@ -486,6 +683,7 @@ def run(o, name):
     obj = bpy.context.view_layer.objects.active; obj.name = 'Body'; obj.data.name = 'Body'
     os.makedirs(o['out'], exist_ok=True)
     stem = o['name'] or name
+    globals()['MOUTH_KIND'] = 'boy' if name.startswith('nam-') else 'girl'      # (the mouth's tint: MOUTH)
     build_atlas(obj, int(o['atlas']), float(o['face']), os.path.join(o['work'], f'{stem}{o["suffix"]}.atlas.png'))
     # rig
     sc = J['Hips'].z / rest['hips']['head'].z

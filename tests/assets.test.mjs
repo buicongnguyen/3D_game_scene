@@ -9,6 +9,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { CONTRACTS, PORTRAITS, TOTAL_RAW_BYTES, SHAPE_KEYS } from './asset-contracts.mjs';
 import { checkImportedModel } from './model-import-check.mjs';
+import { faceMask } from '../src/actors/face-look.js';
 
 const MODELS = new URL('../public/models/', import.meta.url);
 const only = process.env.ASSETS?.split(',').map(s => s.trim()).filter(Boolean);
@@ -49,7 +50,42 @@ async function readVroid(name) {
     morphs: r.listMeshes()[0]?.getExtras()?.targetNames || [], skinned: r.listNodes().some(n => n.getMesh() && n.getSkin()),
     joints: r.listSkins()[0]?.listJoints().map(j => j.getName()) || [], nodes: new Set(r.listNodes().map(n => n.getName())),
     clips: r.listAnimations().map(a => a.getName()), minY: prims[0]?.getAttribute('POSITION').getMin([])[1],
+    atlas: prims[0] && atlasShape(prims[0], r.listSkins()[0]?.listJoints().map(j => j.getName()) || []),
   };
+}
+// How the atlas holds the face (2026-11-28, faces at a distance): the texel shape on the front of the face (the face's own
+// triangles, as actors/face-look.js finds them; median of the UV map's stretch across / along, area-weighted: 1 = square
+// texels) and whether every UV stays inside the picture. The boys' first build packed their face skin 16 : 1 (Blender's
+// packer corrected for the brow sheet's 4 : 1 aspect and turned the island: art/blender/vroid_lite.py build_atlas).
+function atlasShape(prim, joints) {
+  const P = prim.getAttribute('POSITION').getArray(), U = prim.getAttribute('TEXCOORD_0').getArray(), I = prim.getIndices().getArray();
+  const J = prim.getAttribute('JOINTS_0').getArray(), Wt = prim.getAttribute('WEIGHTS_0').getArray(), n = P.length / 3;
+  const own = new Set(['head', 'eye_L', 'eye_R'].map(x => joints.indexOf(x))), eyes = ['eye_L', 'eye_R'].map(x => joints.indexOf(x));
+  const moves = prim.listTargets().map(t => t.getAttribute('POSITION')?.getArray()).filter(Boolean);
+  const mask = faceMask(n, I, i => moves.some(M => M[i * 3] ** 2 + M[i * 3 + 1] ** 2 + M[i * 3 + 2] ** 2 > 1e-10) || (eyes.includes(J[i * 4]) && Wt[i * 4] > 0.5),
+    i => { let w = 0; for (let k = 0; k < 4; k++) if (own.has(J[i * 4 + k])) w += Wt[i * 4 + k]; return w; });
+  const rows = [];
+  for (let t = 0; t < I.length; t += 3) {
+    const [a, b, c] = [I[t], I[t + 1], I[t + 2]];
+    if (!mask[a] || !mask[b] || !mask[c]) continue;
+    const e1 = [0, 1, 2].map(k => P[b * 3 + k] - P[a * 3 + k]), e2 = [0, 1, 2].map(k => P[c * 3 + k] - P[a * 3 + k]);
+    const nv = [e1[1] * e2[2] - e1[2] * e2[1], e1[2] * e2[0] - e1[0] * e2[2], e1[0] * e2[1] - e1[1] * e2[0]], area = Math.hypot(...nv) / 2;
+    if (area < 1e-9 || Math.abs(nv[2]) / (2 * area) < 0.5) continue;
+    // the stretch: UV edges against the edges in the triangle's own plane (singular values of the 2 x 2 map)
+    const l1 = Math.hypot(...e1), tx = e1.map(v => v / l1), nn = nv.map(v => v / (2 * area)), ty = [nn[1] * tx[2] - nn[2] * tx[1], nn[2] * tx[0] - nn[0] * tx[2], nn[0] * tx[1] - nn[1] * tx[0]];
+    const x2 = e2[0] * tx[0] + e2[1] * tx[1] + e2[2] * tx[2], y2 = e2[0] * ty[0] + e2[1] * ty[1] + e2[2] * ty[2];
+    const du1 = U[b * 2] - U[a * 2], dv1 = U[b * 2 + 1] - U[a * 2 + 1], du2 = U[c * 2] - U[a * 2], dv2 = U[c * 2 + 1] - U[a * 2 + 1];
+    // M = D * inverse([[l1, x2], [0, y2]])
+    const m00 = du1 / l1, m10 = dv1 / l1, m01 = (du2 - m00 * x2) / y2, m11 = (dv2 - m10 * x2) / y2;
+    const f = m00 * m00 + m01 * m01 + m10 * m10 + m11 * m11, d = Math.abs(m00 * m11 - m01 * m10), q = Math.sqrt(Math.max(0, f * f - 4 * d * d));
+    const s1 = Math.sqrt((f + q) / 2), s2 = Math.sqrt(Math.max(1e-30, (f - q) / 2));
+    rows.push([s1 / s2, area]);
+  }
+  rows.sort((x, y) => x[0] - y[0]);
+  const total = rows.reduce((s, r) => s + r[1], 0); let acc = 0, p50 = 1;
+  for (const [an, w] of rows) { acc += w; if (acc >= total / 2) { p50 = an; break; } }
+  let lo = Infinity, hi = -Infinity; for (const v of U) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  return { p50, lo, hi };
 }
 async function checkVroid(name, c) {
   const v = await readVroid(name);
@@ -62,6 +98,8 @@ async function checkVroid(name, c) {
   for (const n of c.nodes) assert.ok(v.nodes.has(n), `missing node ${n}`);
   for (const clip of c.clips) assert.ok(v.clips.includes(clip), `missing clip ${clip}`);
   assert.ok(Math.abs(v.minY) < 0.05, `stands on the ground (min y ${v.minY.toFixed(3)})`);
+  assert.ok(v.atlas.p50 < 1.6, `the head's texels are square enough in the atlas (stretch ${v.atlas.p50.toFixed(2)} : 1)`);
+  assert.ok(v.atlas.lo > -0.002 && v.atlas.hi < 1.002, `every UV inside the atlas (${v.atlas.lo.toFixed(3)}..${v.atlas.hi.toFixed(3)})`);
   if (c.vroidOf) {
     const s = await readVroid(c.vroidOf);
     assert.deepEqual(v.joints, s.joints, 'same skeleton as the standard file');

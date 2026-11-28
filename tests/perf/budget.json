@@ -41,6 +41,16 @@
    "draws": 411,
    "tris": 2964909,
    "visible": 1240
+  },
+  "low:festival": {
+   "draws": 115,
+   "tris": 600905,
+   "visible": 756
+  },
+  "high:festival": {
+   "draws": 324,
+   "tris": 2748518,
+   "visible": 1047
   }
  }
 }

@@ -157,6 +157,7 @@ export class StarKite {
     const pm = game.player?.model;
     const hL = pm?.getObjectByName('hand_L'), hR = pm?.getObjectByName('hand_R'), gR = pm?.getObjectByName('grip_R');
     this.bones = hL && hR && gR ? { hL, hR, gR } : null;
+    this.bonesOf = pm || null;
   }
 
   // ------------------------------------------------------------------ public API
@@ -716,6 +717,8 @@ export class StarKite {
     this.holdClip();
     this.pinW = Math.min(1, (this.pinW || 0) + dt / 0.45);
     const w = ease(this.pinW);
+    // (Play as: another body hangs here: its own hands, game/play-as.js)
+    if (this.bonesOf !== p.model) { this.bonesOf = p.model; const hL = p.model?.getObjectByName('hand_L'), hR = p.model?.getObjectByName('hand_R'), gR = p.model?.getObjectByName('grip_R'); this.bones = hL && hR && gR ? { hL, hR, gR } : null; }
     const hanging = !!(this.bones && p.anim?.has('Hang'));
     if (hanging) {
       // palm midpoint in the model's own space, from the pose drawn last frame
