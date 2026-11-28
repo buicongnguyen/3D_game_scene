@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A supervised, virtual swimming lesson. The pool and player controller exist only for this round.
 // The small game distances/times are not a real swimming qualification or a breath-holding exercise.
 //

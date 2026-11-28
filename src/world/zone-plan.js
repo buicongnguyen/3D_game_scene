@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The forest plan of a play zone (docs/PLAY-ZONES-PLAN.md, review gap "zone trees are not the valley's trees").
 //
 // scatter() (world/scatter.js) places every tree, rock and bush from ONE sequence of random numbers, so what it accepts

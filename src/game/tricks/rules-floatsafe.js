@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Float and wait" (uite mate): what to do when you fall into water in your clothes. Pure, deterministic drill rules.
 // The round (floatsafe.js) owns the pool, Rin and the grown-up at the edge, the pictures, the words and the saving.
 // It is a calm drill in a supervised pool: nothing here is a real-world test, and no step asks anyone to hold a breath.

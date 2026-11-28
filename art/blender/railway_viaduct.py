@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline viaduct, lamp tower, sleeper and tunnel portal (railway family).
 
 Viaduct tiles chain along X every 14 m. Each span tile owns x in [-7, +7]: one semicircular arch (clear span

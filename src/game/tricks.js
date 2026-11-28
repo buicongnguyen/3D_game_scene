@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Grandma's Countryside Tricks at runtime (docs/RURAL-TRICKS.md, content/tricks.js). The framework owns everything a
 // trick shares: the sign at its place, the teaching (the teacher's first talk in season plays the intro once), the
 // round (a small HUD with timer and score, hint bubbles, a temporary night look), the results card with the real-world

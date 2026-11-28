@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // How to ride and race, drawn in code: the little animated pictures (inline SVG + CSS keyframes, no assets), the free-ride
 // coach card (3 steps, learn by doing) and the cow race's intro card. Texts and the step logic are pure and tested:
 // game/tricks/rules-cowhelp.js. Used by actors/cow-ride.js and game/tricks/cowrace.js.

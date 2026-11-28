@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The service worker (public/sw.js) keeps the game's files for the next visit. Registered once the title is up, never
 // in tests (?qa) or when asked not to (?nosw), and only in the built site (the dev server has no stamped worker).
 export function registerServiceWorker(params) {

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Round-light: what every mini game round switches off for as long as it runs, the walking games included (they need
 // the live valley, so focus mode, engine/focus.js, is not for them). Nothing a game plays with is touched:
 //   - the Low tier (phones) starts ROUND_FLOOR steps down the frame governor's own ladder (engine/governor.js: fewer far

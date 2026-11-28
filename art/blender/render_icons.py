@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Item icons for the Starline UI: 160x160 transparent 3/4 renders of every model marked
 `icon: true` in tests/asset-contracts.mjs, written to public/icons/<name>.webp.
 

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Hana's bakery interior (build_interiors.py): checker tiles, teal wainscot, the brick oven "older than the viaduct",
 shelves of bread, the shop counter with trays of peach buns, the kneading table with her festival bun recipe, peach
 baskets, festival bunting under the beams and a little cafe table by the shop window."""

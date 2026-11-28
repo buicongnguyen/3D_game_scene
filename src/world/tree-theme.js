@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A cosmetic scenery option. Keep the original scatter records for collisions, quests,
 // wildlife and saves; only the foliage renderer receives these substitute records.
 import { river } from './layout.js';

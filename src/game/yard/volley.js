@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Volleyball (kid-sized: a 2.2 m net on Takamori Green). Two on a side, up to three touches a side: bump (receive),
 // set, spike. A free ball may go over on the first or second touch; a good set and a well-timed third touch makes a
 // fast steep spike. A partner kid does the set when Mika bumps. Rally scoring (a point every rally), the serve

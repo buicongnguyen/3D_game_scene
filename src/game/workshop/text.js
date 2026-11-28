@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Kite workshop's words: English source strings (translated with tx(); scripts/i18n-extract.mjs finds every N_()).
 // Voice: docs/STORY-GRANDMA.md §1a. Grandma says "the what-tricity"; Mika explains simply; Tamo is thrilled and a
 // little jealous of anything that makes light or flies without him. Lines stay within 135 characters.

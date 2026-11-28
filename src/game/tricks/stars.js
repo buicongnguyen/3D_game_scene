@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Stargazing (docs/RURAL-TRICKS.md trick 11): any clear night, on the hill behind the signal cottage. Mika lies back
 // (a camera shot from high above the hilltop; no clip needed) under a sky far richer than the city's: a starfield dome with the
 // Milky Way. Join the stars of a figure, find the North Star, then catch a shooting star and make a wish.

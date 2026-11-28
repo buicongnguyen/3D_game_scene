@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Who speaks with which baked voice, per learning language (docs/TRAVEL-LANGUAGE-PLAN.md §5.2). Read by
 // scripts/speech-build.mjs (the bake list and the clip hashes) and tests/scenes.test.mjs (every speaker has a profile;
 // nobody in one house shares one). The engines run OFFLINE (tools/tts/bake.py); the game ships only the clips.

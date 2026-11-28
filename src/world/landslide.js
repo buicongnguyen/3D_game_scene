@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The landslide scar (public/models/landslide.glb, built by build_landslide() in art/blender/railway_river.py).
 // Pure (no three.js), shared by the runtime and Node tests.
 //

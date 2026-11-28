@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Interior of Kawabe house B (build_interiors.py): the larger home behind the front veranda.
 
 A wooden-floor living room that opens through a wall of sliding glass doors onto the veranda (painted valley view),

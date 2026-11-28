@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Interior of Kawabe house A (build_interiors.py): a cosy riverside family home behind the lattice front door.
 
 Stone genkan with a getabako, a raised tatami area with a low table, an oshiire (futon cupboard), laundry hung to dry

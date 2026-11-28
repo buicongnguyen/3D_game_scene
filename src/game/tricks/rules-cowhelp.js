@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // How to ride and race: the pure parts (no three.js, no DOM), so they are tested in Node (tests/cowhelp.test.mjs).
 // The pictures and the cards are drawn by actors/cow-help.js; the free ride's coach is driven from actors/cow-ride.js,
 // the race's from game/tricks/cowrace.js.

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Frame governor for the Low tier (phones): when frames stay slow it takes one step down a fixed ladder, and it
 // only climbs back while that has never backfired.
 //

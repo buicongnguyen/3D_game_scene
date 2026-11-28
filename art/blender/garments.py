@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Shared garment, weighting and finishing helpers for Starline characters."""
 import math
 import bpy

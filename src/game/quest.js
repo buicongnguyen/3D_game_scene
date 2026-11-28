@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Quest engine: pure state machine over STEPS. dispatch(event) mutates state and returns the ordered
 // effects the director must present (dialogue, cutscenes, toasts, world changes). State effects
 // (give/take/flag/lamp/journal/unlock/season/time/chapter) are applied here so state is always consistent.

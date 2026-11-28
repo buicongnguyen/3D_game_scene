@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The Kawabe general store interior (build_interiors.py): ochre wainscot under cream plaster, a real little shop.
 
 Base room (identical in all variants): the shop counter with scale, abacus, till and bell, goods shelves, barrels, rice

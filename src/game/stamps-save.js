@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The daily stamp card's save shape only (docs/STAMPS.md), so quest.js can keep the field clean without loading the card's
 // code (game/stamps.js, a lazy chunk). Every save carries an empty card (about 80 bytes):
 //   { day: '', tasks: [], total: 0, cards: 0, lucky: '', seen: [] }

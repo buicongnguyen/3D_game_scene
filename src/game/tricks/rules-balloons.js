@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Bow and arrow, the balloon end (docs/RURAL-TRICKS.md): the rules (pure, no three.js; tested in tests/archery.test.mjs).
 //
 // The last end of a round. Balloons are let go down the range and RISE slowly, drifting with the same crosswind that pushes

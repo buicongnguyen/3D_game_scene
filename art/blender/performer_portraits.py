@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Dialogue portraits of the dance game's performers, made exactly like the cast's (portraits.py: Cycles, warm key, rim,
 the character's colour behind), from their default look alone (.tools/portrait-src/<name>.glb, written by
 build_performers.py) so no other wardrobe part shows.

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 
 // Tileable value-noise texture (RGBA = four different frequencies), generated once on the CPU.

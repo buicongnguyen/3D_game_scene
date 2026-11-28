@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Walk-by barks: one-liners called out unprompted. Translations live in barks-i18n.json.
 export const BARKS = [
   { who: 'any', text: "Mind the sheep. Wait, those are clouds. Mind the clouds.", when: {} },

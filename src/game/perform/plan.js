@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A whole performance planned from the song (pure, deterministic: seeded by the song id, like Avatar Studio's
 // generateAutoChain). The ideas are Avatar Studio Club mode's (docs/club/PLAN.md "Club singing", "Dance styles",
 // "Beat sync", "Auto move chains", "Celebration moments"); the rules are re-stated here for one solo singer:

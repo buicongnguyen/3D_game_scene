@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { GroundPose, GROUND } from './pose-ground.js';
 
 const WANTS = ['creeping', 'kneel', 'waiting', 'reach'];

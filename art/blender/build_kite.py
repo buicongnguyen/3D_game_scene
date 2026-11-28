@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Sora's Star Kite: the wind-up flying machine Mika's grandmother flew over the valley to check the
 relay lamps. One model, `star-kite`, ~1.8 m across.
 

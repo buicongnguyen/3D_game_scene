@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Shared leg rigging for the Starline bugs (cricket, grasshopper, mantis; the beetles in build_tricks2.py use the same maths).
 
 A leg is two bones: `leg` (hip > knee, the thigh) and `shin` (knee > claw). Walk, Idle and the rest are not authored by

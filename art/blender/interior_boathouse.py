@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Rin's boathouse interior (build_interiors.py): a riverside boat workshop, warm weathered boards over a teal
 wainscot, a small boat on trestles in the middle (a walkable ring all round), oars on the wall, a workbench, a loft
 shelf with its ladder, a sliding hatch onto the water at the far end, hanging lanterns, fishing gear, and a cosy

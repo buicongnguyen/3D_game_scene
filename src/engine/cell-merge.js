@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The buildings of a map square drawn with one call (phone speed plan, round 3, step R3-3).
 //
 // With one material for every merged part (engine/static-merge.js, `Merged PBR`) a building is one draw, or two with its

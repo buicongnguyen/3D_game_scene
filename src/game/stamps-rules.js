@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The daily stamp card's rules (Explore only; docs/STAMPS.md): the day key, drawing a card, banking stamps, the cottage
 // decorations they unlock, and the words the objective card and the journal show. Pure: no three.js, no DOM. The runtime is
 // game/stamps.js, the save shape game/stamps-save.js, the tables content/stamps.js; tests/stamps.test.mjs checks all of it.

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Morning exercise moves: the clips of the "Morning exercise" mini game (src/game/tricks/exercise.js), authored on
 the shared humanoid skeleton and written as small clip packs that the game loads only when the round starts.
 

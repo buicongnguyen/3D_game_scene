@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The cow-race track on the Takamori north pasture (trick `cowrace`, game/tricks/cowrace.js): where it lies and how the
 // ground under it is prepared. Pure data and one painter, readable in Node (the site test checks it against everything else).
 //

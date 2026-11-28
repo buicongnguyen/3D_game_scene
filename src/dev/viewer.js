@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Development viewer: ?view=x,y,z,tx,ty,tz&season=autumn&hour=17 renders the world from a fixed camera.
 // Used by .tools/dev/capture.mjs for look-development screenshots.
 import * as THREE from 'three';

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Shared uniforms for world-space material effects (snow cover on up-facing surfaces, foliage wind).
 export const FX = {
   uTime: { value: 0 },

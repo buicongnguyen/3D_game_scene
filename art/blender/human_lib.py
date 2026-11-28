@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Character-art library for Starline humans (Blender 4.5, used by build_characters.py).
 
 Geometry

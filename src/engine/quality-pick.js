@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The first graphics tier for a device that has no saved choice. Pure: everything it needs is passed in, so it can be
 // tested (tests/quality-pick.test.mjs). The player's own choice in Settings (a saved tier) always wins.
 //

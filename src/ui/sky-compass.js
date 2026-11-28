@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The sky compass: which way am I looking? Shared by the Stargazing trick (game/tricks/stars.js) and the free viewer
 // "Look up at the sky" (game/skygaze.js). Two pieces, both plain DOM over the canvas:
 //   the horizon marks  the letters N, E, S, W (and a small tick for NE, SE, SW, NW) standing on the horizon of the sky view,

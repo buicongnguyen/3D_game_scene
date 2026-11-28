@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The "How to play" card: a small panel on the left edge of the screen while a mini game runs. Each row is one thing
 // to do: a little moving picture (drawn here as SVG, no files to load), the control for the device in use (keyboard
 // and mouse, touch, gamepad) and a short line. It folds down to a round "?" button (by itself on a phone after a few

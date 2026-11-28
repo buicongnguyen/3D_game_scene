@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Focus mode: while a mini game that does not need the valley runs, the valley stops costing anything.
 //
 //   const focus = enterFocus(game, { keep: [marbles, shooter, …], backdrop: 'blur', sim: 'all' });

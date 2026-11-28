@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { instancedMaterial } from './static-batch.js';
 import { SHADOW_ONLY } from './sky.js';

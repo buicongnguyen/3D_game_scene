@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { river, riverHalfWidth, WATER_Y, PLACES } from './layout.js';
 import { rng } from '../engine/spline.js';

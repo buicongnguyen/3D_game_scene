@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { river, riverHalfWidth, WATER_Y } from './layout.js';
 import { ZONE_FADE, ZONE_FADE_PARS } from './zone-fade.js';

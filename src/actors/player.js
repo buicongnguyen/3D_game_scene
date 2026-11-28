@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { mergeSkinnedParts } from '../engine/skin-merge.js';
 import { Silhouette } from './silhouette.js';
 import { HUMAN_GAIT } from './gait.js';

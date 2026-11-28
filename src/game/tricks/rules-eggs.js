@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Eggs down the gutters: the rules. Pure (no three.js, no DOM, no Math.random), tested in tests/eggs.test.mjs. The round
 // (./eggs.js) draws what is decided here.
 //

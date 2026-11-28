@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Weather moments (lazy chunk; game.wakeMoments fetches it): now and then, while Mika roams outdoors by day,
 // something small happens in the sky. The rules are game/moments-rules.js, the look fx/moment-fx.js, the whole
 // story docs/WEATHER-MOMENTS.md. Never touched from here: fx.setWeather, FX.uWind, fog, the sun, the grade, the

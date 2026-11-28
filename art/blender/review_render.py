@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Review renders for Starline GLBs (evidence only; write under .tools/, never public/).
 
 blender -b --factory-startup --python art/blender/review_render.py -- <models_dir> <out_dir> [options] [names...]

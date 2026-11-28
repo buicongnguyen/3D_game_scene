@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The electric bulb of "A Year with Grandma": a glass pear on a brass screw base. One shared geometry; each bulb has its
 // own glass material so the lamps switch on one by one. Used in the lantern heads of the Star Lamps (structures.js)
 // and as the bulb Tamo carries up (director.js).

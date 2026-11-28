@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { weakDevice } from './people.js';
 
 // The card shown before a story (or Explore) on a weak device (docs/play-zones/phase-1-device-notice.md): the story

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // PLAY ZONES (docs/PLAY-ZONES-PLAN.md): a mini game opened from the title builds only its own corner of the valley.
 //
 // A zone is a circle { x, z, r } around the game's place (zone-shape.js). Inside it every builder makes exactly what

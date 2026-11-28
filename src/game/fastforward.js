@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Fast-forward the pure quest engine to a step: the autopilot's --from=<step> and the game's Explore mode (a valley
 // where the whole story has already happened) both start from here.
 import { Quest } from './quest.js';

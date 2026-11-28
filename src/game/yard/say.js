@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // What the kids call out at the yards (English source strings, translated with tx() when shown) and the yard's page styles.
 import { N_ } from '../../i18n/i18n.js';
 

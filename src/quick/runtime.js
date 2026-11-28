@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // QUICK START: the mini games that need no valley, played from the title's Mini games list without loading or building
 // the valley (no world, no terrain, no forests, no villagers, no Director, not one model file).
 //

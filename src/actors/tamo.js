@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { Animator } from './animator.js';
 import { makeGlowTexture } from '../engine/textures.js';

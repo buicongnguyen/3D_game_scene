@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { TROPICAL_TREES, TROPICAL_BUSHES } from '../world/tree-theme.js';
 
 // Every model the runtime may load (see art/CONTRACTS.md). Missing files fall back to placeholders.

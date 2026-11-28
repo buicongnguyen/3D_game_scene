@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Everything Game.load() builds the valley from, behind one dynamic import: the title menu and the quick-start mini
 // games (src/quick/runtime.js) run on a Game that has not loaded any of this (no terrain, no forests, no models).
 export { World } from '../world/world.js';

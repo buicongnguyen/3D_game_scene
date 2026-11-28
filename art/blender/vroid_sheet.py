@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Contact sheet: GLB characters side by side at true scale, front and three-quarter, standing and mid-walk.
 
     blender -b --factory-startup --python art/blender/vroid_sheet.py -- <out.png> <a.glb> <b.glb> ...

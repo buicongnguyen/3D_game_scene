@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Star groups (constellations) for "Look up at the sky" (game/skygaze.js), the journal and the Stargazing trick.
 // Pure data and maths, Node-readable. Real positions (J2000 right ascension in hours, declination in degrees, visual
 // magnitude), so the same stars serve every sky profile; only the latitude, the horizon, the ordering and the words differ.

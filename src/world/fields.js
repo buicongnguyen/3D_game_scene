@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // What grows in the field grid west of Kawabe, and the festival lights strung round it. Pure data and maths over
 // layout.js PADDIES (no three.js): read by paddies.js, checked by tests/signs.test.mjs.
 import { PADDIES } from './layout.js';

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Ota's mill interior (build_interiors.py): stone and timber, the great pit wheel on the water wheel's axle, the
 wallower and main shaft, the spur wheel and stone nut under the millstone tun and its hopper; a raised tatami corner
 with the brazier and low table (and a plate of pickled radish), shelves of radish crocks and two pickling barrels

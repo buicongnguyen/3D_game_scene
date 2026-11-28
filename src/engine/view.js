@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { Frustum, Matrix4, Sphere } from 'three';
 
 // What the camera sees, for things that need not be there while nobody looks.

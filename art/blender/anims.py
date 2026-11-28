@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline humanoid clips.
 
 Clips are authored as pose functions p (0..1) -> Poser spec. Feet are driven by two-bone IK:

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Helpers for build_animals.py (Blender 4.5): organic lofts, cartoon eyes with blink lids, chain
 skinning, and an animation player with analytic two-bone leg IK so paws plant on the ground.
 

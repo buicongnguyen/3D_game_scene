@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Where Mika can fish: each place is data. The session, the pond and the pile read only this, so a third place is one
 // more entry (and a line in tests/fishing.test.mjs, which checks every entry against the world).
 // Pure data (no three.js), shared by the runtime and the Node tests.

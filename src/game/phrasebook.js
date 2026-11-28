@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The travel notebook behind "Listening at the table" (docs/TRAVEL-LANGUAGE-PLAN.md §4, §8.4). Pure: what was heard,
 // the phrases met (light Leitner boxes 1-3, spaced over days), the gentle recall pick and the phrase of the day.
 // Progress is shared by all save slots (owner default 2026-11-28): localStorage `starline-phrasebook`; the player's

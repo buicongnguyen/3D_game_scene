@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline supporting cast: Genzo, Rin, Ota, Hana, Grandma Sora and the three recolourable villagers.
 
 Each build_<name>() resets the scene, models the character around a Body skeleton, weights every part,

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Ô ăn quan guide owns an isolated example board. Every animation step comes from the same
 // pure play() function as the real round; opening help never reads or writes the running simulation.
 import { newBoard, cloneBoard, play, finished, totalValue, QUAN_VALUE } from '../game/yard/oanquan.js';

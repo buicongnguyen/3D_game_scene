@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // From egg to wings: a thinking game about how small animals grow up. Mika sits down in the riverside meadow with her
 // teacher, who lays out picture cards: put a life in order, find the missing card, spot the stranger, match young and
 // grown-up, say where a stage lives, and (Difficult) read a grid or answer a question about the whole life. No reflexes,

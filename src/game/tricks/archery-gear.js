@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The archery round's props (docs/RURAL-TRICKS.md): the bamboo bow, the practice arrow, the skin-coloured finger parts that curl
 // round the bow's grip and the string on Mika's hands, and the soft dot for the aim arc. All procedural, cheap and merged:
 //   bow      one dynamic limb tube (rewritten when the draw changes), one dynamic string tube, one static grip mesh, one bead

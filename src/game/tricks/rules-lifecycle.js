@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // From egg to wings: the rules of the life-cycle card game (pure: no three.js, no DOM; tests/lifecycle.test.mjs).
 //
 // Five animals, each a row of stages in the order they happen. Every puzzle is built from those rows with a seed, so a

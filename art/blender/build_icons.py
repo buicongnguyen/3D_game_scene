@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline menu icons: the Mini games menu, its category cards and the new game cards (trick-*, yard-*, fish-*, ...).
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_icons.py [-- --only yard-volley,cat-sky]

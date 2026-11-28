@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The house scenes' screens (docs/TRAVEL-LANGUAGE-PLAN.md §2, §4): the subtitle panel (the learning line with its
 // phrase chips, the meaning under it, one flat row Again · Slower · Next · Leave), the phrase card, the first-visit
 // language card and the gentle recall card. Built from JS (no index.html markup); styles in ui/style.css (.hs-*).

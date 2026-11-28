@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Firefly jar (docs/RURAL-TRICKS.md trick 1): summer night at the paddy edge. Three kinds of firefly blink there, each
 // on its own rhythm (rules-firefly.js): little green Heike (quick), big yellow Genji over the water (slow, neighbours in
 // unison) and now and then a tiny golden Hime (rare, very shy). They are shy: Mika walks softly, or the ones round her

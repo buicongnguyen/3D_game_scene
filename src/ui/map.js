@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The journal's Map page: a storybook top-down map of Hoshi Valley with live markers for Mika, the Fallen Stars,
 // Sora's treasures, the Star Lamps and the current goal.
 // - The land is painted once per season into an offscreen canvas (ImageData) from the height grid, the ground splat

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Starline — the whole story as data. docs/STORY.md tells it in prose; after editing, run npm run story:md
 // to regenerate its script appendix from this file.
 // Pure module (no DOM/three): used by the quest engine, the director and the Node playthrough test.

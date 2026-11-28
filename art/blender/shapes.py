@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Body-shape morphs for the graceful performers (docs/PERFORMERS.md).
 
 Every part carries an integer 'region' attribute (tag) saying how the shape fields move it; after skinning, add()

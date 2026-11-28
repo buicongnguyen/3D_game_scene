@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Supper at the Nakanos'" (docs/TRAVEL-LANGUAGE-PLAN.md §5.3). Scene lines are learning content: each line carries
 // its own en/ko/vi/ja text (not UI strings, so scripts/i18n-extract.mjs does not collect them). Korean is a draft until a
 // native speaker has read it (`review`).

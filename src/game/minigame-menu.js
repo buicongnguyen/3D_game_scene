@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Mini games menu at runtime: starts any game from the catalogue (content/minigames.js) straight away, with no story
 // progress and no teacher required. Two kinds of session:
 //   * the title's "Mini games" button resolves ui.title() as an Explore session (its own save slot "explore": every way

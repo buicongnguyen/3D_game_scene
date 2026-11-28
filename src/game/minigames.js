@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Minigame rules (pure; Node-testable). The director drives them each frame and renders their state.
 // (Fishing has its own rules and view now: src/game/fishing/.)
 

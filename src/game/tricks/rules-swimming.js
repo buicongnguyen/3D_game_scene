@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Virtual swimming practice: pure, deterministic lesson rules. These game-sized times and distances
 // are input cues, never a real-world swimming test or a prescription for holding one's breath.
 // Runtime owns supervision/entry teaching, the pool, camera, translated hints and standard trick saving.

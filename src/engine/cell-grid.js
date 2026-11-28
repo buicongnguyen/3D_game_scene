@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { Box3, Frustum, Group, Matrix4, OrthographicCamera, Sphere, Vector3 } from 'three';
 
 // Static things in squares of the map, so three.js can skip a whole square the camera cannot see.

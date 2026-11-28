@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Firefly jar: the rules. Pure (no three.js, no DOM, no Math.random), tested in tests/firefly.test.mjs. The round
 // (./firefly.js) draws what is decided here.
 //

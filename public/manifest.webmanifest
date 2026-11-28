@@ -1,6 +1,9 @@
 {
   "name": "Starline",
   "short_name": "Starline",
+  "description": "Starline — Hoshi Valley: a cosy 3D story game. Original game by Bui Cong Nguyen · solluxlabs.com",
+  "author": "Bui Cong Nguyen (solluxlabs.com)",
+  "developer": { "name": "Bui Cong Nguyen", "url": "https://solluxlabs.com" },
   "id": "./",
   "start_url": "./",
   "scope": "./",

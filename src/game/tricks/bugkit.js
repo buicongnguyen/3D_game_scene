@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // What the two meadow tricks (hoppers.js, cricket.js) share: a picture of a bug (the artist's model, or a stand-in made of a
 // few capsules until it lands), the net in Mika's right hand, the cage at her left hip, the creeping input, and the
 // release at the end of a round, when the cage is opened and everything hops away.

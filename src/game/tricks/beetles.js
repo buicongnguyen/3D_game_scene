@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Beetle sap trap (docs/RURAL-TRICKS.md, trick 6): a summer dusk in the grove. Choose a tree (beetles drink sap: oak and
 // chestnut are right, a beech or a maple brings little, a cedar nothing), rub banana-and-sugar bait on the bark in an
 // even rhythm, and sleep on it. At dawn, see who came: rhinoceros beetles, stag beetles, moths. Lift a beetle to look

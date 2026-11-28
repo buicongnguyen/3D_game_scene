@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // QA helpers for the browser autopilot (only attached with ?qa=1). The autopilot still acts through real
 // keyboard and mouse input; these helpers only read state, teleport, and point the camera.
 export function attachQA(game, director, ui) {

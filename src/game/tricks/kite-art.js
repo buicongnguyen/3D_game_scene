@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The kites of "Make and fly a kite", drawn here (no model files): the painted Japanese kaku-dako, the Vietnamese flute
 // kite (diều sáo), the hawk kite (tonbi-dako) and the box kite. A flat kite is one painted sheet (a canvas with the kite's
 // outline cut out of it) on a frame of bamboo sticks merged into one mesh; the box kite is real boxes. Every kite comes

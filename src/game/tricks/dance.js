@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Festival dance: an evening dance lesson on the Takamori square, in front of the bell tower. Two dances on one card:
 //   * the hat dance (múa nón) with Hoa, Hana's grown-up daughter: she dances a line, Mika copies it on the beat (and on
 //     Normal / Difficult two village kids join the class); the paper lanterns over the square burn brighter as she dances

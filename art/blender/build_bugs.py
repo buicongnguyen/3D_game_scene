@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline bugs for the bug-catching games: grasshopper, praying mantis, bug cage (+ the cricket, in build_critters.py).
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_bugs.py [-- --only grasshopper,mantis,bug-cage] [--no-save]

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline rural tricks (docs/RURAL-TRICKS.md, Phase 1): held props and the trick-card icon scenes.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_tricks.py [-- --only glass-jar,bug-net]

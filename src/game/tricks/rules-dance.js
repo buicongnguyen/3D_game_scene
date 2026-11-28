@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Festival dance: the pure rules (no three.js, no DOM), tested in Node by tests/dance.test.mjs. The game itself is
 // ./dance.js. Two dances share these rules:
 //   'festival'  the hat dance (múa nón) with Hoa by the bell tower: sweep left, sweep right, hat up, turn, then hat tilt,

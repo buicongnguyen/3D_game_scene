@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Baked voice clips for the house scenes (docs/TRAVEL-LANGUAGE-PLAN.md §8). One reusable <audio> element streams the
 // clip (nothing is decoded on the main thread); where the game's AudioContext runs, the element goes through it, so
 // the volume works on iOS too and the music is ducked while someone speaks. Only the learning language's index.json

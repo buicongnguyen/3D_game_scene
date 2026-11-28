@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A song's musical time as pure functions of song time t (seconds): beats, bars, sections, energy. Ported from Avatar
 // Studio's Club mode (src/club/beat-clock.js, "Shared interfaces" in its docs/club/PLAN.md), without the audio analysis
 // (Starline never decodes a song: the song files carry their grid).

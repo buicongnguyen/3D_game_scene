@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Morning exercise: what is on the screen (the round itself is ./exercise.js, the rules ./rules-exercise.js).
 //   - the move card: a little picture of the move, the arrow that answers it and its word (a "mirror" badge and the word
 //     only in a mirror section; nothing in a "follow me" section);

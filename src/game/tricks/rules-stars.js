@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The rules of Stargazing (game/tricks/stars.js), pure: no three.js, no DOM. Tested in tests/stars.test.mjs.
 //
 // The sky is the real one (content/constellations.js: catalogue positions, the season's sidereal time) seen from the

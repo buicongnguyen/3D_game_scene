@@ -3,7 +3,10 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Starline — a cosy story game in Hoshi Valley (three.js + Blender).",
+  "description": "Starline — a cosy story game in Hoshi Valley (three.js + Blender). © 2026 Bui Cong Nguyen · solluxlabs.com",
+  "author": "Bui Cong Nguyen (https://solluxlabs.com)",
+  "license": "SEE LICENSE IN LICENSE",
+  "homepage": "https://solluxlabs.com",
   "scripts": {
     "dev": "vite",
     "build": "vite build && node scripts/pack-models.mjs dist/models && node scripts/stamp-sw.mjs dist",

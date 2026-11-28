@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Eggs down the gutters: Grandma's hens sit on the roof of the henhouse behind the cottage and lay into four bamboo
 // down-gutters. Bamboo seesaws ("rungs") join neighbouring gutters: an egg takes every rung it meets (Amidakuji, the
 // ghost-leg lot game), so the spout it leaves by has to be read off the board. Mika runs left and right under the

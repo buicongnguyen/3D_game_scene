@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Weather moments: the rules, as pure data and functions (no three.js, no DOM). The runtime is game/moments.js, the
 // look is fx/moment-fx.js and the story of the feature is docs/WEATHER-MOMENTS.md. Tests: tests/moments.test.mjs.
 //

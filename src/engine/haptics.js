@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Haptics: a short buzz on a phone (navigator.vibrate) or a rumble on a gamepad (vibrationActuator) for the moments a
 // player should feel: a hard landing, a pickup, a catch, a star, a lamp lit. The sound cues in engine/audio.js call
 // buzz(kind); nothing runs per frame. Settings > Vibration turns it off (key starline-opt-haptics); iPhones have no

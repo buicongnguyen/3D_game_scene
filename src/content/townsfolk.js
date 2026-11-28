@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Town Life: the valley's named neighbours. Where they go (SPOTS), what they do all day (plan blocks of tasks that loop
 // while the block lasts) and the small personal stories Mika can follow with them (story stages, chapter-gated).
 // Contract: scratchpad townlife/DESIGN.md. Spots pass the placement rules of tests/barks.test.mjs (dry, gentle, clear of

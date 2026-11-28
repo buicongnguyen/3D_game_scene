@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The farm animals of the two villages (content/farm.js): cows, pigs, goats and dogs. They graze, doze (at night),
 // look up when Mika is near and call out, amble a few steps, and step aside for a running Mika. The dogs take to her:
 // they bark hello, trot along at her side while she is near home, and sit and wag when she stops.

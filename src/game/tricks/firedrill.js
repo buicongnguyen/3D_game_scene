@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Fire drill: fire-extinguisher practice on the lawn in Kawabe, led by a grown-up (Grandma; the stationmaster in Classic).
 // A practice ground is set out for the round: metal trays with small practice fires, a stand with extinguishers, a wind
 // sock, an arrow to the way out and four cones. It teaches what a school fire drill teaches:

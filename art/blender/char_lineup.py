@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Same-scale lineup of every Starline character GLB (review evidence, Cycles GPU).
 
 blender -b --factory-startup --python art/blender/char_lineup.py -- <out.png> [--pose Idle@0.3] [--back]

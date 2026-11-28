@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The valley's small living things: crickets singing in the grass,
 // between forest trees, ladybugs on flowers and bushes, dragonflies darting over the river and the rice paddies, and
 // butterflies drifting over meadows and gardens, and frogs on the paddy bunds and the river banks that sing at dusk

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { tx } from '../i18n/i18n.js';
 import { POSES, FILTERS, FRAMES, LENSES, MAX_SHOTS, SEASON_NAMES, RIG, captionPlace, canEnter, photoState, poseOk, solveRig, fitShot, nearestPlace, addShot, shotName, padEdges } from './photo.js';
@@ -7,6 +8,7 @@ import { BAND } from '../world/zone-backdrop.js';
 import { U } from '../fx/cel-sprites.js';
 import { PhotoUI } from '../ui/photo-ui.js';
 import { drawFrame } from '../ui/photo-frame.js';
+import { stampCanvas } from '../ui/brand.js';
 
 // Photo mode: the game is paused (Game.togglePause), so nothing in the valley moves, and this takes the camera.
 // Nothing here changes the follow camera, the animator or the player's code: what it changes (the camera, Mika's
@@ -397,6 +399,7 @@ export class PhotoMode {
     try {
       await document.fonts?.ready;
       drawFrame(c.getContext('2d'), c.width, c.height, job.frame, job.caption, { grid: false });
+      stampCanvas(c.getContext('2d'), c.width, c.height);         // the author's mark in the corner (ui/brand.js)
       const blob = await new Promise((res, rej) => c.toBlob(b => (b ? res(b) : rej(new Error('no picture'))), 'image/jpeg', 0.92));
       const name = shotName(new Date());
       const file = new File([blob], name, { type: 'image/jpeg' });

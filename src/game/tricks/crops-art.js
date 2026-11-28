@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The cards of "From seed to harvest", drawn as SVG (120 x 120, flat and warm like lifecycle-art.js): no files to
 // load, crisp at any size. Pure strings, so Node can make a contact sheet of them (.tools/crops-sheet.mjs).
 // Each card is a little scene: the background says where it happens (a flooded paddy, a dry field, the soil in

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { PLACES, WATER_Y } from '../world/layout.js';
 import { N_, getLang } from '../i18n/i18n.js';

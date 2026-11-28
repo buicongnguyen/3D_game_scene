@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The save files in the browser's storage, read and cleared without the valley: the title menu lists them before any
 // 3D exists (src/main.js), and the quick-start runtime keeps its records in the Explore save (src/quick/runtime.js).
 // Director's static helpers (Director.loadSave, .slots, …) are these same functions.

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Journal > Phrasebook: the travel notebook of "Listening at the table" (docs/TRAVEL-LANGUAGE-PLAN.md §4). One flat row
 // to pick the language being learned, the counts, then a page per house scene: a stamp when heard to the end, every
 // heard line with ▶ (audio only, no 3D) and its meaning, and the kept ★ phrases.

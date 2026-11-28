@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Make & fly a kite (docs/RURAL-TRICKS.md trick 9): autumn and winter, on the cow meadow south of Kawabe.
 // Build it in three timing presses (bamboo cross, paper, tail), then fly it: the wind swings and gusts, the grass
 // streaks and the clouds show where it is going a moment before the kite feels it, and Mika steers the kite back into

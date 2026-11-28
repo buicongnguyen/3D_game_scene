@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Decor variants of Kawabe house A (Var_1 young family, Var_2 elderly couple, Var_3 fisher's home).
 
 Each variant is a pivot group holding only small decor (no colliders), placed on or against the base room's furniture,

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Read aloud (Settings > Voices): the dialogue spoken by the device's own voices (the Web Speech API), in the game's
 // language. Nothing is downloaded; the speaking runs in the phone's own speech engine, not in the game's frame.
 //

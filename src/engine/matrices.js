@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { Object3D, Matrix4 } from 'three';
 
 // World matrices, once a frame, for the things that can be seen and have moved.

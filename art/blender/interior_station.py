@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Genzo's station office (build_interiors.py): green wainscot and cream plaster, the pot-belly stove with its kettle,
 the big timetable board and the pendulum clock, the ticket window with its counter, dating press and pigeonhole rack
 of card tickets, the signal lever frame, Genzo's desk with the green lamp (where Kobo's first ticket waits), his cap on

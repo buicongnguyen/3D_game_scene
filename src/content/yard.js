@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The playground yards: where they are and what stands in them. Pure data (no three.js, no DOM), read by
 // src/world/yard.js (which builds them), src/game/yard/ (the games played there) and tests/yard.test.mjs.
 //

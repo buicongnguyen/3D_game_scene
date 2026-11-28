@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Things to do inside the houses (content/hotspots.js): sit at the table, look out of the window, open the tansu,
 // pet the cat, ring the altar bell… and the one small "house memory" hidden in each home, kept in the journal.
 import * as THREE from 'three';

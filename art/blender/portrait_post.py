@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Composite a transparent portrait render over a soft radial gradient and save a 512x512 WebP.
 
 python art/blender/portrait_post.py <in.png> <out.webp> <inner #hex> <outer #hex>

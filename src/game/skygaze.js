@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Look up at the sky": at the lamp towers and a few high, open places (content/skyspots.js) Mika can stop and look
 // up. The camera tilts from behind her to the sky. By night: a deep star field and shooting stars to wish on (the action
 // key while one is falling; the wishes are counted in the save). At dusk: the first stars, earlier beside a lit lamp.

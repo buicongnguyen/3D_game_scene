@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Reference speed (m/s) at normal playback, checked in the flat-foot part
 // of stance on both feet of the exported human rigs. Full and lite clips match.
 export const HUMAN_GAIT = {

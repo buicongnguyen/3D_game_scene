@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The phone videos: which clips exist and how they are named (pure data, shared by the recorder
 // scripts/record-videos.mjs, the players in game/tour.js and game/video.js, and tests/video.test.mjs).
 // The files live in public/video/ next to manifest.json, which the recorder writes: durations and stop times come

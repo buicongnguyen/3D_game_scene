@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { HeightGrid, rawHeight } from './heightfield.js';
 import { TERRAIN } from './layout.js';

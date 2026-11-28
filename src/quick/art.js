@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // What the quick-start runtime shows in place of the valley (./runtime.js). No files to fetch: two painted still scenes
 // for the card games (inline SVG: a summer meadow by the river for "From egg to wings", the autumn fields for "From
 // seed to harvest"), the ground of the playground for marbles and ô ăn quan (one canvas texture: swept earth with

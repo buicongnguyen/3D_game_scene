@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // How high the valley's rim stands in the sky seen from a place, and how high Mika must fly (with the Star Kite) for
 // the low star groups to clear it. Pure maths, Node-readable: tests/skyflight.test.mjs checks it on a toy terrain, and
 // tools/measure-horizon.mjs measures the real valley (content/skyspots.js `lift` is the answer for every spot).

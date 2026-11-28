@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { U, spriteAtlas } from './cel-sprites.js';
 import { GlowLines } from './cel-lines.js';

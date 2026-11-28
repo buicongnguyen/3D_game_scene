@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Finish documented imports: collider fit, real ray-traced vertex AO, embedded texture."""
 import os
 import sys

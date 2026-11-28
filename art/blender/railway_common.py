@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Shared helpers for the Starline railway family (build_railway.py).
 
 Geometry helpers that the generic kit does not have: revolve about any axis with reliable

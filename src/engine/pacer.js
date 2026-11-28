@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Even frames on a phone that cannot keep 60 (the Low tier). Frames that swing between ~26 and ~38 ms (the shadow map
 // is drawn every other frame) look like stutter; a steady 30 looks smooth, and the phone stays cooler. The game's own
 // work per frame decides, not the gaps between frames (those are what pacing changes):

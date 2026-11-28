@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Morning exercise (content/tricks.js 'exercise'): a calm, happy routine on the big lawn in Kawabe. The instructor
 // (TRICK.exercise.instructor, Rin for now) leads from a low wooden stage beside a little radio, Mika copies her in the
 // front row and, on Normal and Difficult, neighbours join in: two kids beside her, two grown-ups behind.

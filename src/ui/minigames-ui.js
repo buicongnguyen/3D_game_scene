@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Mini games picker: a panel of game cards with a tab for each category. Built from JS (no index.html parts), used
 // from the title menu (before any game exists) and from the pause menu / the "Mini games" chip in the game.
 //   keyboard   arrows move between cards (Up from the top row reaches the tabs, Left / Right change tab), Enter plays, Esc closes

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Foot-tennis (đá cầu over a net): a shuttlecock is kicked back and forth over the yard's low net. Whoever lets it
 // touch the ground on their side, kicks it into the net or sends it out gives the other side a point. First to
 // `target` points wins. This file is the whole game as a pure, seeded simulation (no three.js, no DOM): the yard's

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 
 const HYSTERESIS = 1.35;        // a newcomer must outshine the weakest lit source by this factor to take its light

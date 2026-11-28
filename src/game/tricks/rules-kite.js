@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Make & fly a kite: the rules (pure, no three.js; tested with recorded inputs in tests/tricks2-kite-dew.test.mjs).
 //
 // Building is three timing presses (bamboo cross, paper, tail): a marker sweeps over a bar and the press is judged by

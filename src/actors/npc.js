@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { ANIMAL_GAIT, HUMAN_GAIT } from './gait.js';
 import { Animator } from './animator.js';

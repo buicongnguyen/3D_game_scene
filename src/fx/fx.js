@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { makeGlowTexture } from '../engine/textures.js';
 import { dirtyRange } from '../engine/buffer-updates.js';

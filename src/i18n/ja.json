@@ -5144,5 +5144,13 @@
   "Ask at the first home": "最初の家で聞く",
   "In some homes the family talks at supper, in the shop or over paper cranes. You hear it in the language you are learning, with the meaning under each line.": "いくつかの家では、晩ごはんの席やお店、折り鶴を折りながら家族が話します。学んでいる言葉で聞けて、各行の下に意味が出ます。",
   "Meaning under the line": "行の下に意味を表示",
-  "Speech": "話す速さ"
+  "Speech": "話す速さ",
+  "Author: {name}": "作者: {name}",
+  "Original game by {name}": "{name} によるオリジナルゲーム",
+  "Author": "作者",
+  "All rights reserved.": "無断転載・複製を禁じます。",
+  "Voices and songs": "声と歌",
+  "The voices in the language homes are synthetic (made by computer, not recorded people): Kokoro (English), VieNeu-TTS (Vietnamese), Supertonic (Korean).": "言葉を学ぶ家の声は合成音声です(人の録音ではなく、コンピューターで作った声): Kokoro(英語)、VieNeu-TTS(ベトナム語)、Supertonic(韓国語)。",
+  "Kotone's song “Golden Rails”: original lyrics, music made with ACE-Step 1.5.": "琴音の歌「Golden Rails」: オリジナルの歌詞、音楽は ACE-Step 1.5 で制作。",
+  "Story, code and the Blender-made models: {who}.": "物語、コード、Blender で作ったモデル: {who}。"
 }

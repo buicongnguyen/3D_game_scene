@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The valley's everyday people: where each villager starts, who comes home as the Star Lamps are lit, and the little
 // loops they stroll. Positions are checked by tests/barks.test.mjs (dry ground, gentle slope, clear of buildings).
 // A villager is [id, model, x, z, facing]; the returning ones add the number of lit lamps that brings them home

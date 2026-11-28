@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A small chooser two tricks share (the kite: which kite to build; the paper planes: which plane to fold): a row of
 // picture buttons, and under it the chosen one's name, one line about it and two or three bars that say how it flies.
 // It sits under the round's HUD, not over the whole screen, so the "How to play" card and the touch buttons stay free.

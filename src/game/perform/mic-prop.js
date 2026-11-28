@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Kotone's hand mic: one small mesh, one material (colours in the vertices: a dark body, a gold band, a silver grille),
 // built in code (~300 triangles, no download), on her grip_R bone where the Moves v2 solver's micGrip handle sits in her
 // fist (content/kotone-club-fit.js, written by the bake). Shown only while she sings (scaled in and out), no shadow.

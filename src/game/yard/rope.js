@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Rope jumping (nhảy dây, ナワトビ): two kids turn a long rope, the jumper jumps in on the beat. One button: Jump / E /
 // tap the moment before the rope reaches the ground (the airborne window is wide when she is new at it). Every clean
 // jump adds to the streak, the kids count aloud, the rope speeds up as the streak grows; a trip ends the streak. A round

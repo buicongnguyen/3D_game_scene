@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Kotone's performance vocabulary: Avatar Studio Club-mode moves (Moves v2, authored there; baked on her skeleton by
 // scripts/kotone-club-bake.mjs into public/models/moves-kotone.glb). Every loop is 8 (or 4) beats at a 120 BPM design;
 // feet land on beats or "and"s by construction, so beat-locked playback (game/perform/plan.js) keeps her on the song.

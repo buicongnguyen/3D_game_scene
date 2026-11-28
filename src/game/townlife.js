@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Town Life at runtime: the valley's named neighbours (content/townsfolk.js) walk their day plans along the roads,
 // work, shop, sit, chat and play; Mika can follow their little stories, run errands, and buy and sell in the shops.
 // The planning is pure (game/schedule.js, world/roads.js, game/folk.js); this file only gives it bodies: it executes

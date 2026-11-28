@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The engine shed workshop (build_interiors.py): the old locomotive shed west of Hoshi Station where Kobo was repaired.
 
 Warm red brick below, cream plaster above, timber trusses and an overhead hoist rail. A short length of track runs

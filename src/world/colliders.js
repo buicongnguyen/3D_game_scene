@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Kinematic collision world (pure; Node-testable).
 // Solids are vertical prisms: oriented boxes and cylinders spanning [y0, y1].
 // A solid with walkable=true can be stood on (its top y1 becomes ground).

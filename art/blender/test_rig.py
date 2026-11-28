@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Smoke test for rig.py: blender -b --factory-startup --python art/blender/test_rig.py -- <out_dir>"""
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

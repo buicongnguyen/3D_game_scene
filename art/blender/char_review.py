@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Character review renders (evidence only, under .tools/review/characters).
 
 blender -b --factory-startup --python art/blender/char_review.py -- <name> [--views front,side,back,face]

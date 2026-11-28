@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // From seed to harvest: the rules of the crop card game (pure: no three.js, no DOM; tests/crops.test.mjs).
 // A sibling of "From egg to wings" (rules-lifecycle.js): the same board, the same three tries, other knowledge.
 //

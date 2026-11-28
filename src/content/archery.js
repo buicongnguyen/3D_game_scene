@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The village archery range: where it stands and what is on it. Pure data (no three.js, no DOM), read by
 // src/world/archery.js (which builds it), src/game/tricks/archery.js (the round) and tests/archery.test.mjs.
 //

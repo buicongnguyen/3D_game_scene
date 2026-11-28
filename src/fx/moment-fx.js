@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The weather moments' look (game/moments.js runs them; docs/WEATHER-MOMENTS.md). Nothing new to compile: a second
 // Rainbow and a second Butterflies mesh use the programs the celebrations already compiled at load, and every
 // particle goes into celebrate's precompiled GPU sprite systems (written once when emitted, then free). All of it

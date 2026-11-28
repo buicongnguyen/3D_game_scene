@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Interiors family for Starline: enterable rooms behind four front doors, and the keepsakes found inside.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_interiors.py [-- --only cottage,photo] [--no-save] [--out dir]

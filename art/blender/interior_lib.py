@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Toolkit for the Starline interiors (build_interiors.py): rooms, painted window views, floors, shared props.
 
 Builds on kit.py and arch_lib.py (never edits them). A Room is an arch_lib Asset with collision boxes (Col_* meshes

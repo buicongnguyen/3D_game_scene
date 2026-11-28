@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Deterministic vegetation & rock placement (pure; Node-testable). Returns plain records.
 import { rng, fbm, smoothstep } from '../engine/spline.js';
 import { river, riverHalfWidth, rail, BUILDINGS, CLEARINGS, PLAY_GROUNDS, ORCHARD, TERRAIN, PLACES } from './layout.js';

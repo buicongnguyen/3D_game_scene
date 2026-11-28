@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Railway and river family for Starline (see art/CONTRACTS.md, "Railway and river").
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_railway.py [-- --only kobo,coach]

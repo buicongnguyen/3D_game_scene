@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { frameLayout } from '../game/photo.js';
 
 // Photo mode's frames, drawn with a 2D context: once over the live view (a canvas on top of the game, redrawn only

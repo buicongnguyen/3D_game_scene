@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { CAST, ITEMS, JOURNAL, STAR_POEM, FISH, STEPS, STEP_INDEX, CHAPTERS, FRIENDS, KEEPSAKES, ALBUM, TREASURES, SKY_LETTERS, GIFTS, DIALOGUE, huntProgress, objectiveText } from '../game/story.js';
 import { FALLEN_STARS } from '../world/layout.js';
 import { tx, N_, isCJK, LANGS, getLang, setLang, onLangChange, setGlobal } from '../i18n/i18n.js';
@@ -17,6 +18,7 @@ import { noteWanted, deviceFacts, noteSeen, markNoteSeen } from '../engine/devic
 import { Voice } from '../engine/voice.js';
 import { mountPhrasebook } from './phrasebook-ui.js';
 import { haptics } from '../engine/haptics.js';
+import { colophonHTML } from './brand.js';
 
 // the weak-device card's words (engine/device-note.js); Settings repeats them
 const DEVICE_NOTE = N_('The story and Explore build the whole valley. On this device it may run slowly and warm up the phone. Light mode helps.');
@@ -1255,7 +1257,7 @@ export class UI {
       body.innerHTML = `<p>${esc(tx('{n} of {total} friends made. Walk up to a creature and press {act} to say hello.', { n, total: FRIENDS.length }))}</p><div class="cards">` +
         FRIENDS.map(f => this.cardHTML(!!met[f.id], f.icon, tx(f.name), met[f.id] ? tx(f.desc) : tx(f.hint), met[f.id] ? '♥' : tx('Not met yet'))).join('') + '</div>';
     } else {
-      body.innerHTML = this.controlsHTML();
+      body.innerHTML = this.controlsHTML() + colophonHTML();     // (the journal's back page carries the author's line)
     }
   }
 

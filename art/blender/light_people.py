@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Light versions of the people: the same look, skeleton and clips, a fraction of the triangles and one draw call.
 
     blender.exe -b --factory-startup --python art/blender/light_people.py [-- --only=mika,villager-kid] [--report=path.json]

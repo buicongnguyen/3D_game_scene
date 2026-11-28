@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The Starline coach: a wooden bogie coach in cream and teal with gold lining (railway family).
 
 Blender frame: faces -Y, rail top z=0, standard gauge. Contract nodes: Wheel1..Wheel4 (axle pivots, front to

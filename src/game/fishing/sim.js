@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // River fishing rules (pure; no three.js, no DOM: Node-testable and seedable).
 //
 // One round: cast -> wait -> approach -> nibble -> bite -> hooked -> caught | escaped.

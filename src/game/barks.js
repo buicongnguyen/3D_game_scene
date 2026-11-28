@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Barks: the one-line remarks people call out as Mika walks past, with no interaction needed. Pure logic (no DOM, no
 // three.js) so it can be tested: which lines fit this speaker and this moment, and which one to say now.
 import { BARKS } from '../content/barks.js';

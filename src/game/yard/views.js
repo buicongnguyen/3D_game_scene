@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // What the yard games draw while they are played: the shuttle and the volleyball with their shadow blob, the jump rope,
 // the tug-of-war rope and flag, the oan quan pebbles, the sacks and the marbles. Every view is a handful of meshes made
 // once (instanced where there are many), shared by every yard, and moved each frame: nothing is allocated while a game

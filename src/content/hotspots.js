@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 /**
  * Indoor interactions: things Mika can walk up to and use (press E) in every enterable room, and the one small
  * "house memory" hidden in each home (collected into the journal).

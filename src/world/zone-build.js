@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Play zones in the browser (docs/PLAY-ZONES-PLAN.md, world/zone.js): after the valley's builders have run for a zone,
 // what stands well outside it is taken out of the scene. Shared geometry and materials stay (other copies use them).
 import * as THREE from 'three';

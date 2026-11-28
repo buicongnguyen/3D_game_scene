@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Townsfolk stories and shops: pure logic over a plain state object (no DOM, no three.js).
 // st = { folk: { [id]: { stage, asked, met, chat } }, mon, inv: { item: n }, chapter, done(stepId) -> bool, lamps }
 // Functions never mutate st: they return `effects`, applied by applyEffects(st, effects) (the quest does this).

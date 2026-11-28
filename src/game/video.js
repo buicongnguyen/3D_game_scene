@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Recorded video in place of live 3D on phones (docs/VIDEO.md): the title's backdrop, the new game's arrival and the
 // scene tour (game/tour.js uses the layer from here). The clips are filmed from the real game by
 // scripts/record-videos.mjs; only the picture is video: captions, buttons and fades stay live HTML, so they are

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The far view of a play zone (docs/PLAY-ZONES-PLAN.md, world/zone.js), rendered from the whole valley: a cube of six
 // pictures taken from the zone's middle, with the near plane at the zone's edge so nothing inside the zone is in them
 // (the zone draws its own). scripts/bake-zone-backdrops.mjs calls this through the QA helpers and writes the files.

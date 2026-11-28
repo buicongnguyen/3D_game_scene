@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Marbles (bắn bi, ビー玉): a chalk ring on bare dirt, coloured marbles in the middle. Take turns flicking the shooter
 // at them to knock them out of the ring; the marbles you knock out are yours. Aim at a marble (tap it, or the arrow keys
 // move the cross-hair), hold the button to charge the flick and let go to shoot. Four shots each: the first to four

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Night river lantern (docs/RURAL-TRICKS.md, trick 2): wade the shallows at night with the hand lantern. Its circle of
 // light lies on the black water; inside it the water turns clear, the sleepy fish hold still and show every scale, and
 // shrimp eyes twinkle back. Hold the circle over a fish for a second to name it (night-only fish come out too).

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { river, riverHalfWidth, WATER_Y } from '../world/layout.js';
 import { U } from './cel-sprites.js';

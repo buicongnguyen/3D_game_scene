@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The dance game's performers (art/blender/build_performers.py, docs/PERFORMERS.md): who they are, their outfit looks,
 // the skin tones and the body-shape controls a character studio can offer. Pure data (no three.js, no DOM), Node-readable;
 // src/engine/wardrobe.js puts a look, a skin tone or a shape on a model.

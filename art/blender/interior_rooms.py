@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The four enterable rooms (build_interiors.py): Sora's cottage, Hana's bakery, Ota's mill, Genzo's station office.
 
 Each room is built in its own space: floor z=0, centred on the origin, door in the -Y wall. Furniture uses Loc frames

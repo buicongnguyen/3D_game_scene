@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The scene tour (Settings → Scene tour, and the title menu): pure data and pure math, read by the runtime
 // (game/tour.js) and by Node tests (tests/tour.test.mjs). No three.js objects are made here.
 //

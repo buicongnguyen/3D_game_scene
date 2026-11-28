@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Look up at the sky": the places where Mika can stop and watch the sky (game/skygaze.js). Pure data, Node-readable;
 // tests/skygaze.test.mjs checks every spot.
 //

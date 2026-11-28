@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // One shadow caster per map square for the buildings in it (phone speed plan, step 2).
 //
 // Each building throws its shadow with its own merged mesh: one shadow draw per building in the sun's box (14-15 a

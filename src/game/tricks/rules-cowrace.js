@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Cow race (trick `cowrace`): the pure rules, no three.js and no DOM, so a recorded run can be replayed in Node.
 // Four cows run a straight track, one lane each. Mika's cow keeps the beat of its own stride: a "Giddy-up!" tap on the
 // beat pushes it on, taps off the beat do nothing, and mashing tires the cow (it puffs and slows). Fresh grass bundles

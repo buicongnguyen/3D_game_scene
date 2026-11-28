@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Settings > "Weather moments (rainbows, birds, breezes)": on by default, remembered like the other options
 // (localStorage 'starline-opt-moments', JSON). Tiny and static: the title page loads it, the moments code
 // (game/moments.js) is fetched only when wanted. docs/WEATHER-MOMENTS.md.

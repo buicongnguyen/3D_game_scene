@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Rigging and authored animation clips for Starline characters and animals.
 
 Pipeline (Blender 4.5 LTS, headless):

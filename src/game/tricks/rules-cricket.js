@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Cricket by its song: the rules. Pure (no three.js, no DOM, no Math.random), seeded, tested with recorded inputs in
 // tests/bugs.test.mjs. The round (./cricket.js) only draws and sounds what happens here.
 //

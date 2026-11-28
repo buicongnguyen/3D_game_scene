@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Anatomy pass for Starline's humans: a chest, waist and hips, sloped shoulders and longer legs.
 
 Every builder models a torso as a loft of plain rings and the limbs as tubes, so seen from the side the people

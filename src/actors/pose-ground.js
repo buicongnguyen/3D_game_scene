@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Pure ground-pose decisions; callers own input, clip playback and instantaneous game events.
 export const GROUND = Object.freeze({ walkSpeed: 0.6, pickupSeconds: 1, pickupGrab: 0.4, pickupLock: 0.55,
   reachSeconds: 0.8, reachAgain: 0.45, sitDelay: 2.5, creepEnter: 1.02, creepLeave: 1.15, moveEnter: 0.18, moveLeave: 0.1 });

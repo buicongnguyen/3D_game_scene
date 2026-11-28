@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Props and items family for Starline: story pickups, held tools and village set dressing.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_props.py [-- --only a,b]

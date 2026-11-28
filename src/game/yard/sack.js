@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Sack race (đua bao bố): a straight 13 m course, a banner at each end, a lane each. Hop forward with one press per hop
 // (E / tap / Jump): a steady rhythm builds longer hops, mashing makes you wobble and, after a second wobble, tumble
 // (the kids get up laughing). A round is about fifteen seconds; solo stars use finish time, other races finishing place. Pure and seeded (no

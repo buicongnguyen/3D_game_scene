@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Takamori house B interior (build_interiors.py): a compact, tidy, bright home behind the veranda door.
 
 One main room: cream plaster over sky-blue wainscot, pale birch floor, a raised tatami area with a window over it, a

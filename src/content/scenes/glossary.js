@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Phrase cards for the chips in the house scenes (src/content/scenes/*.js). Per learning language: `say` (the phrase as
 // heard), `roman` (Korean romanisation) or `tone` (Vietnamese tone marks spelled out), and per UI language the
 // `mean`ing and a short culture `note`. tests/scenes.test.mjs checks every chip id has an entry for its language.

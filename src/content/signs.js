@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Name boards: what every building in the valley is, written on a wooden board at its door. Pure data (no three.js,
 // no DOM), read by src/world/signs.js (which builds and paints the boards) and checked by tests/signs.test.mjs.
 //

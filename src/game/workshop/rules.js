@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Kite workshop: the rules, with no three.js and no DOM (tests/workshop.test.mjs imports this file).
 //
 // Mika fits electric motors to Grandma's wind-up Star Kite on the bench in the cottage (./index.js draws and plays it):

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Shared toolkit for the Starline art pass (Blender 4.5 LTS).
 
 Adapted from the race3D_game AAA kit (art/aaa/aaa_kit.py).

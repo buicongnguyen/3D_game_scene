@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """River props for the Starline railway family: Rin's ferry, rowboat, jetty module, stepping stones, festival
 lantern boat and the landslide scar. All face -Y in Blender; boats have their origin at the waterline."""
 import math, random

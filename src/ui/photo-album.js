@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { tx } from '../i18n/i18n.js';
 import { readShots, deleteShot, MAX_SHOTS, SEASON_NAMES, captionPlace } from '../game/photo.js';
 

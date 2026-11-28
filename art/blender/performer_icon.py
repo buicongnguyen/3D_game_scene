@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The Festival dance's menu icon: Hoa in her ao dai lifting the non la, in a dusk medallion with two paper lanterns.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/performer_icon.py

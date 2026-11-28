@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The rules of the Fire drill (tricks/firedrill.js draws them): practice with a grown-up at a metal tray, the way a
 // school fire drill teaches it. Pure and Node-tested (tests/firedrill.test.mjs): no three.js, no DOM.
 //

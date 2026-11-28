@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The HUD's little map, top right (owner 2026-11-27: the clock pill did nothing and was large; "a tiny map to locate
 // where we are and the direction to the next task"). A round window on the journal map's own picture of the valley
 // (ui/map.js: the land, paths, railway and roofs), turned so the way the camera looks is up, with Mika's arrow in the

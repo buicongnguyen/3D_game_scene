@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { CARRY, SWAY, Reasons, darkLatch, resolveCarry, clipKind, makeSway, stepSway, stepBlend, ease, restLean, lanternLight } from './lantern-carry.js';
 

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The group performance (game/perform/troupe.js): Kotone and the other seven VRoid Project sample characters (built
 // like her by art/blender/vroid_mixamo.py --member: one mesh, one material, the 69-bone Mixamo skeleton, three face
 // morphs; models and packs fetched only when a group performs). Two rows of four facing the camera, each row ONE group

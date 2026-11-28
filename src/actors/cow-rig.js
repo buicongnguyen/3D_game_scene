@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The things a ridden cow wears and the hay it is fed: a straw-padded blanket for a saddle, rope reins, and a haystack
 // with a trough. All procedural: one merged, vertex-coloured mesh per thing, one shared material, built on first use.
 // Shared by the free ride (actors/cow-ride.js) and the cow race (game/tricks/cowrace.js).

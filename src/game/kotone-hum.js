@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Kotone hums on her day walks: now and then, while she walks between the station forecourt and the lane by day and Mika
 // is near, she hums her song's tune softly (content/kotone-songs.js KOTONE_HUM: a wordless 8-bar loop), her lips moving
 // with it (actors/face.js sing(), the loop's own mouth curves).

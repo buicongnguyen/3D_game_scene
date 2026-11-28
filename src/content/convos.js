@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Town Life: conversations Mika can overhear when two townsfolk meet (a `chat` task in both their plans).
 // Lines are [speaker, text] with speaker 'a' or 'b'; at most 58 characters each (speech bubbles).
 // Specific pairs tell running mini-stories in order (`after` = that convo must have been overheard first).

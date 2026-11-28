@@ -5144,5 +5144,13 @@
   "Ask at the first home": "Hỏi khi vào nhà đầu tiên",
   "In some homes the family talks at supper, in the shop or over paper cranes. You hear it in the language you are learning, with the meaning under each line.": "Ở vài ngôi nhà, cả nhà trò chuyện bên bữa tối, ở cửa hàng hay khi gấp hạc giấy. Bạn nghe bằng ngôn ngữ đang học, có nghĩa ở dưới mỗi câu.",
   "Meaning under the line": "Nghĩa dưới mỗi câu",
-  "Speech": "Tốc độ nói"
+  "Speech": "Tốc độ nói",
+  "Author: {name}": "Tác giả: {name}",
+  "Original game by {name}": "Trò chơi gốc của {name}",
+  "Author": "Tác giả",
+  "All rights reserved.": "Bảo lưu mọi quyền.",
+  "Voices and songs": "Giọng nói và bài hát",
+  "The voices in the language homes are synthetic (made by computer, not recorded people): Kokoro (English), VieNeu-TTS (Vietnamese), Supertonic (Korean).": "Giọng nói trong các ngôi nhà học ngôn ngữ là giọng tổng hợp (do máy tính tạo ra, không phải người thật thu âm): Kokoro (tiếng Anh), VieNeu-TTS (tiếng Việt), Supertonic (tiếng Hàn).",
+  "Kotone's song “Golden Rails”: original lyrics, music made with ACE-Step 1.5.": "Bài hát của Kotone “Golden Rails”: lời gốc, nhạc làm bằng ACE-Step 1.5.",
+  "Story, code and the Blender-made models: {who}.": "Cốt truyện, mã nguồn và các mô hình làm bằng Blender: {who}."
 }

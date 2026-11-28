@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Story lines that name keyboard keys, said the phone's way (owner 2026-11-27: on a phone the kite lines spoke of G,
 // Space, C and Shift, which a phone does not have). ui.js dialogueInner swaps a line for its phone version on touch
 // screens, before translating it; the keyboard line and its translations stay as they are.

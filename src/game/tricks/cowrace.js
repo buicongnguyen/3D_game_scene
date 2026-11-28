@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Cow race (trick `cowrace`): the village cow race on the Takamori north pasture, in the spirit of the ox races of An Giang.
 // Four cows, four lanes, a 56 m track with a mud patch and fresh grass. Mika rides one (Giddy-up on the beat of her
 // hooves), Kenta, Yui and Daichi ride the others. Rules (pure, tested): ./rules-cowrace.js.

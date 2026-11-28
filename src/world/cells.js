@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Static scatter records grouped in squares (pure: Node-testable), for the foliage lists (foliage.js).
 //
 // The view and shadow lists test every record against the view or the shadow box, every time the camera has moved a

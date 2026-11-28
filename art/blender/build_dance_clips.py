@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Dance clips for people who already exist: Mika, the village kid, woman and man (clip-only GLBs, no mesh).
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_dance_clips.py [-- --only mika,villager-kid]

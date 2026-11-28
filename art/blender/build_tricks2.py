@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline rural tricks (docs/RURAL-TRICKS.md, Phase 2): kite, dew webs, sweet potato roast, beetle sap trap.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_tricks2.py [-- --only beetle-rhino,moth]

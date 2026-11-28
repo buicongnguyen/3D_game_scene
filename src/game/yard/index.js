@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The games of the Kawabe playground yard. A yard game is a small module (./footnet.js, ./keepup.js) whose default
 // export is
 //   { id, name, teams(kids) -> { mine, theirs, wall? }, target(level), create(opts) -> sim, bot(sim, at), focus }

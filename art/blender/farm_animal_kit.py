@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Shared helpers for the Starline farm animals (cow, pig, goat, dog) built in build_animals.py.
 
 Everything here is pure toolkit: leg lofts + bone chains for a standard four-legged rig, a body-girth probe for

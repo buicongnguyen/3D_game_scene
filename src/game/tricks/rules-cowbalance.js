@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Cow race, the bareback heats: the rider's balance. Pure rules (no three.js, no DOM), seeded, so a run replays in Node.
 //
 // In a bareback heat the cows keep their lanes and left / right is not steering any more: it is LEANING. While the cow

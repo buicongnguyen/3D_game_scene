@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Riding a cow. Feed a farm cow some hay from the haystack by her pasture and she is Mika's friend; then "Ride the cow"
 // appears beside her. Mika hops up onto a straw-padded blanket and sits (her Sit clip) while the stick steers the cow:
 // walk, hold to trot, hold on to gallop (a stamina bar drains, and fills again while walking, standing or grazing).

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The fishing water at the Kawabe dock, as a view: a patch of clear river with a school of fish in it.
 // Fishing owns one while Mika has a line out; the scene tour can make one too (see FishPond below).
 //

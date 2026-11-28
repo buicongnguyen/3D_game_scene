@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline animals: modelled, rigged, animated and exported from code (Blender 4.5).
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_animals.py [-- --only fox,bear]

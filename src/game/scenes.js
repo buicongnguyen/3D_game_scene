@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { N_ } from '../i18n/i18n.js';
 import { CAPTIONS, DIALOGUE, STAR_POEM } from './story.js';

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Kotone's evening show: from 17:00 until she goes in at 19:00 the visitor dances and sings on the Hoshi Station
 // forecourt, her back to the station, facing the lane from the valley (content/townsfolk.js: her plan's `do: 'Show'`).
 // Her dances and singing are not in her model: they are a clip pack (public/models/moves-kotone.glb, her own armature

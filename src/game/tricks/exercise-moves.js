@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Morning exercise moves at runtime: the clip packs made by art/blender/exercise_moves.py (public/models/
 // exercise-<person>.glb: that person's armature, no mesh, one animation per move) are loaded only when a round starts
 // and handed to the people taking part. A pack's bones and rest pose are those of its person to the bit, so the same

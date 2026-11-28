@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The village archery range, built in code from content/archery.js: a shooting board and chalk line, a quiver stand and a
 // bench, a rope-and-flag cordon down both sides, three straw targets on tripods (painted rings in kids' colours), a rail for
 // the sliding target, a hay-bale wall with a tall net, a banner and the wind sock. No model files. Everything solid and still

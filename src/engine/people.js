@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { paletteMaterial, MAX_PARTS } from './skin-merge.js';
 

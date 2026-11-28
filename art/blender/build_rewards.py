@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Rewards family for Starline: the story's treasures and the thank-you gifts that fill Sora's cottage.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_rewards.py [-- --only a,b]

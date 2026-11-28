@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Grandma's Countryside Tricks (docs/RURAL-TRICKS.md): real rural things to do, each a short game taught once by
 // Grandma (Rin in Classic). Pure data, Node-readable; the framework is src/game/tricks.js, each game src/game/tricks/<id>.js.
 //

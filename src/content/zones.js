@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Which mini games play in a zone when opened from the title (docs/PLAY-ZONES-PLAN.md, world/zone.js), and how big
 // each zone is. A game listed here builds only the circle around its place; the others still build the whole valley.
 // Grows phase by phase (docs/play-zones/): the pilot first.

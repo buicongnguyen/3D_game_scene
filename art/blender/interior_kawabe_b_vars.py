@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Decor variants of Kawabe house B: Var_1 young family with a baby, Var_2 retired teacher, Var_3 tailor's home.
 
 Pivot groups of small decor only (no colliders); everything sits on or against the base room's furniture."""

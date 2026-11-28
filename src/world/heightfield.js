@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Terrain height: an analytic function of the layout (pure, Node-testable) baked into a grid that
 // both the terrain mesh and the character controller sample, so feet land exactly on the drawn ground.
 

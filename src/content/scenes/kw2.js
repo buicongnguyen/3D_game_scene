@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Shop talk" at Fujita Grocery: prices, asking for something, the shop's goodbye (docs/TRAVEL-LANGUAGE-PLAN.md §5.1).
 export default [{
   id: 'kw2.shop', house: 'kw2',

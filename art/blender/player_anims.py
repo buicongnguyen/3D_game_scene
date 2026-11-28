@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Character-specific Starline clips (Mika's gameplay set, Rin's fishing/ferry, Genzo, Hana, Ota).
 
 Every function returns (name, frames, pose_fn, loop). Hand targets are in chest rest space via

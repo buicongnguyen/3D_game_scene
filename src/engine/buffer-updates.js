@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 /** One bounded component range, including changes not yet consumed by the renderer. */
 export function dirtyRange(attribute, start, count) {
   if (count <= 0) return;

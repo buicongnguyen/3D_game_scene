@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Small shared props for the Kawabe shop and the boathouse interiors (barrels, jars, buckets, rope, fish, nets, a
 hull...). Own helpers so interior_lib / interior_rooms stay untouched. Every colour is a tint over the family bases."""
 import math, random

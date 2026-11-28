@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Float and wait" (uite mate): a calm water-safety drill in the swimming lesson's supervised pool. Mika steps in with her
 // clothes on, with Rin and a grown-up at the edge, and practises what to do after a fall: do not thrash, lie back and
 // float, breathe slowly, call for help, hold on to something that floats, scull to the edge and take the reaching pole.

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The playground yards at runtime (content/yard.js, world/yard.js, ./index.js, ./views.js). Three jobs:
 //   - the kids' own play: Town Life hands over the kids whose day plan says `play: '<game>'` at a yard's spot (townlife.js
 //     updateGames -> ambient); they play by themselves, the same pure simulation Mika plays with nobody human in it. It

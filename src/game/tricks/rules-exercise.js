@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Morning exercise: the rules. Pure (no three.js, no DOM, no Math.random), tested in tests/exercise.test.mjs. The round
 // (./exercise.js) shows and plays what is planned here.
 //

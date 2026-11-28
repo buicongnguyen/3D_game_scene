@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Mini games menu: every game Mika can play, listed from the sources of truth so a game that lands later (a new
 // trick row, a new yard game, a new fishing place) shows up with no edit here.
 //   tricks      content/tricks.js  TRICKS               (countryside tricks, stargazing, bug catching, archery, cow races…)

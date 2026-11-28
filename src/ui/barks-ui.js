@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The little speech bubbles over people's heads (see game/barks.js for what they say and when). A handful of DOM
 // elements are reused; each frame the ones in use are moved to their speaker's head on screen.
 import * as THREE from 'three';

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Day planner for townsfolk: pure logic (no three.js, no DOM). The runtime (director) owns the bodies; each frame it
 // calls planner.update(dt, hour, ctx), executes the returned commands, and reports back with planner.arrived() when a
 // walk ends. Everything else (clip timers, waits, block changes, night, hour jumps) is timed here.

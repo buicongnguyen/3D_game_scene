@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Bow and arrow (docs/RURAL-TRICKS.md): the rules (pure, no three.js; tested with recorded inputs in tests/archery.test.mjs).
 //
 // Everything is in LANE units (content/archery.js): u metres down the range, v to the shooter's right, y up from the ground

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The shape of a play zone (docs/PLAY-ZONES-PLAN.md, world/zone.js): a circle { x, z, r } around a mini game's place.
 // No imports: the title and the boot code ask these without pulling the valley's layout into the first chunk.
 

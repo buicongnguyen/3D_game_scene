@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Bow and arrow (docs/RURAL-TRICKS.md): the village archery range west of Kawabe (world/archery.js builds it; content/archery.js
 // says where). Mika stands at the shooting line with a bamboo practice bow and shoots six arrows at each of three straw targets
 // (10, 15, 20 m), and after the first try four more at a sliding target. HOLD to draw (E, the mouse button, a trigger or the

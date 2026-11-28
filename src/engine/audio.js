@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Procedural audio (WebAudio): generative seasonal music, voice blips, SFX and ambience. No downloads.
 // The cues a player should also feel (landings, pickups, successes, stars, lamps) buzz the phone or gamepad too
 // (engine/haptics.js), muted or not.

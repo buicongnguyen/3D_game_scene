@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Town Life shops: what the valley sells, who keeps the counter, and the little things they say.
 // GOODS become ITEMS too (icon = the key). Never sells story items (cog, plate, peach, bun, key, timber, bolts, kite,
 // compass, honeycomb, starfin, honeyChestnuts). Prices are in mon. Contract: scratchpad townlife/DESIGN.md.

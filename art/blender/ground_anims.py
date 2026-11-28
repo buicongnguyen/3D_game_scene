@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Ground interactions shared by Mika and the village kids. Metres, 30 fps, root stays at zero."""
 import math
 from mathutils import Vector

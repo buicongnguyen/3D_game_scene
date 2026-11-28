@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A play zone's edge in the ground's own shaders (docs/PLAY-ZONES-PLAN.md, world/zone-backdrop.js): the terrain and the
 // river are dithered away between two radii round the zone, so the baked far view behind them shows through without
 // a hard line and without sorting transparent ground. Outside a zone the radii are huge and nothing is discarded.

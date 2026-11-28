@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The scene tour at runtime (Settings → Scene tour, and the title menu): a camera flight through Hoshi Valley in one
 // of five looks (the four seasons and a starry summer night), or all five in a row. The stops, the lines and the
 // camera math are in content/tour.js; this file owns the picker, the flight's little toolbar, and the borrowing and

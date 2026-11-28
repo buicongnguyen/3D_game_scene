@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Takamori house A interior (build_interiors.py): a roomy two-zone hill-town home behind the porch door.
 
 Wooden living/dining zone (table, four chairs, plate dresser, window seat in the bay), a tiled kitchen with a brick

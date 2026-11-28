@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Seasons and time of day: pure data + interpolation (no three.js). Colours are sRGB hex.
 // Art direction: vivid and warm by day; nights are deep blue with black-blue water, and the
 // colour lives in the lamps and lanterns rather than in a pink afterglow.

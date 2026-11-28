@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // From seed to harvest: a thinking game about the crops of the valley. Mika sits down at the edge of the rice paddies
 // with her teacher, who lays out picture cards: put a crop's life in order, find the missing card, spot the stranger,
 // read the year wheel (how long is it in the field?), say what a crop needs, which part we eat and what is made from

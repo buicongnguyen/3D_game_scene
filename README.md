@@ -4,6 +4,8 @@
 
 **Play:** https://buicongnguyen.github.io/3D_game_scene/ (desktop or phone, WebGL 2)
 
+**Author:** Bui Cong Nguyen · [solluxlabs.com](https://solluxlabs.com) — © 2026 Bui Cong Nguyen. All rights reserved (see [LICENSE](LICENSE)).
+
 In **A Year with Grandma**, the default story, Mika comes to stay with Grandma Sora after a flood
 has carried off the valley's lamp oil. She brings a suitcase of bulbs. Grandma has a list of jobs.
 Mika and Tamo start at Ōta's water mill, where three missing cogs stand between Kawabe and its first electric light.
@@ -166,3 +168,17 @@ Pushing `main` runs `.github/workflows/deploy-pages.yml`: install, test, build
 
 The previous version of this repository (*Wildhaven: River & Hearth*) is kept at
 the git tag `wildhaven-legacy`.
+
+## Author and copyright
+
+Starline is an original game by **Bui Cong Nguyen** · [solluxlabs.com](https://solluxlabs.com).
+
+© 2026 Bui Cong Nguyen. All rights reserved. The game's own code, art, story, text and audio are not
+licensed for reuse: reading the code and playing the game are welcome, copying or re-hosting it needs
+the author's written permission. Third-party parts (three.js, VRoid Project sample characters, Mixamo
+animations, the synthetic voice engines, ACE-Step, fonts) keep their own licences; see [LICENSE](LICENSE).
+
+The mark "Bui Cong Nguyen · solluxlabs.com" appears on the loading screen, the title, the pause menu,
+the credits and the journal; a small "solluxlabs.com" sits in the corner during play and in every photo
+and recorded video (`src/ui/brand.js`). A copy running on another host says "Original game by Bui Cong
+Nguyen · solluxlabs.com" in the corner and on the title.

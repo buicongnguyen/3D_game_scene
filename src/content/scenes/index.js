@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // House scenes: little voiced moments inside the valley's homes, heard in the language the player is learning
 // (docs/TRAVEL-LANGUAGE-PLAN.md). Pure data and pure helpers only (tests/scenes.test.mjs); the runner is
 // src/game/house-scenes.js.

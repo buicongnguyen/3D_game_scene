@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The farm animals of Kawabe and Takamori: cows, pigs, goats and dogs (models: art/blender/build_animals.py).
 // [id, kind, x, z, facing, roam radius]: they graze, doze and amble within `radius` metres of where they start. The dogs
 // have no radius: they take to Mika and trot along beside her while she is near home. Checked by tests/farm.test.mjs.

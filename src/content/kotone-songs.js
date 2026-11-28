@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Kotone's songs for her evening show (game/kotone-show.js performs one whole song at a time: game/perform/) and for
 // Sing & Play (game/singplay/singplay.js).
 import { N_ } from '../i18n/i18n.js';

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The stage cards of "From egg to wings", drawn as SVG (120 x 120, flat and warm like the How to play pictograms, but
 // bigger): no files to load, crisp at any size. Pure strings, so Node can make a contact sheet of them.
 // Each card is a little scene: the background says where the stage lives (water with its surface line, a plant, the

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Town Life held props for Starline villagers: ball, broom, bucket, basket, letters, hoe.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_townlife.py [-- --only a,b]

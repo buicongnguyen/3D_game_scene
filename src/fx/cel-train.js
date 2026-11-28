@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { GlowLines, Draw } from './cel-lines.js';
 import { GlowPoints, KIND, U } from './cel-sprites.js';

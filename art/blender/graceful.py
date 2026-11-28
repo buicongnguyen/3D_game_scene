@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The graceful body option: a dancer's proportions and posture on the people's own skeleton.
 
 The village cast is built as stiff tubes (a straight box torso, square shoulders, thick straight arms held out, short

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Shared helpers for the nature and props generators (build_nature.py, build_props.py).
 
 Builds on kit.py (never edits it). Adds organic modelling tools:

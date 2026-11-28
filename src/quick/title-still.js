@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The picture behind the title menu before the valley is loaded (quick start): the valley at golden hour as it was
 // filmed for the phones' title (public/video/title-*.jpg and .mp4, see docs/VIDEO.md). The still shows at once (75 kB);
 // the short looping clip plays over it where the browser can. No 3D, no valley code: a <video> over the canvas.

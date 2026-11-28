@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Architecture toolkit for the Starline buildings (used by build_architecture.py).
 
 Design notes

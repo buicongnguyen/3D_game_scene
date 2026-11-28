@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "A Year with Grandma": the default story (docs/STORY-GRANDMA.md). Plain data, no imports.
 // Merged over the classic tables in ../story.js by ./index.js (useStory): DIALOGUE, CHATTER, CAPTIONS override by id or
 // key; JOURNAL and SKY_LETTERS replace the classic lists; KEEPSAKES, GIFTS and STEPS override fields by id.

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Memory: a model's vertex data is kept in the browser twice, as the typed arrays three.js made for it and as the copy
 // on the graphics card. Once a geometry has been uploaded nothing reads the first copy again, if the geometry belongs
 // to a model that no code re-reads (houses, trees, rooms). `trimOnUpload` frees those arrays right after the upload,

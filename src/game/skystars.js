@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The star-group sky of "Look up at the sky" (game/skygaze.js): the real stars of content/constellations.js placed on
 // the dome for a season's evening, over a faint background field and the Milky Way. Built once when Mika looks up,
 // disposed when she looks down. One Points mesh (background, Milky Way and the group stars) and one ribbon mesh (the

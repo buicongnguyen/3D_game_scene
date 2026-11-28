@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Tug of war (kéo co, 綱引き): a long rope on a marked strip, a flag on its middle and a line each side. The kids shout
 // "Heave!" on a beat: press / tap when the ring closes on you to add a big pull, off the beat adds little and tires you
 // out (the strain meter). The flag crossing a line is a pull won; first to two pulls takes the match. One button only.

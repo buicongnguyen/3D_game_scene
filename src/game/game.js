@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { Renderer, isMobile } from '../engine/renderer.js';
 import { getTropicalTrees as tropicalTreesOn } from '../world/tree-theme.js';

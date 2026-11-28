@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Post-process icon renders (system Python + PIL): premultiplied downsample, optional glow, a thin
 dark outline for readability at 48 px, WebP output and review contact sheets.
 

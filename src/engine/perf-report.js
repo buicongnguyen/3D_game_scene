@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A performance report the player can copy from Settings and paste to the developer: what device this is, what tier and
 // governor step the game settled on, how long frames really take, how many draws and how much memory. Real phones are
 // the one thing the development machine cannot imitate (GPU fill, heat, memory limits), so this is how they get measured.

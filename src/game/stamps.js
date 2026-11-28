@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The daily stamp card at runtime (Explore only; docs/STAMPS.md). A lazy chunk: the Director fetches it when an Explore
 // save begins (never in a story save or a play zone; ?stamps=off never fetches it; a ?qa run only with ?stamps=on).
 // Three little jobs a day from the neighbours (carry something from door to door, find something lost, play a game), each

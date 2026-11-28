@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The yard games' shared rules: the court, a seeded random source, shuttle flights, kick timing and how the kids
 // play. Pure and seeded (no three.js, no DOM, no Math.random): tests/yard.test.mjs replays recorded input through it.
 //

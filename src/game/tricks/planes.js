@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Paper planes on the breeze: fold a paper aeroplane step by step, then throw it far down the long open hillside above
 // Takamori Landing. Rules: ./rules-planes.js (folding as real flat folds, the trim they give, the flight).
 //

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The daily stamp card in the journal's Neighbours tab, and the little stamp that slams onto a card near the top of the
 // screen when a job is done (docs/STAMPS.md). Phone portrait first: no text under 11 px, every tap 44 px or more.
 // Styles: ui/style.css (.stampcard, .stamp-row, .stamp-ring, .stamp-ink, .stamp-play, #stampPop).

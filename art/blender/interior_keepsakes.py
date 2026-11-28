@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The keepsakes found in the rooms (build_interiors.py). Floating pickups centred on the origin (the runtime bobs
 and spins them like every item), about 0.35 m across so they read from the follow camera, each <= 1.2k triangles.
 

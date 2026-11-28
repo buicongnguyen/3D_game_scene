@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // One discoverable way out of every playable mini-game, through its own cleanup.
 import { tx } from '../i18n/i18n.js';
 

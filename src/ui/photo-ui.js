@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import { tx, N_ } from '../i18n/i18n.js';
 import { FILTERS, FRAMES, LENSES, ROLLS } from '../game/photo.js';
 import { drawFrame } from './photo-frame.js';

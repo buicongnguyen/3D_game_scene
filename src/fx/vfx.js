@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Small, cheap visual effects for the valley (docs/VFX.md): footstep and landing puffs by ground and season, pollen and
 // ice glints in the daylight air, smoke from the bakery and mill chimneys.
 //

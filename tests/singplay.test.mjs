@@ -101,6 +101,6 @@ test('Record: mp4 where the browser writes it, else webm; captions on the video 
   assert.equal(pickType(m => m.startsWith('video/webm')).ext, 'webm');
   assert.equal(pickType(() => false), null);
   const srt = srtFromLyrics({ lines: [{ t: 1, e: 2.5, text: 'Hello' }, { t: 61.25, e: 63, text: 'Xin chào' }] }, .5);
-  assert.equal(srt, '1\r\n00:00:00,500 --> 00:00:02,000\r\nHello\r\n\r\n2\r\n00:01:00,750 --> 00:01:02,500\r\nXin chào\r\n');
+  assert.equal(srt, '1\r\n00:00:00,000 --> 00:00:01,000\r\nBui Cong Nguyen · solluxlabs.com\r\n\r\n2\r\n00:00:00,500 --> 00:00:02,000\r\nHello\r\n\r\n3\r\n00:01:00,750 --> 00:01:02,500\r\nXin chào\r\n', "the author's mark is the first cue");
   assert.equal(srtFromLyrics({ lines: [{ t: 1, e: 2, text: 'gone' }] }, 5), '', 'lines before the take are left out');
 });

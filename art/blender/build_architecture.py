@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Architecture family for Starline (Hoshi Valley).
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_architecture.py [-- --only a,b] [--no-save]

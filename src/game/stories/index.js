@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Two stories in one valley. The shared structure (steps, items, places) lives in ../story.js, written for the
 // original story ("Starline Classic"). The default story, "A Year with Grandma" (./grandma.js), overrides its words
 // and a few step rules. useStory() swaps the chosen story's text into the shared tables *in place*, so every module

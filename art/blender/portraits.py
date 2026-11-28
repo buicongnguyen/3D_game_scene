@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Dialogue portraits: head-and-shoulders 3/4 renders of the exported GLBs (Cycles, GPU/OptiX).
 
 Called from build_characters.py (or standalone:

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Kite workshop at runtime (rules: ./rules.js, shapes: ./parts.js, words: ./text.js).
 //
 // Where: the Star Kite's cradle by the workbench in Grandma's cottage. Once Mika owns the kite (and, in the Grandma

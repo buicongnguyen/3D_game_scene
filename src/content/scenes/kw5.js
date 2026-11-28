@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Grandma and grandchild" at Granny Tsuru's: folding paper cranes, the shrine bell (docs/TRAVEL-LANGUAGE-PLAN.md §5.1).
 // Yui (kw3) comes over every afternoon: Granny Tsuru is everyone's grandmother on this street.
 export default [{

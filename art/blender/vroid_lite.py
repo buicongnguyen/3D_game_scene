@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Light game models from the VRoid Project sample characters (ktvgo "desktop-mixamo65" GLBs).
 
     blender -b --factory-startup --python art/blender/vroid_lite.py -- \

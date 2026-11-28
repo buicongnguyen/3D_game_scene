@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A play zone's far view (docs/PLAY-ZONES-PLAN.md): the whole valley as seen from the zone's middle, baked by
 // scripts/bake-zone-backdrops.mjs into six pictures, drawn as the scene's background. Inside the zone everything is real;
 // the ground and the river fade into the picture over the last BAND metres (world/zone-fade.js), and the sky dome is

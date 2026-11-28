@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Levels of a mini game: Easy, Normal and Difficult. Every countryside trick and every playground game is played at one
 // of them; the very first go at a game is always a guided Easy round. Normal opens with one star on Easy, Difficult with
 // two stars on Normal. Pure data and rules (no three.js, no DOM): the picker is src/ui/level-picker.js, the runners are

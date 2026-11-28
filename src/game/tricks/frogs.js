@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Frog chorus (docs/RURAL-TRICKS.md, trick 3): dusk at the paddies. The frogs sing in swells; walk while the chorus is
 // loud and freeze when it goes quiet (moving in the silence sends the nearest frogs plopping into the water). Reach the
 // singer on the far bund and it hops onto Mika's hand. Then the frogs line up for a call-and-answer: they croak in an

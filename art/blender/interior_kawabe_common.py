@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Shared helpers for the two Kawabe riverside homes (interior_kawabe_a / interior_kawabe_b).
 
 Everything here only builds on interior_lib / interior_rooms. The decor variants are pivot groups `Var_1..Var_3`

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Hoshi Valley layout: pure data (no three.js), shared by the runtime and Node tests.
 // Coordinates: metres, x east, z south, y up. Water surface is y = 0.
 // rot: degrees about +Y; a model's front (+Z in three.js) faces (sin rot, cos rot).

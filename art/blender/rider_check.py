@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Review scenes for the cow riders: a posed cow with Mika or a villager kid on it, at the documented seat.
 
 blender -b --factory-startup --python art/blender/rider_check.py -- <out_dir> [who:cow_clip@f:rider_clip@f ...]

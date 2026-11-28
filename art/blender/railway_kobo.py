@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Kobo: Genzo's tomato-red 0-6-0 side-tank engine (railway family).
 
 Blender frame: faces -Y (smokebox at -Y), +X is the engine's left (driver's side), rail top z=0,

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Fishing at the Kawabe dock, in the world: the camera lifts to look down into clear water where the fish swim, a
 // click or tap on the water casts the float there, and the catch is played out on the line (rules: ./sim.js).
 //

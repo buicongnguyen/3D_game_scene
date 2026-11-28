@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Kite workshop's things, made of plain three.js shapes (no model files): motors, propellers, the battery, the
 // switch, wire, a spoon and a clothes peg, the kite frame on the bench, the level, and the motor kit the real Star
 // Kite carries once it is built. Every thing is ONE merged mesh with its colours (and, on the bench, its light) baked

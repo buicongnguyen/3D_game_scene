@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Procedural poses for the yard games: the kids and Mika have no volleyball, rope, tug-of-war or sack clips, so for a
 // third of a second after an event the right bones are bent by hand, after the animation mixer has run and before the
 // frame is drawn. It works on Low's merged skins too (the bones are there either way) and with the lantern carry rig.

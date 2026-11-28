@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The archery round's "How to shoot" help (docs/RURAL-TRICKS.md): a short card with three steps, each a little loop drawn in code
 // (a canvas, no pictures to load): 1 AIM (the circle slides onto the target), 2 HOLD (the ring fills, the string comes back),
 // 3 LET GO (the arrow flies, the wind sock bends: aim a little upwind). The words and the control glyphs follow the device in use

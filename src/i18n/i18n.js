@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Localisation. English source strings are the keys (gettext style): every string the player sees
 // passes through tx(), which returns the active language's translation or the English original.
 // Packs (vi.json, ko.json, ja.json) are flat { "English": "Translation" } maps built from

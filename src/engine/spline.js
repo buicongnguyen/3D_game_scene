@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Pure 2D/3D Catmull-Rom polylines with arc-length lookup and nearest-point queries.
 // Used for the river, the railway and paths. No three.js dependency so Node tests can use it.
 

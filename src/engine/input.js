@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Unified input: keyboard + mouse, gamepad and touch -> one action model polled once per frame.
 // move: {x, y} with x = right, y = forward, length <= 1. look: {x, y} deltas (pixels-ish) this frame.
 // Buttons: jump, act, dive (held), sprint (held), journal, pause, back; in Hard mode also aim (held) and fire.

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A small stylised fire for the countryside tricks (the sweet potato roast's straw fire, the fire drill's practice trays).
 // One mesh, one draw call: a handful of flame "tongues", each a quad that turns to the camera in the vertex shader and is
 // cut into a licking flame in the fragment shader (a scrolling noise bends it and breaks its tip into licks; the heat

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Grasshopper & mantis (meadow bug catching): the rules. Pure (no three.js, no DOM, no Math.random), seeded, and tested
 // with recorded inputs in tests/bugs.test.mjs. The round (./hoppers.js) only draws what happens here.
 //

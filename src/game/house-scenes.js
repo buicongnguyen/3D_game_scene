@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Listening at the table" (docs/TRAVEL-LANGUAGE-PLAN.md): when Mika walks into a home whose little scene is due (the
 // Nakanos' supper, Fujita's shop talk, Granny Tsuru's paper cranes), the household sits at its places and talks, voiced
 // by baked clips in the language the player is learning, with the meaning in their own language under each line.

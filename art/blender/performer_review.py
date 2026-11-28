@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Review renders of the performers (evidence only, written under .tools/review/...).
 
 blender -b --factory-startup --python art/blender/performer_review.py -- <file.glb>[,<other.glb>...] --out DIR

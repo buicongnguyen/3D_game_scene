@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 
 // Mika at the shooting line (the archery round, game/tricks/archery.js): her arms and hands are posed by hand, after the

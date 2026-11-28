@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // One draw for a row of the group (game/perform/troupe.js; measured in docs/GROUP-PERFORMANCE.md).
 //
 // A row's members dance in unison but each is its own SkinnedMesh: a view draw, a shadow draw, a skeleton update and a

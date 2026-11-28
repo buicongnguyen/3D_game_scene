@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Starline characters: build, rig, animate and export every rigged human + Tamo.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_characters.py [-- --only mika,tamo]

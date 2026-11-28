@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """The dance game's performers on the graceful body (graceful.py), with swappable outfits (outfits.py).
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_performers.py -- [--only nabi,haru] [--out DIR]

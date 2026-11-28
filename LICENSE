@@ -1,0 +1,44 @@
+Starline — Hoshi Valley
+Copyright (c) 2026 Bui Cong Nguyen (solluxlabs.com). All rights reserved.
+
+Author: Bui Cong Nguyen · https://solluxlabs.com
+
+The game's own code, art, story, text, music and audio in this repository are the
+property of Bui Cong Nguyen and are NOT licensed for reuse. This covers, among other
+things: the source code (src/, scripts/, tools/, tests/, art/ scripts), the 3D models,
+textures, portraits, icons, videos and pictures made for this game (including every
+model built with the Blender scripts in art/blender), the story, dialogue and other
+writing, the translations, and the voice clips and songs generated for this game.
+
+The source is published so that it can be read and the game played at
+https://buicongnguyen.github.io/3D_game_scene/. Reading the code and playing the game
+is welcome. Copying, re-hosting, redistributing, modifying or publishing this game or
+any part of it, in whole or in part, needs the author's written permission.
+Contact: https://solluxlabs.com
+
+-------------------------------------------------------------------------------------
+Third-party parts (under their own licences and terms, not under the notice above)
+-------------------------------------------------------------------------------------
+
+- three.js (https://threejs.org) — MIT License, Copyright (c) 2010-2026 three.js authors.
+  Bundled into the built game.
+- meshoptimizer / gltfpack decoder — MIT License, Copyright (c) 2016-2026 Arseny Kapoulkine.
+- glTF-Transform (build tool) — MIT License, Copyright (c) Don McCurdy.
+- Vite (build tool) — MIT License.
+- VRoid Project sample characters (Kotone and other visitors), by pixiv Inc. /
+  VRoid Project — used under the VRoid Hub licence written in each model's VRM meta
+  (anyone; commercial use, modification and redistribution allowed). Credited in the
+  game's Credits. The conversion, rigging changes and lite versions are the author's.
+- Mixamo animations (Adobe) — used under Adobe's Mixamo terms for use in projects.
+  The animation files themselves are not offered for separate redistribution.
+- Synthetic voices: spoken lines were generated with Kokoro-82M (Apache-2.0, English),
+  VieNeu-TTS (Apache-2.0, Vietnamese) and Supertonic (OpenRAIL-M, Korean). The voices
+  are machine-made, not recordings of people; this is disclosed in the game's Credits.
+  Use of the generated audio follows each engine's output terms.
+- Songs: Kotone's song "Golden Rails" — original lyrics by the author, music generated
+  with ACE-Step 1.5 (Apache-2.0); used under ACE-Step's output terms.
+- Fonts: Fredoka, Nunito and Zen Maru Gothic (SIL Open Font License 1.1), loaded from
+  Google Fonts at run time, not stored in this repository.
+- Blender (https://www.blender.org, GPL) is the tool used to make the models. Blender's
+  licence does not cover the files made with it: every Blender-made asset here is the
+  author's (see the notice above).

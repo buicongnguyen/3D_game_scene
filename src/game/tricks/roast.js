@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Sweet potato roast (docs/RURAL-TRICKS.md, trick 10): autumn, the open meadow south of Kawabe. Mika gathers armfuls of dry
 // straw; Grandma lights it (fires are for grown-ups: Mika never does, and stands back while it burns down). Then Mika
 // buries the sweet potatoes in the ash and watches each spot: grey ash is still raw, an amber glow with white steam is

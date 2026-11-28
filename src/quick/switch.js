@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Quick start: the title menu comes up before the valley exists, and the mini games that need no valley are played by
 // a small runtime of their own (./runtime.js). Everything else (the story, Explore, the other games, the scene tour)
 // loads the valley when it is first asked for. This file only answers "which way does this page boot?".

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Small helpers the trick rounds share (Node-safe: nothing here touches the DOM at import time).
 import * as THREE from 'three';
 

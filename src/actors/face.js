@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 
 // A small living face for a character whose model carries it (the VRoid visitor, art/blender/vroid_lite.py): three

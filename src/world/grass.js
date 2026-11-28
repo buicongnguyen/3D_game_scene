@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { AFTER_ORDER } from '../actors/silhouette.js';
 import { FX } from '../engine/effects.js';

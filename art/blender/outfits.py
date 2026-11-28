@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Wardrobe for the graceful performers (graceful.py): swappable clothes on the shared skeleton.
 
 Every garment is self-contained over its slot, so any top goes with any bottom and any shoes:

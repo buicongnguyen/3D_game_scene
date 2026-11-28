@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Dialogue portrait of Kotone, the visitor at Hoshi Station (a VRoid Project sample character made light by
 vroid_mixamo.py), made exactly like the cast's (portraits.py: Cycles, warm key, rim, her colour behind) from her full
 model public/models/kotone.glb, posed by her own Idle (Mixamo's Happy Idle).

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Where Mika carries Sora's lantern: WORN on her belt at the right hip (hands free) or HELD up in her right hand.
 // This file is the pure part (no three.js; tests/lantern.test.mjs imports it): the rule that picks the state, the
 // reasons other systems give, and the little pendulum that makes it sway. ./lantern-rig.js moves the model.

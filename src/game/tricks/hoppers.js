@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Grasshopper and mantis (docs/RURAL-TRICKS.md, the meadow bug catching): summer and autumn days, in the long grass
 // below the rice paddies. Mika holds a bug net and walks through the grass; a ring on the ground shows where the net will
 // land. Grasshoppers crouch for 0.3 s before each hop (the tell); a mantis watches her, so she creeps while it stares.

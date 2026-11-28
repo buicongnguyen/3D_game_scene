@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Paper planes on the breeze: the rules (pure, no three.js, no DOM; tested in tests/planes.test.mjs).
 //
 // 1. FOLDING. The sheet is a set of flat polygons; a fold reflects everything on one side of a crease line over to the

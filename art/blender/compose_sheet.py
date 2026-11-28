@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Compose review renders into a labelled sheet: python art/aaa/compose_sheet.py <dir> <out.png> [cols] [names...]"""
 import sys, os
 from PIL import Image, ImageDraw, ImageFont

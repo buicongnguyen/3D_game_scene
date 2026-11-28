@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { lookOf, SKIN, PROPORTIONS, clampProportion } from '../content/performers.js';
 import { tintLite, isLite } from './people.js';

@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Reusable body-part builders for Starline humans (heads, faces, hair, hands, limbs, footwear).
 
 All builders work in the rest pose (arms slightly out, character facing -Y) and return

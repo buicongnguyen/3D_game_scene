@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { lightingAt } from './seasons.js';
 /** The layer of what only the sun's shadow map draws (the view's camera keeps layer 0 only). */

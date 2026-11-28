@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Fly up" in the sky viewer (game/skygaze.js): the Star Kite lifts Mika straight up from where she stands, so the
 // valley's mountains drop below the horizon and the star groups show where they really are, then brings her back to
 // the same spot. Pure maths and a small state machine (no three.js, no DOM): tests/skyflight.test.mjs drives it.

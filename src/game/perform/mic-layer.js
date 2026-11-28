@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Singing with a hand mic over a dance, after Avatar Studio Club mode ("Club singing": src/club/club-singing.js and
 // club-singers.js micLayer). On sung lines the mic moves' neck, head, arms, hands and fingers are laid over the running
 // dance by a weight (up 0.45 s before a line, held through gaps under 2.4 s, down after); the legs, hips and spine keep

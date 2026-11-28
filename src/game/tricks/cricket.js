@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Cricket by its song (docs/RURAL-TRICKS.md trick 5): summer and autumn evenings on the hill above Takamori. The screen
 // goes to dusk and a cricket sings somewhere in the grass: its song pans to the side it comes from and swells as Mika
 // gets near, and a pulse on the edge of the screen shows the same for eyes. Close up it goes quiet when she moves

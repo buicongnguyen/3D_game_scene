@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Dance clips on the people's skeleton: the festival dance (the hat dance, múa nón), the K-pop stage set, the singer's
 set and the crowd's clapping, for the performers (graceful.py), Mika and the village kids alike.
 

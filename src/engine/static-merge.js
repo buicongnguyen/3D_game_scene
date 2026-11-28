@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // One draw for a building instead of eight (docs/play-zones and the draw-call pass of 2026-10-25): a static model's
 // plain, opaque, single-coloured parts are merged into one mesh per roughness whose vertex colours carry each part's
 // colour (times the baked shading already in COLOR_0), with one material per roughness shared by every merged model. Parts that must stay

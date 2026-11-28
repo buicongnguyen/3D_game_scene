@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Keep it up: everybody stands in a ring on the near half of the court and keeps the shuttlecock in the air, kicking
 // it from one to the next; the touches in a row are counted. Alone, Mika (or a kid) juggles it from foot to foot.
 // A round lasts `time` seconds, or until Mika has let it fall three times; a kid's drop only breaks the count. The

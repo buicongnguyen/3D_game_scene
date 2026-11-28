@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The daily stamp card's tables (Explore only; docs/STAMPS.md). Pure data: game/stamps-rules.js draws a card from them,
 // game/stamps.js runs it. Strings are English sources marked with N_() (tx() on show).
 //   DELIVERIES  take something from one neighbour's front door to another's. People are townsfolk ids (content/townsfolk.js),

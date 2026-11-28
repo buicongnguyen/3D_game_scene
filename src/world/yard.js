@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The Kawabe playground yard, built in code from content/yard.js: a packed-earth court with chalk lines and a low
 // net, a rail fence with painted post caps, two benches, a scoreboard post, a box of balls and shuttlecocks, a
 // hopscotch grid, a seesaw, a practice kick-board and a string of pennants. No model files: everything solid and

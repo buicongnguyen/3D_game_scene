@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 
 // Mika seen through what hides her: where a well, a house corner, a tree or a hill stands between her and the camera,

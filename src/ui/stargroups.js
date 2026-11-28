@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The journal's star groups: the figure and story of every group learned, a "?" for the others with the season to look in.
 import { profileFor, groupsFor, textOf, seasonsOf, shapeSvg, cleanStarGroups } from '../content/constellations.js';
 

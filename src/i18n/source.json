@@ -28261,6 +28261,61 @@
   ]
  },
  {
+  "s": "Author: {name}",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "Original game by {name}",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "Mika's Journal",
+  "ctx": [
+   "UI (src/ui/brand.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Author",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "All rights reserved.",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "Voices and songs",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "The voices in the language homes are synthetic (made by computer, not recorded people): Kokoro (English), VieNeu-TTS (Vietnamese), Supertonic (Korean).",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "Kotone's song “Golden Rails”: original lyrics, music made with ACE-Step 1.5.",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
+  "s": "Story, code and the Blender-made models: {who}.",
+  "ctx": [
+   "UI (src/ui/brand.js)"
+  ]
+ },
+ {
   "s": "Fell in? Do not thrash. Lie back and float.",
   "ctx": [
    "UI (src/ui/howto.js)"
@@ -30355,12 +30410,6 @@
  },
  {
   "s": "Credits",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Mika's Journal",
   "ctx": [
    "menu / screen text"
   ]

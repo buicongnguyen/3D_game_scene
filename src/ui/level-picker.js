@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The level picker: three big buttons (Easy, Normal, Difficult) shown before a mini game round, each with the stars
 // earned on it; a level still closed shows a lock and what opens it. Mouse and touch press a button; keyboard and
 // gamepad move with left / right and choose with the action (or Jump), Backspace leaves. The runner calls step(input)

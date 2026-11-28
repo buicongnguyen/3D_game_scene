@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Ô ăn quan, the Vietnamese village board game, played with the real rules (Wikipedia, "Ô ăn quan"):
 //
 //   The board: twelve squares in a ring. Two big "quan" (mandarin) squares at the ends, 0 and 6, and five small

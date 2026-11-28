@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { NPC } from './npc.js';
 import { spawnFarm, farmStep } from './farm-animals.js';

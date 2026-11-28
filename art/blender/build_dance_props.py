@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Hand props for the dance game: the conical hat for the hat dance, the singer's mic, the crowd's light stick.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_dance_props.py

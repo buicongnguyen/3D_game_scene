@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Road graph for townsfolk: pure math over layout data (no three.js objects are created), shared by runtime and tests.
 // Nodes sit at PATHS vertices and junctions; named spots and building doors hang off the roads on short, clear spurs.
 // Routes never cross the river (the villages are linked only by the ferry), so Kawabe <-> Takamori returns null.
