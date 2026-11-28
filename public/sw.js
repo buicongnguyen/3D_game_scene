@@ -8,9 +8,16 @@
  *   index.html          network first, so a new deploy reaches the player on the next load; the cached page is used
  *                       offline or when the network is slow
  *   video/*.mp4         only after they were asked for, up to a size cap, and served with range support
- *   ../starline-songs/  the song library (same origin, its own repo: content/song-catalog.js). Nothing is stored ahead:
- *                       a song's files are kept when it is first played (their names carry their version, so a kept copy
- *                       is exact; the oldest go past SONGS_MAX_TOTAL), index.json is network first (the kept one offline)
+ *   ../starline-songs/  the song library (same origin, its own repo: content/song-catalog.js). Nothing is stored ahead.
+ *                       Two caches (their names carry the song's version, so a stored copy is exact):
+ *                       SONGS_KEPT  the songs the player downloaded (the Song list's Download, written by the page:
+ *                                   game/singplay/song-library.js). This worker never removes anything from it; only the
+ *                                   list's Delete (or "Clear downloaded game data") does.
+ *                       SONGS       a song played without a download is kept here when first played; the oldest go past
+ *                                   SONGS_MAX_TOTAL (SONGS_KEPT is not counted and never touched)
+ *                       a song file is answered from SONGS_KEPT, then SONGS, then the network; a download's request
+ *                       (?keep=1) is answered the same way but stored by the page, not here. index.json is network first
+ *                       (the stored one offline).
  *
  * `scripts/stamp-sw.mjs` fills in STAMP after the build. Unstamped (the dev server) this worker does nothing.
  * Never cached: other origins, non-GET requests, pages opened with ?nosw or ?qa, and anything when the browser has
@@ -25,7 +32,8 @@ const VIDEO = `${PREFIX}video`;
 const MIN_FREE_MB = 100;
 const VIDEO_MAX_FILE = 6 * 1048576;
 const VIDEO_MAX_TOTAL = 40 * 1048576;
-const SONGS = `${PREFIX}songs`;
+const SONGS = `${PREFIX}songs`;              // played songs: temporary (the oldest go past SONGS_MAX_TOTAL)
+const SONGS_KEPT = `${PREFIX}songs-kept`;    // downloaded songs: never removed by this worker
 const SONGS_MAX_TOTAL = 120 * 1048576;
 const LIVE = STAMP.build !== 'dev';
 const scope = new URL(self.registration.scope);
@@ -181,7 +189,8 @@ async function video(e) {
   return fetch(e.request);
 }
 
-// ---- the song library: the catalog network first, a song's files kept once played (whole answers only)
+// ---- the song library: the catalog network first; a song's files from the downloaded copy, else the played copy, else
+// the network (then kept in SONGS once played: whole answers only)
 async function songCatalog(e) {
   const key = e.request.url.split('#')[0].split('?')[0];
   try {
@@ -195,11 +204,15 @@ async function songCatalog(e) {
   }
 }
 async function songFile(e) {
-  const key = e.request.url.split('#')[0].split('?')[0], cache = await caches.open(SONGS);
+  const url = new URL(e.request.url), key = url.origin + url.pathname, range = e.request.headers.get('range');
+  const kept = await (await caches.open(SONGS_KEPT)).match(key, { ignoreVary: true });
+  if (kept) return rangeFrom(kept, range);
+  const cache = await caches.open(SONGS);
   const hit = await cache.match(key, { ignoreVary: true });
-  if (hit) return rangeFrom(hit, e.request.headers.get('range'));
+  if (hit) return rangeFrom(hit, range);
   const res = await fetch(e.request);
-  if (!e.request.headers.get('range') && res.ok && res.status === 200) e.waitUntil(keepSong(cache, key, res.clone()));
+  // (a download, ?keep=1: the page stores it in SONGS_KEPT itself)
+  if (!range && !url.searchParams.has('keep') && res.ok && res.status === 200) e.waitUntil(keepSong(cache, key, res.clone()));
   return res;
 }
 async function keepSong(cache, key, res) {

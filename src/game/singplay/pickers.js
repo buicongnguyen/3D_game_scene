@@ -7,7 +7,8 @@
 //   Singer · Song · Group · Dance · Stage · Time · ⚙ (Lyrics, Show effects: the sheet opens straight to the two switches)
 //   keyboard  Tab reaches the chips; in a picker arrows / WASD move, Enter / Space pick, Esc closes, Tab stays inside
 //   gamepad   the D-pad focuses the bar (chips and actions), A presses, B leaves (or move the stick); in a picker the D-pad
-//             or the stick move, A picks, B closes
+//             or the stick move, A picks, B closes (the Song list: LB / RB switch its tab)
+// The Song picker is the whole song library with Download / Delete per song (song-list.js, song-library.js).
 //   touch     a tap outside closes the picker and does nothing else (another chip opens its own picker at once)
 // The choices' data and handlers stay with their owners (singplay.js songChoices / chooseSong / pickSinger / setGroup /
 // setDance / toggleLyrics / toggleShow, time-row.js, stages-row.js); this file only shows them. While a picker is open
@@ -18,6 +19,7 @@ import { STAGES } from '../../content/stages.js';
 import { DANCE_STYLES } from '../../content/kotone-club.js';
 import { TIME_CHOICES, timeIcon, currentTime, pickTime } from './time-row.js';
 import { stageAt, jump } from './stages-row.js';
+import { songListData, SongListView, defaultTab } from './song-list.js';
 
 /** The chips in the bar's order (phones: two rows, singer · song · group / dance · stage · time · settings). */
 export const PICKERS = Object.freeze(['singer', 'song', 'group', 'dance', 'stage', 'time', 'settings']);
@@ -89,11 +91,7 @@ export function pickerData(sp, id) {
     const cur = sp.singerNext || sp.singer;
     return one(sp.singers.map(s => ({ id: s, name: singerLabel(s), img: facePic(s), sub: s === NIGHT_STAR ? tx(N_('Best at night')) : '', selected: s === cur, disabled: !!sp.singerWait })), { w: 440, tile: 92 });
   }
-  if (id === 'song') {
-    const cur = sp.currentSong()?.id, busy = !!sp.songWait;
-    const sections = songSections(sp.songChoices()).map(s => ({ label: tx(s.label), items: s.items.map(c => ({ id: c.id, name: c.title, sub: songTags(c).join(' · '), svg: c.instrumental ? ICONS.notes : ICONS.note, selected: c.id === cur, disabled: busy })) }));
-    return { kind: 'rows', sections, note: sp.songs?.length ? '' : tx(N_('No songs yet')), w: 420 };
-  }
+  if (id === 'song') return songListData(sp, sp.songTab || defaultTab(getLang()), { songTags, songSections, icons: ICONS });   // (song-list.js)
   if (id === 'group') {
     const sizes = GROUP_SIZES.filter(n => n <= sp.max());
     return one(sizes.map(n => ({ id: String(n), name: tx(GROUP_LABELS[n]), svg: people(n), selected: n === sp.group })), { note: sp.groupWait ? tx(N_('Getting the group ready…')) : groupNote(sp), w: 380, tile: 104 });
@@ -240,6 +238,9 @@ const STYLE = `
 @media (max-width:370px){.sp-row:last-child .sp-chip:not(.icon) .sp-chip-vis{display:none}.sp-row:last-child .sp-chip:not(.icon){padding-left:12px}}
 `;
 
+/** An option shown as the chosen one (aria-selected; the Song list's rows: aria-pressed). */
+const isSel = o => o.getAttribute('aria-selected') === 'true' || o.getAttribute('aria-pressed') === 'true';
+
 /** Build the chips into the bar (before its hint line) and the one picker panel. -> Pickers */
 export function mountPickers(sp) { return new Pickers(sp); }
 
@@ -323,6 +324,7 @@ export class Pickers {
     if (this.sp.perf || !this.chips.has(id)) return false;
     if (this.open) this.close('switch');
     this.open = id; this.via = via;
+    if (id === 'song') this.sp.library?.scan();   // (what the worker kept meanwhile, the room left: the list follows)
     const chip = this.chips.get(id);
     chip.setAttribute('aria-expanded', 'true');
     this.panel.dataset.picker = id;
@@ -331,7 +333,7 @@ export class Pickers {
     this.place();
     addEventListener('keydown', this.onKey, true);
     this.hold();
-    const sel = this.options().find(o => o.getAttribute('aria-selected') === 'true' || o.getAttribute('role') === 'switch') || this.options()[0];
+    const sel = this.options().find(o => isSel(o) || o.getAttribute('role') === 'switch') || this.options()[0];
     sel?.focus({ preventScroll: true });
     sel?.scrollIntoView?.({ block: 'nearest' });
     if (via === 'pad') this.mark(sel);
@@ -357,7 +359,9 @@ export class Pickers {
     this.panel.querySelector('#spPickerTitle').textContent = tx(TITLES[id]);
     this.panel.querySelector('.sp-pk-x').setAttribute('aria-label', tx(N_('Close')));
     this.panel.style.setProperty('--pk-w', `${d.w}px`);
-    this.panel.querySelector('.sp-pk-note').textContent = d.note || '';
+    const noteEl = this.panel.querySelector('.sp-pk-note'); if (noteEl.textContent !== (d.note || '')) noteEl.textContent = d.note || '';
+    if (d.kind === 'songs') { (this.songView ||= new SongListView(this)).render(d, full); return; }   // (song-list.js)
+    this.songView?.hide();
     const key = `${id}|${d.sections.map(s => s.label + s.items.map(i => i.id + i.name + i.sub).join()).join('/')}`;
     if (!full && key === this.bodyKey) {
       for (const it of d.sections.flatMap(s => s.items)) {
@@ -438,12 +442,14 @@ export class Pickers {
 
   /** The options of the open picker, in order. */
   options() { return [...this.body.querySelectorAll('.sp-opt')]; }
+  /** Every control of the open picker in reading order (the Song list adds its tabs, header button and row buttons). */
+  controls() { return this.open === 'song' && this.songView ? [...this.songView.controls(), ...this.body.querySelectorAll('.sp-opt,.sp-dl')] : this.options(); }
 
   /** Move the focus among the panel's controls (the options, then the close button) by their places. */
   move(dir, via) {
-    const list = [...this.options(), this.panel.querySelector('.sp-pk-x')].filter(o => o.getClientRects().length);
+    const list = [...this.controls(), this.panel.querySelector('.sp-pk-x')].filter(o => o.getClientRects().length);
     const i = list.indexOf(document.activeElement);
-    if (i < 0) { const s = list.find(o => o.getAttribute('aria-selected') === 'true') || list[0]; s?.focus({ preventScroll: true }); s?.scrollIntoView?.({ block: 'nearest' }); if (via === 'pad') this.mark(s); return; }
+    if (i < 0) { const s = list.find(o => o.classList.contains('sp-opt') && isSel(o)) || list[0]; s?.focus({ preventScroll: true }); s?.scrollIntoView?.({ block: 'nearest' }); if (via === 'pad') this.mark(s); return; }
     const j = navStep(list.map(o => o.getBoundingClientRect()), i, dir);
     if (j >= 0) { list[j].focus({ preventScroll: true }); list[j].scrollIntoView?.({ block: 'nearest' }); if (via === 'pad') this.mark(list[j]); }
   }
@@ -475,11 +481,12 @@ export class Pickers {
     if (!gp) { this.prev = {}; return; }
     const bt = i => !!gp.buttons[i]?.pressed, ax = gp.axes || [];
     const stick = this.open ? { up: ax[1] < -0.6, down: ax[1] > 0.6, left: ax[0] < -0.6, right: ax[0] > 0.6 } : {};
-    const now = { a: bt(0), b: bt(1), up: bt(12) || !!stick.up, down: bt(13) || !!stick.down, left: bt(14) || !!stick.left, right: bt(15) || !!stick.right };
+    const now = { a: bt(0), b: bt(1), lb: bt(4), rb: bt(5), up: bt(12) || !!stick.up, down: bt(13) || !!stick.down, left: bt(14) || !!stick.left, right: bt(15) || !!stick.right };
     const prev = this.prev, edge = k => now[k] && !prev[k];
     this.prev = now;
     const dirs = ['up', 'down', 'left', 'right'].filter(edge);
     if (this.open) {
+      if (this.open === 'song' && (edge('lb') || edge('rb'))) { this.via = 'pad'; this.songView?.step(edge('lb') ? -1 : 1); return; }   // (the Song list's tabs)
       for (const d of dirs) this.move(d, 'pad');
       if (edge('a')) { const a = document.activeElement; if (a && this.panel.contains(a)) a.click(); else this.move('down', 'pad'); }
       else if (edge('b')) this.close('pad');
@@ -515,7 +522,7 @@ export class Pickers {
     this.hold();
   }
   /** The pad's ring on one control (programmatic focus shows no ring after a tap: this one always does). */
-  mark(el) { for (const b of document.querySelectorAll('.sp-chip.pad,.sp-opt.pad,.sp-act.pad')) b.classList.remove('pad'); el?.classList.add('pad'); }
+  mark(el) { for (const b of document.querySelectorAll('.sp-chip.pad,.sp-opt.pad,.sp-act.pad,.sp-tab.pad,.sp-dl.pad,.sp-all.pad')) b.classList.remove('pad'); el?.classList.add('pad'); }
 
   /** The game's keys, pad and stick stay off her while a picker is open or the pad is on the bar (game.js inputHold). */
   hold() { this.g.inputHold = !!(this.open || this.padBar); }

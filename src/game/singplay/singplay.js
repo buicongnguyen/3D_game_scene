@@ -30,6 +30,8 @@ import { DANCE_STYLES, DANCE_STYLE } from '../../content/kotone-club.js';
 import { makeTime } from './time-row.js';
 import { NightWatchers } from './night-watchers.js';
 import { mountPickers, DANCE_AUTO, DANCE_PICKS, singerLabel } from './pickers.js';
+import { SongLibrary, songBytes } from './song-library.js';
+import { inTab } from './song-list.js';
 
 export { SAVE_KEY };   // (sing-here.js: the pause menu's Sing here writes her place before this module loads)
 export { singerLabel };   // (a singer's label: pickers.js)
@@ -128,6 +130,7 @@ export class SingPlay {
     this.singers = singerList(undefined, game.params); this.singer = loadSinger(undefined, game.params); this.singerWait = false; this.singerNext = null; this.songId = load(SONG_KEY, () => true, ''); this.lyricsOn = load(LYRICS_KEY, () => true, '1') !== '0';
     this.rig = null; this.capLines = null; this.capKey = '';
     this.songWait = false; this.loaded = new Map();   // (a song's files, fetched when it is first performed: id -> promise)
+    this.library = null; this.songTab = null;   // (the songs on this device: song-library.js; the Song list's tab, song-list.js)
     this.show = null; this.showOn = true;   // (the show effects: fx/show-fx.js, the switch read in start())
     this.time = null; this.watchers = new NightWatchers(this);   // (the Time choice: time-row.js; night audiences: night-watchers.js)
   }
@@ -152,6 +155,11 @@ export class SingPlay {
     // the built-in ones stay); a song's own files load when it is performed
     this.builtIn = [...KOTONE_SONGS, songFromParam(g.params?.get?.('kotoneSong'))].filter(Boolean);
     this.songs = this.builtIn.map(song => ({ song }));
+    // the songs on this device (Download / Delete in the Song list: song-library.js); going on or offline changes what
+    // can be sung now
+    this.library = new SongLibrary({ onChange: () => { if (this.bar) this.label(); } });
+    this.onNet = () => this.library?.changed(true);
+    addEventListener('online', this.onNet); addEventListener('offline', this.onNet);
     const base = songsBase(g.params);
     this.catalog = base ? fetchCatalog(base).then(lib => { if (lib) this.setSongs(mergeSongs(this.builtIn, lib)); return lib; }) : Promise.resolve(null);
     this.limits = groupLimits(low, g.params);
@@ -287,26 +295,27 @@ export class SingPlay {
   }
 
   // ---------------------------------------------------------------- the choices (data + handlers; the chips only show them)
-  /** The songs to choose from now (pool order: dance songs, slow songs, instrumentals), as plain data for any picker. */
+  /** Every song to choose from (all languages, the Song list: song-list.js; order: dance songs, slow songs,
+   *  instrumentals), as plain data for any picker. */
   songChoices() {
-    return this.pool().map(({ song: s }) => ({ id: s.id, title: songTitle(s), lang: s.language || null, bpm: s.bpm, duration: s.duration || null,
-      dance: songDance(s), instrumental: !!s.instrumental, style: songStyle(s), remote: !!s.remote }));
+    return this.allSongs().map(({ song: s }) => ({ id: s.id, title: songTitle(s), lang: s.language || null, bpm: s.bpm, duration: s.duration || null,
+      dance: songDance(s), instrumental: !!s.instrumental, style: songStyle(s), remote: !!s.remote, fallback: !!s.fallback, bytes: s.bytes || 0, totalBytes: songBytes(s) }));
   }
-  /** The song Perform sings now (the picked one when it is in the pool, else the first): its choice data, or null. */
-  currentSong() { const id = pickSong(this.pool(), this.songId)?.song.id; return this.songChoices().find(c => c.id === id) || null; }
-  /** Pick a song (remembered per device). With Dance on Auto she dances its style (danceFor); a picked style stays.
-   *  false while a song plays or loads, or for a song not in the pool. */
+  /** The song Perform sings now (picked): its choice data, or null. */
+  currentSong() { const id = this.picked()?.song.id; return this.songChoices().find(c => c.id === id) || null; }
+  /** Pick a song, in any language (remembered per device). With Dance on Auto she dances its style (danceFor); a picked
+   *  style stays. false while a song plays or loads, or for a song that cannot play now (offline and not on the device). */
   chooseSong(id) {
-    const x = this.perf || this.songWait ? null : this.pool().find(e => e.song.id === id);
-    if (!x) return false;
+    const x = this.perf || this.songWait ? null : this.allSongs().find(e => e.song.id === id);
+    if (!x || !this.canPlay(x.song)) return false;
     this.songId = id; keep(SONG_KEY, id);
     this.label();
     return true;
   }
   /** The style Auto dances to the song picked now (danceFor). */
-  songDance() { return danceFor(DANCE_AUTO, pickSong(this.pool(), this.songId)?.song); }
+  songDance() { return danceFor(DANCE_AUTO, this.picked()?.song); }
   /** The style she dances to the song picked now. */
-  danceNow() { return danceFor(this.dancePick, pickSong(this.pool(), this.songId)?.song); }
+  danceNow() { return danceFor(this.dancePick, this.picked()?.song); }
   /** The Dance choice: 'auto' (the song's style) or a style (remembered per device; not during a song). */
   setDance(id) {
     if (this.perf || !DANCE_PICKS.includes(id)) return false;
@@ -323,14 +332,39 @@ export class SingPlay {
   /** New songs (the library's catalog came in): the chip and an open Song picker follow. */
   setSongs(list) {
     this.songs = list.map(song => ({ song }));
+    this.library?.scan(list);   // (which of them are on this device)
     this.onSongs?.(this.songChoices());   // (another host showing the song choice refreshes here)
     if (this.bar) this.label();
   }
 
-  /** A song's files (once per song this visit; the library's copy failing: the built-in one it replaced). */
+  // ---------------------------------------------------------------- the songs on this device (song-library.js)
+  /** True when a song can be sung now: online, on the device (downloaded, played lately, built in) or loaded this visit. */
+  canPlay(s) { return !s ? false : !this.library || this.library.usable(s) || !!this.loaded?.has(s.id); }
+  /** True while a song is sung or being got ready (its files are not deleted then). */
+  inUse(id) { return this.perf?.data?.song?.id === id || (!!this.songWait && this.picked()?.song.id === id); }
+  songById(id) { return this.allSongs().find(e => e.song.id === id)?.song || null; }
+  /** Download a song to this device (it stays until Delete). */
+  downloadSong(id) { const s = this.songById(id); return !!s && !!this.library?.download(s); }
+  /** Stop a song's download. */
+  cancelDownload(id) { return !!this.library?.cancel(id); }
+  /** Every song of a Song list tab not on the device yet (song-list.js inTab). -> how many were queued */
+  downloadAll(tab) { return this.library ? this.library.downloadAll(this.allSongs().map(e => e.song).filter(s => inTab({ lang: s.language, instrumental: s.instrumental }, tab))) : 0; }
+  stopDownloads() { this.library?.cancelAll(); }
+  /** Delete a downloaded song's files (the list keeps it). Not while it is sung or got ready. */
+  async deleteSong(id) {
+    const s = this.songById(id);
+    if (!s || this.inUse(id)) return false;
+    const ok = await (this.library?.remove(s) ?? false);
+    if (ok) this.loaded.delete(id);   // (this visit's copy goes too: offline it is no longer there)
+    return ok;
+  }
+
+  /** A song's files (once per song this visit; the library's copy failing: the built-in one it replaced). A downloaded
+   *  song's files come from the device (song-library.js fetcher: also where no service worker runs). */
   songData(e) {
     if (!this.loaded.has(e.id)) {
-      const p = loadSong(e).then(d => d || (e.fallback ? loadSong(e.fallback) : null));
+      const get = this.library?.fetcher();
+      const p = loadSong(e, { fetch: get }).then(d => d || (e.fallback ? loadSong(e.fallback) : null));
       this.loaded.set(e.id, p); p.then(d => { if (!d) this.loaded.delete(e.id); });
     }
     return this.loaded.get(e.id);
@@ -377,10 +411,10 @@ export class SingPlay {
     if (this.perf || this.songWait || !this.songs?.length) return;
     if (!this.allowed.ok) { this.ui.toast?.(tx(REASONS[this.allowed.reason] || REASONS.room)); return; }
     if (this.groupWait) { this.ui.toast?.(tx(N_('Getting the group ready…'))); return; }
-    // the picked song (the Song row) of those in the game's language (content/kotone-songs.js songsFor: English where she
-    // has none in it) or an instrumental
-    const pick = pickSong(this.pool(), this.songId);
+    // the picked song (the Song list: any language), else the first of the game's language that can play now (picked)
+    const pick = this.picked();
     if (!pick) return;
+    if (!this.canPlay(pick.song)) { this.ui.toast?.(tx(N_('Needs internet'))); return; }
     this.songWait = true; this.label();
     const song = await this.songData(pick.song).catch(() => null);
     this.songWait = false;
@@ -597,9 +631,17 @@ export class SingPlay {
     el.hidden = false;
   }
 
-  /** The songs she can sing now: those in the game's language (content/kotone-songs.js songsFor) and the instrumentals;
-   *  the dance songs first, then the slow ones, then the instrumentals (content/song-catalog.js songOrder). */
+  /** The songs of the game's language (content/kotone-songs.js songsFor) and the instrumentals: where the song comes from
+   *  when none is picked (or the picked one cannot play now); the dance songs first, then the slow ones, then the
+   *  instrumentals (content/song-catalog.js songOrder). */
   pool() { const list = this.songs || [], by = new Map(list.map(x => [x.song, x])); return songOrder(songsFor(list.map(x => x.song), getLang())).map(s => by.get(s)); }
+  /** Every song, all languages, in the same order (the Song list). */
+  allSongs() { const list = this.songs || [], by = new Map(list.map(x => [x.song, x])); return songOrder(list.map(x => x.song)).map(s => by.get(s)); }
+  /** The song Perform sings: the picked one (any language) when it can play now, else the pool's first that can. */
+  picked() {
+    const ok = e => this.canPlay(e.song), all = this.allSongs(), mine = all.find(e => e.song.id === this.songId);
+    return (mine && ok(mine) ? mine : null) || this.pool().find(ok) || all.find(ok) || pickSong(this.pool(), this.songId);
+  }
 
   /** The members around her (clones of the loaded files; the back row's source gets its pack, made ready for its body). */
   makeFormation() {
@@ -683,7 +725,7 @@ export class SingPlay {
   }
 
   /** Leave the mode: her place kept, back to the title. */
-  leave() { this.stopSong(); this.keepPlace(); this.pickers?.dispose(); this.g.inputHold = false; this.bar?.remove(); location.href = location.pathname; }
+  leave() { this.stopSong(); this.keepPlace(); this.pickers?.dispose(); this.g.inputHold = false; this.bar?.remove(); removeEventListener('online', this.onNet); removeEventListener('offline', this.onNet); location.href = location.pathname; }
 }
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 /** The actions' pictograms (20 px, the button's own colour; the Record dot red). */

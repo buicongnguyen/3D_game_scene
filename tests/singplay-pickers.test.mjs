@@ -61,10 +61,14 @@ test('pickers as data: one selected option each, every option of the choice show
   assert.equal(singer.find(i => i.id === NIGHT_STAR).sub, 'Best at night');
   assert.ok(singer.every(i => i.img === `faces/${i.id}.webp`));
   const songs = pickerData(sp, 'song');
-  assert.equal(songs.kind, 'rows');
-  assert.deepEqual(songs.sections.map(s => s.label), ['Dance songs', 'Slow songs', 'Instrumentals']);
+  assert.equal(songs.kind, 'songs', 'the Song list: tabs over the rows (song-list.js)');
+  assert.equal(songs.tab, 'en', "it opens on the game's language");
+  assert.deepEqual(songs.tabs.map(t => [t.id, t.name, t.n]), [['all', 'All', 3], ['en', 'English', 2], ['vi', 'Tiếng Việt', 0], ['ko', '한국어', 0], ['inst', 'Instrumental', 1]]);
+  assert.deepEqual(songs.sections.map(s => s.label), ['Dance songs', 'Slow songs']);
+  assert.deepEqual(pickerData(fakeSp({ songTab: 'all' }), 'song').sections.map(s => s.label), ['Dance songs', 'Slow songs', 'Instrumentals']);
   assert.deepEqual(one('song').filter(i => i.selected).map(i => i.id), ['b']);
-  assert.equal(one('song').find(i => i.id === 'c').sub, 'Instrumental · 128 bpm · K-pop · 1:01');
+  assert.equal(pickerData(fakeSp({ songTab: 'inst' }), 'song').sections[0].items.find(i => i.id === 'c').sub, 'Instrumental · 128 bpm · K-pop · 1:01');
+  assert.ok(one('song').every(i => i.act === null), 'no library here: no Download buttons');
   const dance = one('dance');
   assert.deepEqual(dance.map(i => i.id), DANCE_PICKS);
   assert.equal(dance.find(i => i.selected).id, 'auto');

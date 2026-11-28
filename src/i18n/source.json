@@ -18711,7 +18711,8 @@
  {
   "s": "Instrumental",
   "ctx": [
-   "UI (src/game/singplay/pickers.js)"
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/singplay/song-list.js)"
   ]
  },
  {
@@ -18754,13 +18755,6 @@
   "s": "Best at night",
   "ctx": [
    "UI (src/game/singplay/pickers.js)"
-  ]
- },
- {
-  "s": "No songs yet",
-  "ctx": [
-   "UI (src/game/singplay/pickers.js)",
-   "UI (src/game/singplay/singplay.js)"
   ]
  },
  {
@@ -18810,6 +18804,14 @@
   "s": "Lights, confetti and fireworks around the show",
   "ctx": [
    "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "No songs yet",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/singplay/singplay.js)",
+   "UI (src/game/singplay/song-list.js)"
   ]
  },
  {
@@ -18945,6 +18947,13 @@
   ]
  },
  {
+  "s": "Needs internet",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)",
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
   "s": "The song couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18972,6 +18981,146 @@
   "s": "Leave Sing & Play",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "All",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Nothing downloaded yet",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Downloaded: 1 song",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Downloaded: {n} songs",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "free about {size}",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Not enough room on this device for {song}. Delete a downloaded song to make room.",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "{song} couldn't be downloaded: check the connection.",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "This browser can't keep songs.",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Offline: the downloaded songs can be sung.",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Playing now",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Downloaded",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Downloading {n} %",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Waiting to download",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Delete",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)",
+   "UI (src/ui/photo-album.js)",
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Delete {song} from this device",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Waiting",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Stop downloading {song}",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Download",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Download {song} ({size})",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Stop downloads",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Download all {n} ({size})",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "No songs in this list yet",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
+  ]
+ },
+ {
+  "s": "Songs",
+  "ctx": [
+   "UI (src/game/singplay/song-list.js)"
   ]
  },
  {
@@ -29548,13 +29697,6 @@
   "s": "Delete this photo?",
   "ctx": [
    "UI (src/ui/photo-album.js)"
-  ]
- },
- {
-  "s": "Delete",
-  "ctx": [
-   "UI (src/ui/photo-album.js)",
-   "UI (src/ui/ui.js)"
   ]
  },
  {

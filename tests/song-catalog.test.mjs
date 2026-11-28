@@ -100,21 +100,32 @@ test('a song brings its dance on Auto: Cute for a slow song, the catalog hint, M
   assert.equal(danceFor('auto', null), 'mix'); assert.equal(danceFor('hiphop', by('softly-brave')), 'hiphop'); assert.equal(danceFor('nope', by('glow')), 'kpop');
 });
 
-test('the song choice as data: songChoices / currentSong / chooseSong (any picker can host it)', () => {
+test('the song choice as data: songChoices (every language) / currentSong / chooseSong (any picker can host it)', () => {
   const sp = Object.create(SingPlay.prototype);
-  Object.assign(sp, { perf: null, songWait: false, songId: '', dancePick: 'auto', label() {} });
+  Object.assign(sp, { perf: null, songWait: false, songId: '', dancePick: 'auto', loaded: new Map(), label() {} });
   let shown = null; sp.onSongs = c => { shown = c; };
   sp.setSongs(mergeSongs(KOTONE_SONGS, catalogSongs(INDEX, BASE)));
-  assert.deepEqual(shown.map(c => c.id), ['wake-up-new-day', 'golden-rails-en', 'softly-brave', 'glow', 'smooth']);
+  assert.deepEqual(shown.map(c => c.id), ['wake-up-new-day', 'mo-that-xa', 'byeolkkaji-jarana', 'golden-rails-vi', 'golden-rails-en', 'softly-brave', 'glow', 'smooth'],
+    'the whole list, every language (owner 2026-11-28): dance songs, slow songs, instrumentals');
   const c = shown[0];
-  assert.deepEqual(Object.keys(c).sort(), ['bpm', 'dance', 'duration', 'id', 'instrumental', 'lang', 'remote', 'style', 'title']);
+  assert.deepEqual(Object.keys(c).sort(), ['bpm', 'bytes', 'dance', 'duration', 'fallback', 'id', 'instrumental', 'lang', 'remote', 'style', 'title', 'totalBytes']);
   assert.equal(c.title, 'Wake Up, New Day'); assert.equal(c.lang, 'en'); assert.equal(c.dance, true);
+  assert.equal(c.bytes, 3472717); assert.equal(c.totalBytes, 3634000); assert.equal(shown.find(x => x.id === 'softly-brave').totalBytes, 3300000, 'no totalBytes: the audio');
+  assert.equal(shown.find(x => x.id === 'golden-rails-en').fallback, true); assert.equal(shown.find(x => x.id === 'golden-rails-vi').remote, false);
   assert.equal(songTitle({ remote: true, title: 'Breeze' }), 'Breeze', 'a library title is shown as written');
   assert.equal(shown.find(x => x.id === 'golden-rails-en').title, 'Golden Rails', 'a built-in song keeps its own (translated) title');
-  assert.equal(sp.currentSong().id, 'wake-up-new-day', 'nothing picked: the first');
+  assert.equal(sp.currentSong().id, 'wake-up-new-day', "nothing picked: the first of the game's language");
   assert.equal(sp.chooseSong('softly-brave'), true); assert.equal(sp.currentSong().id, 'softly-brave'); assert.equal(sp.danceNow(), 'cute', 'a slow song brings Cute on Auto');
   assert.equal(sp.songDance(), 'cute');
-  assert.equal(sp.chooseSong('mo-that-xa'), false, 'not sung in this language'); assert.equal(sp.currentSong().id, 'softly-brave');
+  assert.equal(sp.chooseSong('mo-that-xa'), true, 'a song in another language'); assert.equal(sp.currentSong().id, 'mo-that-xa'); assert.equal(sp.songDance(), 'mix');
+  assert.equal(sp.chooseSong('nope'), false); assert.equal(sp.currentSong().id, 'mo-that-xa');
+  // offline: only what is on the device (library.usable) can be picked; a picked song that cannot play gives way to the
+  // first of the game's language that can (a built-in one here), without forgetting the pick
+  sp.library = { usable: s => !s.remote || !!s.fallback };
+  assert.equal(sp.chooseSong('softly-brave'), false, 'offline, not downloaded'); assert.equal(sp.currentSong().id, 'golden-rails-en');
+  assert.equal(sp.songId, 'mo-that-xa'); assert.equal(sp.chooseSong('golden-rails-vi'), true, 'built in: always');
+  sp.loaded.set('softly-brave', Promise.resolve({})); assert.equal(sp.chooseSong('softly-brave'), true, 'loaded this visit: still here offline');
+  sp.library = null;
   sp.perf = {}; assert.equal(sp.chooseSong('glow'), false, 'never during a song'); sp.perf = null;
   assert.equal(sp.chooseSong('glow'), true); assert.equal(sp.danceNow(), 'kpop'); assert.equal(sp.currentSong().instrumental, true);
   // a picked style is kept when the song changes (Auto is the only choice that follows the song)
