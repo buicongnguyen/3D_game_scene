@@ -181,5 +181,14 @@ Owner: Starline's songs move to their own public repo, served by GitHub Pages, a
 - **Service worker**: nothing of the library is precached. index.json is network first (the kept copy offline); a song's
   files are kept in `starline-songs` once played (range answers from the kept copy; the oldest go past 120 MB); `?qa` and
   `?nosw` pages keep nothing. Settings' "Clear downloaded game data" clears it with the rest.
+- **Titles**: a library song's title is shown as its catalog writes it (its own language); a built-in one stays translated.
+- **Caption**: a line still being sung keeps the caption until its end (a short line right before the next one was cut
+  off by the next one's 0.6 s lead and its last word never lit: Tay Trong Tay).
+- **Checked on every song** (`.tools/songs/library-check.mjs`, 2026-11-28): beat clock from beats.json, the plan in all four
+  styles (a dance for every section, mic spans only on sung songs), solo and group camera plans to the end, every caption
+  line shown at its own time with its words lit in order, the singing mouth open on 89-98 % of the sung word time. Six
+  slow songs sing into their last two bars, so their plan has no closing bow (the plan's rule: no moment over a sung
+  line). troupe-check (group of 8): Mơ Thật Xa (mix) and 별까지 자라나 (K-pop): no joint-rule frames, planted-foot slide
+  p95 0.8-1.4 cm/s, p99 under 3.2 cm/s.
 - **Credits**: "Songs © 2026 Bui Cong Nguyen, made with ACE-Step 1.5; from the Avatar Studio library."
 - Tests: `tests/song-catalog.test.mjs` (fixture `tests/fixtures/songs-index.json`, no network; the service worker run in a vm).

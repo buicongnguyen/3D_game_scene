@@ -53,6 +53,9 @@ export const bodyFile = (id, low) => { const m = member(id) || member(KOTONE); r
 export const singerLabel = id => nameOf(id, getLang()) || tx(N_('Singer {n}'), { n: SINGERS.indexOf(id) + 1 });
 /** The show effects' switch as stored (per device), else the default for this device. */
 export const loadShow = (store = globalThis.localStorage, facts = {}) => { const v = load(SHOW_KEY, x => x === '1' || x === '0', '', store); return v ? v === '1' : showDefault(facts); };
+/** A song's title as shown: a built-in song's translated (N_ in content/kotone-songs.js), a library song's as its catalog
+ *  writes it (its own language; never matched against the game's strings). */
+export const songTitle = s => (s.remote && !s.fallback ? String(s.title || s.id) : tx(s.title || s.id));
 /** The song to sing from a pool (the songs in the game's language): the picked one when it is there, else the first. */
 export const pickSong = (pool, id) => pool.find(x => x.song.id === id) || pool[0] || null;
 /** The formation's layouts, tried in turn when the group checks its room (a hillside: the closer one keeps the whole
@@ -308,7 +311,7 @@ body.singplay #inventory{display:none}
   // ---------------------------------------------------------------- the song choice (data + handlers; the row only shows them)
   /** The songs to choose from now (pool order: dance songs, slow songs, instrumentals), as plain data for any picker. */
   songChoices() {
-    return this.pool().map(({ song: s }) => ({ id: s.id, title: tx(s.title || s.id), lang: s.language || null, bpm: s.bpm, duration: s.duration || null,
+    return this.pool().map(({ song: s }) => ({ id: s.id, title: songTitle(s), lang: s.language || null, bpm: s.bpm, duration: s.duration || null,
       dance: songDance(s), instrumental: !!s.instrumental, style: songStyle(s), remote: !!s.remote }));
   }
   /** The song Perform sings now (the picked one when it is in the pool, else the first): its choice data, or null. */
@@ -375,7 +378,7 @@ body.singplay #inventory{display:none}
     if (this.btnLyrics) { this.btnLyrics.textContent = tx(this.lyricsOn ? N_('Lyrics: On') : N_('Lyrics: Off')); this.btnLyrics.setAttribute('aria-pressed', String(this.lyricsOn)); }
     if (this.btnShow) { this.btnShow.textContent = tx(this.showOn ? N_('Show effects: On') : N_('Show effects: Off')); this.btnShow.setAttribute('aria-pressed', String(this.showOn)); this.btnShow.setAttribute('aria-disabled', String(!!p)); }
     this.stages?.refresh();
-    this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `${p.data.song.instrumental ? '♫' : '♪'} ${tx(p.data.song.title)}` : '')
+    this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `${p.data.song.instrumental ? '♫' : '♪'} ${songTitle(p.data.song)}` : '')
       : this.songWait ? tx(N_('Getting the song ready…')) : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
   }
 

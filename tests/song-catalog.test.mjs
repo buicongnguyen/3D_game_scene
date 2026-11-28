@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { SONGS_BASE, CATALOG, songsBase, catalogSongs, fetchCatalog, mergeSongs, songOrder, songStyle, songDance } from '../src/content/song-catalog.js';
 import { KOTONE_SONGS, songsFor } from '../src/content/kotone-songs.js';
-import { loadSong, SingPlay } from '../src/game/singplay/singplay.js';
+import { loadSong, SingPlay, songTitle } from '../src/game/singplay/singplay.js';
 import { createBeatClock } from '../src/game/perform/beat-clock.js';
 import { planPerformance, micShown } from '../src/game/perform/plan.js';
 import { SongAudio } from '../src/game/perform/performer.js';
@@ -106,6 +106,8 @@ test('the song choice as data: songChoices / currentSong / chooseSong (any picke
   const c = shown[0];
   assert.deepEqual(Object.keys(c).sort(), ['bpm', 'dance', 'duration', 'id', 'instrumental', 'lang', 'remote', 'style', 'title']);
   assert.equal(c.title, 'Wake Up, New Day'); assert.equal(c.lang, 'en'); assert.equal(c.dance, true);
+  assert.equal(songTitle({ remote: true, title: 'Breeze' }), 'Breeze', 'a library title is shown as written');
+  assert.equal(shown.find(x => x.id === 'golden-rails-en').title, 'Golden Rails', 'a built-in song keeps its own (translated) title');
   assert.equal(sp.currentSong().id, 'wake-up-new-day', 'nothing picked: the first');
   assert.equal(sp.chooseSong('softly-brave'), true); assert.equal(sp.currentSong().id, 'softly-brave'); assert.equal(sp.dance, 'cute', 'a slow song brings Cute');
   assert.equal(sp.chooseSong('mo-that-xa'), false, 'not sung in this language'); assert.equal(sp.currentSong().id, 'softly-brave');
