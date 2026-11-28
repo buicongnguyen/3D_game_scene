@@ -107,6 +107,9 @@ export class Performer {
     this.actions = new Map(); this.layer = null; this.mic = null;
     this.camera = null;
     this.onPose = null;   // (dt, song time) after her dance pose, before the mic layer (game/perform/troupe.js)
+    // a lead who is not Kotone (Sing & Play's Singer row): her body copies Kotone's evaluated rig (troupe.js leadSource),
+    // set before start(); her own mixer plays nothing then, the mic layer, the face and the ground fit stay hers
+    this.source = null;
   }
 
   get state() { const bar = this.clock.barAt(this.t), b = this.plan.blocks[blockAt(this.plan, bar)], m = momentAt(this.plan, bar), s = this.clock.sectionAt(this.t);
@@ -117,7 +120,7 @@ export class Performer {
     const n = this.n, anim = n.anim; if (!anim || this.on) return;
     this.t = t; this.on = true;
     anim.cancelOneShot(); anim.mixer.stopAllAction(); anim.current = null; anim.currentName = ''; anim.locked = true;
-    for (const name of new Set([...this.plan.blocks.map(b => b.clip), ...this.plan.moments.map(m => m.clip)])) {
+    if (!this.source) for (const name of new Set([...this.plan.blocks.map(b => b.clip), ...this.plan.moments.map(m => m.clip)])) {
       const clip = this.clips.get(name); if (!clip) continue;
       const a = anim.mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat, Infinity); a.timeScale = 0; a.setEffectiveWeight(0); a.play();
       this.actions.set(name, a);
@@ -127,7 +130,7 @@ export class Performer {
     const mics = new Map(MIC_CLIPS.filter(id => want.includes(id) && this.clips.has(id)).map(id => [id, this.clips.get(id)]));
     this.layer = mics.size === want.length ? micLayer(n.model, mics, this.restRoot) : null;
     this.mic = this.layer ? makeMic(n.model) : null;
-    this.feet = createFootHold(n.model);
+    this.feet = this.source ? null : createFootHold(n.model);   // (a copy's feet follow the rig's held feet: troupe.js makeCopier)
     this.fit = this.ground ? createGroundFit(n.model, this.ground) : null;
     const track = this.data.mouth?.open ? this.data.mouth : this.data.lyrics;
     if (track) n.face?.sing(track, () => this.t);
@@ -143,6 +146,7 @@ export class Performer {
     for (const a of this.actions.values()) { a.stop(); anim.mixer.uncacheAction(a.getClip(), anim.root); }
     this.actions.clear(); this.layer = null;
     this.mic?.dispose(); this.mic = null;
+    this.source?.dispose(); this.source = null;
     n.face?.sing(null); n.face?.setMood(); n.gaze = null;
     if (n.poser === this) n.poser = null;
     anim.locked = false;
@@ -173,7 +177,7 @@ export class Performer {
   before() {
     if (!this.on) return;
     this.fit?.restore(); this.layer?.restore(); this.feet?.restore();
-    this.fading = poseDance(this.plan, this.clock, this.actions, this.t);
+    if (!this.source) this.fading = poseDance(this.plan, this.clock, this.actions, this.t);
   }
 
   /** The moment now and its weight (in and out over a beat; the song's last moment holds to the end). */
@@ -184,6 +188,7 @@ export class Performer {
     if (!this.on) return;
     const P = this.plan, t = Math.min(this.t, P.end), c = this.clock, lines = P.lines;
     const want = lines ? leadTarget(lines, t) : 0;
+    this.source?.pose(dt, t);             // a lead who is not Kotone: Kotone's rig danced, her body copies it
     this.feet?.update(dt, this.fading);   // planted feet held through a cross-fade (foot-hold.js)
     this.onPose?.(dt, t);                  // her dance pose, before the mic: a group's front row copies it (troupe.js)
     this.fit?.apply();                     // then her own feet on the slope under her (the copies fit their own: troupe.js)

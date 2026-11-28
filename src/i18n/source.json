@@ -16473,7 +16473,8 @@
  {
   "s": "Singer",
   "ctx": [
-   "UI (src/content/performers.js)"
+   "UI (src/content/performers.js)",
+   "UI (src/game/singplay/singplay.js)"
   ]
  },
  {
@@ -18521,7 +18522,19 @@
   ]
  },
  {
+  "s": "Singer {n}",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Kotone couldn't be loaded",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "The group couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
@@ -18563,6 +18576,12 @@
   ]
  },
  {
+  "s": "Song",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Stop",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18575,6 +18594,18 @@
   ]
  },
  {
+  "s": "Lyrics: On",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Lyrics: Off",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "No songs yet",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18582,12 +18613,6 @@
  },
  {
   "s": "Getting the group ready…",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "The group couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]

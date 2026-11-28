@@ -9,12 +9,14 @@ import { troupeOf, leadOffset } from '../src/content/troupe.js';
 import { sharedGrid, buildingSolids } from '../src/world/roads.js';
 import { WATER_Y } from '../src/world/layout.js';
 
-const STAGE = { x: -91, z: 99.5, facing: 0 };   // (singplay.js STAGE: the first visit; facing: the camera's view)
+const STAGE = { x: -92, z: 101, facing: Math.PI };   // (singplay.js STAGE: the first visit; facing: the camera's view)
 import { planShots, createCameraMan, damp, shotAt, shotPose, fromCamera, overGround, CUT, GROUND_GAP } from '../src/game/perform/camera-man.js';
 import { faceCamera, LAYOUTS } from '../src/game/singplay/singplay.js';
 import { createBeatClock } from '../src/game/perform/beat-clock.js';
 import { planPerformance } from '../src/game/perform/plan.js';
 import { pickType, srtFromLyrics } from '../src/game/perform/recorder.js';
+import { captionLines, captionAt, CAPTION } from '../src/game/perform/caption.js';
+import { pickSong, loadSinger, bodyFile, SINGER_KEY } from '../src/game/singplay/singplay.js';
 
 const env = (heightAt, o = {}) => ({ heightAt, waterY: 0, solid: () => false, room: null, swimming: false, ...o });
 const P = { x: 0, y: 5, z: 0 };
@@ -154,4 +156,25 @@ test('Record: mp4 where the browser writes it, else webm; captions on the video 
   const srt = srtFromLyrics({ lines: [{ t: 1, e: 2.5, text: 'Hello' }, { t: 61.25, e: 63, text: 'Xin chào' }] }, .5);
   assert.equal(srt, '1\r\n00:00:00,500 --> 00:00:02,000\r\nHello\r\n\r\n2\r\n00:01:00,750 --> 00:01:02,500\r\nXin chào\r\n');
   assert.equal(srtFromLyrics({ lines: [{ t: 1, e: 2, text: 'gone' }] }, 5), '', 'lines before the take are left out');
+});
+
+test('the lyric caption: the line being sung, its word lit in time, nothing between lines', () => {
+  const L = captionLines({ lines: [{ t: 2, e: 4, text: 'Off the train', words: [{ w: 'Off', t: 2, e: 2.5 }, { w: 'the', t: 2.6, e: 3 }, { w: 'train', t: 3.2, e: 4 }] }, { t: 10, e: 12, text: 'No words here' }, { t: 'x', e: 1, text: 'bad' }] });
+  assert.equal(L.length, 2); assert.deepEqual(L[1].words.map(w => w.w), ['No words here'], 'a line without word times is one word');
+  assert.equal(captionAt(L, 0), null);
+  assert.deepEqual(captionAt(L, 2 - CAPTION.lead + .01), { i: 0, k: -1 }, 'shows a little before its first word');
+  assert.deepEqual(captionAt(L, 2.7), { i: 0, k: 1 });
+  assert.deepEqual(captionAt(L, 3.1), { i: 0, k: 1 }, 'a gap between words keeps the word before');
+  assert.deepEqual(captionAt(L, 4.2), { i: 0, k: 3 }, 'all sung');
+  assert.equal(captionAt(L, 4 + CAPTION.hold + .01), null, 'gone between lines');
+  assert.deepEqual(captionAt(L, 11), { i: 1, k: 0 });
+  assert.equal(captionAt([], 3), null);
+});
+
+test('Singer and Song picks: remembered per device, a picked song only where it is sung, every body built', () => {
+  const store = v => ({ getItem: k => (k === SINGER_KEY ? v : null) });
+  assert.equal(loadSinger(store('nu-3')), 'nu-3'); assert.equal(loadSinger(store('nobody')), 'kotone'); assert.equal(loadSinger(store(null)), 'kotone');
+  assert.equal(bodyFile('nam-2', true), 'vroid-nam2.lite'); assert.equal(bodyFile('kotone', false), 'kotone'); assert.equal(bodyFile('??', false), 'kotone');
+  const pool = [{ song: { id: 'a' } }, { song: { id: 'b' } }];
+  assert.equal(pickSong(pool, 'b').song.id, 'b'); assert.equal(pickSong(pool, 'gone').song.id, 'a', 'a song no longer listed: the first'); assert.equal(pickSong([], 'a'), null);
 });

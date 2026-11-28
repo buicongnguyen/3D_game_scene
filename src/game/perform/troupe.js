@@ -46,7 +46,7 @@ export function legLength(root) {
  * A copier from the source rig to one follower (same bone names). restSrc / restDst: restPose() of each. ->
  * { copy(), bones, corrected } (corrected: how many bones need the per-bone rest turn).
  */
-export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, legSrc = legLength(srcRest), legDst = legLength(dst), feet = 'auto' } = {}) {
+export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, dstRest = dst, legSrc = legLength(srcRest), legDst = legLength(dstRest), feet = 'auto' } = {}) {
   const pairs = [], srcBones = new Map();
   src.traverse(o => { if (o.isBone && !srcBones.has(o.name)) srcBones.set(o.name, o); });
   let corrected = 0, hips = null;
@@ -69,9 +69,9 @@ export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, legSrc =
   }).filter(l => l.s.foot && l.d.foot);
   const seg = (r, a, b) => restLen(r, a, b);
   const split = r => seg(r, 'thigh_L', 'shin_L') / Math.max(1e-4, seg(r, 'shin_L', 'foot_L'));
-  const mismatch = Math.abs(split(dst) / split(src) - 1);
+  const mismatch = Math.abs(split(dstRest) / split(srcRest) - 1);
   const ik = feet === 'auto' ? mismatch > IK_SPLIT : !!feet;
-  if (ik) for (const l of legs) { l.restS = restAnkle(srcRest, l.s.foot.name); l.restD = restAnkle(dst, l.d.foot.name); }
+  if (ik) for (const l of legs) { l.restS = restAnkle(srcRest, l.s.foot.name); l.restD = restAnkle(dstRest, l.d.foot.name); }
   const k = hips?.k ?? 1, hipsD = dst.getObjectByName('hips');
   return {
     bones: pairs.length, corrected, hips, ik, mismatch,
@@ -111,8 +111,8 @@ export function chorusAt(lines, t) {
   return i >= 0 && lines.chorus[i] === 1 && t <= lines.e[i] + SINGING.post;
 }
 
-/** The back row's source: one mixer, the second routine, the foot hold. */
-class RowDancer {
+/** A row's source: one mixer, a routine (the lead's plan or the back row's), the foot hold. */
+export class RowDancer {
   constructor(model, clips, plan, clock) {
     this.model = model; this.plan = plan; this.clock = clock;
     this.mixer = new THREE.AnimationMixer(model); this.actions = new Map();
@@ -132,6 +132,34 @@ class RowDancer {
   dispose() { this.feet.restore(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model); }
 }
 
+/**
+ * The lead's dance when she is not Kotone (Sing & Play's Singer row): Kotone's rig (`rig`: a member of the formation, or
+ * a hidden clone under the player in a solo) plays her moves pack on the lead's plan (one mixer, her foot hold), and the
+ * lead's body copies it with the followers' maths (hips by the leg ratio, the leg solve, then her own ground fit:
+ * performer.js). rigRest: Kotone's pack armature at rest; body / bodyRest: the lead's model and its file's scene at rest.
+ * -> the Performer's `source` ({ pose(dt, t), fit, model, ms(), dispose() }); `fit` is the rig's own ground fit when it
+ * stands in the formation (troupe.js sets it: put back before her mixer writes).
+ */
+export function leadSource(perf, rig, clips, rigRest, body, bodyRest) {
+  const dancer = new RowDancer(rig, clips, perf.plan, perf.clock);
+  const cp = makeCopier(rig, body, restPose(rigRest), restPose(bodyRest), { srcRest: rigRest, dstRest: bodyRest });
+  let ms = 0, n = 0;
+  return {
+    model: rig, fit: null, copier: cp,
+    pose(dt, t) {
+      const t0 = performance.now();
+      this.fit?.restore();
+      dancer.pose(dt, t);
+      rig.updateWorldMatrix(true, true);   // (the leg solves read its ankles from its world matrices: the lead's and the row's)
+      cp.copy();
+      ms += performance.now() - t0; n++;
+    },
+    /** Mean ms a frame for the rig's dance and the copy (and resets). */
+    ms() { const v = n ? ms / n : 0; ms = 0; n = 0; return v; },
+    dispose() { dancer.dispose(); },
+  };
+}
+
 export class Troupe {
   /**
    * lead: Kotone's Performer (started); leadModel: her model; leadRest: her rig at rest (her pack's armature);
@@ -148,8 +176,12 @@ export class Troupe {
     // a hillside (opts.ground (x, z) -> y): every member's planted feet fitted to the ground under its own spot (ground-fit.js)
     if (opts.ground) for (const e of members) e.fit = createGroundFit(e.model, opts.ground);
     const leadR = restPose(leadRest), leadLeg = legLength(leadRest);
-    const front = members.filter(e => e.m.row === 0), back = members.filter(e => e.m.row === 1);
-    this.front = front.map(e => makeCopier(leadModel, e.model, leadR, rest.get(e), { srcRest: leadRest, legSrc: leadLeg, feet: opts.feet ?? 'auto' }));
+    // the front row copies Kotone's evaluated rig: the lead's body when she sings, else the performer's source (her rig
+    // in the formation, posed by leadSource before this; it is not copied, its feet are fitted with the row's)
+    const srcModel = lead.source?.model || leadModel, srcE = members.find(e => e.model === srcModel);
+    if (srcE && lead.source) lead.source.fit = srcE.fit || null;
+    const front = members.filter(e => e.m.row === 0 && e !== srcE), back = members.filter(e => e.m.row === 1);
+    this.front = front.map(e => makeCopier(srcModel, e.model, leadR, rest.get(e), { srcRest: leadRest, legSrc: leadLeg, feet: opts.feet ?? 'auto' }));
     const src = back.find(e => e.m.source);
     this.back = null;
     if (src?.clips?.size) {

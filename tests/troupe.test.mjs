@@ -12,7 +12,7 @@ import { canGroup } from '../src/game/singplay/flat.js';
 import { groupLimits, groupMax, GROUP_LIMITS } from '../src/game/singplay/singplay.js';
 import { strongPhone, BudgetWatch, dropNow, STRONG } from '../src/game/singplay/strong-phone.js';
 import { mergeRowGeometry, atlasCell, canMerge, RowMesh } from '../src/game/perform/row-merge.js';
-import { TROUPE, troupeOf, troupeFiles, leadOffset, GROUP_SIZES } from '../src/content/troupe.js';
+import { TROUPE, troupeOf, troupeFiles, leadOffset, GROUP_SIZES, castOf, SINGERS, NAMES, KOTONE, BACK_PACK, member } from '../src/content/troupe.js';
 import { CLUB_LOOPS } from '../src/content/kotone-club.js';
 import { VROID_MEMBERS } from './asset-contracts.mjs';
 
@@ -41,6 +41,34 @@ test('the cast: Kotone leads the front row, two rows of four, one source a row, 
   assert.equal(eight.filter(f => f.startsWith('moves-')).length, 1);
   assert.equal(eight.length, 8);
   assert.ok(Math.hypot(leadOffset().x, leadOffset().z) < 1, 'Kotone near the middle');
+});
+
+test('any member sings lead: she takes the lead place, Kotone hers (and stays the front row source), no new files', () => {
+  assert.deepEqual([...SINGERS].sort(), TROUPE.map(m => m.id).sort(), 'the Singer row lists all eight');
+  assert.equal(SINGERS[0], KOTONE); assert.deepEqual(NAMES, {}, 'no names yet: labelled by face');
+  assert.deepEqual(castOf(KOTONE), TROUPE.map(m => ({ ...m })), 'Kotone leading: the cast as it was');
+  for (const id of SINGERS) {
+    const c = castOf(id), lead = c.find(m => m.lead), kot = c.find(m => m.id === KOTONE);
+    assert.equal(new Set(c.map(m => m.id)).size, 8, `${id}: everyone once`);
+    assert.equal(lead.id, id); assert.deepEqual([lead.x, lead.z, lead.row], [-.75, .35, 0], `${id}: at the lead's place`);
+    assert.deepEqual(c.map(m => [m.x, m.z, m.row]), TROUPE.map(m => [m.x, m.z, m.row]), `${id}: the same places (the room checks hold)`);
+    assert.equal(kot.row, 0, `${id}: Kotone in the front row (in every group of 4)`);
+    assert.ok(kot.source && kot.pack === 'moves-kotone', `${id}: Kotone is the front row's source`);
+    for (const row of [0, 1]) assert.equal(c.filter(m => m.row === row && m.source).length, 1, `${id}: one source in row ${row}`);
+    assert.equal(c.find(m => m.row === 1 && m.source).pack, BACK_PACK, `${id}: the back row plays nam-1's pack`);
+    for (const m of c) assert.equal(m.file, member(m.id).file, `${id}: ${m.id}'s own body`);
+    for (const n of [1, 4, 8]) {
+      const f = troupeFiles(n, true, id);
+      assert.ok(f.every(x => /^vroid-\w+\.lite$/.test(x) || x === BACK_PACK), `${id} ${n}: only the built models and nam-1's pack`);
+      assert.ok(!f.includes(`${member(id).file}.lite`) && !f.some(x => x.startsWith('kotone')), `${id} ${n}: the lead and Kotone are the mode's own`);
+      assert.equal(f.length, n === 1 ? 0 : (n === 4 ? 3 : 8) - (id === KOTONE ? 0 : 1), `${id} ${n}: the files`);
+    }
+  }
+  // a singer from the back row: Kotone takes the outer front place, its girl goes to the singer's place
+  const c = castOf('nam-1');
+  assert.equal(c.find(m => m.x === 2.25 && m.row === 0).id, KOTONE);
+  assert.equal(c.find(m => m.x === -1.5 && m.row === 1).id, 'nu-4');
+  for (const m of TROUPE) assert.ok(m.gait.walk > .9 && m.gait.walk < 1.15 && m.gait.run > 4, `${m.id}: her own gait`);
 });
 
 test('the back row: the same bar lines as the lead, another dance in each block, no hand contact, the closing moments', () => {
