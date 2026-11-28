@@ -34,7 +34,10 @@ const WHO = arg('who') || 'kotone', DIR = path.resolve(ROOT, arg('dir') || 'publ
 if (arg('vendor')) {
   const studio = arg('vendor'), files = ['src/moves-v2/core.js', 'src/moves-v2/kit.js', 'src/moves-v2/club-kit.js', 'src/authored-clap.js', 'src/motion-provenance.js',
     'src/anatomy-joint-check.js', 'src/joint-rules.js', 'src/joint-rule-profiles.js', 'src/foot-contact.js', 'src/foot-support.js', 'src/gymnast-proportions.js', 'src/util/math.js'];
-  for (const f of files) { await fs.mkdir(path.dirname(path.join(SOLVER, f)), { recursive: true }); await fs.copyFile(path.join(studio, f), path.join(SOLVER, f)); }
+  for (const f of files) {   // (src/util/math.js is gone from newer Studio copies; nothing here imports it any more)
+    await fs.mkdir(path.dirname(path.join(SOLVER, f)), { recursive: true });
+    try { await fs.copyFile(path.join(studio, f), path.join(SOLVER, f)); } catch (e) { if (e.code !== 'ENOENT' || !f.includes('util/')) throw e; }
+  }
   const moves = path.join(studio, 'src/moves-v2/moves');
   await fs.mkdir(path.join(SOLVER, 'src/moves-v2/moves'), { recursive: true });
   for (const f of await fs.readdir(moves)) if (f.endsWith('.js')) await fs.copyFile(path.join(moves, f), path.join(SOLVER, 'src/moves-v2/moves', f));
@@ -46,13 +49,21 @@ if (arg('vendor')) {
   src = src.replace("bone('spine2|upperchest', 'Spine2')", "bone('spine2|upperchest|chest', 'Spine2')")
     .replace('bone(`calf_${s}|lowerleg_${s}`', 'bone(`calf_${s}|lowerleg_${s}|shin_${s}`')
     .replace('m.morphTargetDictionary.face_pucker ?? m.morphTargetDictionary.face_lip_close, d = key', 'm.morphTargetDictionary.face_pucker ?? m.morphTargetDictionary.face_lip_close ?? m.morphTargetDictionary.mouthO, d = key');
+  // the stance: the solver plants each foot at its rest spot plus the move's offset; a VRoid body stands at rest with its
+  // ankles together (60 % of the hip joints' width; the Studio heroes 82-160 %), so every move danced with the feet too
+  // close under a moving upper body (owner 2026-11-28). STANCE_WIDEN.m (metres a foot, set by the bake) moves both spots out.
+  const feetAt = '.addScaledVector(M.side, c.feet?.[s]?.[0] || 0)';
+  if (!src.includes(feetAt)) throw new Error('core.js: the feet line moved; patch the stance by hand');
+  src = src.replace(feetAt, ".addScaledVector(M.side, (c.feet?.[s]?.[0] || 0) + (s === 'L' ? -1 : 1) * STANCE_WIDEN.m)")
+    + '\n/** Starline patch (scripts/kotone-club-bake.mjs): metres each planted foot stands out from its rest spot. */\nexport const STANCE_WIDEN = { m: 0 };\n';
   await fs.writeFile(core, src);
   console.log('solver copied to', SOLVER);
   process.exit(0);
 }
 
 const imp = p => import(pathToFileURL(path.join(SOLVER, p)).href);
-const { rig, bakeMove, micHandle, handTriangles } = await imp('src/moves-v2/core.js');
+const { rig, bakeMove, micHandle, handTriangles, STANCE_WIDEN } = await imp('src/moves-v2/core.js');
+if (!STANCE_WIDEN) throw new Error('the solver copy predates the stance patch: run --vendor again');
 const { createAnatomyCheck } = await imp('src/anatomy-joint-check.js');
 
 async function loadGlb(file) {   // textures stripped (Node has no image decoder; the solver reads only bones and skin)
@@ -68,6 +79,12 @@ async function loadGlb(file) {   // textures stripped (Node has no image decoder
 
 const g = await loadGlb(path.join(DIR, `${WHO}.glb`)), root = g.scene; root.updateMatrixWorld(true);
 const rg = rig(root); if (!rg) throw new Error(`${WHO}: the solver does not recognise the skeleton`);
+// the stance (see the vendor patch): the rest ankles moved out to STANCE_K x the hip joints' width (measured on the Avatar
+// Studio heroes: rest 82-160 %, the moves add ~40 %; .tools/stance.mjs), never in; --stance 0 bakes the old narrow stance
+const STANCE_K = Number(arg('stance') ?? 1.15);
+{ const x = b => b.getWorldPosition(new Vector3()), hipW = x(rg.legs.L.up).distanceTo(x(rg.legs.R.up)), ankle = x(rg.legs.L.foot).distanceTo(x(rg.legs.R.foot));
+  STANCE_WIDEN.m = STANCE_K > 0 ? Math.max(0, (STANCE_K * hipW - ankle) / 2) : 0;
+  console.log(`stance: hip joints ${(hipW * 100).toFixed(1)} cm, rest ankles ${(ankle * 100).toFixed(1)} cm (${Math.round(ankle / hipW * 100)} %) -> ${((ankle + 2 * STANCE_WIDEN.m) * 100).toFixed(1)} cm (${Math.round((ankle + 2 * STANCE_WIDEN.m) / hipW * 100)} %)`); }
 const rest = new Map([...rg.all.values()].map(b => [b.name, { q: b.quaternion.clone(), p: b.position.clone() }]));
 const cacheMap = new Map(), cache = { has: k => cacheMap.has(k), get: k => cacheMap.get(k), set: (k, v) => cacheMap.set(k, v) };
 const chk = createAnatomyCheck(root); if (!chk.supported) throw new Error(`joint check: ${chk.reason}`);

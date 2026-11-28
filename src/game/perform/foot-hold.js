@@ -1,11 +1,13 @@
 // Feet that stay put while one dance cross-fades into the next (after Avatar Studio Club mode's Dance & sing "Feet over a
 // dance change"). A cross-fade of two leg poses blends rotations, not foot positions, so a planted foot slides under her
 // even when both dances stand it on the same spot. While a fade runs, a foot that was on the floor when it began is held
-// there by a two-bone leg solve (thigh + shin turned, the foot keeps its own world turn); after the fade it lets go over a
-// short ease. A held foot whose new dance wants it more than `reach` away is let go at once (the new dance steps it).
+// there by a two-bone leg solve (thigh + shin turned, the foot keeps its own world turn); after the fade it lets go: quickly
+// while the new dance has that foot in the air (it steps: nothing slides), else creeping to the new dance's spot no faster
+// than `creep` m/s (2026-11-28: the release over 0.8 s slid a planted foot 5-8 cm/s when two dances stand it 2-6 cm apart).
+// A held foot whose new dance wants it more than `reach` away is let go (the new dance steps it).
 import * as THREE from 'three';
 
-export const HOLD = Object.freeze({ floor: .025, reach: .04, release: .8 });
+export const HOLD = Object.freeze({ floor: .025, reach: .04, release: .8, lifted: .25, creep: .008 });
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3(), _t = new THREE.Vector3(), _q = new THREE.Quaternion(), _p = new THREE.Quaternion(), _f = new THREE.Quaternion();
 
 /** Turn `bone` in world space by q (premultiplied), keeping its children's world turn. */
@@ -53,7 +55,12 @@ export function createFootHold(model) {
           if (l.at && ankle.clone().applyMatrix4(inv).distanceTo(l.at) > HOLD.reach) l.k = Math.min(l.k, .999);   // its new spot is a step away: let it go
         }
         if (!l.at) continue;
-        if (!fading || l.k < 1) l.k = Math.max(0, l.k - dt / HOLD.release);
+        if (!fading || l.k < 1) {
+          // in the air in the new dance: let go fast; still planted: creep (the goal moves d * rate m/s)
+          const d = Math.hypot(...['x', 'z'].map(k => l.at.clone().applyMatrix4(model.matrixWorld)[k] - ankle[k]));
+          const rate = toeY > restToe + HOLD.floor ? 1 / HOLD.lifted : Math.min(1 / HOLD.release, HOLD.creep / Math.max(d, 1e-4));
+          l.k = Math.max(0, l.k - dt * rate);
+        }
         if (l.k <= 0) { l.at = null; continue; }
         const goal = l.at.clone().applyMatrix4(model.matrixWorld).lerp(ankle, 1 - l.k);
         goal.y = Math.max(goal.y, ankle.y);   // held on its spot, never pushed into the floor (the new dance may lift it)

@@ -25,7 +25,8 @@ const VROID_CLIPS = ['Idle', 'Walk', 'Run', 'Talk', 'Wave', 'Cheer', 'Bow', 'Loo
 export const KOTONE_SHOW_CLIPS = ['DanceHipHop', 'DanceArms', 'DanceHouse', 'DanceRunningMan', 'DanceSamba', 'DanceYmca', 'DanceWave', 'Sing', 'SingUpper',
   // her song performances (game/perform/): Avatar Studio Club-mode moves baked on her (scripts/kotone-club-bake.mjs)
   ...PERFORM_CLIPS];
-const VROID_MORPHS = ['blink', 'mouthA', 'mouthO'];
+// (+ the happy face, 2026-11-28: smile, smileEyes, browUp, wink from each sample's own VRoid Fun / Joy / Surprised shapes)
+const VROID_MORPHS = ['blink', 'mouthA', 'mouthO', 'smile', 'smileEyes', 'browUp', 'wink'];
 /** The other seven VRoid samples, built like Kotone (vroid_mixamo.py --member) for the group performance (content/troupe.js). */
 export const VROID_MEMBERS = ['vroid-nu1', 'vroid-nu3', 'vroid-nu4', 'vroid-nu5', 'vroid-nam1', 'vroid-nam2', 'vroid-nam3'];
 export const SHAPE_KEYS = ['shape_chest', 'shape_waist', 'shape_hips', 'shape_thigh', 'shape_arm', 'shape_build'];
@@ -386,7 +387,10 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // the models of that group (one set: light on Low) and one pack (the back row's source, nam-1).
 // -6.82 MB: the six packs nobody fetched (moves-vroid-nu1/nu3/nu4/nu5/nam2/nam3) dropped from the deploy (owner 2026-11-28;
 // vroid_mixamo.py --member <id> rebuilds one when a member gets a solo show).
-export const TOTAL_RAW_BYTES = 84_700_000;      // (the dance game, the exercise packs and the visitor)
+// +0.76 MB: the happy faces and the Dance choice (2026-11-28): four face morphs on all 16 VRoid models (smile, smileEyes,
+// browUp, wink: +21-30 KB each) and six new Club clips + the wider stance in moves-kotone / moves-vroid-nam1 (1.14 -> 1.30 MB
+// each); 85,194,072 B measured.
+export const TOTAL_RAW_BYTES = 85_250_000;      // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -413,7 +417,8 @@ export const TOTAL_RAW_BYTES = 84_700_000;      // (the dance game, the exercise
 // +13.06 MB: the seven VRoid members, packed (a model 0.53-0.59 MB, a light one 0.43-0.47 MB, a pack 0.86 MB; 42.25 MB
 // measured). A group of 8 on Low fetches 3.1 MB of models + 0.86 MB (nam-1's pack); on PC 3.96 + 0.86 MB.
 // -5.2 MB: the six unused member packs dropped (owner 2026-11-28).
-export const TOTAL_PACKED_BYTES = 37_300_000;      // (all together)
+// +0.2 MB: the happy faces and the Dance choice packed (a model +10-15 KB, the two packs 0.86 -> 0.97 MB; 37.49 MB measured).
+export const TOTAL_PACKED_BYTES = 37_550_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

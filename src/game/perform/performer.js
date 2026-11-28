@@ -4,7 +4,8 @@
 //   moments   one-shots over the dance, in and out over a beat (the closing bow holds)
 //   mic       the mic moves' upper body over the dance on sung lines (mic-layer.js), the hand mic in her fist over each
 //             vocal span (mic-prop.js)
-//   face      face.sing(): the song's mouth curves (or lyric timings); her eyes on the camera on sung lines when it is near
+//   face      face.sing(): the song's mouth curves (or lyric timings); her eyes on the camera on sung lines when it is near;
+//             her mood (face.setMood: a resting smile, brighter on choruses, brightest in a cheer and the bow: moodAt)
 // The pose is a pure function of the song time, so a skipped or slow frame never puts her off the beat.
 // Hooks: the NPC calls poser.before() before its mixer update and poser.after() after it (actors/npc.js).
 import * as THREE from 'three';
@@ -13,11 +14,15 @@ import { planPerformance, blockAt, momentAt, micShown, PLAN } from './plan.js';
 import { micLayer, leadTarget, micClipFor, micFold, SINGING } from './mic-layer.js';
 import { makeMic } from './mic-prop.js';
 import { createFootHold } from './foot-hold.js';
-import { MIC_MOVES } from '../../content/kotone-club.js';
+import { MIC_CLIPS } from '../../content/kotone-club.js';
 
 const follow = (cur, target, dt, up, down) => cur + (target - cur) * (1 - Math.exp(-dt / Math.max(1e-3, target > cur ? up : down)));
 const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 const CLOCK_TAU = .35;   // s: the song clock follows the audio clock this softly (Club "Club show": smooth at any frame rate)
+/** How happy the performer looks (actors/face.js setMood) by the part of the song and the moment playing. */
+export const MOOD = Object.freeze({ intro: .6, verse: .55, prechorus: .65, chorus: .85, drop: .85, bridge: .6, break: .65, outro: .65,
+  other: .6, moment: .9, cheer: 1, bow: .95 });
+export const moodAt = (section, moment = null) => (moment ? MOOD[moment] ?? MOOD.moment : MOOD[section] ?? MOOD.other);
 
 /** The song's audio: an <audio> element through the game's music bus when WebAudio is up (else its own volume). */
 export class SongAudio {
@@ -88,10 +93,11 @@ export class Performer {
    * npc: the performer (actors/npc.js: model, anim, face); clips: Map name -> AnimationClip (her pack, made ready for her
    * model); song: { song (the list entry), beats, lyrics, mouth, stage, url }; restRoot: the pack's armature (rest pose).
    */
-  constructor(npc, clips, song, { audio = null, restRoot = null } = {}) {
+  constructor(npc, clips, song, { audio = null, restRoot = null, style } = {}) {
     this.n = npc; this.clips = clips; this.data = song;
     this.clock = createBeatClock(song.song, { beats: song.beats, sections: song.stage?.sections || null, lyrics: song.lyrics });
-    this.plan = planPerformance(song.song, this.clock, song.lyrics);
+    this.plan = planPerformance(song.song, this.clock, song.lyrics, { style });   // (style: the Dance choice)
+    this.mood = moodAt('intro');
     this.sound = new SongAudio(song.url, audio);
     this.restRoot = restRoot;
     this.t = 0; this.on = false; this.done = false;
@@ -114,8 +120,10 @@ export class Performer {
       const a = anim.mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat, Infinity); a.timeScale = 0; a.setEffectiveWeight(0); a.play();
       this.actions.set(name, a);
     }
-    const mics = new Map([MIC_MOVES.verse, ...MIC_MOVES.chorus].filter(id => this.clips.has(id)).map(id => [id, this.clips.get(id)]));
-    this.layer = mics.size === 3 ? micLayer(n.model, mics, this.restRoot) : null;
+    // the mic moves of her style (an older pack without one of them: no mic layer, she dances and the mic stays down)
+    const set = this.plan.mic, want = [...new Set([...set.verse, ...set.chorus])];
+    const mics = new Map(MIC_CLIPS.filter(id => want.includes(id) && this.clips.has(id)).map(id => [id, this.clips.get(id)]));
+    this.layer = mics.size === want.length ? micLayer(n.model, mics, this.restRoot) : null;
     this.mic = this.layer ? makeMic(n.model) : null;
     this.feet = createFootHold(n.model);
     const track = this.data.mouth?.open ? this.data.mouth : this.data.lyrics;
@@ -132,7 +140,7 @@ export class Performer {
     for (const a of this.actions.values()) { a.stop(); anim.mixer.uncacheAction(a.getClip(), anim.root); }
     this.actions.clear(); this.layer = null;
     this.mic?.dispose(); this.mic = null;
-    n.face?.sing(null); n.gaze = null;
+    n.face?.sing(null); n.face?.setMood(); n.gaze = null;
     if (n.poser === this) n.poser = null;
     anim.locked = false;
     anim.play(n.idleClip || 'Idle', { fade: .3 });
@@ -179,11 +187,15 @@ export class Performer {
     this.g = micShown(P, t);
     this.mic?.show(this.g);
     if (this.layer && (this.w > 1e-3 || this.g > 1e-3)) {
-      const b = c.beatAt(t), id = lines ? micClipFor(lines, t) : MIC_MOVES.verse;
+      const b = c.beatAt(t), id = lines ? micClipFor(lines, t, P.mic) : P.mic.verse[0];
       if (id !== this.cur) { if (this.cur) { this.prevMic = this.cur; this.xfAt = b; } this.cur = id; }
       const x = b * micFold(c.bpmAt(t)) * .5, L1 = this.layer.loop(this.cur), L0 = this.layer.loop(this.prevMic || this.cur), xf = smooth((b - this.xfAt) / SINGING.micFade);
       this.layer.apply(this.cur, ((x % L1) + L1) % L1, xf < 1 ? this.prevMic : '', ((x % L0) + L0) % L0, xf, this.w, this.g);
     }
+    // mood: brighter on choruses, brightest in a cheer and the bow (a group's members take hers: troupe.js)
+    const mo = momentAt(P, c.barAt(t));
+    this.mood = moodAt(c.sectionAt(t).kind, mo?.id);
+    this.n.face?.setMood(this.mood);
     // eyes: the camera on her sung lines when it is near (the face looks at Mika's head otherwise)
     const cam = this.camera, n = this.n;
     if (cam && this.w > .5) { const p = cam.getWorldPosition?.(_cam) || cam.position; n.gaze = p.distanceToSquared(n.pos) < 144 ? p : null; }

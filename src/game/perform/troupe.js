@@ -263,7 +263,7 @@ export class Troupe {
       const on = Face.on && (e.m.row === 0 || this.opts.backFaces) && !!cam && e.model.getWorldPosition(_p).distanceToSquared(cam) < near;
       f.setEnabled(on);
       if (!on) continue;
-      f.lookAt(cam); f.update(dt);
+      f.lookAt(cam); f.setMood(this.lead.mood); f.update(dt);   // (the lead's mood: the whole group smiles with her)
     }
     for (const r of this.rows) r.sync();
     this.ms += performance.now() - t0;

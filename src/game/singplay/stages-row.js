@@ -25,7 +25,7 @@ export function mountStages(sp) {
     const st = document.createElement('style'); st.id = 'singplayStagesStyle';
     st.textContent = `.singplay-stages{flex-basis:100%;display:flex;justify-content:center;gap:6px;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch;scroll-snap-type:x proximity}
 .singplay-stages::-webkit-scrollbar{display:none}.singplay-stage{flex:0 0 auto;scroll-snap-align:start;background:rgba(232,244,236,.92);white-space:nowrap}.singplay-stage[aria-pressed=true]{background:#2f7d5b;color:#fff}
-@media (max-width:640px){.singplay-stages{justify-content:flex-start}.singplay-bar:has(.singplay-stages) .singplay-hint{top:152px}}
+@media (max-width:640px){.singplay-stages{justify-content:flex-start}.singplay-bar:has(.singplay-stages) .singplay-hint{top:204px}}
 @media (max-height:480px) and (orientation:landscape){.singplay-stages{justify-content:flex-start;contain:inline-size}.singplay-stages .singplay-btn{min-height:44px;padding:0 12px;font-size:13px}}`;
     document.head.appendChild(st);
   }

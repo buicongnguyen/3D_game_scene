@@ -21,12 +21,17 @@ import { strongPhone, BudgetWatch, dropNow, shotIndex, STRONG_KEY } from './stro
 import { deviceFacts } from '../../engine/device-note.js';
 import { mountStages } from './stages-row.js';
 import { SAVE_KEY } from './sing-here.js';
+import { DANCE_STYLES, DANCE_STYLE } from '../../content/kotone-club.js';
 
 export { SAVE_KEY };   // (sing-here.js: the pause menu's Sing here writes her place before this module loads)
 export const GROUP_KEY = 'starline:singplay:group';   // the group size last picked (per device: 1, 4 or 8)
+export const DANCE_KEY = 'starline:singplay:dance';   // the Dance choice last picked (per device: content/kotone-club.js DANCE_STYLES)
 export const STAGE = Object.freeze({ x: -91, z: 99.5, facing: Math.PI });   // first visit: in front of the station stage
 const REASONS = { water: N_('Too close to the water'), steep: N_('Too steep here'), room: N_('Not enough room here'), group: N_('Not enough room for the group here') };
 const GROUP_LABELS = { 1: N_('Solo'), 4: N_('Group of 4'), 8: N_('Group of 8') };
+const DANCE_LABELS = { mix: N_('Mixed'), kpop: N_('K-pop'), cute: N_('Cute'), hiphop: N_('Hip-hop') };
+export const loadDance = (store = globalThis.localStorage) => { try { const v = store?.getItem(DANCE_KEY); return DANCE_STYLES.includes(v) ? v : DANCE_STYLE; } catch { return DANCE_STYLE; } };
+const saveDance = v => { try { localStorage.setItem(DANCE_KEY, v); } catch { /* per-device convenience */ } };
 const AUDIENCE = { low: 2, other: 4, near: 35, ring: 4.2, groupRing: 7.5 };
 const loadPlace = () => { try { const v = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return v && Number.isFinite(v.x) && Number.isFinite(v.z) ? v : null; } catch { return null; } };
 const savePlace = p => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(p)); } catch { /* per-device convenience */ } };
@@ -69,6 +74,7 @@ export class SingPlay {
     this.g = game; this.d = director; this.ui = ui;
     this.perf = null; this.cam = null; this.auto = true; this.freeUntil = 0; this.rec = null; this.songIx = 0; this.audience = [];
     this.checkT = 0; this.allowed = { ok: false, reason: 'room' }; this.saveT = 0;
+    this.dance = loadDance();
     this.group = 1; this.groupReady = null; this.groupWait = false; this.troupe = null; this.formation = null; this.limits = null;
   }
 
@@ -141,6 +147,14 @@ export class SingPlay {
       row.appendChild(b); return b;
     });
     bar.appendChild(row);
+    // the dance style: four flat choices in a row of their own, always visible (no menu); the group dances it too
+    const drow = this.danceRow = document.createElement('div'); drow.className = 'singplay-group singplay-dance'; drow.setAttribute('role', 'group'); drow.setAttribute('aria-label', tx(N_('Dance style')));
+    this.btnDance = DANCE_STYLES.map(id => {
+      const b = document.createElement('button'); b.type = 'button'; b.id = `spDance-${id}`; b.className = 'singplay-btn singplay-seg'; b.textContent = tx(DANCE_LABELS[id]); b.dataset.dance = id;
+      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); if (!this.perf) { this.dance = id; saveDance(id); this.label(); } });
+      drow.appendChild(b); return b;
+    });
+    bar.appendChild(drow);
     this.hint = document.createElement('p'); this.hint.className = 'singplay-hint'; this.hint.setAttribute('aria-live', 'polite');
     bar.appendChild(this.hint);
     this.stages = mountStages(this);   // the stage list: a row of its own (stages-row.js)
@@ -153,7 +167,7 @@ export class SingPlay {
 body.singplay #inventory{display:none}
 @media (max-width:640px){body.singplay #toasts{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px))}}
 .singplay-group{flex-basis:100%;display:flex;justify-content:center;gap:6px}.singplay-seg[aria-pressed=true]{background:#5b3fa0;color:#fff}
-@media (max-width:640px){.singplay-bar{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 104px);left:12px;right:12px;transform:none;max-width:none;flex-wrap:wrap;gap:6px}.singplay-btn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px;white-space:nowrap}.singplay-hint{position:absolute;top:102px;left:0;right:0}}`;
+@media (max-width:640px){.singplay-bar{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 104px);left:12px;right:12px;transform:none;max-width:none;flex-wrap:wrap;gap:6px}.singplay-btn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px;white-space:nowrap}.singplay-hint{position:absolute;top:152px;left:0;right:0}}`;
       document.head.appendChild(st);
     }
     document.body.appendChild(bar);
@@ -171,6 +185,7 @@ body.singplay #inventory{display:none}
     this.btnCam.textContent = tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free'));
     this.btnCam.setAttribute('aria-disabled', String(!p));
     // (Group of 8 shows on a phone once it has measured strong: strong-phone.js)
+    for (const b of this.btnDance || []) { b.setAttribute('aria-pressed', String(b.dataset.dance === this.dance)); b.setAttribute('aria-disabled', String(!!p)); }
     for (const b of this.btnGroup || []) { b.hidden = Number(b.dataset.n) > this.max(); b.setAttribute('aria-pressed', String(Number(b.dataset.n) === this.group)); b.setAttribute('aria-disabled', String(!!p)); }
     this.stages?.refresh();
     this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
@@ -200,7 +215,7 @@ body.singplay #inventory{display:none}
     const want = new Set(songsFor(this.songs.map(x => x.song), getLang())), pool = this.songs.filter(x => want.has(x.song));
     const song = pool[this.songIx++ % pool.length];
     p.locked = true; p.vel.set(0, 0, 0);
-    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot });
+    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: this.dance });
     this.perf.start(0);
     this.d.performing = true;   // (director.updateBarks: the villagers' bubbles hidden, no new ones, until she stops)
     if (this.group > 1) this.makeTroupe();
