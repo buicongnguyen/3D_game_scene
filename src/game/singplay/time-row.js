@@ -6,6 +6,9 @@
 // & Play writes no Explore save. The choice is remembered per device (TIME_KEY).
 // Data + handlers for any host (the Time chip and its picker, pickers.js): TIME_CHOICES, currentTime(sp), pickTime(sp, id),
 // timeIcon(id). makeTime() starts the mode's clock.
+// In Explore (since 2026-11-28 the show is Explore's layer: docs/EXPLORE-AND-SHOW.md) a tap is a Go to… instead: the
+// valley's own clock moves FORWARD to that time (later today or tomorrow, the days in between lived: game/goto.js) with
+// the same 2-s ease of the sky, and it holds still afterwards as Explore's clock always has; nothing is eased on open.
 import { tx, N_, getLang } from '../../i18n/i18n.js';
 import { NIGHT_STAR, nameOf } from '../../content/troupe.js';
 
@@ -51,16 +54,27 @@ export const timeIcon = id => TIME_ICONS[timeChoice(id)?.icon] || '';
 export class SingTime {
   constructor(sp) {
     this.sp = sp; this.g = sp.g;
+    this.goto = sp.d?.goto || null;      // (Explore's Go to…: the valley's own clock, forward only)
     this.hour = norm(sp.g.shownHour?.() ?? 17.5);
-    this.ease = null; this.band = bandOf(this.hour);
+    this.ease = null; this.target = null; this.band = bandOf(this.hour);
   }
 
   /** The band shown pressed: where a tap is taking the valley, else the hour's own band. */
-  currentTime() { return this.ease?.to || bandOf(this.hour); }
+  currentTime() {
+    if (this.goto) return (this.goto.ease && this.target) || bandOf(this.g.shownHour());
+    return this.ease?.to || bandOf(this.hour);
+  }
 
   /** Ease the valley to a time of day (not during a song). -> whether it was taken */
   pickTime(id, { save = true } = {}) {
     const c = timeChoice(id); if (!c || this.sp.perf) return false;
+    if (this.goto) {
+      if (!this.goto.state().ok) return false;
+      this.target = id;
+      this.goto.go({ hour: c.hour }, { ease: true });
+      this.changed();
+      return true;
+    }
     if (save) keepTime(id);
     const span = hourSpan(this.hour, c.hour);
     this.ease = Math.abs(span) > 1 / 60 ? { from: this.hour, span, t: 0, to: id } : null;
@@ -70,10 +84,14 @@ export class SingTime {
   }
 
   /** A song starts mid-ease: the valley goes straight to the hour it was easing to (the show decides day or night now). */
-  settle() { if (!this.ease) return; this.hour = norm(this.ease.from + this.ease.span); this.ease = null; this.apply(); this.changed(); }
+  settle() {
+    if (this.goto) { this.goto.settle(); this.target = null; this.changed(); return; }
+    if (!this.ease) return; this.hour = norm(this.ease.from + this.ease.span); this.ease = null; this.apply(); this.changed();
+  }
 
   /** Every frame (paused: not called, so the clock stops with the game). */
   update(dt) {
+    if (this.goto) { if (!this.goto.ease) this.target = null; if (this.currentTime() !== this.band) this.changed(); return; }
     const e = this.ease;
     if (e) { e.t += dt; this.hour = easeHour(e.from, e.span, e.t / TIME_EASE); if (e.t >= TIME_EASE) { this.hour = norm(e.from + e.span); this.ease = null; } }
     else if (!this.sp.perf) this.hour = norm(this.hour + dt * CLOCK_RATE);
@@ -99,6 +117,7 @@ export const pickTime = (sp, id) => sp?.time?.pickTime(id) ?? false;
  */
 export function makeTime(sp) {
   const t = new SingTime(sp);
+  if (t.goto) return t;                 // (Explore: the valley's own hour, never moved on open)
   const saved = loadTime();
   if (saved && saved !== t.currentTime()) t.pickTime(saved, { save: false });
   return t;

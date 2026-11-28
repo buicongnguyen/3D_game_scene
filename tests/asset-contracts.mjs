@@ -446,7 +446,9 @@ export const TOTAL_RAW_BYTES = 91_900_000;     // (the dance game, the exercise 
 // +2.16 MB: Vita and Bibi packed (0.63 / 0.62 MB, light 0.46 / 0.45 MB; one set or the other, fetched near the station only; 39,708,864 B measured).
 // +1.06 MB: the Night Star packed (vroid-nightstar.glb 0.60 MB, .lite 0.45 MB; one or the other is fetched, at night by
 // the shrine or for Sing & Play's Singer row).
-export const TOTAL_PACKED_BYTES = 40_800_000;      // (all together)
+// +0.23 MB: the Explore moves pack packed (moves-explore.glb, every singer body's Explore moves; fetched the first time a
+// singer is played, Play as; 41.03 MB measured).
+export const TOTAL_PACKED_BYTES = 41_100_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

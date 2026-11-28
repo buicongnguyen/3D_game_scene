@@ -137,9 +137,9 @@ export class UI {
       const onCont = async () => { const slot = await this.pickSlot('continue', slots, last); if (slot && await noted()) done({ mode: 'continue', slot }); };
       const onExplore = async () => { const v = await this.pickExplore(); if (v && await noted()) done({ mode: 'explore', slot: 'explore', ...v }); };
       // Mini games: pick a game and play it at once (an Explore session: the game starts when the world is ready, see game/minigame-menu.js)
-      const onMini = async () => { const r = await this.pickMinigame(); if (r) { this.pendingLaunch = { id: r.e.id, quick: !!r.e.quick }; done({ mode: 'explore', slot: 'explore', season: r.plan?.season, hour: r.plan?.hour, fresh: false }); } };
-      // Sing & Play (game/singplay/): Kotone walks the valley and performs her songs; an Explore session of its own kind
-      const onSing = async () => { if (await noted()) done({ mode: 'explore', slot: 'explore', singplay: true, season: 'spring', hour: 17.5, fresh: false }); };
+      const onMini = async () => { const r = await this.pickMinigame(); if (r) { this.pendingLaunch = { id: r.e.id, quick: !!r.e.quick }; done({ mode: 'explore', slot: 'explore', season: r.plan?.season, hour: r.plan?.hour, look: true, fresh: false }); } };
+      // Sing & Play: Explore with its show layer open (game/singplay/, docs/EXPLORE-AND-SHOW.md), the valley as the save left it
+      const onSing = async () => { if (await noted()) done({ mode: 'explore', slot: 'explore', singplay: true, fresh: false }); };
       const sing = $('btnSingPlay');
       if (sing) { sing.classList.toggle('hidden', this.game.params?.get?.('singplay') === 'off'); sing.addEventListener('click', onSing); }
       const cleanup = () => { sing?.removeEventListener('click', onSing); $('btnNew').removeEventListener('click', onNew); $('btnContinue').removeEventListener('click', onCont); $('btnExplore').removeEventListener('click', onExplore); $('btnTitleMini')?.removeEventListener('click', onMini); };
@@ -168,7 +168,8 @@ export class UI {
     const has = !!loadSave('explore');
     $('slotsTitle').textContent = tx('Explore the valley');
     box.classList.remove('hidden');
-    const pick = { season: 'spring', hour: 8 };
+    // a valley already explored starts as it was left; a season or a time picked here is a Go to… (forward: game/goto.js)
+    const pick = has ? { season: '', hour: '' } : { season: 'spring', hour: 8 };
     return new Promise(resolve => {
       const close = v => { box.classList.add('hidden'); $('slotsClose').onclick = null; resolve(v); };
       $('slotsClose').onclick = () => close(null);
@@ -195,8 +196,8 @@ export class UI {
       const intro = document.createElement('p'); intro.className = 'explore-intro';
       intro.textContent = tx('No story, no hurry: the valley after the four lamps are lit. Wander, shop, play and visit the neighbours.');
       list.append(intro,
-        row(tx('Season'), [['spring', tx('Spring')], ['summer', tx('Summer')], ['autumn', tx('Autumn')], ['winter', tx('Winter')]], 'season'),
-        row(tx('Time of day'), [[8, tx('Morning')], [12, tx('Noon')], [18, tx('Evening')], [21.5, tx('Night')], ['cycle-slow', tx('A day passes')]], 'hour'));
+        row(tx('Season'), [...(has ? [['', tx('As you left it')]] : []), ['spring', tx('Spring')], ['summer', tx('Summer')], ['autumn', tx('Autumn')], ['winter', tx('Winter')]], 'season'),
+        row(tx('Time of day'), [...(has ? [['', tx('As you left it')]] : []), [8, tx('Morning')], [12, tx('Noon')], [18, tx('Evening')], [21.5, tx('Night')], ['cycle-slow', tx('A day passes')]], 'hour'));
       const go = document.createElement('button'); go.className = 'primary explore-go';
       go.textContent = has ? tx('Keep exploring') : tx('Start exploring');
       go.onclick = () => { this.audio?.click(); close({ ...pick, fresh: false }); };
@@ -1096,6 +1097,7 @@ export class UI {
     if (b) b.classList.toggle('hidden', !this.game.director?.minigameMenu?.canOpen());
     $('btnPausePhoto')?.classList.toggle('hidden', !canEnter(photoState(this.game)));
     this.refreshSingHere();
+    this.explorePanels?.refreshPause();   // (Explore's Go to… and Play as: ui/explore-panels.js)
   }
 
   /** Sing here (game/singplay/sing-here.js): Explore's way into Sing & Play at Mika's spot, beside Photo mode. */
@@ -1165,6 +1167,13 @@ export class UI {
     if (!this.overlay) this.game.togglePause?.(false, true);
   }
 
+  /** Go to… moved the valley's own time (game/goto.js): Settings' display-only season and time go back to "the valley's". */
+  letGoOfLook() {
+    for (const [id, k] of [['optSeason', 'season'], ['optTime', 'time']]) {
+      const el = $(id); if (el && el.value !== '') { el.value = ''; try { localStorage.setItem(`starline-opt-${k}`, JSON.stringify('')); } catch { /* per device */ } }
+    }
+  }
+
   /** The end card belongs to the finale only; the menu's Credits button shows the plain page. */
   endClosed() {
     $('endCard').classList.add('hidden');
@@ -1196,6 +1205,7 @@ export class UI {
     if (tab === 'map') {
       // the valley map lives in map.js: a painted map with live markers, redrawn while the page is open
       (this.map ??= new JournalMap(this.game)).mount(body, this);
+      this.explorePanels?.journalRow(body);   // (Explore: the valley's day, Go to… and Play as over the map)
     } else if (tab === 'story') {
       const cur = STEP_INDEX[q.step];
       const rows = STEPS.slice(0, cur + 1).filter(s => s.chapter === q.chapter || STEP_INDEX[s.id] === cur)

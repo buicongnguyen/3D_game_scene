@@ -155,8 +155,12 @@ for (const clip of pack.animations) {
 }
 
 // write the clips back into the pack (gltf-transform: the same armature nodes, new samplers)
-const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.decoder': MeshoptDecoder });
 const doc = await io.read(IN), R = doc.getRoot(), buf = R.listBuffers()[0], nodes = new Map(R.listNodes().map(nd => [nd.getName(), nd]));
+// the armature's rest exactly the body's (a fresh Blender import differs in the last float bits; tests/assets.test.mjs
+// checks a pack's rest against its person to the bit)
+{ const body = (await io.read(path.join(ROOT, 'public/models', `${BODY}.glb`))).getRoot();
+  for (const j of body.listSkins()[0].listJoints()) { const nd = nodes.get(j.getName()); if (nd) nd.setTranslation(j.getTranslation()).setRotation(j.getRotation()).setScale(j.getScale()); } }
 for (const anim of R.listAnimations()) {
   const o = out.get(anim.getName()); if (!o) continue;
   for (const ch of anim.listChannels()) { anim.removeChannel(ch); ch.dispose(); }

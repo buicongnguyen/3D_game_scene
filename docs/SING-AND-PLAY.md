@@ -1,5 +1,16 @@
 # Sing & Play (plan, 2026-11-27)
 
+> **Since 2026-11-28 Sing & Play is Explore's show layer** (docs/EXPLORE-AND-SHOW.md), not a mode of its own. What
+> changed from the sections below: it opens in place from Explore (the HUD's Perform on flat open ground, the pause
+> menu's Sing here, the title's Sing & Play = Explore with the layer open); the singer is the Play as body (Saki when the
+> player was Mika) and the Singer chip changes the body walking the valley; **Leave show** closes the layer where she
+> stands (no reload, no return to the title); the Explore save goes on (nothing is written mid-song) and the mode's own
+> place key `starline:singplay:v1` is no longer read; the **Time** chip is a Go to… (the valley's own clock moves
+> forward, days lived, no slow clock while free, nothing eased on open); Tamo waits at home only during a song; the
+> station sisters keep their day; the Night Star waits only during the player's own song; the **Festival stage** on the
+> Takamori square is the eighth stage. Everything else (songs, groups, the camera man, Record, captions, effects,
+> watchers, the strong-phone rule, Stella) works as described below.
+
 Owner's choices: play as Kotone, perform anywhere flat, an automatic camera and Record. Mika stays the story heroine.
 Builds on Kotone's song performance (`src/game/perform/`, docs/KOTONE-SHOW.md).
 
