@@ -43,6 +43,9 @@ export class Game {
     this.assets = new Assets();
     this.assets.people = peopleSet(this.renderer.qualityName, params);
     this.assets.performers = performersSet(this.renderer.qualityName, params);
+    // (the VRoid people's atlas: anisotropic filtering, the GPU's most on PC, 4 on Low; ?atlasAniso=1 turns it off)
+    { const mx = this.renderer.renderer.capabilities.getMaxAnisotropy(), want = Number(params?.get?.('atlasAniso')) || (this.renderer.qualityName === 'low' ? 4 : 16);
+      this.assets.atlasAniso = Math.max(1, Math.min(mx, want)); }
     this.time = { hour: 10, speed: 0, season: 'spring' };
     this.systems = [];
     this.paused = false;

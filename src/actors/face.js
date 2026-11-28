@@ -6,7 +6,12 @@ import * as THREE from 'three';
 //   blink  every 2.5-6 s (a double blink now and then)
 //   mouth  flaps while one of her lines is on screen (speak(text): about 0.07 s a letter, 1-5 s), A with a touch of O;
 //          or follows a song (sing(): the Avatar Studio's per-song mouth curves or lyric word timings)
-//   eyes   look at a point (Mika's head) when it is near and in front, else straight ahead; clamped to a small cone
+//   eyes   look at a point (Mika's head, the camera) when it is near and in front, else straight ahead. The irises SLIDE
+//          in the face (EYE), they do not turn: the VRoid irises are wide shallow caps about 0.4 mm in front of the eye
+//          white, and their eye bones sit 58 mm behind them (the source's Mixamo-65 conversion), so a turn swung an iris
+//          up to 16 mm aside and sank its rim behind the white: half an iris or white eyes in the group and medium shots
+//          (owner 2026-11-28: "faces seem broken when the camera is a little distant"; docs/GROUP-PERFORMANCE.md, "Faces
+//          at a distance"). `?eyes=turn` brings the old turn back (to compare).
 //   smile  a happy face (owner 2026-11-28: "all the faces look a little sad"): the 'smile' morph (closed-mouth smile and
 //          lifted brows) and 'smileEyes' (the eye smile), both from the VRoid sample's own Fun / Joy shapes
 //          (art/blender/vroid_mixamo.py add_happy_keys). A resting smile always; setMood() brightens it (choruses, a
@@ -16,13 +21,17 @@ import * as THREE from 'three';
 //          src/sing-expression.js, owner: "happy like the anime girl characters"): a bigger grin in the gap after a sung
 //          phrase (more often on choruses), a brow lift ('browUp') on a phrase's start now and then, and on bright parts
 //          (mood >= 0.8) a wink ('wink': her right eye) after a phrase once in a while. faceLife() is pure (tests).
-// Cost: one uniform array per frame and two bone rotations; nothing at all while `enabled` is false (far away, out of
-// view, or the Low tier's far ring: the director switches it).
+// Off (setEnabled(false): far away, out of view, or the Low tier's far ring) the face rests: eyes open and ahead, mouth
+// closed, the resting smile (not a blank face: that one looks sad). Cost: one uniform array per frame and two bone moves;
+// nothing at all while off.
 
 const ID = new THREE.Quaternion();
 const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _s = new THREE.Vector3(), _v = new THREE.Vector3(), _w = new THREE.Vector3(), _e = new THREE.Vector3();
 
-const EYE_CONE = 0.3;           // radians (~17 degrees) an eye may turn from straight ahead
+/** The gaze: an eyeball of radius r turned toward the target moves the iris r * sin(angle) across the face, held inside
+ *  an ellipse of `across` x `up` metres (the iris stays whole between the lids); a target more than acos(aside) off
+ *  straight ahead is not looked at. cone: the old turn's limit (radians), for `?eyes=turn` only. */
+export const EYE = Object.freeze({ r: .012, across: .003, up: .002, aside: .36, cone: .3 });
 const LOOK_NEAR = 7;            // metres: farther than this she looks ahead
 /** The happy face: rest mood, the smile morph at mood 1 (capped), how much an open / round mouth takes away, the eye
  *  smile per mood (soft: 1 would close the eyes into "^^"), how fast the mood follows (1/s). */
@@ -82,8 +91,11 @@ export class Face {
       // the eye's forward (the model's +Z) in the bone's own frame, from the bind pose
       const i = mesh.skeleton.bones.indexOf(bone);
       const bind = new THREE.Matrix4().copy(mesh.skeleton.boneInverses[i]).invert();
-      const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(new THREE.Quaternion().setFromRotationMatrix(bind).invert()).normalize();
-      return { bone, rest: bone.quaternion.clone(), fwd };
+      const qb = new THREE.Quaternion(); bind.decompose(new THREE.Vector3(), qb, new THREE.Vector3()); qb.invert();
+      const fwd = new THREE.Vector3(0, 0, 1).applyQuaternion(qb).normalize();
+      // (and the model's up and across in it: the slide's axes)
+      const side = new THREE.Vector3(0, 1, 0).applyQuaternion(qb).cross(fwd).normalize(), up = new THREE.Vector3().crossVectors(fwd, side);
+      return { bone, rest: bone.quaternion.clone(), at: bone.position.clone(), fwd, up, side };
     });
     this.enabled = true;
     this.t = 0;
@@ -150,9 +162,13 @@ export class Face {
     if (!on) {
       const m = this.mesh.morphTargetInfluences;
       m[this.ix.blink] = 0; if (this.ix.a >= 0) m[this.ix.a] = 0; if (this.ix.o >= 0) m[this.ix.o] = 0;
-      for (const k of ['smile', 'eyes', 'brow', 'wink']) if (this.ix[k] >= 0) m[this.ix[k]] = 0;
-      this.mouth = 0;
-      for (const e of this.eyes) e.bone.quaternion.copy(e.rest);
+      for (const k of ['brow', 'wink']) if (this.ix[k] >= 0) m[this.ix[k]] = 0;
+      // (the resting smile stays: a face past the near ring keeps its usual look, not a blank one)
+      const [sm, ey] = smileFor(SMILE.rest);
+      if (this.ix.smile >= 0) m[this.ix.smile] = sm;
+      if (this.ix.eyes >= 0) m[this.ix.eyes] = ey;
+      this.mouth = 0; this.mood = SMILE.rest; this.look = 0;
+      for (const e of this.eyes) { e.bone.quaternion.copy(e.rest); e.bone.position.copy(e.at); }
     }
   }
 
@@ -214,23 +230,38 @@ export class Face {
     }
     this.look += (aim - this.look) * Math.min(1, dt * 4);
     for (const e of this.eyes) {
-      e.bone.quaternion.copy(e.rest);
+      e.bone.quaternion.copy(e.rest); e.bone.position.copy(e.at);
       if (this.look < 0.01 || !this.target) continue;
       // last frame's head matrix (never update world matrices here: the engine walks them itself, engine/matrices.js,
       // and forcing the walk from a bone up to the scene broke the frame)
       e.bone.parent.matrixWorld.decompose(_v, _qp, _s);
       _q.copy(_qp).multiply(e.rest);                     // the eye's neutral world rotation
-      const cur = _e.copy(e.fwd).applyQuaternion(_q);
       _v.setFromMatrixPosition(e.bone.matrixWorld);
-      const to = _w.copy(this.target).sub(_v).normalize();
-      const ang = cur.angleTo(to);
-      if (!(ang < 1.2) || ang < 1e-4) continue;          // behind her: straight ahead
-      // turn toward the target, at most EYE_CONE, eased by `look`: world = q2 * qh * rest -> local = qh^-1 * q2 * qh * rest
-      _q2.setFromUnitVectors(cur, to).slerp(ID, 1 - Math.min(1, EYE_CONE / ang) * this.look);
-      e.bone.quaternion.copy(_qp.invert().multiply(_q2).multiply(_q));
+      if (Face.eyeTurn) { turnEye(e, this.target, this.look); continue; }
+      // the target's direction in the eye's own (rest) frame
+      const to = _w.copy(this.target).sub(_v).applyQuaternion(_q2.copy(_q).invert()).normalize();
+      if (!(to.dot(e.fwd) > EYE.aside)) continue;        // behind or far aside: straight ahead
+      // slide across and up by an eyeball's turn toward it, inside the ellipse, eased by `look`; the offset is in the
+      // eye's frame: into the head's (parent) frame by the eye's rest turn, divided by the head's world scale
+      let h = to.dot(e.side) * EYE.r, v = to.dot(e.up) * EYE.r;
+      const k = Math.hypot(h / EYE.across, v / EYE.up); if (k > 1) { h /= k; v /= k; }
+      e.bone.position.add(_e.copy(e.side).multiplyScalar(h * this.look).addScaledVector(e.up, v * this.look).applyQuaternion(e.rest).divide(_s));
     }
   }
 }
 
+// The old gaze (before 2026-11-28): the eye bone turned toward the target, at most EYE.cone. Only for `?eyes=turn`.
+function turnEye(e, target, look) {
+  const cur = _e.copy(e.fwd).applyQuaternion(_q);
+  const to = _w.copy(target).sub(_v).normalize();
+  const ang = cur.angleTo(to);
+  if (!(ang < 1.2) || ang < 1e-4) return;
+  // world = q2 * qh * rest -> local = qh^-1 * q2 * qh * rest
+  _q2.setFromUnitVectors(cur, to).slerp(ID, 1 - Math.min(1, EYE.cone / ang) * look);
+  e.bone.quaternion.copy(_qp.invert().multiply(_q2).multiply(_q));
+}
+
 /** The switch for all faces: `?face=off` turns them off (to measure what they cost). */
 Face.on = !(typeof location !== 'undefined' && /[?&]face=off\b/.test(location.search || ''));
+/** `?eyes=turn`: the old gaze (the eye bones turn) instead of the slide, to compare. */
+Face.eyeTurn = typeof location !== 'undefined' && /[?&]eyes=turn\b/.test(location.search || '');
