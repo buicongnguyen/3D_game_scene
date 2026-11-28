@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Kotone on the full Mixamo skeleton: her light game models and her dance pack, from the VRoid Project sample "nu-2"
 (the ktvgo "desktop-mixamo65" GLB, read only) and Mixamo FBX moves (read only).
 

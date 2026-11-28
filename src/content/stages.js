@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Sing & Play's ready-made stages (game/singplay/stages-row.js): open ground where Kotone performs Solo, with 4 or with 8.
 // facing: the camera's view after a jump, in radians (0 = toward +z): she stands with her back to the camera looking at
 // that view, and Perform turns her (and the group) half round to face the camera (game/singplay/singplay.js

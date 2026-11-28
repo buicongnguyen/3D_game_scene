@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The lyric caption under a performance (Sing & Play, docs/SING-AND-PLAY.md "Singer, Song and the lyric caption"): the
 // line being sung, karaoke style: the word sung now lit, the words before it sung, the rest still to come. Pure and
 // cheap: the DOM is touched only when the line or the lit word changes (singplay.js). Recorded videos stay clean: the

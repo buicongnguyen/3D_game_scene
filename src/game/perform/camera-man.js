@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // An automatic camera for a performance, after Avatar Studio Club mode's camera man (club-director.js, docs/club/PLAN.md
 // "Camera man", "Club show", "Club camera 2"): shots planned from the song's sections, bars and sung lines
 // (deterministic, seeded by the song id), played with a critically damped follower solved in closed form, so it moves the

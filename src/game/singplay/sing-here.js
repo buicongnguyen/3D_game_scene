@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // "Sing here" (docs/SING-AND-PLAY.md): the Explore pause menu's way into Sing & Play at Mika's own spot and facing.
 // Small and pure apart from singHere(): the pause menu asks singHereState() each time it opens; the mode itself
 // (singplay.js) loads only when the button is pressed. Explore only (the story keeps its own flow and save).

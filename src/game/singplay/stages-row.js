@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Sing & Play's stage list (docs/SING-AND-PLAY.md): one flat, always visible row of ready-made spots
 // (content/stages.js). A tap takes Kotone there (teleport, the camera reset behind her), ready to press Perform.
 // Its own row element and its own style block, so the rest of the bar stays as it was. On a phone it scrolls sideways;

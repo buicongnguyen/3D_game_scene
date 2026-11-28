@@ -1,3 +1,4 @@
+# © 2026 Bui Cong Nguyen · solluxlabs.com
 """Nature family for Starline: trees, bushes, rocks, flowers and forest-floor dressing.
 
 blender -b --factory-startup --python-exit-code 1 --python art/blender/build_nature.py [-- --only a,b]

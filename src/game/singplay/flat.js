@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Where Kotone may perform in Sing & Play (pure; tests/singplay.test.mjs): walkable, open ground with room around her -
 // level ground or a gentle hillside (owner 2026-11-28: "make it perform in a little steep spot"; her feet are fitted to
 // the slope, game/perform/ground-fit.js). Not on a steep hillside (the ground over a ring round her stays within

@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // The hand-mic grip, fitted on each body (any of the VRoid members can lead): where the handle sits in the right palm
 // and a closed fist round it, measured on that body's own skin, so the mic neither sinks into the hand nor floats in a
 // half-open one. Done once per model at the bind pose (a skeleton-only clone; no download, a few ms):

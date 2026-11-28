@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Group of 8 on a phone (docs/GROUP-PERFORMANCE.md "Strong phones"): the Low tier (every phone) offers it only when this
 // phone has shown, by its own measured frames, that it has room for it; during a show it falls back to the front row
 // when the frame budget breaks. Pure logic (tested in tests/troupe.test.mjs), fed by SingPlay.

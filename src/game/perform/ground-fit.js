@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Feet on a gentle hillside (owner 2026-11-28: "make it perform in a little steep spot"). The dances are baked for level
 // ground: on a slope a planted foot floats over the ground on the downhill side and sinks into it uphill. After the
 // dance pose (and the foot hold, and a follower's copy) each planted foot is fitted to the ground under it:

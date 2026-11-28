@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A whole song performed by one character (Kotone): the plan (plan.js) played with the song's audio as the clock.
 //   dances    beat-locked Club loops on her own mixer: clip time from the song's beat, a one-beat crossfade on each block's
 //             bar line (Avatar Studio Club mode's dance-sets.js rule)

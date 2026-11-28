@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 import * as THREE from 'three';
 import { Quest } from './quest.js';
 import { storyId } from './stories/index.js';

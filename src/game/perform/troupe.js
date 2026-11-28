@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // A group performance (content/troupe.js): Kotone and up to seven VRoid members in two rows of four, every row ONE
 // group that dances in unison. The cost of a dancer is mostly its animation (a mixer blending two or three 69-bone
 // clips, the foot hold, the face); here a row pays it once:

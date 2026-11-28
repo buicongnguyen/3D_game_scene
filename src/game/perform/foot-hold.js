@@ -1,3 +1,4 @@
+// © 2026 Bui Cong Nguyen · solluxlabs.com
 // Feet that stay put while one dance cross-fades into the next (after Avatar Studio Club mode's Dance & sing "Feet over a
 // dance change"). A cross-fade of two leg poses blends rotations, not foot positions, so a planted foot slides under her
 // even when both dances stand it on the same spot. While a fade runs, a foot that was on the floor when it began is held
