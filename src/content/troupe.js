@@ -25,7 +25,7 @@ export const KOTONE = 'kotone';
 export const BACK_PACK = 'moves-vroid-nam1';
 
 export const TROUPE = Object.freeze([
-  // front row (group A): Kotone sings lead with the hand mic, the girls copy her dance and sing along on the choruses
+  // front row (group A): Kotone sings lead with the hand mic, the girls copy her dance and sing every line with her (the back row joins on the choruses)
   { id: 'nu-3', file: 'vroid-nu3', h: 1.645, gait: { walk: .987, run: 4.203 }, row: 0, x: -2.25, z: 0 },
   { id: 'kotone', file: 'kotone', h: 1.616, gait: { walk: .958, run: 4.077 }, row: 0, x: -.75, z: .35, source: true, lead: true, pack: 'moves-kotone' },
   // (owner 2026-11-28: the group of 4 is Kotone, Saki and the two girls in white, Aoi and Yuna; Mio, the blue-green

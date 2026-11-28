@@ -10,8 +10,8 @@
 // The copy: a follower's bone turns from ITS rest by the turn the source's bone made from the source's rest (a constant
 // per bone, identity when the two rests match: the VRoid conversion gives nearly all bones the same rest), and the
 // hips' travel scaled by the ratio of the leg lengths, so a taller body bounces as far as its legs reach and its planted
-// feet stay put (scripts/troupe-check.mjs measures it). The sing-along: each member's face follows the song's mouth on
-// chorus lines only (actors/face.js sing(..., when)), and only while the camera is near; blinks stay their own.
+// feet stay put (scripts/troupe-check.mjs measures it). The sing-along: the front row's faces follow the song's mouth on
+// every line, the back row's on the chorus lines (actors/face.js sing(..., when)), only while the camera is near.
 // The draws: each row's followers are drawn as ONE skinned mesh (row-merge.js: one view draw, one shadow draw, one bone
 // texture a row instead of one a member). Limits for slow phones (measured: docs/GROUP-PERFORMANCE.md): the back row
 // at half rate, its faces off, no shadows, or the back row left out (setSize(4): Sing & Play's fallback during a show).
@@ -189,11 +189,12 @@ export class Troupe {
       const plan = planBacking(lead.plan, { noContact: true });
       this.back = { src, dancer: new RowDancer(src.model, src.clips, plan, lead.clock), copiers: back.filter(e => e !== src).map(e => makeCopier(src.model, e.model, rest.get(src), rest.get(e), { feet: opts.feet ?? 'auto' })) };
     }
-    // faces: blink of their own; the mouth on chorus lines
+    // faces: blink of their own; the front row sings every line with the lead (owner 2026-11-28: "the front four sing
+    // together"), the back row joins on the chorus lines
     const lines = lead.plan.lines, track = lead.data.mouth?.open ? lead.data.mouth : lead.data.lyrics;
     for (const e of members) {
       e.face = Face.attach(e.model);
-      if (e.face && track) e.face.sing(track, () => lead.t, t => chorusAt(lines, t));
+      if (e.face && track) e.face.sing(track, () => lead.t, e.m.row === 0 ? null : t => chorusAt(lines, t));
     }
     // each row's followers as one mesh (Kotone stays her own: she is the player's body)
     this.rows = [];
