@@ -232,7 +232,8 @@ Owner: Starline's songs move to their own public repo, served by GitHub Pages, a
   instrumentals, in the order dance songs (bpm 90 and up), slow songs, instrumentals; one flat row after Lyrics On/Off,
   sideways scroll where it does not fit. Picking a song brings its dance style (`songStyle`: the catalog's `style`, else
   Cute for a slow song); the Dance row still changes it. The choice is data plus handlers (`songChoices()`,
-  `currentSong()`, `chooseSong(id)`, `onSongs`) so another picker can host it.
+  `currentSong()`, `chooseSong(id)`, `onSongs`) so another picker can host it. (Now the whole library in every
+  language, with Download / Delete: "Song list: Download and Delete" below.)
 - **Lazy files**: nothing of a song loads before Perform. Perform fetches its json files and its whole audio (shown as
   "Getting the song ready…"), then plays a blob: copy (one download; Record and Web Audio take it as before). A failure:
   the built-in copy when there is one, else a toast.
@@ -240,7 +241,8 @@ Owner: Starline's songs move to their own public repo, served by GitHub Pages, a
 - **Level**: the catalog's `gainDb` (to -16 LUFS) scales the song on the music bus (`SongAudio.level`).
 - **Service worker**: nothing of the library is precached. index.json is network first (the kept copy offline); a song's
   files are kept in `starline-songs` once played (range answers from the kept copy; the oldest go past 120 MB); `?qa` and
-  `?nosw` pages keep nothing. Settings' "Clear downloaded game data" clears it with the rest.
+  `?nosw` pages keep nothing. Settings' "Clear downloaded game data" clears it with the rest. (Downloaded songs have their
+  own cache that is never evicted: "Song list: Download and Delete" below.)
 - **Titles**: a library song's title is shown as its catalog writes it (its own language); a built-in one stays translated.
 - **Caption**: a line still being sung keeps the caption until its end (a short line right before the next one was cut
   off by the next one's 0.6 s lead and its last word never lit: Tay Trong Tay).
@@ -271,7 +273,7 @@ effects, Stages, Time); every choice, its handler and its remembered value are t
   on the bar) `game.inputHold` keeps the keys, pad and sticks off her (`game.js`: no movement, no look, no edges).
   - Singer: face tiles with names (Stella: "Best at night"). Song: list rows (title; language or Instrumental, bpm, dance
     style, length) in sections Dance songs / Slow songs / Instrumentals, scrolling inside the sheet, the current one
-    picked. Group: Solo / 4 / 8 tiles with little people; 8 only where the device offers it, else a short note
+    picked (now with language tabs and Download / Delete per row: "Song list: Download and Delete" below). Group: Solo / 4 / 8 tiles with little people; 8 only where the device offers it, else a short note
     ("Group of 8: checking this device…" while a phone measures, "Group of 8 needs a faster device"). Dance: 5 tiles; Auto
     says what it will dance now ("Follows the song: Cute"). Stage: "Here" (where she stands; only when she is not on a
     stage) and the 7 stages. Time: 4 tiles with sky icons and hours.
@@ -311,3 +313,58 @@ effects, Stages, Time); every choice, its handler and its remembered value are t
   all pass. Pictures: `.tools/pickers/before/`, `.tools/pickers/after/` (local).
 - Tests: `tests/singplay-pickers.test.mjs` (chips and pickers as data, song tags and sections, Auto, the Group of 8 note,
   Stage "Here", the keyboard / pad step), `tests/song-catalog.test.mjs` (Auto follows the song, a picked style stays).
+
+## Song list: Download and Delete (2026-11-28, branch song-library)
+Owner: "Add the full list of songs: if I want, I press Download and it downloads; if memory is full I can delete a song
+(it stays in the list). The list should include ALL the songs in the GitHub Avatar Studio I created (Vietnamese and
+Korean songs too)."
+- **The whole library** (`singplay.js` songChoices / allSongs / picked): the Song picker lists every song of the catalog,
+  every language, not only the game language's. Any song can be picked and sung (a Korean song in an English game too).
+  With nothing picked (or the picked one unable to play now) Perform takes the first song of the game's language that
+  can play (`pool()`, `songsFor`), as before.
+- **Tabs** (`src/game/singplay/song-list.js`): a flat row **All · English · Tiếng Việt · 한국어 · Instrumental** over the
+  list (not scrolled with it); it opens on the game's language (Japanese: English); each language keeps its own name in
+  every language. Inside a tab: Dance songs / Slow songs / Instrumentals as before.
+- **A row**: the song (tap: pick it; title, then language, bpm, dance style, length and its size in MB) and its own button
+  beside it (48 px; on narrow phones icon only, its name in aria-label): **Download** (cloud) · while downloading the % on
+  a ring (tap: stop that download) or **Waiting** (queued; tap: take it out) · once downloaded **Delete** (bin). A line
+  under the tags tells the state: ✓ Downloaded · Downloading n % · Waiting to download · Needs internet · Playing now.
+  Delete keeps the row (it shows Download again); not while that song is sung or being got ready.
+- **Header**: "Downloaded: N songs · X MB · free about Y" (X from the catalog's sizes, Y from `navigator.storage.estimate`)
+  and one direct button: **Download all n (size)** for the open tab (a language or the instrumentals; not on All), or
+  **Stop downloads** while any download runs or waits. Downloads go one at a time.
+- **Two caches** (`src/game/singplay/song-library.js`, `public/sw.js`):
+  - `starline-songs-kept`: Download puts every file of the song there (audio first, then beats / lyrics / mouth / stage).
+    The service worker never removes anything from it; only Delete (or Settings' "Clear downloaded game data") does.
+  - `starline-songs`: the play cache as before: a song sung without a download is kept once played, the oldest go past
+    120 MB (the kept cache is not counted and never touched).
+  - A song file is answered from the kept cache, then the play cache, then the network (ranges from either). A download
+    asks each file with `?keep=1`: the worker answers it (from the play cache when the song was played lately: no network)
+    and stores nothing; the page writes the kept copy, then drops the play copy (one copy per song). The page also reads
+    the kept cache itself when it loads a song (`SongLibrary.fetcher`), so a downloaded song plays where no worker runs
+    (dev server, `?qa`, `?nosw`).
+  - The first download asks once per device for persistent storage (`navigator.storage.persist()`, in the tap's own turn;
+    `starline:songs:persistAsked`).
+  - **Full**: a download that would leave under 20 MB free is refused before it starts; a `QuotaExceededError` mid-way
+    removes what was kept of that song and empties the queue. The note under the list: "Not enough room on this device
+    for <song>. Delete a downloaded song to make room." (every downloaded song shows its Delete in the list). A lost
+    connection: "<song> couldn't be downloaded: check the connection." (its partial files removed).
+- **Offline** (`navigator.onLine`, the online / offline events): songs on the device (downloaded, played lately, built in,
+  or loaded this visit) stay pickable; the rest are shown dimmed with "Needs internet" and cannot be picked; no Download
+  buttons; the note "Offline: the downloaded songs can be sung." The Song chip moves to a song that can play, and back
+  when the connection returns (the pick is remembered). Online, a song that is not downloaded still plays as before (its
+  files fetched on Perform).
+- **Keyboard / gamepad**: the tabs, the header button, each row and its button are controls in the picker's arrow / D-pad
+  steps (left / right between a row and its button, up from the list to the header and tabs); Enter / A presses; LB / RB
+  switch the tab. ARIA: tabs `role="tab"` in a `tablist`; rows `listitem`s with the song button (`aria-pressed` for the
+  picked one, its label with the state) and the action button (its own label: "Download <song> (3.4 MB)", "Stop
+  downloading <song>", "Delete <song> from this device").
+- **The library** (starline-songs, 2026-11-28): 50 entries = 14 English, 22 Vietnamese, 7 Korean songs, 6 instrumentals
+  and Kotone's hum (167 MB). Eight of the nine songs that are files in the Avatar Studio (GitHub avatar-studio
+  `public/songs/`) but that the owner took out of the studio's song list on 2026-11-27 were added (two commits there: 반짝
+  Light + Đèn Phố Lên Rồi first, then six more); Tim Đập Theo Nhịp is left out (its second verse cannot be timed: see that
+  repo's README).
+- Tests: `tests/song-library.test.mjs` (fixture catalog, fake caches and network: download / delete / progress / persist
+  once / full before and during / lost connection / Stop / the play cache moved / offline / the list as data, and the
+  worker in a vm: the kept copy first and never evicted, `?keep=1` not stored, the oldest played songs out past 120 MB),
+  `tests/song-catalog.test.mjs` and `tests/singplay-pickers.test.mjs` updated (every language listed and pickable).

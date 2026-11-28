@@ -3,10 +3,12 @@
 // github.com/buicongnguyen/starline-songs, served by GitHub Pages from the game's own origin
 // (https://buicongnguyen.github.io/starline-songs/), so Web Audio and Record take its sound like a song of the game's.
 //   index.json            the catalog (version 1): per song id, ver, title, lang, instrumental, dance, mood, style, bpm,
-//                         offset, duration, bytes, gainDb, base 'songs/<id>/', files { audio, beats, lyrics, mouth, stage }
+//                         offset, duration, bytes (audio), totalBytes (all its files), gainDb, base 'songs/<id>/',
+//                         files { audio, beats, lyrics, mouth, stage }
 //   songs/<id>/<id>.<ver>.<kind>   immutable files: a new version is a new name (the service worker keeps them as they are)
 // The catalog is read when Sing & Play starts (at most CATALOG.timeout; late or failed: the built-in songs only,
-// content/kotone-songs.js); a song's files load only when it is performed. ?songsBase=<url> reads another copy (a local
+// content/kotone-songs.js); a song's files load only when it is performed, or when the player downloads it (the Song list:
+// game/singplay/song-library.js, song-list.js). ?songsBase=<url> reads another copy (a local
 // server of the songs repo), ?songsBase=off none; ?qa pages read none unless given one.
 import { DANCE_STYLES } from './kotone-club.js';
 
@@ -44,7 +46,8 @@ export function catalogSongs(index, base) {
       language: inst || !e.lang ? undefined : String(e.lang), instrumental: inst,
       dance: typeof e.dance === 'boolean' ? e.dance : e.bpm >= CATALOG.danceBpm,
       style: DANCE_STYLES.includes(e.style) ? e.style : undefined,
-      gainDb: finite(e.gainDb) ? Math.max(-12, Math.min(6, e.gainDb)) : 0, bytes: finite(e.bytes) ? e.bytes : 0, remote: true,
+      gainDb: finite(e.gainDb) ? Math.max(-12, Math.min(6, e.gainDb)) : 0, bytes: finite(e.bytes) ? e.bytes : 0,
+      totalBytes: finite(e.totalBytes) && e.totalBytes >= (e.bytes || 0) ? e.totalBytes : finite(e.bytes) ? e.bytes : 0, remote: true,
     });
   }
   return out;
@@ -72,6 +75,10 @@ export function mergeSongs(builtIn, remote) {
   const lib = remote.map(s => (own.has(s.id) ? { ...own.get(s.id), ...s, title: own.get(s.id).title, fallback: own.get(s.id) } : s));
   return [...builtIn.filter(s => !remote.some(r => r.id === s.id)), ...lib];
 }
+
+/** A library song's file URLs, the audio first (what a download keeps: game/singplay/song-library.js); [] for a built-in
+ *  song (the game's own files). */
+export const songUrls = s => (s?.remote && s.audio ? [s.base + s.audio, ...Object.values(s.files || {}).map(f => s.base + f)] : []);
 
 /** A song to dance to (bpm 90 and up, unless its entry says). */
 export const songDance = s => (typeof s?.dance === 'boolean' ? s.dance : Number(s?.bpm) >= CATALOG.danceBpm);
