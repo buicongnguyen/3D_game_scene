@@ -3,7 +3,7 @@
 //             bar line (Avatar Studio Club mode's dance-sets.js rule)
 //   moments   one-shots over the dance, in and out over a beat (the closing bow holds)
 //   mic       the mic moves' upper body over the dance on sung lines (mic-layer.js), the hand mic in her fist over each
-//             vocal span (mic-prop.js)
+//             vocal span (mic-prop.js) in the grip fitted on her body, its capsule turned to her lips (mic-grip.js)
 //   face      face.sing(): the song's mouth curves (or lyric timings); her eyes on the camera on sung lines when it is near;
 //             her mood (face.setMood: a resting smile, brighter on choruses, brightest in a cheer and the bow: moodAt)
 // The pose is a pure function of the song time, so a skipped or slow frame never puts her off the beat.
@@ -13,6 +13,7 @@ import { createBeatClock } from './beat-clock.js';
 import { planPerformance, blockAt, momentAt, micShown, PLAN } from './plan.js';
 import { micLayer, leadTarget, micClipFor, micFold, SINGING } from './mic-layer.js';
 import { makeMic } from './mic-prop.js';
+import { fitMicGrip, aimMic } from './mic-grip.js';
 import { createFootHold } from './foot-hold.js';
 import { MIC_CLIPS } from '../../content/kotone-club.js';
 
@@ -123,8 +124,12 @@ export class Performer {
     // the mic moves of her style (an older pack without one of them: no mic layer, she dances and the mic stays down)
     const set = this.plan.mic, want = [...new Set([...set.verse, ...set.chorus])];
     const mics = new Map(MIC_CLIPS.filter(id => want.includes(id) && this.clips.has(id)).map(id => [id, this.clips.get(id)]));
-    this.layer = mics.size === want.length ? micLayer(n.model, mics, this.restRoot) : null;
-    this.mic = this.layer ? makeMic(n.model) : null;
+    // the grip fitted on this body (its palm, its fist, its lips: mic-grip.js), once per model
+    if (mics.size === want.length && n.model.userData.micGrip === undefined) n.model.userData.micGrip = fitMicGrip(n.model);
+    this.grip = n.model.userData.micGrip || null;
+    this.layer = mics.size === want.length ? micLayer(n.model, mics, this.restRoot, this.grip?.q) : null;
+    this.mic = this.layer ? makeMic(n.model, this.grip) : null;
+    this.handR = n.model.getObjectByName('hand_R'); this.headB = n.model.getObjectByName('head');
     this.feet = createFootHold(n.model);
     const track = this.data.mouth?.open ? this.data.mouth : this.data.lyrics;
     if (track) n.face?.sing(track, () => this.t);
@@ -191,6 +196,11 @@ export class Performer {
       if (id !== this.cur) { if (this.cur) { this.prevMic = this.cur; this.xfAt = b; } this.cur = id; }
       const x = b * micFold(c.bpmAt(t)) * .5, L1 = this.layer.loop(this.cur), L0 = this.layer.loop(this.prevMic || this.cur), xf = smooth((b - this.xfAt) / SINGING.micFade);
       this.layer.apply(this.cur, ((x % L1) + L1) % L1, xf < 1 ? this.prevMic : '', ((x % L0) + L0) % L0, xf, this.w, this.g);
+      // the capsule toward her lips while she sings into it (a small wrist turn: mic-grip.js aimMic)
+      if (this.grip?.aimAt && this.mic?.mesh.visible && this.w > 1e-3) {
+        this.handR.parent.updateWorldMatrix(true, false); this.headB.updateWorldMatrix(true, false);
+        aimMic(this.handR, this.mic.mesh, this.headB, this.grip.aimAt, this.w * this.g, this.mic.mesh.userData.headY);
+      }
     }
     // mood: brighter on choruses, brightest in a cheer and the bow (a group's members take hers: troupe.js)
     const mo = momentAt(P, c.barAt(t));

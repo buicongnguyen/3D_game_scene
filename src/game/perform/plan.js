@@ -7,8 +7,9 @@
 //             chorus a step up, a loud verse a step up; never the same dance twice in a row
 //   singing   sung sections dance a light standing groove (the Club's SINGER_GROOVE); the mic moves' upper body lies over
 //             it on sung lines (mic-layer.js leadTarget): Mic sway on verse lines, Mic punch / Mic wave on chorus lines
-//   the mic   in her hand over each vocal span (lines closer than 2 bars are one span), from a bar before to a bar after;
-//             no hand-contact dance (claps, the heart) while she holds it
+//   the mic   in her hand over each vocal span (lines closer than 2 bars are one span), from a bar before to a bar after
+//             (and through a moment danced with it, the closing bow to the end); no hand-contact dance (claps, the
+//             heart) while she holds it
 //   moments   a clap hop on the last bar before a chorus (only with free hands), a wave to the crowd over a bridge's first
 //             2 bars, a cheer then a bow over the song's last bars; never inside a sung line; with the mic: its variant
 //   tempo     every loop plays at the song's beat (beatRate: 1/2, 1 or 2 loop beats a song beat), clip time from the beat
@@ -80,9 +81,10 @@ export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE
     const a = Math.floor(clock.barAt(lines.t[i])), b = Math.ceil(clock.barAt(lines.e[i]));
     const s = spans.at(-1);
     if (s && a - s.b1 < PLAN.spanGapBars + 1) s.b1 = Math.max(s.b1, b + 1);
-    else spans.push({ b0: Math.max(0, a - 1), b1: b + 1 });
+    else spans.push({ b0: Math.max(0, a - 1), b1: b + 1, first: lines.t[i] });
   }
-  spans.forEach(s => { s.t0 = timeOf(s.b0); s.t1 = timeOf(s.b1); });
+  // (in hand before its first line's lead-in even when that line starts before the song's first bar line: a pickup)
+  spans.forEach(s => { s.t0 = Math.min(timeOf(s.b0), s.first - SINGING.pre); s.t1 = timeOf(s.b1); delete s.first; });
   const micAtBar = b => spans.some(s => b >= s.b0 && b < s.b1);
   const sungIn = (t0, t1) => Boolean(lines) && Array.from(lines.t).some((t, i) => t < t1 + SINGING.post && lines.e[i] > t0 - SINGING.pre);
   // sections on the bar grid (whole bars, none under one bar)
@@ -134,6 +136,9 @@ export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE
   });
   // the song's end without a final section of 4+ bars: still a bow after the last line
   if (!moments.some(m => m.id === 'bow') && lastBar >= 2) { const b0 = lastBar - 2, t0 = timeOf(b0); if (!sungIn(t0, timeOf(lastBar))) moments.push({ id: 'bow', b0, b1: lastBar, t0, t1: timeOf(lastBar), clip: micAtBar(b0) ? MOM.bow[1] : MOM.bow[0], mic: micAtBar(b0), fade: PLAN.longFadeBeats }); }
+  // a moment danced with the mic keeps it in her hand to its end (the bow with the mic held to the song's end): it never
+  // vanishes mid-move
+  for (const m of moments) if (m.mic) { const s = spans.find(x => m.b0 < x.b1 + 1 && m.b1 > x.b0); if (s && m.b1 > s.b1) { s.b1 = m.b1; s.t1 = m.b1 >= lastBar ? end + 2 : timeOf(m.b1); } }
   blocks.forEach(b => { b.t0 = timeOf(b.b0); b.t1 = timeOf(b.b1); });
   const summary = blocks.map(b => `${b.t0.toFixed(1)}s ${b.kind}${b.final ? '*' : ''} ${b.clip}${b.mic ? ' +mic' : ''}${b.sung ? ' sung' : ''} fade ${b.fade || 1}`)
     .concat(moments.map(m => `${m.t0.toFixed(1)}s moment ${m.clip}`)).sort((a, b) => parseFloat(a) - parseFloat(b));
