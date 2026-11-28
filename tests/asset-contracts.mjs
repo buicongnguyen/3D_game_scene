@@ -409,6 +409,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // 0.78 MB; 89,296,816 B measured). Fetched only near the station or near the sisters (game/station-visitors.js), one set or the other.
 // +1.90 MB: the Night Star (vroid-nightstar.glb 1.11 MB, .lite 0.79 MB; one or the other is fetched, at night near the
 // shrine or for Sing & Play's Singer row; no pack of her own: she dances Kotone's moves); 87,298,064 B measured.
+// +0.05 MB: the boys' atlases re-packed (square texels, hair cards sharing their sheet: vroid-nam1/2/3 and their light
+// files +50,688 B together; faces at a distance, round 2); 91,242,852 B measured.
 export const TOTAL_RAW_BYTES = 91_400_000;     // (the dance game, the exercise packs, the visitors and the Night Star)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
@@ -440,6 +442,7 @@ export const TOTAL_RAW_BYTES = 91_400_000;     // (the dance game, the exercise 
 // +2.16 MB: Vita and Bibi packed (0.63 / 0.62 MB, light 0.46 / 0.45 MB; one set or the other, fetched near the station only; 39,708,864 B measured).
 // +1.06 MB: the Night Star packed (vroid-nightstar.glb 0.60 MB, .lite 0.45 MB; one or the other is fetched, at night by
 // the shrine or for Sing & Play's Singer row).
+// +0.01 MB: the boys' atlases re-packed (+10,656 B packed: the PC group set +39 KB, the phone set -29 KB); 40,777,576 B measured.
 export const TOTAL_PACKED_BYTES = 40_800_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of

@@ -8,6 +8,7 @@ import { separateCoplanar } from './coplanar.js';
 import { mergeStatic, BUILD_MERGE } from './static-merge.js';
 import { MERGE_EXACT } from '../content/models.js';
 import { peopleFile, prepareLite, LITE_ON_LOW } from './people.js';
+import { patchFaceMaterial, faceNormals } from '../actors/face-look.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
 export const GLOW_MATERIALS = ['Window glow', 'Lamp glass', 'Lamp star', 'Lantern glow', 'Street glow', 'Porch glass', 'Headlamp glass', 'Tamo glow', 'Garland glow'];
@@ -67,11 +68,13 @@ export class Assets {
       for (const m of [o.material].flat()) {
         // Baked AO lives in COLOR_0; make sure it multiplies the base colour.
         if (o.geometry.attributes.color) m.vertexColors = true;
-        // the VRoid people's atlas (art/blender/vroid_lite.py build_atlas): the boys' face skin is packed squashed about
-        // 9 : 1, and a face seen from a few metres was drawn from a mip chosen by its dense axis (a smear);
-        // anisotropic filtering reads it right (docs/GROUP-PERFORMANCE.md, "Faces at a distance"). The rows' joined
-        // atlas copies it (game/perform/row-merge.js).
+        // the VRoid people's atlas (art/blender/vroid_lite.py build_atlas): anisotropic filtering, so an island stretched
+        // in the atlas is read from the right mip (the boys' face skin was packed 16 : 1 until their atlases were re-packed,
+        // 2026-11-28; the girls' brow, eye-line and lash sheets are still 4 : 1). The rows' joined atlas copies it
+        // (game/perform/row-merge.js; docs/GROUP-PERFORMANCE.md, "Faces at a distance").
         if (m.name === 'VRoid atlas' && m.map && m.map.anisotropy < this.atlasAniso) m.map.anisotropy = this.atlasAniso;
+        // and its faces: thin strokes kept far away, the face shaded as one soft surface (actors/face-look.js)
+        if (m.name === 'VRoid atlas') { patchFaceMaterial(m); if (o.isSkinnedMesh) faceNormals(o); }
         if (GLOW_MATERIALS.includes(m.name)) {
           if (!this.glow.has(m.name)) this.glow.set(m.name, new Set());
           this.glow.get(m.name).add(m);
