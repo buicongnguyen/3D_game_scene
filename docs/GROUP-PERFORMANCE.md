@@ -337,11 +337,56 @@ broken dashes on the boys' brows, the girls 1.4x too dark at 12 m); a 2 x 2 scre
 bias (black blobs on the brows); the four-read majority without multisampling (the boy 1.45x too dark, flicker
 0.52 -> 0.83). On Low every all-or-nothing rule measured worse than none.
 
-Not done: the girls, Kotone, the Night Star and the visitors are not rebuilt. Their face skin is square (1.2-1.5 : 1)
-and their atlases 52-62 % used, but the same build would give their faces ~5x the texels (Kotone 27,146 -> 135,887,
-Saki 25,606 -> 133,715: hair cards sharing their sheet) and square brows: sharper close-ups, nothing at a distance.
-Kotone's needs her pack, Club bake and portrait redone with it (`vroid_mixamo.py`, then `kotone-club-bake.mjs`,
-`kotone_portrait.py`).
+### Round 3 (2026-11-28): sharper close-ups for the girls, and a mouth that reads
+Owner: "Maybe Saki looks better — build for sharper close-ups too. Check those 8 characters; maybe we need to keep the
+lips more pink-red so we can see the mouth?"
+
+**The girls re-packed.** Kotone, Saki, Mio, Yuna, Aoi, the Night Star and the visitors Vita and Bibi rebuilt with round
+2's atlas (`vroid_mixamo.py`, Blender 5.2.5, one run each; the boys once more for the mouth). The texels the face's own
+triangles get (skin, eyes, lines, brows, mouth; each texel once), PC file / light file: Kotone 66,495 -> 327,597 (4.9x) /
+16,764 -> 83,056; Saki 62,853 -> 322,436 (5.1x) / 15,875 -> 83,019; Yuna 61,041 -> 365,256 (6.0x); Aoi 138,830 ->
+363,948 (2.6x); Mio 298,330 -> 387,735 (1.3x: her atlas was roomy); Stella 2.3x, Vita and Bibi 2.1x (the same on the
+light files). The face skin alone: Kotone 27,146 -> 135,887, Saki 25,606 -> 133,715. Sharper close-ups (the eye lines,
+lashes and the mouth line at 0.8-2 m); from ~6 m on nothing changes (the mip there is the same picture).
+
+**The mouth, measured first.** The same frozen Sing & Play frame (group of 8, Golden Rails, first chorus + 4 s, the pose
+stepped by hand so every run shows the same frame), the camera 0.8-12 m in front of each face, the mouth closed and sung
+open (mouthA 0.6 / mouthO 0.2: the song's median sung frame), PC 1280 x 720 (Medium, MSAA 4) and Low 390 x 844 (light
+files). Numbers per face, top quarter of the mouth box's pixels, CIE76: "signal" = how much singing changes the pixels
+(open vs closed), "darkness" = skin L minus the open mouth's L. What we found: the VRoid faces paint a closed mouth as
+one thin line, and the open mouth's inside is a mid red (the tongue / roof sheet) close to the skin's brightness, so the
+moving mouth was a small red smudge from 4 m on. Options built into the atlas (`VROID_MOUTH_VARIANTS=1`) and compared on
+one frame against the plain re-packed atlas, girls' mean (PC; Low alike):
+- (a) a soft lip tint, a few mm round the slit (strength 0.55): a closed mouth changed by 1.2 units at 2 m (not seen).
+  A wider band (3.2 mm above, 6.8 mm below the slit at most; strength 0.88): 4.4 at 2 m, 3.9 at 4 m, 3.2 at 6 m, 2.7 at
+  8 m: just seen, soft pink lips, no lipstick. Alone it lowers the signal a little (21.8 -> 21.1 at 2 m: closed lips
+  are pinker, so opening changes less).
+- (b) the inside darker (teeth kept): signal at 2 / 4 / 6 / 8 / 12 m 21.8 / 18.7 / 15.4 / 11.8 / 8.7 -> 24.7 / 20.8 /
+  17.2 / 12.7 / 9.5 at 0.5 darker, 28.2 / 23.4 / 19.1 / 13.6 / 9.9 at 0.65 darker (Low 21.2 / 20.2 / 17.4 / 15.1 / 14.7
+  -> 28.1 / 26.6 / 22.2 / 19.4 / 18.3): the open mouth reads as a dark shape, the anime way.
+- (c) both: what was kept. Girls and women: the wide pink-coral lip band (0.88) and the inside 0.6 darker; boys: a faint
+  natural rose on a narrow band (0.35, 2 / 4 mm) and the inside 0.6 darker. In the atlas at build time
+  (`vroid_lite.MOUTH`, `mouth_masks`, `mouth_look`; art/CONTRACTS.md): no draws, materials, textures or shader work,
+  the same on PC, Low and the merged rows.
+
+**Effect** (before = the shipped files, after = these, the same frame). Signal before -> after: PC girls 22.3 -> 28.5
+(+28 %) at 2 m, 19.5 -> 23.8 (+22 %) at 4 m, +14 % at 6 m, +18 % at 8 m, +12 % at 12 m; boys +55 / +42 / +45 / +45 / +34 %;
+Low girls +29 / +27 / +26 / +22 / +16 %, boys +44-51 %. The open mouth's darkness, PC girls 28.1 -> 40.0 (2 m), 25.9 ->
+35.9 (4 m), 26.8 -> 33.8 (6 m). A closed mouth changed by 3-7 units (the pink lips). Saki and Kotone gain least (their
+slits are the narrowest, 20.9 / 25 mm; Aoi's is 35.6): Saki PC +9 % at 2 and 4 m, +4-6 % further, darkness 30.4 -> 37.7
+at 2 m, her closed mouth 4.5 / 4.0 / 3.2 units changed at 2 / 4 / 6 m (Low 6.9 / 7.3 / 5.0); Kotone PC +9 / +8 / +2 %,
+Low +14-18 %. Past ~8 m a mouth is 1-2 pixels: no tint makes it readable there.
+Sizes: raw -49 KB (91,193,824 B), packed -83 KB (40,695,020 B): the re-pack shrank the girls' pictures more than the
+tint added; no budget changed. Skeletons: all 24 files (16 models, 8 light) and both packs keep the same 69 joints, order,
+parents, rest and inverse binds to the last bit; nam-1's pack and Club bake came out byte-identical, Kotone's pack's
+nine own clips too. Kotone's body is 13,989 tris now (13,878: her last build predates decimate_to's fix, b4e5fc6), and
+the Club bake re-solved her arms' clearance on it (the solver on her old body gives the shipped pack byte for byte):
+Club / Mic / Moment upper arms moved up to 12-35 deg at their extremes (p99 under 19 deg), hips and legs exact.
+`scripts/troupe-check.mjs`: joints 0 for all eight, slide unchanged (Kotone p95 1.01 cm/s before and after).
+Pictures: `.tools/girls/<name>-pc.png` / `-low.png` (face at 0.8 m x2, close-ups 0.8 / 1.2 / 2 m resting and singing
+before | after, the 2-12 m strip singing, the options), `all8-pc.png` / `all8-low.png`, `portrait-before-after.png`,
+`singer-faces-before-after.png`; numbers in `.tools/girls/m/final-vs-before.json`, `tint-pc-wide.json`,
+`tint-low-wide.json` (local, ignored).
 
 ## Checks
 - `npm test` (troupe.test.mjs: cast, back routine, copy maths, leg solve, sing-along gate, room check, group shots,

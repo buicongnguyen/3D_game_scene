@@ -270,7 +270,12 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   `node scripts/kotone-club-bake.mjs` (run it again after a rebuild): Club* (14 beat-locked loops, 8 beats at 120 BPM),
   Mic* (3 mic moves, upper body laid over the dance), Moment* (6 one-shots); joint rules R1-R11 checked by the script.
 - Rebuild all three together (one Blender session): `blender -b --factory-startup --python art/blender/vroid_mixamo.py`
-  (`-- --only full,lite,pack`); then `art/blender/kotone_portrait.py`.
+  (`-- --only full,lite,pack`); then `node scripts/kotone-club-bake.mjs` and `art/blender/kotone_portrait.py`.
+  Round 3 (2026-11-28, the re-packed atlas and the mouth): her skeleton, rest and inverse binds came out identical and the
+  pack's own nine clips byte-identical; her body is 13,989 tris now (13,878 before: decimate_to's fix from b4e5fc6, which
+  her last build predates), so the Club bake re-solved her arms' clearance on it: the Club / Mic / Moment clips moved
+  (upper arms up to 12-35 deg at their extremes, p99 under 19 deg; hips and legs exact, the same slide), joint rules
+  R1-R11 pass; the solver on her old body gives the shipped pack byte for byte. The mic fit is unchanged.
 
 #### The other seven VRoid samples (the group performance) — `vroid_mixamo.py --member <id>` (since 2026-11-28)
 
@@ -286,10 +291,22 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
 - The atlas (`vroid_lite.build_atlas`, 2026-11-28 round 2): square texels (each island scaled by its source picture's
   width and height), one material's islands that read the same texels share them (hair cards), the packer kept from
   correcting for a picture's aspect (it had squashed the boys' face skin 16 : 1). tests/assets.test.mjs checks every
-  VRoid file: the face's texels under 1.6 : 1 (median), every UV inside the picture. Rebuilt with it so far: nam-1, nam-2,
-  nam-3 (models and light files; nam-1's pack and Club bake came out byte-identical). The girls, Kotone, the Night Star
-  and the visitors still carry the older pack (face skin square, brow / line / lash sheets 4 : 1, hair cards one copy
-  each): a rebuild gives their faces ~5x the texels (docs/GROUP-PERFORMANCE.md, "Faces at a distance", round 2).
+  VRoid file: the face's texels under 1.6 : 1 (median), every UV inside the picture. Rebuilt with it: the boys (round 2),
+  then the girls, Kotone, the Night Star and the visitors (round 3, 2026-11-28): every VRoid file in the game. Their
+  faces got 2.1-6x the texels (Kotone 4.9x, Saki 5.1x, Yuna 6.0x, Aoi 2.6x, Mio 1.3x, Stella / Vita / Bibi 2.1-2.3x).
+- The mouth (`vroid_lite.MOUTH`, `mouth_masks` / `mouth_look`, 2026-11-28 round 3): two masks read off the source
+  materials before the bake (the lips: the face skin within a few mm of the mouth's slit, the upper lip thinner, fading
+  at the corners; the inside: the FaceMouth sheet and its bake margin) and a multiply in the atlas: the lips toward
+  pink-coral for the girls and women (strength 0.88, 3.2 mm above / 6.8 mm below the slit at most) and a faint natural
+  rose for the boys (0.35, 2 / 4 mm), the inside 0.6 darker except the teeth (both kinds). `MOUTH_KIND` is set per
+  member (`nam-*` = boy). `VROID_MOUTH=off` builds the plain atlas; `VROID_MOUTH_VARIANTS=1` writes the measured options
+  beside it (`.tools/.../<stem>.atlas.<option>.png`) and leaves the atlas plain. No draws, materials or shader work:
+  the same on PC and Low. Numbers in docs/GROUP-PERFORMANCE.md ("Faces at a distance", round 3).
+- Rebuild order for the whole set (one Blender run per member, run in parallel): Kotone `-- --only full,lite,pack`, then
+  `node scripts/kotone-club-bake.mjs`; `-- --member nam-1 --only full,lite,pack`, then `kotone-club-bake.mjs --who
+  vroid-nam1`; the other girls and boys `-- --member <id> --only full,lite`; the guests `-- --member cc0-d-darkness |
+  cc0-f | cc0-e --only full,lite --out <folder>`, copied as vroid-nightstar / visitor-vita / visitor-bibi; then
+  `art/blender/kotone_portrait.py` (Blender 4.5.11, as the cast's portraits) and `node scripts/bake-singer-faces.mjs`.
 - Loaded only by a group performance (`content/troupe.js`, `game/perform/troupe.js`): the models of the group and one
   pack (`moves-vroid-nam1`, the back row's source). Only that pack ships: the other six were dropped from the deploy
   (owner, 2026-11-28); `--member <id>` rebuilds a member's pack when it is needed.
