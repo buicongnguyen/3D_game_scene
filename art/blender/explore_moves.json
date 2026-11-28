@@ -1,0 +1,19 @@
+[
+ ["Jump", "Jumping Up", {"range": [0.42, 0.83], "blend": 0}],
+ ["Fall", "Fall A Loop", {}],
+ ["Land", "Fall A Land To Standing Idle 01", {}],
+ ["Swim", "Swimming To Edge", {"range": [0.1, 2.4], "blend": 0.5}],
+ ["Tread", "Treading Water", {}],
+ ["Sit", "Sitting", {"range": [0.0, 5.0], "blend": 0.5}],
+ ["SitGrass", "Kneeling", {}],
+ ["Crouch", "Kneeling Down", {"range": [2.1, 2.77], "blend": 0}],
+ ["CrouchWalk", "Crouched Walking", {}],
+ ["CrouchReach", "Kneeling Inspecting", {"range": [0.4, 1.4], "blend": 0}],
+ ["CrouchReachHold", "Kneeling Inspecting", {"range": [0.0, 4.5], "blend": 0.4}],
+ ["Kneel", "Kneeling Idle", {}],
+ ["Pickup", "Gathering Objects", {"range": [0.35, 1.35], "blend": 0}],
+ ["Interact", "Taking Item", {"range": [0.6, 2.2], "blend": 0}],
+ ["Pat", "Patting", {}],
+ ["PatHigh", "Petting Animal", {"range": [0.0, 6.0], "blend": 0.4}],
+ ["Hang", "Hanging Idle", {}]
+]

@@ -1,5 +1,6 @@
 // Machine-readable mirror of art/CONTRACTS.md. Keep both in sync.
 import { PERFORM_CLIPS } from '../src/content/kotone-club.js';
+import { PACK_MOVES as EXPLORE_PACK_MOVES } from '../src/actors/body-moves.js';
 // tris: triangle budget. nodes: node names the runtime looks up. mats: material names.
 // clips: animation clips (rigged models). family: generator script.
 
@@ -75,6 +76,10 @@ export const CONTRACTS = {
   'kotone.lite': { family: 'vroid', vroidOf: 'kotone', tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
   // her evening show (game/kotone-show.js): her armature and the dances and singing, no mesh, fetched only for the show
   'moves-kotone': { family: 'vroid-clips', of: 'kotone', clips: KOTONE_SHOW_CLIPS },
+  // Play as (docs/EXPLORE-AND-SHOW.md): the Explore moves every singer body borrows (jump, fall, land, swim, tread, sit,
+  // kneel, crouch, pick up, reach, pat, hang), ONE pack on Saki's skeleton (art/blender/explore_moves.json, then
+  // scripts/explore-moves-fix.mjs), made ready for each body at load (actors/body-moves.js); fetched when a singer is played
+  'moves-explore': { family: 'vroid-clips', of: 'vroid-nu3', clips: EXPLORE_PACK_MOVES },
   // the other seven, the same contract; fetched only when a group performs (game/perform/troupe.js), never at the start
   ...Object.fromEntries(VROID_MEMBERS.flatMap(m => [
     [m, { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }],
@@ -409,7 +414,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // 0.78 MB; 89,296,816 B measured). Fetched only near the station or near the sisters (game/station-visitors.js), one set or the other.
 // +1.90 MB: the Night Star (vroid-nightstar.glb 1.11 MB, .lite 0.79 MB; one or the other is fetched, at night near the
 // shrine or for Sing & Play's Singer row; no pack of her own: she dances Kotone's moves); 87,298,064 B measured.
-export const TOTAL_RAW_BYTES = 91_400_000;     // (the dance game, the exercise packs, the visitors and the Night Star)
+// +0.49 MB: the Explore moves pack (moves-explore.glb, 17 clips on Saki's skeleton for every singer body; Play as).
+export const TOTAL_RAW_BYTES = 91_900_000;     // (the dance game, the exercise packs, the visitors, the Night Star and Play as)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
