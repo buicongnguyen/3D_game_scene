@@ -43,6 +43,38 @@ def sofa(R, c, rot, col, w=1.8):
     R.col_c('sofa', (L.o.x, L.o.y, 0), (w + .06, .88, .85))
 
 
+DINE_TOP = .755
+
+
+def place_setting(R, c, f):
+    """Rice bowl on the diner's left, miso soup on the right, chopsticks across the front; f = the diner's facing."""
+    c, f = V(c), V((f[0], f[1], 0))
+    right = V((f.y, -f.x, 0))
+    bowl(R, c - right * .09, r=.055, col='#f4efe2', fill='#fbf8ee')
+    bowl(R, c + right * .09, r=.055, col='#7a2a1e', fill='#c08a4a')
+    rot = math.atan2(right.y, right.x)
+    for k in (-1, 1):
+        R.box('K', c - f * .13 + f * k * .008 + V((0, 0, .006)), (.22, .008, .008), '#6b4027', ch=0, rot=(0, 0, rot),
+              tag='chopsticks')
+
+
+def supper_set(R, dt, top):
+    """Var_scene_supper: five place settings, two grilled fish on a long plate and the rice tub (one Paint mesh)."""
+    with group(R, 'Var_scene_supper'):
+        z = top + .012
+        for x, y, f in ((dt.x - .35, dt.y + .26, (0, -1)), (dt.x + .35, dt.y + .26, (0, -1)),
+                        (dt.x - .35, dt.y - .26, (0, 1)), (dt.x + .35, dt.y - .26, (0, 1)), (dt.x + .58, dt.y, (-1, 0))):
+            place_setting(R, (x, y, z), f)
+        R.box('K', (dt.x - .12, dt.y, z + .006), (.36, .15, .012), '#e8e0ce', ch=0, tag='fish plate')
+        R.box('K', (dt.x - .12, dt.y, z + .014), (.3, .11, .004), '#2f4c86', ch=0, tag='fish plate')
+        grilled_fish(R, (dt.x - .2, dt.y + .02, z + .012), rot=.1, L=.16, col='#c98a4a')
+        grilled_fish(R, (dt.x - .02, dt.y - .02, z + .012), rot=-.1, L=.2, col='#d99448')
+        oc = V((dt.x - .58, dt.y + .1, z))
+        R.cyl('K', oc + V((0, 0, .07)), .1, .14, '#c98f58', n=8, tag='rice tub')
+        R.cyl('K', oc + V((0, 0, .145)), .105, .015, '#8a5a32', n=8, tag='rice tub')
+        R.box('K', oc + V((.07, -.08, .165)), (.05, .16, .01), '#e8d8b4', ch=0, rot=(0, 0, .4), tag='rice paddle')
+
+
 @builder('interior-kawabe-b')
 def build_kawabe_b():
     with lean_boxes():
@@ -50,23 +82,24 @@ def build_kawabe_b():
 
 
 def _build_kawabe_b():
-    W, D, H = 7.8, 5.8, 3.2
+    W, D, H = 8.0, 6.6, 3.3          # 2026-11-28: enlarged from 7.8 x 5.8 (dining nook for the supper scene)
     CEIL = 3.6
-    R = Room('interior-kawabe-b', W, D, H, ceil=CEIL, cam_top=3.1)
+    R = Room('interior-kawabe-b', W, D, H, ceil=CEIL, cam_top=3.2)
     fire_mat(R)
     make_variants(R)
+    R.pivot('Var_scene_supper', V((0, 0, 0)))
     rng = random.Random(2727)
     fc = R.faces()
     xs = lambda x: x + W / 2           # back/left u from x  (back wall)
     FW = .6                            # glass starts here (wooden lower panels below)
     holes = {
         'front': [(.25, W - .25, FW, 2.35)],
-        'back': [(1.3, 2.6, 1.1, 2.15), (5.2, 6.5, 1.1, 2.15)],
-        'left': [(3.8, 5.1, 0, 2.2)],
-        'right': [(1.9, 3.2, 1.1, 2.15)],
+        'back': [(1.4, 2.7, 1.1, 2.15), (5.3, 6.6, 1.1, 2.15)],
+        'left': [(4.6, 5.9, 0, 2.2)],
+        'right': [(2.3, 3.6, 1.1, 2.15)],
     }
-    posts = {'back': [.07, 3.0, 5.0, W - .07], 'front': [.07, W - .07], 'left': [.07, 2.6, D - .07],
-             'right': [.07, 1.65, 3.45, D - .07]}
+    posts = {'back': [.07, 3.1, 5.1, W - .07], 'front': [.07, W - .07], 'left': [.07, 3.4, D - .07],
+             'right': [.07, 2.05, 3.85, D - .07]}
     rails = [(2.5, .1), (H - .08, .16)]
     for side, (f, L) in fc.items():
         z0 = FW if side == 'front' else .95
@@ -76,14 +109,14 @@ def _build_kawabe_b():
             wainscot(R, f, L, 0, .95, holes[side], SAGE, board=.5, cap=DARKW, seed=len(side))
         posts_and_rails(R, f, L, 0, H, posts[side], rails, col=POST, holes=holes[side])
     # beams and ceiling
-    for y in (-.3, 1.6):
+    for y in (-.5, 1.9):
         R.box('W', (0, y, H + .14), (W + .1, .3, .3), DARKW, ch=0, tag='beams')
     R.box('W', (0, 1.0, 3.45), (.2, D + .1, .18), DARKW, ch=0, tag='beams')
     board_ceiling(R, CEIL, col='#c89058', board=.6, along='y')
     shadow_shell(R, holes)
 
     # ---- floors: honey planks, stone kitchen floor in the back-left corner
-    KX, KY = -1.6, .7
+    KX, KY = -1.7, 1.1
     plank_floor(R, KX, W / 2, -D / 2, D / 2, z=0, board=.3, seg=2.2, base=HONEY, along='x', seed=3)
     plank_floor(R, -W / 2, KX, -D / 2, KY, z=0, board=.3, seg=2.2, base=HONEY, along='x', seed=4)
     tile_floor(R, -W / 2, KX, KY, D / 2, z=0, tile=.55, cols=('#b3a794', '#a39a8c', '#c2b49c', '#9d958a'), grout='#6e665c',
@@ -105,14 +138,14 @@ def _build_kawabe_b():
     R.fbox(ff, 'W', W / 2 + .02, 1.1, .08, .03, .22, .03, BRASS, ch=0, tag='handles')
     # ---- left: the plank door of the kitchen, the sewing corner
     fl = fc['left'][0]
-    door_inside(R, 'left', 4.45, w=1.3, h=2.2, col='#8a5a32', frame=POST, glass=False)
+    door_inside(R, 'left', 5.25, w=1.3, h=2.2, col='#8a5a32', frame=POST, glass=False)
     # sewing corner (front-left): table in front of the glass, chest on the left wall, pegboard above
-    sl = Loc((-3.0, -2.5), 0.0)
+    sl = Loc((-3.1, -2.9), 0.0)
     R.box('W', sl.p(0, 0, .76), (1.3, .7, .05), '#c98f58', ch=0, rot=sl.rz, tag='sewing table')
     for s in (-1, 1):
         R.box('W', sl.p(s * .6, 0, .37), (.06, .62, .74), '#a8723c', ch=0, rot=sl.rz, tag='sewing table')
     R.box('W', sl.p(0, .3, .5), (1.2, .03, .4), '#8a5a32', ch=0, rot=sl.rz, tag='sewing table')
-    R.col_c('sewing table', (-3.0, -2.5, 0), (1.34, .74, .8))
+    R.col_c('sewing table', (-3.1, -2.9, 0), (1.34, .74, .8))
     # sewing machine
     mc = sl.p(.1, .05, .785)
     R.box('K', mc + V((0, 0, .03)), (.34, .16, .06), '#2a2a30', ch=0, tag='sewing machine')
@@ -120,17 +153,17 @@ def _build_kawabe_b():
     R.box('K', mc + V((-.02, .03, .27)), (.34, .09, .08), '#d9d4c8', ch=0, tag='sewing machine')
     R.cyl('M', mc + V((.2, .0, .14)), .05, .02, '#30343e', n=8, rot=(math.pi / 2, 0, 0), tag='sewing machine')
     # stool
-    st = V((-3.0, -1.9, 0))
+    st = V((-3.1, -2.3, 0))
     R.cyl('W', st + V((0, 0, .44)), .19, .05, '#a8723c', n=8, tag='stool')
     for a in range(3):
         ang = a * TAU / 3 + .5
         R.rod('W', st + V((math.cos(ang) * .12, math.sin(ang) * .12, .02)), st + V((math.cos(ang) * .15, math.sin(ang) * .15, .43)),
               .02, '#8a5a32', n=4, tag='stool')
-    LT = Loc((-W / 2 + .23, -1.2, 0), AGAINST['left'])
+    LT = Loc((-W / 2 + .23, -1.6, 0), AGAINST['left'])
     chest_lean(R, LT, .95, .44, .9, 3, '#8a4a2a', pull=IRON, cols_top=2)
-    R.col_c('sewing chest', (-W / 2 + .23, -1.2, 0), (.48, .99, .9), top=.92)
+    R.col_c('sewing chest', (-W / 2 + .23, -1.6, 0), (.48, .99, .9), top=.92)
     # pegboard with spools
-    ub = R.u_of('left', y=-2.3)
+    ub = R.u_of('left', y=-2.7)
     R.fbox(fl, 'W', ub, 1.7, .03, 1.1, .8, .03, '#c08a52', ch=0, tag='pegboard')
     for k, col in enumerate(('#d8342c', '#e0a93a', '#2d78c8', '#3f9a4a', '#a050a0', '#f4efe2')):
         R.fbox(fl, 'K', ub - .42 + (k % 3) * .42, 1.9 - (k // 3) * .35, .07, .08, .1, .06, col, ch=0, tag='spools')
@@ -142,7 +175,7 @@ def _build_kawabe_b():
     fr_ = fc['right'][0]
     window(R, fr_, holes['right'][0], depth=.26, kind='river', seed=6, frame=POST, cols=2, rows=2, nu=4, nv=3,
            casing=False)
-    cc = V((-2.05, D / 2 - .31, 0))
+    cc = V((-2.15, D / 2 - .31, 0))
     R.box('W', cc + V((0, 0, .4)), (1.6, .6, .8), '#8a5a32', ch=0, tag='counter')
     for k in range(3):
         R.box('W', cc + V((-.5 + k * .5, -.305, .4)), (.46, .012, .7), '#a46e3e', ch=0, tag='counter doors')
@@ -153,7 +186,7 @@ def _build_kawabe_b():
     R.rod('M', cc + V((.3, .24, 1.1)), cc + V((.3, .12, 1.1)), .015, '#c9a062', n=4, tag='tap')
     R.col_c('counter', (cc.x, cc.y, 0), (1.66, .66, .9), top=.9)
     # iron stove at the left end of the counter, pipe to the ceiling
-    sc = V((-3.3, D / 2 - .33, 0))
+    sc = V((-3.4, D / 2 - .33, 0))
     R.box('K', sc + V((0, 0, .5)), (.6, .56, .7), '#2a2d36', ch=0, tag='stove')
     R.box('K', sc + V((0, 0, .87)), (.64, .6, .04), '#1a1c22', ch=0, tag='stove')
     R.box('K', sc + V((.0, -.285, .52)), (.3, .01, .22), '#5a4030', ch=0, tag='stove')
@@ -191,9 +224,9 @@ def _build_kawabe_b():
     R.col_c('buffet', (2.05, D / 2 - .23, 0), (1.89, .48, .87), top=.9)
 
     # ---- right: bookcase, window
-    BL = Loc((W / 2 - .2, 2.0, 0), AGAINST['right'])
+    BL = Loc((W / 2 - .2, 2.4, 0), AGAINST['right'])
     tops = shelf_unit(R, BL, 1.6, .36, 2.15, 5, '#9a5a32', back='#6b4027')
-    R.col_c('bookcase', (W / 2 - .2, 2.0, 0), (.4, 1.64, 2.15), top=2.15, view=True)
+    R.col_c('bookcase', (W / 2 - .2, 2.4, 0), (.4, 1.64, 2.15), top=2.15, view=True)
 
     # ---- the irori hearth with its hanging kettle
     ic = V((-1.1, -.3, 0))
@@ -204,37 +237,49 @@ def _build_kawabe_b():
     R.box('F', ic + V((0, 0, .06)), (.34, .34, .03), '#ff8a30', ch=0, tag='irori fire')
     for k in range(3):
         R.cyl('W', ic + V((0, 0, .09)), .03, .38, '#4a2e20', n=5, rot=(0, math.pi / 2, k * 1.05 + .3), tag='irori logs')
-    R.rod('M', (ic.x, ic.y, 3.2), (ic.x, ic.y, 1.27), .015, IRON, n=4, tag='hook')
+    R.rod('M', (ic.x, ic.y, H), (ic.x, ic.y, 1.27), .015, IRON, n=4, tag='hook')
     R.box('W', (ic.x, ic.y, 1.27), (.5, .04, .04), '#4a2e20', ch=0, tag='hook')
     kettle(R, (ic.x, ic.y, 1.0), r=.13)
     R.col_c('irori', (ic.x, ic.y, 0), (1.04, 1.04, .62))
     R.node('Light_3', (ic.x, ic.y, .3))['fire'] = 1
     # ---- dining table and chairs, living-room sofa and coffee table
-    dt = V((1.6, .9, 0))
+    dt = V((1.5, 1.15, 0))
     R.box('W', dt + V((0, 0, .73)), (1.5, .9, .05), '#c98f58', ch=0, tag='dining table')
     for sx in (-1, 1):
         for sy in (-1, 1):
             R.box('W', dt + V((sx * .66, sy * .36, .35)), (.07, .07, .7), '#a8723c', ch=0, tag='dining table')
     R.col_c('dining table', (dt.x, dt.y, 0), (1.54, .94, .78))
-    for x in (1.25, 1.95):
-        chair(R, x, 1.8, 0.0)
-        chair(R, x, .0, math.pi)
+    for x in (dt.x - .35, dt.x + .35):
+        chair(R, x, dt.y + .9, 0.0)
+        chair(R, x, dt.y - .9, math.pi)
     pendant_lean(R, (dt.x, dt.y, 2.25), r=.24, col='#2f9a8a', cord=CEIL - 2.25 - .16)
     R.node('Light_1', (dt.x, dt.y, 2.1))
-    sofa(R, (2.4, -1.15), 0.0, '#6f9a86')
-    ct = V((2.4, -2.1, 0))
+    sofa(R, (2.5, -1.55), 0.0, '#6f9a86')
+    ct = V((2.5, -2.5, 0))
     R.box('W', ct + V((0, 0, .38)), (1.0, .5, .04), '#c98f58', ch=0, tag='coffee table')
     for sx in (-1, 1):
         R.box('W', ct + V((sx * .44, 0, .18)), (.05, .44, .36), '#a8723c', ch=0, tag='coffee table')
     R.col_c('coffee table', (ct.x, ct.y, 0), (1.04, .54, .42))
-    paper_lamp_lean(R, (2.4, -1.6, 2.4), r=.27, h=.44, cord=CEIL - 2.4 - .22)
-    R.node('Light_2', (2.4, -1.6, 2.25))
+    paper_lamp_lean(R, (2.5, -2.0, 2.4), r=.27, h=.44, cord=CEIL - 2.4 - .22)
+    R.node('Light_2', (2.5, -2.0, 2.25))
 
     # ---- residents, spawn, exit
     spot(R, 'Spot_npc_1', (-2.0, -.3, 0), (ic.x, ic.y, 0))
-    spot(R, 'Spot_npc_2', (-2.3, 1.55, 0), (0, 0, 0))
-    R.node('Spawn', (0.0, -.95, 0))
+    spot(R, 'Spot_npc_2', (-2.4, 1.95, 0), (0, .4, 0))
+    R.node('Spawn', (0.0, -1.35, 0))
     R.node('Exit', (0, -D / 2 + .55, 0))
+    # ---- "Supper at the Nakanos'" (docs/TRAVEL-LANGUAGE-PLAN.md 5.3): the family at the dining table, the guest
+    # standing at its east end, Mika at the west end; the free front-right chair is hers if she sits
+    ty = dt.y + .85                                       # back-row roots: on the chair seats, a little toward the table
+    scene_seat(R, 'Seat_1', (dt.x - .35, ty, 0), (dt.x - .35, dt.y, 0), 'sit')          # Mrs. Nakano
+    scene_seat(R, 'Seat_2', (dt.x + .35, ty, 0), (dt.x + .35, dt.y, 0), 'sit')          # Mr. Nakano
+    scene_seat(R, 'Seat_3', (dt.x - .35, dt.y - .85, 0), (dt.x - .35, dt.y, 0), 'sit')  # Daichi
+    scene_seat(R, 'Seat_4', (dt.x + 1.1, dt.y, 0), (dt.x, dt.y, 0), 'stand')            # Grandpa Ota (no Sit clip)
+    scene_seat(R, 'Spot_mika', (dt.x - 1.15, dt.y, 0), (dt.x, dt.y, 0), 'stand')
+    scene_cam(R, 'Cam_wide', (.7, -2.3, 2.3), (dt.x, dt.y - .05, .85))
+    scene_cam(R, 'Cam_a', (dt.x - .7, dt.y - 1.9, 1.45), (dt.x + .1, dt.y + .85, 1.0))   # over Daichi to his parents
+    scene_cam(R, 'Cam_b', (dt.x + 1.85, dt.y - .4, 1.75), (dt.x - .3, dt.y + .1, 1.0))  # over Ota down the table
+    supper_set(R, dt, DINE_TOP)
     R.shell_cols(surface='wood')
 
     env = dict(R=R, W=W, D=D, H=H, CEIL=CEIL, fc=fc, ic=ic, dt=dt, ct=ct, rng=rng, BL=BL, tops=tops, LT=LT, LC=LC, BC=BC)

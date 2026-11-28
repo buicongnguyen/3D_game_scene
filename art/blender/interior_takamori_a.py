@@ -250,18 +250,18 @@ HONEY = '#d09a5e'
 
 @builder('interior-takamori-a')
 def build_takamori_a():
-    W, D, H = 6.9, 5.6, 3.2
-    R = Room('interior-takamori-a', W, D, H, ceil=3.8, cam_top=3.12)
+    W, D, H = 7.6, 6.4, 3.3          # 2026-11-28: enlarged from 6.9 x 5.6 (dining nook)
+    R = Room('interior-takamori-a', W, D, H, ceil=3.9, cam_top=3.3)
     fire_mat(R)
     install_vars(R)
     rng = random.Random(21)
     fc = R.faces()
     PZ = .24                                  # raised tatami nook
     holes = {
-        'front': [(1.7, 2.7, 0, 2.15), (4.05, 6.25, .9, 2.2)],                       # door x 1.25 ; bay window
-        'back': [(4.65, 5.85, 1.0, 2.2), (.9, 1.8, .85, 2.2), (2.28, 3.22, 0, 2.1)],  # kitchen, nook, back door
-        'left': [(3.25, 4.15, .85, 2.15), (1.35, 2.25, .85, 2.15)],
-        'right': [(3.25, 4.15, .85, 2.15)],
+        'front': [(2.05, 3.05, 0, 2.15), (4.75, 6.95, .9, 2.2)],                     # door x 1.25 ; bay window
+        'back': [(5.35, 6.55, 1.0, 2.2), (.9, 1.8, .85, 2.2), (2.63, 3.57, 0, 2.1)],  # kitchen, nook, back door
+        'left': [(4.05, 4.95, .85, 2.15), (1.35, 2.25, .85, 2.15)],
+        'right': [(4.05, 4.95, .85, 2.15)],
     }
     posts = {'back': [.06, W - .06], 'front': [.06, W - .06], 'left': [.06, D - .06], 'right': [.06, D - .06]}
     WB = 1.0
@@ -273,25 +273,25 @@ def build_takamori_a():
             R.fbox(f, 'W', u, H / 2, .04, .17, H, .08, WALNUT, ch=.012, tag='posts')
         for a, b in spans(0, L, 2.55, holes[side]):
             R.fbox(f, 'K', (a + b) / 2, 2.55, .02, b - a, .07, .04, TERRA, ch=.008, tag='picture rail')
-    for y in (-1.7, .35, 2.2):
+    for y in (-2.0, .35, 2.5):
         R.box('W', (0, y, H + .14), (W + .1, .24, .28), WALNUT, ch=.02, tag='beams')
     for x in (-2.2, 2.2):
         R.box('W', (x, .35, H + .5), (.1, .1, .45), WALNUT, ch=.01, tag='beams')
-    board_ceiling(R, 3.8, col='#e2b87a', board=.32, along='x')
+    board_ceiling(R, 3.9, col='#e2b87a', board=.32, along='x')
     shadow_shell(R, holes)
 
     # ---- floors: honey planks everywhere, cream-and-teal tiles in the kitchen
     plank_floor(R, -W / 2, W / 2, -D / 2, D / 2, base=HONEY, board=.26, seg=1.7, along='x', seed=4)
-    tile_floor(R, .2, W / 2, .6, D / 2, z=.016, tile=.43, cols=('#f1e4c6', '#e6d3a8', '#7fb8b4'), grout='#8f7a5c',
+    tile_floor(R, .55, W / 2, 1.0, D / 2, z=.016, tile=.43, cols=('#f1e4c6', '#e6d3a8', '#7fb8b4'), grout='#8f7a5c',
                checker=False, tag='kitchen tiles')
-    R.box('W', (.2, (.6 + D / 2) / 2, .012), (.06, D / 2 - .6, .02), WALNUT, ch=.004, tag='tile edge')
+    R.box('W', (.55, (1.0 + D / 2) / 2, .012), (.06, D / 2 - 1.0, .02), WALNUT, ch=.004, tag='tile edge')
 
     # ---- front wall: door, bay window and window seat, plate dresser, hooks
-    door_inside(R, 'front', 2.2, w=1.0, h=2.15, col=TEAL, frame=CRM)
+    door_inside(R, 'front', 2.55, w=1.0, h=2.15, col=TEAL, frame=CRM)
     ff, Lf = fc['front']
     window(R, ff, holes['front'][1], depth=.24, kind='valley', nu=7, nv=5, seed=3, frame=CRM, cols=3, rows=2, frame_key='K')
     # window seat in the bay
-    sx0, sx1 = -2.8, -.6
+    sx0, sx1 = -3.15, -.95
     R.box('W', ((sx0 + sx1) / 2, -D / 2 + .22, .21), (sx1 - sx0, .4, .42), '#8f5a30', ch=.01, tag='window seat')
     for k in range(3):
         xc = sx0 + (sx1 - sx0) * (k + .5) / 3
@@ -300,7 +300,7 @@ def build_takamori_a():
     R.box('W', ((sx0 + sx1) / 2, -D / 2 + .22, .44), (sx1 - sx0 + .04, .44, .035), '#c98f55', ch=.008, tag='window seat')
     R.col_c('window seat', ((sx0 + sx1) / 2, -D / 2 + .22, 0), (sx1 - sx0 + .04, .44, .46))
     # tall plate dresser to the right of the door
-    dc = (2.65, -D / 2 + .24)
+    dc = (3.0, -D / 2 + .24)
     L = Loc(dc, AGAINST['front'])
     chest_lite(R, L, 1.5, .44, .92, 2, '#a5612f', pull=BRASS, cols=2)
     Lu = Loc((dc[0], dc[1] + .06, .95), AGAINST['front'])
@@ -311,13 +311,13 @@ def build_takamori_a():
             R.cyl('K', L.p(x, .12, z + .36 - .05), .1, .014, col, n=8, rot=(math.pi / 2, 0, 0), tag='plates')
     R.col_c('dresser', dc, (1.54, .48, 0), top=2.0)
     # coat hooks, cap and shawl by the door
-    R.fbox(ff, 'W', 3.95 - .25 + .3, 1.65, .03, .7, .08, .03, WALNUT, ch=.008, tag='hooks')
-    for u in (3.65, 3.9, 4.15):
+    R.fbox(ff, 'W', 4.35, 1.65, .03, .7, .08, .03, WALNUT, ch=.008, tag='hooks')
+    for u in (4.0, 4.25, 4.5):
         R.B('M').rod(ff.p(u - .0, 1.65, .04), ff.p(u, 1.62, .12), .01, n=4, tint=R.t('M', BRASS), tag='hooks')
-    R.B('P').append(bm_loft([ff.p(3.65, 1.62, .13), ff.p(3.65, 1.15, .15), ff.p(3.72, .85, .12)],
+    R.B('P').append(bm_loft([ff.p(4.0, 1.62, .13), ff.p(4.0, 1.15, .15), ff.p(4.07, .85, .12)],
                             [(-.1, 0), (.1, 0), (.09, .03), (-.09, .03)], closed=True, caps=True), None,
                     tint=R.t('P', '#c8643c'), smooth=40, tag='shawl')
-    R.lathe('P', [(0, .1), (.06, .09), (.09, .04), (.17, .015), (.18, 0), (0, 0)], ff.p(4.15, 1.5, .12), '#e3bb58', n=12,
+    R.lathe('P', [(0, .1), (.06, .09), (.09, .04), (.17, .015), (.18, 0), (0, 0)], ff.p(4.5, 1.5, .12), '#e3bb58', n=12,
             rot=(math.pi / 2, 0, ff.rot), tag='hat')
     for x, col in ((.05, '#3f8a5a'), (.3, '#3f8a5a')):
         R.box('K', (x, -D / 2 + .22, .15), (.1, .13, .3), col, ch=.02, seg=2, tag='boots')
@@ -378,32 +378,32 @@ def build_takamori_a():
     fb, Lb = fc['back']
     window(R, fb, holes['back'][0], depth=.24, kind='village', nu=6, nv=5, seed=9, frame=CRM, cols=2, rows=1, frame_key='K')
     window(R, fb, holes['back'][1], depth=.24, kind='valley', nu=7, nv=5, seed=10, frame=CRM, cols=2, rows=1, frame_key='K')
-    door_inside(R, 'back', 2.75, w=.94, h=2.1, col='#3f8a5a', frame=CRM, glass=True)
-    cx0, cx1, cy0, cy1, cz = .2, W / 2 - .02, D / 2 - .5, D / 2 - .02, .88
+    door_inside(R, 'back', 3.1, w=.94, h=2.1, col='#3f8a5a', frame=CRM, glass=True)
+    cx0, cx1, cy0, cy1, cz = .55, W / 2 - .02, D / 2 - .5, D / 2 - .02, .88
     R.box('K', ((cx0 + cx1) / 2, (cy0 + cy1) / 2, cz / 2 - .02), (cx1 - cx0, cy1 - cy0, cz - .06), '#a9d0c0', ch=.015, tag='counter')
     for k in range(6):
         x = cx0 + .3 + k * (cx1 - cx0 - .6) / 5
         R.box('K', (x, cy0 - .01, cz / 2 - .02), (.5, .02, .62), '#c3e0d2', ch=.006, tag='counter doors')
         R.box('M', (x + .18, cy0 - .03, cz - .22), (.04, .02, .12), BRASS, ch=0, tag='counter doors')
     R.box('W', ((cx0 + cx1) / 2, (cy0 + cy1) / 2 - .02, cz), (cx1 - cx0 + .04, cy1 - cy0 + .07, .06), '#d9a468', ch=.012, tag='counter top')
-    R.box('K', (1.8, cy1 - .22, cz + .026), (.62, .38, .02), '#cfd6d8', ch=.006, tag='sink')
-    R.box('K', (1.8, cy1 - .22, cz + .031), (.5, .28, .012), '#7a8a90', ch=0, tag='sink')
-    R.rod('M', (1.8, cy1 - .06, cz + .03), (1.8, cy1 - .06, cz + .25), .012, BRASS, n=6, tag='tap')
-    R.rod('M', (1.8, cy1 - .06, cz + .25), (1.8, cy1 - .17, cz + .25), .012, BRASS, n=6, tag='tap')
+    R.box('K', (2.15, cy1 - .22, cz + .026), (.62, .38, .02), '#cfd6d8', ch=.006, tag='sink')
+    R.box('K', (2.15, cy1 - .22, cz + .031), (.5, .28, .012), '#7a8a90', ch=0, tag='sink')
+    R.rod('M', (2.15, cy1 - .06, cz + .03), (2.15, cy1 - .06, cz + .25), .012, BRASS, n=6, tag='tap')
+    R.rod('M', (2.15, cy1 - .06, cz + .25), (2.15, cy1 - .17, cz + .25), .012, BRASS, n=6, tag='tap')
     R.col('counter', (cx0 - .05, cy0 - .05, -.5), (cx1 + .1, cy1 + .1, cz + .1))
     # spice shelf left of the window, towel bar right
-    ub0 = W / 2 + .3
+    ub0 = W / 2 + .65
     for z in (1.45, 1.85):
         R.fbox(fb, 'W', ub0 + .45, z, .1, 1.0, .035, .2, '#8f5a30', ch=.008, tag='spice shelf')
     # pot rack over the counter front
-    for x in (.45, 1.95):
-        R.rod('W', (x, 2.0, H + .02), (x, 2.0, 2.45), .006, '#2a1c14', n=4, tag='pot rack')
-    R.rod('M', (.45, 2.0, 2.45), (1.95, 2.0, 2.45), .014, IRON, n=6, tag='pot rack')
-    for k, (x, r, hh, col) in enumerate(((.7, .11, .13, '#c97a3a'), (1.35, .1, .12, '#2a9a9a'))):
-        hang_pot(R, (x, 2.0, 2.43), r=r, h=hh, col=col, lid=k % 2 == 0)
+    for x in (.8, 2.3):
+        R.rod('W', (x, 2.4, H + .02), (x, 2.4, 2.45), .006, '#2a1c14', n=4, tag='pot rack')
+    R.rod('M', (.8, 2.4, 2.45), (2.3, 2.4, 2.45), .014, IRON, n=6, tag='pot rack')
+    for k, (x, r, hh, col) in enumerate(((1.05, .11, .13, '#c97a3a'), (1.7, .1, .12, '#2a9a9a'))):
+        hang_pot(R, (x, 2.4, 2.43), r=r, h=hh, col=col, lid=k % 2 == 0)
     # nook window sill pot and the lantern chest
     # ---- tatami nook (left/back corner)
-    nx0, nx1, ny0, ny1 = -W / 2, -1.65, 1.0, D / 2
+    nx0, nx1, ny0, ny1 = -W / 2, -2.0, 1.4, D / 2
     R.box('W', ((nx0 + nx1) / 2, (ny0 + ny1) / 2, PZ / 2 - .01), (nx1 - nx0, ny1 - ny0, PZ), '#8f5a30', ch=.01, tag='nook')
     R.box('W', ((nx0 + nx1) / 2, ny0 + .012, PZ / 2 - .02), (nx1 - nx0, .03, PZ - .04), '#74441f', ch=0, tag='nook')
     R.box('W', (nx1 - .006, (ny0 + ny1) / 2, PZ / 2 - .02), (.03, ny1 - ny0, PZ - .04), '#74441f', ch=0, tag='nook')
@@ -421,22 +421,29 @@ def build_takamori_a():
     R.cyl('W', (nx1 - .28, ny1 - .26, PZ + .345), .08, .02, '#3a2418', n=8, tag='lantern')
 
     # ---- lights and dining set
-    pendant_lite(R, (-1.1, -.35, 2.3), r=.28, col=TERRA, cord=H + .6 - 2.3)
-    R.node('Light_1', (-1.1, -.35, 2.2))
-    pendant_lite(R, (1.7, 1.55, 2.45), r=.24, col=TEAL, cord=H + .6 - 2.45)
-    R.node('Light_2', (1.7, 1.55, 2.3))
-    tc = (-1.1, -.35)
+    tc = (-1.3, -.4)
+    pendant_lite(R, (tc[0], tc[1], 2.3), r=.28, col=TERRA, cord=H + .6 - 2.3)
+    R.node('Light_1', (tc[0], tc[1], 2.2))
+    pendant_lite(R, (2.05, 1.95, 2.45), r=.24, col=TEAL, cord=H + .6 - 2.45)
+    R.node('Light_2', (2.05, 1.95, 2.3))
     table(R, tc, 1.55, .88, .76, top='#dcab6e', leg='#8a5a32')
     for x in (-.45, .45):
         chair(R, (tc[0] + x, tc[1] + .62), tc, '#a8693a', '#e2b574')
         chair(R, (tc[0] + x, tc[1] - .62), tc, '#a8693a', '#e2b574')
-    R.col('dining set', (-2.15, -1.28, -.4), (.1, .6, .95))
+    R.col('dining chairs', (tc[0] - 1.05, tc[1] - .93, -.4), (tc[0] + 1.2, tc[1] + .95, .95))
 
     # ---- NPC spots and the door
-    npc_spot(R, 'Spot_npc_1', (2.05, .5), (-1.1, -.35))
-    npc_spot(R, 'Spot_npc_2', (.25, 1.0), (-1.1, -.35))
+    npc_spot(R, 'Spot_npc_1', (2.4, .5), tc)
+    npc_spot(R, 'Spot_npc_2', (.4, 1.3), tc)
     R.node('Spawn', (1.25, -D / 2 + 2.0, 0))
     R.node('Exit', (1.25, -D / 2 + .55, 0))
+    # ---- scene nodes (no scene yet): the four dining chairs, roots a little toward the table
+    for k, (x, y) in enumerate(((-.45, .58), (.45, .58), (-.45, -.58), (.45, -.58))):
+        scene_seat(R, f'Seat_{k + 1}', (tc[0] + x, tc[1] + y, 0), (tc[0] + x, tc[1], 0), 'sit')
+    scene_seat(R, 'Spot_mika', (tc[0] + 1.6, tc[1], 0), (tc[0], tc[1], 0), 'stand')
+    scene_cam(R, 'Cam_wide', (1.4, -2.3, 2.3), (tc[0], tc[1], .85))
+    scene_cam(R, 'Cam_a', (tc[0] - .75, tc[1] - 1.6, 1.45), (tc[0] + .1, tc[1] + .62, 1.0))
+    scene_cam(R, 'Cam_b', (tc[0] + .2, tc[1] + 1.6, 1.5), (tc[0] - .1, tc[1] - .62, 1.0))
 
     # ================================================================ variants (meshes only)
     ctx = dict(fc=fc, holes=holes, W=W, D=D, H=H, PZ=PZ, tc=tc, nook=(nx0, nx1, ny0, ny1), cz=cz)
@@ -457,9 +464,10 @@ def common_dress(R, ctx, c_main, c_trim, c_fold, rug_col, rug_border, rug_stripe
     fc, holes = ctx['fc'], ctx['holes']
     for side, idx in (('front', 1), ('back', 1), ('left', 0)):
         curtains(R, fc[side][0], holes[side][idx], c_main, trim=c_trim, fold=c_fold, tie=True)
-    rug(R, -2.3, -1.45, .1, .75, 0.0, rug_col, rug_border, stripe=rug_stripe)
-    for k, x in enumerate((-2.4, -1.5)):
-        R.box('P', (x, -2.58, .46 + .05), (.4, .37, .1), seat_col[k % len(seat_col)], ch=.03, rot=(0, 0, .1 * (k - 1)), tag='cushion')
+    tc = ctx['tc']
+    rug(R, tc[0] - 1.2, tc[1] - 1.1, tc[0] + 1.2, tc[1] + 1.1, 0.0, rug_col, rug_border, stripe=rug_stripe)
+    for k, x in enumerate((-2.75, -1.85)):
+        R.box('P', (x, -2.98, .46 + .05), (.4, .37, .1), seat_col[k % len(seat_col)], ch=.03, rot=(0, 0, .1 * (k - 1)), tag='cushion')
     nx0, nx1, ny0, ny1 = ctx['nook']
     PZ = ctx['PZ']
     R.box('P', (nx0 + .85, (ny0 + ny1) / 2 + .05, PZ + .05 + .06), (1.55, 1.5, .12), futon, ch=.04, seg=2, tag='futon')
@@ -477,8 +485,8 @@ def var_baker(R, ctx):
     tc, W, D, cz = ctx['tc'], ctx['W'], ctx['D'], ctx['cz']
     common_dress(R, ctx, '#f4b896', TERRA, '#e8946e', '#d9724a', '#f4e2bc', '#f4e2bc', [TERRA, '#e8b640'],
                  '#e8a05a', '#fbf3e0',
-                 [(('right', 3.7), 1.7, .62, .46, 'landscape', WALNUT), (('left', 4.9), 1.65, .46, .6, 'portrait', WALNUT)])
-    for k, (x, y, hh) in enumerate(((.55, 1.7, .62), (.98, 1.76, .55))):
+                 [(('right', 4.5), 1.7, .62, .46, 'landscape', WALNUT), (('left', 4.9), 1.65, .46, .6, 'portrait', WALNUT)])
+    for k, (x, y, hh) in enumerate(((.9, 2.1, .62), (1.33, 2.16, .55))):
         sack_lite(R, (x, y, 0), h=hh, r=.21, col='#efe2c4', rot=rng.random(), seed=k)
     sack_lite(R, (.6, -D / 2 + .45, 0), h=.45, r=.17, col='#efe2c4', rot=.4, seed=9)
     # table: basket of loaves, rolling pin, plate of peach buns, mugs
@@ -493,12 +501,12 @@ def var_baker(R, ctx):
         bun(R, (tc[0] + .3 + (k - .5) * .08, tc[1] + .22 + (k % 2) * .03, .78), r=.04, col='#f6d7b0', blush='#f58aa8')
     mug(R, (tc[0] - .7, tc[1] - .25, .76), TERRA)
     # counter: loaves and a board; peel on the wall; tins and jars on the spice shelf
-    for k, x in enumerate((.5, .85)):
-        R.B('K').append(bm_sphere((.17, .06, .055), 7, 4), arch_lib.xform(V((x, 2.62, cz + .06)), (0, 0, .3 * k)),
+    for k, x in enumerate((.85, 1.2)):
+        R.B('K').append(bm_sphere((.17, .06, .055), 7, 4), arch_lib.xform(V((x, 3.02, cz + .06)), (0, 0, .3 * k)),
                         R.t('K', '#d99448'), smooth=80, tag='bread')
-    R.rod('W', (3.15, 2.1, .05), (3.3, 2.2, 1.9), .02, '#c98f55', n=5, tag='peel')
-    R.box('W', (3.31, 2.22, 2.05), (.3, .02, .32), '#d9a468', ch=0, rot=(.1, 0, .0), tag='peel')
-    ub0 = W / 2 + .3 + .45
+    R.rod('W', (3.5, 2.5, .05), (3.65, 2.6, 1.9), .02, '#c98f55', n=5, tag='peel')
+    R.box('W', (3.66, 2.62, 2.05), (.3, .02, .32), '#d9a468', ch=0, rot=(.1, 0, .0), tag='peel')
+    ub0 = W / 2 + .65 + .45
     fb = ctx['fc']['back'][0]
     for k in range(2):
         jar(R, fb.p(ub0 - .2 + k * .35, 1.85 + .02, .1), fill=['#c8643c', '#e0657a'][k], h=.1)
@@ -514,8 +522,8 @@ def var_musician(R, ctx):
     tc, W, D = ctx['tc'], ctx['W'], ctx['D']
     common_dress(R, ctx, '#3f6aa8', '#e8c860', '#34588c', '#2f5a8a', '#e8d6a0', '#e8b640', ['#2a9a9a', '#e8c860'],
                  '#5a86c8', '#e8d6a0',
-                 [(('right', 3.7), 1.7, .5, .62, 'night', DARKW), (('left', 4.9), 1.65, .46, .6, 'landscape', DARKW)])
-    kc = V((-2.62, -1.0, 0))
+                 [(('right', 4.5), 1.7, .5, .62, 'night', DARKW), (('left', 4.9), 1.65, .46, .6, 'landscape', DARKW)])
+    kc = V((-2.97, -1.4, 0))
     for sy in (-.7, .7):
         R.box('W', kc + V((0, sy, .15)), (.34, .05, .3), '#5a3726', ch=0, tag='koto stand')
     R.box('W', kc + V((0, 0, .34)), (.26, 1.9, .07), '#8f4a22', ch=0, tag='koto')
@@ -526,7 +534,7 @@ def var_musician(R, ctx):
         R.B('M').rod(kc + V((dx, -.86, .41)), kc + V((dx, .86, .41)), .003, n=3, tint=R.t('M', '#f4efe2'), tag='koto strings')
     R.box('W', kc + V((0, .9, .4)), (.28, .04, .06), '#3a2418', ch=0, tag='koto')
     # taiko-style drum on a rack by the dresser
-    dcn = V((3.0, -1.55, 0))
+    dcn = V((3.35, -1.95, 0))
     R.cyl('W', dcn + V((0, 0, .38)), .26, .32, '#a5342c', n=12, ch=0, tag='drum')
     R.cyl('K', dcn + V((0, 0, .545)), .255, .012, '#f0e2c0', n=12, tag='drum')
     for sx in (-1, 1):
@@ -544,9 +552,9 @@ def var_musician(R, ctx):
     R.B('W').rod(fl.p(D / 2, 2.0, .1), fl.p(D / 2, 2.35, .1), .02, n=5, tint=R.t('W', '#5a3726'), tag='lute')
     R.sphere('K', fl.p(D / 2, 1.9, .2), (.04, .01, .04), '#3a2418', seg=5, rings=3, tag='lute')
     R.box('W', fl.p(D / 2, 2.4, .1), (.06, .04, .1), '#3a2418', ch=0, tag='lute')
-    R.box('W', (-.85, 1.2, .5), (.04, .04, 1.0), '#3a2418', ch=0, tag='music stand')
-    R.box('W', (-.85, 1.2, .1), (.4, .04, .04), '#3a2418', ch=0, tag='music stand')
-    R.box('K', (-.85, 1.17, 1.0), (.36, .02, .26), '#f6f0dc', ch=0, rot=(-.3, 0, 0), tag='music stand')
+    R.box('W', (-.5, 1.6, .5), (.04, .04, 1.0), '#3a2418', ch=0, tag='music stand')
+    R.box('W', (-.5, 1.6, .1), (.4, .04, .04), '#3a2418', ch=0, tag='music stand')
+    R.box('K', (-.5, 1.57, 1.0), (.36, .02, .26), '#f6f0dc', ch=0, rot=(-.3, 0, 0), tag='music stand')
     fo = Face((W / 2 - .56, 1.65, 0), (-1, 0, 0))
     R.B('W').rod(fo.p(.45, 1.47, .15), fo.p(.95, 1.47, .15), .012, n=5, tint=R.t('W', '#e8c48a'), tag='flute')
     teacup(R, fo.p(1.2, 1.42, .1), '#f4efe2')
@@ -559,12 +567,12 @@ def var_gardener(R, ctx):
     fc = ctx['fc']
     common_dress(R, ctx, '#a8cc78', '#4f9a3a', '#8cb85c', '#6fa85a', '#f1e4b0', '#e8d060', ['#f4efe2', '#e8d060'],
                  '#9acb7a', '#f4efe2',
-                 [(('right', 3.7), 1.7, .56, .5, 'landscape', '#8a5a32'), (('left', 4.9), 1.65, .6, .46, 'landscape', '#8a5a32')])
+                 [(('right', 4.5), 1.7, .56, .5, 'landscape', '#8a5a32'), (('left', 4.9), 1.65, .6, .46, 'landscape', '#8a5a32')])
     # herbs hang from a rail slung under the middle beam, and a few more from the ceiling over the table
-    for x in (.25, 2.85):
-        R.rod('W', (x, .35, 2.62), (x, .35, 3.2), .005, '#2a1c14', n=3, tag='herb rail')
-    R.rod('W', (.25, .35, 2.62), (2.85, .35, 2.62), .012, '#3a2418', n=4, tag='herb rail')
-    for k, x in enumerate((.7, 1.3, 1.9, 2.5)):
+    for x in (.6, 3.2):
+        R.rod('W', (x, .35, 2.62), (x, .35, 3.3), .005, '#2a1c14', n=3, tag='herb rail')
+    R.rod('W', (.6, .35, 2.62), (3.2, .35, 2.62), .012, '#3a2418', n=4, tag='herb rail')
+    for k, x in enumerate((1.05, 1.65, 2.25, 2.85)):
         col = ['#6aa84a', '#b8a040', '#7a4a8a', '#c87a8a'][k]
         R.rod('W', (x, .35, 2.62), (x, .35, 2.52), .004, '#2a1c14', n=3, tag='herbs')
         R.lathe('P', [(0, 0), (.04, 0), (.075, -.12), (.05, -.26), (0, -.3)], (x, .35, 2.52), col, n=5, tag='herbs', smooth=60)
@@ -574,12 +582,12 @@ def var_gardener(R, ctx):
     vase(R, (tc[0] + .1, tc[1] - .05, .76), col='#f4efe2', flowers=('#f06a8a', '#ffd35a', '#c07ad8'), h=.18, seed=3)
     mug(R, (tc[0] - .1, tc[1] + .15, .76), '#f4efe2')
     # watering can near the door, pots on the sills, a trailing plant on the mantel, baskets of vegetables
-    wc = V((.25, -1.9, 0))
+    wc = V((.25, -2.3, 0))
     R.cyl('M', wc + V((0, 0, .13)), .09, .26, '#4a8a9a', n=8, tag='watering can')
     R.rod('M', wc + V((.07, 0, .12)), wc + V((.28, 0, .3)), .012, '#4a8a9a', n=4, tag='watering can')
     fb = fc['back'][0]
-    sill_pot(R, fb, 5.05, 1.0, r=.08, h=.1, pot='#c8643c', flowers='#f06a8a', seed=1)
-    sill_pot(R, fc['front'][0], 4.9, .9, r=.07, h=.09, pot='#f4efe2', flowers='#ffd35a', seed=7)
+    sill_pot(R, fb, 5.95, 1.0, r=.08, h=.1, pot='#c8643c', flowers='#f06a8a', seed=1)
+    sill_pot(R, fc['front'][0], 5.6, .9, r=.07, h=.09, pot='#f4efe2', flowers='#ffd35a', seed=7)
     fo = Face((W / 2 - .56, 1.65, 0), (-1, 0, 0))
     plant(R, fo.p(.6, 1.42, .1), r=.1, h=.12, pot='#c8643c', leaf='#4f9a3a', kind='tall', seed=11)
-    R.box('W', (.55, 2.6, cz + .03), (.2, .14, .03), '#8a5a32', ch=0, tag='tray')
+    R.box('W', (.9, 3.0, cz + .03), (.2, .14, .03), '#8a5a32', ch=0, tag='tray')

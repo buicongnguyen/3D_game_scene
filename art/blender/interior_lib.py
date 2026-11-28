@@ -985,3 +985,26 @@ def fire_mat(R):
     BASE['Interior fire'] = lin('#ffb060')
     R.m['F'] = m
     return m
+
+
+# ---------------------------------------------------------------- scene nodes ("Listening at the table")
+# Seat_1..4 / Spot_mika: an empty on the floor where a person's root stands; like Spot_npc_*, its three.js +Z
+# (Blender -Y) is the way they face. glTF extra `pose`: 'sit' (Sit clip: hips on a 0.45 m seat right over the root),
+# 'floor' (children only: SitGrass / Kneel) or 'stand'.
+# Cam_*: an empty at the camera position, its three.js +Z (Blender -Y) pointing at the shot's target; glTF extra
+# `look` = that target in room-model (three.js) coordinates, i.e. Blender (x, z, -y).
+
+def scene_seat(R, name, loc, look_at, pose='stand'):
+    n = R.node(name, loc)
+    n.rotation_euler = (0, 0, math.atan2(look_at[0] - loc[0], -(look_at[1] - loc[1])))
+    n['pose'] = pose
+    return n
+
+
+def scene_cam(R, name, pos, look):
+    n = R.node(name, pos)
+    d = V(look) - V(pos)
+    n.rotation_mode = 'QUATERNION'
+    n.rotation_quaternion = (-d).to_track_quat('Y', 'Z')       # local -Y (three.js +Z) along d
+    n['look'] = [round(look[0], 3), round(look[2], 3), round(-look[1], 3)]
+    return n
