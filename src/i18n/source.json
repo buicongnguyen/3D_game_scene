@@ -101,6 +101,18 @@
   ]
  },
  {
+  "s": "Vita",
+  "ctx": [
+   "character name (vita)"
+  ]
+ },
+ {
+  "s": "Bibi",
+  "ctx": [
+   "character name (bibi)"
+  ]
+ },
+ {
   "s": "Mrs. Komori",
   "ctx": [
    "character name (t2)",
@@ -17296,6 +17308,90 @@
   ]
  },
  {
+  "s": "Sister, look! The train is so shiny! Take my picture!",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Excuse me, which way to the shrine? We came early for the summer festival.",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Over the river and up the stone steps. Just follow the road!",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Thank you! This suit is my festival costume. I'm a cosplayer!",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "She made it herself! Thank you so much!",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Over the river and up the stone steps. We remember! Thank you again.",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "I'm the photographer today. Sister has to pose for every picture!",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "This costume took me three months. The sun here is making it very warm!",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Do they sell sweets at the festival? Sister says only one. One BIG one.",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "The lanterns are so pretty! Sister looks like a star in her costume.",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Everyone wants a photo with me. I said yes to all of them.",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "We take the evening train home. One more look at the lanterns first.",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Best trip ever! Can we come back next summer?",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
+  "s": "Thank you for showing us the way. Have a lovely evening!",
+  "ctx": [
+   "UI (src/content/visitors.js)"
+  ]
+ },
+ {
   "s": "Foot-tennis",
   "ctx": [
    "UI (src/content/yard.js)",
@@ -17445,8 +17541,8 @@
   "s": "Talk to {name}",
   "ctx": [
    "UI (src/game/director.js)",
-   "UI (src/game/townlife.js)",
-   "UI (src/game/tricks/dance.js)"
+   "UI (src/game/station-visitors.js)",
+   "UI (src/game/townlife.js)"
   ]
  },
  {
@@ -18066,6 +18162,7 @@
   "s": "You can change this in Settings > Learn a language.",
   "ctx": [
    "UI (src/game/house-scenes.js)",
+   "UI (src/game/station-visitors.js)",
    "UI (src/ui/scene-ui.js)"
   ]
  },
@@ -19026,6 +19123,12 @@
   "s": "New in the cottage: {item}",
   "ctx": [
    "UI (src/game/stamps.js)"
+  ]
+ },
+ {
+  "s": "Two travellers are asking the way. Which language would you like to listen in?",
+  "ctx": [
+   "UI (src/game/station-visitors.js)"
   ]
  },
  {
@@ -30777,6 +30880,18 @@
  },
  {
   "s": "Mixamo (animations)",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Vita and Bibi, the travellers",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "VRoid Project (VRoid Studio sample characters, CC0)",
   "ctx": [
    "menu / screen text"
   ]

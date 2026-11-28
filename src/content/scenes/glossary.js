@@ -123,4 +123,53 @@ export const GLOSSARY = {
       ja: 'ベトナム語は二人とも呼びます：cháu（孫）が bà（おばあちゃん）にお礼。韓国語の「고마워요」は親しみ、「감사합니다」はよりていねい。',
     },
   },
+  // ---- "Which way?" at Hoshi Station (scenes/station.js): travel phrases
+  'excuse-me': {
+    en: { say: 'Excuse me' },
+    ko: { say: '저기요', roman: 'jeogiyo' },
+    vi: { say: 'cho em hỏi', tone: 'cho (ngang) · em (ngang) · hỏi (hỏi)' },
+    mean: { en: 'Getting a stranger’s attention politely', vi: 'Gọi người lạ một cách lịch sự', ko: '모르는 사람을 공손하게 부를 때', ja: '知らない人にていねいに声をかける' },
+    note: {
+      en: 'Korean 저기요 means “over there”, the everyday way to call someone; 실례합니다 is more formal. Vietnamese “cho em hỏi” is “let me ask”: em when you are younger than the person.',
+      vi: 'Tiếng Hàn 저기요 là cách gọi hằng ngày; 실례합니다 trang trọng hơn. Tiếng Anh “Excuse me” dùng với mọi người.',
+      ko: '베트남어 “cho em hỏi”는 “여쭤볼게요”라는 뜻이에요. 상대보다 어리면 em이라고 해요.',
+      ja: '韓国語の「저기요」は日常の呼びかけ、「실례합니다」はよりていねい。ベトナム語の「cho em hỏi」は「ちょっと聞かせて」。',
+    },
+  },
+  'which-way': {
+    en: { say: 'Which way…?' },
+    ko: { say: '어느 쪽', roman: 'eoneu jjok' },
+    vi: { say: 'đi lối nào', tone: 'đi (ngang) · lối (sắc) · nào (huyền)' },
+    mean: { en: 'Asking the way', vi: 'Hỏi đường', ko: '길을 물을 때', ja: '道をたずねる' },
+    note: {
+      en: 'Say the place first: “신사는 어느 쪽이에요?” (Korean), “Đền đi lối nào ạ?” (Vietnamese): the shrine, which way?',
+      vi: 'Nói nơi muốn đến trước: “Which way to the shrine?” — “신사는 어느 쪽이에요?”',
+      ko: '가고 싶은 곳을 먼저 말해요: “Which way to the shrine?” — “Đền đi lối nào ạ?”',
+      ja: '行きたい場所を先に言います。韓国語「신사는 어느 쪽이에요?」、ベトナム語「Đền đi lối nào ạ?」',
+    },
+  },
+  'thank-you': {
+    en: { say: 'Thank you' },
+    ko: { say: '고마워요', roman: 'gomawoyo' },
+    vi: { say: 'Cảm ơn chị', tone: 'cảm (hỏi) · ơn (ngang) · chị (nặng)' },
+    mean: { en: 'Thanking someone', vi: 'Cảm ơn ai đó', ko: '고맙다고 할 때', ja: 'お礼を言う' },
+    note: {
+      en: 'Vietnamese thanks a person by name or title: “cảm ơn chị” (to an older girl or woman). Korean 고마워요 is warm; 감사합니다 is more formal.',
+      vi: 'Tiếng Hàn 고마워요 thân mật; 감사합니다 trang trọng hơn.',
+      ko: '베트남어는 상대를 불러서 고마워해요: “cảm ơn chị” (언니·누나에게).',
+      ja: 'ベトナム語は相手を呼んでお礼を言います：「cảm ơn chị」（お姉さんに）。',
+    },
+  },
+  'nice-trip': {
+    en: { say: 'Have a nice trip!' },
+    ko: { say: '즐거운 여행 되세요', roman: 'jeulgeoun yeohaeng doeseyo' },
+    vi: { say: 'đi chơi vui vẻ', tone: 'đi (ngang) · chơi (ngang) · vui (ngang) · vẻ (hỏi)' },
+    mean: { en: 'Wishing a traveller well', vi: 'Chúc người đi du lịch', ko: '여행하는 사람에게 하는 인사', ja: '旅をする人へのあいさつ' },
+    note: {
+      en: 'Vietnamese starts with “Chúc …” (I wish you …). Korean 되세요 makes it a kind wish.',
+      vi: 'Tiếng Hàn 되세요 biến câu thành lời chúc.',
+      ko: '베트남어는 “Chúc …”(…하길 바라요)로 시작해요.',
+      ja: 'ベトナム語は「Chúc …」（…を願います）で始めます。韓国語の「되세요」で願いの形になります。',
+    },
+  },
 };

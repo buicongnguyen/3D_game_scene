@@ -3,7 +3,7 @@
 // to pick the language being learned, the counts, then a page per house scene: a stamp when heard to the end, every
 // heard line with ▶ (audio only, no 3D) and its meaning, and the kept ★ phrases.
 import { tx, N_, getLang, loadFont } from '../i18n/i18n.js';
-import { SCENES, LEARN_LANGS, inLang, lineKey } from '../content/scenes/index.js';
+import { SCENES, LEARN_LANGS, inLang, lineKey, lineLang } from '../content/scenes/index.js';
 import { GLOSSARY } from '../content/scenes/glossary.js';
 import { bookStats, phrasesIn } from '../game/phrasebook.js';
 import { CAST } from '../game/story.js';
@@ -32,10 +32,10 @@ export function mountPhrasebook(body, ui, hs) {
     html += `<div class="pb-page"><h3>${heard ? '<span class="pb-stamp" aria-hidden="true">✓</span>' : ''}${esc(inLang(s.title, ui0))}</h3>`;
     if (!lines.length) html += `<p class="note">${esc(tx(N_('Not heard yet. Visit between {from}:00 and {to}:00.'), { from: Math.floor(a ?? 0), to: Math.ceil(b ?? 24) }))}</p>`;
     for (const { l, i } of lines) {
-      const c = CAST[l.who] || {};
+      const c = CAST[l.who] || {}, ll = lineLang(l, lang);
       html += `<div class="pb-line"><button type="button" class="hs-btn pb-play" data-play="${esc(s.id)}|${i}" aria-label="${esc(tx(N_('Hear it')))}">▶</button>` +
-        `<div><b style="color:${esc(c.color || 'inherit')}">${esc(tx(c.name || l.who))}</b> <span lang="${lang}">${esc(l[lang])}</span>` +
-        (ui0 !== lang ? `<div class="pb-mean">${esc(l[ui0] || l.en)}</div>` : '') + '</div></div>';
+        `<div><b style="color:${esc(c.color || 'inherit')}">${esc(tx(c.name || l.who))}</b> <span lang="${ll}">${esc(l[ll])}</span>` +
+        (ui0 !== ll ? `<div class="pb-mean">${esc(l[ui0] || l.en)}</div>` : '') + '</div></div>';
     }
     html += '</div>';
   }

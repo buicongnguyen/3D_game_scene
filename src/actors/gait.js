@@ -13,6 +13,9 @@ export const HUMAN_GAIT = {
   hoa: { walk: 1.6, run: 4.195 },
   nabi: { walk: 1.6, run: 4.195 },
   kotone: { walk: 0.958, run: 4.077 },   // her Mixamo Walking / Running, from the planted feet (art/blender/vroid_mixamo.py)
+  // the station visitors (vroid_mixamo.py --member cc0-f / cc0-e build logs; Vita's Run scaled from Kotone's by the walk)
+  'visitor-vita': { walk: 1.009, run: 4.29 },
+  'visitor-bibi': { walk: 0.796, run: 3.372 },
   'villager-kid': { walk: 1.567, run: 4.2 },
   'villager-man': { walk: 1.587, run: 4.2 },
   'villager-woman': { walk: 1.586, run: 4.196 },

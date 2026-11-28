@@ -69,6 +69,8 @@ test('recall questions point at real lines; seats and cameras exist in the room 
       assert.equal(new Set([r.answer, ...r.decoys]).size, 3);
       for (const u of UI_LANGS) assert.ok(r.q[u]);
     }
+    // an outdoor scene (the station's travellers): its runner frames the shots, no seats or room cameras
+    if (!s.house) { assert.ok(s.place, `${s.id}: a house or a place`); for (const l of s.lines) assert.ok(l.cam === undefined || (l.cam >= 0 && l.cam <= 2)); continue; }
     const man = INTERIOR_MANIFEST[`interior-${kindOf[s.house]}`];
     assert.ok(man, `${s.id}: room ${s.house}`);
     for (const seat of Object.values(s.cast)) assert.ok(man.nodes[seat], `${s.id}: ${seat} missing`);

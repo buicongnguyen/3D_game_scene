@@ -5,12 +5,16 @@
 import kw4 from './kw4.js';
 import kw2 from './kw2.js';
 import kw5 from './kw5.js';
+import station from './station.js';
 
 export const LEARN_LANGS = ['en', 'ko', 'vi'];          // voiced learning languages (Japanese is subtitles only)
 export const UI_LANGS = ['en', 'vi', 'ko', 'ja'];
-export const SCENES = [...kw4, ...kw2, ...kw5];
+export const SCENES = [...kw4, ...kw2, ...kw5, ...station];
 export const SCENE_BY_ID = new Map(SCENES.map(s => [s.id, s]));
-export const SCENE_HOUSES = new Set(SCENES.map(s => s.house));
+export const SCENE_HOUSES = new Set(SCENES.filter(s => s.house).map(s => s.house));   // (outdoor scenes have a `place` instead)
+
+/** The language a line is voiced and shown in: its own `say` (a traveller asking in English) or the one being learned. */
+export const lineLang = (line, lang) => line?.say || lang;
 
 /** The clip key of line i (0-based) of a scene: 'kw4.supper/01'. */
 export const lineKey = (sceneId, i) => `${sceneId}/${String(i + 1).padStart(2, '0')}`;

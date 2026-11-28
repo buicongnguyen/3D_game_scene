@@ -19,6 +19,10 @@ export const CAST_VOICES = {
   t2: { kind: 'f-adult', en: { engine: 'kokoro', voice: 'af_bella', speed: 1 }, vi: { engine: 'vieneu', voice: 'Đoan Trang' }, ko: { engine: 'supertonic', voice: 'F2', speed: 1 } },
   v3: { kind: 'boy', en: { engine: 'kokoro', voice: 'af_kore', speed: 1.06 }, vi: { engine: 'vieneu', voice: 'Ngọc Huyền' }, ko: { engine: 'supertonic', voice: 'F3', speed: 1.05 } },
   v18: { kind: 'f-elder', en: { engine: 'kokoro', voice: 'bf_emma', speed: 0.92 }, vi: { engine: 'vieneu', voice: 'Ngọc Linh' }, ko: { engine: 'supertonic', voice: 'F5', speed: 0.92 } },
+  // the sisters at Hoshi Station (scenes/station.js): voices nobody in the homes has. Supertonic has only five women's
+  // styles and the homes use all of them, so the sisters' Korean voices are blends of two styles (bake.py 'F2:0.6+F5:0.4')
+  vita: { kind: 'f-adult', en: { engine: 'kokoro', voice: 'af_aoede', speed: 1 }, vi: { engine: 'vieneu', voice: 'Kim Thanh' }, ko: { engine: 'supertonic', voice: 'F2:0.6+F5:0.4', speed: 1 } },
+  bibi: { kind: 'girl', en: { engine: 'kokoro', voice: 'af_jessica', speed: 1.06 }, vi: { engine: 'vieneu', voice: 'Mỹ Duyên' }, ko: { engine: 'supertonic', voice: 'F3:0.5+F1:0.5', speed: 1.06 } },
   v20: { kind: 'girl', en: { engine: 'kokoro', voice: 'af_nicole', speed: 1.04 }, vi: { engine: 'vieneu', voice: 'Ngọc Huyền' }, ko: { engine: 'supertonic', voice: 'F3', speed: 1.05 } },
 };
 

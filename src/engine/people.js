@@ -17,7 +17,9 @@ export const PEOPLE = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'villager-
   'hoa', 'nabi', 'byeol', 'haru',
   // the visitor at Hoshi Station (art/blender/vroid_lite.py): textured, one mesh in both files; the light one has fewer
   // triangles and a 512 px atlas instead of 1024 (no palette: prepareLite leaves it as it is)
-  'kotone'];
+  'kotone',
+  // the sisters visiting the station (game/station-visitors.js): the same kind of textured VRoid file as Kotone
+  'visitor-vita', 'visitor-bibi'];
 export const PEOPLE_CHOICES = ['auto', 'std', 'lite'];
 const KEY = 'starline-opt-people';
 const LITE = '.lite';
@@ -60,7 +62,7 @@ export function peopleSet(qualityName, params, dev) {
  */
 export const PERFORMERS = ['hoa', 'nabi', 'byeol', 'haru'];
 /** Who follows that rule (light on Low with Automatic): the performers and the textured visitor. */
-export const LITE_ON_LOW = [...PERFORMERS, 'kotone'];
+export const LITE_ON_LOW = [...PERFORMERS, 'kotone', 'visitor-vita', 'visitor-bibi'];
 export function performersSet(qualityName, params, choice = getPeopleChoice()) {
   const url = params?.get?.('people');
   if (url === 'std' || url === 'standard') return 'std';

@@ -70,13 +70,13 @@ export function keep(book, id, lang, on = true) {
 }
 
 /**
- * The recall question for house `house` in `lang` on `day`, or null: from a scene heard on an EARLIER day, whose
+ * The recall question for house (or outdoor place) `house` in `lang` on `day`, or null: from a scene heard on an EARLIER day, whose
  * answer line has a phrase that is due, and not asked yet today. -> { scene, q, answer, choices: [line index] (shuffled
  * by the day, so the right one is not always first) }
  */
 export function recallFor(book, house, lang, day) {
   for (const s of SCENES) {
-    if (s.house !== house || !s.recall?.length) continue;
+    if ((s.house ?? s.place) !== house || !s.recall?.length) continue;   // (an outdoor scene: its `place`, e.g. 'station')
     const heard = book.scenes[s.id]?.[lang];
     if (!heard || heard.last === day || book.recall[s.id]?.[lang] === day) continue;
     const r = s.recall[day % s.recall.length];

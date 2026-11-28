@@ -820,6 +820,9 @@ export const PEOPLE = [
 export const FOLK_CAST = {
   t1: { name: 'Mr. Fujita', color: '#b5652a', pitch: 0.85 },
   kotone: { name: 'Kotone', color: '#3d5a8a', pitch: 1.2, voice: 'f' },
+  // the sisters visiting the station (game/station-visitors.js, content/visitors.js): not townsfolk, no day plan here
+  vita: { name: 'Vita', color: '#2a8fb8', pitch: 1.15, voice: 'f' },
+  bibi: { name: 'Bibi', color: '#5f9a2a', pitch: 1.45, voice: 'c' },
   t2: { name: 'Mrs. Komori', color: '#d0587e', pitch: 1.12 },
   v1: { name: 'Mr. Hirano', color: '#3f6fb0', pitch: 0.9 },
   v2: { name: 'Mrs. Nakano', color: '#3a9a8a', pitch: 1.08 },

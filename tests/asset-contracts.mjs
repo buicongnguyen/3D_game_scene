@@ -29,6 +29,8 @@ export const KOTONE_SHOW_CLIPS = ['DanceHipHop', 'DanceArms', 'DanceHouse', 'Dan
 const VROID_MORPHS = ['blink', 'mouthA', 'mouthO', 'smile', 'smileEyes', 'browUp', 'wink'];
 /** The other seven VRoid samples, built like Kotone (vroid_mixamo.py --member) for the group performance (content/troupe.js). */
 export const VROID_MEMBERS = ['vroid-nu1', 'vroid-nu3', 'vroid-nu4', 'vroid-nu5', 'vroid-nam1', 'vroid-nam2', 'vroid-nam3'];
+/** The station visitors, Vita and Bibi (CC0 VRoid Studio samples F and E; game/station-visitors.js). */
+export const VISITORS = ['visitor-vita', 'visitor-bibi'];
 export const SHAPE_KEYS = ['shape_chest', 'shape_waist', 'shape_hips', 'shape_thigh', 'shape_arm', 'shape_build'];
 // Interiors (build_interiors.py): nodes and materials every room carries (see "Interiors" in art/CONTRACTS.md).
 const ROOM_NODES = ['Spawn', 'Exit', 'Item_keepsake', 'Light_1', 'Light_2', 'Light_3', 'Col_floor', 'Col_ceiling',
@@ -79,6 +81,12 @@ export const CONTRACTS = {
     [`${m}.lite`, { family: 'vroid', vroidOf: m, tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }],
     // (only the back row's source keeps a pack; the others' were dropped 2026-11-28: rebuild with vroid_mixamo.py --member)
     ...(m === 'vroid-nam1' ? [[`moves-${m}`, { family: 'vroid-clips', of: m, clips: KOTONE_SHOW_CLIPS }]] : [])])),
+  // the two sisters visiting Hoshi Station (game/station-visitors.js): the CC0 VRoid Studio samples AvatarSample_F ("Vita",
+  // 1.71 m, her cyber suit is her festival costume) and AvatarSample_E ("Bibi", 1.41 m), built like Kotone
+  // (vroid_mixamo.py --member cc0-f / cc0-e). Fetched only near the station or near where the sisters are, never at the start.
+  ...Object.fromEntries(VISITORS.flatMap(m => [
+    [m, { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }],
+    [`${m}.lite`, { family: 'vroid', vroidOf: m, tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }]])),
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
 
   // The dance game's performers (art/blender/build_performers.py on the graceful body, docs/PERFORMERS.md). Seen up
@@ -391,7 +399,9 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // browUp, wink: +21-30 KB each) and six new Club clips + the wider stance in moves-kotone / moves-vroid-nam1 (1.14 -> 1.30 MB
 // each); 85,194,072 B measured.
 // +0.21 MB: the language pilot's five larger home kinds (seats, camera points, scene props; 85,402,716 B measured).
-export const TOTAL_RAW_BYTES = 85_600_000;     // (the dance game, the exercise packs and the visitor)
+// +3.89 MB: the station visitors Vita and Bibi (visitor-vita.glb 1.13 MB, visitor-bibi.glb 1.12 MB, their .lite files 0.79 /
+// 0.78 MB; 89,296,816 B measured). Fetched only near the station or near the sisters (game/station-visitors.js), one set or the other.
+export const TOTAL_RAW_BYTES = 89_450_000;    // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -419,7 +429,8 @@ export const TOTAL_RAW_BYTES = 85_600_000;     // (the dance game, the exercise 
 // measured). A group of 8 on Low fetches 3.1 MB of models + 0.86 MB (nam-1's pack); on PC 3.96 + 0.86 MB.
 // -5.2 MB: the six unused member packs dropped (owner 2026-11-28).
 // +0.2 MB: the happy faces and the Dance choice packed (a model +10-15 KB, the two packs 0.86 -> 0.97 MB; 37.49 MB measured).
-export const TOTAL_PACKED_BYTES = 37_550_000;      // (all together)
+// +2.16 MB: Vita and Bibi packed (0.63 / 0.62 MB, light 0.46 / 0.45 MB; one set or the other, fetched near the station only; 39,708,864 B measured).
+export const TOTAL_PACKED_BYTES = 39_720_000;     // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

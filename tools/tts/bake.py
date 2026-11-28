@@ -160,9 +160,21 @@ def make_engine(engine: str):
         tts = st.load(str(SUPERTONIC_DIR / "onnx"))
         styles = {}
 
+        def load(voice):
+            # a preset 'F2', or a blend of presets 'F2:0.6+F5:0.4' (weights sum to 1: a new timbre between them)
+            if "+" not in voice and ":" not in voice:
+                return st.load_style(str(SUPERTONIC_DIR / "voice_styles" / f"{voice}.json"))
+            ttl = dp = None
+            for part in voice.split("+"):
+                name, w = (part.split(":") + ["1"])[:2]
+                t, d = st.load_style(str(SUPERTONIC_DIR / "voice_styles" / f"{name}.json"))
+                ttl = t * float(w) if ttl is None else ttl + t * float(w)
+                dp = d * float(w) if dp is None else dp + d * float(w)
+            return ttl.astype(np.float32), dp.astype(np.float32)
+
         def run(text, voice, speed, style, seed, lang="ko"):
             if voice not in styles:
-                styles[voice] = st.load_style(str(SUPERTONIC_DIR / "voice_styles" / f"{voice}.json"))
+                styles[voice] = load(voice)
             out = []
             for i, s in enumerate(sentences(text)):
                 np.random.seed(seed + i)

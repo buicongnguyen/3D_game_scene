@@ -19,11 +19,12 @@ const TOOLS = path.join(ROOT, '.tools/speech');
 export const spoken = t => String(t || '').replace(/…/g, ', ').replace(/\s+,/g, ',').replace(/\s+/g, ' ').trim();
 export const hashOf = (text, profile) => crypto.createHash('sha1').update(`${spoken(text)}|${voiceKey(profile)}`).digest('hex').slice(0, 16);
 
-/** Every line to bake: [{ key, scene, i, who, kind, lang, text, voice, h, file }]. */
+/** Every line to bake: [{ key, scene, i, who, kind, lang, text, voice, h, file }] (a `say: 'en'` line: English only). */
 export function bakeList(langs = LEARN_LANGS) {
   const out = [];
   for (const s of SCENES) s.lines.forEach((l, i) => {
     for (const lang of langs) {
+      if (l.say && l.say !== lang) continue;      // a traveller's English line is voiced from the English set only
       const cv = CAST_VOICES[l.who], profile = cv?.[lang];
       const key = lineKey(s.id, i);
       out.push({ key, scene: s.id, i, who: l.who, kind: cv?.kind || null, lang, text: spoken(l[lang]), voice: profile || null, h: hashOf(l[lang], profile), file: `${key}.m4a` });

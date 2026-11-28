@@ -89,6 +89,13 @@ Each speaker has a different profile inside each house (kw4 = v2 v8 v10 ota mika
 | v3 Kenta | boy | af_kore @1.06 | Ngọc Huyền | F3 @1.05 |
 | v18 Granny Tsuru | f-elder | bf_emma @0.92 | Ngọc Linh | F5 @0.92 |
 | v20 Yui | girl | af_nicole @1.04 | Ngọc Huyền | F3 @1.05 |
+| vita Vita (station visitor) | f-adult | af_aoede | Kim Thanh | F2:0.6+F5:0.4 |
+| bibi Bibi (station visitor) | girl | af_jessica @1.06 | Mỹ Duyên | F3:0.5+F1:0.5 @1.06 |
+
+The station scene (`station.which`, two travellers at Hoshi Station) has lines marked `say: 'en'`: Vita asks Mika in
+English whatever language is learned, so those lines are baked in English only (`speech-build.mjs` skips them for ko/vi;
+the game plays the English clip). Supertonic has only five women's styles and the homes use all five, so a voice may be a
+**blend** of two presets, `'F2:0.6+F5:0.4'` (weights summing to 1; both style vectors mixed), like Kokoro's blends.
 
 Speeds are each engine's native pace control (Kokoro `speed`, Supertonic duration scale), not DSP stretching.
 Supertonic median F0 on one Korean line: F4 196 Hz, F1 181, F2 178, F3 166, F5 154; M1-M5 86-95 Hz.

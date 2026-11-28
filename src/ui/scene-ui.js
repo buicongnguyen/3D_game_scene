@@ -97,11 +97,11 @@ export class SceneUI {
     });
   }
 
-  /** The first-visit question: which language to listen in. -> 'en' | 'ko' | 'vi' | 'off' */
-  chooseLanguage(sceneTitle) {
+  /** The first-visit question: which language to listen in (question: another wording). -> 'en' | 'ko' | 'vi' | 'off' */
+  chooseLanguage(sceneTitle, question = null) {
     return this.modal('hs-choose', (c, finish) => {
       c.appendChild(el('h3', '', sceneTitle));
-      c.appendChild(el('p', '', tx(N_('The family is talking. Which language would you like to listen in?'))));
+      c.appendChild(el('p', '', question || tx(N_('The family is talking. Which language would you like to listen in?'))));
       const row = el('div', 'hs-col');
       for (const l of ['en', 'ko', 'vi']) {
         loadFont(l);

@@ -18,6 +18,7 @@ import { STOPS } from '../world/railway.js';
 import { BarkBubbles } from '../ui/barks-ui.js';
 import { TownLife } from './townlife.js';
 import { HouseScenes } from './house-scenes.js';
+import { StationVisitors } from './station-visitors.js';
 import { Indoors } from './indoor.js';
 import { Tricks } from './tricks.js';
 import { SkyGaze } from './skygaze.js';
@@ -200,7 +201,7 @@ export class Director {
   barkSpeakers() {
     const inside = this.game.interiors?.active || null, out = [];
     for (const [id, n] of Object.entries(this.npcs)) {
-      if (!n.visible || n.riding || (n.path && n.speed > 3)) continue;
+      if (!n.visible || n.riding || n.visitor || (n.path && n.speed > 3)) continue;   // (the station's travellers: no village remarks)
       if ((n.resident || null) !== inside) continue;
       out.push([id, n]);
     }
@@ -358,6 +359,8 @@ export class Director {
     this.indoor.spawn();
     // voiced little scenes in the homes, in the language the player is learning (game/house-scenes.js)
     this.houseScenes = new HouseScenes(this);
+    // two sisters visiting the station in Explore: off the train, "which way?", a walk to the shrine (game/station-visitors.js)
+    this.visitors = new StationVisitors(this);
     // Grandma's countryside tricks: signs, teaching, rounds and the journal Tricks tab (game/tricks.js)
     this.tricks = new Tricks(this);
     // her lantern (belt or hand) follows the pose every frame, with or without a quest (actors/lantern-carry.js)
@@ -1429,6 +1432,7 @@ export class Director {
     if (townDt > 0) this.town?.update(townDt);
     this.indoor?.update();
     this.houseScenes?.update(dt);
+    this.visitors?.update(dt);
     this.tricks?.update(dt);
     this.sky?.update(dt);
     this.yard?.update(dt);

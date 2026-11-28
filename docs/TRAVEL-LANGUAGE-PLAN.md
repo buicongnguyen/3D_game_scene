@@ -723,3 +723,24 @@ tremble). EN Kokoro has no seed (one deterministic take): its 5 fails are listed
 7 materials, ≤ 756 KB. Measured Low (390×844): kw4 empty 29 draws / 41 k tris, supper 47 / 118 k (4 people + props,
 shadows included); kw5 cranes 33, kw2 shop 31 — far under the outdoor Low rows (91–133). Raw model budget headroom is
 now only ~60 KB.
+
+## 14. Station visitors: "Which way?" (2026-11-28, branch `station-visitors`)
+
+Owner: "use Vita and Bibi as station visitors". Two CC0 VRoid Studio samples (AvatarSample_F "Vita" 1.71 m, AvatarSample_E
+"Bibi" 1.41 m; `public/models/visitor-vita|visitor-bibi(.lite).glb`, built like Kotone by `vroid_mixamo.py --member cc0-f /
+cc0-e`) are sisters on a trip: Vita is a cosplayer come early for the summer festival (her suit is her costume), Bibi
+pulls her toward everything. **Explore only** (never a story save, a play zone or Sing & Play, so never beside a group
+performance); `?visitors=off|on`.
+
+- Day (`content/visitors.js`, runner `game/station-visitors.js`): 7:00 off the train (when Mika is near the station
+  before noon; else already on the square) → platform photo → through the station → photos on the square until they have
+  asked the way (or 15:30) → the roads to the ford, the stepping stones, the shrine trail and the stone steps → the
+  shrine yard until 20:30 → back to the station, gone with the evening train; away 21:30-7:00.
+- Cost: a walker (distance along a path) always; bodies (1 skinned mesh each, `.lite` on Low) fetched and made only within
+  120 m of them (or 60 m of the station), dropped beyond 170 m. Out of sight (> 140 m) their walk runs 8x.
+- Scene `station.which` (`content/scenes/station.js`, 10 lines, played by `HouseScenes.play(scene, stage)` on an outdoor
+  stage with three computed shots): Vita's two lines to Mika are `say: 'en'` (English whatever is learned: the travel
+  language; baked once, in English), every other line is in the learning language. Phrases: excuse-me, which-way,
+  thank-you, nice-trip. Recall (`recallFor(book, 'station', …)`) on a later day when Mika talks to them.
+- Voices: Vita af_aoede / Kim Thanh / Supertonic blend F2:0.6+F5:0.4; Bibi af_jessica@1.06 / Mỹ Duyên / F3:0.5+F1:0.5@1.06
+  (`bake.py` now mixes Supertonic styles like Kokoro blends; all five F presets were taken by the homes).

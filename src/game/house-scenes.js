@@ -15,7 +15,7 @@ import { CAST } from './story.js';
 import { VILLAGERS, RETURNING } from '../content/villagers.js';
 
 const VILLAGER_MODEL = Object.fromEntries([...VILLAGERS, ...RETURNING].map(v => [v[0], v[1]]));
-import { SCENES, SCENE_BY_ID, SCENE_HOUSES, LEARN_LANGS, dueScene, lineKey, inLang, segments, scenePhrases } from '../content/scenes/index.js';
+import { SCENES, SCENE_BY_ID, SCENE_HOUSES, LEARN_LANGS, dueScene, lineKey, lineLang, inLang, segments, scenePhrases } from '../content/scenes/index.js';
 import { GLOSSARY } from '../content/scenes/glossary.js';
 import { SpeechAudio } from '../engine/speech-audio.js';
 import { SceneUI } from '../ui/scene-ui.js';
@@ -167,21 +167,24 @@ export class HouseScenes {
   /**
    * Play a scene in the room Mika is in. opts.from: first line (0). -> true when heard to the end.
    */
-  async play(scene) {
-    const g = this.g, d = this.d, I = g.interiors, room = this.room();
+  async play(scene, stage = null) {
+    const g = this.g, d = this.d, I = g.interiors, room = stage ? null : this.room();
     const lang = this.lang;
-    if (!room || !lang || this.running) return false;
+    if ((!room && !stage) || !lang || this.running) return false;
     d.busy++;
-    const run = this.running = { scene, i: 0, lang, stop: false, wake: null, again: false };
+    // stage (an outdoor scene, game/station-visitors.js): { bodies, ok() -> still on?, shot(cam, line, speaker) }
+    const run = this.running = { scene, i: 0, lang, stop: false, wake: null, again: false, stage };
     let finished = false;
     try {
-      this.held = room.id;
-      this.props(room, scene.props, true);
-      await this.seat(scene, room);
-      // Mika stands where she can see everyone
-      const ms = this.spot(room, 'Spot_mika');
-      if (ms) { g.player.teleport(ms.pos.x, ms.pos.z, ms.pos.y, ms.yaw); I.snapTamo?.(); }
-      this.speech.prefetch(scene.lines.map((_, i) => lineKey(scene.id, i)), lang);
+      if (!stage) {
+        this.held = room.id;
+        this.props(room, scene.props, true);
+        await this.seat(scene, room);
+        // Mika stands where she can see everyone
+        const ms = this.spot(room, 'Spot_mika');
+        if (ms) { g.player.teleport(ms.pos.x, ms.pos.z, ms.pos.y, ms.yaw); I.snapTamo?.(); }
+      }
+      this.prefetchScene(scene, lang);
       this.view.open({
         next: () => this.wake('next'),
         again: () => this.wake('again'),
@@ -192,7 +195,7 @@ export class HouseScenes {
       this.view.setSlow(this.prefs.speed === 0.75);
       this.keys(true);
       for (run.i = 0; run.i < scene.lines.length && !run.stop;) {
-        if (I.active !== room.id) { run.stop = true; break; }
+        if (stage ? !stage.ok() : I.active !== room.id) { run.stop = true; break; }
         const r = await this.playLine(scene, run.i, lang);
         if (r === 'leave') { run.stop = true; break; }
         if (r === 'again') continue;
@@ -213,7 +216,7 @@ export class HouseScenes {
       this.keys(false);
       this.speech.stop();
       this.view.close();
-      for (const n of this.bodies) { n.setIdle(n.restClip); if (!n.seated) n.targetFacing = n.seatYaw; }
+      if (!stage) for (const n of this.bodies) { n.setIdle(n.restClip); if (!n.seated) n.targetFacing = n.seatYaw; }
       g.follow?.clearCutscene?.(false);
       this.running = null;
       d.busy--;
@@ -221,15 +224,22 @@ export class HouseScenes {
     return finished;
   }
 
+  /** Fetch a scene's clips ahead, each from its own voice language (a traveller's English line from the English set). */
+  prefetchScene(scene, lang) {
+    const by = new Map();
+    scene.lines.forEach((l, i) => { const ll = lineLang(l, lang); if (!by.has(ll)) by.set(ll, []); by.get(ll).push(lineKey(scene.id, i)); });
+    for (const [ll, keys] of by) this.speech.prefetch(keys, ll);
+  }
+
   /** One line: camera, speaker, text, voice; waits for the clip (or reading time) and the player. -> 'next'|'again'|'leave' */
   async playLine(scene, i, lang) {
-    const g = this.g, run = this.running, line = scene.lines[i];
-    const room = this.room();
-    this.shot(room, line.cam ?? 0);
+    const g = this.g, run = this.running, line = scene.lines[i], stage = run.stage;
+    const bodies = stage ? stage.bodies : this.bodies;
+    const speaker = bodies.find(n => n.sceneCast === line.who);
+    if (stage) stage.shot(line.cam ?? 0, line, speaker); else this.shot(this.room(), line.cam ?? 0);
     const c = CAST[line.who] || {};
-    const speaker = this.bodies.find(n => n.sceneCast === line.who);
     // the speaker talks (standing people gesture; seated ones keep their seat), the others look at them
-    for (const n of this.bodies) {
+    for (const n of bodies) {
       if (n === speaker) {
         if (!n.seated) { if (line.gesture && n.anim?.has(line.gesture)) n.gesture(line.gesture); else if (n.anim?.has('Talk')) n.setIdle('Talk'); }
       } else {
@@ -238,20 +248,23 @@ export class HouseScenes {
         if (who && !n.seated) n.lookAt(who.x, who.z);
       }
     }
-    if (line.who === 'mika' && speaker == null) { const look = this.bodies[0]?.pos; if (look) g.player.facing = Math.atan2(look.x - g.player.pos.x, look.z - g.player.pos.z); }
+    if (line.who === 'mika' && speaker == null) { const look = bodies[0]?.pos; if (look) g.player.facing = Math.atan2(look.x - g.player.pos.x, look.z - g.player.pos.z); }
     const ui = this.uiLang;
+    // a traveller's line in English (`say`) is shown and voiced in English, with its meaning under it; no chips unless
+    // English is the language being learned
+    const ll = lineLang(line, lang);
     this.view.setTitle(inLang(scene.title, ui), `${i + 1}/${scene.lines.length}`);
     this.view.line({
-      name: tx(c.name || line.who), color: c.color, lang,
-      segments: segments(line, lang),
-      meaning: this.prefs.meaning && ui !== lang ? line[ui] || line.en : null,
-      draft: scene.review?.[lang] === 'draft' && !!g.params?.has?.('qa'),
+      name: tx(c.name || line.who), color: c.color, lang: ll,
+      segments: ll === lang ? segments(line, lang) : [{ text: line[ll] || '' }],
+      meaning: this.prefs.meaning && ui !== ll ? line[ui] || line.en : null,
+      draft: scene.review?.[ll] === 'draft' && !!g.params?.has?.('qa'),
     });
     hearLine(this.book, scene.id, i, lang, this.day());
     saveBook(this.book);
     this.potdHeard(scene, i, lang);
     const key = lineKey(scene.id, i);
-    const r = await this.voice(key, line, lang, c);
+    const r = await this.voice(key, line, ll, c);
     if (r) return r;
     return this.waitFor(AUTO_NEXT);
   }
@@ -350,7 +363,7 @@ export class HouseScenes {
     if (!r) return;
     this.d.busy++;
     try {
-      const choices = r.choices.map(i => ({ text: r.scene.lines[i][lang], lang, play: () => this.speech.play(lineKey(r.scene.id, i), lang) }));
+      const choices = r.choices.map(i => { const ll = lineLang(r.scene.lines[i], lang); return { text: r.scene.lines[i][ll], lang: ll, play: () => this.speech.play(lineKey(r.scene.id, i), ll) }; });
       const right = await this.view.recall({ q: inLang(r.q, this.uiLang), choices, answer: r.choices.indexOf(r.answer), chime: () => this.g.audio?.chime?.(2) });
       answerRecall(this.book, r.scene.id, lang, day, right);
       saveBook(this.book);
@@ -387,7 +400,7 @@ export class HouseScenes {
   /** Replay one heard line audio-only (the Phrasebook). */
   replay(sceneId, i, lang = this.lang) {
     if (!lang) return Promise.resolve(false);
-    return this.speech.play(lineKey(sceneId, i), lang, { slow: this.prefs.speed === 0.75 });
+    return this.speech.play(lineKey(sceneId, i), lineLang(SCENE_BY_ID.get(sceneId)?.lines[i], lang), { slow: this.prefs.speed === 0.75 });
   }
 
   // ------------------------------------------------------------------ per frame
@@ -405,7 +418,7 @@ export class HouseScenes {
       if (!SCENE_HOUSES.has(door.id)) continue;
       if ((door.outside.x - p.x) ** 2 + (door.outside.z - p.z) ** 2 > PREFETCH * PREFETCH) continue;
       const s = this.due(door.id);
-      if (s) this.speech.prefetch(s.lines.map((_, i) => lineKey(s.id, i)), lang);
+      if (s) this.prefetchScene(s, lang);
     }
   }
 }
