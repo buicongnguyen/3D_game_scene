@@ -36,7 +36,9 @@ test('the cast: Kotone leads the front row, two rows of four, one source a row, 
   for (const b of back) { assert.ok(Math.min(...front.map(f => Math.abs(f.x - b.x))) >= .7, `${b.id} not straight behind someone`); assert.ok(b.z <= -1.5); }
   // the files: nothing for a solo; four models for 4 (light on Low); eight with the back row's pack, not the others'
   assert.deepEqual(troupeFiles(1, true), []);
-  assert.deepEqual(troupeFiles(4, true).sort(), ['vroid-nu1.lite', 'vroid-nu3.lite', 'vroid-nu4.lite']);
+  // the group of 4: Kotone, Saki and the two girls in white (Aoi, Yuna); Mio is in the back row of the eight (owner)
+  assert.deepEqual(troupeFiles(4, true).sort(), ['vroid-nu3.lite', 'vroid-nu4.lite', 'vroid-nu5.lite']);
+  assert.ok(troupeOf(8).filter(m => m.row === 0).every(m => troupeOf(4).some(f => f.id === m.id)), 'the four stand in front in the eight');
   const eight = troupeFiles(8, false);
   assert.equal(eight.filter(f => f.startsWith('moves-')).length, 1);
   assert.equal(eight.length, 8);
@@ -67,10 +69,12 @@ test('any member sings lead: she takes the lead place, Kotone hers (and stays th
       assert.equal(f.length, n === 1 ? 0 : (n === 4 ? 3 : 8) - (id === KOTONE ? 0 : 1), `${id} ${n}: the files`);
     }
   }
-  // a singer from the back row: Kotone takes the outer front place, its girl goes to the singer's place
+  // a singer from the back row: Kotone takes Saki's outer front place, Saki goes to the singer's place (the two girls in
+  // white stay in front)
   const c = castOf('nam-1');
-  assert.equal(c.find(m => m.x === 2.25 && m.row === 0).id, KOTONE);
-  assert.equal(c.find(m => m.x === -1.5 && m.row === 1).id, 'nu-4');
+  assert.equal(c.find(m => m.x === -2.25 && m.row === 0).id, KOTONE);
+  assert.equal(c.find(m => m.x === -1.5 && m.row === 1).id, 'nu-3');
+  assert.ok(['nu-4', 'nu-5'].every(id => c.find(m => m.id === id).row === 0), 'the girls in white stay in front');
   for (const m of TROUPE) assert.ok(m.gait.walk > .9 && m.gait.walk < 1.15 && m.gait.run > 4, `${m.id}: her own gait`);
 });
 

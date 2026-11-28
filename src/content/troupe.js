@@ -28,10 +28,12 @@ export const TROUPE = Object.freeze([
   // front row (group A): Kotone sings lead with the hand mic, the girls copy her dance and sing along on the choruses
   { id: 'nu-3', file: 'vroid-nu3', h: 1.645, gait: { walk: .987, run: 4.203 }, row: 0, x: -2.25, z: 0 },
   { id: 'kotone', file: 'kotone', h: 1.616, gait: { walk: .958, run: 4.077 }, row: 0, x: -.75, z: .35, source: true, lead: true, pack: 'moves-kotone' },
-  { id: 'nu-1', file: 'vroid-nu1', h: 1.598, gait: { walk: .958, run: 4.077 }, row: 0, x: .75, z: 0 },
+  // (owner 2026-11-28: the group of 4 is Kotone, Saki and the two girls in white, Aoi and Yuna; Mio, the blue-green
+  // hair, dances in the back row of the eight)
+  { id: 'nu-5', file: 'vroid-nu5', h: 1.737, gait: { walk: 1.04, run: 4.414 }, row: 0, x: .75, z: 0 },
   { id: 'nu-4', file: 'vroid-nu4', h: 1.668, gait: { walk: .963, run: 4.095 }, row: 0, x: 2.25, z: 0 },
   // back row (group B), 1.8 m behind, between and outside the front row's shoulders so every face shows
-  { id: 'nu-5', file: 'vroid-nu5', h: 1.737, gait: { walk: 1.04, run: 4.414 }, row: 1, x: -3.0, z: -1.8 },
+  { id: 'nu-1', file: 'vroid-nu1', h: 1.598, gait: { walk: .958, run: 4.077 }, row: 1, x: -3.0, z: -1.8 },
   { id: 'nam-1', file: 'vroid-nam1', h: 1.713, gait: { walk: 1.028, run: 4.376 }, row: 1, x: -1.5, z: -1.8, source: true, pack: BACK_PACK },
   { id: 'nam-3', file: 'vroid-nam3', h: 1.761, gait: { walk: 1.028, run: 4.376 }, row: 1, x: 1.5, z: -1.8 },
   { id: 'nam-2', file: 'vroid-nam2', h: 1.735, gait: { walk: 1.099, run: 4.684 }, row: 1, x: 3.0, z: -1.8 },
@@ -78,17 +80,20 @@ export const avoidOf = id => member(id)?.avoid || [];
 export const facePic = id => `faces/${id}.webp`;
 
 const PERSON = ['id', 'file', 'h', 'gait'];
+// the front place Kotone takes when a back-row singer or a guest sings lead: Saki's (the left outer place), so the two
+// girls in white stay in the front row (owner 2026-11-28)
+const OUTER = () => TROUPE.findIndex(m => m.row === 0 && !m.lead);
 /** The whole cast of 8 with `lead` singing at the lead's place (see the top of this file). */
 export function castOf(lead = KOTONE) {
   const who = TROUPE.map(m => m.id), at = id => who.indexOf(id);
   const L = at(KOTONE), S = at(lead);
   if (S >= 0 && S !== L) {
     if (TROUPE[S].row === 0) { who[L] = lead; who[S] = KOTONE; }
-    else { const outer = TROUPE.findLastIndex(m => m.row === 0 && !m.lead); who[L] = lead; who[S] = who[outer]; who[outer] = KOTONE; }
+    else { const outer = OUTER(); who[L] = lead; who[S] = who[outer]; who[outer] = KOTONE; }
   } else if (S < 0 && isGuest(lead)) {
     // a guest sings at the lead's place, Kotone takes the outer front place (she is still the front row's source) and
     // that place's girl sits this one out
-    const outer = TROUPE.findLastIndex(m => m.row === 0 && !m.lead); who[L] = lead; who[outer] = KOTONE;
+    const outer = OUTER(); who[L] = lead; who[outer] = KOTONE;
   }
   return TROUPE.map((slot, i) => {
     const p = member(who[i]), out = { row: slot.row, x: slot.x, z: slot.z };
