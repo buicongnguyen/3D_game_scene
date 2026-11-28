@@ -9,6 +9,7 @@ import { mergeStatic, BUILD_MERGE } from './static-merge.js';
 import { MERGE_EXACT } from '../content/models.js';
 import { peopleFile, prepareLite, LITE_ON_LOW } from './people.js';
 import { patchFaceMaterial, faceNormals } from '../actors/face-look.js';
+import { patchUplight } from '../fx/stage-uplight.js';
 
 // Materials the runtime drives by name (see art/CONTRACTS.md).
 export const GLOW_MATERIALS = ['Window glow', 'Lamp glass', 'Lamp star', 'Lantern glow', 'Street glow', 'Porch glass', 'Headlamp glass', 'Tamo glow', 'Garland glow'];
@@ -75,6 +76,8 @@ export class Assets {
         if (m.name === 'VRoid atlas' && m.map && m.map.anisotropy < this.atlasAniso) m.map.anisotropy = this.atlasAniso;
         // and its faces: thin strokes kept far away, the face shaded as one soft surface (actors/face-look.js)
         if (m.name === 'VRoid atlas') { patchFaceMaterial(m); if (o.isSkinnedMesh) faceNormals(o); }
+        // and the stage light a show puts on its performers at night (fx/stage-uplight.js: uniforms only, off elsewhere)
+        if (m.name === 'VRoid atlas') patchUplight(m);
         if (GLOW_MATERIALS.includes(m.name)) {
           if (!this.glow.has(m.name)) this.glow.set(m.name, new Set());
           this.glow.get(m.name).add(m);

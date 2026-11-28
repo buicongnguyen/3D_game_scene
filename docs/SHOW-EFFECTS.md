@@ -14,6 +14,8 @@ feature can be switched off in the game).
   clips), `buildStage` (the set's geometry), `stageSize`.
 - `src/game/singplay/singplay.js`: the switch (`spShow`, `starline:singplay:showfx`), start / update / stop with the song.
 - `src/game/nightstar/night-star.js`: the Night Star's show uses the same effects (docs/NIGHT-STAR.md).
+- `src/fx/stage-uplight.js`: the stage light on the performers at night (footlights, stage fill, rim; below), patched
+  into the VRoid atlas material by `src/engine/assets.js` (one line).
 - `tests/show-fx.test.mjs` (cues, budget rule, the set's triangle budget), `tests/perf/show-perf.mjs` (the in-page A/B
   with a null control and the fill count).
 
@@ -26,6 +28,7 @@ feature can be switched off in the game).
 | bursts | ONE instanced draw of a quad, 192 (Low) / 480 (PC) particles in 4 burst slots; the position of every particle is a pure function of song time and its seed in the vertex shader (ballistic lift, analytic drag toward a drift velocity, flutter), so the CPU writes 8 uniforms a frame and uploads nothing. Night: confetti (half from cannons on the tower tops, half showered from the truss, tumbling); day: petals, soap bubbles (rim, highlight, a rainbow tint), balloons. Dead particles collapse to a point outside the view (no `discard`). | 1 | every chorus opens with one, a long chorus gets a second at its middle bar, the closing cheer one |
 | glow sticks | ONE `InstancedMesh` of the dance game's `light-stick.glb` (handle + glowing head, one geometry, ×1.7 so it reads at concert distance) in each watcher's `grip_R` (their hand's matrix written after their own pose this frame: no lag). The watchers play the dance game's crowd clips (`villager-*-dance`: 34 KB each) with the clip time set from the song's beat before their mixer runs: `StickWave` (left on one beat, right on the next) at night, `Clap` on the beat by day. | 1 | night, with watchers |
 | fireworks | the valley's own (`fx/fx.js fireworks`, its spark pool) 45 m behind the stage | +1 while they fly | the last chorus to the end, night |
+| stage light on the performers | footlights along the stage front (glowing fixtures in the stage set's mesh), the light they throw on the performers and a stage fill (a term in the performers' own shader: `fx/stage-uplight.js`), a warm pool on the ground (in the ground wash's card) and the footlights' spill (one more card). See "Stage light on the performers" below. | 0 | night (fades in from dusk), Show effects On |
 
 All of them read one shared set of uniforms (song time, beat sweep, pulse, wash, level, night, unfold); the CPU's work a
 frame is those uniforms and up to 12 stick matrices. Shaders are compiled when the mode starts (`ShowFX.warm`:
@@ -86,7 +89,8 @@ station's Low budget 87 + 3 = 90 of 91).
 | Low, group of 4, orbit | 0.18 (raw 0.48) | 0.31 (raw 0.32) | 0.06 | 0.00 | **0.55** |
 | PC, group of 8, fixed | 0.20 (raw 0.57) | 0.31 (raw 0.35) | 0.07 | 0.00 | **0.58** |
 
-About half an additive layer a pixel in all: the beams are narrow and short, the haze card small and faded near the
+(The glow cards' numbers here were taken while their ground kinds were culled by mistake: see "Stage light on the
+performers" below for the fix and the fill with them.) About half an additive layer a pixel in all: the beams are narrow and short, the haze card small and faded near the
 camera, and the scene in front hides much of them (the raw counts are 2-3x higher). The bursts are a few thousand
 pixels (small quads). Fireworks are the valley's own pool (unchanged).
 
@@ -95,6 +99,91 @@ pixels (small quads). Fireworks are the valley's own pool (unchanged).
 
 **Pictures** (.tools/show/final/, local): PC and phone, day and night, mid-chorus; the last chorus at night with 8
 (lasers, fireworks); the idle bar on a phone and on PC; the Night Star's show on PC and phone, its end and the unlock.
+
+## Stage light on the performers (night, 2026-11-28)
+Owner: "In the night, maybe we need to add light from the ground to shine up on their bodies and faces ... or make their
+performance area lit so we can see their faces." The effects above light the scene but not the people: at night the
+performers stood dark against the show (face luminance ~20 of 255 in every shot). Now three terms light them, still with
+no three.js light (a light recompiles every lit material and costs every fragment of the valley), no draw and no program:
+
+| term | what | look |
+|---|---|---|
+| key (footlights) | toward a line of footlights on the ground 1 m in front of the front-most performer; the light seems to come from a little higher for a higher point (source height 0.12 m + 0.45 x the point's height): grazing on the legs, front-below on the face, never a floor light from straight under the chin; soft wrap (0.3), falloff 1 / (1 + (d / 2.2 m)^2) and to 60 % at head height; nothing on the back | warm white (1, 0.86, 0.72) with 14 % of the section's colour, x2.4, +10 % on the beat |
+| fill (the stage area) | from the audience and above, half-Lambert squared (the body keeps its shape, nothing on the back), faces x1.22 (the face mask of actors/face-look.js; their bent normals make it one soft surface) | warm (1, 0.9, 0.8) with 10 % of the section's colour, x0.45 |
+| rim | `(1 - n.v)^3` on the side toward the stage front | the section's colour (verse blue, chorus pink, bridge gold), x1.4 scaled by the section's energy |
+
+All three only inside the formation's area (a box round the members, 0.85 m past the outer ones, a 0.7 m soft edge, from
+the feet to above the hair): watchers and villagers are outside it (and wear other materials); a VRoid visitor elsewhere
+in the valley is never lit. Night only (from dusk: `uplightNight`, 0 at night 0.05, full at 0.6 = about 19:00; a hint at
+Sunset), Show effects On only, in and out with the stage set's unfold and fold. Solo, 4 and 8, the lead, both rows'
+joined meshes, the Night Star and her group: everyone on the stage.
+
+**A visible source.** Footlights stand on the ground along the stage front (3-9 by the stage's width, each on its own
+ground): a dark housing and a warm lens in the stage set's own mesh (material code 0.25 in the vertex colour's alpha; 24
+triangles each, the set 2.4-2.9k of its 3.2k budget), the lens glowing with the light (and the beat) at night. On the
+ground: a warm pool in the ground wash's own card (the same card, one layer of fill) and the footlights' spill (one more
+card in the glow draw). Low with 8 has no glow cards (the budget rule): the performers are lit, the ground is not.
+
+**How (src/fx/stage-uplight.js).** `patchUplight` chains onto the VRoid atlas material when it loads (engine/assets.js,
+after face-look's patch; program key `...|face-look|uplight`): the terms are in the people's program from its first
+compile, so nothing compiles at a show or at nightfall, and the rows' joined material (game/perform/row-merge.js) gets
+them through its own-hook chain. The fragment shader adds `area * E * BRDF_Lambert(diffuseColor.rgb)` to the direct
+diffuse after `lights_fragment_end`; the world position and normal come from three's own `vViewPosition` and `normal` and
+the view matrix (no vertex shader change, no varying). Seven shared uniforms (`UPLIGHT`): the stage frame and area (set at
+a show's start), the strengths and colours (a vec4 and three colours a frame). One uniform test (`k.x + k.y + k.z > 0`)
+skips everything by day and with the effects off. The show whose light it is owns it (`uplightStart` / `uplightUpdate` /
+`uplightStop`: the Night Star and Sing & Play each keep a ShowFX). Switches: `?uplight=off` (not patched, no footlights:
+the before pictures), `?uplight=key|fill|both`, `ShowFX.light.mix` (probes, the A/B).
+
+**Balance (picked: both).** Face luminance (0-255, the lead's face patch, mid-chorus at 21:30, the station), main's code
+vs this branch, and this branch's terms one at a time (PC, group of 4):
+
+| shot | before (main) | uplight only (key + rim) | fill only | both |
+|---|---|---|---|---|
+| PC, 4, wide | 17 (27) | 68 (75) | 43 (51) | **81 (88)** |
+| PC, 4, medium | 20 (24) | 83 (77) | 51 (50) | **96 (88)** |
+| PC, 4, close (the lead) | 22 (25) | 81 (78) | 51 (51) | **98 (92)** |
+| PC, 4, low hero | 26 (26) | 107 (88) | 63 (55) | **121 (100)** |
+
+(the lead's face, in brackets the mean over every visible face). Both, the other shots, before -> after: phone 4 wide
+17 -> 69 (24 -> 86), medium 22 -> 97 (31 -> 118); phone solo medium 22 -> 96, close 22 -> 94; PC solo medium 34 -> 104,
+close 24 -> 95; PC 8 wide 18 -> 80 (42 -> 99), medium 21 -> 99 (36 -> 96: the back row lit too); phone 8 wide 17 -> 72
+(27 -> 90); Sunset (18:00, the light at ~0.2) PC wide 75 -> 79, close 90 -> 95, phone medium 91 -> 95: a hint only, the
+low sun already lights them.
+
+Uplight only gives the anime stage look (warm front-below light, bright legs) but the faces stay a little dim and the
+back row dark; fill only is even but flat and dim; both lights the faces clearly in wide, medium and close shots while
+the key's direction and the rim keep the shape. No clipped skin (hot pixels 0 on faces), skin not orange (the warm
+white key stays near neutral after the night grade), no bloom on the white dresses (under the 0.92 threshold).
+
+**Found on the way: the ground cards were never drawn.** The glow cards' ground kinds (the ground wash and the beams'
+floor spots) laid a `PlaneGeometry` on the ground by mapping its y to z, which turned its front face down: the
+single-sided material culled it from every camera above the ground. Fixed (z = -y). Drawn for the first time they were
+strong (a pink floor), so the wash is now half of what it was written as, and smaller (the performers' area and a little
+round it); the warm pool shares its card. Their fill counts now: see Measured below.
+
+**Measured** (`tests/perf/show-perf.mjs --what=uplight`: the show on in every arm, the light off / on / off again in one
+page; a built preview, the governor held):
+
+| Low 390x844, 4x CPU, group of 4 | arms off / on / null | paired p50 rise on (null) | draws off -> on | glow fill (depth-tested; main) |
+|---|---|---|---|---|
+| fixed wide camera (7.5 m+) | 30 cycles | +0.4 ms (null +2.3) | 127.7 -> 127.0 | 0.190 (main 0.176) |
+| close-up on the lead (1.75 m) | 30 cycles | -0.6 ms (null +1.3) | 106.9 -> 107.4 | 0.753 (main 0.689) |
+
+Both rises are inside their null controls (this PC was busy with other jobs: frame p50 21-34 ms at 4x, so the noise is
++-2 ms; an earlier run gave +1.2 vs +0.9 and -3.0 vs -0.4): no cost shows. The draw counts move with the song time, not
+with the light. The pool and spill on the ground: 0.002-0.004 fragments a pixel (the grass hides most of it). The ground
+wash fades out when the camera is within ~3 m of its middle (close-ups: the feet are out of the frame), which took the
+close-up's glow fill from 0.92 to 0.75: the fixed ground cards cost +0.01 (wide) and +0.06 (close-up) over main.
+
+Draws: none added (the footlights are in the stage set's draw, the pool and spill in the glow draw). Programs: the same
+count as main in every configuration (PC 152-154, phone 143-145, `renderer.info.programs`). CPU: a vec4 and three colours
+a frame. Fragment work: about 40 ALU operations per performer fragment while it is on, nothing elsewhere.
+
+**Pictures** (.tools/uplight/final/, local): `*-before.png` from main's own code (2cc6019) and `*-both.png` from this branch,
+PC 1280x720 and phone 390x844: group of 4 at night (wide, medium, close, low hero; plus `-off`, `-key`, `-fill` for the
+balance), solo at night (medium, close), group of 8 (wide, medium), Sunset (wide, close), the Night Star at the shrine
+(`nightstar-*`); the probes `.tools/uplight/shots.mjs` and `nightstar.mjs` (the song frozen mid-chorus, fixed views).
 
 ## The switch
 **Show effects: On / Off** in the Song row of the idle bar (after Lyrics; flat, 44 px on phones, text 13 px; the row
@@ -106,3 +195,5 @@ scrolls sideways on a phone as before; hidden with the setup rows while a song p
   home after dark, so in deep night nobody came. A night show in Sing & Play now fills its audience with villagers who
   stayed out for it (one draw each, no shadow).
 - Real-phone numbers (the "Copy performance report" from two or three phones) would confirm the 4x-CPU measurements.
+- The stage light (2026-11-28): the owner's look at the balance (key + fill, "both"), the footlights' size and the
+  ground wash now that it draws (at half its written strength). Knobs: `UP` in src/fx/stage-uplight.js.
