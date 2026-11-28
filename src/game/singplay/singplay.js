@@ -19,8 +19,10 @@ import { Troupe } from '../perform/troupe.js';
 import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset } from '../../content/troupe.js';
 import { strongPhone, BudgetWatch, dropNow, shotIndex, STRONG_KEY } from './strong-phone.js';
 import { deviceFacts } from '../../engine/device-note.js';
+import { mountStages } from './stages-row.js';
+import { SAVE_KEY } from './sing-here.js';
 
-export const SAVE_KEY = 'starline:singplay:v1';
+export { SAVE_KEY };   // (sing-here.js: the pause menu's Sing here writes her place before this module loads)
 export const GROUP_KEY = 'starline:singplay:group';   // the group size last picked (per device: 1, 4 or 8)
 export const STAGE = Object.freeze({ x: -91, z: 99.5, facing: Math.PI });   // first visit: in front of the station stage
 const REASONS = { water: N_('Too close to the water'), steep: N_('Too steep here'), room: N_('Not enough room here'), group: N_('Not enough room for the group here') };
@@ -141,6 +143,7 @@ export class SingPlay {
     bar.appendChild(row);
     this.hint = document.createElement('p'); this.hint.className = 'singplay-hint'; this.hint.setAttribute('aria-live', 'polite');
     bar.appendChild(this.hint);
+    this.stages = mountStages(this);   // the stage list: a row of its own (stages-row.js)
     if (!document.getElementById('singplayStyle')) {
       const st = document.createElement('style'); st.id = 'singplayStyle';
       st.textContent = `.singplay-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;flex-wrap:wrap;justify-content:center;gap:8px;z-index:30;max-width:calc(100vw - 24px);pointer-events:auto}
@@ -166,6 +169,7 @@ export class SingPlay {
     this.btnCam.setAttribute('aria-disabled', String(!p));
     // (Group of 8 shows on a phone once it has measured strong: strong-phone.js)
     for (const b of this.btnGroup || []) { b.hidden = Number(b.dataset.n) > this.max(); b.setAttribute('aria-pressed', String(Number(b.dataset.n) === this.group)); b.setAttribute('aria-disabled', String(!!p)); }
+    this.stages?.refresh();
     this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
   }
 
@@ -264,7 +268,7 @@ export class SingPlay {
         const was = this.allowed.ok + this.allowed.reason, env = gameEnv(g);
         this.allowed = p.grounded ? canPerform(p.pos, env) : { ok: false, reason: 'steep' };
         if (this.allowed.ok && this.group > 1) this.allowed = canGroup(p.pos, p.facing, this.spots(), env);
-        if (was !== this.allowed.ok + this.allowed.reason) this.label();
+        if (was !== this.allowed.ok + this.allowed.reason) this.label(); else this.stages?.refresh();
       }
     }
     this.saveT -= dt; if (this.saveT <= 0) { this.saveT = 5; this.keepPlace(); }

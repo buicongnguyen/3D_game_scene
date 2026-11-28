@@ -10,6 +10,7 @@ import { getTropicalTrees, setTropicalTrees, onTreeThemeChange } from '../world/
 import { getPeopleChoice, setPeopleChoice, peopleSetFor } from '../engine/people.js';
 import { loadSave, shotsKey } from '../game/saves.js';
 import { canEnter, photoState } from '../game/photo.js';
+import { singHereState, singHere, hereReason } from '../game/singplay/sing-here.js';
 import { mountShots, creditsShots } from './photo-album.js';
 import { clearGameData, canClearGameData } from '../sw-register.js';
 import { noteWanted, deviceFacts, noteSeen, markNoteSeen } from '../engine/device-note.js';
@@ -785,6 +786,7 @@ export class UI {
     this.bindTour();
     this.bindMinigames();
     this.bindPhoto();
+    this.bindSingHere();
     $('btnSaveQuit').addEventListener('click', () => this.game.saveAndQuit?.());
     // Esc and J work on the menus themselves: game input is switched off while paused
     addEventListener('keydown', e => {
@@ -985,6 +987,32 @@ export class UI {
     const b = $('btnPauseMini');
     if (b) b.classList.toggle('hidden', !this.game.director?.minigameMenu?.canOpen());
     $('btnPausePhoto')?.classList.toggle('hidden', !canEnter(photoState(this.game)));
+    this.refreshSingHere();
+  }
+
+  /** Sing here (game/singplay/sing-here.js): Explore's way into Sing & Play at Mika's spot, beside Photo mode. */
+  bindSingHere() {
+    const b = document.createElement('button');
+    b.id = 'btnPauseSingHere'; b.type = 'button'; b.className = 'hidden';
+    b.innerHTML = '<span class="sh-label"></span><small class="sh-why"></small>';
+    b.addEventListener('click', () => { this.audio?.click(); singHere(this.game, this); });
+    if (!document.getElementById('singHereCss')) {
+      const st = document.createElement('style'); st.id = 'singHereCss';
+      st.textContent = '#btnPauseSingHere{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:44px}#btnPauseSingHere.hidden{display:none}' +
+        '#btnPauseSingHere[aria-disabled=true]{opacity:.6}#btnPauseSingHere .sh-why{font-size:12px;font-weight:600;line-height:1.2}#btnPauseSingHere .sh-why:empty{display:none}';
+      document.head.appendChild(st);
+    }
+    $('btnPausePhoto').after(b);
+  }
+
+  refreshSingHere() {
+    const b = $('btnPauseSingHere'); if (!b) return;
+    const s = singHereState(this.game);
+    b.classList.toggle('hidden', !s.show);
+    if (!s.show) return;
+    b.setAttribute('aria-disabled', String(!s.ok));
+    b.querySelector('.sh-label').textContent = tx(N_('Sing here'));
+    b.querySelector('.sh-why').textContent = hereReason(s);
   }
 
   /** Photo mode's door in the pause menu (game/photo-mode.js; V and pad R3 open it from play). Built like the Mini games one. */
