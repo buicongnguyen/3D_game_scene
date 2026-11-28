@@ -142,7 +142,7 @@ vs this branch, and this branch's terms one at a time (PC, group of 4):
 |---|---|---|---|---|
 | PC, 4, wide | 17 (27) | 68 (75) | 43 (51) | **81 (88)** |
 | PC, 4, medium | 20 (24) | 83 (77) | 51 (50) | **96 (88)** |
-| PC, 4, close (the lead) | 22 (25) | 81 (78) | 51 (51) | **98 (92)** |
+| PC, 4, close (the lead) | 22 (25) | 84 (79) | 53 (52) | **98 (92)** |
 | PC, 4, low hero | 26 (26) | 107 (88) | 63 (55) | **121 (100)** |
 
 (the lead's face, in brackets the mean over every visible face). Both, the other shots, before -> after: phone 4 wide
