@@ -4,7 +4,7 @@
 // (https://buicongnguyen.github.io/starline-songs/), so Web Audio and Record take its sound like a song of the game's.
 //   index.json            the catalog (version 1): per song id, ver, title, lang, instrumental, dance, mood, style, bpm,
 //                         offset, duration, bytes (audio), totalBytes (all its files), gainDb, base 'songs/<id>/',
-//                         files { audio, beats, lyrics, mouth, stage }
+//                         files { audio, beats, lyrics, mouth, stage }, singer (whose song it is: the Night Star's show)
 //   songs/<id>/<id>.<ver>.<kind>   immutable files: a new version is a new name (the service worker keeps them as they are)
 // The catalog is read when Sing & Play starts (at most CATALOG.timeout; late or failed: the built-in songs only,
 // content/kotone-songs.js); a song's files load only when it is performed, or when the player downloads it (the Song list:
@@ -48,6 +48,7 @@ export function catalogSongs(index, base) {
       style: DANCE_STYLES.includes(e.style) ? e.style : undefined,
       gainDb: finite(e.gainDb) ? Math.max(-12, Math.min(6, e.gainDb)) : 0, bytes: finite(e.bytes) ? e.bytes : 0,
       totalBytes: finite(e.totalBytes) && e.totalBytes >= (e.bytes || 0) ? e.totalBytes : finite(e.bytes) ? e.bytes : 0, remote: true,
+      ...(ID.test(e.singer || '') ? { singer: e.singer } : {}),   // (whose song it is: showSongs; 'night-star' = her show sings it)
     });
   }
   return out;

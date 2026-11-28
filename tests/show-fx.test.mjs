@@ -14,7 +14,8 @@ import { UP, UPLIGHT, stageArea, uplightNight, uplightShader, patchUplight, upli
 import { patchFaceMaterial } from '../src/actors/face-look.js';
 import { castOf, troupeOf, troupeFiles, TROUPE, KOTONE, NIGHT_STAR, GUESTS, NAMES, LOCAL_NAMES, nameOf, member, avoidOf, singersWith, isGuest } from '../src/content/troupe.js';
 import { DANCE_STYLES, CLUB_LOOPS } from '../src/content/kotone-club.js';
-import { KOTONE_SONGS, showSongs, songsFor } from '../src/content/kotone-songs.js';
+import { KOTONE_SONGS, showSongs, showSongsWith, songsFor } from '../src/content/kotone-songs.js';
+import { catalogSongs } from '../src/content/song-catalog.js';
 import { NIGHT_STAR_SHOW, nightStarState, nightStarSeen, markNightStarSeen, SEEN_KEY } from '../src/content/night-star.js';
 import { STAGES } from '../src/content/stages.js';
 import { singerList, loadShow, SHOW_KEY } from '../src/game/singplay/singplay.js';
@@ -141,6 +142,26 @@ test('her song: one entry with singer "night-star" is all it takes; Kotone keeps
   assert.deepEqual(showSongs(list, NIGHT_STAR, 'en').map(s => s.id), ['night-star-en'], 'hers once it is there');
   assert.ok(!showSongs(list, KOTONE, 'en').includes(mine), "Kotone's show never sings it");
   assert.ok(songsFor(list, 'en').includes(mine), "Sing & Play's Song row lists it for everyone");
+});
+
+test('her song from the song library: the catalog keeps `singer`, her show sings hers in the game language, else Golden Rails', () => {
+  const INDEX = JSON.parse(readFileSync('tests/fixtures/songs-index.json', 'utf8')), BASE = 'http://127.0.0.1:4319/';
+  const like = INDEX.songs.find(s => s.id === 'wake-up-new-day');
+  const entry = (id, lang, extra = {}) => ({ ...like, id, lang, title: id, mood: 'dreamy glowing electro-pop', style: 'mix', bpm: 102, base: `songs/${id}/`,
+    files: Object.fromEntries(['audio', 'beats', 'lyrics', 'mouth'].map(k => [k, `${id}.1a2b3c4d.${k === 'audio' ? 'm4a' : `${k}.json`}`])), ...extra });
+  const index = { ...INDEX, songs: [...INDEX.songs, entry('night-star-en', 'en', { singer: NIGHT_STAR }), entry('night-star-vi', 'vi', { singer: NIGHT_STAR }), entry('odd-owner', 'en', { singer: '../x' })] };
+  const lib = catalogSongs(index, BASE);
+  assert.equal(lib.find(s => s.id === 'night-star-vi')?.singer, NIGHT_STAR, 'the catalog entry keeps whose song it is');
+  assert.equal(lib.find(s => s.id === 'odd-owner')?.singer, undefined, 'a bad singer id is dropped');
+  assert.equal(lib.find(s => s.id === 'wake-up-new-day')?.singer, undefined);
+  for (const [lang, want] of [['en', 'night-star-en'], ['vi', 'night-star-vi'], ['ko', 'night-star-en'], ['ja', 'night-star-en']]) {
+    assert.deepEqual(showSongsWith(KOTONE_SONGS, lib, NIGHT_STAR, lang).map(s => s.id), [want], `her show in ${lang}`);
+  }
+  const hers = showSongsWith(KOTONE_SONGS, lib, NIGHT_STAR, 'en')[0];
+  assert.equal(hers.base, `${BASE}songs/night-star-en/`); assert.equal(hers.audio, 'night-star-en.1a2b3c4d.m4a'); assert.equal(hers.remote, true);
+  assert.ok(!showSongsWith(KOTONE_SONGS, lib, KOTONE, 'en').some(s => s.singer), "Kotone's show never sings it");
+  assert.deepEqual(showSongsWith(KOTONE_SONGS, null, NIGHT_STAR, 'vi').map(s => s.id), ['golden-rails-vi'], 'no catalog (offline, ?qa): Golden Rails');
+  assert.deepEqual(showSongsWith(KOTONE_SONGS, catalogSongs(INDEX, BASE), NIGHT_STAR, 'en').map(s => s.id), ['golden-rails-en'], 'a catalog without hers: Golden Rails');
 });
 
 test('the Night Star is there only on starry nights near the shrine, at the Shrine yard stage', () => {

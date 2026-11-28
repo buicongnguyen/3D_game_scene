@@ -50,9 +50,15 @@ row." Model: VRoid Project's CC0 alpha sample **AvatarSample_D_Darkness** (white
   than 15 cm, a hip roll).
 
 ## Her song (the hook)
-Another agent is making her own song (EN / VI). Until then she sings Golden Rails. Adding hers is one entry each in
-`src/content/kotone-songs.js` with `singer: 'night-star'` (`showSongs`): her show sings her own songs in the game's
-language once there is one, Kotone's station show never sings it, and Sing & Play's Song row lists it for every singer.
+"Night Star" (EN) / "Ngôi Sao Đêm" (VI), 2026-11-28: dreamy, glowing electro-pop with a soaring chorus (about 102-104 bpm,
+E minor, 2:40; ACE-Step 1.5 XL sft, original lyrics: find light in the dark, step out into the night, the stars guide you
+home). It lives in the song library (starline-songs `night-star-en` / `night-star-vi`, both with `singer: 'night-star'`).
+Her show reads the catalog when it loads at night (content/song-catalog.js `fetchCatalog`, at most 4 s; the catalog keeps
+`singer`) and sings her own song in the game's language (`showSongsWith`: English for ko / ja); its files load like a
+Sing & Play library song (game/perform/song-files.js `loadSong`). Without the catalog (offline, a `?qa` page without
+`?songsBase`) or when her song cannot load, she sings Golden Rails as before. A singer's show only uses the library when
+she has her own song there, so Kotone's station show never sings hers; Sing & Play's Song row lists it for every singer.
+A built-in song of hers would still be one entry in `src/content/kotone-songs.js` with `singer: 'night-star'`.
 
 ## Files
 - Model: `public/models/vroid-nightstar.glb` (1.11 MB raw / 0.60 MB packed, 13.6k triangles, 1024 atlas) and

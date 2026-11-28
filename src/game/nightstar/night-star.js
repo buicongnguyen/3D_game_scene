@@ -13,7 +13,9 @@ import { planShots, createCameraMan, fromCamera } from '../perform/camera-man.js
 import { Troupe, leadSource } from '../perform/troupe.js';
 import { prepareMoves } from '../tricks/exercise-moves.js';
 import { SHOW } from '../kotone-show.js';
-import { KOTONE_SONGS, showSongs } from '../../content/kotone-songs.js';
+import { KOTONE_SONGS, showSongsWith } from '../../content/kotone-songs.js';
+import { songsBase, fetchCatalog } from '../../content/song-catalog.js';
+import { loadSong } from '../perform/song-files.js';
 import { troupeOf, leadOffset, member, avoidOf, KOTONE, NIGHT_STAR, nameOf } from '../../content/troupe.js';
 import { NIGHT_STAR_SHOW, markNightStarSeen, nightStarSeen } from '../../content/night-star.js';
 import { ShowFX } from '../../fx/show-fx.js';
@@ -41,14 +43,6 @@ function starlight() {
 /** Her group by tier (measured: docs/NIGHT-STAR.md): Kotone and two friends behind her, on phones too. ?nightStarGroup=1|4 */
 export const groupFor = (tier, params = null) => { const q = Number(params?.get?.('nightStarGroup')); return q === 1 || q === 4 ? q : S.group; };
 
-/** A song's data files (the same as Sing & Play's loadSong): { song, beats, lyrics, mouth, stage, url } or null. */
-async function loadSong(e) {
-  const json = url => fetch(url).then(r => (r.ok ? r.json() : null)).catch(() => null);
-  const meta = e.meta ? await json(e.base + e.meta) : null, song = { ...(meta || {}), ...e, id: e.id };
-  const [beats, lyrics, mouth, stage] = await Promise.all(['beats', 'lyrics', 'mouth', 'stage'].map(k => json(`${e.base}${e.id}.${k}.json`)));
-  return song.bpm > 0 || beats ? { song, beats, lyrics, mouth, stage, url: e.base + (e.audio || `${e.id}.m4a`) } : null;
-}
-
 export class NightStar {
   constructor(game, director) {
     this.g = game; this.d = director;
@@ -66,9 +60,14 @@ export class NightStar {
     const a = this.g.assets, f = id => (this.low ? `${member(id).file}.lite` : member(id).file);
     const files = [...new Set([f(NIGHT_STAR), f(KOTONE), SHOW.pack, ...(this.n > 1 ? troupeOf(this.n, NIGHT_STAR).filter(m => !m.lead).map(m => f(m.id)) : [])])];
     this.files = files;
-    const list = showSongs(KOTONE_SONGS, NIGHT_STAR, getLang());
-    this.loading = Promise.all([a.loadLater(files).catch(() => {}), Promise.all(list.map(loadSong))]).then(([, songs]) => {
-      this.songs = songs.filter(Boolean);
+    // her songs (content/kotone-songs.js showSongsWith): her own from the built-in and library songs (the catalog read here,
+    // at most CATALOG.timeout; none under ?qa unless ?songsBase), else the songs nobody owns
+    const base = songsBase(this.g.params);
+    const pick = lib => Promise.all(showSongsWith(KOTONE_SONGS, lib, NIGHT_STAR, getLang()).map(e => loadSong(e).then(d => d || (e.fallback ? loadSong(e.fallback) : null))))
+      .then(s => s.filter(Boolean)).then(s => (s.length || !lib ? s : pick(null)));   // (her library song failed: the built-in ones)
+    const songs = (base ? fetchCatalog(base).catch(() => null) : Promise.resolve(null)).then(pick);
+    this.loading = Promise.all([a.loadLater(files).catch(() => {}), songs]).then(([, songs]) => {
+      this.songs = songs;
       this.ready = files.every(x => a.has(x)) && this.songs.length > 0;
       if (this.ready) {
         const pack = a.gltf(SHOW.pack), rig = a.clone(f(KOTONE));

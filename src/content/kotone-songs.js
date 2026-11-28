@@ -2,6 +2,7 @@
 // Kotone's songs for her evening show (game/kotone-show.js performs one whole song at a time: game/perform/) and for
 // Sing & Play (game/singplay/singplay.js).
 import { N_ } from '../i18n/i18n.js';
+import { mergeSongs } from './song-catalog.js';
 
 // A song is its audio plus the data files next to it in `base` (any may be missing except the audio):
 //   <id>.beats.json   the beat grid (version 1: beats, downbeats, sections, energy)   else bpm + offset below
@@ -23,15 +24,26 @@ export const KOTONE_SONGS = [
 ];
 
 // `singer` (optional): whose song it is. The Night Star's show at the night festival (game/nightstar/) sings the songs
-// with `singer: 'night-star'` (in the game's language, songsFor); until she has one she sings Kotone's (showSongs).
-// Adding her song (EN / VI) is one entry each, e.g.
-//   { id: 'night-star-en', title: N_('Night Star'), base: 'songs/kotone/', audio: 'night-star-en.m4a', bpm: 92, offset: 0.3, duration: 120, mood: 'dreamy', language: 'en', singer: 'night-star' },
+// with `singer: 'night-star'` (in the game's language, songsFor); without one she sings Kotone's (showSongs).
+// Her song "Night Star" / "Ngôi Sao Đêm" (2026-11-28) is in the song library (the starline-songs catalog's night-star-en /
+// night-star-vi entries carry `singer: 'night-star'`, content/song-catalog.js keeps it): her show reads the catalog
+// (showSongsWith), and sings Golden Rails when it cannot (offline, ?qa). A built-in song of hers would be one entry here, e.g.
+//   { id: 'night-star-en', title: N_('Night Star'), base: 'songs/kotone/', audio: 'night-star-en.m4a', bpm: 102, offset: 0.3, duration: 160, mood: 'dreamy', language: 'en', singer: 'night-star' },
 // In Sing & Play every singer may sing every song (the Song row lists them all).
 
 /** The songs a show by `singer` sings in language `lang`: her own (`singer` field), else the songs nobody owns. */
 export function showSongs(list, singer, lang) {
   const own = list.filter(s => s.singer && s.singer === singer);
   return songsFor(own.length ? own : list.filter(s => !s.singer), lang);
+}
+
+/**
+ * showSongs with the song library (`lib`: content/song-catalog.js catalogSongs, or null): the singer's own songs from the
+ * built-in and library songs; when she has none there, the built-in songs only (a show never loads the library's others).
+ */
+export function showSongsWith(builtIn, lib, singer, lang) {
+  const all = mergeSongs(builtIn, lib || []);
+  return showSongs(all.some(s => s.singer && s.singer === singer) ? all : builtIn, singer, lang);
 }
 
 /**
