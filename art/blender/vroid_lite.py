@@ -299,7 +299,9 @@ def decimate_to(o, target):
         n = tri_count(o)
         if n > target: hi = mod.ratio
         else: lo = mod.ratio
-        if abs(n - target) < target * 0.01: break
+        # (close enough only from below: a step just over the target used to stop here and fall back to lo = 0.02, the
+        # whole body cut to 2 % - AvatarSample_F's 21.6k body met 0.51 -> 10994 tris against 10914)
+        if n <= target and target - n < target * 0.01: break
     mod.ratio = lo if tri_count(o) > target else mod.ratio
     select_only([o])
     bpy.ops.object.modifier_apply(modifier=mod.name)

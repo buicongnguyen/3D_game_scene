@@ -99,6 +99,15 @@ SOURCE = SOURCE_OF('nu-2')
 # pose, the bones and the hips' travel all follow and the feet stay on the ground.
 MEMBERS = {'nam-1': 0.975, 'nam-2': 0.909, 'nam-3': 0.975, 'nu-1': None, 'nu-3': None, 'nu-4': None, 'nu-5': None}
 member_stem = lambda sid: 'vroid-' + sid.replace('-', '')
+# VRoid Studio's alpha-era sample models, released CC0 by VRoid / pixiv (OpenGameArt "VRoid Studio CC0 models"; the VRM
+# meta says author VRoid Project). Not in the game yet: their VRM is turned into the same "mixamo65" GLB as the seven
+# above (ktvgo's tools/convert.mjs, into .tools/vroid-cc0/mixamo65) and built into .tools/vroid-cc0/models unless --out
+# says otherwise. `--member cc0-d` writes vroid-cc0d.glb, .lite.glb and moves-vroid-cc0d.glb. Value: (file stem, scale).
+CC0 = {'cc0-d': ('AvatarSample_D', None), 'cc0-d-darkness': ('AvatarSample_D_Darkness', None), 'cc0-e': ('AvatarSample_E', None),
+       'cc0-f': ('AvatarSample_F', None), 'cc0-g': ('AvatarSample_G', None)}
+CC0_DIR = os.path.join(REPO, '.tools/vroid-cc0')
+SOURCE_CC0 = lambda sid: (f'VRoid Studio alpha sample model {CC0[sid][0]} by VRoid Project (pixiv), released CC0. '
+                          'Moves: Mixamo animations.')
 
 
 def cli():
@@ -110,8 +119,13 @@ def cli():
     for x in a:
         if x.startswith('--'): k = x[2:]
         elif k: o[k] = x; k = None
-    if o.get('member'):
-        sid = o['member']; assert sid in MEMBERS, f'unknown member {sid} (one of {", ".join(MEMBERS)})'
+    if o.get('member') in CC0:
+        sid = o['member']
+        o['src'] = os.path.join(CC0_DIR, 'mixamo65', f'{CC0[sid][0]}-mixamo65.glb'); o['name'] = member_stem(sid)
+        if '--out' not in a: o['out'] = os.path.join(CC0_DIR, 'models')
+        o['work'] = os.path.join(o['work'], o['name'])
+    elif o.get('member'):
+        sid = o['member']; assert sid in MEMBERS, f'unknown member {sid} (one of {", ".join(list(MEMBERS) + list(CC0))})'
         o['src'] = o['src'].replace('nu-2-mixamo65', f'{sid}-mixamo65'); o['name'] = member_stem(sid)
         o['work'] = os.path.join(o['work'], o['name'])
     for p in ('src', 'moves', 'out', 'work'): o[p] = os.path.abspath(o[p])
@@ -545,7 +559,8 @@ def patch_extras(path, extras):
 if __name__ == '__main__':
     O = cli()
     MOVES = O['moves']
-    if O.get('member'): SCALE = MEMBERS[O['member']]; SOURCE = SOURCE_OF(O['member'])
+    if O.get('member') in CC0: SCALE = CC0[O['member']][1]; SOURCE = SOURCE_CC0(O['member'])
+    elif O.get('member'): SCALE = MEMBERS[O['member']]; SOURCE = SOURCE_OF(O['member'])
     if O['packlist']: PACK_CLIPS = [tuple(x) for x in json.load(open(O['packlist']))]
     if O['list']: MODEL_CLIPS = [tuple(x) for x in json.load(open(O['list']))]     # (trying other moves: [[name, file, opts], ...])
     run(O)

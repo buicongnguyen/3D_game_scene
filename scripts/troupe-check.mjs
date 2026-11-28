@@ -4,7 +4,7 @@
 // slide = their speed across the ground while planted), the joint rules on the copied poses (Avatar Studio's
 // anatomy-joint-check.js, R1-R11, read-only copy in .tools/club-solver: run kotone-club-bake.mjs --vendor first), the
 // sink below the floor, and the JS time of one frame's troupe pose against a full mixer per member.
-//   node scripts/troupe-check.mjs [--song public/songs/kotone/golden-rails-en | .tools/test-song/ngay-nao-cung-vui] [--dir public/models] [--n 8] [--own]
+//   node scripts/troupe-check.mjs [--song public/songs/kotone/golden-rails-en | .tools/test-song/ngay-nao-cung-vui] [--dir public/models] [--n 8] [--own] [--cast <json>] [--tag <name>]
 //     --own: every member on its own mixer and own bake (what the shared animation saves; slide of the own bakes)
 //     --style mix|kpop|cute|hiphop: the Dance choice (content/kotone-club.js DANCE_STYLES)
 //   stance: the ankles' distance apart while both feet are planted, median, as % of that body's hip-joint width
@@ -46,7 +46,10 @@ const song = { song: { ...(meta || {}), id }, beats: await json(`${SONG}.beats.j
 if (!song.song.bpm && !song.beats) throw new Error(`no song at ${SONG}`);
 
 const scene = new THREE.Scene(), formation = new THREE.Group(); scene.add(formation);
-const cast = troupeOf(N), lead = cast.find(m => m.lead);
+// --cast <json>: a trial line-up instead of the game's (e.g. candidate models in a .tools folder given by --dir; Kotone,
+// the lead, still loads from public/models): [{ id, file, row, x, z, lead?, source? }, ...]
+const CAST = arg('cast');
+const cast = CAST ? JSON.parse(await fs.readFile(path.resolve(ROOT, CAST), 'utf8')) : troupeOf(N), lead = cast.find(m => m.lead);
 const place = (m, model) => { model.position.set(m.x - lead.x, 0, m.z - lead.z); formation.add(model); model.updateMatrixWorld(true); };
 const kg = await loadGlb(path.join(ROOT, 'public/models/kotone.glb')), kpack = await loadGlb(path.join(ROOT, 'public/models/moves-kotone.glb'));
 const kModel = kg.scene; kModel.userData.clips = kg.animations; place(lead, kModel);
@@ -110,4 +113,4 @@ const out = { song: id, style: perf.plan.style, members: cast.length, mode: OWN 
 console.table(rows.map(({ joints, ...r }) => ({ ...r, joints: Object.keys(joints).join(' ') })));
 console.log(JSON.stringify({ ...out, rows: undefined }));
 await fs.mkdir(path.join(ROOT, '.tools/group'), { recursive: true });
-await fs.writeFile(path.join(ROOT, `.tools/group/troupe-check-${perf.plan.style}-${OWN ? 'own' : `shared-${FEET}${process.argv.includes('--half') ? '-half' : ''}`}-${cast.length}.json`), JSON.stringify(out, null, 1));
+await fs.writeFile(path.join(ROOT, `.tools/group/troupe-check-${perf.plan.style}-${OWN ? 'own' : `shared-${FEET}${process.argv.includes('--half') ? '-half' : ''}`}-${cast.length}${arg('tag') ? `-${arg('tag')}` : ''}.json`), JSON.stringify(out, null, 1));
