@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const NODE_RE = /^(Spawn|Exit|Item_|Light_|Gear_|Pendulum|Spot_)/;
+const NODE_RE = /^(Spawn|Exit|Item_|Light_|Gear_|Pendulum|Spot_|Seat_|Cam_)/;
 const r6 = v => Math.round(v * 1e6) / 1e6;
 
 // 4x4 column-major helpers (glTF matrices)

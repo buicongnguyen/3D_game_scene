@@ -16,6 +16,7 @@ import { clockLabel } from '../world/seasons.js';
 import { STOPS } from '../world/railway.js';
 import { BarkBubbles } from '../ui/barks-ui.js';
 import { TownLife } from './townlife.js';
+import { HouseScenes } from './house-scenes.js';
 import { Indoors } from './indoor.js';
 import { Tricks } from './tricks.js';
 import { SkyGaze } from './skygaze.js';
@@ -186,7 +187,7 @@ export class Director {
     if (!this.residents?.length) return;
     const act = this.game.interiors?.active || null, p = this.game.player.pos;
     for (const n of this.residents) {
-      const here = n.resident === act;
+      const here = n.resident === act && !this.houseScenes?.holds(act);   // (a house scene's family has the room)
       if (n.visible !== here) n.setVisible(here);
       if (!here) continue;
       if (n.pos.distanceTo(p) < 4.5) n.lookAt(p.x, p.z); else n.targetFacing = n.spotYaw;
@@ -354,6 +355,8 @@ export class Director {
     // things to do inside the houses, and the house memories (game/indoor.js)
     this.indoor = new Indoors(this);
     this.indoor.spawn();
+    // voiced little scenes in the homes, in the language the player is learning (game/house-scenes.js)
+    this.houseScenes = new HouseScenes(this);
     // Grandma's countryside tricks: signs, teaching, rounds and the journal Tricks tab (game/tricks.js)
     this.tricks = new Tricks(this);
     // her lantern (belt or hand) follows the pose every frame, with or without a quest (actors/lantern-carry.js)
@@ -406,7 +409,9 @@ export class Director {
     for (const d of I.doors) {
       // the prompt names the house (its board is a small plate on the wall now: content/signs.js)
       const sign = SIGNS.find(s => s.building === d.building) || SIGNS.find(s => s.near === d.building);
-      const goIn = sign ? () => tx('Go inside: {name}', { name: tx(signFor(sign, storyId()).text) }) : N_('Go inside');
+      const goIn0 = sign ? () => tx('Go inside: {name}', { name: tx(signFor(sign, storyId()).text) }) : () => tx('Go inside');
+      // a lantern and the scene's name when a house scene is due there (game/house-scenes.js)
+      const goIn = () => { const h = this.houseScenes?.doorHint(d.id); return h ? `${goIn0()}  ${h}` : goIn0(); };
       this.interact(`door:${d.id}`, d.outside, goIn,() => !I.active && !I.busy && !this.game.kite?.active, () => this.enterHome(d.id), 1.8, null, 0.5);
       this.interact(`exit:${d.id}`, d.exit, N_('Go outside'), () => I.active === d.id && !I.busy, () => this.leaveHome(), 1.8, null, 0.5);
     }
@@ -523,6 +528,7 @@ export class Director {
     try { await I.enter(id, on => this.ui.fade(on, 350)); } finally { this.busy--; }
     const seen = `visited_${id}`;
     if (!this.q.has(seen) && DIALOGUE[`inside_${id}`]) { this.q.state.flags[seen] = true; this.say(`inside_${id}`); }
+    this.houseScenes?.entered(id);
     if (id === 'cottage') {
       // gifts Mika hasn't seen yet sparkle as she comes in
       let n = 0;
@@ -1421,6 +1427,7 @@ export class Director {
     const rl = g.roundLight, townDt = rl?.on ? rl.frame(dt) : dt;
     if (townDt > 0) this.town?.update(townDt);
     this.indoor?.update();
+    this.houseScenes?.update(dt);
     this.tricks?.update(dt);
     this.sky?.update(dt);
     this.yard?.update(dt);

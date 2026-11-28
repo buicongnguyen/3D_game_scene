@@ -390,7 +390,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +0.76 MB: the happy faces and the Dance choice (2026-11-28): four face morphs on all 16 VRoid models (smile, smileEyes,
 // browUp, wink: +21-30 KB each) and six new Club clips + the wider stance in moves-kotone / moves-vroid-nam1 (1.14 -> 1.30 MB
 // each); 85,194,072 B measured.
-export const TOTAL_RAW_BYTES = 85_250_000;      // (the dance game, the exercise packs and the visitor)
+// +0.21 MB: the language pilot's five larger home kinds (seats, camera points, scene props; 85,402,716 B measured).
+export const TOTAL_RAW_BYTES = 85_600_000;     // (the dance game, the exercise packs and the visitor)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).

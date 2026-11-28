@@ -679,3 +679,38 @@ so it is safe to push at any phase.
 - [R6] Local: `C:\Users\n\source\repos\voice_sync\README.md` and `LICENCE_NOTES.md` (checked 2026-10-21: Kokoro, Qwen3-TTS, VieNeu, Piper, Chatterbox, MeloTTS, F5, XTTS, OpenAudio, OmniVoice, MMS)
 - [R7] MDN `getVoices()` / `SpeechSynthesisVoice.localService`: https://developer.mozilla.org/en-US/docs/Web/API/SpeechSynthesis/getVoices
 - Measurements here: `.tools/voice-samples/metrics.json` (CER, F0, sizes) and the interior GLB counts (gltf-transform, 2026-11-28).
+
+---
+
+## 13. Pilot status (2026-11-28, branch `lang-pilot`)
+
+Owner decisions applied: pilot houses kw4/kw2/kw5; the five home kinds enlarged; children voiced by a young woman's
+voice (no pitch shift); progress shared by all slots; off until chosen at the first house visit; Korean ships as
+**draft**; no guides yet.
+
+**Built.** `content/scenes/` (kw4.supper 12 lines, kw2.shop 10, kw5.cranes 10; en/ko/vi/ja; 10 glossary phrases),
+`game/house-scenes.js` (picker, household bodies at `Seat_*`, `Cam_*` cuts, Mika at `Spot_mika`, line loop with
+Again/Slower/Next/Leave, R/S/Space/Esc keys), `engine/speech-audio.js` (one `<audio>`, blob clips, Web Audio route,
+music duck, envelope), `ui/scene-ui.js` (panel, chip card, first-visit language card, recall card),
+`game/phrasebook.js` + `ui/phrasebook-ui.js` (Journal > Phrasebook), Settings > Learn a language / Meaning under the
+line / Speech, phrase of the day toast, `scripts/speech-build.mjs` (+ `--check` in `npm test`), `tools/tts/` bake
+pipeline. Not yet: stamp-card hook for the phrase of the day, head nods/lips (P7), interior perf-budget rows, Voices
+mode migration (the existing Voices select still decides clip / device voice / blips / off).
+
+**Voices shipped** (AAC-LC mono 24 kHz ~41 kbps, −18 LUFS, ≤ −1 dBTP, ≤ 22.5 KB a clip; 32 clips a language):
+EN Kokoro-82M `hexgrad/Kokoro-82M@f3ff357` (Apache-2.0), 437 KB, mean CER 0.024; VI **VieNeu-TTS v3 Turbo**
+`pnnbao-ump/VieNeu-TTS-v3-Turbo@61b85e3` (Apache-2.0, preset voices covered by the card, speakers consented, training
+data undisclosed, default watermark; codec `OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano@6aa02b0` Apache-2.0; neither the
+0.5B nor the 0.3B checkpoint is used), 471 KB, CER 0.031; KO **Supertonic 3** `Supertone/supertonic-3@3cadd1ee`
+(OpenRAIL-M: disclose synthetic voices in the credits; repo archived, vendor winding down, keep the mirror), 430 KB,
+CER 0.012. Korean A/B (8 lines × 3 takes, Whisper large-v3 CER): Qwen3-TTS 1.7B CustomVoice 0.008 best-take mean
+(0.032 all takes) vs Supertonic 0.008 (0.045); Supertonic shipped on the tie for native voices in all 10 presets
+(Qwen3 has one Korean-native speaker), distinct timbres and 0.4 GB CPU. The Qwen3 cast is in `tools/tts/ko-ab.json`.
+Magpie TTS not tried (NeMo toolchain; the prebuilt binary was blocked). Listen: `.tools/voice-samples/listen.html`,
+sections "Korean A/B (blind)" and "Pilot scenes · shipped clips (2026-11-28)".
+
+**Rooms** (floor before → after): kawabe-b 8.2×6.2 → 8.4×7.0, kawabe-a 6.4×5.4 → 7.6×6.4 (horigotatsu), kawabe-shop
+5.4×4.7 → 6.6×5.6, takamori-a 7.3×6.0 → 8.0×6.8, takamori-b 5.3×4.9 → 6.8×6.0; all ≤ 13.8 k tris, ≤ 22 primitives,
+7 materials, ≤ 756 KB. Measured Low (390×844): kw4 empty 29 draws / 41 k tris, supper 47 / 118 k (4 people + props,
+shadows included); kw5 cranes 33, kw2 shop 31 — far under the outdoor Low rows (91–133). Raw model budget headroom is
+now only ~60 KB.

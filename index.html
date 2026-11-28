@@ -84,7 +84,7 @@
       <header><h2 data-i18n>Mika's Journal</h2><button class="close" data-close="journal">✕</button></header>
       <nav class="tabs" id="journalTabs">
         <button data-tab="story" class="on" data-i18n>Story</button><button data-tab="map" data-i18n>Map</button><button data-tab="pages" id="tabPages">Sora's Pages</button>
-        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="friends" data-i18n>Friends</button><button data-tab="tricks" data-i18n>Tricks</button><button data-tab="folk" data-i18n>Neighbours</button><button data-tab="album" data-i18n>Album</button><button data-tab="treasures" data-i18n>Treasures</button><button data-tab="help" data-i18n>Controls</button>
+        <button data-tab="stars" data-i18n>Fallen Stars</button><button data-tab="fish" data-i18n>Fish</button><button data-tab="friends" data-i18n>Friends</button><button data-tab="tricks" data-i18n>Tricks</button><button data-tab="folk" data-i18n>Neighbours</button><button data-tab="album" data-i18n>Album</button><button data-tab="treasures" data-i18n>Treasures</button><button data-tab="phrases" data-i18n>Phrasebook</button><button data-tab="help" data-i18n>Controls</button>
       </nav>
       <section id="journalBody"></section>
     </div>
@@ -133,6 +133,10 @@
         <label><span data-i18n>Sound effects</span> <input id="optSfx" type="range" min="0" max="1" step="0.05" value="0.8" /></label>
         <label><span data-i18n>Voices</span> <select id="optVoices"><option value="blips" data-i18n>Blips</option><option value="read" data-i18n>Read aloud</option><option value="off" data-i18n>Off</option></select></label>
         <p class="note" data-i18n>Read aloud uses the voices on your device. Where it has none for your language, you hear blips.</p>
+        <label><span data-i18n>Learn a language</span> <select id="optLearn"><option value="" data-i18n>Ask at the first home</option><option value="en" lang="en">English</option><option value="ko" lang="ko">한국어</option><option value="vi" lang="vi">Tiếng Việt</option><option value="off" data-i18n>Off</option></select></label>
+        <p class="note" data-i18n>In some homes the family talks at supper, in the shop or over paper cranes. You hear it in the language you are learning, with the meaning under each line.</p>
+        <label class="check"><input id="optMeaning" type="checkbox" checked /> <span data-i18n>Meaning under the line</span></label>
+        <label><span data-i18n>Speech</span> <select id="optSpeechSpeed"><option value="1" data-i18n>Normal</option><option value="0.75" data-i18n>Slower</option></select></label>
         <label class="check"><input id="optHaptics" type="checkbox" checked /> <span data-i18n>Vibration</span></label>
         <label class="check"><input id="optMoments" type="checkbox" checked /> <span data-i18n>Weather moments (rainbows, birds, breezes)</span></label>
         <label class="check"><input id="optFps" type="checkbox" /> <span data-i18n>Show frame rate</span></label>

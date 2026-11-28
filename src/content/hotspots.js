@@ -21,11 +21,11 @@
  */
 
 export const HOTSPOTS = {
-  // ---------------------------------------------------------------- Kawabe house A (6.0 x 5.0 m), door at -Y, x = 0
+  // ---------------------------------------------------------------- Kawabe house A (7.2 x 6.0 m), door at -Y, x = 0
   // variants: 1 young family (kw1, kw7), 2 elderly couple (kw3), 3 fisher's home (kw5)
   'kawabe-a': [
     {
-      id: 'kawabe-a.table', kind: 'sit', stand: [-0.5, -0.5], look: [-0.5, 0.55, 0.62], seatH: 0.1,
+      id: 'kawabe-a.table', kind: 'sit', stand: [-0.7, -0.6], look: [-0.7, 0.55, 0.72], seatH: 0.1,
       label: 'Sit at the low table', variants: [1, 2, 3],
       lines: {
         1: ['Two rice balls, one bitten exactly once. Someone small lost interest halfway.'],
@@ -34,7 +34,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-a.tansu', kind: 'open', stand: [-2.0, -1.1], look: [-2.75, -0.9, 0.9],
+      id: 'kawabe-a.tansu', kind: 'open', stand: [-2.6, -1.1], look: [-3.35, -0.9, 0.9],
       label: 'Open the tansu', variants: [1, 3],
       lines: {
         1: ['Socks, a rubber duck, and one sock that is definitely not a pair with anything.'],
@@ -42,7 +42,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-a.altar', kind: 'ring', stand: [-2.0, -1.1], look: [-2.75, -0.88, 1.5],
+      id: 'kawabe-a.altar', kind: 'ring', stand: [-2.6, -1.1], look: [-3.35, -0.88, 1.5],
       label: 'Ring the altar bell', variants: [2],
       lines: {
         2: ['A small photo, fresh flowers, a candle. They still set out a sweet for someone every day.',
@@ -52,28 +52,28 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-a.toys', kind: 'play', stand: [-1.75, -0.2], look: [-1.62, -0.62, 0.32],
+      id: 'kawabe-a.toys', kind: 'play', stand: [-2.3, -0.3], look: [-2.22, -0.87, 0.32],
       label: 'Play with the toy train', variants: [1],
       lines: {
         1: ['Three carriages and a bear for a driver. The bear has clearly never passed an exam.'],
       },
     },
     {
-      id: 'kawabe-a.cat', kind: 'pet', stand: [-1.9, -0.35], look: [-1.9, -0.9, 0.4],
+      id: 'kawabe-a.cat', kind: 'pet', stand: [-2.5, -0.45], look: [-2.5, -1.0, 0.4],
       label: 'Pet the cat', variants: [2],
       lines: {
         2: ['The cat opens one eye, judges me, and allows it. High praise.'],
       },
     },
     {
-      id: 'kawabe-a.net', kind: 'look', stand: [-1.9, -0.35], look: [-2.95, -0.9, 1.85],
+      id: 'kawabe-a.net', kind: 'look', stand: [-2.5, -0.45], look: [-3.55, -0.9, 1.85],
       label: 'Look at the old net', variants: [3],
       lines: {
         3: ['Every knot in this net was tied by hand. Some of them have clearly been re-tied in a temper.'],
       },
     },
     {
-      id: 'kawabe-a.shelf', kind: 'look', stand: [0.3, 1.7], look: [0.25, 2.3, 1.7],
+      id: 'kawabe-a.shelf', kind: 'look', stand: [0.3, 2.2], look: [0.25, 2.8, 1.7],
       label: 'Look at the shelf', variants: [1, 2, 3],
       lines: {
         1: ['Picture books, a plush bear and a pot plant that has survived several "helpers".'],
@@ -83,7 +83,7 @@ export const HOTSPOTS = {
     },
   ],
 
-  // ---------------------------------------------------------------- Kawabe house B (7.8 x 5.8 m), glass doors at -Y
+  // ---------------------------------------------------------------- Kawabe house B (8.0 x 6.6 m), glass doors at -Y
   // variants: 1 young family with a baby (kw4), 2 retired teacher (kw6), 3 tailor's home (otaHouse)
   'kawabe-b': [
     {
@@ -96,7 +96,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-b.sewing', kind: 'use', stand: [-2.6, -1.6], look: [-3.0, -2.5, 0.85],
+      id: 'kawabe-b.sewing', kind: 'use', stand: [-2.7, -2.0], look: [-3.1, -2.9, 0.85],
       label: 'Look at the sewing table', variants: [1, 2, 3],
       lines: {
         1: ['A tiny onesie with a mended elbow. Babies apparently wear things out at speed.'],
@@ -105,7 +105,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-b.chest', kind: 'look', stand: [-2.85, -1.0], look: [-3.68, -1.1, 1.2],
+      id: 'kawabe-b.chest', kind: 'look', stand: [-2.95, -1.4], look: [-3.78, -1.5, 1.2],
       label: 'Look at the sewing chest', variants: [2, 3],
       lines: {
         2: ['An old radio, tuned to the weather. Retired people take clouds very seriously.'],
@@ -113,7 +113,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-b.bookcase', kind: 'look', stand: [2.9, 1.9], look: [3.6, 2.0, 1.2],
+      id: 'kawabe-b.bookcase', kind: 'look', stand: [3.0, 2.3], look: [3.7, 2.4, 1.2],
       label: 'Browse the bookcase', variants: [1, 2, 3],
       lines: {
         1: ['Picture books chewed at the corners. Somebody here reads with their teeth.'],
@@ -122,7 +122,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-b.playmat', kind: 'play', stand: [-0.45, -1.55], look: [-0.35, -1.85, 0.1],
+      id: 'kawabe-b.playmat', kind: 'play', stand: [-0.45, -1.95], look: [-0.35, -2.25, 0.1],
       label: 'Play on the mat', variants: [1],
       lines: {
         1: ['I spin the mobile. Four wooden stars go round. I may be thirteen, but that was satisfying.'],
@@ -130,11 +130,11 @@ export const HOTSPOTS = {
     },
   ],
 
-  // ---------------------------------------------------------------- Kawabe shop (5.0 x 4.3 m), door at -Y, x = 0
+  // ---------------------------------------------------------------- Kawabe shop (6.2 x 5.2 m), door at -Y, x = 0
   // variants: 1 grocer (kw2), 2 stationery and sweets (kw8), 3 hardware and rope (unused)
   'kawabe-shop': [
     {
-      id: 'kawabe-shop.cat', kind: 'pet', stand: [0.12, -1.05], look: [1.4, -1.93, 1.0],
+      id: 'kawabe-shop.cat', kind: 'pet', stand: [0.6, -1.5], look: [2.0, -2.38, 1.0],
       label: 'Pet the shop cat', variants: [1, 2, 3],
       lines: {
         1: ['The shop cat is in charge of the window. The onions are in charge of everything else.'],
@@ -143,7 +143,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-shop.table', kind: 'look', stand: [-1.0, -0.6], look: [-1.0, 0.3, 0.85],
+      id: 'kawabe-shop.table', kind: 'look', stand: [-1.3, -0.6], look: [-1.3, 0.3, 0.85],
       label: 'Look at the display', variants: [1, 2, 3],
       lines: {
         1: ['Crates of radishes, cabbages and mikan. The mikan are arranged like they are on parade.'],
@@ -152,14 +152,14 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'kawabe-shop.notices', kind: 'read', stand: [-0.9, -1.2], look: [-0.9, -2.15, 1.55],
+      id: 'kawabe-shop.notices', kind: 'read', stand: [-1.2, -1.65], look: [-1.2, -2.55, 1.55],
       label: 'Read the notice board', variants: [1, 2, 3],
       lines: {
         any: ['"Found: one glove, left, very sad." "Wanted: someone who can fix a gramophone. Again."'],
       },
     },
     {
-      id: 'kawabe-shop.hatch', kind: 'look', stand: [-1.6, -1.2], look: [-1.9, -2.1, 1.1],
+      id: 'kawabe-shop.hatch', kind: 'look', stand: [-2.2, -1.55], look: [-2.5, -2.5, 1.1],
       label: 'Look out of the hatch', variants: [1, 2, 3],
       lines: {
         1: ['The hatch opens on the lane. Half the valley buys its tea here without coming in.'],
@@ -169,11 +169,11 @@ export const HOTSPOTS = {
     },
   ],
 
-  // ---------------------------------------------------------------- Takamori house A (6.9 x 5.6 m), door at -Y, x = 1.25
+  // ---------------------------------------------------------------- Takamori house A (7.6 x 6.4 m), door at -Y, x = 1.25
   // variants: 1 baker's family (tk1), 2 musician's home (tk3), 3 gardener's / herbalist's home (tk5)
   'takamori-a': [
     {
-      id: 'takamori-a.windowseat', kind: 'sit', stand: [-1.7, -1.85], look: [-1.7, -2.6, 0.45], seatH: 0.45,
+      id: 'takamori-a.windowseat', kind: 'sit', stand: [-2.05, -2.25], look: [-2.05, -3.0, 0.45], seatH: 0.45,
       label: 'Sit in the window seat', variants: [1, 2, 3],
       lines: {
         any: ['From up here the whole valley looks like it was arranged on purpose.',
@@ -181,7 +181,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'takamori-a.hearth', kind: 'warm', stand: [2.0, 1.25], look: [3.0, 0.9, 0.6],
+      id: 'takamori-a.hearth', kind: 'warm', stand: [2.35, 1.25], look: [3.35, 0.9, 0.6],
       label: 'Warm up by the hearth', variants: [1, 2, 3],
       lines: {
         1: ['A wheat sheaf over the hearth, for luck. Bakers trust bread more than stars.'],
@@ -190,7 +190,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'takamori-a.bedside', kind: 'open', stand: [-2.6, 1.6], look: [-1.93, 2.5, 0.55],
+      id: 'takamori-a.bedside', kind: 'open', stand: [-2.95, 2.0], look: [-2.28, 2.94, 0.55],
       label: 'Open the bedside chest', variants: [1, 2, 3],
       lines: {
         1: ['Clean aprons folded in a stack. Each one still smells faintly of toast.'],
@@ -199,14 +199,14 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'takamori-a.koto', kind: 'play', stand: [-2.25, -1.82], look: [-2.62, -1.3, 0.4],
+      id: 'takamori-a.koto', kind: 'play', stand: [-2.6, -2.22], look: [-2.97, -1.7, 0.4],
       label: 'Pluck the koto', variants: [2],
       lines: {
         2: ['I pluck one string. It hums for ages, like it has been waiting for someone to ask.'],
       },
     },
     {
-      id: 'takamori-a.wateringcan', kind: 'use', stand: [0.6, -1.6], look: [0.25, -1.9, 0.15],
+      id: 'takamori-a.wateringcan', kind: 'use', stand: [0.6, -2.0], look: [0.25, -2.3, 0.15],
       label: 'Pick up the watering can', variants: [3],
       lines: {
         3: ['Half full and dented in three places. A watering can with a long, honest career.'],
@@ -214,11 +214,11 @@ export const HOTSPOTS = {
     },
   ],
 
-  // ---------------------------------------------------------------- Takamori house B (4.9 x 4.5 m), door at -Y, x = 0
+  // ---------------------------------------------------------------- Takamori house B (6.4 x 5.6 m), door at -Y, x = 0
   // variants: 1 young couple's first home (tk2), 2 bell-ringer's family (tk4), 3 grandmother's sewing room (tk6)
   'takamori-b': [
     {
-      id: 'takamori-b.window', kind: 'look', stand: [-1.4, -0.6], look: [-2.33, -0.9, 1.5],
+      id: 'takamori-b.window', kind: 'look', stand: [-2.15, -1.0], look: [-3.08, -1.5, 1.5],
       label: 'Look out of the window', variants: [1, 2, 3],
       lines: {
         1: ['Fresh flowers on the sill and a box labelled "MISC (MORE)". Still moving in, then.'],
@@ -227,7 +227,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'takamori-b.tatami', kind: 'sit', stand: [-1.2, 0.95], look: [-1.7, 1.6, 0.4], seatH: 0.1,
+      id: 'takamori-b.tatami', kind: 'sit', stand: [-1.95, 1.5], look: [-2.45, 2.15, 0.4], seatH: 0.1,
       label: 'Sit on the tatami', variants: [1, 2, 3],
       lines: {
         1: ['A paper heart garland over the window. Slightly crooked. Clearly hung together.'],
@@ -236,14 +236,14 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'takamori-b.bells', kind: 'ring', stand: [-1.6, 1.3], look: [-2.28, 1.3, 1.7],
+      id: 'takamori-b.bells', kind: 'ring', stand: [-2.35, 1.2], look: [-3.03, 1.2, 1.7],
       label: 'Ring a handbell', variants: [2],
       lines: {
         2: ['Eight handbells, smallest to biggest. I ring the smallest. It sounds like a polite sparrow.'],
       },
     },
     {
-      id: 'takamori-b.wardrobe', kind: 'open', stand: [1.1, -1.3], look: [2.1, -1.95, 1.0],
+      id: 'takamori-b.wardrobe', kind: 'open', stand: [1.85, -1.85], look: [2.85, -2.5, 1.0],
       label: 'Open the wardrobe', variants: [1, 2, 3],
       lines: {
         1: ['Half the hangers are empty. The other half hold two very good festival yukata.'],
@@ -252,7 +252,7 @@ export const HOTSPOTS = {
       },
     },
     {
-      id: 'takamori-b.wheel', kind: 'use', stand: [-1.2, -1.3], look: [-1.9, -1.55, 0.6],
+      id: 'takamori-b.wheel', kind: 'use', stand: [-1.5, -1.75], look: [-2.2, -2.1, 0.6],
       label: 'Turn the spinning wheel', variants: [3],
       lines: {
         3: ['The wheel turns with a soft click-click. It sounds like somebody humming without words.'],

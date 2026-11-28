@@ -132,19 +132,49 @@ def mini_teapot(R, c, col='#2f4c86', r=.08):
             tag='tea', arc=.5)
 
 
+def stool(R, c, h=.45, r=.17, col='#a8703c'):
+    c = V(c)
+    R.cyl('W', c + V((0, 0, h - .025)), r, .05, col, n=8, tag='stools')
+    for a in range(3):
+        ang = a * math.tau / 3 + .4
+        R.rod('W', c + V((math.cos(ang) * r * .6, math.sin(ang) * r * .6, .0)),
+              c + V((math.cos(ang) * r * .75, math.sin(ang) * r * .75, h - .05)), .018, shade(col, .8), n=4, tag='stools')
+
+
+def shop_basket(R, c):
+    """Var_scene_shop: a basket of radishes and carrots on the counter (one Paint mesh)."""
+    c = V(c)
+    with var_group(R, 'Var_scene_shop'):
+        R.lathe('K', [(0, 0), (.11, 0), (.15, .1), (.14, .105), (0, .09)], c, '#c9a062', n=8, tag='basket')
+        R.torus('K', c + V((0, 0, .1)), .145, .012, '#a8803c', maj=8, mn=3, tag='basket')
+        for k in range(5):
+            a = k * 1.25 + .3
+            p = c + V((math.cos(a) * .06, math.sin(a) * .06, .11))
+            R.sphere('K', p, (.09, .025, .025), '#f4efe2', seg=5, rings=3, rot=(0, .25, a), tag='radishes')
+            R.box('K', p + V((-math.cos(a) * .1, -math.sin(a) * .1, .03)), (.08, .05, .012), '#4f9a3a', ch=0,
+                  rot=(0, -.6, a), tag='radish leaves')
+        for k in range(5):
+            a = k * 1.25 + .9
+            p = c + V((math.cos(a) * .05, math.sin(a) * .05, .13))
+            R.cyl('K', p, .018, .14, '#f08a24', r2=.004, n=5, rot=(math.pi / 2 - .3, 0, a + math.pi / 2), tag='carrots')
+            R.box('K', p + V((-math.cos(a) * .09, -math.sin(a) * .09, .02)), (.06, .03, .01), '#6fb84a', ch=0,
+                  rot=(0, 0, a), tag='carrot tops')
+
+
 @builder('interior-kawabe-shop')
 def build_shop():
-    W, D, H = 5.0, 4.3, 3.15
-    R = Room('interior-kawabe-shop', W, D, H, ceil=3.75, cam_top=3.1)
+    W, D, H = 6.2, 5.2, 3.3          # 2026-11-28: enlarged from 5.0 x 4.3 (room for customers, a tea nook)
+    R = Room('interior-kawabe-shop', W, D, H, ceil=3.9, cam_top=3.3)
     fire_mat(R)
     make_vars(R)
+    R.pivot('Var_scene_shop', (0, 0, 0), with_statics=True)
     rng = random.Random(61)
     fc = R.faces()
     holes = {
-        'front': [(W / 2 - .65, W / 2 + .65, 0, 2.2), (3.7, 4.85, .95, 2.15), (.15, 1.35, 1.0, 2.15)],
-        'back': [(3.4, 4.3, 0, 2.1), (.9, 1.9, 1.1, 2.0)],
-        'left': [(1.8, 2.8, 1.2, 2.0)],
-        'right': [(1.6, 2.6, 1.1, 2.0)],
+        'front': [(W / 2 - .65, W / 2 + .65, 0, 2.2), (4.9, 6.05, .95, 2.15), (.15, 1.35, 1.0, 2.15)],
+        'back': [(4.35, 5.25, 0, 2.1), (.9, 1.9, 1.1, 2.0)],
+        'left': [(2.25, 3.25, 1.2, 2.0)],
+        'right': [(2.05, 3.05, 1.1, 2.0)],
     }
     posts = {'back': [.06, W - .06], 'front': [.06, W - .06], 'left': [.06, D - .06], 'right': [.06, D - .06]}
     WS = 1.0
@@ -155,14 +185,14 @@ def build_shop():
             R.fbox(f, 'W', u, H / 2, .04, .16, H, .08, CAP, ch=.012, tag='posts')
         for a, b in spans(0, L, 2.5, holes[side]):
             R.fbox(f, 'W', (a + b) / 2, 2.5, .02, b - a, .08, .04, CAP, ch=0, tag='picture rail')
-    for y in (-.95, 1.0):
+    for y in (-1.2, 1.25):
         R.box('W', (0, y, H + .14), (W + .1, .2, .28), '#6b4027', ch=.02, tag='beams')
-    board_ceiling(R, 3.75, col='#d9a468', board=.28, along='x')
+    board_ceiling(R, 3.9, col='#d9a468', board=.28, along='x')
     shadow_shell(R, holes)
 
     # ---- floor: warm planks along the room, an indigo rug in the customer area
     plank_floor(R, -W / 2, W / 2, -D / 2, D / 2, board=.18, seg=1.0, base='#b9824f', var=.15, along='y', seed=6)
-    rug(R, -1.85, -1.0, -.15, 1.55, 0, '#3f5f95', '#e0a93a', stripe='#f4efe2')
+    rug(R, -2.15, -1.2, -.45, 1.75, 0, '#3f5f95', '#e0a93a', stripe='#f4efe2')
 
     # ---- windows and doors
     ff, Lf = fc['front']
@@ -176,11 +206,11 @@ def build_shop():
     window(R, fl, holes['left'][0], depth=.24, kind='river', seed=13, frame=CREAM, cols=2, rows=2, frame_key='K', nu=4, nv=4)
     window(R, fr, holes['right'][0], depth=.24, kind='valley', seed=17, frame=CREAM, cols=2, rows=2, frame_key='K', nu=4, nv=4)
     # back door (storeroom) with a noren
-    door_inside(R, 'back', 3.85, w=.9, h=2.1, col='#8a5a32', frame=CAP, glass=False)
-    noren_inside(R, fb, 3.85, 1.98, .9, .72)
+    door_inside(R, 'back', 4.8, w=.9, h=2.1, col='#8a5a32', frame=CAP, glass=False)
+    noren_inside(R, fb, 4.8, 1.98, .9, .72)
 
     # ---- front: hatch counter (left) with a tea set; the cat's window ledge (right)
-    cx_hatch = -1.775
+    cx_hatch = -2.375
     R.box('W', (cx_hatch, -D / 2 + .2, .44), (1.25, .36, .88), '#8a5a32', ch=.014, tag='hatch cabinet')
     for k in range(3):
         R.box('W', (cx_hatch - .4 + k * .4, -D / 2 + .385, .44), (.34, .02, .7), '#a8703c', ch=0, tag='hatch cabinet')
@@ -193,7 +223,7 @@ def build_shop():
     mini_plant(R, (cx_hatch + .45, -D / 2 + .22, .92), r=.09, h=.12, pot='#c65f3a', leaf='#4f9a3a', flowers='#e8506a', seed=3)
     R.col('hatch cabinet', (cx_hatch - .65, -D / 2, -.5), (cx_hatch + .65, -D / 2 + .44, .92))
     # window ledge cabinet + sleepy cat
-    cxr = 1.75
+    cxr = 2.35
     R.box('W', (cxr, -D / 2 + .19, .42), (1.25, .34, .84), '#8a5a32', ch=.014, tag='ledge cabinet')
     for k in range(2):
         R.box('W', (cxr - .3 + k * .6, -D / 2 + .355, .42), (.52, .02, .66), '#a8703c', ch=0, tag='ledge cabinet')
@@ -205,37 +235,37 @@ def build_shop():
     cat(R, (cxr - .35, -D / 2 + .22, .93), rot=.4)
     R.col('ledge cabinet', (cxr - .65, -D / 2, -.5), (cxr + .65, -D / 2 + .42, .9))
     # notice board left of the door, a hat and an apron on hooks right of it
-    ub = R.u_of('front', x=-.9)
+    ub = R.u_of('front', x=-1.2)
     R.fbox(ff, 'W', ub, 1.55, .02, .75, .6, .03, CAP, ch=0, tag='notice board')
     R.fbox(ff, 'P', ub, 1.55, .04, .69, .54, .01, '#e9d7a8', tag='notice board')
     for k in range(4):
         R.fbox(ff, 'P', ub + rng.uniform(-.2, .2), 1.55 + rng.uniform(-.17, .17), .052, .17, .22, .004,
                rng.choice([CREAM, '#f6dfe0', '#dfe8c8']), ch=0, tag='notices')
-    R.fbox(ff, 'W', R.u_of('front', x=.9), 1.55, .04, .5, .08, .05, CAP, ch=0, tag='hooks')
-    for xx in (.8, 1.0):
+    R.fbox(ff, 'W', R.u_of('front', x=1.2), 1.55, .04, .5, .08, .05, CAP, ch=0, tag='hooks')
+    for xx in (1.1, 1.3):
         R.fbox(ff, 'M', R.u_of('front', x=xx), 1.54, .08, .02, .02, .05, BRASS, tag='hooks')
-    R.fbox(ff, 'W', R.u_of('front', x=.8), 1.38, .12, .3, .05, .1, '#e0c070', ch=.012, tag='hats')
-    R.fbox(ff, 'W', R.u_of('front', x=.8), 1.44, .13, .14, .07, .1, '#d9b060', ch=.012, tag='hats')
-    R.fbox(ff, 'P', R.u_of('front', x=1.0), 1.25, .075, .2, .5, .014, INDIGO, ch=0, tag='aprons')
+    R.fbox(ff, 'W', R.u_of('front', x=1.1), 1.38, .12, .3, .05, .1, '#e0c070', ch=.012, tag='hats')
+    R.fbox(ff, 'W', R.u_of('front', x=1.1), 1.44, .13, .14, .07, .1, '#d9b060', ch=.012, tag='hats')
+    R.fbox(ff, 'P', R.u_of('front', x=1.3), 1.25, .075, .2, .5, .014, INDIGO, ch=0, tag='aprons')
 
     # ---- left wall: goods shelves, pickle barrels under the window
     shelves = []
-    for yc, w in ((-1.1, 1.0), (1.4, 1.15)):
+    for yc, w in ((-1.1, 1.0), (1.6, 1.15)):
         L = Loc((-W / 2 + .2, yc), AGAINST['left'])
         tops = shelf_lite(R, L, w, .36, 2.0, 4, '#c9803c', back='#8a5a32', key='W')
         stock_shelf(R, L, w, tops, rng)
         shelves.append((L, w, tops))
         R.col('shelf left %d' % len(shelves), (-W / 2 - .2, yc - w / 2, -.5), (-W / 2 + .4, yc + w / 2, 2.05), view=True)
-    for (x, y, r_, h_) in ((-2.08, -.12, .28, .74), (-2.03, .45, .26, .7)):
+    for (x, y, r_, h_) in ((-2.68, -.12, .28, .74), (-2.63, .45, .26, .7)):
         barrel(R, (x, y, 0), r=r_, h=h_, col='#a8703c', fill='#c9a85a' if y < 0 else '#6a8a4a', n=8)
-    R.col('barrels', (-2.4, -.42, -.5), (-1.74, .74, .76))
+    R.col('barrels', (-3.0, -.42, -.5), (-2.34, .74, .76))
     # ---- right wall: shelves, the potbelly stove with its kettle
     L = Loc((W / 2 - .2, -1.0), AGAINST['right'])
     tops = shelf_lite(R, L, 1.0, .36, 2.0, 4, '#c9803c', back='#8a5a32', key='W')
     stock_shelf(R, L, 1.0, tops, rng)
     shelves.append((L, 1.0, tops))
     R.col('shelf right', (W / 2 - .4, -1.5, -.5), (W / 2 + .2, -.5, 2.05), view=True)
-    sv = V((2.12, 1.72, 0))
+    sv = V((2.72, 2.17, 0))
     R.box('P', sv + V((0, 0, .02)), (.7, .7, .04), '#8a3a28', ch=.01, tag='stove plate')
     R.lathe('M', [(.2, .1), (.26, .2), (.27, .42), (.22, .62), (.14, .72), (.12, .8), (.14, .86), (0, .86)], sv, '#4a403c',
             n=10, tag='stove')
@@ -245,16 +275,16 @@ def build_shop():
            '#ffb060', normal=(-1, 0, 0), tag='stove fire')
     R.lathe('M', [(.1, 0), (.13, .08), (.1, .16), (.05, .2), (0, .2)], sv + V((0, 0, .86)), '#c9a441', n=8, tag='kettle')
     R.rod('M', sv + V((.1, 0, 1.0)), sv + V((.2, 0, 1.0)), .012, '#3a3e48', n=4, tag='kettle')
-    R.col('stove', (1.78, 1.38, -.5), (2.46, 2.1, 1.05))
+    R.col('stove', (2.38, 1.83, -.5), (3.06, 2.55, 1.05))
     R.node('Light_3', sv + V((-.4, 0, .45)))['fire'] = 1
 
     # ---- back wall: crates, rice sacks, the apothecary drawers, a clock and the price board
-    for k, (x, y, rot) in enumerate(((-.95, 1.8, .05), (-.95, 1.8, -.04))):
+    for k, (x, y, rot) in enumerate(((-1.55, 2.25, .05), (-1.55, 2.25, -.04))):
         crate(R, (x, y, k * .45), s=.5, col='#b07a44', rot=rot, rng=rng)
-    R.col('crates', (-1.25, 1.52, -.5), (-.65, 2.1, 1.0))
-    for k, (x, y, hh) in enumerate(((-1.82, 1.82, .62), (-1.78, 1.36, .56))):
+    R.col('crates', (-1.85, 1.97, -.5), (-1.25, 2.55, 1.0))
+    for k, (x, y, hh) in enumerate(((-2.42, 2.27, .62), (-2.38, 1.81, .56))):
         sack_lite(R, (x, y, 0), h=hh, r=.24, rot=rng.random(), seed=k)
-    R.col('sacks', (-2.1, 1.1, -.5), (-1.5, 2.1, .8))
+    R.col('sacks', (-2.7, 1.55, -.5), (-2.1, 2.55, .8))
     ch = Loc((.1, D / 2 - .22), AGAINST['back'])
     chest_lite(R, ch, .95, .36, 1.35, 5, '#9a5a32')
     R.col('drawers', (-.4, D / 2 - .42, -.5), (.6, D / 2, 1.4))
@@ -270,43 +300,43 @@ def build_shop():
     R.rod('K', cl + V((0, -.07, 0)), cl + V((.08, -.07, -.03)), .008, '#1d2430', n=3, tag='wall clock')
 
     # ---- the shop counter (clerk side east), with abacus, scale, till and bell
-    cx0, cx1, cy0, cy1, cz = .65, 1.4, -1.0, 1.3, .95
+    cx0, cx1, cy0, cy1, cz = 1.0, 1.75, -1.0, 1.3, .95
     R.box('K', ((cx0 + cx1) / 2, (cy0 + cy1) / 2, cz / 2), (cx1 - cx0, cy1 - cy0, cz - .05), '#a8482e', ch=.02, tag='counter')
     for k in range(5):
         y = cy0 + .25 + k * (cy1 - cy0 - .5) / 4
         R.box('K', (cx0 - .012, y, .5), (.02, .38, .55), '#c25a38', ch=0, tag='counter')
     R.box('K', (cx0 - .016, (cy0 + cy1) / 2, .12), (.03, cy1 - cy0, .1), MUST, ch=0, tag='counter')
     R.box('W', ((cx0 + cx1) / 2 - .03, (cy0 + cy1) / 2, cz), (cx1 - cx0 + .12, cy1 - cy0 + .08, .06), '#d9a468', ch=.012, tag='counter top')
-    abacus(R, (.95, .75, cz + .03), rot=math.pi / 2)
-    pans = balance(R, (1.0, -.45, cz + .03), rot=math.pi / 2)
-    R.box('W', (1.1, .1, cz + .1), (.3, .22, .16), '#6b4027', ch=.012, rot=(0, 0, .1), tag='till')
-    R.box('M', (.94, .1, cz + .14), (.01, .16, .05), BRASS, ch=0, tag='till')
-    R.lathe('M', [(.06, .02), (.035, .05), (.04, .09), (.012, .1), (0, .13)], (1.0, 1.1, cz + .03), BRASS, n=8, tag='bell')
-    R.box('P', (1.05, -.05, cz + .045), (.12, .09, .03), '#f0d8a0', ch=0, rot=(0, 0, .3), tag='paper bags')
+    abacus(R, (1.3, .75, cz + .03), rot=math.pi / 2)
+    pans = balance(R, (1.35, -.45, cz + .03), rot=math.pi / 2)
+    R.box('W', (1.45, .1, cz + .1), (.3, .22, .16), '#6b4027', ch=.012, rot=(0, 0, .1), tag='till')
+    R.box('M', (1.29, .1, cz + .14), (.01, .16, .05), BRASS, ch=0, tag='till')
+    R.lathe('M', [(.06, .02), (.035, .05), (.04, .09), (.012, .1), (0, .13)], (1.35, 1.1, cz + .03), BRASS, n=8, tag='bell')
+    R.box('P', (1.4, -.05, cz + .045), (.12, .09, .03), '#f0d8a0', ch=0, rot=(0, 0, .3), tag='paper bags')
     R.col('counter', (cx0 - .05, cy0 - .05, -.5), (cx1 + .05, cy1 + .05, cz + .1))
 
     # ---- display table in the customer area, lanterns and the hanging sign
-    tb = V((-1.0, .3, 0))
+    tb = V((-1.3, .3, 0))
     R.box('W', tb + V((0, 0, .76)), (1.0, .62, .045), '#d9a468', ch=.012, tag='table')
     for sx in (-1, 1):
         for sy in (-1, 1):
             R.box('W', tb + V((sx * .44, sy * .26, .37)), (.06, .06, .74), '#8a5a32', ch=0, tag='table')
     R.box('W', tb + V((0, 0, .2)), (.9, .52, .03), '#8a5a32', ch=0, tag='table')
     R.col_c('display table', (tb.x, tb.y, 0), (1.04, .66, .8))
-    paper_lamp_lite(R, (-1.0, .3, 2.5), r=.26, h=.4, cord=H + .6 - 2.7, col='#f6c070')
-    R.node('Light_1', (-1.0, .3, 2.45))
-    pendant_lite(R, (1.05, .15, 2.35), r=.22, col='#c8452a', cord=H + .6 - 2.35)
-    R.node('Light_2', (1.05, .15, 2.2))
-    sign_plank(R, (-.35, -.7, 2.35), w=.85, h=.32, col='#f0d8a0', mark='#d8342c', cord=.75)
-    lantern(R, (-2.0, -1.75, 2.4), r=.15, h=.3, cord=.9, col='#e8503a')
+    paper_lamp_lite(R, (-1.3, .3, 2.5), r=.26, h=.4, cord=H + .6 - 2.7, col='#f6c070')
+    R.node('Light_1', (-1.3, .3, 2.45))
+    pendant_lite(R, (1.4, .15, 2.35), r=.22, col='#c8452a', cord=H + .6 - 2.35)
+    R.node('Light_2', (1.4, .15, 2.2))
+    sign_plank(R, (-.3, 1.3, 2.4), w=.85, h=.32, col='#f0d8a0', mark='#d8342c', cord=.75)
+    lantern(R, (-2.6, -2.2, 2.4), r=.15, h=.3, cord=.9, col='#e8503a')
     mini_plant(R, (-W / 2 + .15, .15, 1.2), r=.07, h=.11, pot='#c65f3a', leaf='#4f9a3a', flowers='#e8506a', seed=5)
     mini_plant(R, (W / 2 - .15, .05, 1.1), r=.07, h=.11, pot='#23889a', leaf='#6fb84a', flowers='#f4efe2', seed=8)
 
     # framed pictures above the picture rail, a lucky cat on the counter
-    for (face_, u_, z_, kind_, sd) in ((fl, R.u_of('left', y=-1.1), 2.78, 'landscape', 1), (fl, R.u_of('left', y=1.4), 2.78, 'sepia', 2),
+    for (face_, u_, z_, kind_, sd) in ((fl, R.u_of('left', y=-1.1), 2.78, 'landscape', 1), (fl, R.u_of('left', y=1.6), 2.78, 'sepia', 2),
                                       (fr, R.u_of('right', y=-1.0), 2.78, 'map', 3)):
         picture(R, face_, u_, z_, .6, .42, frame='#6b4027', kind=kind_, seed=sd)
-    nk = V((.95, -.95, cz + .03))
+    nk = V((1.3, -.95, cz + .03))
     R.sphere('P', nk + V((0, 0, .06)), (.055, .045, .06), CREAM, seg=6, rings=3, tag='lucky cat')
     R.sphere('P', nk + V((0, 0, .15)), (.05, .045, .04), CREAM, seg=6, rings=3, tag='lucky cat')
     R.box('P', nk + V((.04, -.04, .15)), (.02, .02, .07), CREAM, ch=0, tag='lucky cat')
@@ -314,10 +344,31 @@ def build_shop():
     R.cyl('M', nk + V((0, -.047, .06)), .018, .006, BRASS, n=6, rot=(math.pi / 2, 0, 0), tag='lucky cat')
 
     # ---- nodes
-    R.node('Spawn', (0, -.2, 0))
+    # ---- the tea nook behind the counter: a low table and two stools along the right wall
+    nt = V((2.85, 1.2, 0))
+    R.box('W', nt + V((0, 0, .25)), (.42, .42, .5), '#8a5a32', ch=.012, tag='nook table')
+    R.box('W', nt + V((0, 0, .515)), (.48, .48, .03), '#d9a468', ch=.008, tag='nook table')
+    mini_teapot(R, nt + V((-.06, .05, .53)), col='#c8452a', r=.07)
+    for k in range(2):
+        R.lathe('K', [(.025, 0), (.04, .06), (0, .0)], nt + V((.1, -.1 + k * .2, .53)), [CREAM, TEAL][k], n=6, tag='tea')
+    stool(R, (2.85, .72, 0))
+    stool(R, (2.85, 1.66, 0))
+    R.col('tea nook', (2.6, .52, -.5), (W / 2, 1.83, .62))
+
+    # ---- nodes
+    R.node('Spawn', (0, -.65, 0))
     R.node('Exit', (0, -D / 2 + .5, 0))
-    face_node(R, 'Spot_npc_1', (1.85, .1, 0), (-1, 0))
-    face_node(R, 'Spot_npc_2', (.2, .85, 0), (1, 0))
+    face_node(R, 'Spot_npc_1', (2.2, .1, 0), (-1, 0))
+    face_node(R, 'Spot_npc_2', (.55, .85, 0), (1, 0))
+    # ---- "Shop talk": Mr. Fujita behind the counter (= Spot_npc_1), Mrs. Komori and Kenta on the customer side
+    scene_seat(R, 'Seat_1', (2.2, .1, 0), (1.2, .1, 0), 'stand')              # Mr. Fujita
+    scene_seat(R, 'Seat_2', (.6, .3, 0), (1.6, .2, 0), 'stand')               # Mrs. Komori
+    scene_seat(R, 'Seat_3', (.5, -.5, 0), (1.6, .0, 0), 'stand')              # Kenta
+    scene_seat(R, 'Spot_mika', (-.35, .05, 0), (1.4, .1, 0), 'stand')
+    scene_cam(R, 'Cam_wide', (-1.0, -2.0, 2.3), (1.4, .1, 1.0))
+    scene_cam(R, 'Cam_a', (-.25, .75, 1.65), (2.2, .1, 1.45))               # over Mrs. Komori to Mr. Fujita
+    scene_cam(R, 'Cam_b', (2.55, -.35, 1.8), (.5, -.05, 1.2))               # over Mr. Fujita to the customers
+    shop_basket(R, (1.55, .36, cz + .03))
     R.shell_cols(surface='wood')
 
     # ================= variants (decor only, no colliders)
@@ -328,11 +379,11 @@ def build_shop():
         vr = random.Random(11)
         for k, kind in enumerate(('apple', 'cabbage', 'radish')):
             veg_crate(R, (tb.x - .33 + .33 * k, tb.y, TZ), w=.3, d=.34, h=.12, kind=kind, rng=vr, rot=.05 * k)
-        veg_crate(R, (-.95, 1.8, .95), w=.44, d=.4, h=.12, kind='tomato', rng=vr)
+        veg_crate(R, (-1.55, 2.25, .95), w=.44, d=.4, h=.12, kind='tomato', rng=vr)
         for k in range(3):
             apple(R, pans[0] + V((math.cos(k * 2.1) * .03, math.sin(k * 2.1) * .03, .005 + (.05 if k == 2 else 0))))
         for k, col in enumerate(('#8aaa5a', '#d9a05a', '#8aaa5a')):
-            jar(R, (.9, .55 + .15 * k, CT), r=.06, h=.17, col=col, lid='#8a5a32')
+            jar(R, (1.25, .55 + .15 * k, CT), r=.06, h=.17, col=col, lid='#8a5a32')
         L, w, tops = shelves[0]
         for k in range(4):
             jar(R, L.p(-.36 + k * .24, .02, tops[1]), r=.07, h=.2, col=['#8aaa5a', '#d9a05a', '#e0402a', '#8aaa5a'][k])
@@ -346,7 +397,7 @@ def build_shop():
         L, w, tops = shelves[2]
         for k in range(3):
             veg_crate(R, L.p(-.3 + k * .3, 0, tops[1]), w=.24, d=.28, h=.08, kind='pumpkin' if k == 1 else 'onion', rng=vr, rot=L.r)
-        for k, (x, y) in enumerate(((-.2, -.45), (.45, -.8))):
+        for k, (x, y) in enumerate(((-.2, -.55), (.45, -.95))):
             R.rod('P', (x, y, H + .1), (x, y, 2.05), .008, '#c9a062', n=3, tag='onions')
             for j in range(3):
                 R.sphere('K', (x + (.03 if j % 2 else -.03), y, 2.0 - .12 * j), (.05, .05, .045), '#e0b070' if k else '#c8a8d0',
@@ -356,7 +407,7 @@ def build_shop():
         cols = [RED, '#f4a0a8', MUST, TEAL, '#8aaa5a', '#2f4c86', '#c9a8d8']
         pap = [CREAM, '#f6dfe0', '#e0f0e0']
         for k in range(6):
-            x, y = .87 + (k % 2) * .24, -.65 + (k // 2) * .28
+            x, y = 1.22 + (k % 2) * .24, -.65 + (k // 2) * .28
             jar(R, (x, y, CT), r=.075, h=.2, col=cols[k], lid='#f4efe2')
             R.sphere('K', (x, y, CT + .22), .03, cols[(k + 3) % 7], seg=5, rings=3, tag='candy')
         for k in range(5):
@@ -380,7 +431,7 @@ def build_shop():
             R.box('P', L.p(-.3 + k * .2, 0, tops[3] + .1), (.13, .14, .2), pap[k % 3], ch=0, rot=L.rz, tag='notebooks')
         kite(R, fr, R.u_of('right', y=1.2), 1.8, .02, s=.62, cols=('#e0567a', CREAM), seed=1)
         kite(R, ff, R.u_of('front', x=-.2), 1.3, .02, s=.5, cols=(TEAL, MUST), seed=2)
-        kite(R, fb, R.u_of('back', x=-2.0), 1.7, .02, s=.5, cols=(MUST, '#2f4c86'), seed=3)
+        kite(R, fb, R.u_of('back', x=-2.6), 1.7, .02, s=.5, cols=(MUST, '#2f4c86'), seed=3)
         R.rod('P', (-.3, .0, H + .1), (-.3, .0, 2.55), .006, '#c9a062', n=3, tag='kites')
         for sgn, colr in ((1, '#e0567a'), (-1, CREAM)):
             R.B('K').append(bm_poly([(0, 0, .3), (.13 * sgn, 0, 0), (0, 0, -.3)]), arch_lib.xform((-.3, .0, 2.25), (0, 0, .5)),
@@ -389,12 +440,12 @@ def build_shop():
     with var_group(R, 'Var_3'):
         rope_coil(R, (tb.x - .25, tb.y, TZ), r=.2, col='#c9a062', turns=2)
         rope_coil(R, (tb.x + .22, tb.y + .05, TZ), r=.16, col='#a8c28a', turns=1)
-        bucket(R, (.95, .75, CT), r=.1, h=.14, col='#8aa0b0', n=7)
-        bucket(R, (.95, .75, CT + .13), r=.085, h=.13, col='#b07a44', n=7, handle=False)
+        bucket(R, (1.3, .75, CT), r=.1, h=.14, col='#8aa0b0', n=7)
+        bucket(R, (1.3, .75, CT + .13), r=.085, h=.13, col='#b07a44', n=7, handle=False)
         for k in range(2):
             lantern(R, (-.6 + k * 1.1, -.3 + (k % 2) * .9, 2.45), r=.14, h=.28, cord=.7, col=['#e8503a', '#f6c070', '#e8503a'][k])
         for k in range(1):
-            hurricane_lamp(R, (.85 + k * .22, -.75, CT), col=['#2f5a50', '#8a3a28'][k])
+            hurricane_lamp(R, (1.2 + k * .22, -.75, CT), col=['#2f5a50', '#8a3a28'][k])
         ub = R.u_of('back', x=.1)
         for k, (kind, dx) in enumerate((('hammer', -.55), ('saw', -.3), ('wrench', -.05), ('hammer', .2), ('saw', .45))):
             uu = ub + dx
