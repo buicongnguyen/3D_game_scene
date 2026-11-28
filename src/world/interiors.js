@@ -227,8 +227,9 @@ export class Interiors {
           (m.name === 'Interior fire' ? room.fire : room.glow).push(m);
         }
       }
-      if (/^(Spawn|Exit|Item_|Light_|Gear_|Pendulum|Spot_)/.test(o.name)) N[o.name] = o;
-      if (/^Var_d+$/.test(o.name)) variants.push(o);
+      if (/^(Spawn|Exit|Item_|Light_|Gear_|Pendulum|Spot_|Seat_|Cam_)/.test(o.name)) N[o.name] = o;
+      if (/^Var_\d+$/.test(o.name)) variants.push(o);
+      if (/^Var_scene_[a-z0-9]+$/i.test(o.name)) o.visible = false;      // a house scene's props (game/house-scenes.js) show only while it plays
     });
     // a home shows ONE of its decor variants; the others stay hidden
     for (const v of variants) v.visible = v.name === `Var_${def.variant ?? 1}`;
@@ -458,11 +459,18 @@ export class Interiors {
   snapCamera(yaw, inside) {
     const f = this.game.follow;
     if (!f) return;
-    if (inside) { this.savedZoom ??= f.zoomTarget; f.zoomTarget = Math.min(f.zoomTarget, 4.6); f.pitch = 0.34; }
+    if (inside) { this.savedZoom ??= f.zoomTarget; f.zoomTarget = Math.min(f.zoomTarget, this.zoomFor(this.active)); f.pitch = 0.34; }
     else if (this.savedZoom !== undefined) { f.zoomTarget = this.savedZoom; this.savedZoom = undefined; f.pitch = 0.32; }
     f.yaw = yaw;
     f.idle = 0;
     f.first = true;
+  }
+
+  /** How far the follow camera may stand indoors: 5.2 m in the bigger rooms, 4.6 m in the small ones. */
+  zoomFor(id) {
+    const f = INTERIOR_MANIFEST[this.rooms.get(id)?.def.model]?.floor;
+    if (!f) return 4.6;
+    return Math.min(f.max[0] - f.min[0], f.max[2] - f.min[2]) >= 6.3 ? 5.2 : 4.6;
   }
 
   snapTamo() {

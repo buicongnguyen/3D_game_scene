@@ -14939,7 +14939,7 @@
   "ctx": [
    "UI (src/actors/cow-help.js)",
    "UI (src/game/tricks/lifecycle.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/ui/scene-ui.js)"
   ]
  },
  {
@@ -18020,6 +18020,37 @@
   ]
  },
  {
+  "s": "You can change this in Settings > Learn a language.",
+  "ctx": [
+   "UI (src/game/house-scenes.js)",
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "1 new phrase in your Phrasebook",
+  "ctx": [
+   "UI (src/game/house-scenes.js)"
+  ]
+ },
+ {
+  "s": "{n} new phrases in your Phrasebook",
+  "ctx": [
+   "UI (src/game/house-scenes.js)"
+  ]
+ },
+ {
+  "s": "Phrase of the day: {phrase}",
+  "ctx": [
+   "UI (src/game/house-scenes.js)"
+  ]
+ },
+ {
+  "s": "You heard the phrase of the day!",
+  "ctx": [
+   "UI (src/game/house-scenes.js)"
+  ]
+ },
+ {
   "s": "Stand up",
   "ctx": [
    "UI (src/game/indoor.js)"
@@ -18866,7 +18897,7 @@
   "ctx": [
    "UI (src/game/tour.js)",
    "UI (src/ui/minigames-ui.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/ui/scene-ui.js)"
   ]
  },
  {
@@ -29121,6 +29152,106 @@
   ]
  },
  {
+  "s": "Learn a language",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Off",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Pick a language, then visit the homes in Kawabe: families talk at supper, in the shop and over paper cranes. Every phrase you hear is kept here.",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)"
+  ]
+ },
+ {
+  "s": "{scenes} scenes and {lines} lines heard, {phrases} phrases met.",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)"
+  ]
+ },
+ {
+  "s": "Not heard yet. Visit between {from}:00 and {to}:00.",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)"
+  ]
+ },
+ {
+  "s": "Hear it",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)",
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "Phrases",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)"
+  ]
+ },
+ {
+  "s": "★ = kept. Tap a phrase in a scene to keep it.",
+  "ctx": [
+   "UI (src/ui/phrasebook-ui.js)"
+  ]
+ },
+ {
+  "s": "Again",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "Slower",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Stop listening",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "draft",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "The family is talking. Which language would you like to listen in?",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "Not now",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "Keep",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
+  "s": "Tamo remembers…",
+  "ctx": [
+   "UI (src/ui/scene-ui.js)"
+  ]
+ },
+ {
   "s": "E",
   "ctx": [
    "UI (src/ui/sky-compass.js)"
@@ -30130,6 +30261,12 @@
   ]
  },
  {
+  "s": "Phrasebook",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "Controls",
   "ctx": [
    "menu / screen text"
@@ -30244,13 +30381,31 @@
   ]
  },
  {
-  "s": "Off",
+  "s": "Read aloud uses the voices on your device. Where it has none for your language, you hear blips.",
   "ctx": [
    "menu / screen text"
   ]
  },
  {
-  "s": "Read aloud uses the voices on your device. Where it has none for your language, you hear blips.",
+  "s": "Ask at the first home",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "In some homes the family talks at supper, in the shop or over paper cranes. You hear it in the language you are learning, with the meaning under each line.",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Meaning under the line",
+  "ctx": [
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Speech",
   "ctx": [
    "menu / screen text"
   ]

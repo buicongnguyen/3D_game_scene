@@ -14,6 +14,7 @@ import { mountShots, creditsShots } from './photo-album.js';
 import { clearGameData, canClearGameData } from '../sw-register.js';
 import { noteWanted, deviceFacts, noteSeen, markNoteSeen } from '../engine/device-note.js';
 import { Voice } from '../engine/voice.js';
+import { mountPhrasebook } from './phrasebook-ui.js';
 import { haptics } from '../engine/haptics.js';
 
 // the weak-device card's words (engine/device-note.js); Settings repeats them
@@ -880,6 +881,23 @@ export class UI {
         else this.toast(tx(N_('This device has no voice for this language, so you will hear blips.')));
       });
     }
+    // Learn a language (game/house-scenes.js): which language the homes' little scenes are voiced in, and the meaning line
+    const learn = $('optLearn'), meaning = $('optMeaning'), slow = $('optSpeechSpeed');
+    const hsPrefs = () => this.game.director?.houseScenes?.prefs || JSON.parse(localStorage.getItem('starline-learn') || 'null') || {};
+    const hsSet = p => {
+      const hs = this.game.director?.houseScenes;
+      if (hs) hs.setPrefs(p);
+      else { try { localStorage.setItem('starline-learn', JSON.stringify({ ...hsPrefs(), ...p })); } catch { /* private mode */ } }
+    };
+    if (learn) {
+      const sync = () => { const p = hsPrefs(); learn.value = p.learn || ''; meaning.checked = p.meaning !== false; slow.value = String(p.speed === 0.75 ? 0.75 : 1); };
+      sync();
+      $('btnSettings').addEventListener('click', sync);
+      $('btnPauseSettings').addEventListener('click', sync);
+      learn.addEventListener('change', () => hsSet({ learn: learn.value || null }));
+      meaning.addEventListener('change', () => hsSet({ meaning: meaning.checked }));
+      slow.addEventListener('change', () => hsSet({ speed: +slow.value }));
+    }
     // Vibration (engine/haptics.js): a phone that can buzz, a gamepad that rumbles; a little buzz to show it is on
     const buzz = $('optHaptics');
     if (buzz) {
@@ -1112,6 +1130,8 @@ export class UI {
         rows.map(r => this.cardHTML(r.met, null, r.met ? tx(r.name) : tx('Someone in the valley'), r.met ? (r.ask ? tx(r.ask) : r.done >= r.total ? tx('You have heard their story.') : tx('They may have more to tell later.')) : tx('Not met yet'),
           r.met ? tx(r.role) : '', r.met && r.total ? tx('{n}/{total}', { n: r.done, total: r.total }) : '')).join('') + '</div>';
       this.game.director?.stamps?.mount($('stampCard'), this);
+    } else if (tab === 'phrases') {
+      mountPhrasebook(body, this, this.game.director?.houseScenes);   // ui/phrasebook-ui.js
     } else if (tab === 'tricks') {
       body.innerHTML = this.tricksHTML();
     } else if (tab === 'friends') {

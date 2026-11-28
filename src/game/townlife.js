@@ -292,7 +292,7 @@ export class TownLife {
     const act = this.g.interiors?.active || null;
     const home = it.p.home === it.shopRoom;
     const present = it.plan.selling || (home && it.n.hiddenBy);
-    const show = act === it.shopRoom && !!present;
+    const show = act === it.shopRoom && !!present && !this.d.houseScenes?.holds(act);   // (a house scene seats its own cast)
     if (k.visible !== show) k.setVisible(show);
     if (show) {
       const p = this.g.player.pos;

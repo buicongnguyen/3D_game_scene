@@ -56,7 +56,7 @@ export const N_ = s => s;
 
 export function onLangChange(fn) { listeners.add(fn); return () => listeners.delete(fn); }
 
-function loadFont(l) {
+export function loadFont(l) {
   if (!FONTS[l] || typeof document === 'undefined' || document.getElementById(`font-${l}`)) return;
   const link = document.createElement('link');
   link.id = `font-${l}`;
