@@ -6,7 +6,7 @@
 // arms with the dance instead of taking them, and three's mixer skips a value that did not change, so restore() puts the
 // dance pose back before the next mixer write.
 import * as THREE from 'three';
-import { MIC_MOVES } from '../../content/kotone-club.js';
+import { MIC_SETS } from '../../content/kotone-club.js';
 
 export const SINGING = Object.freeze({ pre: .45, post: .35, hold: 2.4, up: .22, down: .55, micFade: .5 });
 const CHORUS = /chorus|hook|refrain|điệp|drop/i, BUILD = /pre-?chorus|build/i;
@@ -40,11 +40,13 @@ export function leadTarget(lines, t) {
   const next = i + 1 < lines.count ? lines.t[i + 1] : Infinity;
   return next - lines.e[i] < SINGING.hold ? 1 : 0;
 }
-/** The mic move for t: the sway on verse lines; on chorus lines a punch or a crowd wave, alternating by line. */
-export function micClipFor(lines, t) {
+/** The mic move for t from a style's set (content/kotone-club.js MIC_SETS; 'mix': the sway on verse lines, a punch or a
+ *  crowd wave on chorus lines): verse and chorus lines each alternate through their list by line. */
+export function micClipFor(lines, t, set = MIC_SETS.mix) {
   const i = lineIndexAt(lines, t + SINGING.pre);
-  if (i < 0 || !lines.chorus[i]) return MIC_MOVES.verse;
-  return MIC_MOVES.chorus[i % MIC_MOVES.chorus.length];
+  if (i < 0) return set.verse[0];
+  const list = lines.chorus[i] ? set.chorus : set.verse;
+  return list[i % list.length];
 }
 /** Loop beats per song beat for a move authored at 120 BPM: the one that keeps its speed nearest 1. */
 export const micFold = bpm => { const r = (bpm > 0 ? bpm : 120) / 120; let best = 1, d = Infinity; for (const m of [1, .5, 2]) { const x = Math.abs(Math.log(m * r)); if (x < d - 1e-9) { d = x; best = m; } } return best; };

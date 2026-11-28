@@ -20,7 +20,7 @@ same order with the same rest pose (tests/assets.test.mjs checks it).
    kept bone: hair rides the head, the skirt half on the hips and half on the thigh (a skirt that followed a thigh alone
    would tear between the legs), the sleeves on the arm. Four influences, normalised.
 3. Mesh and material: as vroid_lite.py (hidden skin cut, decimated to the target, the face untouched with its three
-   morphs blink / mouthA / mouthO, one baked atlas, one MASK material, one draw).
+   morphs blink / mouthA / mouthO plus smile / smileEyes / browUp / wink (add_happy_keys), one baked atlas, one MASK material, one draw).
 4. Moves. Each Mixamo FBX is imported and retargeted bone by bone in world space: the target bone turns by the source
    bone's change from ITS rest, applied to the target's rest swung onto the source's rest direction (both are T-poses,
    so that swing is a few degrees: the thumbs, the slightly lower VRoid arms). The hips' travel is scaled by the hip
@@ -412,6 +412,34 @@ def make_clips(va, L, which, clip_filter):
 
 
 # ------------------------------------------------------------------------------------------------ build
+# Two happy shapes from each sample's own VRoid expressions (owner 2026-11-28: "all the faces look a little sad"):
+#   smile      the closed-mouth smile with the brows lifted a little (Fcl_MTH_Fun x1 + Fcl_BRW_Fun x0.9, mixed into one key)
+#   smileEyes  the eye smile (Fcl_EYE_Joy: the lower lids up into a "^^" at 1; actors/face.js keeps it to a soft 0.15-0.4)
+#   browUp     a lively brow lift (Fcl_BRW_Surprised; face.js pulses it to ~0.5 on a phrase's start now and then)
+#   wink       her right eye's smile closed (Fcl_EYE_Joy_R; a playful wink after a chorus line now and then)
+# The look follows the Avatar Studio anime girls' singing face (its src/sing-expression.js: a soft Duchenne smile, eyes
+# narrowing with it, brow lifts on phrase starts). Mouth shapes stay their own keys (mouthA / mouthO): actors/face.js
+# lowers the smile while the mouth opens wide.
+HAPPY_MIX = {'smile': {'Fcl_MTH_Fun': 1.0, 'Fcl_BRW_Fun': 0.9}}
+HAPPY_COPY = {'Fcl_EYE_Joy': 'smileEyes', 'Fcl_BRW_Surprised': 'browUp', 'Fcl_EYE_Joy_R': 'wink'}
+
+
+def add_happy_keys(face):
+    keys = face.data.shape_keys.key_blocks
+    find = lambda suffix: next((k for k in keys if k.name.endswith(suffix)), None)
+    for name, parts in HAPPY_MIX.items():
+        for k in keys: k.value = 0
+        got = [find(s) for s in parts]
+        assert all(got), f'{face.name}: missing {[s for s, k in zip(parts, got) if not k]}'
+        for k, w in zip(got, parts.values()): k.value = w
+        face.shape_key_add(name=f'happy_{name}', from_mix=True)
+        for k in keys: k.value = 0
+        VL.MORPHS[f'happy_{name}'] = name
+    for src, dst in HAPPY_COPY.items():
+        assert find(src), f'{face.name}: missing {src}'
+        VL.MORPHS[src] = dst
+
+
 def build_mesh(o, va, meshes, tris, atlas, stem, parent_of):
     target = fold_target(parent_of, float(o['skirt']))
     face = next(m for m in meshes if m.data.shape_keys)
@@ -426,6 +454,7 @@ def build_mesh(o, va, meshes, tris, atlas, stem, parent_of):
         uvs = m.data.uv_layers
         for l in list(uvs)[1:]: uvs.remove(l)
         uvs[0].name = 'UVMap'
+    add_happy_keys(face)
     morphs = VL.keep_morphs(face)
     VL.delete_faces(face, lambda f: 'EyeExtra' in (face.material_slots[f.material_index].material.name if face.material_slots else ''))
     rest = [m for m in meshes if m is not face]

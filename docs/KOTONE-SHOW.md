@@ -108,3 +108,46 @@ See the commit message and the report: pack sizes, frame times near her on Low a
 In Sing & Play she can lead a group of 4 or 8 (docs/GROUP-PERFORMANCE.md): the front row copies her dance pose (taken
 after her foot hold, before her mic layer: `Performer.onPose`), the back row runs a second routine (`planBacking`).
 The station evening show stays solo.
+
+## Happy faces, a natural stance, the Dance choice (2026-11-28)
+Owner: "all the faces look a little sad — make them look happier" (later: "happy like the anime girl characters in the
+Avatar Studio"); "their two legs are too close to each other but the upper body moves"; "is there a better move from
+Avatar Studio Club mode so we can select it?"
+
+**Faces.** Four new morphs on all eight VRoid bodies (art/blender/vroid_mixamo.py `add_happy_keys`, each sample's own
+shapes): `smile` (Fcl_MTH_Fun + 0.9 Fcl_BRW_Fun mixed into one key), `smileEyes` (Fcl_EYE_Joy), `browUp`
+(Fcl_BRW_Surprised), `wink` (Fcl_EYE_Joy_R). actors/face.js: a resting smile (mood 0.45) on every VRoid face (Kotone at
+the station too); `setMood()` brightens it, eased (performer.js `moodAt`: verse 0.55, chorus 0.85, cheer 1, bow 0.95; the
+troupe's members take Kotone's mood). The mouth sings on top: the smile gives way while the mouth opens (x0.45) or rounds
+(x0.8), the eye smile under a blink. After the Studio anime girls' singing face (its src/sing-expression.js): `faceLife`
+adds a bigger grin in the gap after a sung phrase (55 %, 90 % on bright parts), a brow lift on a phrase's start now and
+then, and on bright parts a wink after a phrase once in a while (never on a calm verse, never through a blink). The rows of
+a group read the new morphs through row-merge.js unchanged (morphs joined by name, 7 slots a member). Villagers have no
+face rig: untouched. Cost: 4 more morph weights a face (faces run only within 12 m); +21-30 KB a model raw.
+
+**Stance (root cause).** The Moves v2 solver plants each foot at its REST spot plus the move's offset (core.js poseBody).
+The VRoid bodies stand at rest with their ankles together: 60 % of the hip joints' width (Studio heroes: asian girl 82 %,
+Nabi 111 %, DL2 132 %, Ch38 160 %; `.tools/stance.mjs`). So every Club move danced narrow under a moving upper body. The
+bake now patches the vendored solver (`STANCE_WIDEN`) and moves both planted spots out to 1.15 x hip width
+(`kotone-club-bake.mjs --stance`, 0 = the old stance): Kotone's rest ankles 9.3 -> 17.7 cm; planted in a song (troupe-check
+`stancePctHip`) 62 % -> 115-150 % of hip width, close to the Studio heroes' dancing median. foot-hold.js now lets a held
+foot go fast only while the new dance has it in the air; a still-planted foot creeps to its new spot at <= 0.8 cm/s (the
+old 0.8 s release slid it 5-8 cm/s).
+
+**The Dance choice** (Sing & Play, one flat row: Mixed / K-pop / Cute / Hip-hop, remembered per device in
+`starline:singplay:dance`; the group dances the same). content/kotone-club.js `DANCE_STYLES`, loop `styles`, `MIC_SETS`,
+`STYLE_MOMENTS`; plan.js `planPerformance(..., { style })` (Mixed keeps its old seed), planBacking follows the lead's
+style. Six clips added from the Studio's Moves v2 (all joint rules 0 on Kotone and nam-1): ClubTopRock, ClubBrooklynRock
+(Hip-hop's standing top-rocks), MicPoint (V2PointOutM), MicHeart (V2HandOnHeartM), MomentHeart (V2HeartHands: Cute's hop),
+MomentJumpMic (V2JumpMic: K-pop / Hip-hop's chorus entry with the mic). Left out: Krump (hunched, heavy), Charleston (high
+kicks in a short skirt), the travel loops (they leave the mark).
+
+Golden Rails, group of 8 (scripts/troupe-check.mjs --style ..., planted slide p95 cm/s; joint rules 0 everywhere):
+| style | Kotone stance % hip | Kotone / front slide | back row slide |
+|---|---|---|---|
+| before (main) | 62 | 1.68 / 1.68-1.72 | 0.41-0.43 |
+| Mixed | 115 | 1.01 / 1.01-1.09 | 0.79-0.84 |
+| K-pop | 135 | 1.15 / 1.15-1.19 | 0.81-0.86 |
+| Cute | 115 | 0.84 / 0.84-0.92 | 0.84-0.90 |
+| Hip-hop | 150 | 0.86 / 0.86-0.88 | 0.80-0.85 |
+Packs: moves-kotone / moves-vroid-nam1 1.14 -> 1.30 MB raw, 0.86 -> 0.97 MB packed (fetched on demand).

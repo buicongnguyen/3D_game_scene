@@ -54,3 +54,9 @@ Builds on Kotone's song performance (`src/game/perform/`, docs/KOTONE-SHOW.md).
 A flat **Solo / Group of 4 / Group of 8** row under the bar: Kotone performs with three girls (front row) or with all seven
 other VRoid samples in two rows; each row dances in unison from ONE animation evaluation. Phones (Low) offer Solo and 4.
 See docs/GROUP-PERFORMANCE.md.
+
+## Dance choice (2026-11-28)
+A third flat row under the bar: **Mixed / K-pop / Cute / Hip-hop** (44 px+, always visible, no menu, vi/ko/ja; disabled
+while performing like the group row; remembered per device). It picks the plan's dance loops, mic moves and moments
+(docs/KOTONE-SHOW.md "The Dance choice"); a group dances the same style. Phone layout: the hint moved down to 152 px under
+the three rows.

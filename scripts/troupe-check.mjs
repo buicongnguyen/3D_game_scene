@@ -6,6 +6,8 @@
 // sink below the floor, and the JS time of one frame's troupe pose against a full mixer per member.
 //   node scripts/troupe-check.mjs [--song public/songs/kotone/golden-rails-en | .tools/test-song/ngay-nao-cung-vui] [--dir public/models] [--n 8] [--own]
 //     --own: every member on its own mixer and own bake (what the shared animation saves; slide of the own bakes)
+//     --style mix|kpop|cute|hiphop: the Dance choice (content/kotone-club.js DANCE_STYLES)
+//   stance: the ankles' distance apart while both feet are planted, median, as % of that body's hip-joint width
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -58,7 +60,7 @@ for (const m of cast) {
   if (m.source || OWN) { const p = await loadGlb(path.join(DIR, `moves-${m.file}.glb`)); e.clips = prepareMoves(p, g.scene, p.scene, false); }
   members.push(e);
 }
-const perf = new Performer(npc, kClips, song, { restRoot: kpack.scene });
+const perf = new Performer(npc, kClips, song, { restRoot: kpack.scene, style: arg('style', 'mix') });
 perf.start(0);
 let troupe = null, own = null;
 if (OWN) {   // every member its own dancer (no copy): the cost the shared rows save, and the own bakes' slide
@@ -76,11 +78,12 @@ const all = [{ m: lead, model: kModel }, ...members];
 const st = all.map(e => {
   const toes = ['toe_L', 'toe_R'].map(n => e.model.getObjectByName(n)), inv = new THREE.Matrix4().copy(e.model.matrixWorld).invert();
   const floor = Math.min(...toes.map(t => t.getWorldPosition(new THREE.Vector3()).applyMatrix4(inv).y));
-  return { e, toes, inv, floor, prev: [null, null], run: [null, null], speeds: [], slides: 0, contacts: 0, sink: 0, joints: {}, jointFrames: 0, check: chk ? chk(e.model) : null };
+  const feet = ['foot_L', 'foot_R'].map(n => e.model.getObjectByName(n)), hip = ['thigh_L', 'thigh_R'].map(n => e.model.getObjectByName(n).getWorldPosition(new THREE.Vector3()));
+  return { e, toes, feet, hipW: hip[0].distanceTo(hip[1]), stance: [], inv, floor, prev: [null, null], run: [null, null], speeds: [], slides: 0, contacts: 0, sink: 0, joints: {}, jointFrames: 0, check: chk ? chk(e.model) : null };
 });
 const dt = 1 / HZ, end = perf.plan.end + 1;
 let msAcc = 0, frames = 0;
-const _v = new THREE.Vector3();
+const _v = new THREE.Vector3(), _w = new THREE.Vector3();
 for (let t = 0; t < end; t += dt) {
   perf.update(dt);
   perf.before(); npc.anim.update(dt); perf.after(dt);
@@ -95,15 +98,16 @@ for (let t = 0; t < end; t += dt) {
       else if (s.run[i]) { if (s.run[i].max > SLIDE) s.slides++; s.run[i] = null; }
       s.prev[i] = on ? { x: p.x, z: p.z } : null;
     });
+    if (s.prev[0] && s.prev[1]) s.stance.push(s.feet[0].getWorldPosition(_v).distanceTo(s.feet[1].getWorldPosition(_w)) / s.hipW);
     if (s.check?.supported) { const v = s.check.check({ dt }); if (v.length) s.jointFrames++; for (const x of v) { const k = `${x.rule} ${x.joint}`; s.joints[k] = Math.max(s.joints[k] || 0, +(x.amount - x.limit).toFixed(1)); } }
   }
 }
 const pct = (a, q) => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; };
-const rows = st.map(s => ({ who: s.e.m.id, row: s.e.m.row, slideP95cmS: +(pct(s.speeds, .95) * 100).toFixed(2), slideP99cmS: +(pct(s.speeds, .99) * 100).toFixed(2), slidesOver15mm: s.slides, contacts: s.contacts, sinkCm: +(s.sink * 100).toFixed(2), jointFrames: s.jointFrames, joints: s.joints }));
+const rows = st.map(s => ({ who: s.e.m.id, row: s.e.m.row, stancePctHip: Math.round(pct(s.stance, .5) * 100), slideP95cmS: +(pct(s.speeds, .95) * 100).toFixed(2), slideP99cmS: +(pct(s.speeds, .99) * 100).toFixed(2), slidesOver15mm: s.slides, contacts: s.contacts, sinkCm: +(s.sink * 100).toFixed(2), jointFrames: s.jointFrames, joints: s.joints }));
 const ms = troupe ? troupe.takeMs() : msAcc / frames;
-const out = { song: id, members: cast.length, mode: OWN ? 'own mixer each' : `shared rows, feet ${FEET}${process.argv.includes('--half') ? ', back half rate' : ''}`, frames, msPerFrame: +ms.toFixed(4), front: perf.plan.blocks.map(b => b.clip), back: troupe?.plans.back?.blocks.map(b => b.clip) || null,
+const out = { song: id, style: perf.plan.style, members: cast.length, mode: OWN ? 'own mixer each' : `shared rows, feet ${FEET}${process.argv.includes('--half') ? ', back half rate' : ''}`, frames, msPerFrame: +ms.toFixed(4), front: perf.plan.blocks.map(b => b.clip), back: troupe?.plans.back?.blocks.map(b => b.clip) || null,
   copiers: troupe ? { front: troupe.front.map(c => ({ bones: c.bones, corrected: c.corrected, hipsK: +c.hips.k.toFixed(4), split: +c.mismatch.toFixed(4), ik: c.ik })), back: troupe.back?.copiers.map(c => ({ bones: c.bones, corrected: c.corrected, hipsK: +c.hips.k.toFixed(4), split: +c.mismatch.toFixed(4), ik: c.ik })) } : null, rows };
 console.table(rows.map(({ joints, ...r }) => ({ ...r, joints: Object.keys(joints).join(' ') })));
 console.log(JSON.stringify({ ...out, rows: undefined }));
 await fs.mkdir(path.join(ROOT, '.tools/group'), { recursive: true });
-await fs.writeFile(path.join(ROOT, `.tools/group/troupe-check-${OWN ? 'own' : `shared-${FEET}${process.argv.includes('--half') ? '-half' : ''}`}-${cast.length}.json`), JSON.stringify(out, null, 1));
+await fs.writeFile(path.join(ROOT, `.tools/group/troupe-check-${perf.plan.style}-${OWN ? 'own' : `shared-${FEET}${process.argv.includes('--half') ? '-half' : ''}`}-${cast.length}.json`), JSON.stringify(out, null, 1));

@@ -40,3 +40,39 @@ test('blinks within six seconds, lips move only while a line is shown, and switc
   f.setEnabled(false);
   assert.deepEqual(mesh.morphTargetInfluences, [0, 0, 0], 'off: everything at rest');
 });
+
+// The happy face (owner 2026-11-28: "all the faces look a little sad"; "happy like the Avatar Studio anime girls").
+test('a resting smile, brighter with the mood, giving way to an open or round mouth and to a blink', async () => {
+  const { smileFor, SMILE } = await import('../src/actors/face.js');
+  const [rest, restEyes] = smileFor(SMILE.rest), [bright, brightEyes] = smileFor(.9);
+  assert.ok(rest > .3 && restEyes > .1, `rest ${rest} / ${restEyes}`);
+  assert.ok(bright > rest && brightEyes > restEyes && bright <= SMILE.max && brightEyes < .4, 'brighter, never a full "^^"');
+  assert.ok(smileFor(.9, .85)[0] < bright * .7, 'a wide "ah" keeps less smile (the VRoid Fun corners sit well on an open A)');
+  assert.ok(smileFor(.9, 0, .7)[0] < bright * .5, 'a round "oh" keeps little smile');
+  assert.equal(smileFor(.9, 0, 0, 1)[1], 0, 'no eye smile through a blink');
+});
+
+test('the face drives smile / smileEyes / browUp / wink and rests them when off; its life over a song', async () => {
+  const { faceLife } = await import('../src/actors/face.js');
+  const { root, mesh } = model();
+  mesh.morphTargetDictionary = { blink: 0, mouthA: 1, mouthO: 2, smile: 3, smileEyes: 4, browUp: 5, wink: 6 };
+  mesh.morphTargetInfluences = [0, 0, 0, 0, 0, 0, 0];
+  const f = Face.attach(root);
+  for (let i = 0; i < 60; i++) f.update(1 / 60);
+  assert.ok(mesh.morphTargetInfluences[3] > .3, 'a resting smile');
+  f.setMood(1); for (let i = 0; i < 120; i++) f.update(1 / 60);
+  assert.ok(mesh.morphTargetInfluences[3] > .6, 'brighter');
+  f.setEnabled(false);
+  assert.deepEqual(mesh.morphTargetInfluences, [0, 0, 0, 0, 0, 0, 0]);
+  // a minute of phrases (1.8 s sung, 1.2 s rest) on a bright part: grins in the gaps, brow lifts, a wink now and then
+  let grin = 0, brow = 0, winks = 0, prev = 0;
+  const life = faceLife(11);
+  for (let i = 0; i < 3600; i++) { const t = i / 60, o = life(1 / 60, t % 3 < 1.8 ? .5 : 0, .85);
+    grin = Math.max(grin, o.grin); brow = Math.max(brow, o.brow); if (o.wink > 0 && prev === 0) winks++; prev = o.wink;
+    if (o.wink > 0) assert.ok(t % 3 >= 1.8, 'a wink only in the gap after a phrase'); }
+  assert.ok(grin > .2 && brow > .3, `grin ${grin}, brow ${brow}`);
+  assert.ok(winks >= 1 && winks <= 8, `${winks} winks in 20 phrases`);
+  let calmWinks = 0; const calm = faceLife(11); prev = 0;
+  for (let i = 0; i < 3600; i++) { const o = calm(1 / 60, (i / 60) % 3 < 1.8 ? .5 : 0, .55); if (o.wink > 0 && prev === 0) calmWinks++; prev = o.wink; }
+  assert.equal(calmWinks, 0, 'no winks on a calm verse');
+});

@@ -6,6 +6,15 @@ import * as THREE from 'three';
 //   mouth  flaps while one of her lines is on screen (speak(text): about 0.07 s a letter, 1-5 s), A with a touch of O;
 //          or follows a song (sing(): the Avatar Studio's per-song mouth curves or lyric word timings)
 //   eyes   look at a point (Mika's head) when it is near and in front, else straight ahead; clamped to a small cone
+//   smile  a happy face (owner 2026-11-28: "all the faces look a little sad"): the 'smile' morph (closed-mouth smile and
+//          lifted brows) and 'smileEyes' (the eye smile), both from the VRoid sample's own Fun / Joy shapes
+//          (art/blender/vroid_mixamo.py add_happy_keys). A resting smile always; setMood() brightens it (choruses, a
+//          cheer, a bow: game/perform/performer.js), eased. The mouth's own shapes sing on top: the smile gives way while
+//          the mouth opens wide or rounds (so an "ah" or an "oh" stays readable), the eye smile while the lids blink.
+//   life   small happy changes over a song or a line, after the Avatar Studio anime girls' singing face (its
+//          src/sing-expression.js, owner: "happy like the anime girl characters"): a bigger grin in the gap after a sung
+//          phrase (more often on choruses), a brow lift ('browUp') on a phrase's start now and then, and on bright parts
+//          (mood >= 0.8) a wink ('wink': her right eye) after a phrase once in a while. faceLife() is pure (tests).
 // Cost: one uniform array per frame and two bone rotations; nothing at all while `enabled` is false (far away, out of
 // view, or the Low tier's far ring: the director switches it).
 
@@ -14,6 +23,42 @@ const _q = new THREE.Quaternion(), _q2 = new THREE.Quaternion(), _qp = new THREE
 
 const EYE_CONE = 0.3;           // radians (~17 degrees) an eye may turn from straight ahead
 const LOOK_NEAR = 7;            // metres: farther than this she looks ahead
+/** The happy face: rest mood, the smile morph at mood 1 (capped), how much an open / round mouth takes away, the eye
+ *  smile per mood (soft: 1 would close the eyes into "^^"), how fast the mood follows (1/s). */
+export const SMILE = Object.freeze({ rest: .45, max: .85, open: .45, round: .8, keep: .3, eyes: .45, eyesFrom: .05, rate: 3 });
+/** The smile weights for a mood (0..1) and the mouth now (open = mouthA, round = mouthO weights) and lid (blink 0..1). */
+export function smileFor(mood, open = 0, round = 0, lid = 0) {
+  const free = Math.min(1, Math.max(SMILE.keep, 1 - SMILE.open * open - SMILE.round * round));
+  return [Math.min(SMILE.max, mood) * free, Math.max(0, SMILE.eyes * mood - SMILE.eyesFrom) * (1 - lid)];
+}
+
+/** The life of the face over a song (pure; per-phrase choices from a hash, so a member's face is its own but repeatable). */
+export const LIFE = Object.freeze({ on: .14, off: .07, minPhrase: .6, gapAfter: .25, gapHold: 2.2, grin: .3,
+  chance: .55, brightChance: .9, brow: .5, browChance: .4, browDur: .7, wink: 1, winkChance: .22, winkDur: .5, bright: .8 });
+const hash01 = (a, b) => { let h = (Math.imul(a | 0, 2654435761) ^ Math.imul(b | 0, 1597334677)) >>> 0; h ^= h >>> 15; h = Math.imul(h, 0x85ebca6b) >>> 0; h ^= h >>> 13; return (h >>> 0) / 4294967296; };
+const ss = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
+/** -> update(dt, open 0..1, mood 0..1) -> { grin (added to the mood), brow 0..1, wink 0..1 } */
+export function faceLife(seed = 1) {
+  const st = { voiced: false, len: 0, silent: 9, phrase: 0, gap: false, browT: -1, winkT: -1, grin: 0 }, out = { grin: 0, brow: 0, wink: 0 };
+  return function update(dt, open, mood) {
+    const bright = mood >= LIFE.bright;
+    if (!st.voiced && open > LIFE.on) {
+      st.voiced = true; st.len = 0; st.phrase++; st.gap = false;
+      if (hash01(seed, st.phrase * 7 + 3) < LIFE.browChance * (bright ? 1 : .7)) st.browT = 0;
+    } else if (st.voiced && open < LIFE.off) {
+      st.voiced = false; st.silent = 0;
+      st.gap = st.len >= LIFE.minPhrase && hash01(seed, st.phrase) < (bright ? LIFE.brightChance : LIFE.chance);
+      if (st.gap && bright && st.winkT < 0 && hash01(seed, st.phrase * 13 + 5) < LIFE.winkChance) st.winkT = 0;
+    }
+    if (st.voiced) st.len += dt; else st.silent += dt;
+    const want = !st.voiced && st.gap ? ss((st.silent - LIFE.gapAfter) / .2) * (1 - ss((st.silent - LIFE.gapHold) / .8)) * LIFE.grin : 0;
+    st.grin += (want - st.grin) * (1 - Math.exp(-dt / (want > st.grin ? .22 : .18)));
+    out.grin = st.grin;
+    out.brow = 0; if (st.browT >= 0) { st.browT += dt; if (st.browT < LIFE.browDur) out.brow = LIFE.brow * Math.sin(Math.PI * st.browT / LIFE.browDur) ** 2; else st.browT = -1; }
+    out.wink = 0; if (st.winkT >= 0) { st.winkT += dt; const w = st.winkT - LIFE.gapAfter; if (w > LIFE.winkDur) st.winkT = -1; else if (w > 0) out.wink = LIFE.wink * Math.min(1, w / .1, (LIFE.winkDur - w) / .15); }
+    return out;
+  };
+}
 
 export class Face {
   /** -> Face, or null when the model has no face rig. */
@@ -28,7 +73,10 @@ export class Face {
     this.model = model;
     this.mesh = mesh;
     const d = mesh.morphTargetDictionary;
-    this.ix = { blink: d.blink, a: d.mouthA ?? -1, o: d.mouthO ?? -1 };
+    this.ix = { blink: d.blink, a: d.mouthA ?? -1, o: d.mouthO ?? -1, smile: d.smile ?? -1, eyes: d.smileEyes ?? -1, brow: d.browUp ?? -1, wink: d.wink ?? -1 };
+    this.life = faceLife((Math.random() * 2 ** 31) | 0);
+    this.moodWant = SMILE.rest;  // setMood()
+    this.mood = SMILE.rest;
     this.eyes = ['eye_L', 'eye_R'].map(n => model.getObjectByName(n)).filter(Boolean).map(bone => {
       // the eye's forward (the model's +Z) in the bone's own frame, from the bind pose
       const i = mesh.skeleton.bones.indexOf(bone);
@@ -89,6 +137,9 @@ export class Face {
     return [0.3 + 0.55 * Math.abs(Math.sin(Math.PI * Math.max(1, Math.round((word.e - word.t) * 5)) * p)), 0.15];
   }
 
+  /** How happy she looks, 0..1 (SMILE.rest when nothing is going on); eased in update(). */
+  setMood(v = SMILE.rest) { this.moodWant = Math.min(1, Math.max(0, v)); }
+
   /** Look at this world point (or null for straight ahead). */
   lookAt(p) { this.target = p; }
 
@@ -98,6 +149,7 @@ export class Face {
     if (!on) {
       const m = this.mesh.morphTargetInfluences;
       m[this.ix.blink] = 0; if (this.ix.a >= 0) m[this.ix.a] = 0; if (this.ix.o >= 0) m[this.ix.o] = 0;
+      for (const k of ['smile', 'eyes', 'brow', 'wink']) if (this.ix[k] >= 0) m[this.ix[k]] = 0;
       this.mouth = 0;
       for (const e of this.eyes) e.bone.quaternion.copy(e.rest);
     }
@@ -112,6 +164,7 @@ export class Face {
     this.nextBlink -= dt;
     if (this.nextBlink <= 0 && this.blinkT < 0) { this.blinkT = 0; this.twice = Math.random() < 0.18; }
     let lid = 0;
+    if (this.blinkT >= 0 && this.winking) this.blinkT = -1, this.nextBlink = .4;   // (no blink through a wink)
     if (this.blinkT >= 0) {
       this.blinkT += dt;
       const b = this.blinkT;
@@ -137,6 +190,18 @@ export class Face {
       this.mouth += (want - this.mouth) * Math.min(1, dt * 18);
       if (this.ix.a >= 0) m[this.ix.a] = this.mouth * 0.8;
       if (this.ix.o >= 0) m[this.ix.o] = this.talkT > 0 ? this.mouth * 0.3 * (0.5 + 0.5 * Math.sin(this.t * 2.3)) : 0;
+    }
+    // smile: under the mouth's own shapes (they were written above), the eye smile under the blink
+    if (this.ix.smile >= 0 || this.ix.eyes >= 0) {
+      this.mood += (this.moodWant - this.mood) * Math.min(1, dt * SMILE.rate);
+      const L = this.life(dt, sung ? sung[0] : this.talkT > 0 ? this.mouth : 0, this.mood);
+      const [sm, ey] = smileFor(Math.min(1, this.mood + L.grin), this.ix.a >= 0 ? m[this.ix.a] : 0, this.ix.o >= 0 ? m[this.ix.o] : 0, lid);
+      const wink = this.ix.wink >= 0 ? L.wink : 0;
+      this.winking = wink > 0;
+      if (this.ix.smile >= 0) m[this.ix.smile] = sm;
+      if (this.ix.eyes >= 0) m[this.ix.eyes] = ey * (1 - wink);      // (the winking eye's smile is the wink itself)
+      if (this.ix.brow >= 0) m[this.ix.brow] = L.brow;
+      if (this.ix.wink >= 0) m[this.ix.wink] = wink;
     }
     // eyes
     if (!this.eyes.length) return;

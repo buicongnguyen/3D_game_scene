@@ -276,7 +276,7 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
 
 - `vroid-<id>.glb`, `vroid-<id>.lite.glb`, `moves-vroid-<id>.glb` for nu-1, nu-3, nu-4, nu-5, nam-1, nam-2, nam-3: the
   same contract as Kotone's three files (69 bones, one mesh, one MASK material, 1024 / 512 px atlas, ≤ 14.5k / 8.3k tris,
-  blink / mouthA / mouthO, the same everyday clips, the same pack with the 23 Club moves baked on each body by
+  blink / mouthA / mouthO plus smile / smileEyes / browUp / wink (2026-11-28, `add_happy_keys`), the same everyday clips, the same pack with the 23 Club moves baked on each body by
   `node scripts/kotone-club-bake.mjs --who vroid-<id> --dir <folder>`). Girls at the source's height (1.60-1.74 m); boys
   scaled in the build to one skull height (`MEMBERS` in the script: nam-1 / nam-3 x0.975, nam-2 x0.909: 1.71-1.76 m).
 - Build a member's three files in ONE run (Blender 5.2.5 LTS, `C:\tools\blender\blender-5.2.5-windows-x64\blender.exe

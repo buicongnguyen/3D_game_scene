@@ -116,3 +116,23 @@ test('order: no turning or jumping loop under the mic; stances that differ cross
   }
   for (const m of plan.moments) assert.ok(m.fade === 1 || m.fade === 2);
 });
+
+test('the Dance choice: each style plays its own loops, mic moves and moments; Mixed is the plan it always was', async () => {
+  const { DANCE_STYLES, micSetFor, momentsFor } = await import('../src/content/kotone-club.js');
+  assert.deepEqual(planPerformance(song, clock, lyrics, { style: 'mix' }).summary, plan.summary, 'mix = no choice');
+  assert.deepEqual(planPerformance(song, clock, lyrics, { style: 'nonsense' }).summary, plan.summary, 'unknown = mix');
+  const L = vocalLines(lyrics), ch = lines.findIndex(l => l.section === 'Chorus');
+  const seen = new Set();
+  for (const style of DANCE_STYLES.filter(s => s !== 'mix')) {
+    const p = planPerformance(song, clock, lyrics, { style }), own = p.blocks.filter(b => CLUB_LOOPS.find(d => d.clip === b.clip).styles.includes(style));
+    assert.equal(p.style, style);
+    assert.ok(own.length >= p.blocks.length * .8, `${style}: ${own.length} of ${p.blocks.length} blocks its own`);
+    for (const b of p.blocks) { assert.ok(PERFORM_CLIPS.includes(b.clip)); if (b.mic) assert.ok(!loop(b.clip).contact, `${style}: no claps with the mic`); }
+    for (const m of p.moments) assert.equal(m.clip, momentsFor(style)[m.id][m.mic ? 1 : 0]);
+    const set = micSetFor(style);
+    assert.ok(set.chorus.includes(micClipFor(L, lines[ch].t + .5, set)) && set.verse.includes(micClipFor(L, lines[0].t + .5, set)));
+    for (const id of [...set.verse, ...set.chorus]) assert.ok(PERFORM_CLIPS.includes(id), id);
+    seen.add(p.summary.join());
+  }
+  assert.equal(seen.size, 3, 'three different routines');
+});

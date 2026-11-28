@@ -18428,6 +18428,30 @@
   ]
  },
  {
+  "s": "Mixed",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "K-pop",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Cute",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Hip-hop",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Kotone couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18459,6 +18483,12 @@
  },
  {
   "s": "Group",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Dance style",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
