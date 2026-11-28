@@ -240,7 +240,9 @@ toast says "The back row is taking a break" (vi/ko/ja).
    the game (pause menu, photo mode), and the objective card says what Sing & Play is about.
 2. **Done (2026-11-28):** names for the seven (Kotone's art-club friends from the city, on a summer trip to sing at the
    station; none taken by a villager): nu-3 Saki, nu-1 Mio, nu-4 Yuna, nu-5 Aoi, nam-1 Riku, nam-3 Kai, nam-2 Ren
-   (content/troupe.js NAMES: the Singer row's labels and the photo/video file names). Korean voices: Supertonic 3 kept.
+   (content/troupe.js NAMES: the Singer row's labels and the photo/video file names). Their own Korean and Vietnamese
+   names in those game languages (LOCAL_NAMES): ko Kotone 코토네, Saki 지유, Mio 서아, Yuna 하린, Aoi 수아, Riku 도윤,
+   Kai 시우, Ren 준호; vi Saki Mai, Mio Linh, Yuna Thảo, Aoi Vy, Riku Minh, Kai Khoa, Ren Huy (Kotone keeps hers). Korean voices: Supertonic 3 kept.
 3. **Done (2026-11-28):** Group of 8 on phones only when the phone measures strong (strong-phone.js), with a fallback
    to the front row at a camera cut; every row drawn as one mesh. Open: the thresholds (work p50 10 ms, gap p50 20 ms;
    fall back at 15 ms / 26 ms) are set from this machine's 4x-CPU numbers, not from real phones: a "Copy performance

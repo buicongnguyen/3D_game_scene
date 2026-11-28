@@ -17,7 +17,7 @@ import { planShots, createCameraMan, fromCamera } from '../perform/camera-man.js
 import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js';
 import { canPerform, canGroup, gameEnv } from './flat.js';
 import { Troupe, leadSource } from '../perform/troupe.js';
-import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset, KOTONE, SINGERS, NAMES, member, facePic } from '../../content/troupe.js';
+import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset, KOTONE, SINGERS, NAMES, nameOf, member, facePic } from '../../content/troupe.js';
 import { captionLines, captionAt } from '../perform/caption.js';
 import { strongPhone, BudgetWatch, dropNow, shotIndex, STRONG_KEY } from './strong-phone.js';
 import { deviceFacts } from '../../engine/device-note.js';
@@ -43,7 +43,7 @@ export const loadSinger = store => load(SINGER_KEY, v => SINGERS.includes(v), KO
 /** The model file of a singer's body (the lite one on Low). */
 export const bodyFile = (id, low) => { const m = member(id) || member(KOTONE); return low ? `${m.file}.lite` : m.file; };
 /** A singer's label: her name once she has one (content/troupe.js NAMES), else "Singer n" in the row's order. */
-export const singerLabel = id => (NAMES[id] ? tx(NAMES[id]) : tx(N_('Singer {n}'), { n: SINGERS.indexOf(id) + 1 }));
+export const singerLabel = id => nameOf(id, getLang()) || tx(N_('Singer {n}'), { n: SINGERS.indexOf(id) + 1 });
 /** The song to sing from a pool (the songs in the game's language): the picked one when it is there, else the first. */
 export const pickSong = (pool, id) => pool.find(x => x.song.id === id) || pool[0] || null;
 /** The formation's layouts, tried in turn when the group checks its room (a hillside: the closer one keeps the whole

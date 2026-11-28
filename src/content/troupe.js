@@ -43,6 +43,14 @@ export const SINGERS = Object.freeze(['kotone', 'nu-1', 'nu-3', 'nu-4', 'nu-5', 
 export const NAMES = Object.freeze({
   kotone: 'Kotone', 'nu-3': 'Saki', 'nu-1': 'Mio', 'nu-4': 'Yuna', 'nu-5': 'Aoi', 'nam-1': 'Riku', 'nam-3': 'Kai', 'nam-2': 'Ren',
 });
+/** Their own names in Korean and Vietnamese (owner 2026-11-28: a Korean / Vietnamese name each, not a spelling of the
+ *  English one; Kotone keeps hers, written in Hangul). Other languages use NAMES. */
+export const LOCAL_NAMES = Object.freeze({
+  ko: Object.freeze({ kotone: '코토네', 'nu-3': '지유', 'nu-1': '서아', 'nu-4': '하린', 'nu-5': '수아', 'nam-1': '도윤', 'nam-3': '시우', 'nam-2': '준호' }),
+  vi: Object.freeze({ kotone: 'Kotone', 'nu-3': 'Mai', 'nu-1': 'Linh', 'nu-4': 'Thảo', 'nu-5': 'Vy', 'nam-1': 'Minh', 'nam-3': 'Khoa', 'nam-2': 'Huy' }),
+});
+/** A singer's name in a game language (ko / vi: their own names; else the English ones). */
+export const nameOf = (id, lang) => LOCAL_NAMES[lang]?.[id] || NAMES[id] || null;
 /** A member by id (null for an unknown id). */
 export const member = id => TROUPE.find(m => m.id === id) || null;
 /** A singer's face picture (64 px webp, baked by scripts/bake-singer-faces.mjs from each model's head). */
