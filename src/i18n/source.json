@@ -17142,8 +17142,8 @@
   "s": "Night",
   "ctx": [
    "UI (src/content/tour.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
+   "UI (src/game/singplay/time-row.js)",
+   "UI (src/ui/ui.js)"
   ]
  },
  {
@@ -18850,7 +18850,45 @@
  {
   "s": "Stop the song first",
   "ctx": [
-   "UI (src/game/singplay/stages-row.js)"
+   "UI (src/game/singplay/stages-row.js)",
+   "UI (src/game/singplay/time-row.js)"
+  ]
+ },
+ {
+  "s": "Morning",
+  "ctx": [
+   "UI (src/game/singplay/time-row.js)",
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Noon",
+  "ctx": [
+   "UI (src/game/singplay/time-row.js)",
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Sunset",
+  "ctx": [
+   "UI (src/game/singplay/time-row.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "{name} sings best at night",
+  "ctx": [
+   "UI (src/game/singplay/time-row.js)"
+  ]
+ },
+ {
+  "s": "Time of day",
+  "ctx": [
+   "UI (src/game/singplay/time-row.js)",
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
   ]
  },
  {
@@ -29830,27 +29868,6 @@
   ]
  },
  {
-  "s": "Time of day",
-  "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Morning",
-  "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Noon",
-  "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
-  ]
- },
- {
   "s": "Evening",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -30826,12 +30843,6 @@
  },
  {
   "s": "Follow the story",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Sunset",
   "ctx": [
    "menu / screen text"
   ]

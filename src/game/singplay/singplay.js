@@ -27,6 +27,8 @@ import { deviceFacts } from '../../engine/device-note.js';
 import { mountStages } from './stages-row.js';
 import { SAVE_KEY } from './sing-here.js';
 import { DANCE_STYLES, DANCE_STYLE } from '../../content/kotone-club.js';
+import { mountTime } from './time-row.js';
+import { NightWatchers } from './night-watchers.js';
 
 export { SAVE_KEY };   // (sing-here.js: the pause menu's Sing here writes her place before this module loads)
 export const GROUP_KEY = 'starline:singplay:group';   // the group size last picked (per device: 1, 4 or 8)
@@ -109,6 +111,7 @@ export class SingPlay {
     this.singers = singerList(undefined, game.params); this.singer = loadSinger(undefined, game.params); this.singerWait = false; this.songId = load(SONG_KEY, () => true, ''); this.lyricsOn = load(LYRICS_KEY, () => true, '1') !== '0';
     this.rig = null; this.capLines = null; this.capKey = '';
     this.show = null; this.showOn = true;   // (the show effects: fx/show-fx.js, the switch read in start())
+    this.time = null; this.watchers = new NightWatchers(this);   // (the Time choice: time-row.js; night audiences: night-watchers.js)
   }
 
   async start() {
@@ -261,6 +264,7 @@ export class SingPlay {
     this.hint = document.createElement('p'); this.hint.className = 'singplay-hint'; this.hint.setAttribute('aria-live', 'polite');
     bar.appendChild(this.hint);
     this.stages = mountStages(this);   // the stage list: a row of its own (stages-row.js)
+    this.time = mountTime(this);       // the Time choice, on one line with the stages (time-row.js)
     if (!document.getElementById('singplayStyle')) {
       const st = document.createElement('style'); st.id = 'singplayStyle';
       st.textContent = `.singplay-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;flex-wrap:wrap;justify-content:center;gap:8px;z-index:30;max-width:calc(100vw - 24px);pointer-events:auto}
@@ -312,7 +316,9 @@ body.singplay #inventory{display:none}
     if (this.btnLyrics) { this.btnLyrics.textContent = tx(this.lyricsOn ? N_('Lyrics: On') : N_('Lyrics: Off')); this.btnLyrics.setAttribute('aria-pressed', String(this.lyricsOn)); }
     if (this.btnShow) { this.btnShow.textContent = tx(this.showOn ? N_('Show effects: On') : N_('Show effects: Off')); this.btnShow.setAttribute('aria-pressed', String(this.showOn)); this.btnShow.setAttribute('aria-disabled', String(!!p)); }
     this.stages?.refresh();
+    this.time?.refresh?.();
     this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
+    if (!this.hint.textContent && this.time) this.hint.textContent = this.time.hint();   // ("Stella sings best at night")
   }
 
   // ---------------------------------------------------------------- performing
@@ -339,6 +345,7 @@ body.singplay #inventory{display:none}
     // has none in it)
     const song = pickSong(this.pool(), this.songId);
     if (!song) return;
+    this.time?.settle();   // (mid-ease: the hour it was easing to, before the show picks its day or night look)
     p.locked = true; p.vel.set(0, 0, 0);
     // she (and the group) turns to face the camera: the view the player framed becomes the backdrop; the auto camera's
     // first shot starts where the player's camera stood (camera-man.js open)
@@ -405,11 +412,12 @@ body.singplay #inventory{display:none}
       it.n.walk([[x, z]], () => { it.n.lookAt(p.pos.x, p.pos.z); it.n.setIdle('Idle'); }, 1.6);
       this.audience.push(it);
     });
+    this.watchers?.fill(this.audience, { c, ring, spread, facing: p.facing });   // (at night: up to its count, night-watchers.js)
     this.cheerT = 3;
     // with the show effects: they wave glow sticks on the beat at night, clap on the beat by day (fx/show-fx.js)
     if (this.show?.on && this.show.items.particles) this.show.setCrowd(this.audience);
   }
-  release() { for (const it of this.audience) { it.yardHold = false; it.singHold = false; it.n.path = null; it.n.setIdle('Idle'); } this.audience = []; }
+  release() { for (const it of this.audience) { it.yardHold = false; it.singHold = false; it.n.path = null; it.n.setIdle('Idle'); } this.audience = []; this.watchers?.release(); }
 
   /** Every frame (a game system). */
   update(dt) {
@@ -448,6 +456,8 @@ body.singplay #inventory{display:none}
         if (was !== this.allowed.ok + this.allowed.reason) this.label(); else this.stages?.refresh();
       }
     }
+    this.time?.update(dt);             // (the shown hour: a tap's ease, the slow clock while free, held during a song)
+    this.watchers?.update(dt);
     this.show?.update(dt, g.camera);   // (after the song too: the set folds away)
     this.saveT -= dt; if (this.saveT <= 0) { this.saveT = 5; this.keepPlace(); }
   }

@@ -24,7 +24,9 @@ row." Model: VRoid Project's CC0 alpha sample **AvatarSample_D_Darkness** (white
   lasers on the last chorus, confetti, fireworks over the last chorus). A drag gives the view back for 4 s; **Stop
   watching** (a 48 px button) or E ends it. After her bow she is gone in a shower of gold and blue sparks; seen to the
   bow (watching, or within 30 m) she joins the Singer row (per device: `starline:nightstar:seen`; a toast says so once).
-  She returns on another night (or after Mika has been 95 m away).
+  She returns on another night (or after Mika has been 95 m away). Picked in Sing & Play while the Time choice is not
+  Night, the bar's hint line says "Stella sings best at night" (her name in the game's language; nothing is changed for
+  the player: docs/SING-AND-PLAY.md "Time of day").
 - **Barks** (content/barks.js, after the shrine lines; 58 characters at most, vi / ko / ja): "A girl sings at the shrine
   when the stars come out.", "The Night Star? She sings by the shrine on clear nights.", a child's "A girl in a dark
   dress by the torii! Then poof, gone!", by day "Lights by the shrine last night. And a song, not ours.", at night "Stars

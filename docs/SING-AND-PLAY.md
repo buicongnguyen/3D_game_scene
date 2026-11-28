@@ -156,3 +156,51 @@ a Song row ready for the songs being made.
   leaves one girl out), and in any Dance choice she skips the moves her long dress cannot take. `?nightstar=1` shows her
   in the row for testing.
 
+## Time of day, watchers at night, the song lock (2026-11-28, branch singplay-time)
+Owner: "so we may need a kind of time travel to the good time to perform?" (the show's beams, lasers, confetti and
+fireworks are night-only, petals and bubbles day-only; Stella sings at night; the mode starts at 17:30).
+- **Time** (`src/game/singplay/time-row.js`): a flat choice **Morning (8:00) · Noon (12:30) · Sunset (18:00) · Night
+  (21:00)**, each with a small pictogram. One tap eases the valley there in 2 s (smoothstep, the shorter way round the
+  clock: sky, sun and moon, lamps, the night value, Town Life's plans all follow the shown hour); the pressed button is the
+  band the valley is in (Night from 19:00, where the show's own night starts) or the one it is easing to. While she is
+  free the clock runs on slowly (an hour every 10 minutes); while she performs it holds (a song's look never changes
+  mid-song); after Stop it runs on. A song started mid-ease jumps to the hour it was easing to (the show picks day or
+  night then). Remembered per device (`starline:singplay:time`): the next visit eases to it once the mode is up. The
+  mode owns the shown hour only (`game.timeOverride`); `game.time.hour` (the story and Explore clock) is never touched
+  and Sing & Play writes no Explore save. Hidden with the other setup rows while she performs.
+  For the coming picker: `TIME_CHOICES` ({ id, hour, label, icon }), `currentTime(sp)`, `pickTime(sp, id)`,
+  `timeIcon(id)`; `mountTime` is the thin row.
+- **Layout**: phones (and phones on their side) put Time on one line with the Stages (it scrolls sideways as before;
+  icon over an 11 px label, 44 px tall), so the idle bar keeps its four rows (390x844: 194 px as before). PC (wider than
+  640 px and taller than 480 px): the four join the Perform row (CSS `display: contents` on the line), the stages keep
+  their own row.
+- **Watchers at night** (`src/game/singplay/night-watchers.js`): Town Life sends people home after dark, so a Night show
+  found nobody to wave a glow stick. When a song starts at night the audience fills up to **6 on PC, 3 on Low, 2 on Low
+  with the group of 8**: first Town Life people still out (walking home, from up to 60 m), then villagers who "stayed
+  out for the show": bodies from the valley's own villager models (no download, tinted), **no shadow (one draw each)**,
+  walking in from 5 m to the side over dry, clear ground; places on the half ring first, then a row 1.5 m farther or 1.2 m
+  nearer (a platform edge or a lamp on the ring), 1.2 m apart at least; fewer when there is no more room. After the song
+  they walk off and are removed (12 s at most). `?nightWatchers=off` for measuring.
+- **Stella's hint**: with the Night Star as the singer and the time not Night, the hint line says "Stella sings best at
+  night" (her name in the game's language; nothing is changed for the player).
+- **The song lock** (`director.js`): the director derives `player.locked` every frame, so the `locked = true` Perform set
+  was undone the next frame and she could walk off mid-song (measured: 4.46 m in 1 s holding W). The derivation now
+  includes `performing` (Sing & Play and the Night Star set it for the whole song): 0 m. Interaction prompts and the kite
+  are off during a song for the same reason.
+- **Measured** (dev server, Chromium + GPU, `.tools/time/check.mjs`, `watchers-shot.mjs`):
+  - the ease, Low 390x844 at 4x CPU, unpaced, warmed: steady frames p50 18.6 / p95 27.8 / max 46.8 ms; during an 11-hour
+    ease (Morning -> Night) 17.6 / 31.5 / 37.7 ms. The extra is the sky's own environment-map rebuild (its 120 ms rule:
+    15 an ease, 5.4-6.4 ms each at 4x). An ease is one 2-s governor window and leaves the median alone; the governor
+    steps on a median over 31 ms twice running or a p95 over 62.5 ms three times running, so an ease cannot step it.
+  - night watchers: PC High, group of 4 at the station: 6 villagers, +6 draws and the sticks' 1 (+8.8 measured with Town
+    Life walkers moving), their update 0.15 ms a frame; Low at 4x CPU: group of 4: 2 villagers (the station's ring had
+    room for two), +3.8 draws, 0.6 ms a frame; group of 8: 2 villagers, +3.8 draws, 0.3 ms a frame (the first run: one
+    villager and the sticks, +2.0 exactly).
+  - the station's Low budget (91; tests/perf/budget.json, the budget's own view from Mika's spot there): 87.7 draws at
+    11:00 and 81.7 at 21:00 with the villagers home, so at night the 8 and the show (+3 +3, docs/GROUP-PERFORMANCE.md,
+    docs/SHOW-EFFECTS.md) and the watchers (+3) come to about 84 - 6 + 9 = 87 of 91. People still walking home in view
+    add their own draws for a while (99.5 measured right after jumping from 11:00 to 21:00), as on any evening.
+  - every bar button 44 px+, text 11 px+, no sideways page scroll, no overlap with the minimap, menu, journal or touch
+    buttons on 1280x720, 390x844, 360x780 and 844x390 (on its side the scrolling lines' clipped buttons pass under the
+    touch buttons' boxes, hidden by the line's own clip, as before). Pictures: `.tools/time/` (local).
+

@@ -1411,8 +1411,9 @@ export class Director {
   update(dt) {
     const g = this.game, p = g.player, inp = g.input;
     if (!this.quest) return;
-    // the player is locked exactly while something owns the screen (dialogue, cutscene, minigame, transition)
-    p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks || !!this.sky?.locks || !!this.yard?.locks || !!this.cows?.riding;
+    // the player is locked exactly while something owns the screen (dialogue, cutscene, minigame, transition, a song she
+    // performs: Sing & Play sets `performing` for the whole song; its own lock was overwritten here the next frame)
+    p.locked = this.busy > 0 || !!this.minigame || !!this.tricks?.locks || !!this.sky?.locks || !!this.yard?.locks || !!this.cows?.riding || !!this.performing;
     this.q.state.playtime += dt;
     // focus mode (engine/focus.js): the valley is a still picture behind a round, so only the round itself runs
     if (g.focus?.sim) { this.updateFocused(dt, g.focus); return; }

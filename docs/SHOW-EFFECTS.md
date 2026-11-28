@@ -102,7 +102,7 @@ scrolls sideways on a phone as before; hidden with the setup rows while a song p
 `starline:singplay:showfx`. Default: **On** on every device, weak phones included (measured: the rise stays inside the noise on Low at 4x CPU, the effects' JS is ~0.1 ms, and the Low tier already draws fewer beams and burst particles; with 8 on Low the fill-heavy effects drop out by rule). `?showfx=off|on` for measuring.
 
 ## Open
-- The glow sticks need watchers: Town Life's people go home at night by the shown hour, so in deep night (21:00+) nobody
-  comes to watch (and no sticks wave); in the evening (19:00-20:00) they do. A festival crowd of its own would cost a
-  draw or two a person.
+- (Done 2026-11-28, docs/SING-AND-PLAY.md "Watchers at night") The glow sticks needed watchers: Town Life's people go
+  home after dark, so in deep night nobody came. A night show in Sing & Play now fills its audience with villagers who
+  stayed out for it (one draw each, no shadow).
 - Real-phone numbers (the "Copy performance report" from two or three phones) would confirm the 4x-CPU measurements.
