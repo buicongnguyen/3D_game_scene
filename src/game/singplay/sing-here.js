@@ -34,26 +34,21 @@ export function singHereState(g) {
 export const hereReason = s => (s?.reason ? tx(HERE_REASONS[s.reason] || HERE_REASONS.room) : '');
 
 /**
- * Switch this Explore session to Sing & Play where Mika stands: the Explore save is written first (her place kept, as
- * any save would), Kotone's place becomes this spot, then the mode starts in place (no reload). Sing & Play writes no
- * Explore save from then on (director.canSave). If the mode can't load here, a reload into ?start=singplay does it.
+ * Open Explore's show layer where she stands (docs/EXPLORE-AND-SHOW.md): the Explore save is written first (as any save
+ * would), then the layer opens in place, no reload. The Explore save goes on as ever (nothing is written mid-song).
  */
 export async function singHere(g, ui) {
   const s = singHereState(g);
   if (!s.show) return false;
   if (!s.ok) { ui?.toast?.(hereReason(s)); return false; }
-  const d = g.director, p = g.player;
+  const d = g.director;
   d.save?.();
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ x: +p.pos.x.toFixed(2), z: +p.pos.z.toFixed(2), facing: +p.facing.toFixed(3) })); } catch { /* she starts at the station stage */ }
   g.togglePause?.(false);
-  d.singplay = true;
   try {
     const m = await import('./singplay.js');
-    await m.startSingPlay(g, d, ui);
-    return true;
+    return !!(await m.openShow(g, d, ui))?.isOpen;
   } catch (e) {
-    console.error('[singplay] in place failed: reloading into the mode', e);
-    location.href = `${location.pathname}?start=singplay`;
+    console.error('[singplay] the show could not open', e);
     return false;
   }
 }

@@ -2,8 +2,8 @@
 // The station visitors (content/visitors.js): Vita and her little sister Bibi, two travellers who come off the train at
 // Hoshi Station, take photos on the square, ask Mika the way in a voiced little scene (content/scenes/station.js, played
 // by game/house-scenes.js on an outdoor "stage"), walk the roads to the Forest Shrine, spend the evening there and leave
-// on the evening train. Explore mode only (never in a story save, a play zone or Sing & Play, so never next to a group
-// performance either); ?visitors=off hides them, ?visitors=on brings them into a story save too (QA).
+// on the evening train. Explore mode only (never in a story save or a play zone; since Sing & Play became Explore's show
+// layer they keep their day during a show too); ?visitors=off hides them, ?visitors=on brings them into a story save too (QA).
 //
 // Cheap by design: where they are is a little walker (a distance along a path) that runs whether anyone sees them or not;
 // their bodies (one skinned mesh each, the light file on Low) are fetched and made only when Mika comes within LOAD
@@ -48,7 +48,7 @@ export class StationVisitors {
 
   get enabled() {
     const d = this.d, q = this.g.params?.get?.('visitors');
-    if (q === 'off' || d.singplay || this.g.zone) return false;
+    if (q === 'off' || this.g.zone) return false;
     return !!d.explore || q === 'on';
   }
 
@@ -84,6 +84,9 @@ export class StationVisitors {
     this.runPlan(dt);
     this.pose(dt);
   }
+
+  /** Go to… lived through a day or more (game/goto.js): gone on last night's train, they come again on the next day. */
+  newDay() { if (this.phase === 'gone') this.phase = 'away'; this.sceneDone = false; this.scanT = 0; }
 
   /** A new part of their day (or the clock was moved in Settings). */
   enter(ph, was) {

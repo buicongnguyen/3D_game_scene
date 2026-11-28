@@ -70,8 +70,12 @@ export class GroundPoseSystem {
 
   /** A small right-arm reach on top of the kneel, sampled after the mixer; k = 0 gives the arm back to the clip. */
   bendArm(k) {
+    // (the bend is about Mika's own bone axis: a singer's body, game/play-as.js, has other bone frames and its own reach)
+    if (this.bends && this.bendsOf !== this.p.model) { for (const b of this.bends) if (b?.on) b.bone.quaternion.copy(b.base); this.bends = null; }
+    if (this.p.body?.swimFlat) return;
     if (!this.bends) {
       if (!(k > 0)) return;
+      this.bendsOf = this.p.model;
       this.bends = TAP_BENDS.map(([name, angle]) => {
         const bone = this.p.model?.getObjectByName?.(name);
         return bone ? { bone, angle, base: bone.quaternion.clone(), wrote: bone.quaternion.clone(), on: false } : null;

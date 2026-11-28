@@ -3,6 +3,7 @@
 // (src/main.js): twice a second it asks content/night-star.js nightStarState, and only at night near the shrine does it
 // fetch the show (game/nightstar/night-star.js) and her files. ?nightstar=off: never.
 import { NIGHT_STAR_SHOW, nightStarState } from '../../content/night-star.js';
+import { NIGHT_STAR } from '../../content/troupe.js';
 import { canEnter, photoState } from '../photo.js';
 
 export class NightStarWatch {
@@ -11,9 +12,11 @@ export class NightStarWatch {
   /** The facts nightStarState reads. */
   facts() {
     const g = this.g, d = this.d, p = g.player?.pos, S = NIGHT_STAR_SHOW;
-    const free = canEnter(photoState(g)) && !d.busy && !d.minigame && !d.scenes?.active && !d.singplay && !g.paused && !d.tourLock && !g.zone;
+    // (the player's own show, Explore's show layer: game/singplay/; the player walking as Stella herself: no second Stella)
+    const mine = !!g.singplay?.perf, asHer = d.playAs?.id === NIGHT_STAR;
+    const free = canEnter(photoState(g)) && !d.busy && !d.minigame && !d.scenes?.active && !mine && !asHer && !g.paused && !d.tourLock && !g.zone;
     const open = !!(d.explore || d.q?.unlocked?.('shrineStairs'));
-    return { night: g.night || 0, dist: p ? Math.hypot(p.x - S.x, p.z - S.z) : Infinity, free: free || !!this.ns?.perf, open, indoors: !!g.interiors?.active };
+    return { night: g.night || 0, dist: p ? Math.hypot(p.x - S.x, p.z - S.z) : Infinity, free: free || !!this.ns?.perf, open, indoors: !!g.interiors?.active, gone: mine || asHer };
   }
 
   update(dt) {
@@ -21,9 +24,9 @@ export class NightStarWatch {
     if ((this.t -= dt) > 0) return;
     this.t = 0.5;
     const f = this.facts(), st = nightStarState(f);
-    // (a show under way ends only when Mika goes far or Sing & Play starts: not when the clock or a setting turns to day)
-    const mid = !!this.ns?.perf && f.dist <= NIGHT_STAR_SHOW.leave && !this.d.singplay;
-    if ((st === 'gone' && !mid) || this.d.singplay) {
+    // (a show under way ends only when Mika goes far or the player's own song starts: not when the clock or a setting turns to day)
+    const mid = !!this.ns?.perf && f.dist <= NIGHT_STAR_SHOW.leave && !f.gone;
+    if ((st === 'gone' && !mid) || f.gone) {
       this.ns?.vanish();
       if (this.ns && (f.dist > NIGHT_STAR_SHOW.leave || f.night < NIGHT_STAR_SHOW.night)) this.ns.spent = false;   // (another visit, another night)
       return;

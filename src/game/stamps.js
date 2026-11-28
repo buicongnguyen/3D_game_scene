@@ -10,6 +10,7 @@ import { GLOW_MATERIALS } from '../engine/assets.js';
 import { tx } from '../i18n/i18n.js';
 import { TABLES, DELIVERIES, FINDS, DECOR } from '../content/stamps.js';
 import { cleanStamps } from './stamps-save.js';
+import { valleyTime } from './valley-clock.js';
 import { dayKeyOf, shouldRoll, drawCard, validateCard, award, luck, playCandidates, playProgress, objectiveText } from './stamps-rules.js';
 import { renderCard, showPop, ensurePop } from '../ui/stamps-ui.js';
 
@@ -142,7 +143,8 @@ export class Stamps {
   get s() { return this.quest.state.stamps; }
   /** Another story is lent to the Director (the live scene tour): the card sleeps until its own save is back. */
   borrowed() { return this.d.q !== this.quest; }
-  today() { return this.qaDay || dayKeyOf(new Date()); }
+  // (the valley's date: the real one, plus the days Go to… has lived through, game/valley-clock.js)
+  today() { return this.qaDay || dayKeyOf(valleyTime(this.g?.dayShift || 0)); }
   /** Task `i` of today's card (0 deliver, 1 find, 2 play), or null while there is no card (or it sleeps). */
   task(i) { const s = this.s; return !this.borrowed() && s.day && s.tasks.length === 3 ? s.tasks[i] : null; }
   delivery() { const t = this.task(0); return t ? DELIVERY.get(t.id) || null : null; }

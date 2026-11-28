@@ -1,15 +1,14 @@
 // © 2026 Bui Cong Nguyen · solluxlabs.com
-// Sing & Play (docs/SING-AND-PLAY.md): the player walks the valley as Kotone and performs a whole song wherever the ground
-// is flat and open, villagers gather to watch, an automatic camera films it and Record saves the take with the song.
-// Loaded only when the mode starts (src/main.js). Mika's own save is untouched: the mode keeps Kotone's place apart.
+// Sing & Play (docs/SING-AND-PLAY.md, docs/EXPLORE-AND-SHOW.md): Explore's show layer. Wherever the ground is flat and
+// open the player opens it (the Explore HUD's Perform, the pause menu's Sing here, the title's Sing & Play) and performs a
+// whole song as the singer she walks as (Play as: game/play-as.js; Saki when she was Mika), villagers gather to watch, an
+// automatic camera films it and Record saves the take with the song. "Leave show" closes the layer where she stands; the
+// Explore save goes on as ever (nothing is written mid-song). Loaded only when the layer first opens.
 import * as THREE from 'three';
 import { tx, N_, getLang } from '../../i18n/i18n.js';
-import { Animator } from '../../actors/animator.js';
 import { Face } from '../../actors/face.js';
-import { Silhouette } from '../../actors/silhouette.js';
-import { HUMAN_GAIT } from '../../actors/gait.js';
-import { SWIM } from '../../actors/player.js';
 import { prepareMoves, lendClips } from '../tricks/exercise-moves.js';
+import { MIKA, SAKI } from '../play-as.js';
 import { SHOW } from '../kotone-show.js';
 import { KOTONE_SONGS, songFromParam, songsFor } from '../../content/kotone-songs.js';
 import { songsBase, fetchCatalog, mergeSongs, songOrder, songStyle, songDance } from '../../content/song-catalog.js';
@@ -70,8 +69,6 @@ export const LAYOUTS = Object.freeze([Object.freeze({ x: 1, z: 1 }), Object.free
 export const faceCamera = dir => Math.atan2(dir.x, dir.z) + Math.PI;
 const _dir = new THREE.Vector3();
 const AUDIENCE = { low: 2, other: 4, near: 35, ring: 4.2, groupRing: 7.5 };
-const loadPlace = () => { try { const v = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return v && Number.isFinite(v.x) && Number.isFinite(v.z) ? v : null; } catch { return null; } };
-const savePlace = p => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(p)); } catch { /* per-device convenience */ } };
 const loadGroup = () => { try { const n = Number(localStorage.getItem(GROUP_KEY)); return GROUP_SIZES.includes(n) ? n : 1; } catch { return 1; } };
 const saveGroup = n => { try { localStorage.setItem(GROUP_KEY, String(n)); } catch { /* per-device convenience */ } };
 const loadStrong = () => { try { return localStorage.getItem(STRONG_KEY); } catch { return null; } };
@@ -132,44 +129,96 @@ export class SingPlay {
     this.time = null; this.watchers = new NightWatchers(this);   // (the Time choice: time-row.js; night audiences: night-watchers.js)
   }
 
-  async start() {
-    const g = this.g, a = g.assets, low = g.renderer.qualityName === 'low', body = this.kBody = low ? 'kotone.lite' : 'kotone';
-    this.d.singplay = true;
-    this.d.refreshObjective?.();
+  /**
+   * Open the show layer where she stands (first: Sing & Play's first visit, at the station stage). The singer is the body
+   * she walks as when that is a singer, else Saki (owner 2026-11-28); Mika becomes her (Play as) for the show.
+   */
+  async open({ first = false } = {}) {
+    if (this.isOpen) return true;
+    if (this.opening) return this.opening;
+    this.opening = this.openNow({ first }).finally(() => { this.opening = null; });
+    return this.opening;
+  }
+
+  async openNow({ first = false } = {}) {
+    const g = this.g, d = this.d, a = g.assets, low = g.renderer.qualityName === 'low', body = this.kBody = low ? 'kotone.lite' : 'kotone';
+    if (!d.playAs) return false;
+    this.singers = singerList(undefined, g.params);
+    const cur = d.playAs.chosen;
+    this.singer = cur && cur !== MIKA && this.singers.includes(cur) ? cur : SAKI;
+    d.singplay = true;
+    d.refreshObjective?.(true);
     // the song stops with the game: pause (menu, photo mode) pauses her audio; the next frame after resume plays it on
-    const tp = g.togglePause?.bind(g);
-    if (tp) g.togglePause = (...args) => { const r = tp(...args); if (g.paused) { this.perf?.sound?.el?.pause(); this.pickers?.reset(); } return r; };
-    // Kotone's model and moves always (she is the lead, or the rig the lead copies), the picked singer's model besides
-    const lead = bodyFile(this.singer, low);
-    await a.loadLater([...new Set([body, SHOW.pack, lead])]);
-    if (!a.has(body)) { this.ui.toast?.(tx("Kotone couldn't be loaded")); return false; }
-    this.prepareClips();
-    if (!this.swapBody(a.has(lead) ? this.singer : KOTONE)) return false;
-    const place = loadPlace() || STAGE;
-    g.player.teleport(place.x, place.z, undefined, place.facing);
-    g.follow.first = true; g.follow.yaw = place.facing;   // (the camera behind her looks at the view: she turns to it on Perform)
+    if (!this.pauseWrapped) {
+      this.pauseWrapped = true;
+      const tp = g.togglePause?.bind(g);
+      if (tp) g.togglePause = (...args) => { const r = tp(...args); if (g.paused) { this.perf?.sound?.el?.pause(); this.pickers?.reset(); } return r; };
+    }
+    // Kotone's model and moves always (she is the lead, or the rig the lead copies); the singer's body through Play as
+    await a.loadLater([...new Set([body, SHOW.pack])]).catch(() => {});
+    if (a.has(body) && !this.clips) this.prepareClips();
+    if (!a.has(body) || !await this.useBody(this.singer)) {
+      this.ui.toast?.(tx("Kotone couldn't be loaded"));
+      d.singplay = false; d.refreshObjective?.(true);
+      return false;
+    }
+    if (first) {
+      g.player.teleport(STAGE.x, STAGE.z, undefined, STAGE.facing);
+      g.follow.first = true; g.follow.yaw = STAGE.facing;   // (the camera behind her looks at the view: she turns to it on Perform)
+    }
     // the songs: the built-in ones now, the library's when its catalog comes in (content/song-catalog.js; at most 4 s, else
     // the built-in ones stay); a song's own files load when it is performed
-    this.builtIn = [...KOTONE_SONGS, songFromParam(g.params?.get?.('kotoneSong'))].filter(Boolean);
-    this.songs = this.builtIn.map(song => ({ song }));
-    const base = songsBase(g.params);
-    this.catalog = base ? fetchCatalog(base).then(lib => { if (lib) this.setSongs(mergeSongs(this.builtIn, lib)); return lib; }) : Promise.resolve(null);
-    this.limits = groupLimits(low, g.params);
-    this.judgeStrong();
-    this.showOn = g.params?.get?.('showfx') ? g.params.get('showfx') !== 'off' : loadShow(undefined, { tier: g.renderer.qualityName, strong: this.strong });
+    if (!this.songs) {
+      this.builtIn = [...KOTONE_SONGS, songFromParam(g.params?.get?.('kotoneSong'))].filter(Boolean);
+      this.songs = this.builtIn.map(song => ({ song }));
+      const base = songsBase(g.params);
+      this.catalog = base ? fetchCatalog(base).then(lib => { if (lib) this.setSongs(mergeSongs(this.builtIn, lib)); return lib; }) : Promise.resolve(null);
+      this.limits = groupLimits(low, g.params);
+      this.judgeStrong();
+      this.showOn = g.params?.get?.('showfx') ? g.params.get('showfx') !== 'off' : loadShow(undefined, { tier: g.renderer.qualityName, strong: this.strong });
+    }
     if (this.showOn) this.makeShow();
     this.hud();
     this.setGroup(Math.min(loadGroup(), this.max()), false);
     this.pauseLeave();
-    // the visitor herself steps out of Town Life while the player is her (no second Kotone at the station)
-    const town = this.d.town, k = town?.people.find(it => it.p.id === SHOW.who);
-    if (k) { if (town.show?.on(k)) town.show.end(); k.yardHold = true; k.n.setHidden(true); }
-    // Tamo is Mika's companion: he stays home while Kotone performs (and does not float into her close-ups)
-    this.d.tamo?.hide(); this.d.tamoAround = () => false;
-    g.systems.push(this);
+    // the visitor herself steps out of Town Life while the show is open (no second Kotone beside the group's)
+    const town = d.town, k = town?.people.find(it => it.p.id === SHOW.who);
+    if (k && !k.showHidden) { if (town.show?.on(k)) town.show.end(); k.yardHold = true; k.n.setHidden(true); k.showHidden = true; }
+    this.visitorK = k || null;
+    if (!g.systems.includes(this)) g.systems.push(this);
     g.cameraOverride = dt => this.camera(dt);
-    addEventListener('pagehide', () => this.keepPlace());
+    this.isOpen = true;   // (only now: the bar and its buttons are there)
     return true;
+  }
+
+  /** The singer's body through Play as (her model, her clips and the Explore moves); Kotone also gets her show pack. */
+  async useBody(id) {
+    const pa = this.d.playAs; if (!pa) return false;
+    this.giveBack?.(); this.giveBack = null;
+    if (!await pa.choose(id).catch(() => false) || pa.id !== id) return false;
+    if (id === KOTONE) this.giveBack = lendClips(this.g.player.anim, this.clips);
+    this.singer = id; this.bodyName = bodyFile(id, this.g.renderer.qualityName === 'low');
+    return true;
+  }
+
+  /** Leave the show: the layer closes where she stands, as the singer she is (Explore goes on; its save as ever). */
+  close() {
+    if (!this.isOpen) return;
+    const g = this.g, d = this.d;
+    this.stopSong();
+    this.pickers?.dispose(); this.pickers = null;
+    g.inputHold = false;
+    this.bar?.remove(); this.bar = null; this.time = null;
+    document.body.classList.remove('singplay');
+    document.getElementById('btnPauseSingLeave')?.remove();
+    if (g.cameraOverride) g.cameraOverride = null;
+    const k = this.visitorK;
+    if (k?.showHidden) { k.showHidden = false; if (d.playAs?.id !== KOTONE) { k.yardHold = false; k.n.setHidden(false); } }
+    this.isOpen = false;
+    d.singplay = false;
+    d.playAs?.visitor();
+    d.refreshObjective?.(true);
+    d.save?.();
   }
 
   /** Kotone's dance clips (her moves pack), made ready once for any clone of her model (the same skeleton and rest). */
@@ -179,43 +228,21 @@ export class SingPlay {
     this.restRoot = pack?.scene || null;
   }
 
-  /**
-   * The player's body becomes the singer `id` (Kotone unless the Singer row picked another member): her model, her own
-   * everyday clips (Kotone: plus her show pack), her gait, her face; Mika's lantern put away. -> false if not loaded.
-   */
-  swapBody(id) {
-    const g = this.g, p = g.player, name = bodyFile(id, g.renderer.qualityName === 'low'), m = g.assets.clone(name);
-    if (!m) return false;
-    p.anim?.mixer?.stopAllAction?.(); p.face?.sing?.(null);
-    p.pivot.remove(p.model);
-    p.silhouette?.dispose?.();
-    m.position.y = -SWIM.pivot;
-    m.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
-    p.pivot.add(m);
-    p.model = m; p.anim = new Animator(m); p.gait = id === KOTONE ? HUMAN_GAIT.kotone : member(id).gait; p.grip = m.getObjectByName('grip_R') || m; p.idleClip = 'Idle';
-    p.silhouette = new Silhouette(m);
-    p.lantern?.removeFromParent(); p.carry = null;
-    p.face = Face.attach(m);
-    if (id === KOTONE) lendClips(p.anim, this.clips);
-    p.anim.play('Idle');
-    this.singer = id; this.bodyName = name;
-    return true;
-  }
-
-  /** The Singer row: she becomes the player's body and the lead (her model loads first; never during a song). */
+  /** The Singer chip: she becomes the player's body (Play as, the same choice) and the lead (never during a song). */
   async pickSinger(id) {
     if (this.perf || this.singerWait || id === this.singer || !this.singers.includes(id)) return;
-    const a = this.g.assets, name = bodyFile(id, this.g.renderer.qualityName === 'low');
     keep(SINGER_KEY, id);
     // (while her model loads, the Singer chip already shows her, dimmed: singerNext)
-    if (!a.has(name)) { this.singerWait = true; this.singerNext = id; this.label(); await a.loadLater([name]).catch(() => {}); this.singerWait = false; this.singerNext = null; }
-    if (this.perf || !a.has(name) || !this.swapBody(id)) { if (!a.has(name)) this.ui.toast?.(tx(N_("The group couldn't be loaded"))); this.label(); return; }
+    this.singerWait = true; this.singerNext = id; this.label();
+    const ok = await this.useBody(id).catch(() => false);
+    this.singerWait = false; this.singerNext = null;
+    if (!ok || !this.isOpen) { if (!ok) this.ui.toast?.(tx(N_("The group couldn't be loaded"))); if (this.isOpen) this.label(); return; }
     this.setGroup(this.group, false);   // (the cast around her changes: its files load now)
     this.label();
   }
 
-  // (facing kept: the view's, not her turn to the camera during a song)
-  keepPlace() { const p = this.g.player, f = this.perf && this.viewYaw !== null ? this.viewYaw : p.facing; if (!p.swimming) savePlace({ x: +p.pos.x.toFixed(2), z: +p.pos.z.toFixed(2), facing: +(Math.atan2(Math.sin(f), Math.cos(f))).toFixed(3) }); }
+  /** After a stage jump: the Explore save keeps her place (as any save; never mid-song). */
+  keepPlace() { if (!this.perf) this.d.save?.(); }
 
   /** Her facing if she performed now: toward the camera (faceCamera). */
   performFacing() {
@@ -250,6 +277,7 @@ export class SingPlay {
     this.btnRecord = mk('spRecord', ACT.rec, () => this.toggleRecord());
     this.btnPhoto = mk('spPhoto', ACT.photo, () => this.photo());
     this.btnCam = mk('spCam', ACT.cam, () => { this.auto = !this.auto; this.freeUntil = 0; this.label(); });
+    this.btnLeave = mk('spLeave', ACT.leave, () => this.close());   // (back to plain Explore where she stands; hidden during a song)
     bar.appendChild(acts);
     if (!document.getElementById('singplayStyle')) {
       const st = document.createElement('style'); st.id = 'singplayStyle';
@@ -337,6 +365,7 @@ export class SingPlay {
   }
 
   label() {
+    if (!this.bar || !this.btnPerform) return;   // (still opening, or closed)
     const p = this.perf, ok = this.allowed.ok || !!p;
     const go = tx(p ? N_('Stop') : N_('Perform'));
     this.setAct(this.btnPerform, p ? ACT.stop : ACT.mic, go, go);
@@ -347,6 +376,7 @@ export class SingPlay {
     // Record works before a song too: it starts the performance and the recording together
     this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec && !(ok && this.songs?.length && !this.groupWait && !this.songWait)));
     this.setAct(this.btnPhoto, ACT.photo, tx(N_('Photo')));
+    this.setAct(this.btnLeave, ACT.leave, tx(N_('Leave show')), '', tx(N_('Leave show')));
     this.bar.classList.toggle('performing', !!p);   // (during a song the chips hide: Stop, Record, Photo, Camera)
     this.setAct(this.btnCam, ACT.cam, tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free')), tx(this.auto ? N_('Auto') : N_('Free')));
     this.btnCam.setAttribute('aria-disabled', String(!p));
@@ -416,6 +446,8 @@ export class SingPlay {
       this.show.start(this.perf, { spot: { x: c.x, z: c.z, y: this.formation ? undefined : p.pos.y, facing: f }, group: this.formation ? { w: this.groupW, depth: this.groupD } : null, n: this.troupe?.count || 1, ground: this.ground() || (() => p.pos.y) });
     }
     this.d.performing = true;   // (director.updateBarks: the villagers' bubbles hidden, no new ones, until she stops)
+    // Tamo stays her companion, but not on stage: he waits at home for the song (and never floats into her close-ups)
+    if (!this.tamoWas) { this.tamoWas = this.d.tamoAround; this.d.tamo?.hide(); this.d.tamoAround = () => false; }
     this.capLines = captionLines(song.lyrics); this.capKey = '-';
     g.audio?.holdMusic?.('singplay', true);
     this.shots = planShots(this.perf.plan, this.perf.clock, { group: !!this.troupe });
@@ -437,6 +469,7 @@ export class SingPlay {
     this.rig?.removeFromParent(); this.rig = null;
     this.capLines = null; this.caption();
     this.d.performing = false;
+    if (this.tamoWas) { this.d.tamoAround = this.tamoWas; this.tamoWas = null; }
     g.player.locked = false; g.follow.first = true;
     // back to the view the player framed: she turns to it again, the camera behind her
     if (this.viewYaw !== null) { g.player.facing = this.viewYaw; g.player.root.rotation.y = this.viewYaw; g.follow.yaw = this.viewYaw; this.viewYaw = null; }
@@ -469,6 +502,7 @@ export class SingPlay {
   /** Every frame (a game system). */
   update(dt) {
     const g = this.g, p = g.player;
+    if (!this.isOpen) { this.show?.update(dt, g.camera); return; }   // (closed: only the stage set folding away)
     this.pickers?.pad();   // (a gamepad on the bar or in a picker: pickers.js)
     p.face?.setEnabled(Face.on); p.face?.lookAt(p.gaze || null); p.face?.update(dt);
     if (this.perf) {
@@ -507,7 +541,6 @@ export class SingPlay {
     this.time?.update(dt);             // (the shown hour: a tap's ease, the slow clock while free, held during a song)
     this.watchers?.update(dt);
     this.show?.update(dt, g.camera);   // (after the song too: the set folds away)
-    this.saveT -= dt; if (this.saveT <= 0) { this.saveT = 5; this.keepPlace(); }
   }
 
   /** The show effects, made once (their shaders compiled at once, not at the first chorus). -> the ShowFX or null */
@@ -674,16 +707,16 @@ export class SingPlay {
     R.shoot(g.scene, g.camera, R.pixelRatio, canvas => canvas.toBlob(b => { if (b) saveBlob(b, `${(NAMES[this.singer] || 'kotone').toLowerCase()}-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.png`); }, 'image/png'));
   }
 
-  /** The pause menu's way out (next to Photo mode). */
+  /** The pause menu's way out too (next to Photo mode). */
   pauseLeave() {
-    const after = document.getElementById('btnPausePhoto') || document.getElementById('btnPauseMini'); if (!after) return;
-    const b = document.createElement('button'); b.id = 'btnPauseSingLeave'; b.type = 'button'; b.textContent = tx(N_('Leave Sing & Play'));
-    b.addEventListener('click', () => { this.g.audio?.click?.(); this.leave(); });
+    const after = document.getElementById('btnPausePhoto') || document.getElementById('btnPauseMini'); if (!after || document.getElementById('btnPauseSingLeave')) return;
+    const b = document.createElement('button'); b.id = 'btnPauseSingLeave'; b.type = 'button'; b.textContent = tx(N_('Leave show'));
+    b.addEventListener('click', () => { this.g.audio?.click?.(); this.ui.closeAll?.(); this.g.togglePause?.(false, true); this.close(); });
     after.after(b);
   }
 
-  /** Leave the mode: her place kept, back to the title. */
-  leave() { this.stopSong(); this.keepPlace(); this.pickers?.dispose(); this.g.inputHold = false; this.bar?.remove(); location.href = location.pathname; }
+  /** (the old name: the show closes in place, Explore goes on) */
+  leave() { this.close(); }
 }
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 /** The actions' pictograms (20 px, the button's own colour; the Record dot red). */
@@ -694,6 +727,7 @@ const ACT = Object.freeze({
   rec: ico('<circle class="dot" cx="12" cy="12" r="6.5" fill="#e0384f" stroke="none"/>'),
   photo: ico('<path d="M4 8h3l1.6-2.5h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>'),
   cam: ico('<rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 11l6-3v8l-6-3z"/>'),
+  leave: ico('<path d="M10 4H5.5A1.5 1.5 0 0 0 4 5.5v13A1.5 1.5 0 0 0 5.5 20H10"/><path d="M14 8l4 4-4 4M18 12H9"/>'),
 });
 // The bar (docs/SING-AND-PLAY.md "Bar layout"): one column at the bottom centre (caption, chips, hint, actions). PC: 16 px
 // over the bottom edge. Touch screens: over the touch buttons (Do it / Jump end 114 px up). Phones on their side: at the
@@ -710,7 +744,8 @@ body.touch .singplay-bar{bottom:calc(env(safe-area-inset-bottom,0px) + 124px)}
 .singplay-btn.primary{min-width:150px;min-height:56px;padding:0 24px 0 18px;font-size:18px;background:linear-gradient(180deg,#ffd66b,#f2a33a);color:#3b1c05;box-shadow:0 3px 12px rgba(0,0,0,.3)}
 .singplay-bar.performing .singplay-btn.primary{background:linear-gradient(180deg,#ff8fa8,#e0567a);color:#fff}
 .singplay-btn[aria-disabled=true]{opacity:.5}.singplay-btn.on{background:#e0567a;color:#fff}.singplay-btn.on .dot{fill:#fff}
-#spCam{display:none}.singplay-bar.performing #spCam{display:inline-flex}.singplay-bar.performing .sp-chips{display:none}
+#spCam{display:none}.singplay-bar.performing #spCam{display:inline-flex}.singplay-bar.performing .sp-chips{display:none}.singplay-bar.performing #spLeave{display:none}
+.sp-actions.tight1 #spLeave .sp-act-tx{display:none}.sp-actions.tight1 #spLeave{padding:0 13px}
 .sp-act:focus{outline:none}.sp-act:focus-visible,.sp-act.pad{outline:3px solid #ffd36e;outline-offset:2px}
 .singplay-hint{margin:0;max-width:100%;min-height:17px;text-align:center;font-size:13px;line-height:17px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);pointer-events:none}
 body.singplay #inventory{display:none}
@@ -739,10 +774,12 @@ body.singplay.singplay #prompt{bottom:calc(var(--sp-clear,190px) / var(--ui-scal
 @media (max-width:370px){.sp-actions{gap:6px}.singplay-btn{padding:0 12px 0 10px}.singplay-btn.primary{min-width:108px;padding:0 14px 0 12px}}
 @media (max-width:640px),(max-height:480px){body.singplay.touch #toasts{top:calc(var(--sp-below,200px) / var(--ui-scale,1));bottom:auto}}`;
 
-/** Start Sing & Play on a loaded Explore session (src/main.js). */
-export async function startSingPlay(game, director, ui) {
-  const m = new SingPlay(game, director, ui);
-  game.singplay = m;
-  await m.start();
+/** Open the show layer on a running Explore session (game/explore-show.js, show-door.js, sing-here.js). opts.first: Sing
+ *  & Play's first visit (at the station stage). -> the SingPlay (one per session, opened and closed again) */
+export async function openShow(game, director, ui, opts = {}) {
+  const m = game.singplay ??= new SingPlay(game, director, ui);
+  await m.open(opts);
   return m;
 }
+/** (the old entry point) */
+export const startSingPlay = (game, director, ui) => openShow(game, director, ui);

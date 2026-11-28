@@ -4,7 +4,7 @@
   "ctx": [
    "character name (mika)",
    "UI (src/game/moments.js)",
-   "UI (src/game/tricks/cowrace.js)"
+   "UI (src/game/play-as.js)"
   ]
  },
  {
@@ -16744,6 +16744,12 @@
   ]
  },
  {
+  "s": "Festival stage",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
   "s": "the Kawabe letters",
   "ctx": [
    "UI (src/content/stamps.js)"
@@ -17143,7 +17149,7 @@
   "ctx": [
    "UI (src/content/tour.js)",
    "UI (src/game/singplay/time-row.js)",
-   "UI (src/ui/ui.js)"
+   "UI (src/game/valley-clock.js)"
   ]
  },
  {
@@ -18201,6 +18207,27 @@
   ]
  },
  {
+  "s": "Stop the song first",
+  "ctx": [
+   "UI (src/game/goto.js)",
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/singplay/stages-row.js)"
+  ]
+ },
+ {
+  "s": "Time can't move right now",
+  "ctx": [
+   "UI (src/game/goto.js)",
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Only in Explore",
+  "ctx": [
+   "UI (src/game/goto.js)"
+  ]
+ },
+ {
   "s": "You can change this in Settings > Learn a language.",
   "ctx": [
    "UI (src/game/house-scenes.js)",
@@ -18611,6 +18638,13 @@
   ]
  },
  {
+  "s": "The group couldn't be loaded",
+  "ctx": [
+   "UI (src/game/play-as.js)",
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
   "s": "Light the trackside lantern",
   "ctx": [
    "UI (src/game/scenes.js)"
@@ -18823,14 +18857,20 @@
   "ctx": [
    "UI (src/game/singplay/pickers.js)",
    "UI (src/game/tour.js)",
-   "UI (src/ui/minigames-ui.js)"
+   "UI (src/ui/explore-panels.js)"
   ]
  },
  {
-  "s": "Stop the song first",
+  "s": "Perform",
   "ctx": [
-   "UI (src/game/singplay/pickers.js)",
-   "UI (src/game/singplay/stages-row.js)"
+   "UI (src/game/singplay/show-door.js)",
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "The show couldn't be opened",
+  "ctx": [
+   "UI (src/game/singplay/show-door.js)"
   ]
  },
  {
@@ -18891,19 +18931,7 @@
   ]
  },
  {
-  "s": "The group couldn't be loaded",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
   "s": "Stop",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Perform",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
@@ -18916,6 +18944,12 @@
  },
  {
   "s": "Photo",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Leave show",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
@@ -18969,31 +19003,26 @@
   ]
  },
  {
-  "s": "Leave Sing & Play",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
   "s": "Morning",
   "ctx": [
    "UI (src/game/singplay/time-row.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
+   "UI (src/game/valley-clock.js)",
+   "UI (src/ui/ui.js)"
   ]
  },
  {
   "s": "Noon",
   "ctx": [
    "UI (src/game/singplay/time-row.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
+   "UI (src/game/valley-clock.js)",
+   "UI (src/ui/ui.js)"
   ]
  },
  {
   "s": "Sunset",
   "ctx": [
    "UI (src/game/singplay/time-row.js)",
+   "UI (src/game/valley-clock.js)",
    "menu / screen text"
   ]
  },
@@ -19204,7 +19233,8 @@
  {
   "s": "Now",
   "ctx": [
-   "UI (src/game/skygaze.js)"
+   "UI (src/game/skygaze.js)",
+   "UI (src/game/valley-clock.js)"
   ]
  },
  {
@@ -26794,6 +26824,49 @@
   ]
  },
  {
+  "s": "Cherry blossom morning",
+  "ctx": [
+   "UI (src/game/valley-clock.js)"
+  ]
+ },
+ {
+  "s": "Summer festival night",
+  "ctx": [
+   "UI (src/game/valley-clock.js)"
+  ]
+ },
+ {
+  "s": "Autumn leaves afternoon",
+  "ctx": [
+   "UI (src/game/valley-clock.js)"
+  ]
+ },
+ {
+  "s": "Snowy evening",
+  "ctx": [
+   "UI (src/game/valley-clock.js)"
+  ]
+ },
+ {
+  "s": "Later today",
+  "ctx": [
+   "UI (src/game/valley-clock.js)"
+  ]
+ },
+ {
+  "s": "Tomorrow",
+  "ctx": [
+   "UI (src/game/valley-clock.js)"
+  ]
+ },
+ {
+  "s": "{season}, day {n}",
+  "ctx": [
+   "UI (src/game/valley-clock.js)",
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
   "s": "Loading the opening…",
   "ctx": [
    "UI (src/game/video.js)"
@@ -28670,6 +28743,90 @@
   ]
  },
  {
+  "s": "Go to…",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Play as",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Festival",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Moments",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Season",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)",
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Time of day",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)",
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "On",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Off",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)",
+   "UI (src/ui/phrasebook-ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Lanterns, fireflies at night, people out late and a festival stage on the Takamori square, in any season.",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Time only moves forward: the days you skip are lived (a new stamp card, new visitors).",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Who walks the valley",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Not during a song or a game",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
+  "s": "Games, rides and the workshop are played as Mika; the valley still calls you Mika.",
+  "ctx": [
+   "UI (src/ui/explore-panels.js)"
+  ]
+ },
+ {
   "s": "Fell in? Do not thrash. Lie back and float.",
   "ctx": [
    "UI (src/ui/howto.js)"
@@ -29673,13 +29830,6 @@
   ]
  },
  {
-  "s": "Off",
-  "ctx": [
-   "UI (src/ui/phrasebook-ui.js)",
-   "menu / screen text"
-  ]
- },
- {
   "s": "Pick a language, then visit the homes in Kawabe: families talk at supper, in the shop and over paper cranes. Every phrase you hear is kept here.",
   "ctx": [
    "UI (src/ui/phrasebook-ui.js)"
@@ -29971,17 +30121,9 @@
   ]
  },
  {
-  "s": "Season",
+  "s": "As you left it",
   "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Time of day",
-  "ctx": [
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
+   "UI (src/ui/ui.js)"
   ]
  },
  {

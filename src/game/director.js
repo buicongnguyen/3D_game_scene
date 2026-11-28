@@ -724,7 +724,7 @@ export class Director {
   /** Saving is refused while a cutscene or the Star Train ride owns the game, or Mika is riding something. */
   canSave() {
     if (this.tourLock) return false;   // the scene tour borrows the valley: nothing it shows may reach a save file (game/tour.js)
-    if (this.singplay) return false;   // Sing & Play: Kotone walks the valley, the Explore save keeps Mika's place (game/singplay/)
+    if (this.performing) return false;   // mid-song (the show layer, the Night Star): the save waits for the song's end
     return !!this.quest && !this.scenes.active && !this.minigame && !this.tricks?.round && !this.yard?.round && !this.cows?.riding && !this.game.player.mounted && this.q.state.step !== 'c4.ride';
   }
 
@@ -1166,7 +1166,8 @@ export class Director {
     p.turnTo(Math.atan2(a.pos.x - p.pos.x, a.pos.z - p.pos.z), 1, 50);
     const low = a.slot ? a.pos.y < p.pos.y + 0.55
       : ['rabbit', 'chicken', 'cat', 'fox'].includes(a.kind) && a.pos.y + 0.35 < p.pos.y + 0.55;
-    if (!(low && this.ground.reach())) p.gesture(a.kind === 'duck' ? 'Wave' : 'Interact', { lock: false });
+    // (a singer pets with her own moves, placed so her hand lands on the animal's back: game/play-as.js PET)
+    if (!this.playAs?.pet(a) && !(low && this.ground.reach())) p.gesture(a.kind === 'duck' || (p.body?.swimFlat && ['deer', 'fox'].includes(a.kind)) ? 'Wave' : 'Interact', { lock: false });
     a.hold?.();                                                // a critter stays put for the hello
     const react = { rabbit: 'Hop', chicken: 'Flap', cat: 'Sit', sheep: 'Bleat', deer: 'Idle', fox: 'Look', cow: 'Moo', pig: 'Oink', goat: 'Bleat', dog: 'Wag', cricket: 'Chirp', grasshopper: 'Hop', mantis: 'Look' }[a.kind];
     if (react && a.anim?.has?.(react)) a.anim.once(react, { then: a.idleClip || 'Idle' });

@@ -68,7 +68,7 @@ test('every listed stage has room for Solo, a group of 4 and a group of 8 turned
   const solid = (x, z, r) => solids.some(b => { const dx = x - b.x, dz = z - b.z, lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c; return Math.abs(lx) < b.hw + r && Math.abs(lz) < b.hd + r; });
   const world = env((x, z) => grid.heightAt(x, z), { waterY: WATER_Y, solid });
   const k = leadOffset(), spots = n => troupeOf(n).filter(m => !m.lead).map(m => ({ x: m.x - k.x, z: m.z - k.z }));
-  assert.ok(STAGES.length >= 5 && STAGES.length <= 7, 'five to seven stages (one flat row, it scrolls on phones)');
+  assert.ok(STAGES.length >= 5 && STAGES.length <= 8, 'five to eight stages (the Stage picker: docs/SING-AND-PLAY.md; the festival stage the eighth)');
   assert.equal(new Set(STAGES.map(s => s.id)).size, STAGES.length, 'ids are unique');
   assert.deepEqual({ x: STAGES[0].x, z: STAGES[0].z, facing: STAGES[0].facing }, { ...STAGE }, 'the first stage is the first-visit place');
   for (const st of STAGES) {
