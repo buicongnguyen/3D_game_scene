@@ -6,16 +6,20 @@
 // against `off` of the same cycle, and the median of those differences is reported (paired rise), with the draws a frame
 // (shadow pass included) and JS a frame. Then the effects' fill: their fragments a screen pixel, depth-tested against
 // the scene (what the GPU really shades) and without the depth test (an upper bound), per effect.
+// --what=uplight: the same A/B for the stage light on the performers alone (fx/stage-uplight.js; the show stays on in every
+// arm): off = its terms at 0 (the shader's branch skipped, the footlights dark, no pool on the ground), on = as designed,
+// null = off again; the fill adds the pool cards' share of the glow draw. --cam=close: a close-up on the lead (the most
+// performer pixels on the screen: the term's fragment cost at its largest).
 // Needs a built preview: npm run build (or vite build + pack-models) && npx vite preview --port 4315 --strictPort
 //   GAME_URL=http://127.0.0.1:4315/ node tests/perf/show-perf.mjs [--quality=low] [--cpu=4] [--hour=21.5] [--group=1|4|8]
-//     [--runs=24] [--secs=0.8] [--settle=300] [--cam=fixed|orbit] [--stage=station] [--out=file.json]
+//     [--runs=24] [--secs=0.8] [--settle=300] [--cam=fixed|orbit|close] [--stage=station] [--what=show|uplight] [--out=file.json]
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const s = a.replace(/^--/, ''), i = s.indexOf('='); return i < 0 ? [s, ''] : [s.slice(0, i), s.slice(i + 1)]; }));
 const url = process.env.GAME_URL || 'http://127.0.0.1:4315/';
 const q = args.quality || 'low', cpu = +(args.cpu || (q === 'low' ? 4 : 1)), runs = +(args.runs || 24), secs = +(args.secs || 0.8), settle = +(args.settle || 300);
-const hour = +(args.hour ?? 21.5), group = +(args.group || 1), CAM = args.cam || 'fixed';
+const hour = +(args.hour ?? 21.5), group = +(args.group || 1), CAM = args.cam || 'fixed', WHAT = args.what || 'show';
 const STAGES = { station: { x: -92, z: 101, facing: Math.PI }, kawabe: { x: -45, z: 20, facing: 0 }, shrine: { x: 62.5, z: -149, facing: 0 } };
 const stage = STAGES[args.stage || 'station'];
 const arms = ['off', 'on', 'null'];
@@ -27,22 +31,26 @@ try {
   page.on('pageerror', e => errors.push(String(e)));
   await page.goto(`${url}?mute&qa=1&quality=${q}&start=singplay&pace=off${group === 8 ? '&troupeMax=8' : ''}`);
   await page.waitForFunction(() => window.__STARLINE__?.singplay?.songs?.length && !window.__STARLINE__.singplay.groupWait, null, { timeout: 240000 });
-  await page.evaluate(h => { window.__STARLINE__.timeOverride = h; }, hour);
+  // (the hour through Sing & Play's own clock, time-row.js: it owns game.timeOverride and would put it back)
+  await page.evaluate(h => { const g = window.__STARLINE__, t = g.singplay.time; if (t) { t.ease = null; t.hour = h; t.apply(); } else g.timeOverride = h; }, hour);
   await page.waitForTimeout(2500);
-  await page.evaluate(([CAM]) => {
+  await page.evaluate(() => { const g = window.__STARLINE__, s = g.singplay; g.renderer.governor = null; s.allowed = { ok: true }; s.perform(); });
+  await page.waitForFunction(() => !!window.__STARLINE__.singplay.perf, null, { timeout: 60000 });   // (the song's files load first)
+  await page.evaluate(([CAM, WHAT]) => {
     const g = window.__STARLINE__, s = g.singplay, p = g.player;
-    g.renderer.governor = null;                                  // (held: the same quality for every arm)
-    s.allowed = { ok: true }; s.perform();
     const P = s.perf, L = P.plan.lines; let i = 0; while (L && i < L.count && !L.chorus[i]) i++;
     window.__seek0 = L ? L.t[i] - 1 : 40; P.seek(window.__seek0);
     const c = s.formation ? s.groupCentre() : p.pos, f = p.facing, cam = g.camera, tanH = Math.tan(cam.fov * Math.PI / 360) * cam.aspect;
     const D = Math.max(7.5, ((s.groupW || 1.5) / 2 + 1.2) / tanH + 1);
     window.__orbit0 = performance.now();
-    if (CAM === 'orbit') g.cameraOverride = () => { const a = f + Math.sin((performance.now() - window.__orbit0) / 16000 * Math.PI * 2) * 1.1; cam.position.set(c.x + Math.sin(a) * D, p.pos.y + 2.2, c.z + Math.cos(a) * D); cam.lookAt(c.x, p.pos.y + 1.6, c.z); return true; };
+    if (CAM === 'close') g.cameraOverride = () => { cam.position.set(p.pos.x + Math.sin(f + 0.12) * 1.75, p.pos.y + 1.5, p.pos.z + Math.cos(f + 0.12) * 1.75); cam.lookAt(p.pos.x, p.pos.y + 1.32, p.pos.z); return true; };
+    else if (CAM === 'orbit') g.cameraOverride = () => { const a = f + Math.sin((performance.now() - window.__orbit0) / 16000 * Math.PI * 2) * 1.1; cam.position.set(c.x + Math.sin(a) * D, p.pos.y + 2.2, c.z + Math.cos(a) * D); cam.lookAt(c.x, p.pos.y + 1.6, c.z); return true; };
     else g.cameraOverride = () => { cam.position.set(c.x + Math.sin(f) * D, p.pos.y + 2.0, c.z + Math.cos(f) * D); cam.lookAt(c.x, p.pos.y + 1.7, c.z); return true; };
     // the switch: off = the effects neither updated nor drawn (their update skipped, the set, the sticks and the fireworks hidden)
     const sh = s.show, own = sh.update.bind(sh), upd = (dt, cam) => { const t = performance.now(); own(dt, cam); window.__sp.fx += performance.now() - t; };
-    window.__arm = arm => {
+    const mix = sh.light?.mix, MIX0 = mix && { ...mix };
+    if (WHAT === 'uplight') sh.update = upd;
+    window.__arm = WHAT === 'uplight' ? arm => { for (const k of Object.keys(MIX0)) mix[k] = arm === 'on' ? MIX0[k] : 0; } : arm => {
       const on = arm === 'on';
       sh.update = on ? upd : () => {};
       sh.root.visible = on; if (sh.sticks) sh.sticks.visible = on && sh.sticks.count > 0;
@@ -53,7 +61,7 @@ try {
     g.frame = function () { const t = performance.now(); if (m.last) m.gaps.push(t - m.last); m.last = t; fr(); m.js.push(performance.now() - t); m.frames++; };
     const R = g.renderer.renderer, o = R.renderBufferDirect;
     R.renderBufferDirect = function () { m.draws++; return o.apply(this, arguments); };
-  }, [CAM]);
+  }, [CAM, WHAT]);
   await page.waitForTimeout(3000);   // (the set unfolds, the shaders are in)
   const cdp = await ctx.newCDPSession(page);
   if (cpu > 1) await cdp.send('Emulation.setCPUThrottlingRate', { rate: cpu });
@@ -74,9 +82,9 @@ try {
   const summary = arms.map(a => ({ arm: a, pairedRise: a === 'off' ? 0 : pair(a), p50: at(rows[a].gaps, .5), p95: at(rows[a].gaps, .95), js50: at(rows[a].js, .5), draws: +(rows[a].draws / Math.max(1, rows[a].frames)).toFixed(1), fxMs: +(rows[a].fx / Math.max(1, rows[a].frames)).toFixed(3), frames: rows[a].gaps.length }));
   console.table(summary);
   // the fill: fragments of each effect a screen pixel (depth-tested against the scene, and without depth: upper bound)
-  const fill = await page.evaluate(() => {
+  const fillOf = arm => page.evaluate(arm => {
     const g = window.__STARLINE__, sh = g.singplay.show, R = g.renderer.renderer;
-    window.__arm('on'); sh.update(0, g.camera);
+    window.__arm(arm); sh.update(0, g.camera);
     const w = Math.floor(g.renderer.composer.renderTarget1.width), h = Math.floor(g.renderer.composer.renderTarget1.height);
     const RT = g.renderer.composer.renderTarget1.constructor;
     const rt = new RT(w, h, { depthBuffer: true });
@@ -100,9 +108,12 @@ try {
     for (const [k, m] of Object.entries(meshes)) m.visible = vis[k];
     R.setRenderTarget(prevRT); R.autoClear = prevAuto; R.setClearColor(0x000000, prevClear); rt.dispose();
     return { w, h, ...out, items: sh.items };
-  });
+  }, arm);
+  const fill = await fillOf('on');
+  // (the stage light: its pool cards' share of the glow draw, the glow measured with the light off as well)
+  if (WHAT === 'uplight') { const f0 = await fillOf('off'); fill.poolFill = +(fill.glow - f0.glow).toFixed(3); fill.poolFillRaw = +(fill.glowRaw - f0.glowRaw).toFixed(3); }
   console.log('fill (fragments a pixel):', JSON.stringify(fill));
-  const res = { quality: q, cpu, hour, group, cam: CAM, stage: args.stage || 'station', runs, secs, summary, fill, errors };
+  const res = { what: WHAT, quality: q, cpu, hour, group, cam: CAM, stage: args.stage || 'station', runs, secs, summary, fill, errors };
   if (args.out) fs.writeFileSync(args.out, JSON.stringify(res, null, 1));
   console.log(`on: paired p50 rise ${summary[1].pairedRise} ms (null control ${summary[2].pairedRise} ms), draws ${summary[0].draws} -> ${summary[1].draws}`);
   if (errors.length) console.log('errors', errors.slice(0, 5));

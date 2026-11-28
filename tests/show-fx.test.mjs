@@ -1,13 +1,17 @@
 // © 2026 Bui Cong Nguyen · solluxlabs.com
 // Show effects (docs/SHOW-EFFECTS.md) and the Night Star (docs/NIGHT-STAR.md): the pure cues, the draw budget rule, the
-// stage set's triangle budget, the guest singer's cast, her dress-safe moves, her song hook and when she is there.
+// stage set's triangle budget, the guest singer's cast, her dress-safe moves, her song hook and when she is there; the
+// stage light on the performers at night (fx/stage-uplight.js): its area, the footlights, the shader patch, night only.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createBeatClock } from '../src/game/perform/beat-clock.js';
 import { planPerformance } from '../src/game/perform/plan.js';
 import { WASH, washAt, pulseAt, cuePlan, showItems, showDraws, slotTimes, SLOTS, inWindows, countsFor, showDefault, isShowNight } from '../src/game/perform/show-cues.js';
-import { buildStage, stageSize } from '../src/fx/show-fx.js';
+import * as THREE from 'three';
+import { buildStage, stageSize, footlightSpots } from '../src/fx/show-fx.js';
+import { UP, UPLIGHT, stageArea, uplightNight, uplightShader, patchUplight, uplightStart, uplightUpdate, uplightStop } from '../src/fx/stage-uplight.js';
+import { patchFaceMaterial } from '../src/actors/face-look.js';
 import { castOf, troupeOf, troupeFiles, TROUPE, KOTONE, NIGHT_STAR, GUESTS, NAMES, LOCAL_NAMES, nameOf, member, avoidOf, singersWith, isGuest } from '../src/content/troupe.js';
 import { DANCE_STYLES, CLUB_LOOPS } from '../src/content/kotone-club.js';
 import { KOTONE_SONGS, showSongs, songsFor } from '../src/content/kotone-songs.js';
@@ -150,4 +154,55 @@ test('the Night Star is there only on starry nights near the shrine, at the Shri
   assert.equal(nightStarState({ night: 1, dist: 20 }), 'here');
   assert.equal(nightStarState({ night: 1, dist: 200 }), 'gone');
   assert.equal(nightStarState({ night: 1, dist: 20, free: false }), 'here', 'a dialogue does not make her vanish');
+});
+
+test('the stage light: the lit area holds the formation, footlights in front, the set within its budget', () => {
+  for (const n of [1, 4, 8]) {
+    const cast = troupeOf(n), xs = cast.map(m => m.x), zs = cast.map(m => m.z);
+    const group = n > 1 ? { w: Math.max(...xs) - Math.min(...xs), depth: Math.max(...zs) - Math.min(...zs) } : null;
+    const a = stageArea(group);
+    // every member inside the box (the frame's z = 0 is the front row's line; a solo stands at the centre)
+    for (const m of n > 1 ? cast : [{ x: 0, z: 0 }]) {
+      assert.ok(Math.abs(m.x) <= a.halfW - 0.5, `${n}: ${m.x} across inside ${a.halfW}`);
+      assert.ok(m.z <= a.front - 0.3 && m.z >= a.back + 0.3, `${n}: ${m.z} front to back inside ${a.back}..${a.front}`);
+    }
+    assert.ok(a.foot > Math.max(0, ...(n > 1 ? zs : [0])) + 0.8, `${n}: the footlights a metre in front of the front-most`);
+    const F = footlightSpots(a);
+    assert.ok(F.length >= 3 && F.length <= 9, `${n}: ${F.length} footlights`);
+    assert.ok(F.every(([x, z]) => Math.abs(x) <= a.halfW && z === a.foot), `${n}: on one line across the stage front`);
+    const S = buildStage(stageSize(group), 0.3, -0.4, { beams: 6, foot: F.map(([x, z]) => [x, -0.2, z]) });
+    const tris = S.geometry.index.count / 3;
+    assert.ok(tris <= 3200, `${n}: ${tris} triangles with ${F.length} footlights (budget 3.2k)`);
+    const code = S.geometry.getAttribute('color'); let lens = 0; for (let i = 0; i < code.count; i++) if (Math.abs(code.getW(i) - 0.25) < 1e-6) lens++;
+    assert.equal(lens, F.length * 24, `${n}: a glowing lens (one box) per footlight`);
+  }
+});
+
+test('the stage light: one patch in the shader, its hooks kept, uniforms only, night only, one show at a time', () => {
+  // the VRoid atlas material: face-look first (assets.js), then the stage light; the program key keeps both
+  const m = new THREE.MeshStandardMaterial({ alphaTest: 0.5 });
+  patchFaceMaterial(m); patchUplight(m); patchUplight(m);
+  assert.match(m.customProgramCacheKey(), /\|face-look\|uplight$/, 'the program key composed once');
+  const sh = { uniforms: THREE.UniformsUtils.clone(THREE.ShaderLib.standard.uniforms), vertexShader: THREE.ShaderLib.standard.vertexShader, fragmentShader: THREE.ShaderLib.standard.fragmentShader };
+  m.onBeforeCompile(sh, null);
+  assert.ok(sh.fragmentShader.includes('vFace') && sh.fragmentShader.includes('upE *= 1.0 + uUpK.w * vFace'), 'faces a little brighter (the face mask)');
+  assert.equal(sh.fragmentShader.split('reflectedLight.directDiffuse += upA').length, 2, 'the term added once');
+  assert.ok(!/#define\s+UP|#ifdef\s+UP/.test(sh.fragmentShader), 'no defines: switched by uniforms only (no recompiles)');
+  assert.ok(!/uUp|upW/.test(sh.vertexShader), "nothing added to the vertex shader (no varyings: three's own vViewPosition and normal)");
+  for (const k of Object.keys(UPLIGHT)) assert.equal(sh.uniforms[k], UPLIGHT[k], `${k} shared by reference`);
+  // an unlit material (no lights chunk) is left alone
+  const basic = { uniforms: {}, fragmentShader: THREE.ShaderLib.basic.fragmentShader };
+  uplightShader(basic); assert.equal(basic.fragmentShader, THREE.ShaderLib.basic.fragmentShader);
+  // night only: 0 by day and at sunset's start, full at night
+  assert.equal(uplightNight(0), 0); assert.equal(uplightNight(1), 1); assert.ok(uplightNight(0.15) < 0.15 && uplightNight(0.5) > 0.6);
+  // the show that started last owns the light; another's updates and stops leave it alone
+  const A = {}, B = {}, K = UPLIGHT.uUpK.value, wash = new THREE.Color(1, 0.24, 0.6);
+  uplightStart(A, { x: 1, y: 2, z: 3, facing: Math.PI / 2, tilt: [0.1, 0], area: stageArea(null) });
+  assert.ok(Math.abs(UPLIGHT.uUpF.value.x - 1) < 1e-9 && Math.abs(UPLIGHT.uUpF.value.y) < 1e-9, 'forward on the ground from the facing');
+  assert.ok(uplightUpdate(A, 1, wash, 0.5, 1) > 0.99 && K.x > 2 && K.y > 0.3 && K.z > 1, 'on at night');
+  assert.equal(uplightUpdate(B, 0, wash), 0); assert.ok(K.x > 2, "another show's update leaves it");
+  uplightStop(B); assert.ok(K.x > 2, "another show's stop leaves it");
+  assert.equal(uplightUpdate(A, 0, wash), 0); assert.equal(K.x + K.y + K.z, 0, 'faded out: every term 0 (the branch skipped)');
+  uplightStop(A); assert.equal(uplightUpdate(A, 1, wash), 0, 'stopped: no longer its light');
+  assert.ok(UP.key > UP.fill, 'the key (footlights) leads, the fill only lifts');
 });

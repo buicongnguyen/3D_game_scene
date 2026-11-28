@@ -15,10 +15,14 @@
 //   sticks     ONE instanced draw of the dance game's light stick (public/models/light-stick.glb) in each watcher's hand,
 //              their arms waving on the beat (the dance game's StickWave; by day they Clap on the beat)
 //   fireworks  the valley's own (fx/fx.js fireworks) over the last chorus at night
+//   stage light at night: footlights along the stage front (small glowing fixtures in the set's own mesh), the light
+//              they throw on the performers (fx/stage-uplight.js: a term in the performers' own shader, uniforms only)
+//              and a warm pool of light on the stage ground (glow cards)
 // Research, choices and measurements: docs/SHOW-EFFECTS.md.
 import * as THREE from 'three';
 import { washAt, pulseAt, levelAt, cuePlan, inWindows, slotTimes, SLOTS, showItems, countsFor, isShowNight } from '../game/perform/show-cues.js';
 import { prepareMoves, lendClips } from '../game/tricks/exercise-moves.js';
+import { UP, UPLIGHT, UPLIGHT_ON, STAGE_MIX, stageArea, uplightNight, uplightStart, uplightUpdate, uplightStop } from './stage-uplight.js';
 
 const FOG_ADD = /* glsl */`
 #ifdef USE_FOG
@@ -90,17 +94,19 @@ class StageBuilder {
     return g;
   }
 }
-// material codes (colour alpha): metal (lit), lantern paper (warm glow), LED (the wash pattern), lens (beam light)
-const METAL = 0, PAPER = 0.5, LENS = 0.75, LED = 1;
+// material codes (colour alpha): metal (lit), footlight lens (the stage light), lantern paper (warm glow), LED (the wash
+// pattern), lens (beam light)
+const METAL = 0, FOOT = 0.25, PAPER = 0.5, LENS = 0.75, LED = 1;
 const lin = h => { const c = new THREE.Color(h); return [c.r, c.g, c.b]; };
 const C = { truss: lin('#2b2d36'), plate: lin('#1b1c22'), led: lin('#101018'), red: lin('#e2342c'), white: lin('#f5ecd8'), can: lin('#15151a'), rope: lin('#3a2e24') };
 
 /**
  * The set for towers W apart, its stage line `back` m behind the centre; hl / hr: the ground under the left / right
  * tower (the stage frame's y 0 is the centre's ground). -> { geometry, fixtures: [[x, y, z]], towers: [[x, y, z]] (tops) }
- * About 2.3k triangles (budget 3k: a 120-300 px prop).
+ * foot: the footlights along the stage front, [[x, y, z]] on the ground (stage frame; footlightSpots), 24 triangles each.
+ * About 2.3-2.9k triangles (budget 3.2k: a 120-300 px prop).
  */
-export function buildStage({ W, back, topY }, hl = 0, hr = 0, { beams = 6, lanterns = 7 } = {}) {
+export function buildStage({ W, back, topY }, hl = 0, hr = 0, { beams = 6, lanterns = 7, foot = [] } = {}) {
   const B = new StageBuilder(), z0 = -back, s = 0.17, post = 0.024, top = topY + Math.max(hl, hr);
   const G = (px, py, pz, delay, mode) => [px, py, pz, delay + mode * 10];   // mode 0 scale, 1 rise (y), 2 extend (x)
   const towers = [];
@@ -148,7 +154,20 @@ export function buildStage({ W, back, topY }, hl = 0, hr = 0, { beams = 6, lante
     B.box([x, y - 0.12, z + 0.02], [0.07, 0.008, 0.07], [1, 1, 1, LENS], gf);
     fixtures.push([x, y - 0.13, z + 0.02]);
   }
+  // footlights on the ground at the stage front: a low dark housing, a warm lens on top (lit by the shader at night)
+  foot.forEach(([x, y, z], i) => {
+    const gf = G(x, y, z, 0.6 + i * 0.03, 0);
+    B.box([x, y + 0.032, z], [0.08, 0.032, 0.05], [...C.can, METAL], gf);
+    B.box([x, y + 0.069, z - 0.01], [0.06, 0.006, 0.03], [1, 0.74, 0.42, FOOT], gf);
+  });
   return { geometry: B.geometry(), fixtures, towers, top };
+}
+
+/** Where the footlights stand (stage frame x, z on a line, n by the width; pure): [[x, z]]. */
+export function footlightSpots(area) {
+  if (!UPLIGHT_ON) return [];   // (?uplight=off: the set as it was, for the before pictures and the A/B)
+  const w = Math.max(0.6, area.halfW * 2 - 0.7), n = Math.max(3, Math.min(9, Math.round(w / 0.85) + 1));
+  return Array.from({ length: n }, (_, i) => [(i / (n - 1) - 0.5) * w, area.foot]);
 }
 
 const STAGE_VS = /* glsl */`
@@ -168,7 +187,7 @@ void main() {
   #include <fog_vertex>
 }`;
 const STAGE_FS = /* glsl */`
-uniform vec3 uWash, uSun; uniform float uNight, uPulse, uLevel, uT, uAmb, uDiff, uBeamK;
+uniform vec3 uWash, uSun; uniform float uNight, uPulse, uLevel, uT, uAmb, uDiff, uBeamK, uFootK;
 varying vec4 vCol; varying vec3 vN; varying vec2 vUv;
 #include <fog_pars_fragment>
 void main() {
@@ -191,6 +210,9 @@ void main() {
     float rim = 0.75 + 0.25 * abs(n.y);
     vec3 warm = vec3(1.0, 0.62, 0.3) * (0.15 + 2.1 * uNight) + uWash * 0.35 * uNight * uPulse;
     col = base * lit * (1.0 - 0.7 * uNight) + base * warm * rim;
+  } else if (code > 0.15) {
+    // a footlight's lens: warm glass by day, glowing with the stage light at night (the beat in it, a breath of the wash)
+    col = base * lit * 0.5 + base * (0.1 + 1.6 * uFootK * (0.92 + 0.12 * uPulse)) + uWash * 0.12 * uFootK;
   }
   #include <fog_fragment>
   gl_FragColor = vec4(col, 1.0);
@@ -198,11 +220,11 @@ void main() {
 
 // ------------------------------------------------------------------------------------------------ glow cards
 const GLOW_VS = /* glsl */`
-attribute vec4 aA;      // x, y, z, kind (0 ground wash, 1 haze, 2 lens glow, 3 beam floor spot)
-attribute vec4 aB;      // size x, size y, use the wash (0..1), beam index
+attribute vec4 aA;      // x, y, z, kind (0 ground wash + the stage light's pool, 1 haze, 2 lens glow, 3 beam floor spot, 4 footlight spill)
+attribute vec4 aB;      // size x, size y, use the wash (0..1), beam index (kinds 0 and 4: the stage light's share)
 attribute vec4 aAim;    // a floor spot: its beam's aim (yaw, elevation, sweep, phase)
 attribute vec3 aCol;
-uniform float uSweep, uFan, uGlowK, uHazeK, uBeamK, uGroundY, uNight, uLevel, uPulse;
+uniform float uSweep, uFan, uGlowK, uHazeK, uBeamK, uGroundY, uNight, uLevel, uPulse, uPoolK;
 uniform vec2 uTilt;     // the ground's slope in the stage frame (dy/dx, dy/dz)
 uniform vec3 uWash;
 varying vec2 vQ; varying vec3 vC; varying float vA, vKind;
@@ -221,14 +243,25 @@ void main() {
     float near = smoothstep(2.5, 6.0, -mvPosition.z);   // (the camera close: the haze would fill the screen)
     vA = kind < 1.5 ? uHazeK * uLevel * near : uBeamK * (0.55 + 0.6 * uPulse);
   } else {
-    if (kind > 2.5) {
+    if (kind > 3.5) vA = uPoolK * aB.w * (0.92 + 0.12 * uPulse);   // the footlights' spill on the ground (fx/stage-uplight.js)
+    else if (kind > 2.5) {
       // where its beam meets the ground (the ground plane under the stage)
       vec3 d = aimDir(aAim, 0.0);
       float k = (uGroundY - c.y) / min(d.y, -0.05);
       c = c + d * k;
       vA = uBeamK * uLevel * (0.45 + 0.35 * uPulse);
-    } else vA = uGlowK * uLevel * (0.6 + 0.4 * uPulse);
-    vec3 p = vec3(c.x + corner.x * aB.x * 0.5, 0.0, c.z + corner.y * aB.y * 0.5);
+    } else {
+      // the ground wash in the section's colour (half of what it was written as: first seen 2026-11-28), and in the same
+      // card the stage light's warm pool at night (aCol: one layer of fill on the ground, not two)
+      float wa = uGlowK * uLevel * (0.3 + 0.2 * uPulse), wp = uPoolK * aB.w * (0.92 + 0.12 * uPulse);
+      vA = wa + wp; vC = (uWash * wa + aCol * wp) / max(vA, 1e-3);
+      // gone in close-ups (the camera within ~3 m of its middle: the feet are out of the frame, the ground fills its lower
+      // third; a phone close-up's glow fill 0.92 -> 0.75 a pixel); the camera cuts between shots, so it never fades in view
+      vA *= smoothstep(2.6, 4.2, distance(cameraPosition, (modelMatrix * vec4(c, 1.0)).xyz));
+    }
+    // (z = -corner.y: the plane's front face turned up; with +corner.y it faced down and was culled from every camera above
+    // the ground, so the ground wash and the beams' floor spots were never drawn until 2026-11-28)
+    vec3 p = vec3(c.x + corner.x * aB.x * 0.5, 0.0, c.z - corner.y * aB.y * 0.5);
     p.y = uGroundY + 0.05 + p.x * uTilt.x + p.z * uTilt.y;
     mvPosition = modelViewMatrix * vec4(p, 1.0);
   }
@@ -483,12 +516,13 @@ export class ShowFX {
       uUnfold: { value: 0 }, uGroundY: { value: 0 }, uTilt: { value: new THREE.Vector2() }, uSun: { value: new THREE.Vector3(0.3, 0.8, 0.4) },
       uAmb: { value: 0.5 }, uDiff: { value: 0.7 }, uPxK: { value: 800 }, uLens: { value: 0.07 }, uAngle: { value: 2.2 },
       uW: { value: 6 }, uTop: { value: 4.3 }, uBurst: { value: new Array(SLOTS).fill(-1e4) }, uMode: { value: new Array(SLOTS).fill(0) },
+      uFootK: { value: 0 }, uPoolK: { value: 0 },   // (the stage light: footlight lenses, the pool on the ground; fx/stage-uplight.js)
     };
     const U = this.U, pick = (...k) => Object.fromEntries(k.map(n => [n, U[n]]));
     const fx = { transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: true, forceSinglePass: true };
     this.mats = {
-      stage: new THREE.ShaderMaterial({ uniforms: { ...fogUniforms(), ...pick('uUnfold', 'uWash', 'uSun', 'uNight', 'uPulse', 'uLevel', 'uT', 'uAmb', 'uDiff', 'uBeamK') }, vertexShader: STAGE_VS, fragmentShader: STAGE_FS, vertexColors: true, fog: true }),
-      glow: new THREE.ShaderMaterial({ uniforms: { ...fogUniforms(), ...pick('uSweep', 'uFan', 'uGlowK', 'uHazeK', 'uBeamK', 'uGroundY', 'uNight', 'uLevel', 'uPulse', 'uTilt', 'uWash') }, vertexShader: GLOW_VS, fragmentShader: GLOW_FS, ...fx }),
+      stage: new THREE.ShaderMaterial({ uniforms: { ...fogUniforms(), ...pick('uUnfold', 'uWash', 'uSun', 'uNight', 'uPulse', 'uLevel', 'uT', 'uAmb', 'uDiff', 'uBeamK', 'uFootK') }, vertexShader: STAGE_VS, fragmentShader: STAGE_FS, vertexColors: true, fog: true }),
+      glow: new THREE.ShaderMaterial({ uniforms: { ...fogUniforms(), ...pick('uSweep', 'uFan', 'uGlowK', 'uHazeK', 'uBeamK', 'uGroundY', 'uNight', 'uLevel', 'uPulse', 'uTilt', 'uWash', 'uPoolK') }, vertexShader: GLOW_VS, fragmentShader: GLOW_FS, ...fx }),
       beams: new THREE.ShaderMaterial({ uniforms: { ...fogUniforms(), ...pick('uSweep', 'uFan', 'uBeamK', 'uLaserK', 'uLevel', 'uPulse', 'uPxK', 'uLens', 'uGroundY', 'uWash', 'uAngle') }, vertexShader: BEAM_VS, fragmentShader: BEAM_FS, ...fx, side: THREE.DoubleSide }),
       parts: new THREE.ShaderMaterial({ uniforms: { ...fogUniforms(), ...pick('uT', 'uW', 'uTop', 'uBurst', 'uMode', 'uNight') }, vertexShader: PART_VS, fragmentShader: PART_FS, transparent: true, depthWrite: false, fog: true, side: THREE.DoubleSide, forceSinglePass: true }),
       sticks: new THREE.ShaderMaterial({ uniforms: { ...fogUniforms(), ...pick('uPulse', 'uNight', 'uWash') }, vertexShader: STICK_VS, fragmentShader: STICK_FS, fog: true }),
@@ -499,6 +533,7 @@ export class ShowFX {
     this.stage = null; this.glow = null; this.beams = null; this.parts = null; this.sticks = null;
     this.buildParticles();
     this.size = null; this.stats = { draws: 0 };
+    this.light = { mix: STAGE_MIX, uniforms: UPLIGHT, patched: UPLIGHT_ON };   // (the stage light's switches: probes, the A/B)
     game.scene.add(this.root);
   }
 
@@ -518,10 +553,11 @@ export class ShowFX {
     this.root.add(m);
   }
 
-  /** The set, cards and beams for this stage (towers W apart). hl / hr: the ground under the towers from the centre's. */
-  buildStage(size, hl, hr, items) {
+  /** The set, cards and beams for this stage (towers W apart). hl / hr: the ground under the towers from the centre's;
+   *  area: the performers' lit area (fx/stage-uplight.js stageArea); foot: the footlights on the ground ([[x, y, z]]). */
+  buildStage(size, hl, hr, items, area = stageArea(null), foot = footlightSpots(area).map(([x, z]) => [x, 0, z])) {
     this.disposeStage();
-    const nb = this.counts.beams, S = buildStage(size, hl, hr, { beams: nb });
+    const nb = this.counts.beams, S = buildStage(size, hl, hr, { beams: nb, foot });
     this.size = size; this.fixtures = S.fixtures; this.towers = S.towers;
     const stage = this.stage = new THREE.Mesh(S.geometry, this.mats.stage);
     stage.name = 'show-stage'; stage.frustumCulled = true;
@@ -552,14 +588,17 @@ export class ShowFX {
     const beams = this.beams = new THREE.Mesh(g, this.mats.beams);
     beams.name = 'show-beams'; beams.frustumCulled = false; beams.renderOrder = 10; beams.visible = false;
     this.root.add(beams);
-    // glow cards: the ground wash, the haze, a lens glow and a floor spot per beam
-    const cards = [];
-    cards.push({ a: [0, 0, 0.6, 0], b: [size.W + 3, size.back * 2 + 5, 1, 0] });
+    // glow cards: the ground wash (with the stage light's warm pool at night in the same card: aCol, aB.w), the haze, a
+    // lens glow and a floor spot per beam, and the footlights' spill (a strip on the ground at the stage front). The wash
+    // covers the performers' area and a little round it (2026-11-28: smaller than written, its fill counts now it draws)
+    const cards = [], warm = [1, 0.8, 0.58], mid = (area.front + area.back) / 2;
+    cards.push({ a: [0, 0, mid, 0], b: [size.W + 1.5, area.front - area.back + 2.6, 1, 1], c: warm });
     cards.push({ a: [0, 2.5, -size.back + 0.25, 1], b: [size.W + 3, 5.2, 0.55, 0], c: [0.9, 0.75, 1] });
     for (let i = 0; i < nb; i++) {
       cards.push({ a: [...S.fixtures[i], 2], b: [0.55, 0.55, 0.4, i], c: white });
       cards.push({ a: [...S.fixtures[i], 3], b: [1.7, 1.7, Cc[i * 4 + 3], i], c: white, aim: A.slice(i * 4, i * 4 + 4) });
     }
+    cards.push({ a: [0, 0, area.foot - 0.25, 4], b: [area.halfW * 2, 1.0, 0.08, 0.8], c: warm });
     const gg = new THREE.InstancedBufferGeometry(), q = new THREE.PlaneGeometry(1, 1);
     gg.index = q.index; gg.setAttribute('position', q.getAttribute('position'));
     const GA = new Float32Array(cards.length * 4), GB = new Float32Array(cards.length * 4), GM = new Float32Array(cards.length * 4), GC = new Float32Array(cards.length * 3);
@@ -609,10 +648,13 @@ export class ShowFX {
     const size = stageSize(group), s = Math.sin(spot.facing), c = Math.cos(spot.facing);
     const H = (x, z) => (ground ? ground(spot.x + x * c + z * s, spot.z - x * s + z * c) : spot.y ?? g.world.heightAt(spot.x, spot.z));
     const y0 = spot.y ?? H(0, 0), hl = H(-size.W / 2, -size.back) - y0, hr = H(size.W / 2, -size.back) - y0;
-    this.buildStage(size, hl, hr, this.items);
+    // the performers' lit area and the footlights in front of them, each on its own ground (fx/stage-uplight.js)
+    const area = this.area = stageArea(group), foot = footlightSpots(area).map(([x, z]) => [x, H(x, z) - y0, z]);
+    this.buildStage(size, hl, hr, this.items, area, foot);
     this.root.position.set(spot.x, y0, spot.z); this.root.rotation.y = spot.facing;
     this.U.uGroundY.value = 0;
     const d = 1.5; this.U.uTilt.value.set((H(d, 0) - H(-d, 0)) / (2 * d), (H(0, d) - H(0, -d)) / (2 * d));
+    uplightStart(this, { x: spot.x, y: y0, z: spot.z, facing: spot.facing, tilt: [this.U.uTilt.value.x, this.U.uTilt.value.y], area });
     this.root.visible = true; this.stage.visible = this.items.stage;
     this.on = true; this.want = 1; this.unfold = 0; this.fw = false;
     this.dayNight = isShowNight(night) ? 0 : 1;
@@ -627,7 +669,7 @@ export class ShowFX {
     this.setCrowd([]);
   }
 
-  dispose() { this.stop(); this.disposeStage(); this.root.removeFromParent(); this.parts?.geometry.dispose(); this.sticks?.geometry.dispose(); for (const m of Object.values(this.mats)) m.dispose(); }
+  dispose() { this.stop(); uplightStop(this); this.disposeStage(); this.root.removeFromParent(); this.parts?.geometry.dispose(); this.sticks?.geometry.dispose(); for (const m of Object.values(this.mats)) m.dispose(); }
 
   // ---------------------------------------------------------------- the watchers' glow sticks and claps
   /**
@@ -698,7 +740,7 @@ export class ShowFX {
     // unfold / fold (the set rises in ~2 s; it folds in ~1 s after the song)
     this.unfold += (this.want - this.unfold) > 0 ? Math.min(this.want - this.unfold, dt / 2.2) : Math.max(this.want - this.unfold, -dt / 1.1);
     U.uUnfold.value = this.unfold;
-    if (!this.on && this.unfold <= 0.001) { if (this.root.visible) { this.root.visible = false; this.parts.visible = false; } this.updateSticks(); return; }
+    if (!this.on && this.unfold <= 0.001) { if (this.root.visible) { this.root.visible = false; this.parts.visible = false; } this.upK = 0; uplightStop(this); this.updateSticks(); return; }
     const P = this.perf, night = g.night || 0;
     U.uNight.value = night;
     // the sun for the set's metal (the valley's own), the light by day and night
@@ -732,9 +774,13 @@ export class ShowFX {
         if (fwOn) { const s = Math.sin(this.root.rotation.y), cc = Math.cos(this.root.rotation.y), p = this.root.position; g.fx.fireworks(true, new THREE.Vector3(p.x - s * 45, p.y - 8, p.z - cc * 45), F.t1 - t + 2); }
         else g.fx.fireworks(false);
       }
-    } else { U.uBeamK.value = 0; U.uLaserK.value = 0; U.uGlowK.value *= 0.9; U.uHazeK.value *= 0.9; this.parts.visible = false; }
+      // the stage light on the performers, the footlights and the pool on the ground: night only, in with the set
+      this.upK = intro * uplightNight(night);
+    } else { U.uBeamK.value = 0; U.uLaserK.value = 0; U.uGlowK.value *= 0.9; U.uHazeK.value *= 0.9; this.parts.visible = false; this.upK = (this.upK || 0) * Math.exp(-dt * 5); }
+    const up = uplightUpdate(this, this.upK || 0, U.uWash.value, U.uPulse.value, U.uLevel.value);
+    U.uFootK.value = up; U.uPoolK.value = this.items.glow ? up * UP.pool : 0;   // (Low with 8: no glow cards, the budget rule)
     this.beams.visible = U.uBeamK.value > 0.002 || U.uLaserK.value > 0.002;
-    this.glow.visible = U.uGlowK.value > 0.002 || U.uBeamK.value > 0.002;
+    this.glow.visible = U.uGlowK.value > 0.002 || U.uBeamK.value > 0.002 || U.uPoolK.value > 0.002;
     this.stage.visible = this.items.stage || !this.on;
     this.updateSticks();
     this.stats.draws = [this.stage, this.glow, this.beams, this.parts, this.sticks].filter(m => m?.visible && m.parent && this.root.visible !== false).length;
