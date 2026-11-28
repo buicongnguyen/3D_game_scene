@@ -275,6 +275,8 @@ export class Game {
     const dt = Math.min(raw, 1 / 20);
     this.renderer.track(raw);
     this.input.poll();
+    // a picker over the game (Sing & Play's setup chips, game/singplay/pickers.js) has the keys, the pad and the stick
+    if (this.inputHold) { const i = this.input; i.move.x = i.move.y = 0; i.look.x = i.look.y = 0; i.edges.clear(); }
     this.ui?.pollGamepad();
     if (this.director?.quest && !this.ui.dialogueOpen && !this.director.minigame && !this.director.scenes.active) {
       if (this.input.pressed('pause')) { if (this.ui.overlay) this.ui.closeOverlay(); else this.togglePause(true); }
@@ -282,7 +284,7 @@ export class Game {
       else if (this.input.pressed('photo') && !this.paused) this.openPhoto('key');
       else if (this.input.pressed('items') && !this.paused && !this.ui.overlay) this.ui.toggleInvCard();
     }
-    this.input.enabled = !this.paused && !this.ui.dialogueOpen;
+    this.input.enabled = !this.paused && !this.ui.dialogueOpen && !this.inputHold;
     // a recorded clip covers the whole screen (game/video.js, the phone's opening): none of the valley is seen, so none
     // of it is updated or drawn; the phone only decodes the video. The world picks up where it was when the clip ends.
     if (this.clipPlaying && this.renderer.hold) { FX.uTime.value += dt; this.renderer.render(this.scene, this.camera); this.input.endFrame(); return; }

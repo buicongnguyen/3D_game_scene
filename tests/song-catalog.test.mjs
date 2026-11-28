@@ -9,7 +9,7 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import { SONGS_BASE, CATALOG, songsBase, catalogSongs, fetchCatalog, mergeSongs, songOrder, songStyle, songDance } from '../src/content/song-catalog.js';
 import { KOTONE_SONGS, songsFor } from '../src/content/kotone-songs.js';
-import { loadSong, SingPlay, songTitle } from '../src/game/singplay/singplay.js';
+import { loadSong, SingPlay, songTitle, danceFor } from '../src/game/singplay/singplay.js';
 import { createBeatClock } from '../src/game/perform/beat-clock.js';
 import { planPerformance, micShown } from '../src/game/perform/plan.js';
 import { SongAudio } from '../src/game/perform/performer.js';
@@ -88,18 +88,21 @@ test('the Song row: the songs of the game language plus the instrumentals; dance
   assert.equal(own.find(s => s.id === 'golden-rails-en').singer, 'x');
 });
 
-test('a song picked brings its dance: Cute for a slow song, the catalog hint, nothing for an unhinted dance song', () => {
+test('a song brings its dance on Auto: Cute for a slow song, the catalog hint, Mixed for an unhinted dance song', () => {
   const s = catalogSongs(INDEX, BASE), by = id => s.find(x => x.id === id);
   assert.equal(songStyle(by('softly-brave')), 'cute'); assert.equal(songStyle(by('glow')), 'kpop'); assert.equal(songStyle(by('smooth')), 'hiphop');
   assert.equal(songStyle(KOTONE_SONGS[0]), 'cute', 'Golden Rails (86.7 bpm) is a slow song by the 90 bpm rule');
   assert.equal(songStyle({ bpm: 120 }), null); assert.equal(songStyle({ bpm: 70, instrumental: true }), null);
   for (const x of s) assert.ok(!x.style || DANCE_STYLES.includes(x.style));
   assert.equal(songDance({ bpm: 90 }), true); assert.equal(songDance({ bpm: 89.9 }), false); assert.equal(songDance({ bpm: 120, dance: false }), false);
+  // the Dance choice: Auto follows the song (Mixed when it has no style), a picked style stays whatever the song
+  assert.equal(danceFor('auto', by('softly-brave')), 'cute'); assert.equal(danceFor('auto', by('glow')), 'kpop'); assert.equal(danceFor('auto', { bpm: 120 }), 'mix');
+  assert.equal(danceFor('auto', null), 'mix'); assert.equal(danceFor('hiphop', by('softly-brave')), 'hiphop'); assert.equal(danceFor('nope', by('glow')), 'kpop');
 });
 
 test('the song choice as data: songChoices / currentSong / chooseSong (any picker can host it)', () => {
   const sp = Object.create(SingPlay.prototype);
-  Object.assign(sp, { perf: null, songWait: false, songId: '', dance: 'mix', label() {} });
+  Object.assign(sp, { perf: null, songWait: false, songId: '', dancePick: 'auto', label() {} });
   let shown = null; sp.onSongs = c => { shown = c; };
   sp.setSongs(mergeSongs(KOTONE_SONGS, catalogSongs(INDEX, BASE)));
   assert.deepEqual(shown.map(c => c.id), ['wake-up-new-day', 'golden-rails-en', 'softly-brave', 'glow', 'smooth']);
@@ -109,10 +112,14 @@ test('the song choice as data: songChoices / currentSong / chooseSong (any picke
   assert.equal(songTitle({ remote: true, title: 'Breeze' }), 'Breeze', 'a library title is shown as written');
   assert.equal(shown.find(x => x.id === 'golden-rails-en').title, 'Golden Rails', 'a built-in song keeps its own (translated) title');
   assert.equal(sp.currentSong().id, 'wake-up-new-day', 'nothing picked: the first');
-  assert.equal(sp.chooseSong('softly-brave'), true); assert.equal(sp.currentSong().id, 'softly-brave'); assert.equal(sp.dance, 'cute', 'a slow song brings Cute');
+  assert.equal(sp.chooseSong('softly-brave'), true); assert.equal(sp.currentSong().id, 'softly-brave'); assert.equal(sp.danceNow(), 'cute', 'a slow song brings Cute on Auto');
+  assert.equal(sp.songDance(), 'cute');
   assert.equal(sp.chooseSong('mo-that-xa'), false, 'not sung in this language'); assert.equal(sp.currentSong().id, 'softly-brave');
   sp.perf = {}; assert.equal(sp.chooseSong('glow'), false, 'never during a song'); sp.perf = null;
-  assert.equal(sp.chooseSong('glow'), true); assert.equal(sp.dance, 'kpop'); assert.equal(sp.currentSong().instrumental, true);
+  assert.equal(sp.chooseSong('glow'), true); assert.equal(sp.danceNow(), 'kpop'); assert.equal(sp.currentSong().instrumental, true);
+  // a picked style is kept when the song changes (Auto is the only choice that follows the song)
+  assert.equal(sp.setDance('hiphop'), true); assert.equal(sp.chooseSong('softly-brave'), true); assert.equal(sp.danceNow(), 'hiphop'); assert.equal(sp.songDance(), 'cute');
+  assert.equal(sp.setDance('disco'), false); sp.perf = {}; assert.equal(sp.setDance('auto'), false, 'never during a song'); sp.perf = null;
 });
 
 test('a library song loads its versioned files only when performed, plays a blob copy, and falls back to the built-in one', async () => {

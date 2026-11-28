@@ -45,7 +45,8 @@ Builds on Kotone's song performance (`src/game/perform/`, docs/KOTONE-SHOW.md).
    side it takes no width of its own (CSS `contain: inline-size`) so the bar stays clear of the Do it button.
 
 ## Files
-- `src/game/singplay/singplay.js` (mode: body swap, HUD, perform flow, audience), `flat.js` (pure: the flat-ground test),
+- `src/game/singplay/singplay.js` (mode: body swap, HUD, perform flow, audience), `pickers.js` (the setup chips and their
+  picker: "Bar layout" below), `flat.js` (pure: the flat-ground test),
   `camera-man.js` (pure plan + per-frame follower), `recorder.js`, `captions.js` (pure: .srt from lyrics).
 - `src/ui/ui.js` + `index.html` (the title button), `src/main.js` (start the mode), i18n strings in `src/i18n/*.json`.
 
@@ -240,3 +241,62 @@ Owner: Starline's songs move to their own public repo, served by GitHub Pages, a
   p95 0.8-1.4 cm/s, p99 under 3.2 cm/s.
 - **Credits**: "Songs © 2026 Bui Cong Nguyen, made with ACE-Step 1.5; from the Avatar Studio library."
 - Tests: `tests/song-catalog.test.mjs` (fixture `tests/fixtures/songs-index.json`, no network; the service worker run in a vm).
+
+## Bar layout: picker chips (2026-11-28, branch singplay-pickers)
+Owner: "In Sing & Play there are now too many buttons. Think deep and organise them nicely, neat and tidy. Maybe group:
+'select singer' shows the current one singer; click on it shows the 8 singers to select. The same with the other
+groups." An owner-approved exception to the flat-menu rule, for setup **choices** only; the **actions** stay direct
+one-tap buttons. This replaces the rows described in the sections above (Group, Dance, Singer, Song + Lyrics + Show
+effects, Stages, Time); every choice, its handler and its remembered value are the same.
+- **Chips** (`src/game/singplay/pickers.js`): Singer (face + name) · Song (♪/♫ + title) · Group (Solo / Group of 4 /
+  Group of 8) · Dance (Auto / Mixed / K-pop / Cute / Hip-hop) · Stage (the stage she stands on, else "Here") · Time
+  (sky icon + Morning / Noon / Sunset / Night) · ⚙ (Lyrics, Show effects). Each chip shows a small label over its current
+  value; a chip being loaded (a singer's model, the group, a song) pulses. Chips hide during a song.
+- **One picker**: a tap on a chip opens its picker; one tap on an option picks it and closes (the ⚙ sheet opens straight
+  to its two switches and stays open while they flip). Phones (width up to 640 px or height up to 480 px): a bottom sheet,
+  never over the chips; PC: a popover over the chip (under the little map's line at the top), clamped to the screen.
+  Only one open at a time: another chip switches to its picker in one tap, the same chip / ✕ / Esc / a tap outside
+  closes. A tap outside only closes (it starts no stick, look, drag or button). While a picker is open (or a gamepad is
+  on the bar) `game.inputHold` keeps the keys, pad and sticks off her (`game.js`: no movement, no look, no edges).
+  - Singer: face tiles with names (Stella: "Best at night"). Song: list rows (title; language or Instrumental, bpm, dance
+    style, length) in sections Dance songs / Slow songs / Instrumentals, scrolling inside the sheet, the current one
+    picked. Group: Solo / 4 / 8 tiles with little people; 8 only where the device offers it, else a short note
+    ("Group of 8: checking this device…" while a phone measures, "Group of 8 needs a faster device"). Dance: 5 tiles; Auto
+    says what it will dance now ("Follows the song: Cute"). Stage: "Here" (where she stands; only when she is not on a
+    stage) and the 7 stages. Time: 4 tiles with sky icons and hours.
+  - Keyboard: Tab reaches the chips; Enter / Space opens (the focus on the picked option); arrows / WASD move by place,
+    Home / End, Enter / Space pick, Esc / Backspace close, Tab stays inside; the focus goes back to the chip. Gamepad: the
+    D-pad puts the pad on the bar (Perform first; the D-pad moves among chips and actions), A presses, B closes a picker /
+    leaves the bar, moving the stick leaves it too; in a picker the D-pad or stick moves, A picks, B closes.
+  - ARIA: chips are buttons with `aria-haspopup="dialog"`, `aria-expanded`, `aria-controls`, an aria-label
+    "Singer: Kotone"; the panel is `role="dialog"` (labelled by its title) holding `role="listbox"` sections of
+    `role="option"` buttons with `aria-selected` (⚙: `role="switch"` + `aria-checked`).
+- **Dance: Auto** (new, the default): she dances the song's own style (`danceFor`: the catalog's style, Cute for a slow
+  sung song, else Mixed). A picked style now stays whatever song is chosen (before, picking a song overwrote the Dance
+  choice). Remembered per device under a new key `starline:singplay:dancePick` (the old `starline:singplay:dance` was
+  also written by song picks, so it is not read: everyone starts on Auto once).
+- **Actions** (`singplay.js` hud): a big primary **Perform** (mic; **Stop** in the same place during a song), **Record**
+  (red dot; the time while it records) and **Photo**; **Camera: Auto / Free** only during a song. Narrow phones during a
+  song: Record / Photo show their icon, Camera "Auto" / "Free" (names kept as aria-labels); where the row would wrap (a
+  long language) Photo, then Record, drop their text (`fitActions`).
+- **Where things go** (one column at the bottom centre: caption, chips, hint, actions; `--sp-top`, `--sp-below`,
+  `--sp-clear` set on body by `Pickers.layout`):
+  - Phones upright: chips in two rows at the top, under the objective and the little map with its buttons (Singer · Song
+    · Group / Dance · Stage · Time · ⚙); actions centred just over the Do it / Jump buttons (124 px up); the hint and,
+    during a song, the song line and the lyric caption stacked over them. Toasts under the chips.
+  - Phones on their side: chips in one row under the objective; actions at the bottom in the band left of the touch
+    buttons; the sheet between the chips and the bottom edge. Toasts under the chips.
+  - PC: one chip row over the hint and the actions at the bottom centre; the popover over its chip; toasts at the top as
+    before; the interaction prompt moved over the stack (`--sp-clear`).
+- **Measured** (`.tools/pickers/audit.mjs`, dev server, Chromium + GPU, library songs, `?nightstar=1`): 390x844,
+  360x780, 430x932 (touch, Low), 844x390 (touch, Low), 1280x720, 1920x1080; idle, a toast, every picker open, and a song
+  with a caption line and a toast: 66 states, 0 problems: every control 44 px+ (chips 44 phones / 48 PC, actions 48-58),
+  text 11 px+ (chip labels; values 13-15 px), no overlap with the objective, little map, menu, journal or touch buttons,
+  toasts and the caption clear of everything, no sideways scroll of the page or the chip rows, panels on screen and never
+  over the little map. Vietnamese on 360x780 and 844x390, Korean on 390x844: the same (Vietnamese found two: Photo's
+  text now drops where the row would wrap; the phone chip rows are single flex lines, so long values ellipsize). The idle bar on 390x844: chips 94 px (two rows) at the top + actions 52 px over the touch
+  buttons, instead of 194 px of rows that scrolled sideways. Behaviour (`.tools/pickers/behave.mjs`): picks (singer
+  swap, group load, dance, time ease, stage jump, switches), keyboard, gamepad, outside taps, input hold, the song state:
+  all pass. Pictures: `.tools/pickers/before/`, `.tools/pickers/after/` (local).
+- Tests: `tests/singplay-pickers.test.mjs` (chips and pickers as data, song tags and sections, Auto, the Group of 8 note,
+  Stage "Here", the keyboard / pad step), `tests/song-catalog.test.mjs` (Auto follows the song, a picked style stays).

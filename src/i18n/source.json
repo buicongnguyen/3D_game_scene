@@ -16528,7 +16528,7 @@
   "s": "Singer",
   "ctx": [
    "UI (src/content/performers.js)",
-   "UI (src/game/singplay/singplay.js)"
+   "UI (src/game/singplay/pickers.js)"
   ]
  },
  {
@@ -18617,6 +18617,223 @@
   ]
  },
  {
+  "s": "Auto",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Mixed",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "K-pop",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Cute",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Hip-hop",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Solo",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Group of 4",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Group of 8",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Song",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Group",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Dance",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Stage",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Time",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Settings",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)",
+   "menu / screen text"
+  ]
+ },
+ {
+  "s": "Singer {n}",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Instrumental",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "{n} bpm",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Dance songs",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Slow songs",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Instrumentals",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Group of 8: checking this device…",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Group of 8 needs a faster device",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Best at night",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "No songs yet",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Getting the group ready…",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Follows the song: {style}",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Here",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Where you stand",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Lyrics",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "The words she sings, on screen",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Show effects",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Lights, confetti and fireworks around the show",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Show setup",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Close",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/tour.js)",
+   "UI (src/ui/minigames-ui.js)"
+  ]
+ },
+ {
+  "s": "Stop the song first",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)",
+   "UI (src/game/singplay/stages-row.js)"
+  ]
+ },
+ {
   "s": "Not while swimming",
   "ctx": [
    "UI (src/game/singplay/sing-here.js)"
@@ -18668,54 +18885,6 @@
   ]
  },
  {
-  "s": "Solo",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Group of 4",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Group of 8",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Mixed",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "K-pop",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Cute",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Hip-hop",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Singer {n}",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
   "s": "Kotone couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
@@ -18723,6 +18892,12 @@
  },
  {
   "s": "The group couldn't be loaded",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Stop",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
@@ -18752,79 +18927,19 @@
   ]
  },
  {
-  "s": "Group",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Dance style",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Song",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Instrumental: dance only",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Stop",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
   "s": "Camera: Free",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
  },
  {
-  "s": "Lyrics: On",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Lyrics: Off",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Show effects: On",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Show effects: Off",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "No songs yet",
+  "s": "Free",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
  },
  {
   "s": "Getting the song ready…",
-  "ctx": [
-   "UI (src/game/singplay/singplay.js)"
-  ]
- },
- {
-  "s": "Getting the group ready…",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]
@@ -18860,19 +18975,6 @@
   ]
  },
  {
-  "s": "Stages",
-  "ctx": [
-   "UI (src/game/singplay/stages-row.js)"
-  ]
- },
- {
-  "s": "Stop the song first",
-  "ctx": [
-   "UI (src/game/singplay/stages-row.js)",
-   "UI (src/game/singplay/time-row.js)"
-  ]
- },
- {
   "s": "Morning",
   "ctx": [
    "UI (src/game/singplay/time-row.js)",
@@ -18899,14 +19001,6 @@
   "s": "{name} sings best at night",
   "ctx": [
    "UI (src/game/singplay/time-row.js)"
-  ]
- },
- {
-  "s": "Time of day",
-  "ctx": [
-   "UI (src/game/singplay/time-row.js)",
-   "UI (src/ui/ui.js)",
-   "menu / screen text"
   ]
  },
  {
@@ -19257,14 +19351,6 @@
   "s": "Two travellers are asking the way. Which language would you like to listen in?",
   "ctx": [
    "UI (src/game/station-visitors.js)"
-  ]
- },
- {
-  "s": "Close",
-  "ctx": [
-   "UI (src/game/tour.js)",
-   "UI (src/ui/minigames-ui.js)",
-   "UI (src/ui/scene-ui.js)"
   ]
  },
  {
@@ -29892,6 +29978,13 @@
   ]
  },
  {
+  "s": "Time of day",
+  "ctx": [
+   "UI (src/ui/ui.js)",
+   "menu / screen text"
+  ]
+ },
+ {
   "s": "Evening",
   "ctx": [
    "UI (src/ui/ui.js)"
@@ -30645,12 +30738,6 @@
  },
  {
   "s": "Sing & Play",
-  "ctx": [
-   "menu / screen text"
-  ]
- },
- {
-  "s": "Settings",
   "ctx": [
    "menu / screen text"
   ]

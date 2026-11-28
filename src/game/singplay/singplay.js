@@ -18,32 +18,36 @@ import { planShots, createCameraMan, fromCamera } from '../perform/camera-man.js
 import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js';
 import { canPerform, canGroup, gameEnv } from './flat.js';
 import { Troupe, leadSource } from '../perform/troupe.js';
-import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset, KOTONE, SINGERS, NAMES, nameOf, member, facePic, singersWith, avoidOf, NIGHT_STAR } from '../../content/troupe.js';
+import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset, KOTONE, NAMES, member, singersWith, avoidOf, NIGHT_STAR } from '../../content/troupe.js';
 import { nightStarSeen } from '../../content/night-star.js';
 import { ShowFX } from '../../fx/show-fx.js';
 import { SHOW_KEY, showDefault } from '../perform/show-cues.js';
 import { captionLines, captionAt } from '../perform/caption.js';
 import { strongPhone, BudgetWatch, dropNow, shotIndex, STRONG_KEY } from './strong-phone.js';
 import { deviceFacts } from '../../engine/device-note.js';
-import { mountStages } from './stages-row.js';
 import { SAVE_KEY } from './sing-here.js';
 import { DANCE_STYLES, DANCE_STYLE } from '../../content/kotone-club.js';
-import { mountTime } from './time-row.js';
+import { makeTime } from './time-row.js';
 import { NightWatchers } from './night-watchers.js';
+import { mountPickers, DANCE_AUTO, DANCE_PICKS, singerLabel } from './pickers.js';
 
 export { SAVE_KEY };   // (sing-here.js: the pause menu's Sing here writes her place before this module loads)
+export { singerLabel };   // (a singer's label: pickers.js)
 export const GROUP_KEY = 'starline:singplay:group';   // the group size last picked (per device: 1, 4 or 8)
-export const DANCE_KEY = 'starline:singplay:dance';   // the Dance choice last picked (per device: content/kotone-club.js DANCE_STYLES)
+// the Dance choice last picked (per device: 'auto', the default, or a content/kotone-club.js DANCE_STYLES id). The older
+// key 'starline:singplay:dance' is not read: song picks wrote it too, so it was rarely the player's own choice.
+export const DANCE_KEY = 'starline:singplay:dancePick';
 export const SINGER_KEY = 'starline:singplay:singer';   // the singer last picked (per device: content/troupe.js SINGERS)
 export const SONG_KEY = 'starline:singplay:song';       // the song last picked (per device: a content/kotone-songs.js id)
 export const LYRICS_KEY = 'starline:singplay:lyrics';   // the lyric caption on ('1', the default) or off ('0')
 export { SHOW_KEY };                                     // the show effects on ('1') or off ('0'): perform/show-cues.js showDefault
 export const STAGE = Object.freeze({ x: -92, z: 101, facing: Math.PI });   // first visit: the station stage (facing: the camera's view, content/stages.js)
 const REASONS = { water: N_('Too close to the water'), steep: N_('Too steep here'), room: N_('Not enough room here'), group: N_('Not enough room for the group here') };
-const GROUP_LABELS = { 1: N_('Solo'), 4: N_('Group of 4'), 8: N_('Group of 8') };
-const DANCE_LABELS = { mix: N_('Mixed'), kpop: N_('K-pop'), cute: N_('Cute'), hiphop: N_('Hip-hop') };
-export const loadDance = (store = globalThis.localStorage) => { try { const v = store?.getItem(DANCE_KEY); return DANCE_STYLES.includes(v) ? v : DANCE_STYLE; } catch { return DANCE_STYLE; } };
+export const loadDance = (store = globalThis.localStorage) => { try { const v = store?.getItem(DANCE_KEY); return DANCE_PICKS.includes(v) ? v : DANCE_AUTO; } catch { return DANCE_AUTO; } };
 const saveDance = v => { try { localStorage.setItem(DANCE_KEY, v); } catch { /* per-device convenience */ } };
+/** The style she dances: Auto follows the song (content/song-catalog.js songStyle: the catalog's hint, Cute for a slow
+ *  sung song), else Mixed; a picked style stays whatever the song. */
+export const danceFor = (pick, song) => (pick !== DANCE_AUTO && DANCE_STYLES.includes(pick) ? pick : songStyle(song) || DANCE_STYLE);
 const load = (k, ok, d, store = globalThis.localStorage) => { try { const v = store?.getItem(k); return v !== null && v !== undefined && ok(v) ? v : d; } catch { return d; } };
 const keep = (k, v) => { try { localStorage.setItem(k, v); } catch { /* per-device convenience */ } };
 /** The Singer row: the eight, and the Night Star once her show was seen (content/night-star.js; ?nightstar=1 for testing). */
@@ -51,8 +55,6 @@ export const singerList = (store = globalThis.localStorage, params = null) => si
 export const loadSinger = (store, params = null) => load(SINGER_KEY, v => singerList(store, params).includes(v), KOTONE, store);
 /** The model file of a singer's body (the lite one on Low). */
 export const bodyFile = (id, low) => { const m = member(id) || member(KOTONE); return low ? `${m.file}.lite` : m.file; };
-/** A singer's label: her name once she has one (content/troupe.js NAMES), else "Singer n" in the row's order. */
-export const singerLabel = id => nameOf(id, getLang()) || tx(N_('Singer {n}'), { n: SINGERS.indexOf(id) + 1 });
 /** The show effects' switch as stored (per device), else the default for this device. */
 export const loadShow = (store = globalThis.localStorage, facts = {}) => { const v = load(SHOW_KEY, x => x === '1' || x === '0', '', store); return v ? v === '1' : showDefault(facts); };
 /** A song's title as shown: a built-in song's translated (N_ in content/kotone-songs.js), a library song's as its catalog
@@ -120,10 +122,10 @@ export class SingPlay {
     this.g = game; this.d = director; this.ui = ui;
     this.perf = null; this.cam = null; this.auto = true; this.freeUntil = 0; this.rec = null; this.songIx = 0; this.audience = [];
     this.checkT = 0; this.allowed = { ok: false, reason: 'room' }; this.saveT = 0;
-    this.dance = loadDance();
+    this.dancePick = loadDance();   // ('auto': the song's own style, danceFor)
     this.group = 1; this.groupReady = null; this.groupWait = false; this.troupe = null; this.formation = null; this.limits = null; this.layout = LAYOUTS[0];
     this.viewYaw = null; this.from = null;
-    this.singers = singerList(undefined, game.params); this.singer = loadSinger(undefined, game.params); this.singerWait = false; this.songId = load(SONG_KEY, () => true, ''); this.lyricsOn = load(LYRICS_KEY, () => true, '1') !== '0';
+    this.singers = singerList(undefined, game.params); this.singer = loadSinger(undefined, game.params); this.singerWait = false; this.singerNext = null; this.songId = load(SONG_KEY, () => true, ''); this.lyricsOn = load(LYRICS_KEY, () => true, '1') !== '0';
     this.rig = null; this.capLines = null; this.capKey = '';
     this.songWait = false; this.loaded = new Map();   // (a song's files, fetched when it is first performed: id -> promise)
     this.show = null; this.showOn = true;   // (the show effects: fx/show-fx.js, the switch read in start())
@@ -136,7 +138,7 @@ export class SingPlay {
     this.d.refreshObjective?.();
     // the song stops with the game: pause (menu, photo mode) pauses her audio; the next frame after resume plays it on
     const tp = g.togglePause?.bind(g);
-    if (tp) g.togglePause = (...args) => { const r = tp(...args); if (g.paused) this.perf?.sound?.el?.pause(); return r; };
+    if (tp) g.togglePause = (...args) => { const r = tp(...args); if (g.paused) { this.perf?.sound?.el?.pause(); this.pickers?.reset(); } return r; };
     // Kotone's model and moves always (she is the lead, or the rig the lead copies), the picked singer's model besides
     const lead = bodyFile(this.singer, low);
     await a.loadLater([...new Set([body, SHOW.pack, lead])]);
@@ -205,7 +207,8 @@ export class SingPlay {
     if (this.perf || this.singerWait || id === this.singer || !this.singers.includes(id)) return;
     const a = this.g.assets, name = bodyFile(id, this.g.renderer.qualityName === 'low');
     keep(SINGER_KEY, id);
-    if (!a.has(name)) { this.singerWait = true; this.label(); await a.loadLater([name]).catch(() => {}); this.singerWait = false; }
+    // (while her model loads, the Singer chip already shows her, dimmed: singerNext)
+    if (!a.has(name)) { this.singerWait = true; this.singerNext = id; this.label(); await a.loadLater([name]).catch(() => {}); this.singerWait = false; this.singerNext = null; }
     if (this.perf || !a.has(name) || !this.swapBody(id)) { if (!a.has(name)) this.ui.toast?.(tx(N_("The group couldn't be loaded"))); this.label(); return; }
     this.setGroup(this.group, false);   // (the cast around her changes: its files load now)
     this.label();
@@ -223,96 +226,67 @@ export class SingPlay {
   /** The ground for the feet and the camera on a hillside: the terrain outdoors; null in a room or on a deck (level). */
   ground() { const g = this.g, p = g.player; return g.interiors?.active || p.onItem ? null : (x, z) => g.world.heightAt(x, z); }
 
-  // ---------------------------------------------------------------- the HUD: one row, every button always in its place
-  // (during a song the setup rows - group, dance, stages - hide: they cannot be used then; Stop, Record, Photo and Camera
-  // stay in one row with the song line under it)
+  // ---------------------------------------------------------------- the HUD (docs/SING-AND-PLAY.md "Bar layout")
+  // One stack at the bottom centre: the lyric caption (while she sings), the setup chips (pickers.js: Singer, Song, Group,
+  // Dance, Stage, Time, settings; on phones they sit at the top under the little map instead, in two rows), the hint line
+  // and the actions. The actions stay direct buttons, always in their places: Perform (Stop while she sings, in the same
+  // spot), Record, Photo, and Camera during a song. During a song the chips hide.
   hud() {
     const bar = this.bar = document.createElement('div');
     bar.id = 'singplayBar'; bar.className = 'singplay-bar';
-    const mk = (id, label, fn) => { const b = document.createElement('button'); b.type = 'button'; b.id = id; b.className = 'singplay-btn'; b.textContent = tx(label); b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); fn(); }); bar.appendChild(b); return b; };
-    this.btnPerform = mk('spPerform', N_('Perform'), () => (this.perf ? this.stopSong() : this.perform()));
-    this.btnRecord = mk('spRecord', N_('Record'), () => this.toggleRecord());
-    this.btnPhoto = mk('spPhoto', N_('Photo'), () => this.photo());
-    this.btnCam = mk('spCam', N_('Camera: Auto'), () => { this.auto = !this.auto; this.freeUntil = 0; this.label(); });
-    // (two setup rows share a line: group + dance, singer + song; a line scrolls sideways where it does not fit)
-    const line = (...rows) => { const l = document.createElement('div'); l.className = 'singplay-line'; l.append(...rows); bar.appendChild(l); return l; };
-    // the group: three flat choices in a row of their own, always visible (no menu)
-    const row = this.groupRow = document.createElement('div'); row.className = 'singplay-group'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', tx(N_('Group')));
-    this.btnGroup = GROUP_SIZES.filter(n => n <= Math.max(this.limits.max, this.limits.strongMax)).map(n => {
-      const b = document.createElement('button'); b.type = 'button'; b.id = `spGroup${n}`; b.className = 'singplay-btn singplay-seg'; b.textContent = tx(GROUP_LABELS[n]); b.dataset.n = String(n);
-      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); if (!this.perf) this.setGroup(n); });
-      row.appendChild(b); return b;
-    });
-    // the dance style: four flat choices in a row of their own, always visible (no menu); the group dances it too
-    const drow = this.danceRow = document.createElement('div'); drow.className = 'singplay-group singplay-dance'; drow.setAttribute('role', 'group'); drow.setAttribute('aria-label', tx(N_('Dance style')));
-    this.btnDance = DANCE_STYLES.map(id => {
-      const b = document.createElement('button'); b.type = 'button'; b.id = `spDance-${id}`; b.className = 'singplay-btn singplay-seg'; b.textContent = tx(DANCE_LABELS[id]); b.dataset.dance = id;
-      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); if (!this.perf) { this.dance = id; saveDance(id); this.label(); } });
-      drow.appendChild(b); return b;
-    });
-    line(row, drow);
-    // the singer: the eight members' faces in a flat row (no menu); she becomes the player and sings lead
-    const srow = this.singerRow = document.createElement('div'); srow.className = 'singplay-group singplay-scroll singplay-singers'; srow.setAttribute('role', 'group'); srow.setAttribute('aria-label', tx(N_('Singer')));
-    this.btnSinger = this.singers.map(id => {
-      const b = document.createElement('button'); b.type = 'button'; b.id = `spSinger-${id}`; b.className = 'singplay-btn singplay-seg singplay-face'; b.dataset.singer = id;
-      b.setAttribute('aria-label', singerLabel(id)); b.title = singerLabel(id);
-      const img = document.createElement('img'); img.src = facePic(id); img.alt = ''; img.width = 40; img.height = 40; img.decoding = 'async'; img.draggable = false;
-      b.appendChild(img);
-      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); this.pickSinger(id); });
-      srow.appendChild(b); return b;
-    });
-    // the song: the lyric caption's switch, then the songs she can sing in the game's language and the instrumentals (the
-    // library's join the row when its catalog comes in: setSongs), one flat row that scrolls sideways where it does not fit
-    const qrow = this.songRow = document.createElement('div'); qrow.className = 'singplay-group singplay-scroll singplay-songs'; qrow.setAttribute('role', 'group'); qrow.setAttribute('aria-label', tx(N_('Song')));
-    this.btnLyrics = document.createElement('button'); this.btnLyrics.type = 'button'; this.btnLyrics.id = 'spLyrics'; this.btnLyrics.className = 'singplay-btn singplay-seg';
-    this.btnLyrics.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); this.lyricsOn = !this.lyricsOn; keep(LYRICS_KEY, this.lyricsOn ? '1' : '0'); this.capKey = '-'; this.label(); });
-    qrow.appendChild(this.btnLyrics);
-    // the show effects (fx/show-fx.js: the stage set, lights, bursts, glow sticks, fireworks): a switch of their own,
-    // remembered per device (owner rule: every costly feature can be switched off in the game)
-    this.btnShow = document.createElement('button'); this.btnShow.type = 'button'; this.btnShow.id = 'spShow'; this.btnShow.className = 'singplay-btn singplay-seg';
-    this.btnShow.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); if (this.perf) return; this.showOn = !this.showOn; keep(SHOW_KEY, this.showOn ? '1' : '0'); if (this.showOn) this.makeShow(); this.label(); });
-    qrow.appendChild(this.btnShow);
-    this.songButtons();   // (after the two switches: a long song list never pushes them out of view)
-    line(srow, qrow);
     // the lyric caption over the view while she sings (a DOM line: recorded videos stay clean, the .srt has the words)
     const cap = this.capEl = document.createElement('div'); cap.id = 'spCaption'; cap.className = 'singplay-caption'; cap.hidden = true; cap.setAttribute('aria-hidden', 'true');
-    document.body.appendChild(cap);
+    bar.appendChild(cap);
     this.hint = document.createElement('p'); this.hint.className = 'singplay-hint'; this.hint.setAttribute('aria-live', 'polite');
     bar.appendChild(this.hint);
-    this.stages = mountStages(this);   // the stage list: a row of its own (stages-row.js)
-    this.time = mountTime(this);       // the Time choice, on one line with the stages (time-row.js)
+    const acts = this.actsEl = document.createElement('div'); acts.className = 'sp-actions';
+    const mk = (id, icon, fn, cls = '') => {
+      const b = document.createElement('button'); b.type = 'button'; b.id = id; b.className = `singplay-btn sp-act${cls}`;
+      b.innerHTML = `<span class="sp-act-ic">${icon}</span><span class="sp-act-tx"></span><span class="sp-act-short"></span>`;
+      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); fn(); });
+      acts.appendChild(b); return b;
+    };
+    this.btnPerform = mk('spPerform', ACT.mic, () => (this.perf ? this.stopSong() : this.perform()), ' primary');
+    this.btnRecord = mk('spRecord', ACT.rec, () => this.toggleRecord());
+    this.btnPhoto = mk('spPhoto', ACT.photo, () => this.photo());
+    this.btnCam = mk('spCam', ACT.cam, () => { this.auto = !this.auto; this.freeUntil = 0; this.label(); });
+    bar.appendChild(acts);
     if (!document.getElementById('singplayStyle')) {
       const st = document.createElement('style'); st.id = 'singplayStyle';
-      st.textContent = `.singplay-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;flex-wrap:wrap;justify-content:center;gap:8px;z-index:30;max-width:calc(100vw - 24px);pointer-events:auto}
-.singplay-btn{min-width:48px;min-height:48px;padding:0 16px;border-radius:24px;border:0;font:600 15px/1 inherit;background:rgba(255,250,240,.92);color:#3a2a1a;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}
-.singplay-btn[aria-disabled=true]{opacity:.5}.singplay-btn.on{background:#e0567a;color:#fff}
-.singplay-hint{flex-basis:100%;margin:0;text-align:center;font:600 13px/1.3 inherit;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);min-height:17px}
-body.singplay #inventory{display:none}
-@media (max-width:640px){body.singplay #toasts{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px))}}
-.singplay-group{flex-basis:100%;display:flex;justify-content:center;gap:6px}.singplay-seg[aria-pressed=true]{background:#5b3fa0;color:#fff}
-.singplay-bar.performing .singplay-group,.singplay-bar.performing .singplay-stages{display:none}
-@media (max-width:640px){.singplay-bar{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 104px);left:12px;right:12px;transform:none;max-width:none;flex-wrap:wrap;gap:6px}.singplay-btn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px;white-space:nowrap}.singplay-hint{position:absolute;top:152px;left:0;right:0}}
-@media (max-width:640px){.singplay-bar.performing.performing .singplay-hint{top:52px}}
-.singplay-scroll{overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}.singplay-scroll::-webkit-scrollbar{display:none}.singplay-scroll>.singplay-btn{flex:0 0 auto}
-.singplay-face{width:48px;padding:0;display:inline-flex;align-items:center;justify-content:center;overflow:hidden}.singplay-face img{width:40px;height:40px;border-radius:50%;display:block;pointer-events:none}
-.singplay-face[aria-pressed=true]{background:#5b3fa0;box-shadow:0 0 0 3px #5b3fa0,0 2px 8px rgba(0,0,0,.25)}
-.singplay-line{flex-basis:100%;display:flex;flex-wrap:nowrap;gap:16px;justify-content:safe center;overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;-webkit-overflow-scrolling:touch}.singplay-line::-webkit-scrollbar{display:none}
-.singplay-line>.singplay-group{flex:0 0 auto;width:auto}
-.singplay-bar.performing .singplay-line{display:none}
-@media (max-width:640px){.singplay-line{justify-content:flex-start;gap:12px}}
-@media (max-height:480px) and (orientation:landscape){.singplay-line{justify-content:flex-start;gap:12px;contain:inline-size}}
-.singplay-caption{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 23vh);z-index:29;width:max-content;max-width:min(720px,calc(100vw - 32px));box-sizing:border-box;padding:6px 16px;border-radius:18px;background:rgba(14,10,24,.58);color:rgba(255,255,255,.7);font:600 17px/1.35 inherit;text-align:center;pointer-events:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.5)}
-.singplay-caption[hidden]{display:none}.singplay-caption .sung{color:#fff}.singplay-caption .now{color:#ffd36e}
-@media (max-width:640px){.singplay-face{width:44px}.singplay-face img{width:36px;height:36px}.singplay-singers,.singplay-songs{justify-content:flex-start}.singplay-caption{bottom:calc(env(safe-area-inset-bottom,0px) + 190px);font-size:14px;padding:5px 12px}}
-@media (max-height:480px) and (orientation:landscape){.singplay-face{width:44px;min-height:44px}.singplay-face img{width:36px;height:36px}.singplay-caption{bottom:calc(env(safe-area-inset-bottom,0px) + 98px);font-size:14px;max-width:min(560px,calc(100vw - 360px))}}`;
+      st.textContent = BAR_STYLE;
       document.head.appendChild(st);
     }
     document.body.appendChild(bar);
     document.body.classList.add('singplay');   // Kotone carries none of Mika's items: the item strip hides (style above)
+    this.time = makeTime(this);          // the Time choice's clock (time-row.js; its saved choice eases in now)
+    this.pickers = mountPickers(this);   // the setup chips and their picker (pickers.js), before the hint line
     this.label();
   }
 
-  // ---------------------------------------------------------------- the song choice (data + handlers; the row only shows them)
+  /** An action button's face: icon, text (and its short form for a phone during a song), written only when it changes. */
+  setAct(b, icon, text, short = '', aria = text) {
+    const k = `${icon.length}|${text}|${short}`;
+    if (b.dataset.k === k) return;
+    b.dataset.k = k;
+    const [ic, t, s] = b.children;
+    if (ic.dataset.n !== String(icon.length)) { ic.innerHTML = icon; ic.dataset.n = String(icon.length); }
+    t.textContent = text; s.textContent = short;
+    b.setAttribute('aria-label', aria);
+    if (!this.fitRaf) this.fitRaf = requestAnimationFrame(() => { this.fitRaf = 0; this.fitActions(); });
+  }
+
+  /** The actions keep one row: where they would wrap (a narrow phone, a long language) Photo, then Record, show only
+   *  their icon (their names stay as aria-labels). */
+  fitActions() {
+    const a = this.actsEl; if (!a?.isConnected) return;
+    a.classList.remove('tight1', 'tight2');
+    const one = () => a.offsetHeight <= this.btnPerform.offsetHeight + 2;
+    if (one()) return;
+    a.classList.add('tight1'); if (one()) return;
+    a.classList.add('tight2');
+  }
+
+  // ---------------------------------------------------------------- the choices (data + handlers; the chips only show them)
   /** The songs to choose from now (pool order: dance songs, slow songs, instrumentals), as plain data for any picker. */
   songChoices() {
     return this.pool().map(({ song: s }) => ({ id: s.id, title: songTitle(s), lang: s.language || null, bpm: s.bpm, duration: s.duration || null,
@@ -320,37 +294,37 @@ body.singplay #inventory{display:none}
   }
   /** The song Perform sings now (the picked one when it is in the pool, else the first): its choice data, or null. */
   currentSong() { const id = pickSong(this.pool(), this.songId)?.song.id; return this.songChoices().find(c => c.id === id) || null; }
-  /** Pick a song (remembered per device); it brings its dance (content/song-catalog.js songStyle: Cute for a slow one; the
-   *  Dance row still changes it). false while a song plays or loads, or for a song not in the pool. */
+  /** Pick a song (remembered per device). With Dance on Auto she dances its style (danceFor); a picked style stays.
+   *  false while a song plays or loads, or for a song not in the pool. */
   chooseSong(id) {
     const x = this.perf || this.songWait ? null : this.pool().find(e => e.song.id === id);
     if (!x) return false;
     this.songId = id; keep(SONG_KEY, id);
-    const st = songStyle(x.song); if (st) { this.dance = st; saveDance(st); }
     this.label();
     return true;
   }
-
-  /** The Song row's song buttons (thin: songChoices + chooseSong). */
-  songButtons() {
-    const qrow = this.songRow; if (!qrow) return;
-    for (const b of this.btnSongs || []) b.remove();
-    this.btnSongs = this.songChoices().map(c => {
-      const b = document.createElement('button'); b.type = 'button'; b.id = `spSong-${c.id}`; b.className = 'singplay-btn singplay-seg'; b.dataset.song = c.id;
-      b.textContent = `${c.instrumental ? '♫' : '♪'} ${c.title}`;
-      if (c.instrumental) b.title = tx(N_('Instrumental: dance only'));
-      b.addEventListener('click', e => { e.stopPropagation(); this.g.audio?.click?.(); this.chooseSong(c.id); });
-      qrow.appendChild(b); return b;
-    });
+  /** The style Auto dances to the song picked now (danceFor). */
+  songDance() { return danceFor(DANCE_AUTO, pickSong(this.pool(), this.songId)?.song); }
+  /** The style she dances to the song picked now. */
+  danceNow() { return danceFor(this.dancePick, pickSong(this.pool(), this.songId)?.song); }
+  /** The Dance choice: 'auto' (the song's style) or a style (remembered per device; not during a song). */
+  setDance(id) {
+    if (this.perf || !DANCE_PICKS.includes(id)) return false;
+    this.dancePick = id; saveDance(id);
+    this.label();
+    return true;
   }
+  /** The lyric caption's switch (remembered per device). */
+  toggleLyrics() { this.lyricsOn = !this.lyricsOn; keep(LYRICS_KEY, this.lyricsOn ? '1' : '0'); this.capKey = '-'; this.label(); }
+  /** The show effects' switch (fx/show-fx.js; remembered per device; owner rule: every costly feature can be switched off
+   *  in the game). Not during a song. */
+  toggleShow() { if (this.perf) return; this.showOn = !this.showOn; keep(SHOW_KEY, this.showOn ? '1' : '0'); if (this.showOn) this.makeShow(); this.label(); }
 
-  /** New songs (the library's catalog came in): the row rebuilt, the picked song kept in view. */
+  /** New songs (the library's catalog came in): the chip and an open Song picker follow. */
   setSongs(list) {
     this.songs = list.map(song => ({ song }));
-    this.onSongs?.(this.songChoices());   // (a picker showing the song choice refreshes here)
-    if (!this.songRow) return;
-    this.songButtons(); this.label();
-    this.btnSongs.find(b => b.getAttribute('aria-pressed') === 'true')?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    this.onSongs?.(this.songChoices());   // (another host showing the song choice refreshes here)
+    if (this.bar) this.label();
   }
 
   /** A song's files (once per song this visit; the library's copy failing: the built-in one it replaced). */
@@ -364,25 +338,20 @@ body.singplay #inventory{display:none}
 
   label() {
     const p = this.perf, ok = this.allowed.ok || !!p;
-    this.btnPerform.textContent = tx(p ? N_('Stop') : N_('Perform'));
+    const go = tx(p ? N_('Stop') : N_('Perform'));
+    this.setAct(this.btnPerform, p ? ACT.stop : ACT.mic, go, go);
     this.btnPerform.setAttribute('aria-disabled', String(!ok || !this.songs?.length || this.songWait));
-    this.btnRecord.textContent = this.rec ? `● ${fmt(this.rec.secs())}` : tx(N_('Record'));
+    const secs = this.rec ? fmt(this.rec.secs()) : '';
+    this.setAct(this.btnRecord, ACT.rec, secs || tx(N_('Record')), secs, secs ? `${tx(N_('Record'))} ${secs}` : tx(N_('Record')));
     this.btnRecord.classList.toggle('on', !!this.rec);
     // Record works before a song too: it starts the performance and the recording together
     this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec && !(ok && this.songs?.length && !this.groupWait && !this.songWait)));
-    this.bar.classList.toggle('performing', !!p);   // (during a song the setup rows hide: one row of Stop, Record, Photo, Camera)
-    this.btnCam.textContent = tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free'));
+    this.setAct(this.btnPhoto, ACT.photo, tx(N_('Photo')));
+    this.bar.classList.toggle('performing', !!p);   // (during a song the chips hide: Stop, Record, Photo, Camera)
+    this.setAct(this.btnCam, ACT.cam, tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free')), tx(this.auto ? N_('Auto') : N_('Free')));
     this.btnCam.setAttribute('aria-disabled', String(!p));
-    // (Group of 8 shows on a phone once it has measured strong: strong-phone.js)
-    for (const b of this.btnDance || []) { b.setAttribute('aria-pressed', String(b.dataset.dance === this.dance)); b.setAttribute('aria-disabled', String(!!p)); }
-    for (const b of this.btnGroup || []) { b.hidden = Number(b.dataset.n) > this.max(); b.setAttribute('aria-pressed', String(Number(b.dataset.n) === this.group)); b.setAttribute('aria-disabled', String(!!p)); }
-    for (const b of this.btnSinger || []) { b.setAttribute('aria-pressed', String(b.dataset.singer === this.singer)); b.setAttribute('aria-disabled', String(!!p || this.singerWait)); }
-    const song = pickSong(this.pool(), this.songId)?.song.id;
-    for (const b of this.btnSongs || []) { b.setAttribute('aria-pressed', String(b.dataset.song === song)); b.setAttribute('aria-disabled', String(!!p || this.songWait)); }
-    if (this.btnLyrics) { this.btnLyrics.textContent = tx(this.lyricsOn ? N_('Lyrics: On') : N_('Lyrics: Off')); this.btnLyrics.setAttribute('aria-pressed', String(this.lyricsOn)); }
-    if (this.btnShow) { this.btnShow.textContent = tx(this.showOn ? N_('Show effects: On') : N_('Show effects: Off')); this.btnShow.setAttribute('aria-pressed', String(this.showOn)); this.btnShow.setAttribute('aria-disabled', String(!!p)); }
-    this.stages?.refresh();
-    this.time?.refresh?.();
+    if (p) { if (this.pickers?.open) this.pickers.close('outside'); }
+    else this.pickers?.refresh();   // (the chips' values; Group of 8 shows on a phone once it has measured strong: strong-phone.js)
     this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `${p.data.song.instrumental ? '♫' : '♪'} ${songTitle(p.data.song)}` : '')
       : this.songWait ? tx(N_('Getting the song ready…')) : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
     if (!this.hint.textContent && this.time) this.hint.textContent = this.time.hint();   // ("Stella sings best at night")
@@ -431,7 +400,7 @@ body.singplay #inventory{display:none}
     this.viewYaw = f - Math.PI; p.facing = f; p.root.rotation.y = f;
     this.from = fromCamera(g.camera.position, { x: p.pos.x, y: p.pos.y, z: p.pos.z, facing: f });
     const ground = this.ground();
-    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: this.dance, ground, avoid: avoidOf(this.singer) });
+    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: danceFor(this.dancePick, song.song), ground, avoid: avoidOf(this.singer) });
     // another singer: the group's Kotone (or a hidden Kotone under her in a solo) dances and the lead copies her
     const members = this.group > 1 ? this.makeFormation() : null;
     if (this.singer !== KOTONE) {
@@ -500,6 +469,7 @@ body.singplay #inventory{display:none}
   /** Every frame (a game system). */
   update(dt) {
     const g = this.g, p = g.player;
+    this.pickers?.pad();   // (a gamepad on the bar or in a picker: pickers.js)
     p.face?.setEnabled(Face.on); p.face?.lookAt(p.gaze || null); p.face?.update(dt);
     if (this.perf) {
       this.perf.update(dt, { listen: 1, camera: g.camera });
@@ -531,7 +501,7 @@ body.singplay #inventory{display:none}
           for (const L of LAYOUTS) { r = canGroup(p.pos, f, this.spots(L), env); if (r.ok) { this.layout = L; break; } }
           this.allowed = r;
         }
-        if (was !== this.allowed.ok + this.allowed.reason) this.label(); else this.stages?.refresh();
+        if (was !== this.allowed.ok + this.allowed.reason) this.label(); else this.pickers?.refresh();   // (the Stage chip as she walks)
       }
     }
     this.time?.update(dt);             // (the shown hour: a tap's ease, the slow clock while free, held during a song)
@@ -713,9 +683,61 @@ body.singplay #inventory{display:none}
   }
 
   /** Leave the mode: her place kept, back to the title. */
-  leave() { this.stopSong(); this.keepPlace(); this.bar?.remove(); location.href = location.pathname; }
+  leave() { this.stopSong(); this.keepPlace(); this.pickers?.dispose(); this.g.inputHold = false; this.bar?.remove(); location.href = location.pathname; }
 }
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+/** The actions' pictograms (20 px, the button's own colour; the Record dot red). */
+const ico = body => `<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${body}</svg>`;
+const ACT = Object.freeze({
+  mic: ico('<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M8.5 21h7"/>'),
+  stop: ico('<rect x="6.5" y="6.5" width="11" height="11" rx="2.5" fill="currentColor"/>'),
+  rec: ico('<circle class="dot" cx="12" cy="12" r="6.5" fill="#e0384f" stroke="none"/>'),
+  photo: ico('<path d="M4 8h3l1.6-2.5h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.2" r="3.4"/>'),
+  cam: ico('<rect x="3" y="7" width="12" height="10" rx="2"/><path d="M15 11l6-3v8l-6-3z"/>'),
+});
+// The bar (docs/SING-AND-PLAY.md "Bar layout"): one column at the bottom centre (caption, chips, hint, actions). PC: 16 px
+// over the bottom edge. Touch screens: over the touch buttons (Do it / Jump end 114 px up). Phones on their side: at the
+// bottom, in the band left of the touch buttons. Phones upright: the chips go to the top (pickers.js). During a song on a
+// narrow screen Record, Photo and Camera show their short forms (an icon; the time; Auto / Free).
+const BAR_STYLE = `.singplay-bar{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));right:calc(12px + env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:30;
+ display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;font-family:var(--ui,Nunito,system-ui,sans-serif)}
+body.touch .singplay-bar{bottom:calc(env(safe-area-inset-bottom,0px) + 124px)}
+.sp-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;max-width:100%;pointer-events:none}
+.singplay-btn{pointer-events:auto;display:inline-flex;align-items:center;justify-content:center;gap:7px;box-sizing:border-box;min-width:48px;min-height:52px;padding:0 18px 0 14px;border:0;border-radius:26px;
+ background:rgba(255,250,240,.94);color:#3a2a1a;box-shadow:0 2px 8px rgba(0,0,0,.25);font-family:inherit;font-size:16px;line-height:1;font-weight:800;white-space:nowrap;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.sp-act-ic{display:inline-flex;flex:0 0 auto}.sp-act-short{display:none}.sp-act-tx:empty,.sp-act-short:empty{display:none!important}
+.sp-actions.tight1 #spPhoto .sp-act-tx,.sp-actions.tight2 #spRecord:not(.on) .sp-act-tx{display:none}.sp-actions.tight1 #spPhoto,.sp-actions.tight2 #spRecord:not(.on){padding:0 13px}
+.singplay-btn.primary{min-width:150px;min-height:56px;padding:0 24px 0 18px;font-size:18px;background:linear-gradient(180deg,#ffd66b,#f2a33a);color:#3b1c05;box-shadow:0 3px 12px rgba(0,0,0,.3)}
+.singplay-bar.performing .singplay-btn.primary{background:linear-gradient(180deg,#ff8fa8,#e0567a);color:#fff}
+.singplay-btn[aria-disabled=true]{opacity:.5}.singplay-btn.on{background:#e0567a;color:#fff}.singplay-btn.on .dot{fill:#fff}
+#spCam{display:none}.singplay-bar.performing #spCam{display:inline-flex}.singplay-bar.performing .sp-chips{display:none}
+.sp-act:focus{outline:none}.sp-act:focus-visible,.sp-act.pad{outline:3px solid #ffd36e;outline-offset:2px}
+.singplay-hint{margin:0;max-width:100%;min-height:17px;text-align:center;font-size:13px;line-height:17px;font-weight:700;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.8);pointer-events:none}
+body.singplay #inventory{display:none}
+body.singplay.singplay #prompt{bottom:calc(var(--sp-clear,190px) / var(--ui-scale,1))}
+.singplay-caption{box-sizing:border-box;max-width:min(720px,100%);margin-bottom:4px;padding:6px 16px;border-radius:18px;background:rgba(14,10,24,.58);color:rgba(255,255,255,.7);font-size:17px;line-height:1.35;font-weight:600;
+ text-align:center;pointer-events:none;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.singplay-caption[hidden]{display:none}.singplay-caption .sung{color:#fff}.singplay-caption .now{color:#ffd36e}
+@media (max-width:640px){
+ .singplay-btn{min-height:48px;padding:0 14px 0 11px;font-size:14px;gap:6px}
+ .singplay-btn.primary{min-width:118px;min-height:52px;padding:0 18px 0 14px;font-size:16px}
+ .sp-actions{gap:8px}
+ .singplay-caption{font-size:14px;padding:5px 12px}
+}
+@media (max-height:480px) and (orientation:landscape){
+ .singplay-bar,body.touch .singplay-bar{bottom:calc(env(safe-area-inset-bottom,0px) + 10px);gap:6px}
+ body.touch .singplay-bar{right:calc(194px + env(safe-area-inset-right,0px))}
+ .singplay-btn{min-height:46px;padding:0 14px 0 11px;font-size:14px;gap:6px}
+ .singplay-btn.primary{min-width:118px;min-height:50px;font-size:16px}
+ .singplay-caption{font-size:14px;padding:5px 12px;margin-bottom:0}
+}
+@media (max-width:640px),(max-height:480px) and (max-width:760px){
+ .singplay-bar.performing .sp-act-tx{display:none}.singplay-bar.performing .sp-act-short{display:inline}
+ .singplay-bar.performing .sp-act:not(.primary){padding:0 13px}
+ .singplay-bar.performing .singplay-btn.primary{min-width:100px}
+}
+@media (max-width:370px){.sp-actions{gap:6px}.singplay-btn{padding:0 12px 0 10px}.singplay-btn.primary{min-width:108px;padding:0 14px 0 12px}}
+@media (max-width:640px),(max-height:480px){body.singplay.touch #toasts{top:calc(var(--sp-below,200px) / var(--ui-scale,1));bottom:auto}}`;
 
 /** Start Sing & Play on a loaded Explore session (src/main.js). */
 export async function startSingPlay(game, director, ui) {

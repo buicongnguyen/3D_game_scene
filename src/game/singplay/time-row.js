@@ -4,8 +4,8 @@
 // on slowly while she is free and holds still while she performs (a song's look never changes mid-song). The mode owns
 // the shown hour through game.timeOverride only: game.time.hour (the story and Explore clock) is never touched, and Sing
 // & Play writes no Explore save. The choice is remembered per device (TIME_KEY).
-// Data + handlers for any host (today a flat row beside the stages; a picker later): TIME_CHOICES, currentTime(sp),
-// pickTime(sp, id), timeIcon(id). mountTime() is the thin row.
+// Data + handlers for any host (the Time chip and its picker, pickers.js): TIME_CHOICES, currentTime(sp), pickTime(sp, id),
+// timeIcon(id). makeTime() starts the mode's clock.
 import { tx, N_, getLang } from '../../i18n/i18n.js';
 import { NIGHT_STAR, nameOf } from '../../content/troupe.js';
 
@@ -94,38 +94,11 @@ export const currentTime = sp => sp?.time?.currentTime() ?? null;
 export const pickTime = (sp, id) => sp?.time?.pickTime(id) ?? false;
 
 /**
- * The flat Time row, sharing a line with the stages (phones: the line scrolls sideways; PC: the four join the Perform row).
- * Hidden with the other setup rows while she performs. -> the SingTime (sp.time), with refresh()
+ * The mode's clock (sp.time): the choice remembered on this device eases the valley to it now (its band already showing:
+ * the hour stays as it is). The Time chip and its picker (pickers.js) show it. -> the SingTime
  */
-export function mountTime(sp) {
+export function makeTime(sp) {
   const t = new SingTime(sp);
-  const row = document.createElement('div');
-  row.id = 'spTime'; row.className = 'singplay-group sp-time'; row.setAttribute('role', 'group'); row.setAttribute('aria-label', tx(N_('Time of day')));
-  const btns = TIME_CHOICES.map(c => {
-    const b = document.createElement('button');
-    b.type = 'button'; b.id = `spTime-${c.id}`; b.className = 'singplay-btn singplay-seg sp-time-btn'; b.dataset.time = c.id;
-    b.innerHTML = timeIcon(c.id);
-    const s = document.createElement('span'); s.textContent = tx(c.label); b.appendChild(s);
-    b.addEventListener('click', e => { e.stopPropagation(); sp.g.audio?.click?.(); if (!t.pickTime(c.id)) sp.ui.toast?.(tx(N_('Stop the song first'))); });
-    row.appendChild(b); return b;
-  });
-  const line = document.createElement('div');
-  line.className = 'singplay-line sp-time-line';
-  line.append(row);
-  if (sp.stages?.el) line.append(sp.stages.el);
-  sp.bar.insertBefore(line, sp.hint || null);
-  if (!document.getElementById('singplayTimeStyle')) {
-    const st = document.createElement('style'); st.id = 'singplayTimeStyle';
-    st.textContent = `.sp-time-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap}.sp-time-btn svg{flex:0 0 auto}
-.sp-time-line>.singplay-stages{flex:0 0 auto;overflow:visible}
-@media (min-width:641px) and (min-height:481px){.singplay-bar>.sp-time-line{display:contents}.singplay-bar>.singplay-line,.singplay-bar>.singplay-hint,.sp-time-line>.singplay-stages{order:1}.sp-time-line>.sp-time{order:0;flex:0 0 auto;margin-left:8px}.sp-time-line>.singplay-stages{flex:0 1 100%;overflow-x:auto}}
-@media (max-width:640px),(max-height:480px) and (orientation:landscape){.sp-time-btn{flex-direction:column;gap:2px;padding:0 8px;min-width:48px;font-size:11px;line-height:1.1}.sp-time-btn svg{width:16px;height:16px}.sp-time-line>.singplay-stages{contain:none}}`;
-    document.head.appendChild(st);
-  }
-  t.el = row;
-  t.refresh = () => { const on = t.currentTime(), busy = !!sp.perf; for (const b of btns) { b.setAttribute('aria-pressed', String(b.dataset.time === on)); b.setAttribute('aria-disabled', String(busy)); } };
-  t.refresh();
-  // the choice remembered on this device: the valley eases to it now (its band already showing: the hour stays as it is)
   const saved = loadTime();
   if (saved && saved !== t.currentTime()) t.pickTime(saved, { save: false });
   return t;
