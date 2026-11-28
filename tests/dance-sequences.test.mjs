@@ -10,6 +10,7 @@ import { planPerformance, planBacking, hasClip, clipRate, clipTiming, sequenceBl
 import { freezeDelay } from '../src/game/perform/performer.js';
 import { SEQUENCES, SEQ_TAKES, SEQ_STYLES, SEQ_DROPPED, sequenceStep, rowStep, rockStep, isSequence, seqPacks, styleClips, isFloorClip } from '../src/content/dance-sequences.js';
 import { SEQ_FIT } from '../src/content/dance-seq-fit.js';
+import { SEQ_PAIRS } from '../src/content/dance-seq-pairs.js';
 import { CLUB_LOOPS, DANCE_STYLES, micSetFor, momentsFor } from '../src/content/kotone-club.js';
 import { floorOk, FLOOR_SLOPE } from '../src/game/singplay/flat.js';
 import { pickerData, DANCE_PICKS, DANCE_LABELS, DANCE_ROUNDS, DANCE_AUTO } from '../src/game/singplay/pickers.js';
@@ -31,7 +32,7 @@ const LEGACY = ['Bow', 'Cheer', 'Clap', 'CrowdWave', 'DanceBow', 'DanceIdle', 'F
   'MocapWalk', 'MocapWave', 'PointStep', 'PowerPose', 'Run', 'SideL', 'SideR', 'SingIdle', 'SingReach', 'SlideL', 'SlideR', 'Spin', 'StickWave', 'SweepL', 'SweepR', 'Talk', 'Turn', 'Walk', 'Wave'];
 
 test('the sequences: every step names takes the bake kept or Club loops; packs and contracts per style; no legacy clip', () => {
-  assert.deepEqual(SEQ_STYLES, ['breaking', 'capoeira', 'popping', 'classics', 'latin', 'soul']);
+  assert.deepEqual(SEQ_STYLES, ['breaking', 'capoeira', 'classics', 'latin', 'soul']);
   for (const style of SEQ_STYLES) {
     const sq = SEQUENCES[style];
     assert.equal(sq.bars, sq.steps.reduce((n, s) => n + s.bars, 0));
@@ -59,6 +60,11 @@ test('the sequences: every step names takes the bake kept or Club loops; packs a
     const P = planPerformance(song, clock, lyrics, { style, bodies: front }), B = planBacking(P, { noContact: true, bodies: back });
     for (const b of P.blocks) assert.ok(!SEQ_FIT[b.clip]?.fails?.kotone?.some(f => front.includes(f)), `${style}: ${b.clip} breaks a rule on the front row`);
     for (const b of B.blocks) assert.ok(!SEQ_FIT[b.clip]?.fails?.nam1?.some(f => back.includes(f)), `${style}: ${b.clip} breaks a rule on the back row`);
+    // and no fade the pair check found breaking a rule on these bodies (or the rig's own)
+    for (const [Q, rig, bodies] of [[P, 'kotone', front], [B, 'nam1', back]]) for (let i = 1; i < Q.blocks.length; i++) {
+      const f = SEQ_PAIRS[rig][`${Q.blocks[i - 1].clip}>${Q.blocks[i].clip}`];
+      assert.ok(!f || !(f.includes('self') || f.some(x => bodies.includes(x))), `${style} ${rig}: ${Q.blocks[i - 1].clip} > ${Q.blocks[i].clip} at bar ${Q.blocks[i].b0}`);
+    }
   }
   assert.ok(Object.keys(SEQ_DROPPED).length >= 5);
 });
@@ -72,8 +78,8 @@ test('a round is laid back from the section end; a row ahead keeps its own bars'
   assert.equal(at(4, 3).step.part, 'power');
   assert.equal(at(12, 11).step.part, 'power');
   assert.equal(sequenceStep(s, 0).step.part, 'ready', 'no section length: from the round\'s start');
-  // popping, the back row 2 bars on: another step than the front at the same bar, the same bar lines
-  const p = SEQUENCES.popping;
+  // Latin party, the back row 2 bars on: another step than the front at the same bar, the same bar lines
+  const p = SEQUENCES.latin;
   for (let b = 0; b < 8; b++) assert.notEqual(rowStep(p, b, 2, 8).index, rowStep(p, b, 0, 8).index, `bar ${b}`);
   assert.deepEqual([0, 2, 4, 6].map(b => rowStep(p, b, 2, 8).startBar), [0, 2, 4, 6]);
 });
@@ -165,7 +171,7 @@ test('the freeze: eased into a stop, held through the last beat, then on from th
   assert.equal(freezeDelay(5, null), 0);
 });
 
-test('floor work needs level ground: a hillside stage keeps the back row standing', () => {
+test('floor work needs level ground: a hillside stage keeps the back row standing (and its feet on the hold, not the lock)', () => {
   const spots = [{ x: -2.25, z: -2.15 }, { x: -.75, z: -2.15 }, { x: 2.25, z: -2.15 }];
   const env = deg => ({ room: null, heightAt: (x, z) => -z * Math.tan(deg * Math.PI / 180) });
   assert.equal(floorOk({ x: 0, z: 0 }, 0, spots, env(0)), true);
@@ -198,7 +204,7 @@ test('sequenceBlocks on its own: a slope (no floor) and a dancer who has none of
   const s = { b0: 0, b1: 8, kind: 'chorus', index: 0 };
   const a = sequenceBlocks(SEQUENCES.soul, s, { rig: 'nam1', floor: true, bpm: 118 }), b = sequenceBlocks(SEQUENCES.soul, s, { rig: 'nam1', floor: false, bpm: 118 });
   assert.ok(a.some(x => x.floor) && !b.some(x => x.floor));
-  const none = sequenceBlocks(SEQUENCES.popping, s, { rig: 'nobody', bpm: 118, like: 'hiphop' });
+  const none = sequenceBlocks(SEQUENCES.latin, s, { rig: 'nobody', bpm: 118, like: 'kpop' });
   assert.ok(none.length && none.every(x => CLUB_LOOPS.some(d => d.clip === x.clip)), 'Club loops of the style it borrows');
 });
 

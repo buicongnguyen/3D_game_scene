@@ -2,7 +2,7 @@
 // Dance sequences (docs/SING-AND-PLAY.md "Dance sequences"): Avatar Studio Club mode's sequence styles brought to Sing &
 // Play (its src/club/dance-sequences.js, "Dance sequences (2026-11-25)" and "Move and dance" in its docs/club/PLAN.md). A
 // style with a sequence plays its steps in order over bars instead of one dance per block: Breaking's round (ready ->
-// top rock -> footwork -> power move, frozen on the section's end), the capoeira ginga round, popping's wave and tut, the
+// top rock -> footwork -> power move, frozen on the section's end), the capoeira ginga round, the
 // party classics, a latin party and Northern soul with its floor spin.
 //
 // The takes are Mixamo dances from the owner's library (Mixamo licence: in-app use, modified, commercial OK per the owner;
@@ -36,11 +36,6 @@ export const SEQ_TAKES = Object.freeze({
   SeqGinga: { stem: 'ginga-variation-1-ace8c8c0', tile: 2, grounded: true },
   SeqGinga2: { stem: 'ginga-variation-2-c4346262', tile: 2, grounded: true },
   SeqCapoeira: { stem: 'capoeira-51a06fb8', tile: 0 },
-  // Popping and tutting
-  SeqWave2: { stem: 'wave-hip-hop-dance-f2653af5', tile: 0 },
-  SeqTut: { stem: 'tut-hip-hop-dance-7e65b66b', tile: 0 },
-  SeqTut2: { stem: 'tut-hip-hop-dance-519c94fb', tile: 0 },
-  SeqSnake: { stem: 'snake-hip-hop-dance-117e9198', tile: 0 },
   // Party classics
   SeqYmca: { stem: 'ymca-dance-02c59e27', tile: 0 },
   SeqMacarena: { stem: 'macarena-dance-0922aa09', tile: 0 },
@@ -77,6 +72,7 @@ export const SEQ_DROPPED = Object.freeze({
   'northern-soul-dance-4c58dd12': 'Northern soul dance: a planted foot slides more than the take (Kotone), a knee out of its plane and the thighs through each other (nam-1)',
   'house-dancing-a8408e03': 'House 2: only Kotone keeps it, as a 32-beat (19.8 s) loop at 1.1x at most: left out to keep the Latin pack small (House, Samba 7 and Salsa fill its step)',
   'capoeira-5a715ca2': 'Capoeira 2: not tried (the Club drops it on every hero: joint rules, reach)',
+  'popping': 'Popping and tutting (wave 2, tut, tut 2, snake): Kotone keeps only Wave 2 (the Club wave and the tuts need the hands\' full clearance reach or break the joint rules on her), and its copies on the boys break a wrist rule; nam-1\'s tuts and snake cross the thighs of the thicker copies (Saki, Kai, Ren) and their fades break rules on nam-1 itself. With the cast\'s bodies and fades checked, no popping take was left for either row of the usual cast: the style was dropped (2026-11-28)',
   'travel takes': 'shopping cart, running man, dancing 1, booty hip hop and the Club Travel step loop: they travel; Sing & Play\'s spots are fixed',
 });
 
@@ -106,12 +102,6 @@ export const SEQUENCES = Object.freeze({
     { part: 'ginga', bars: 2, ids: ['SeqGinga2', 'SeqGinga'] },
     { part: 'round', bars: 4, ids: ['SeqCapoeira', 'SeqGinga'] },
   ], { backShift: 4, like: 'hiphop' }),   // (one row plays the round while the other gingas)
-  popping: seq([
-    { part: 'wave', bars: 2, ids: ['SeqWave2', 'ClubBodyRoll'] },
-    { part: 'tut', bars: 2, ids: ['SeqTut', 'SeqSnake', 'SeqTut2', 'ClubBodyRoll'] },
-    { part: 'wave', bars: 2, ids: ['SeqWave2', 'ClubShimmy'] },
-    { part: 'tut', bars: 2, ids: ['SeqTut2', 'SeqTut', 'SeqSnake', 'ClubBodyRoll'] },
-  ], { backShift: 2, like: 'hiphop' }),   // (a wave in front while the back row tuts)
   classics: seq([
     { part: 'party', bars: 4, ids: ['SeqYmca', 'SeqSilly2', 'SeqSilly'] },
     { part: 'party', bars: 2, ids: ['SeqMacarena', 'SeqSilly', 'ClubClapStep'] },

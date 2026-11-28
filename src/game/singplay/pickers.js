@@ -27,9 +27,9 @@ const ROWS = Object.freeze([['singer', 'song', 'group'], ['dance', 'stage', 'tim
 export const DANCE_AUTO = 'auto';
 export const DANCE_PICKS = Object.freeze([DANCE_AUTO, ...DANCE_STYLES]);
 export const DANCE_LABELS = Object.freeze({ auto: N_('Auto'), mix: N_('Mixed'), kpop: N_('K-pop'), cute: N_('Cute'), hiphop: N_('Hip-hop'),
-  breaking: N_('Breaking'), capoeira: N_('Capoeira'), popping: N_('Popping'), classics: N_('Party classics'), latin: N_('Latin party'), soul: N_('Northern soul') });
+  breaking: N_('Breaking'), capoeira: N_('Capoeira'), classics: N_('Party classics'), latin: N_('Latin party'), soul: N_('Northern soul') });
 /** The sequence styles' tiles: their round in a few words (content/dance-sequences.js SEQUENCES). */
-export const DANCE_ROUNDS = Object.freeze({ breaking: N_('Rock · floor · freeze'), capoeira: N_('Ginga · round'), popping: N_('Wave · tut'),
+export const DANCE_ROUNDS = Object.freeze({ breaking: N_('Rock · floor · freeze'), capoeira: N_('Ginga · round'),
   classics: N_('YMCA · silly steps'), latin: N_('Salsa · samba · house'), soul: N_('Jazz · floor spin') });
 export const GROUP_LABELS = Object.freeze({ 1: N_('Solo'), 4: N_('Group of 4'), 8: N_('Group of 8') });
 const TITLES = Object.freeze({ singer: N_('Singer'), song: N_('Song'), group: N_('Group'), dance: N_('Dance'), stage: N_('Stage'), time: N_('Time'), settings: N_('Settings') });
@@ -156,12 +156,11 @@ export const ICONS = Object.freeze({
   caret: svg('<path d="M7 10l5 5 5-5"/>', 14),
 });
 /** The Dance tiles' pictures: Mixed a shuffle, K-pop a star, Cute a heart, Hip-hop a bolt; the sequences: a head spin
- *  (Breaking), a kick (Capoeira), a wave (Popping), the Y of the YMCA (Party classics), maracas (Latin party), a record
+ *  (Breaking), a kick (Capoeira), the Y of the YMCA (Party classics), maracas (Latin party), a record
  *  (Northern soul). */
 const DANCE_ICONS = Object.freeze({
   breaking: svg('<circle cx="12" cy="19" r="2"/><path d="M12 17V9.5M12 9.5 8 4M12 9.5l4-5.5"/><path d="M4.5 13.5c1.6 1.6 4.4 2.5 7.5 2.5s5.9-.9 7.5-2.5"/>'),
   capoeira: svg('<circle cx="6.5" cy="5" r="2"/><path d="M7 7.2 8.2 13l-2.7 7.5M8.2 13l10.3-4.2M7.6 9.6 3.5 11.5"/>'),
-  popping: svg('<path d="M2.5 14c2.1-4.5 4.2-4.5 6.3 0s4.2 4.5 6.3 0 4.2-4.5 6.4 0"/><circle cx="3" cy="14" r="1.2"/>'),
   classics: svg('<circle cx="12" cy="9.5" r="2"/><path d="M12 11.5v5.5M12 17l-3 4.5M12 17l3 4.5M10.8 10.2 6 3M13.2 10.2 18 3"/>'),
   latin: svg('<ellipse cx="7.5" cy="7" rx="3" ry="4"/><path d="M9 10.7l3 9.3"/><ellipse cx="16.5" cy="7" rx="3" ry="4"/><path d="M15 10.7 12 20"/>'),
   soul: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5.6a6.4 6.4 0 0 1 6.4 6.4"/>'),

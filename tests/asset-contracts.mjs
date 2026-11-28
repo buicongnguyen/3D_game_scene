@@ -426,7 +426,10 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +0.49 MB: the Explore moves pack (moves-explore.glb, 17 clips on Saki's skeleton for every singer body; Play as).
 // -0.05 MB: the girls, Kotone, the Night Star and the visitors re-packed the same way, and every VRoid mouth tinted in its
 // atlas (faces round 3: the 16 models and light files -49,028 B together); 91,193,824 B measured.
-export const TOTAL_RAW_BYTES = 91_950_000;     // (the dance game, the exercise packs, the visitors, the Night Star and Play as)
+// +2.32 MB: the dance sequences (docs/SING-AND-PLAY.md "Dance sequences"): 10 lazy clip packs, one per sequence style and
+// body (moves-seq-<style>-kotone 0.06-0.50 MB, -nam1 0.12-0.46 MB; 2,323,696 B together), fetched only when that style is
+// picked in Sing & Play (a player downloads one style's one or two packs); 94,009,844 B measured.
+export const TOTAL_RAW_BYTES = 94_100_000;     // (the dance game, the exercise packs, the visitors, the Night Star, Play as, the dance sequences)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -461,7 +464,9 @@ export const TOTAL_RAW_BYTES = 91_950_000;     // (the dance game, the exercise 
 // +0.23 MB: the Explore moves pack packed (moves-explore.glb, every singer body's Explore moves; fetched the first time a
 // singer is played, Play as; 41.03 MB measured).
 // -0.08 MB: the girls' atlases re-packed and the mouths tinted (-82,556 B packed; faces round 3); 40,695,020 B measured.
-export const TOTAL_PACKED_BYTES = 41_150_000;      // (all together)
+// +1.57 MB: the dance sequence packs packed (0.04-0.32 MB each, 1,574,884 B together; one style's one or two are fetched);
+// 42.53 MB measured for the whole library (main at 8b6e36f + these packs).
+export const TOTAL_PACKED_BYTES = 42_650_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

@@ -19,7 +19,7 @@
 //             (the whole set when a tier has none that fits), its mic moves (micSetFor) and its moments (momentsFor)
 //   avoid     clips this singer never dances (the Night Star's long dress: no kicks, jumps or wide steps; content/troupe.js
 //             GUESTS avoid): left out of every pool and moment (an empty list changes nothing: the old plans stay)
-//   sequence  a sequence style (content/dance-sequences.js: Breaking, Capoeira, Popping, Party classics, Latin party,
+//   sequence  a sequence style (content/dance-sequences.js: Breaking, Capoeira, Party classics, Latin party,
 //             Northern soul; Avatar Studio Club mode's "Dance sequences"): each section plays the style's round step by step
 //             (sequenceStep: laid back from the section's end) instead of a dance per block; a step's takes play at their
 //             own tempo on the song's beat (clipRate: each its own m, never faster than the rate its joints pass); the lead
@@ -31,6 +31,7 @@ import { CLUB_LOOPS, CONTACT_MOMENTS, DANCE_STYLES, DANCE_STYLE, MOMENTS, moment
 import { STANCE } from '../../content/kotone-club-fit.js';
 import { SEQUENCES, SEQ_TAKES, rowStep, rockStep, isFloorClip } from '../../content/dance-sequences.js';
 import { SEQ_FIT } from '../../content/dance-seq-fit.js';
+import { SEQ_PAIRS } from '../../content/dance-seq-pairs.js';
 import { beatRate, normalizeKind } from './beat-clock.js';
 import { vocalLines, SINGING } from './mic-layer.js';
 
@@ -207,7 +208,7 @@ export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE
  * hand contact; under a sung line a calm torso) and that keeps to the song's beat at 0.5x or more; a floor step a
  * dancer may not do plays the round's top-rock step's takes; a body with none of a step's takes plays another standing
  * take of the round, else a Club loop of the `like` style's pool; never the take of the step before when the list has
- * another. Blocks: the plan's block fields plus m / rate (the take's own beat rate), seq: { step, part, round }, floor,
+ * another, nor one whose fade from it breaks a joint rule on these bodies (scripts/seq-pairs.mjs: dance-seq-pairs.js). Blocks: the plan's block fields plus m / rate (the take's own beat rate), seq: { step, part, round }, floor,
  * freeze (held on the section's last beat), and for a take that goes on from the block before (the only one left):
  * from (the bar its loop counts from), after (the freeze of the block before: it runs out of it the same way) and lost
  * (beats earlier freezes held), so its clip time runs on without a jump.
@@ -215,6 +216,7 @@ export function planPerformance(song = {}, clock, lyrics = null, { style = DANCE
 export function sequenceBlocks(sq, s, { rig = 'kotone', lead = false, floor = false, ahead = 0, avoid = null, bpm = 120, calm = false, tier = 'mid', final = false,
   like = 'mix', sungAt = () => false, micAt = () => false, chorus = false, noContact = false, prev = null, prevBlock = null, seed = 1, rotate = 0, bodies = null } = {}) {
   const fits = id => !bodies || !SEQ_FIT[id]?.fails?.[rig]?.some(f => bodies.includes(f));   // (a body that copies this rig breaks a joint rule in it)
+  const pairBad = (a, id) => { const f = a && SEQ_PAIRS[rig]?.[`${a}>${id}`]; return Boolean(f && (f.includes('self') || bodies?.some(x => f.includes(x)))); };
   const n = s.b1 - s.b0, out = [], rock = rockStep(sq);
   const standing = [...new Set(sq.steps.filter(x => !x.floor).flatMap(x => x.ids))];
   const rate = id => clipRate(id, bpm, { calm, rig }) || beatRate(bpm, 120, { calm });
@@ -231,9 +233,12 @@ export function sequenceBlocks(sq, s, { rig = 'kotone', lead = false, floor = fa
     // dances at their slower rate before the sequence gives up)
     const onBeat = list.filter(id => rate(id).rate >= .5 - 1e-9); if (onBeat.length) list = onBeat;
     // (the round and the section turn the list, so sections differ; a floor step played standing takes the next one)
-    const at = st.round + (s.index | 0) + (down ? st.index : 0) + rotate;
-    let clip = list.length ? list[at % list.length] : null;
-    if (clip && clip === prev && list.length > 1) clip = list[(at + 1) % list.length];
+    // the take the round and the section turn to, else the next one whose fade from the take before is clean on these
+    // bodies (dance-seq-pairs.js), else the take before going on (no fade at all), else another standing take of the round,
+    // else the take before going on even outside this step's list
+    const at = st.round + (s.index | 0) + (down ? st.index : 0) + rotate, order = list.map((_, j) => list[(at + j) % list.length]);
+    let clip = order.find(id => id !== prev && !pairBad(prev, id)) || (prev && order.includes(prev) ? prev : null)
+      || standing.filter(ok).find(id => id !== prev && !pairBad(prev, id)) || (prev && list.length && ok(prev) ? prev : null) || order[0] || null;
     if (!clip) {   // nothing of the round fits this dancer: a Club loop of the style it borrows from
       let pool = dancePool(tier, { sung, mic, chorus, style: like, avoid }).filter(d => !(noContact && d.contact));
       if (pool.length > 1) pool = pool.filter(d => d.clip !== prev);

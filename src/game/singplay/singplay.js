@@ -469,7 +469,10 @@ export class SingPlay {
     this.perfStyle = style;
     // (the bodies that copy Kotone's rig: the lead when she is not Kotone and the front row of a group)
     const front = troupeOf(this.group, this.singer).filter(m => m.row === 0 && m.id !== KOTONE).map(m => m.file);
-    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style, ground, avoid: avoidOf(this.singer), bodies: front });
+    // level ground under her and the group (flat.js floorOk, FLOOR_SLOPE): a sequence's feet lock and the back row's floor work
+    const env = gameEnv(g), level = !ground || floorOk(p.pos, f, [{ x: 0, z: 0 }, ...(this.group > 1 ? this.spots() : [])], env);
+    this.level = level;
+    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style, ground, avoid: avoidOf(this.singer), bodies: front, level });
     // another singer: the group's Kotone (or a hidden Kotone under her in a solo) dances and the lead copies her
     const members = this.group > 1 ? this.makeFormation() : null;
     if (this.singer !== KOTONE) {
@@ -706,9 +709,8 @@ export class SingPlay {
     // (a hillside: each member's feet fitted to the ground under its own spot, ground-fit.js; the formation stands at y 0,
     // so its members' heights are the world's)
     const ground = this.ground();
-    // floor work (a sequence's back row) only where the ground under the back row is level (flat.js floorOk)
-    const k = leadOffset(), back = cast.filter(m => m.row === 1).map(m => ({ x: (m.x - k.x) * this.layout.x, z: (m.z - k.z) * this.layout.z }));
-    const floor = !ground || floorOk(p.pos, p.facing, back, gameEnv(g));
+    // floor work (a sequence's back row) only where the ground under the group is level (performWith: flat.js floorOk)
+    const floor = this.level !== false;
     this.troupe = new Troupe(this.perf, p.model, this.restRoot, members, { backHalf: L.backHalf, backFaces: L.backFaces, backShadows: L.backShadows, merge: L.merge, parent: root, ground, floor });
   }
 

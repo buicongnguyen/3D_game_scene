@@ -32,7 +32,7 @@ function fakeSp(o = {}) {
 
 test('seven chips in the bar order; the Dance choice adds Auto (the default) before the four styles', () => {
   assert.deepEqual(PICKERS, ['singer', 'song', 'group', 'dance', 'stage', 'time', 'settings']);
-  assert.deepEqual(DANCE_PICKS, ['auto', 'mix', 'kpop', 'cute', 'hiphop', 'breaking', 'capoeira', 'popping', 'classics', 'latin', 'soul']);
+  assert.deepEqual(DANCE_PICKS, ['auto', 'mix', 'kpop', 'cute', 'hiphop', 'breaking', 'capoeira', 'classics', 'latin', 'soul']);
   assert.equal(loadDance(store({})), 'auto', 'nothing stored: Auto');
   assert.equal(loadDance(store({ [DANCE_KEY]: 'hiphop' })), 'hiphop');
   assert.equal(loadDance(store({ [DANCE_KEY]: 'disco' })), 'auto');

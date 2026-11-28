@@ -101,7 +101,7 @@ export const SEQ_FIT = Object.freeze({
    "lift": 0.174,
    "reach": 0.402,
    "kick": 0.429,
-   "handGap": 0.403
+   "handGap": 0.4
   },
   "maxRate": {
    "kotone": 1.2,
@@ -168,18 +168,18 @@ export const SEQ_FIT = Object.freeze({
   "stance": {
    "feet": [
     [
-     0.112,
-     0.294
+     0.115,
+     0.296
     ],
     [
-     0.324,
-     -0.518
+     0.327,
+     -0.516
     ]
    ],
    "hipYaw": 28.9,
    "chestYaw": 99.4,
    "lift": 0.177,
-   "reach": 0.641,
+   "reach": 0.637,
    "kick": 0.203,
    "handGap": 0.223
   },
@@ -208,17 +208,17 @@ export const SEQ_FIT = Object.freeze({
    "feet": [
     [
      -0.507,
-     -0.349
+     -0.351
     ],
     [
      -0.137,
-     0.331
+     0.329
     ]
    ],
    "hipYaw": 28.5,
    "chestYaw": 54,
    "lift": 0.163,
-   "reach": 0.769,
+   "reach": 0.77,
    "kick": 0.232,
    "handGap": 0.314
   },
@@ -230,48 +230,6 @@ export const SEQ_FIT = Object.freeze({
    "kotone",
    "nam1"
   ]
- },
- "SeqWave2": {
-  "bpm": 94.74,
-  "beat": 0.63333,
-  "phase": 0.0262,
-  "loop": 5.0667,
-  "beats": 8,
-  "grid": "eighth",
-  "energy": 1.193,
-  "stance": {
-   "feet": [
-    [
-     0.115,
-     0.012
-    ],
-    [
-     -0.211,
-     -0.052
-    ]
-   ],
-   "hipYaw": 84.7,
-   "chestYaw": 80.5,
-   "lift": 0.095,
-   "reach": 0.449,
-   "kick": 0.133,
-   "handGap": 0.141
-  },
-  "maxRate": {
-   "kotone": 1.2,
-   "nam1": 1.2
-  },
-  "rigs": [
-   "kotone",
-   "nam1"
-  ],
-  "fails": {
-   "kotone": [
-    "vroid-nam1",
-    "vroid-nam2",
-    "vroid-nam3"
-   ]
-  }
  },
  "SeqYmca": {
   "bpm": 153.19,
@@ -397,8 +355,8 @@ export const SEQ_FIT = Object.freeze({
      0.15
     ]
    ],
-   "hipYaw": 177,
-   "chestYaw": 176.9,
+   "hipYaw": 179.8,
+   "chestYaw": 179.4,
    "lift": 0.054,
    "reach": 0.585,
    "kick": 0.099,
@@ -452,6 +410,9 @@ export const SEQ_FIT = Object.freeze({
     "vroid-nam1",
     "vroid-nam2",
     "vroid-nam3"
+   ],
+   "nam1": [
+    "vroid-nu3"
    ]
   }
  },
@@ -489,38 +450,36 @@ export const SEQ_FIT = Object.freeze({
   ]
  },
  "SeqSamba2": {
-  "bpm": 83.24,
-  "beat": 0.72083,
-  "phase": 0.3367,
-  "loop": 5.7667,
-  "beats": 8,
-  "grid": "eighth",
-  "energy": 1.039,
+  "bpm": 83.72,
+  "beat": 0.71667,
+  "phase": 0.4945,
+  "loop": 2.8667,
+  "beats": 4,
+  "grid": "beat",
+  "energy": 1.053,
   "stance": {
    "feet": [
     [
-     0.017,
-     -0.029
+     -0.002,
+     -0.085
     ],
     [
-     -0.051,
-     -0.05
+     -0.282,
+     -0.101
     ]
    ],
-   "hipYaw": 34.6,
-   "chestYaw": 21.3,
-   "lift": 0.094,
-   "reach": 0.385,
-   "kick": 0.059,
-   "handGap": 0.358
+   "hipYaw": 28.1,
+   "chestYaw": 19.7,
+   "lift": 0.074,
+   "reach": 0.343,
+   "kick": 0.042,
+   "handGap": 0.454
   },
   "maxRate": {
-   "kotone": 1.2,
-   "nam1": 1.2
+   "kotone": 1.2
   },
   "rigs": [
-   "kotone",
-   "nam1"
+   "kotone"
   ]
  },
  "SeqSamba5": {
@@ -570,17 +529,17 @@ export const SEQ_FIT = Object.freeze({
    "feet": [
     [
      0.024,
-     0.156
+     0.161
     ],
     [
      -0.138,
-     0.414
+     0.419
     ]
    ],
    "hipYaw": 87,
    "chestYaw": 98.7,
    "lift": 0.106,
-   "reach": 0.482,
+   "reach": 0.477,
    "kick": 0.124,
    "handGap": 0.843
   },
@@ -591,13 +550,7 @@ export const SEQ_FIT = Object.freeze({
   "rigs": [
    "kotone",
    "nam1"
-  ],
-  "fails": {
-   "nam1": [
-    "vroid-nu1",
-    "vroid-nu3"
-   ]
-  }
+  ]
  },
  "SeqHouse": {
   "bpm": 109.09,
@@ -702,7 +655,7 @@ export const SEQ_FIT = Object.freeze({
     ]
    ],
    "hipYaw": 26.3,
-   "chestYaw": 178.9,
+   "chestYaw": 179.5,
    "lift": 0.316,
    "reach": 0.982,
    "kick": 0.267,
@@ -734,18 +687,18 @@ export const SEQ_FIT = Object.freeze({
   "stance": {
    "feet": [
     [
-     0.209,
-     -0.016
+     0.217,
+     -0.005
     ],
     [
-     -0.448,
-     -0.143
+     -0.44,
+     -0.132
     ]
    ],
-   "hipYaw": 176.2,
+   "hipYaw": 176.8,
    "chestYaw": 179.6,
    "lift": 0.006,
-   "reach": 0.491,
+   "reach": 0.483,
    "kick": 1.258,
    "handGap": 0.462
   },
@@ -755,118 +708,6 @@ export const SEQ_FIT = Object.freeze({
   "rigs": [
    "nam1"
   ]
- },
- "SeqTut": {
-  "bpm": 142.57,
-  "beat": 0.42083,
-  "phase": 0.2461,
-  "loop": 6.7333,
-  "beats": 16,
-  "grid": "eighth",
-  "energy": 1.034,
-  "stance": {
-   "feet": [
-    [
-     0.008,
-     -0.025
-    ],
-    [
-     -0.189,
-     0.022
-    ]
-   ],
-   "hipYaw": 179.9,
-   "chestYaw": 179.4,
-   "lift": 0.103,
-   "reach": 0.409,
-   "kick": 0.211,
-   "handGap": 0.148
-  },
-  "maxRate": {
-   "nam1": 1.1
-  },
-  "rigs": [
-   "nam1"
-  ],
-  "fails": {
-   "nam1": [
-    "vroid-nam3",
-    "vroid-nu3"
-   ]
-  }
- },
- "SeqTut2": {
-  "bpm": 147.69,
-  "beat": 0.40625,
-  "phase": 0.3895,
-  "loop": 6.5,
-  "beats": 16,
-  "grid": "eighth",
-  "energy": 0.965,
-  "stance": {
-   "feet": [
-    [
-     -0.003,
-     -0.087
-    ],
-    [
-     -0.121,
-     0.178
-    ]
-   ],
-   "hipYaw": 141.9,
-   "chestYaw": 142,
-   "lift": 0.077,
-   "reach": 0.407,
-   "kick": 0.282,
-   "handGap": 0.106
-  },
-  "maxRate": {
-   "nam1": 1.1
-  },
-  "rigs": [
-   "nam1"
-  ]
- },
- "SeqSnake": {
-  "bpm": 133.33,
-  "beat": 0.45,
-  "phase": 0.375,
-  "loop": 1.8,
-  "beats": 4,
-  "grid": "eighth",
-  "energy": 0.441,
-  "stance": {
-   "feet": [
-    [
-     0.132,
-     -0.066
-    ],
-    [
-     -0.048,
-     0
-    ]
-   ],
-   "hipYaw": 13.7,
-   "chestYaw": 9.5,
-   "lift": 0.204,
-   "reach": 0.251,
-   "kick": 0.04,
-   "handGap": 0.283
-  },
-  "maxRate": {
-   "nam1": 1.2
-  },
-  "rigs": [
-   "nam1"
-  ],
-  "fails": {
-   "nam1": [
-    "vroid-nam2",
-    "vroid-nam3",
-    "vroid-nu3"
-   ]
-  }
  },
  "SeqMacarena": {
   "bpm": 146.94,
@@ -922,7 +763,7 @@ export const SEQ_FIT = Object.freeze({
    ],
    "hipYaw": 24.2,
    "chestYaw": 30.9,
-   "lift": 0.102,
+   "lift": 0.104,
    "reach": 0.409,
    "kick": 0.013,
    "handGap": 0.128
@@ -1062,8 +903,8 @@ export const SEQ_FIT = Object.freeze({
      -0.361
     ]
    ],
-   "hipYaw": 177.7,
-   "chestYaw": 177.8,
+   "hipYaw": 178.5,
+   "chestYaw": 178.7,
    "lift": 0.191,
    "reach": 1.245,
    "kick": 0.845,
@@ -1122,15 +963,15 @@ export const SEQ_FIT = Object.freeze({
    "feet": [
     [
      -0.269,
-     -0.434
+     -0.433
     ],
     [
      -0.086,
-     -0.066
+     -0.065
     ]
    ],
    "hipYaw": 179.2,
-   "chestYaw": 178.9,
+   "chestYaw": 179.6,
    "lift": 0.507,
    "reach": 0.815,
    "kick": 0.416,

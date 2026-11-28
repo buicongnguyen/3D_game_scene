@@ -54,7 +54,7 @@ export const CLUB_LOOPS = Object.freeze([
  *           heart hands into the chorus
  *   hiphop  low and grounded: bounce rock, side groove, body roll, afro step, top rock, Brooklyn rock, fist pump; punches
  *           and points on chorus lines, a mic jump into the chorus
- * and the sequence styles (content/dance-sequences.js SEQ_STYLES: breaking, capoeira, popping, classics, latin, soul),
+ * and the sequence styles (content/dance-sequences.js SEQ_STYLES: breaking, capoeira, classics, latin, soul),
  * which play a round of steps (game/perform/plan.js sequenceBlocks) and borrow a style above for the mic and the moments.
  */
 export const DANCE_STYLES = Object.freeze(['mix', 'kpop', 'cute', 'hiphop', ...SEQ_STYLES]);

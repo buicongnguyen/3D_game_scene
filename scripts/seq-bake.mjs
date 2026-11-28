@@ -5,22 +5,24 @@
 // beat warp, seam, foot lock, floor, hand clearance, joint repair; floor work grounded on the whole skin), copied
 // READ-ONLY into .tools/club-solver like the Moves v2 solver (scripts/kotone-club-bake.mjs). Kotone measures each take's
 // timing; nam-1 shares it (the same loop window and beat grid), so both rows' steps land on the same beats.
-// Checked on every clip before it ships (60 Hz, the joint-speed rule at the fastest beat-sync rate 1.2x; a clip whose only
-// break is a roll speed at 1.2x is kept with the fastest rate it passes, 1.1 or 1.0: the plan never plays it faster, `maxRate`):
+// Each standing clip's planted feet are pinned first (plantFeet: the legs keyed at 60 Hz). Then it is checked before it
+// ships (the joint rules every 120 Hz, twice the leg keys, so nothing between two keys is missed, at the fastest beat-sync
+// rate 1.2x; a clip whose only break is a roll speed at 1.2x is kept with the fastest rate it passes, 1.1 or 1.0: the plan
+// never plays it faster, `maxRate`; the slide at 60 Hz, the game's frame):
 //   joints   the Studio's joint rules R1-R11 (anatomy-joint-check.js): no frame breaks one
 //   slide    standing loops: planted toes (within 4 mm of the floor) move <= 1.5 cm/s p95 over the ground
 //   floor    the lowest skin point against the rest floor: standing <= 1.5 cm under it; floor work <= 2.5 cm (soft contact)
 //   copies   the joint rules again on every body that may dance the clip as a copy of that rig (game/perform/troupe.js
-//            makeCopier, the game's own copy with its leg solve): Kotone's rig is copied by the front row and by any lead
+//            makeCopier, the game's own copy with its toes' leg solve): Kotone's rig is copied by the front row and by any lead
 //            who is not Kotone (the seven members and the Night Star), nam-1's by the back row (nu-1, nam-3, nam-2, and Saki
 //            when a back-row singer leads); a clip that breaks a rule on one of them is kept, with that body in its `fails`,
 //            and the plan leaves it out of any routine that body copies (game/perform/plan.js sequenceBlocks `bodies`)
-// A clip that fails on a body is left out of that body's packs (the plan then plays the step's other takes). Floor work
+// A clip that fails on its own rig is left out of that rig's packs (the plan then plays the step's other takes). Floor work
 // only goes into nam-1's packs: the front row (Kotone's rig) never goes down to the floor.
 // Writes public/models/moves-seq-<style>-kotone.glb / -nam1.glb (the pack's armature from moves-kotone / moves-vroid-nam1,
 // so joints, order and rest are the shipped ones; keys thinned like the Club bake: hips and legs exact, floor work's arms
-// and spine exact too; rotations 16-bit), src/content/dance-seq-fit.js (each clip's tempo, loop and stance) and the report
-// .tools/seq/report.json.
+// and spine exact too; rotations 16-bit), src/content/dance-seq-fit.js (each clip's tempo, loop, stance, max rate, fails) and
+// the report .tools/seq/report.json. Then node scripts/seq-pairs.mjs --step 0.5 (the fades between two dances).
 //   node scripts/seq-bake.mjs --vendor <Avatar Studio folder>   (dance-prep and its helpers into .tools/club-solver)
 //   node scripts/seq-bake.mjs [--blender <blender.exe>]          (the raw takes first when missing; then prep, check, packs)
 //   node scripts/seq-bake.mjs --only SeqYmca,SeqWave             (report only for these: no packs written)
@@ -42,7 +44,7 @@ import { makeCopier, restPose } from '../src/game/perform/troupe.js';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const SOLVER = path.join(ROOT, '.tools', 'club-solver'), SEQ = path.join(ROOT, '.tools', 'seq'), MODELS = path.join(ROOT, 'public/models');
 const arg = n => { const i = process.argv.indexOf(`--${n}`); return i > 0 ? process.argv[i + 1] : null; };
-export const SEQ_CHECK = Object.freeze({ hz: 60, fastest: 1.2, slower: [1.1, 1], planted: .004, slideCmS: 1.5, sinkCm: 1.5, floorSinkCm: 2.5 });
+export const SEQ_CHECK = Object.freeze({ hz: 120, fastest: 1.2, slower: [1.1, 1], planted: .004, slideCmS: 1.5, sinkCm: 1.5, floorSinkCm: 2.5 });
 const TRIM = 2.4, EXACT_STAND = '^(hips|thigh_[LR]|shin_[LR]|foot_[LR]|toe_[LR])$',
   EXACT_FLOOR = '^(hips|spine|spine1|chest|neck|head|shoulder_[LR]|upperarm_[LR]|forearm_[LR]|hand_[LR]|thigh_[LR]|shin_[LR]|foot_[LR]|toe_[LR])$';
 /** The bodies that copy each rig (content/troupe.js castOf: who can stand in that rig's row, or sing lead over it). */
@@ -170,11 +172,14 @@ function measure(root, clip, { floor = false, chk, pts, restFloor, rest, rate = 
     if (hits.length) jointFrames++;
     for (const h of hits) { const k = `${h.rule} ${h.joint}`, over = +(h.amount - h.limit).toFixed(1); if (!(worst[k] >= over)) worst[k] = over; }
     const lo = lowestPoint(root, pts) - restFloor; low = Math.min(low, lo); high = Math.max(high, lo);
+    // (the slide at 60 Hz, the game's frame and the troupe check's: at 120 Hz the sub-millimetre wobble between two 60 Hz
+    // leg keys read as 2-7 cm/s; the joint rules above take every 120 Hz frame)
     toes.forEach((t, j) => {
       const p = t.getWorldPosition(v), on = p.y < restToe + K.planted;
-      if (on && prev[j]) { speeds.push(Math.hypot(p.x - prev[j].x, p.z - prev[j].z) / dt); if (process.env.SEQ_DEBUG === clip.name && speeds.at(-1) > .015) console.log('  slide', j, i, (speeds.at(-1) * 100).toFixed(1), 'cm/s at', ((p.y - restToe) * 1000).toFixed(1), 'mm'); }
-      prev[j] = on ? { x: p.x, z: p.z } : null;
       kick = Math.max(kick, p.y - restToe);
+      if (i % 2) return;
+      if (on && prev[j]) speeds.push(Math.hypot(p.x - prev[j].x, p.z - prev[j].z) / (dt * 2));
+      prev[j] = on ? { x: p.x, z: p.z } : null;
     });
     for (const f of feet) { f.getWorldPosition(w); reach = Math.max(reach, Math.hypot(w.x, w.z)); }
     handGap = Math.min(handGap, hands[0].getWorldPosition(v).distanceTo(hands[1].getWorldPosition(w)));
@@ -212,7 +217,7 @@ for (const r of RIGS) {
     // again after it), as the Club prepares its gingas
     const attempt = grounded => {
       let res;
-      try { res = prepareClubDance(root, src, { tree, name, label: name, timing: process.env.SEQ_OWN ? null : timings.get(name) || null, ...(d.floor || grounded ? { floorWork: true } : d.footprint ? { footprint: true } : {}) }); }
+      try { res = prepareClubDance(root, src, { tree, name, label: name, timing: timings.get(name) || null, ...(d.floor || grounded ? { floorWork: true } : d.footprint ? { footprint: true } : {}) }); }
       catch (e) { res = { clip: null, reason: `error: ${e.message}` }; }
       putBack(rest); root.updateMatrixWorld(true);
       if (!res.clip) return { res, grounded };
@@ -249,7 +254,7 @@ const bodyOf = async f => { if (!bodies.has(f)) { const g = await loadGlb(path.j
   bodies.set(f, { root, rest: restPose(root), chk: createAnatomyCheck(root), bones: restOf(root) }); } return bodies.get(f); };
 for (const r of RIGS) {
   const src = await bodyOf(r.model);
-  const cps = await Promise.all(COPIES[r.who].map(async f => { const b = await bodyOf(f); return { f, b, cp: makeCopier(src.root, b.root, src.rest, b.rest) }; }));
+  const cps = await Promise.all(COPIES[r.who].map(async f => { const b = await bodyOf(f); return { f, b, cp: makeCopier(src.root, b.root, src.rest, b.rest, { toes: true }) }; }));
   for (const [name, clip] of kept[r.who]) {
     const rate = fit[name]?.maxRate?.[r.suffix] ?? SEQ_CHECK.fastest, mixer = new AnimationMixer(src.root), a = mixer.clipAction(clip); a.play();
     const N = Math.max(2, Math.round(clip.duration * SEQ_CHECK.hz)), dt = clip.duration / N, bad = {};

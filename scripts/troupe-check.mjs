@@ -12,11 +12,14 @@
 //       over the ground under them against the dance's own height over level ground (planted: the dance's toe within
 //       4 mm of its floor), slide measured on those planted frames
 //   stance: the ankles' distance apart while both feet are planted, median, as % of that body's hip-joint width
-//   --style breaking|capoeira|popping|classics|latin|soul: a sequence style (content/dance-sequences.js): its lazy packs
+//   --style breaking|capoeira|classics|latin|soul: a sequence style (content/dance-sequences.js): its lazy packs
 //     (moves-seq-<style>-kotone / -nam1) join the two sources' clips; on level ground (or --slope under FLOOR_SLOPE) the
 //     back row may go down to the floor. Frames in floor work (and fading into or out of it) are left out of the slide
 //     (the feet sweep the floor there); skinSinkCm: the lowest skin point under that body's rest floor (any frame, level
 //     ground only; 20 Hz), floorFrames: frames the row spent in floor work, freezes: the plan's frozen section ends
+//   --why N: each member's first N frames that break a joint rule (time, rules, the block and the one before it; the back
+//     row's foot pins); --slidewhy <member> / --sinkwhy <member>: that member's planted frames over 1.5 cm/s, toes over 1 cm
+//     under the floor
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -82,7 +85,7 @@ for (const m of cast) {
   if (m.source || OWN) { const p = await loadGlb(path.join(DIR, `moves-${m.file}.glb`)); e.clips = prepareMoves(p, g.scene, p.scene, false); if (SEQ && m.row === 1) await addPack(e.clips, SEQ[1], g.scene); }
   members.push(e);
 }
-const perf = new Performer(npc, kClips, song, { restRoot: kpack.scene, style: STYLE, ground, bodies: cast.filter(m => m.row === 0 && m.id !== 'kotone').map(m => m.file) });
+const perf = new Performer(npc, kClips, song, { restRoot: kpack.scene, style: STYLE, ground, bodies: cast.filter(m => m.row === 0 && m.id !== 'kotone').map(m => m.file), level: SLOPE <= FLOOR_SLOPE });
 perf.start(0);
 let troupe = null, own = null;
 if (OWN) {   // every member its own dancer (no copy): the cost the shared rows save, and the own bakes' slide
@@ -130,14 +133,14 @@ for (let t = 0; t < end; t += dt) {
       s.sink = Math.max(s.sink, s.floor - p.y);
       if (SINK_WHY === s.e.m.id && s.floor - p.y > .01 && (s.kw = (s.kw || 0) + 1) <= 60) console.log(`  sink t ${t.toFixed(2)} ${s.e.m.id} ${'LR'[i]} ${((s.floor - p.y) * 100).toFixed(1)} cm | ${blk?.clip}${pb ? ` (from ${pb.clip}, fade ${blk.fade})` : ''} @bar ${(bar - blk.b0).toFixed(2)} of ${blk.b1 - blk.b0}`);
       if (on && s.prev[i]) { s.speeds.push(Math.hypot(p.x - s.prev[i].x, p.z - s.prev[i].z) / dt);
-        if (SLIDE_WHY === s.e.m.id && s.speeds.at(-1) > SLIDE && (s.sw = (s.sw || 0) + 1) <= 80) console.log(`  slide t ${t.toFixed(2)} ${s.e.m.id} ${'LR'[i]} ${(s.speeds.at(-1) * 100).toFixed(1)} cm/s | ${blk?.clip}${pb ? ` (from ${pb.clip}, fade ${blk.fade})` : ''} @bar ${(bar - blk.b0).toFixed(2)} of ${blk.b1 - blk.b0}`); }
+        if (SLIDE_WHY === s.e.m.id && s.speeds.at(-1) > SLIDE && (s.sw = (s.sw || 0) + 1) <= 80) console.log(`  slide t ${t.toFixed(2)} ${s.e.m.id} ${'LR'[i]} ${(s.speeds.at(-1) * 100).toFixed(1)} cm/s | ${blk?.clip}${pb ? ` (from ${pb.clip}, fade ${blk.fade})` : ''} @bar ${(bar - blk.b0).toFixed(2)} of ${blk.b1 - blk.b0}${s.e.m.row === 1 && troupe?.back ? ` pins ${JSON.stringify(troupe.back.dancer.feet.pins.map(q => q && +q.w.toFixed(2)))}` : ''}`); }
       if (on) { if (!s.run[i]) { s.run[i] = { x: p.x, z: p.z, max: 0 }; s.contacts++; } else s.run[i].max = Math.max(s.run[i].max, Math.hypot(p.x - s.run[i].x, p.z - s.run[i].z)); }
       else if (s.run[i]) { if (s.run[i].max > SLIDE) s.slides++; s.run[i] = null; }
       s.prev[i] = on ? { x: p.x, z: p.z } : null;
     });
     if (s.prev[0] && s.prev[1]) s.stance.push(s.feet[0].getWorldPosition(_v).distanceTo(s.feet[1].getWorldPosition(_w)) / s.hipW);
     if (s.check?.supported) { const v = s.check.check({ dt }); if (v.length) s.jointFrames++; for (const x of v) { const k = `${x.rule} ${x.joint}`; s.joints[k] = Math.max(s.joints[k] || 0, +(x.amount - x.limit).toFixed(1)); }
-      if (v.length && WHY && (s.why = (s.why || 0) + 1) <= WHY) console.log(`  t ${t.toFixed(2)} ${s.e.m.id}: ${v.map(x => `${x.rule} ${x.joint} ${x.amount.toFixed(0)}/${x.limit}`).join(', ')} | ${blk?.clip}${pb ? ` (from ${pb.clip}, fade ${blk.fade})` : ''} @bar ${(bar - blk.b0).toFixed(2)} of ${blk.b1 - blk.b0}${blk.freeze ? ' freeze' : ''}`); }
+      if (v.length && WHY && (s.why = (s.why || 0) + 1) <= WHY) console.log(`  t ${t.toFixed(2)} ${s.e.m.id}: ${v.map(x => `${x.rule} ${x.joint} ${x.amount.toFixed(0)}/${x.limit}`).join(', ')} | ${blk?.clip}${pb ? ` (from ${pb.clip}, fade ${blk.fade})` : ''} @bar ${(bar - blk.b0).toFixed(2)} of ${blk.b1 - blk.b0}${blk.freeze ? ' freeze' : ''}${s.e.m.row === 1 && troupe?.back ? ` pins ${JSON.stringify(troupe.back.dancer.feet.pins.map(q => q && +q.w.toFixed(2)))}` : ''}`); }
   }
 }
 const pct = (a, q) => { if (!a.length) return 0; const s = a.slice().sort((x, y) => x - y); return s[Math.min(s.length - 1, Math.floor(q * s.length))]; };

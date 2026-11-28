@@ -18694,12 +18694,6 @@
   ]
  },
  {
-  "s": "Popping",
-  "ctx": [
-   "UI (src/game/singplay/pickers.js)"
-  ]
- },
- {
   "s": "Party classics",
   "ctx": [
    "UI (src/game/singplay/pickers.js)"
@@ -18725,12 +18719,6 @@
  },
  {
   "s": "Ginga · round",
-  "ctx": [
-   "UI (src/game/singplay/pickers.js)"
-  ]
- },
- {
-  "s": "Wave · tut",
   "ctx": [
    "UI (src/game/singplay/pickers.js)"
   ]

@@ -313,7 +313,7 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
 
 #### The dance sequences — `moves-seq-<style>-kotone.glb` / `-nam1.glb` (since 2026-11-28, docs/SING-AND-PLAY.md "Dance sequences")
 
-- One lazy pack per sequence style (breaking, capoeira, popping, classics, latin, soul) and body: Kotone's (the front
+- One lazy pack per sequence style (breaking, capoeira, classics, latin, soul) and body: Kotone's (the front
   row's source) and nam-1's (the back row's). No mesh; the armature is copied from `moves-kotone` / `moves-vroid-nam1`
   (same joints, order and rest: tests/assets.test.mjs); clips `Seq*` (content/dance-sequences.js SEQ_TAKES), only the takes
   that body keeps (content/dance-seq-fit.js `rigs`); floor work (footwork, head spin, floor spin) only in nam-1's.

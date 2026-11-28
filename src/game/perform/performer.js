@@ -166,7 +166,7 @@ export class Performer {
    * npc: the performer (actors/npc.js: model, anim, face); clips: Map name -> AnimationClip (her pack, made ready for her
    * model); song: { song (the list entry), beats, lyrics, mouth, stage, url }; restRoot: the pack's armature (rest pose).
    */
-  constructor(npc, clips, song, { audio = null, restRoot = null, style, ground = null, avoid = null, bodies = null } = {}) {
+  constructor(npc, clips, song, { audio = null, restRoot = null, style, ground = null, avoid = null, bodies = null, level = true } = {}) {
     this.n = npc; this.clips = clips; this.data = song;
     this.clock = createBeatClock(song.song, { beats: song.beats, sections: song.stage?.sections || null, lyrics: song.lyrics });
     // (style: the Dance choice; avoid: clips this singer never dances, content/troupe.js GUESTS)
@@ -176,6 +176,7 @@ export class Performer {
     this.sound = new SongAudio(song.url, audio, song.song?.gainDb);
     this.restRoot = restRoot;
     this.ground = ground;   // (x, z) -> y: her feet fitted to a hillside (ground-fit.js); null on level stages
+    this.level = level;     // the group stands on level ground (singplay/flat.js floorOk): a sequence's feet lock, floor work
     this.t = 0; this.on = false; this.done = false;
     this.w = 0; this.g = 0; this.cur = ''; this.prevMic = ''; this.xfAt = -99;
     this.actions = new Map(); this.layer = null; this.mic = null;
@@ -268,7 +269,9 @@ export class Performer {
     const P = this.plan, t = Math.min(this.t, P.end), c = this.clock, lines = P.lines;
     const want = lines ? leadTarget(lines, t) : 0;
     this.source?.pose(dt, t);             // a lead who is not Kotone: Kotone's rig danced, her body copies it
-    if (this.plan.sequence) this.feet?.lock(dt, this.fading === 1);   // a sequence's takes: feet pinned where they touch (foot-hold.js lock)
+    // a sequence's takes on level ground: feet pinned where they touch (foot-hold.js lock); on a hillside the hold, as the
+    // Club loops (the lock's pins and the ground fit's leg solve on one leg bent knees out of their plane: troupe-check --slope 8)
+    if (this.plan.sequence && this.level) this.feet?.lock(dt, this.fading === 1);
     else this.feet?.update(dt, this.fading);   // planted feet held through a cross-fade (foot-hold.js)
     this.onPose?.(dt, t);                  // her dance pose, before the mic: a group's front row copies it (troupe.js)
     this.fit?.apply();                     // then her own feet on the slope under her (the copies fit their own: troupe.js)
