@@ -87,6 +87,12 @@ export const CONTRACTS = {
   ...Object.fromEntries(VISITORS.flatMap(m => [
     [m, { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }],
     [`${m}.lite`, { family: 'vroid', vroidOf: m, tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }]])),
+  // The Night Star (docs/NIGHT-STAR.md): VRoid Project's CC0 alpha sample AvatarSample_D_Darkness, built like the others
+  // (vroid_mixamo.py: one mesh, one MASK atlas, 69 bones, the face morphs, the everyday clips); fetched only at night
+  // near the shrine (game/nightstar/) or when Sing & Play's Singer row picks her. Her dances are Kotone's (copied from
+  // Kotone's rig: perform/troupe.js leadSource), so she has no pack of her own. 13.6k / 8.0k triangles, 1.73 m.
+  'vroid-nightstar': { family: 'vroid', tris: 14500, atlas: 1024, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
+  'vroid-nightstar.lite': { family: 'vroid', vroidOf: 'vroid-nightstar', tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS },
   tamo: { family: 'characters', tris: 4000, nodes: ['root', 'body', 'arm_L', 'arm_R'], mats: ['Tamo glow'], clips: ['Float', 'Happy', 'Talk', 'Sad', 'Fire'] },
 
   // The dance game's performers (art/blender/build_performers.py on the graceful body, docs/PERFORMERS.md). Seen up
@@ -401,7 +407,9 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +0.21 MB: the language pilot's five larger home kinds (seats, camera points, scene props; 85,402,716 B measured).
 // +3.89 MB: the station visitors Vita and Bibi (visitor-vita.glb 1.13 MB, visitor-bibi.glb 1.12 MB, their .lite files 0.79 /
 // 0.78 MB; 89,296,816 B measured). Fetched only near the station or near the sisters (game/station-visitors.js), one set or the other.
-export const TOTAL_RAW_BYTES = 89_450_000;    // (the dance game, the exercise packs and the visitor)
+// +1.90 MB: the Night Star (vroid-nightstar.glb 1.11 MB, .lite 0.79 MB; one or the other is fetched, at night near the
+// shrine or for Sing & Play's Singer row; no pack of her own: she dances Kotone's moves); 87,298,064 B measured.
+export const TOTAL_RAW_BYTES = 91_400_000;     // (the dance game, the exercise packs, the visitors and the Night Star)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
 // 14.2 -> 14.3 MB: critters (0.14 MB packed together; mostly their clips).
@@ -430,7 +438,9 @@ export const TOTAL_RAW_BYTES = 89_450_000;    // (the dance game, the exercise p
 // -5.2 MB: the six unused member packs dropped (owner 2026-11-28).
 // +0.2 MB: the happy faces and the Dance choice packed (a model +10-15 KB, the two packs 0.86 -> 0.97 MB; 37.49 MB measured).
 // +2.16 MB: Vita and Bibi packed (0.63 / 0.62 MB, light 0.46 / 0.45 MB; one set or the other, fetched near the station only; 39,708,864 B measured).
-export const TOTAL_PACKED_BYTES = 39_720_000;     // (all together)
+// +1.06 MB: the Night Star packed (vroid-nightstar.glb 0.60 MB, .lite 0.45 MB; one or the other is fetched, at night by
+// the shrine or for Sing & Play's Singer row).
+export const TOTAL_PACKED_BYTES = 40_800_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of
 // the model library above and are only downloaded by a phone that plays them (one clip at a time).

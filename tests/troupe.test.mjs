@@ -12,7 +12,7 @@ import { canGroup } from '../src/game/singplay/flat.js';
 import { groupLimits, groupMax, GROUP_LIMITS } from '../src/game/singplay/singplay.js';
 import { strongPhone, BudgetWatch, dropNow, STRONG } from '../src/game/singplay/strong-phone.js';
 import { mergeRowGeometry, atlasCell, canMerge, RowMesh } from '../src/game/perform/row-merge.js';
-import { TROUPE, troupeOf, troupeFiles, leadOffset, GROUP_SIZES, castOf, SINGERS, NAMES, LOCAL_NAMES, nameOf, KOTONE, BACK_PACK, member } from '../src/content/troupe.js';
+import { TROUPE, troupeOf, troupeFiles, leadOffset, GROUP_SIZES, castOf, SINGERS, NAMES, LOCAL_NAMES, nameOf, KOTONE, BACK_PACK, member, GUESTS, singersWith } from '../src/content/troupe.js';
 import { CLUB_LOOPS } from '../src/content/kotone-club.js';
 import { VROID_MEMBERS } from './asset-contracts.mjs';
 
@@ -45,8 +45,9 @@ test('the cast: Kotone leads the front row, two rows of four, one source a row, 
 
 test('any member sings lead: she takes the lead place, Kotone hers (and stays the front row source), no new files', () => {
   assert.deepEqual([...SINGERS].sort(), TROUPE.map(m => m.id).sort(), 'the Singer row lists all eight');
-  assert.equal(SINGERS[0], KOTONE); assert.deepEqual(Object.keys(NAMES).sort(), [...SINGERS].sort(), 'every singer has a name');
-  for (const l of ['ko', 'vi']) assert.deepEqual(Object.keys(LOCAL_NAMES[l]).sort(), [...SINGERS].sort(), `every singer has a ${l} name`);
+  const all = singersWith(GUESTS.map(g => g.id));   // (the guests too: the Night Star once seen)
+  assert.equal(SINGERS[0], KOTONE); assert.deepEqual(Object.keys(NAMES).sort(), [...all].sort(), 'every singer has a name');
+  for (const l of ['ko', 'vi']) assert.deepEqual(Object.keys(LOCAL_NAMES[l]).sort(), [...all].sort(), `every singer has a ${l} name`);
   assert.equal(nameOf('nu-3', 'ko'), '지유'); assert.equal(nameOf('nu-3', 'vi'), 'Mai'); assert.equal(nameOf('nu-3', 'ja'), 'Saki');
   assert.deepEqual(castOf(KOTONE), TROUPE.map(m => ({ ...m })), 'Kotone leading: the cast as it was');
   for (const id of SINGERS) {

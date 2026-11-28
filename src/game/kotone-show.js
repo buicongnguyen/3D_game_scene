@@ -14,7 +14,7 @@
 // A song number starts only when Mika is near (its audio and data load then); she hears it louder the closer she stands.
 import { prepareMoves, lendClips } from './tricks/exercise-moves.js';
 import { SPOTS } from '../content/townsfolk.js';
-import { KOTONE_SONGS, songFromParam, songsFor } from '../content/kotone-songs.js';
+import { KOTONE_SONGS, songFromParam, showSongs } from '../content/kotone-songs.js';
 import { getLang } from '../i18n/i18n.js';
 import { Performer } from './perform/performer.js';
 
@@ -99,9 +99,9 @@ export class KotoneShow {
     return this.songsLoading;
   }
 
-  /** The loaded songs she sings in the game's language now. */
+  /** The loaded songs she sings in the game's language now (hers: not another singer's own song, showSongs). */
   songPool() {
-    const want = new Set(songsFor((this.songs || []).map(x => x.song), getLang()));
+    const want = new Set(showSongs((this.songs || []).map(x => x.song), SHOW.who, getLang()));
     return (this.songs || []).filter(x => want.has(x.song));
   }
 

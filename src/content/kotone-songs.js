@@ -20,6 +20,18 @@ export const KOTONE_SONGS = [
   { id: 'golden-rails-vi', title: N_('Golden Rails'), base: 'songs/kotone/', audio: 'golden-rails-vi.m4a', bpm: 85, offset: 0.095, duration: 88, mood: 'uplifting', language: 'vi' },
 ];
 
+// `singer` (optional): whose song it is. The Night Star's show at the night festival (game/nightstar/) sings the songs
+// with `singer: 'night-star'` (in the game's language, songsFor); until she has one she sings Kotone's (showSongs).
+// Adding her song (EN / VI) is one entry each, e.g.
+//   { id: 'night-star-en', title: N_('Night Star'), base: 'songs/kotone/', audio: 'night-star-en.m4a', bpm: 92, offset: 0.3, duration: 120, mood: 'dreamy', language: 'en', singer: 'night-star' },
+// In Sing & Play every singer may sing every song (the Song row lists them all).
+
+/** The songs a show by `singer` sings in language `lang`: her own (`singer` field), else the songs nobody owns. */
+export function showSongs(list, singer, lang) {
+  const own = list.filter(s => s.singer && s.singer === singer);
+  return songsFor(own.length ? own : list.filter(s => !s.singer), lang);
+}
+
 /**
  * The songs for the game's language `lang` ('en', 'vi', 'ko', 'ja'): those sung in it, else the English ones. An entry
  * without a `language` (a test page's `?kotoneSong=`) goes with every language; 'en+vi' with either.

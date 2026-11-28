@@ -7,7 +7,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
-import { TROUPE, SINGERS } from '/src/content/troupe.js';
+import { member, singersWith, GUESTS } from '/src/content/troupe.js';
 
 const S = 128;
 const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: false });
@@ -16,8 +16,10 @@ renderer.outputColorSpace = THREE.SRGBColorSpace; renderer.toneMapping = THREE.A
 document.body.appendChild(renderer.domElement);
 const loader = new GLTFLoader(); loader.setMeshoptDecoder(MeshoptDecoder);
 const out = {};
-for (const id of SINGERS) {
-  const m = TROUPE.find(x => x.id === id);
+// (?only=<id>,<id>: just those, e.g. a new guest singer; the others keep their files byte for byte)
+const only = new URLSearchParams(location.search).get('only')?.split(',').filter(Boolean) || null;
+for (const id of singersWith(GUESTS.map(g => g.id)).filter(id => !only || only.includes(id))) {
+  const m = member(id);
   const gltf = await loader.loadAsync(`/models/${m.file}.glb`);
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#f6e7d2');
