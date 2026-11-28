@@ -170,9 +170,9 @@ export class Renderer {
   buildComposer() {
     const q = this.q;
     const size = this.renderer.getSize(new THREE.Vector2());
-    const rt = new THREE.WebGLRenderTarget(Math.max(1, size.x), Math.max(1, size.y), {
-      type: THREE.HalfFloatType, samples: Math.min(q.msaa, this.renderer.capabilities.maxSamples || 0),
-    });
+    const samples = this.samples = Math.min(q.msaa, this.renderer.capabilities.maxSamples || 0);
+    const rt = new THREE.WebGLRenderTarget(Math.max(1, size.x), Math.max(1, size.y), { type: THREE.HalfFloatType, samples });
+    this.onSamples?.(samples);   // (game.js: the people's faces use alpha to coverage only on a multisampled frame)
     this.composer?.dispose();
     this.bloom?.dispose();
     this.composer = new EffectComposer(this.renderer, rt);

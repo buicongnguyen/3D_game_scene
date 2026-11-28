@@ -263,12 +263,85 @@ mouth closed (fine), but no smile, the "a little sad" face the owner had asked t
 - Alpha-tested lines lost in the mips (lashes, brows): the dark feature pixels in the eye band already match the
   reference (e.g. Kotone at 8 m 149 of 153, 12 m 55 of 53), drawing the girls and Kotone from mip 0 only moves their
   error by -1.0..+2.3 (the boys gain from it: cause 2), and the whole atlas keeps 96 % of its alpha coverage at mip 3.
-  Coverage-preserving mips or alpha sharpening would buy nothing.
+  Coverage-preserving mips or alpha sharpening would buy nothing. (Round 2 below: wrong. That count was too lenient
+  and the alpha was measured over the whole atlas; per face sheet the boys' brows lose 55 % of their coverage at mip 3.)
 - Shadows on the faces (receiveShadow off): -0.1..+0.5 error, no visible change. Bloom off: no change.
 - Bleeding between members in the merged rows' atlas: the boys' smear is the same on their own meshes (cause 2).
 - Lite mesh normals: the faces are not decimated in the light files (same face triangles).
 Not changed: the faces are lit as 3D surfaces (a shading line down the nose when the sun is from the side). An anime
-look would bend the face normals forward; that changes close-ups too, so it is the owner's call.
+look would bend the face normals forward; that changes close-ups too, so it is the owner's call (done in round 2).
+
+### Round 2 (2026-11-28): "at a little distance their face becomes no face"
+After the first round the owner still saw blank faces from ~6 m (head ~38 px at 1080p): eyes, eye lines and brows faded
+to skin colour while the supersampled picture still showed dark marks; at 12 m nearly no face; a hard light/shade split
+down every face. Measured again on frozen Sing & Play frames (group of 8, Golden Rails at 42 s) with a new probe
+(`.tools/faces2/probe.mjs`: variants switched by uniform on ONE frame, a 3x supersampled truth, crops read back with
+readPixels; `sheet.py`, `final_sheet.py`; 2 s moving-camera sequences for flicker).
+
+**What made the face disappear.**
+1. *The boys' atlases (the root of their smear).* `vroid_lite.build_atlas` scaled each source island by sqrt(w x h) and
+   then `bpy.ops.uv.pack_islands` "corrected" the islands for the aspect of the material's picture: the boys' first
+   material slot is the 1024 x 256 brow sheet, and every island the packer turned 90 degrees came back squashed by that
+   aspect squared. Face skin 15 : 1 (p90 19 : 1; the source is 1.15 : 1), nam-2's irises 7.7 : 1, the atlas 27-43 % used,
+   nam-1's UVs past the picture's edge (v -0.039). Reproduced in Blender 5.2.5 (`.tools/faces2/pack_probe.py`: face skin
+   1.2 -> 16.1 after the pack; a picture-less material on every slot while packing: 1.2 -> 1.2). The girls' first slot is
+   the square mouth sheet: not squashed. Two more wastes on every VRoid build: the brow / eye-line / lash sheets came out
+   4 : 1 and the eyes 2 : 1 (sqrt scaling of non-square pictures), and nam-2's 83 hair cards each got their own copy of
+   the hair sheet (~85 % of his atlas: his face skin 112 x 112 texels).
+2. *Thin strokes vanish under the alpha cut-off.* The lines, lashes and brows are alpha-tested shells. Per face sheet
+   (not the whole atlas, as round 1 measured): nam-1's brows keep all their passing texels to mip 2, 45 % at mip 3,
+   30 % at mip 4, none at mip 5; his lashes 67 % at mip 3, none at mip 5; Kotone's lashes 51 % at mip 4. A stroke
+   thinner than half the pixel is discarded and the skin shows; the supersampled picture keeps it as a partly dark
+   pixel. Against that truth the eye band of the plain render had 75-87 % of its darkness at 6-18 m for Kotone and
+   57 % (12 m) / 1 % (18 m) for nam-1.
+3. *Side light on a 3D face.* The face is lit as a real surface: a hard shade line down the nose and one dark cheek,
+   which at 20-40 px reads as a patchy, featureless face.
+
+**Fixes.**
+1. *Atlas (art/blender/vroid_lite.py build_atlas; the three boys rebuilt, one Blender 5.2.5 run each; nam-1's pack and
+   Club bake redone: byte-identical to before).* Islands scaled by the source picture's width and height (square
+   texels); each material on a UV tile of its own with `merge_overlap` (one material's islands that read the same texels
+   share them; two materials never do); one picture-less material on every slot while packing; `udim_source=
+   'ACTIVE_UDIM'` (into the unit square); an assert that every UV stays inside. Face skin 15 : 1 -> 1.18 : 1 and
+   54,590 / 8,950 / 16,628 -> 153,519 / 136,612 / 151,789 texels (nam-1 / nam-2 / nam-3); brows, lines, lashes, irises
+   1.1-1.4 : 1 with 2.5-15x the texels; atlas used 27 / 38 / 43 % -> 72 / 75 / 73 %. tests/assets.test.mjs now checks
+   every VRoid file's face texels (median stretch under 1.6 : 1; boys 1.17-1.20, girls 1.21-1.49) and that its UVs stay
+   inside. Sizes: the six boys' files +51 KB raw, +10.7 KB packed (the PC group set +39 KB, the phone set -29 KB).
+2. *Strokes (actors/face-look.js, patched into the VRoid material and the rows' copy).* On a multisampled frame (PC
+   Medium, High) the face's own fragments (a per-vertex face mask, 1 byte, found at load: the parts a face morph moves,
+   held by the head or an eye bone) use alpha to coverage: near, the edge sharpened at the cut-off; far (from mip 0.5,
+   full at 2.5), the cut-off done on four reads a level finer across the pixel, coverage = (the part that passes) ^ 0.7,
+   in the stroke's own colour. Hair and clothes keep the all-or-nothing cut-off (partial coverage let the forehead show
+   through the fringe). Low (no multisampling) is unchanged; a governor step that drops the samples switches it back.
+3. *Anime face shading (actors/face-look.js faceNormals).* The face's normals bent 80 % toward an ellipsoid in the head
+   (half-axes 0.15 / 0.18 / 0.086 m, flat in front, centre 1 cm behind and below the eye bones), once a model at load;
+   the joined rows carry both normal sets. The face is lit as one soft surface from any side; the hair and body keep
+   theirs. `?faceShade=off` / `?faceFeatures=off` compare.
+
+**Effect** (eye-band error in 0-255 levels against the run's own supersampled truth, before -> after; "dark" = the
+darkness the eyes and brows put in that band, 1 = the truth's). PC 1280 x 720: Kotone 2 m 4.6 -> 4.0, 4 m 9.3 -> 8.4,
+8 m 16.7 -> 11.1, 12 m 16.1 -> 13.9 (dark 0.78 -> 0.92 at 8 m); Saki (nu-3) 4 m 8.8 -> 7.2, 8 m 13.7 -> 11.4; Riku
+(nam-1) 3 m 6.6 -> 4.5, 6 m 8.4 -> 6.3, 12 m 6.8 -> 4.7 (dark 0.57 -> 1.14), 18 m dark 0.01 -> 0.80. At 18 m (7 px heads)
+the girls' error rises 1-2 levels while their darkness gets closer to the truth's (0.75 -> 0.85, 0.79 -> 0.96).
+Low 390 x 844: the re-pack alone (no runtime rule there): the girls within 1.5 levels of before; the boy's smear is gone
+(before, the squashed skin darkened his whole face). Flicker over a 2 s dolly (excess frame-to-frame change against the
+truth's): PC at 8 m Kotone 1.11 -> 1.19, Saki 1.17 -> 1.22, Riku 0.65 -> 0.54; Low at 6 m 1.19 -> 1.24, 1.39 -> 1.43,
+0.52 -> 0.60. Cost: no new draws, materials or programs (149 PC / 140 Low, before and after); frame time on the frozen
+frame 7.9 vs 8.1 ms (Kotone at 6 m) and 7.7 vs 8.2 ms (the group at 10 m), within noise; four extra texture reads only
+on far face pixels. Sheets: `.tools/faces2/final/pc720-*.png`, `low390-*.png` (before | after | truth), numbers in
+`pc720.json`, `low390.json`.
+
+**Measured and rejected (round 2).** Alpha to coverage with the plain mip alpha (soft stroke edges read as see-through:
+lighter eyes, a streaky fringe, smudges around the eyes once boosted); a lower far cut-off (0.3-0.42: black bars and
+broken dashes on the boys' brows, the girls 1.4x too dark at 12 m); a 2 x 2 screen dither (eye error 20-30); a -1 mip
+bias (black blobs on the brows); the four-read majority without multisampling (the boy 1.45x too dark, flicker
+0.52 -> 0.83). On Low every all-or-nothing rule measured worse than none.
+
+Not done: the girls, Kotone, the Night Star and the visitors are not rebuilt. Their face skin is square (1.2-1.5 : 1)
+and their atlases 52-62 % used, but the same build would give their faces ~5x the texels (Kotone 27,146 -> 135,887,
+Saki 25,606 -> 133,715: hair cards sharing their sheet) and square brows: sharper close-ups, nothing at a distance.
+Kotone's needs her pack, Club bake and portrait redone with it (`vroid_mixamo.py`, then `kotone-club-bake.mjs`,
+`kotone_portrait.py`).
 
 ## Checks
 - `npm test` (troupe.test.mjs: cast, back routine, copy maths, leg solve, sing-along gate, room check, group shots,

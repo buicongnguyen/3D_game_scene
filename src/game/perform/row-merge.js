@@ -14,6 +14,7 @@
 // The members' own meshes stay in the scene, hidden (their bones are still walked by engine/matrices.js), so the row
 // can switch back (setMerged) and the faces need no change.
 import * as THREE from 'three';
+import { registerNormals, faceNormalsOf, forgetNormals, trackFaceMaterial, untrackFaceMaterial } from '../../actors/face-look.js';
 
 /** The margin around each member's picture in the joined texture (part of its own size). */
 export const ATLAS_PAD = 1 / 16;
@@ -49,7 +50,10 @@ export function canMerge(meshes) {
 export function mergeRowGeometry(meshes, { pad = ATLAS_PAD } = {}) {
   const n = meshes.length, total = meshes.reduce((s, o) => s + o.geometry.attributes.position.count, 0);
   const pos = new Float32Array(total * 3), nor = new Float32Array(total * 3), uv = new Float32Array(total * 2);
+  // (faces shaded as one soft surface, actors/face-look.js: both normal sets come along, for its A/B switch)
+  const fns = meshes.some(o => faceNormalsOf(o.geometry)) ? [new Float32Array(total * 3), new Float32Array(total * 3)] : null;
   const si = new Uint16Array(total * 4), sw = new Float32Array(total * 4), mem = new Float32Array(total);
+  const face = meshes.some(o => o.geometry.attributes.aFace) ? new Uint8Array(total) : null;   // (actors/face-look.js)
   const targets = Object.keys(meshes[0].morphTargetDictionary || {}).sort((x, y) => meshes[0].morphTargetDictionary[x] - meshes[0].morphTargetDictionary[y]);
   const morphIx = meshes.map(o => targets.map(t => o.morphTargetDictionary[t]));
   const hasMN = !!meshes[0].geometry.morphAttributes.normal;
@@ -66,9 +70,11 @@ export function mergeRowGeometry(meshes, { pad = ATLAS_PAD } = {}) {
       const at = base + k;
       v.fromBufferAttribute(A.position, k).applyMatrix4(B); pos[at * 3] = v.x; pos[at * 3 + 1] = v.y; pos[at * 3 + 2] = v.z;
       if (A.normal) { v.fromBufferAttribute(A.normal, k).applyMatrix3(nm).normalize(); nor[at * 3] = v.x; nor[at * 3 + 1] = v.y; nor[at * 3 + 2] = v.z; }
+      if (fns) { const fn = faceNormalsOf(g); [fn?.orig, fn?.bent].forEach((src, j) => { if (src) v.fromArray(src, k * 3).applyMatrix3(nm).normalize(); else v.fromArray(nor, at * 3); v.toArray(fns[j], at * 3); }); }
       u.fromBufferAttribute(A.uv, k).applyMatrix3(uvm); uv[at * 2] = cell.off[0] + u.x * cell.k[0]; uv[at * 2 + 1] = cell.off[1] + u.y * cell.k[1];
       for (let q = 0; q < 4; q++) { si[at * 4 + q] = A.skinIndex.getComponent(k, q) + jb; sw[at * 4 + q] = A.skinWeight.getComponent(k, q); }
       mem[at] = i;
+      if (face && A.aFace) face[at] = A.aFace.array[k];
       targets.forEach((t, j) => {
         const ix = morphIx[i][j], P = g.morphAttributes.position?.[ix];
         if (P) { v.fromBufferAttribute(P, k); if (!g.morphTargetsRelative) v.sub(_p.fromBufferAttribute(A.position, k)); applyLinear(v, B); mp[j][at * 3] = v.x; mp[j][at * 3 + 1] = v.y; mp[j][at * 3 + 2] = v.z; }
@@ -84,10 +90,12 @@ export function mergeRowGeometry(meshes, { pad = ATLAS_PAD } = {}) {
   const out = new THREE.BufferGeometry();
   out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
   out.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+  if (fns) registerNormals(out, fns[0], fns[1]);
   out.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
   out.setAttribute('skinIndex', new THREE.BufferAttribute(si, 4));
   out.setAttribute('skinWeight', new THREE.BufferAttribute(sw, 4));
   out.setAttribute('aMember', new THREE.BufferAttribute(mem, 1));
+  if (face) out.setAttribute('aFace', new THREE.BufferAttribute(face, 1, true));
   out.setIndex(new THREE.BufferAttribute(total > 65535 ? new Uint32Array(index) : new Uint16Array(index), 1));
   if (targets.length) {
     out.morphAttributes.position = mp.map(a => new THREE.BufferAttribute(a, 3));
@@ -130,7 +138,11 @@ export function rowMaterial(src, map, members, targets) {
   // (four slots a row whatever its size: both rows share one shader program, one compile at the show's start)
   const T = targets, slots = new Float32Array(Math.max(1, Math.max(4, members) * T));
   m.userData.rowMorph = slots;
-  m.onBeforeCompile = sh => {
+  // (the members' own hook first: actors/face-look.js patches their atlas material; clone() does not copy hooks)
+  const own = src.onBeforeCompile === THREE.Material.prototype.onBeforeCompile ? null : src.onBeforeCompile, ownKey = own ? src.customProgramCacheKey() : '';
+  trackFaceMaterial(m);
+  m.onBeforeCompile = (sh, r) => {
+    own?.call(src, sh, r);
     sh.uniforms.uRowMorph = { value: slots };
     const loop = (k, add) => `
 #ifdef ${k}
@@ -143,7 +155,7 @@ export function rowMaterial(src, map, members, targets) {
       .replace('#include <morphtarget_vertex>', T ? loop('USE_MORPHTARGETS', 0) : '#include <morphtarget_vertex>')
       .replace('#include <morphnormal_vertex>', T ? loop('USE_MORPHNORMALS', 1) : '#include <morphnormal_vertex>');
   };
-  m.customProgramCacheKey = () => `troupe-row-${slots.length}`;
+  m.customProgramCacheKey = () => `troupe-row-${slots.length}${ownKey}`;
   return m;
 }
 
@@ -197,6 +209,7 @@ export class RowMesh {
   dispose() {
     this.setMerged(false);
     this.mesh.removeFromParent();
+    forgetNormals(this.mesh.geometry); untrackFaceMaterial(this.mesh.material);
     this.mesh.geometry.dispose(); this.mesh.material.map?.dispose(); this.mesh.material.dispose(); this.mesh.skeleton.dispose();
   }
 }

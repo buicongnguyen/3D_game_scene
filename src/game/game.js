@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { Renderer, isMobile } from '../engine/renderer.js';
 import { getTropicalTrees as tropicalTreesOn } from '../world/tree-theme.js';
 import { Assets } from '../engine/assets.js';
+import * as FaceLook from '../actors/face-look.js';
 import { trimModels } from '../engine/trim.js';
 import { peopleSet, performersSet } from '../engine/people.js';
 import { Input } from '../engine/input.js';
@@ -45,7 +46,10 @@ export class Game {
     this.assets.performers = performersSet(this.renderer.qualityName, params);
     // (the VRoid people's atlas: anisotropic filtering, the GPU's most on PC, 4 on Low; ?atlasAniso=1 turns it off)
     { const mx = this.renderer.renderer.capabilities.getMaxAnisotropy(), want = Number(params?.get?.('atlasAniso')) || (this.renderer.qualityName === 'low' ? 4 : 16);
-      this.assets.atlasAniso = Math.max(1, Math.min(mx, want)); }
+      this.assets.atlasAniso = Math.max(1, Math.min(mx, want)); FaceLook.FACE_LOOK.uFaceAniso.value = this.assets.atlasAniso; }
+    // (and their faces' thin strokes: alpha to coverage while the frame is multisampled, actors/face-look.js)
+    this.faceLook = FaceLook;
+    this.renderer.onSamples = s => FaceLook.setFaceA2C(s > 0); FaceLook.setFaceA2C(this.renderer.samples > 0);
     this.time = { hour: 10, speed: 0, season: 'spring' };
     this.systems = [];
     this.paused = false;

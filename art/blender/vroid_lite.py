@@ -23,7 +23,9 @@ What the script does, per character:
    blink, mouthA, mouthO from the authored Fcl_EYE_Close / Fcl_MTH_A / Fcl_MTH_O).
 4. Material. Every source material's base colour and alpha are baked (Cycles, emission) into ONE atlas; one
    material, alpha MASK, double sided -> one draw call. Texel share per material follows its source texture size,
-   the face and eyes get extra.
+   the face and eyes get extra; texels stay square (u by the source's width, v by its height), islands of one material
+   that read the same texels share them (hair cards), and the packer is kept from "correcting" for a picture's aspect
+   (build_atlas: the boys' faces came out 16 : 1 before 2026-11-28).
 """
 import bpy, bmesh, sys, os, json, math, struct
 import numpy as np
@@ -341,22 +343,40 @@ def build_atlas(o, size, face_boost, out_png):
     if os.environ.get('VROID_DEBUG'):
         for (img, fac, ua), s in zip(info, o.material_slots):
             print('SRC', s.material.name, img.name if img else None, img.size[:] if img else None, [round(x, 3) for x in fac], ua)
+    # each island in source texels: u by the source picture's width, v by its height, so a texel stays square in the atlas
+    # (a 1024 x 256 brow / eye-line / lash sheet scaled by sqrt(w * h) both ways came out 4 : 1, the 1024 x 512 eyes 2 : 1)
     scale = []
     for (img, fac, _), s in zip(info, o.material_slots):
-        px = math.sqrt(img.size[0] * img.size[1]) / 1024 if img and img.size[0] else 0.1
+        w, h = (img.size[0], img.size[1]) if img and img.size[0] else (102.4, 102.4)
         n = s.material.name
         boost = face_boost if any(k in n for k in ('_FACE', '_EYE', 'Face_00_SKIN')) else 1.0
-        scale.append(px * boost)
+        scale.append((w / 1024 * boost, h / 1024 * boost))
+    # Each material on a tile of its own (u + 8 x its slot), so islands of one material that read the same part of its
+    # picture can share their texels (merge_overlap) and two materials never do: nam-2's 83 hair cards each read the whole
+    # hair sheet and took ~85 % of his atlas as ~170 copies of it, his face skin 112 x 112 texels.
     uv = atlas.data
     for p in me.polygons:
-        k = scale[p.material_index]
-        for li in p.loop_indices: uv[li].uv = uv[li].uv * k
+        kx, ky = scale[p.material_index]
+        off = 8.0 * p.material_index
+        for li in p.loop_indices: uv[li].uv = (uv[li].uv.x * kx + off, uv[li].uv.y * ky)
     select_only([o])
+    # The packer corrects islands for the aspect of their material's picture (the boys' first slot is the 1024 x 256 brow
+    # sheet): an island it turned 90 deg came back squashed by that aspect squared, the boys' face skin 16 : 1 in a strip
+    # 60 texels wide, with 36-45 % of the atlas left empty (2026-11-28, face-speech-motion faces-at-distance.md). One
+    # picture-less material on every slot while packing: no correction, the islands keep the square texels set above.
+    keep = [s.material for s in o.material_slots]
+    plain = bpy.data.materials.new('pack_plain')
+    for s in o.material_slots: s.material = plain
     bpy.context.scene.tool_settings.use_uv_select_sync = True
     bpy.ops.object.mode_set(mode='EDIT')
     bpy.ops.mesh.select_all(action='SELECT')
-    bpy.ops.uv.pack_islands(rotate=True, scale=True, margin=0.006, merge_overlap=False, shape_method='CONCAVE')
+    # (into the 0..1 square: the default puts each island in the UDIM tile nearest to it, the material tiles above)
+    bpy.ops.uv.pack_islands(udim_source='ACTIVE_UDIM', rotate=True, scale=True, margin=0.006, merge_overlap=True, shape_method='CONCAVE')
     bpy.ops.object.mode_set(mode='OBJECT')
+    for s, m in zip(o.material_slots, keep): s.material = m
+    bpy.data.materials.remove(plain)
+    U = np.array([l.uv[:] for l in o.data.uv_layers['atlas'].data])
+    assert U.min() > -0.01 and U.max() < 1.01, f'atlas UVs outside the picture: {U.min(0)} .. {U.max(0)}'
     # bake: each source material as emission (colour, then alpha) into the atlas
     sc = bpy.context.scene
     sc.render.engine = 'CYCLES'; sc.cycles.device = 'CPU'; sc.cycles.samples = 4

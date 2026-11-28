@@ -282,6 +282,14 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
 - Build a member's three files in ONE run (Blender 5.2.5 LTS, `C:\tools\blender\blender-5.2.5-windows-x64\blender.exe
   -b --factory-startup --python art/blender/vroid_mixamo.py -- --member nam-1`): Blender 5.x's exporter orders the roots
   by name, so a model and its pack from different runs may not match (tests/assets.test.mjs checks joints and rest).
+  A member whose pack does not ship: `-- --member nam-2 --only full,lite`.
+- The atlas (`vroid_lite.build_atlas`, 2026-11-28 round 2): square texels (each island scaled by its source picture's
+  width and height), one material's islands that read the same texels share them (hair cards), the packer kept from
+  correcting for a picture's aspect (it had squashed the boys' face skin 16 : 1). tests/assets.test.mjs checks every
+  VRoid file: the face's texels under 1.6 : 1 (median), every UV inside the picture. Rebuilt with it so far: nam-1, nam-2,
+  nam-3 (models and light files; nam-1's pack and Club bake came out byte-identical). The girls, Kotone, the Night Star
+  and the visitors still carry the older pack (face skin square, brow / line / lash sheets 4 : 1, hair cards one copy
+  each): a rebuild gives their faces ~5x the texels (docs/GROUP-PERFORMANCE.md, "Faces at a distance", round 2).
 - Loaded only by a group performance (`content/troupe.js`, `game/perform/troupe.js`): the models of the group and one
   pack (`moves-vroid-nam1`, the back row's source). Only that pack ships: the other six were dropped from the deploy
   (owner, 2026-11-28); `--member <id>` rebuilds a member's pack when it is needed.
