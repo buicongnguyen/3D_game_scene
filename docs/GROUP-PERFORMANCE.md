@@ -223,6 +223,53 @@ inside the noise, moves at half the frame rate) or no back-row shadows.
 **Owner (2026-11-28):** +3.1 ms on the fixed full-group view accepted (no look trade); when the back row leaves, a short
 toast says "The back row is taking a break" (vi/ko/ja).
 
+## Faces at a distance (2026-11-28)
+Owner: "In Perform, when the camera is a little distant, the faces of the characters are not clear, they seem broken,
+even on PC. How to fix?"
+
+Measured on frozen frames (Sing & Play, group of 8, mid-chorus; the camera 2-18 m in front of Kotone and on the
+formation's centre; PC High 1280x720 and 1920x1080, Low 390x844), every suspect switched on the same frame and compared
+with a 3x supersampled picture of it (`.tools/faces/probe.mjs`, `sheet.py`, `summary.py`; sheets in `.tools/faces/shots/`).
+
+**Cause 1, the main one: the eyes turned out of their sockets.** Every face looks at the camera within 7 m
+(actors/face.js; the troupe's faces always, Kotone on her sung lines). The VRoid irises are wide, shallow caps
+(36 mm across, 15 mm deep) sitting about 0.4 mm in front of the eye white, and the eye bones of the converted rig sit
+58 mm behind them and 2 cm toward the nose (`.tools/faces/eye_rig.py`; the same in the source files). Turning such an
+eye by 4 / 10 / 17 degrees slides the iris 4 / 10 / 16 mm and sinks its rim behind the eye white: 94 / 76 / 49 % of the
+iris stays visible, cut by a hard straight edge (`iris_visible.py`). Over 75 s of a real show (the camera man's own
+shots) the old gaze turned more than 12 degrees in 85 % of the samples and sat at its 17 degree limit in 72 %; with the
+camera 3-8 m away, 88-93 % were over 10 degrees (`gaze-stats.mjs`). Close-ups are straight on and past 7 m the eyes
+look ahead, so it showed exactly "a little distant": half-white crescents or blank white eyes.
+**Fix:** the iris slides in the face plane instead (`EYE` in actors/face.js): an eyeball of 12 mm turned toward the
+target, at most 3 mm across and 2 mm up (an ellipse), the eye bone never turns, so the iris never goes deeper than the
+eye white: 92-98 % visible at the full slide. `?eyes=turn` brings the old turn back to compare. Same cost (well under
+1 us a face a frame in Node), works on the merged rows (they skin the members' own bones) and on the lead.
+
+**Cause 2: the boys' faces were drawn from the wrong mip.** In vroid-nam1/nam2/nam3 (and their light files) the face
+skin is packed squashed about 9 : 1 (p90 16 : 1) in the atlas: a 60 x 1010 texel strip (`face_density.py`; the source's
+face UVs are 1.1 : 1: the squash happens in the atlas build, `vroid_lite.build_atlas`, not found yet). Trilinear filtering picks the mip from the dense
+axis, so from a few metres the boys' faces were smeared and darkened, their brows gone. The girls' islands are fine
+(1.2 : 1). **Fix:** anisotropic filtering on the VRoid atlas only (engine/assets.js `atlasAniso`, set in game.js: the
+GPU's most on PC, 4 on Low; `?atlasAniso=1` turns it off); the rows' joined atlas copies it. Eye-band error (mean of
+0-255 levels) against a 3x supersampled picture of the fixed frame, boys: 11.5 -> 8.0 (2-4 m), 15.3 -> 12.3 (6-8 m), 22.4 -> 15.6 (12-18 m) on PC 720p; 1080p
+9.5 -> 7.0, 14.8 -> 12.0, 18.4 -> 12.4; Low 11.2 -> 9.6, 16.2 -> 14.2. Girls and Kotone (eyes + filtering): 8.0 -> 6.3,
+14.3 -> 13.0, 17.1 -> 15.9 (PC 720p). No new draws or programs (a sampler setting). Still to do (an art job): pack the
+boys' atlases right (their atlases also leave 40-55 % empty); then their faces gain detail close up too.
+
+**Cause 3 (small): a blank face past 12 m.** Faces switch off past `faceNear` and every weight went to 0: eyes open and
+mouth closed (fine), but no smile, the "a little sad" face the owner had asked to fix. Off now rests at the resting smile.
+
+**Measured and rejected** (PC 720p, the same frozen frame, error against its supersampled picture):
+- Alpha-tested lines lost in the mips (lashes, brows): the dark feature pixels in the eye band already match the
+  reference (e.g. Kotone at 8 m 149 of 153, 12 m 55 of 53), drawing the girls and Kotone from mip 0 only moves their
+  error by -1.0..+2.3 (the boys gain from it: cause 2), and the whole atlas keeps 96 % of its alpha coverage at mip 3.
+  Coverage-preserving mips or alpha sharpening would buy nothing.
+- Shadows on the faces (receiveShadow off): -0.1..+0.5 error, no visible change. Bloom off: no change.
+- Bleeding between members in the merged rows' atlas: the boys' smear is the same on their own meshes (cause 2).
+- Lite mesh normals: the faces are not decimated in the light files (same face triangles).
+Not changed: the faces are lit as 3D surfaces (a shading line down the nose when the sun is from the side). An anime
+look would bend the face normals forward; that changes close-ups too, so it is the owner's call.
+
 ## Checks
 - `npm test` (troupe.test.mjs: cast, back routine, copy maths, leg solve, sing-along gate, room check, group shots,
   limits, strong-phone rule, budget watch and the cut, the row merge's skinning/morph/UV maths, a packed pack's rest

@@ -31,6 +31,7 @@ export class Assets {
     this.merge = null;     // names of the static models whose plain parts are merged into one mesh (engine/static-merge.js)
     this.people = 'std';   // which set of people a name such as 'mika' means: 'std' | 'lite' (engine/people.js)
     this.performers = null; // the dance performers' own set ('std' | 'lite'), or null to follow `people`
+    this.atlasAniso = 1;    // anisotropic filtering of the VRoid people's one atlas (game.js: the GPU's most on PC, 4 on Low)
   }
 
   /** The set (std | lite) the model `name` comes from. */
@@ -66,6 +67,11 @@ export class Assets {
       for (const m of [o.material].flat()) {
         // Baked AO lives in COLOR_0; make sure it multiplies the base colour.
         if (o.geometry.attributes.color) m.vertexColors = true;
+        // the VRoid people's atlas (art/blender/vroid_lite.py build_atlas): the boys' face skin is packed squashed about
+        // 9 : 1, and a face seen from a few metres was drawn from a mip chosen by its dense axis (a smear);
+        // anisotropic filtering reads it right (docs/GROUP-PERFORMANCE.md, "Faces at a distance"). The rows' joined
+        // atlas copies it (game/perform/row-merge.js).
+        if (m.name === 'VRoid atlas' && m.map && m.map.anisotropy < this.atlasAniso) m.map.anisotropy = this.atlasAniso;
         if (GLOW_MATERIALS.includes(m.name)) {
           if (!this.glow.has(m.name)) this.glow.set(m.name, new Set());
           this.glow.get(m.name).add(m);
