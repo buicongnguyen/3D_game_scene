@@ -10,6 +10,7 @@
 // blips, and with Voices off it is shown for a reading time. Pure picking lives in content/scenes and game/phrasebook.
 import * as THREE from 'three';
 import { tx, N_, getLang } from '../i18n/i18n.js';
+import { valleyTime } from './valley-clock.js';
 import { NPC } from '../actors/npc.js';
 import { CAST } from './story.js';
 import { VILLAGERS, RETURNING } from '../content/villagers.js';
@@ -46,7 +47,8 @@ export class HouseScenes {
 
   get lang() { return LEARN_LANGS.includes(this.prefs.learn) ? this.prefs.learn : null; }
   get uiLang() { return getLang(); }
-  day() { return dayOf(new Date()); }
+  // (the valley's date: Explore's Go to… days included, game/valley-clock.js)
+  day() { return dayOf(valleyTime(this.g?.dayShift || 0)); }
   holds(room) { return !!room && this.held === room; }
   setPrefs(p) { this.prefs = { ...this.prefs, ...p }; savePrefs(this.prefs); }
 

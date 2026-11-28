@@ -154,7 +154,8 @@ export class Game {
       FX.uSnow.value = PALETTES[s].snow;
       this.onSeason?.(s);
     }
-    this.fx?.setWeather(this.weatherOff ? null : PALETTES[s].particles);
+    // (a festival night asks for fireflies: game/festival.js)
+    this.fx?.setWeather(this.weatherOff ? null : this.festivalWeather || PALETTES[s].particles);
   }
 
   /** Resolves with the next rendered frame as a small WebP data URL (for the photo album). */

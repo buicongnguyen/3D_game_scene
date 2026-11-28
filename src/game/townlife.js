@@ -6,6 +6,8 @@
 // handles talking and shopping.
 import * as THREE from 'three';
 import { NPC } from '../actors/npc.js';
+import { LATE, FESTIVAL_NEAR } from './festival.js';
+import { FESTIVAL_STAGE } from '../content/stages.js';
 import { PEOPLE, SPOTS } from '../content/townsfolk.js';
 import { SHOPS, GOODS } from '../content/shops.js';
 import { CONVOS } from '../content/convos.js';
@@ -188,7 +190,9 @@ export class TownLife {
       if (it.game && it.game === this.mikaPlays) continue;   // nobody leaves a game Mika is playing in
       // a scene moved them (place() drops the walk): the planner takes it as arrived and carries on from there
       if (it.plan.phase === 'walk' && !n.path) it.plan.arrived([n.pos.x, n.pos.z]);
-      const cmds = it.plan.update(dt, hour, { pos: [n.pos.x, n.pos.z], ok });
+      // (a festival night: the people round the festival square stay out late, game/festival.js; the rest go home as ever)
+      const late = g.festival && Math.hypot(n.pos.x - FESTIVAL_STAGE.x, n.pos.z - FESTIVAL_STAGE.z) < FESTIVAL_NEAR ? LATE : 0;
+      const cmds = it.plan.update(dt, hour, { pos: [n.pos.x, n.pos.z], ok, late });
       for (const c of cmds) this.exec(it, c);
     }
     if (!frozen) { this.updateGames(dt); this.keepApart(dt); }

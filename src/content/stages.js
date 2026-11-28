@@ -22,4 +22,9 @@ export const STAGES = Object.freeze([
   { id: 'kawabe', name: N_('Village square'), x: -45, z: 20, facing: 0 },                  // the middle of Kawabe
   { id: 'hill', name: N_('Star hill'), x: -59, z: 159, facing: Math.PI },                  // the stargazing hill, the valley below behind them
   { id: 'orchard', name: N_('Orchard slope'), x: 80, z: -85, facing: -1.55 },              // a 12 deg hillside by the orchard gate, the valley below (feet fitted: perform/ground-fit.js)
+  // the festival stage on the Takamori square (docs/EXPLORE-AND-SHOW.md "Festival"): its paper lanterns hang round it
+  // while the festival is on (game/festival.js); the festival stall and the square's roofs behind the performers
+  { id: 'festival', name: N_('Festival stage'), x: 114.5, z: 5.5, facing: 0, festival: true },
 ].map(Object.freeze));
+/** The festival's own stage (game/festival.js hangs its lanterns round it). */
+export const FESTIVAL_STAGE = STAGES.find(s => s.id === 'festival');
