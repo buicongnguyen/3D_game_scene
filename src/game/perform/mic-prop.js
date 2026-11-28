@@ -1,9 +1,9 @@
 // © 2026 Bui Cong Nguyen · solluxlabs.com
-// Kotone's hand mic: one small mesh, one material (colours in the vertices: a dark body, a gold band, a silver grille),
-// built in code (~300 triangles, no download), on her grip_R bone where the Moves v2 solver's micGrip handle sits in her
-// fist (content/kotone-club-fit.js, written by the bake). Shown only while she sings (scaled in and out), no shadow.
-// The shape follows Avatar Studio's stage mic (src/stage-mic-prop.js): a 40 mm handle in the fist, a tail below the
-// little finger, a neck widening to a 38 mm ball head above the thumb.
+// The lead singer's hand mic: one small mesh, one material (colours in the vertices: a dark body, a gold band, a silver
+// grille), built in code (~300 triangles, no download), on her grip_R bone where mic-grip.js fitted the handle in that
+// body's own palm (content/kotone-club-fit.js, the bake's Kotone fit, only without a fit). Shown only while she sings
+// (scaled in and out), no shadow. The shape follows Avatar Studio's stage mic (src/stage-mic-prop.js): a 36 mm handle in
+// the fist, a short tail below the little finger, a neck widening to a 38 mm ball head above the thumb.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { MIC_FIT } from '../../content/kotone-club-fit.js';
@@ -25,17 +25,26 @@ export function micGeometry({ radius = .02, half = .034, headR = .019, neck = .0
   return g;
 }
 
-let shared = null;
-/** A mic placed on `model`'s grip_R (null when the model has no grip). One mesh, one material, shared geometry. */
-export function makeMic(model) {
+let mat = null;
+const geos = new Map();
+/** The capsule's centre up the mic's axis from the handle's centre (metres, micGeometry's defaults). */
+export const micHeadY = half => half + .006 + .019 * .82;
+/**
+ * A mic placed on `model`'s grip_R (null when the model has no grip). One mesh, one material, geometry shared by size.
+ * fit: mic-grip.js fitMicGrip(model) (the handle fitted in this body's palm); without one, Kotone's baked MIC_FIT.
+ */
+export function makeMic(model, fit = null) {
   const grip = model.getObjectByName('grip_R'); if (!grip) return null;
-  shared ||= { geo: micGeometry({ radius: MIC_FIT.radius, half: MIC_FIT.half }), mat: new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .45, metalness: .5 }) };
-  const mesh = new THREE.Mesh(shared.geo, shared.mat);
+  const own = Boolean(fit?.grip), radius = own ? fit.r : MIC_FIT.radius, half = own ? +fit.half.toFixed(4) : MIC_FIT.half, key = `${radius}:${half}:${own ? fit.tail : ''}`;
+  mat ||= new THREE.MeshStandardMaterial({ vertexColors: true, roughness: .45, metalness: .5 });
+  if (!geos.has(key)) geos.set(key, micGeometry(own ? { radius, half, tail: fit.tail } : { radius, half }));
+  const mesh = new THREE.Mesh(geos.get(key), mat);
   mesh.name = 'KotoneMic';
   mesh.castShadow = false; mesh.receiveShadow = false; mesh.frustumCulled = false;
-  mesh.position.fromArray(MIC_FIT.centre);
-  mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().fromArray(MIC_FIT.up).normalize());
-  const s = MIC_FIT.scale; mesh.scale.setScalar(s);
+  if (own) { mesh.position.copy(fit.grip.centre); mesh.quaternion.copy(fit.grip.quaternion); }
+  else { mesh.position.fromArray(MIC_FIT.centre); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3().fromArray(MIC_FIT.up).normalize()); }
+  const s = own ? fit.grip.scale : MIC_FIT.scale; mesh.scale.setScalar(s);
+  mesh.userData.headY = micHeadY(half);
   mesh.visible = false;
   grip.add(mesh);
   return {
