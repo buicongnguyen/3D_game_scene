@@ -30,6 +30,7 @@ def M_leaves():
 # are remeshed coarse and smooth, trunks and limbs drop to a few sides, twigs and fruit go.
 LOD = False
 LOD_BUDGET = 350
+LOD_MIN_R = .2   # thinnest limb end radius in a LOD (m; limb roots and trunk tops x1.3): solid bodies for far trees
 
 
 def make_trunk(name, spine, r0, r1, material, sides=16, roots=4, root_amp=.9, root_h=.12, seed=0,
@@ -38,6 +39,7 @@ def make_trunk(name, spine, r0, r1, material, sides=16, roots=4, root_amp=.9, ro
     twist. Rings are packed near the base where the flare needs the resolution."""
     if LOD:
         sides, rings, roots, root_amp, ridge, noise_amp, twist = 6, 4, 3, root_amp * .5, 0.0, 0.0, 0.0
+        r1 = max(r1, LOD_MIN_R * 1.3)
     ph = random.Random(seed).uniform(0, TAU)
     dense = spline(spine, 80)
     L = sum((b - a).length for a, b in zip(dense, dense[1:]))
@@ -76,7 +78,12 @@ def make_limb(name, pts, r0, r1, material, sides=7, seed=0, count=None, ridge=.0
     if LOD:
         if name == 'Twig':
             return None
-        sides, count, ridge, noise_amp, r0, r1 = 4, 3, 0.0, 0.0, r0 * 1.15, r1 * 1.4
+        # Solid bodies: a far tree is a few pixels wide, and limbs of 0.2-0.3 m fell between pixel centres and
+        # blinked as the camera moved (phone tier, no anti-aliasing). LOD limbs are at least 0.4 m across: far
+        # bark blinks -40..-72 % in slow pans (2026-11-28). A screen-space minimum width in the vertex shader was
+        # tried and made it worse (widened limbs poke out through the crown); thick limbs stay hidden inside it.
+        sides, count, ridge, noise_amp = 4, 3, 0.0, 0.0
+        r0, r1 = max(r0 * 1.15, LOD_MIN_R * 1.3), max(r1 * 1.4, LOD_MIN_R)
     P = spline(pts, count or max(5, len(pts) * 2 + 1))
     return sweep(name, P, lambda s: lerp(r0, r1, s), material, sides=sides, caps=False,
                  pole_end=P[-1] + (P[-1] - P[-2]).normalized() * r1 * 1.5, ridge=ridge,
