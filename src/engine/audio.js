@@ -53,6 +53,11 @@ export class Audio {
     this.music = c.createGain(); this.music.gain.value = this.musicVol * 0.5; this.music.connect(this.comp);
     this.sfx = c.createGain(); this.sfx.gain.value = this.sfxVol; this.sfx.connect(this.comp);
     this.ambBus = c.createGain(); this.ambBus.gain.value = this.sfxVol * 0.6; this.ambBus.connect(this.comp);
+    // a performed song (Sing & Play, the Night Star, Kotone's show): straight to the master, past the mix's compressor and
+    // the under-water lowpass. The songs are mastered (-16 LUFS, peaks under -1 dBTP); the compressor (threshold -14 dB,
+    // soft knee) squashed and pumped them, and the bus ran at a quarter of the music volume (owner 2026-11-28: "the sound in
+    // the game is not as good as on the listen page").
+    this.songBus = c.createGain(); this.songBus.gain.value = this.songLevel(); this.songBus.connect(this.master);
     this.reverb = c.createConvolver();
     this.reverb.buffer = this.impulse(2.6);
     this.revGain = c.createGain(); this.revGain.gain.value = 0.45;
@@ -66,7 +71,8 @@ export class Audio {
     if (!this.ctx) return;
     this.music.gain.setTargetAtTime(music * 0.5, this.ctx.currentTime, 0.2);
     this.sfx.gain.setTargetAtTime(sfx, this.ctx.currentTime, 0.2);
-    this.ambBus.gain.setTargetAtTime(sfx * 0.6, this.ctx.currentTime, 0.2);
+    this.ambBus.gain.setTargetAtTime(sfx * 0.6 * (1 - 0.75 * (this.duck || 0)), this.ctx.currentTime, 0.2);
+    this.songBus.gain.setTargetAtTime(this.songLevel(), this.ctx.currentTime, 0.2);
   }
 
   impulse(sec) {
@@ -435,6 +441,17 @@ export class Audio {
   }
 
   // ---------------------------------------------------------------- the morning exercise (game/tricks/exercise.js)
+  /** The performed songs' level from the Music volume (0.55 by default -> 0.88: about the listen page's level). */
+  songLevel() { return Math.min(1, this.musicVol * 1.6); }
+
+  /** While a song is performed (k 0..1) the valley's ambience (river, wind) steps back so the song is heard clearly. */
+  songDuck(k = 0) {
+    const d = Math.max(0, Math.min(1, k));
+    if (!this.ctx || Math.abs(d - (this.duck || 0)) < 0.02) return;
+    this.duck = d;
+    this.ambBus.gain.setTargetAtTime(this.sfxVol * 0.6 * (1 - 0.75 * d), this.ctx.currentTime, 0.3);
+  }
+
   /** A song of a mini game holds the valley's own music (true) or gives it back (false). */
   song(on) {
     this.songOn = !!on;

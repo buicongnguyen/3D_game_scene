@@ -38,18 +38,19 @@ export class SongAudio {
     if (this.el || !this.url || typeof window === 'undefined' || !window.Audio) return this.el;
     const el = this.el = new window.Audio(); el.preload = 'auto'; el.src = this.url; el.crossOrigin = 'anonymous';
     const a = this.audio;
-    if (a?.ctx && a.music) { try { const src = a.ctx.createMediaElementSource(el); this.gain = a.ctx.createGain(); this.gain.gain.value = 0; src.connect(this.gain); this.gain.connect(a.music); } catch { this.gain = null; } }
+    if (a?.ctx && a.music) { try { const src = a.ctx.createMediaElementSource(el); this.gain = a.ctx.createGain(); this.gain.gain.value = 0; src.connect(this.gain); this.gain.connect(a.songBus || a.music); } catch { this.gain = null; } }
     return el;
   }
   /** Play at song time t with loudness k (0..1); k 0 pauses. */
   update(t, k, playing) {
     const el = k > 0.001 && playing ? this.ensure() : this.el;
     if (!el) return;
-    if (k <= 0.001 || !playing || !(t >= 0)) { if (!el.paused) el.pause(); return; }
+    if (k <= 0.001 || !playing || !(t >= 0)) { if (!el.paused) el.pause(); if (this.ducked) { this.ducked = false; this.audio?.songDuck?.(0); } return; }
     if (Math.abs(el.currentTime - t) > .3 || el.paused) { try { el.currentTime = t; } catch { /* not seekable yet */ } }
     if (el.paused) el.play()?.catch?.(() => {});
-    if (this.gain) this.gain.gain.setTargetAtTime(k * 2 * this.level, this.audio.ctx.currentTime, .1);   // (the music bus is at half the music volume)
+    if (this.gain) this.gain.gain.setTargetAtTime(k * this.level * (this.audio.songBus ? 1 : 2), this.audio.ctx.currentTime, .1);   // (the song bus carries the music volume; the old music bus ran at half)
     else el.volume = Math.min(1, k * (this.audio?.musicVol ?? .55) * 1.6 * this.level);
+    this.ducked = true; this.audio?.songDuck?.(k);   // (the river and wind step back while she sings)
   }
   /** The song's sound as a MediaStream (Record): a tap on its gain node, else the element's own capture. */
   stream() {
@@ -59,7 +60,7 @@ export class SongAudio {
   }
   /** The audio's own time while it plays, else null. */
   time() { const el = this.el; return el && !el.paused && el.readyState >= 2 ? el.currentTime : null; }
-  stop() { if (this.el) { this.el.pause(); this.el.removeAttribute('src'); this.el.load?.(); this.el = null; } }
+  stop() { if (this.ducked) { this.ducked = false; this.audio?.songDuck?.(0); } if (this.el) { this.el.pause(); this.el.removeAttribute('src'); this.el.load?.(); this.el = null; } }
 }
 
 /** The moment at bar position `bar` and its weight (in and out over a beat; the song's last moment holds to the end). */
