@@ -19,8 +19,10 @@ import { Troupe } from '../perform/troupe.js';
 import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset } from '../../content/troupe.js';
 import { strongPhone, BudgetWatch, dropNow, shotIndex, STRONG_KEY } from './strong-phone.js';
 import { deviceFacts } from '../../engine/device-note.js';
+import { mountStages } from './stages-row.js';
+import { SAVE_KEY } from './sing-here.js';
 
-export const SAVE_KEY = 'starline:singplay:v1';
+export { SAVE_KEY };   // (sing-here.js: the pause menu's Sing here writes her place before this module loads)
 export const GROUP_KEY = 'starline:singplay:group';   // the group size last picked (per device: 1, 4 or 8)
 export const STAGE = Object.freeze({ x: -91, z: 99.5, facing: Math.PI });   // first visit: in front of the station stage
 const REASONS = { water: N_('Too close to the water'), steep: N_('Too steep here'), room: N_('Not enough room here'), group: N_('Not enough room for the group here') };
@@ -141,17 +143,20 @@ export class SingPlay {
     bar.appendChild(row);
     this.hint = document.createElement('p'); this.hint.className = 'singplay-hint'; this.hint.setAttribute('aria-live', 'polite');
     bar.appendChild(this.hint);
+    this.stages = mountStages(this);   // the stage list: a row of its own (stages-row.js)
     if (!document.getElementById('singplayStyle')) {
       const st = document.createElement('style'); st.id = 'singplayStyle';
       st.textContent = `.singplay-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(env(safe-area-inset-bottom,0px) + 12px);display:flex;flex-wrap:wrap;justify-content:center;gap:8px;z-index:30;max-width:calc(100vw - 24px);pointer-events:auto}
 .singplay-btn{min-width:48px;min-height:48px;padding:0 16px;border-radius:24px;border:0;font:600 15px/1 inherit;background:rgba(255,250,240,.92);color:#3a2a1a;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}
 .singplay-btn[aria-disabled=true]{opacity:.5}.singplay-btn.on{background:#e0567a;color:#fff}
 .singplay-hint{flex-basis:100%;margin:0;text-align:center;font:600 13px/1.3 inherit;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.7);min-height:17px}
+body.singplay #inventory{display:none}
 .singplay-group{flex-basis:100%;display:flex;justify-content:center;gap:6px}.singplay-seg[aria-pressed=true]{background:#5b3fa0;color:#fff}
 @media (max-width:640px){.singplay-bar{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 104px);left:12px;right:12px;transform:none;max-width:none;flex-wrap:wrap;gap:6px}.singplay-btn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px;white-space:nowrap}.singplay-hint{position:absolute;top:102px;left:0;right:0}}`;
       document.head.appendChild(st);
     }
     document.body.appendChild(bar);
+    document.body.classList.add('singplay');   // Kotone carries none of Mika's items: the item strip hides (style above)
     this.label();
   }
 
@@ -166,6 +171,7 @@ export class SingPlay {
     this.btnCam.setAttribute('aria-disabled', String(!p));
     // (Group of 8 shows on a phone once it has measured strong: strong-phone.js)
     for (const b of this.btnGroup || []) { b.hidden = Number(b.dataset.n) > this.max(); b.setAttribute('aria-pressed', String(Number(b.dataset.n) === this.group)); b.setAttribute('aria-disabled', String(!!p)); }
+    this.stages?.refresh();
     this.hint.textContent = !this.songs?.length ? tx(N_('No songs yet')) : p ? (p.data.song.title ? `♪ ${tx(p.data.song.title)}` : '') : this.groupWait ? tx(N_('Getting the group ready…')) : this.allowed.ok ? '' : tx(REASONS[this.allowed.reason] || REASONS.room);
   }
 
@@ -264,7 +270,7 @@ export class SingPlay {
         const was = this.allowed.ok + this.allowed.reason, env = gameEnv(g);
         this.allowed = p.grounded ? canPerform(p.pos, env) : { ok: false, reason: 'steep' };
         if (this.allowed.ok && this.group > 1) this.allowed = canGroup(p.pos, p.facing, this.spots(), env);
-        if (was !== this.allowed.ok + this.allowed.reason) this.label();
+        if (was !== this.allowed.ok + this.allowed.reason) this.label(); else this.stages?.refresh();
       }
     }
     this.saveT -= dt; if (this.saveT <= 0) { this.saveT = 5; this.keepPlace(); }

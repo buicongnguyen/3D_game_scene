@@ -16647,6 +16647,42 @@
   ]
  },
  {
+  "s": "Station stage",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
+  "s": "Shrine yard",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
+  "s": "Kite meadow",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
+  "s": "Riverside",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
+  "s": "Village square",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
+  "s": "Star hill",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
   "s": "the Kawabe letters",
   "ctx": [
    "UI (src/content/stamps.js)"
@@ -18386,20 +18422,47 @@
   ]
  },
  {
+  "s": "Not while swimming",
+  "ctx": [
+   "UI (src/game/singplay/sing-here.js)"
+  ]
+ },
+ {
+  "s": "Not while riding",
+  "ctx": [
+   "UI (src/game/singplay/sing-here.js)"
+  ]
+ },
+ {
+  "s": "Not indoors",
+  "ctx": [
+   "UI (src/game/singplay/sing-here.js)"
+  ]
+ },
+ {
+  "s": "Stand on the ground first",
+  "ctx": [
+   "UI (src/game/singplay/sing-here.js)"
+  ]
+ },
+ {
   "s": "Too close to the water",
   "ctx": [
+   "UI (src/game/singplay/sing-here.js)",
    "UI (src/game/singplay/singplay.js)"
   ]
  },
  {
   "s": "Too steep here",
   "ctx": [
+   "UI (src/game/singplay/sing-here.js)",
    "UI (src/game/singplay/singplay.js)"
   ]
  },
  {
   "s": "Not enough room here",
   "ctx": [
+   "UI (src/game/singplay/sing-here.js)",
    "UI (src/game/singplay/singplay.js)"
   ]
  },
@@ -18515,6 +18578,18 @@
   "s": "Leave Sing & Play",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "Stages",
+  "ctx": [
+   "UI (src/game/singplay/stages-row.js)"
+  ]
+ },
+ {
+  "s": "Stop the song first",
+  "ctx": [
+   "UI (src/game/singplay/stages-row.js)"
   ]
  },
  {
@@ -29659,6 +29734,12 @@
  },
  {
   "s": "This device has no voice for this language, so you will hear blips.",
+  "ctx": [
+   "UI (src/ui/ui.js)"
+  ]
+ },
+ {
+  "s": "Sing here",
   "ctx": [
    "UI (src/ui/ui.js)"
   ]

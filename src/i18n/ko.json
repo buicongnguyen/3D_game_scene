@@ -5101,5 +5101,18 @@
  "Items": "소지품",
  "Items: {list}": "소지품: {list}",
  "+{n} {item}": "{item} +{n}",
- "The names of your items (gamepad LB)": "가진 물건 이름 보기 (게임패드 LB)"
+ "The names of your items (gamepad LB)": "가진 물건 이름 보기 (게임패드 LB)",
+ "Station stage": "역 앞 무대",
+ "Shrine yard": "신사 마당",
+ "Kite meadow": "연날리기 풀밭",
+ "Riverside": "강가",
+ "Village square": "마을 광장",
+ "Star hill": "별 언덕",
+ "Stages": "무대",
+ "Stop the song first": "먼저 노래를 멈춰요",
+ "Sing here": "여기서 노래하기",
+ "Not while swimming": "수영 중에는 안 돼요",
+ "Not while riding": "타는 중에는 안 돼요",
+ "Not indoors": "실내에서는 안 돼요",
+ "Stand on the ground first": "먼저 땅 위에 서요"
 }

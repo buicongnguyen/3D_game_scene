@@ -2,7 +2,14 @@
 // captions.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { canPerform, FLAT } from '../src/game/singplay/flat.js';
+import { canPerform, canGroup, FLAT } from '../src/game/singplay/flat.js';
+import { STAGES } from '../src/content/stages.js';
+import { singHereState, HERE_REASONS } from '../src/game/singplay/sing-here.js';
+import { troupeOf, leadOffset } from '../src/content/troupe.js';
+import { sharedGrid, buildingSolids } from '../src/world/roads.js';
+import { WATER_Y } from '../src/world/layout.js';
+
+const STAGE = { x: -91, z: 99.5, facing: Math.PI };   // (singplay.js STAGE: the first visit)
 import { planShots, createCameraMan, damp, shotAt } from '../src/game/perform/camera-man.js';
 import { createBeatClock } from '../src/game/perform/beat-clock.js';
 import { planPerformance } from '../src/game/perform/plan.js';
@@ -24,6 +31,43 @@ test('perform only on flat, dry, open ground (and in rooms only with room to spa
   assert.equal(canPerform(P, env(() => 5, { room })).ok, true, 'the middle of a 4 m room');
   assert.equal(canPerform({ ...P, x: 1.2 }, env(() => 5, { room })).reason, 'room', 'too near its wall');
   assert.equal(canPerform(P, env(() => 5, { room: { min: { x: -1, z: -1 }, max: { x: 1, z: 1 } } })).reason, 'room', 'a closet');
+});
+
+// The stage list (content/stages.js): every stage holds Solo, 4 and 8 at its facing on the real terrain, clear of every
+// building's collider box (the spots were picked in the browser with the game's full colliders: trees, fences, props).
+test('every listed stage has room for Solo, a group of 4 and a group of 8 at its facing', () => {
+  const grid = sharedGrid(), solids = buildingSolids();
+  const solid = (x, z, r) => solids.some(b => { const dx = x - b.x, dz = z - b.z, lx = dx * b.c - dz * b.s, lz = dx * b.s + dz * b.c; return Math.abs(lx) < b.hw + r && Math.abs(lz) < b.hd + r; });
+  const world = env((x, z) => grid.heightAt(x, z), { waterY: WATER_Y, solid });
+  const k = leadOffset(), spots = n => troupeOf(n).filter(m => !m.lead).map(m => ({ x: m.x - k.x, z: m.z - k.z }));
+  assert.ok(STAGES.length >= 5 && STAGES.length <= 6, 'five or six stages (one flat row)');
+  assert.equal(new Set(STAGES.map(s => s.id)).size, STAGES.length, 'ids are unique');
+  assert.deepEqual({ x: STAGES[0].x, z: STAGES[0].z, facing: STAGES[0].facing }, { ...STAGE }, 'the first stage is the first-visit place');
+  for (const st of STAGES) {
+    const p = { x: st.x, y: grid.heightAt(st.x, st.z), z: st.z };
+    assert.deepEqual(canPerform(p, world), { ok: true }, `${st.id}: Solo`);
+    for (const n of [4, 8]) assert.deepEqual(canGroup(p, st.facing, spots(n), world), { ok: true }, `${st.id}: group of ${n}`);
+    for (let i = 0; i < STAGES.length; i++) if (STAGES[i] !== st) assert.ok(Math.hypot(STAGES[i].x - st.x, STAGES[i].z - st.z) > 20, `${st.id} is a place of its own`);
+  }
+});
+
+test('Sing here: Explore only, while nothing owns the game, on dry flat ground outdoors', () => {
+  const ground = { heightAt: () => 5 };
+  const game = (o = {}, p = {}) => ({ world: ground, zone: null, params: new URLSearchParams(o.q || ''), interiors: { active: o.room || null, rooms: new Map() }, ui: {}, follow: {}, renderer: {},
+    colliders: { resolve: () => ({ hit: false }) },
+    director: { quest: {}, explore: o.explore ?? true, singplay: !!o.sing, minigameMenu: { canOpen: () => o.menu ?? true }, cows: { riding: !!o.cow } },
+    player: { pos: { x: 0, y: 5, z: 0 }, grounded: true, swimming: false, ...p } });
+  assert.deepEqual(singHereState(game()), { show: true, ok: true });
+  assert.equal(singHereState(game({ explore: false })).show, false, 'not in the story');
+  assert.equal(singHereState(game({ sing: true })).show, false, 'not in the mode itself');
+  assert.equal(singHereState(game({ menu: false })).show, false, 'not in a round, a scene or a ride');
+  assert.equal(singHereState(game({ q: 'singplay=off' })).show, false, '?singplay=off');
+  assert.equal(singHereState(game({}, { swimming: true })).reason, 'swim');
+  assert.equal(singHereState(game({}, { mounted: true })).reason, 'ride');
+  assert.equal(singHereState(game({ room: 'bakery' })).reason, 'indoors');
+  assert.equal(singHereState(game({}, { grounded: false })).reason, 'ground');
+  assert.equal(singHereState({ ...game(), world: { heightAt: x => 5 + x * .4 } }).reason, 'steep');
+  for (const r of Object.keys(HERE_REASONS)) assert.ok(HERE_REASONS[r].length <= 28, `${r}: a short reason`);
 });
 
 const BAR = 2.4, song = { id: 'cam-song', bpm: 100, offset: 0, duration: 40 * BAR, mood: 'uplifting' };

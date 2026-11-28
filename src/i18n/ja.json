@@ -5101,5 +5101,18 @@
   "Items": "持ち物",
   "Items: {list}": "持ち物：{list}",
   "+{n} {item}": "{item} +{n}",
-  "The names of your items (gamepad LB)": "持ち物の名前を見る（ゲームパッド LB）"
+  "The names of your items (gamepad LB)": "持ち物の名前を見る（ゲームパッド LB）",
+  "Station stage": "駅前ステージ",
+  "Shrine yard": "神社の境内",
+  "Kite meadow": "凧あげの原っぱ",
+  "Riverside": "川べり",
+  "Village square": "村の広場",
+  "Star hill": "星の丘",
+  "Stages": "ステージ",
+  "Stop the song first": "先に歌を止めてね",
+  "Sing here": "ここで歌う",
+  "Not while swimming": "泳いでいる間はできません",
+  "Not while riding": "乗っている間はできません",
+  "Not indoors": "室内ではできません",
+  "Stand on the ground first": "まず地面に立ってね"
 }
