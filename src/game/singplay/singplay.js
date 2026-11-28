@@ -135,12 +135,17 @@ export class SingPlay {
    */
   async open({ first = false } = {}) {
     if (this.isOpen) return true;
+    if (this.opening) return this.opening;
+    this.opening = this.openNow({ first }).finally(() => { this.opening = null; });
+    return this.opening;
+  }
+
+  async openNow({ first = false } = {}) {
     const g = this.g, d = this.d, a = g.assets, low = g.renderer.qualityName === 'low', body = this.kBody = low ? 'kotone.lite' : 'kotone';
     if (!d.playAs) return false;
     this.singers = singerList(undefined, g.params);
     const cur = d.playAs.chosen;
     this.singer = cur && cur !== MIKA && this.singers.includes(cur) ? cur : SAKI;
-    this.isOpen = true;
     d.singplay = true;
     d.refreshObjective?.(true);
     // the song stops with the game: pause (menu, photo mode) pauses her audio; the next frame after resume plays it on
@@ -154,7 +159,7 @@ export class SingPlay {
     if (a.has(body) && !this.clips) this.prepareClips();
     if (!a.has(body) || !await this.useBody(this.singer)) {
       this.ui.toast?.(tx("Kotone couldn't be loaded"));
-      this.isOpen = false; d.singplay = false; d.refreshObjective?.(true);
+      d.singplay = false; d.refreshObjective?.(true);
       return false;
     }
     if (first) {
@@ -182,6 +187,7 @@ export class SingPlay {
     this.visitorK = k || null;
     if (!g.systems.includes(this)) g.systems.push(this);
     g.cameraOverride = dt => this.camera(dt);
+    this.isOpen = true;   // (only now: the bar and its buttons are there)
     return true;
   }
 
@@ -359,6 +365,7 @@ export class SingPlay {
   }
 
   label() {
+    if (!this.bar || !this.btnPerform) return;   // (still opening, or closed)
     const p = this.perf, ok = this.allowed.ok || !!p;
     const go = tx(p ? N_('Stop') : N_('Perform'));
     this.setAct(this.btnPerform, p ? ACT.stop : ACT.mic, go, go);

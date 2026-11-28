@@ -141,13 +141,20 @@ Everything else in free roam works with any body: walk, run, the speed leap, jum
 out, sitting indoors (chairs and cushions), the ground poses (creep, kneel, reach, pick up, rest on the grass), talking,
 the doors, the shops, the train and the ferry, the kite flight from G, petting.
 
-## Measured (2026-11-28, dev server, Chromium + GPU)
-- Low (390x844), 21:00, the festival on, the festival stage, Saki: the place's own view 97 draws a frame (every pass);
-  a song Solo 97.5, group of 4 93, group of 8 91.5 (the Low + 8 rule: stage, bursts, sticks). Nothing more had to be
-  dropped there: the show at the festival stage draws no more than the place itself. At the station the same show is
-  105-111 (Solo / 4 / 8), as in docs/SHOW-EFFECTS.md.
-- PC High, the same group of 4 at the festival stage: 267 draws a frame (view pass).
-- The perf budget (`tests/perf-budget-browser.mjs`, built preview, 11:00): see the final report table in the commit.
+## Measured (2026-11-28, built preview, Chromium + GPU)
+- **The perf budget** (`tests/perf-budget-browser.mjs`, every draw of a frame, 11:00, the budget's own views): all ten
+  places within their limits; the new place `festival` (the festival stage, the festival on, its lanterns) recorded at
+  Low 107 draws / 552.8k tris / 682 visible (limit 115 / 600.9k / 756) and High 299 / 2.49M / 952 (limit 324 / 2.75M /
+  1047). The station's Low: 84 of 91, as before.
+- **A show at the festival stage**, Low (390x844), 21:00, the festival on, Saki leading: the place's own view 95.5 draws a
+  frame; a song Solo 99.5, group of 4 89, group of 8 87.5 (the Low + 8 rule: stage, bursts, sticks). All inside the
+  place's limit (115): nothing more had to be dropped there. At the station (the camera framing the valley) the same show
+  is 127.5 / 133 / 133.5 with the festival off and 105.5 / 108.5 / 112.4 with it on: the festival's late night keeps only
+  Takamori's people out, so the station costs no more on a festival night.
+- PC High, the group of 4 at the festival stage: 267 draws a frame in the view pass (dev server).
+- **The UI audit** (the final browser pass, `.tools/merge/final.mjs`, PC 1280x720 and phone 390x844 touch Low): the Play
+  as panel, the Go to… panel, the HUD's Perform and the show's bar: every control 44 px+, every text 11 px+, nothing over
+  the little map, the menu, the journal or the touch buttons, no sideways scroll; no console errors.
 
 ## Open decisions for the owner
 1. Explore's clock still holds still between jumps (as before). A slow-running clock (Sing & Play ran one while free)
