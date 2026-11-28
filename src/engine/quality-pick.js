@@ -16,6 +16,14 @@ export const ULTRA = /RTX\s*(30[789]0|40[6789]0|50[6789]0|A[0-9]{4})|RX\s*(6[7-9
 
 export const HIGH_PIXELS = 6.5e6;   // physical pixels above which High needs an ultra chip (a 4K display is 8.3 M)
 
+/** The graphics chip's class from its name: 'software' | 'ultra' (holds 4K-class) | 'strong' | 'other' (engine/resolution.js). */
+export function gpuClass(renderer = '') {
+  if (SOFTWARE.test(renderer)) return 'software';
+  if (WEAK.test(renderer)) return 'other';
+  if (ULTRA.test(renderer)) return 'ultra';
+  return STRONG.test(renderer) ? 'strong' : 'other';
+}
+
 /** { saved, renderer, mobile, width, height, dpr, deviceMemory, cores } -> 'low' | 'medium' | 'high' */
 export function pickQuality({ saved = null, renderer = '', mobile = false, width = 1280, height = 720, dpr = 1, deviceMemory, cores } = {}) {
   if (saved === 'low' || saved === 'medium' || saved === 'high') return saved;

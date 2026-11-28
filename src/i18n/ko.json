@@ -5262,5 +5262,11 @@
  "Stop downloads": "다운로드 중지",
  "Download all {n} ({size})": "{n}곡 모두 다운로드 ({size})",
  "No songs in this list yet": "이 목록에는 아직 노래가 없어요",
- "Songs": "노래"
+ "Songs": "노래",
+ "Resolution": "해상도",
+ "Sharp": "선명",
+ "Balanced": "균형",
+ "Low": "낮음",
+ "Render {w}×{h} · {pct} % · {tier}": "렌더링 {w}×{h} · {pct} % · {tier}",
+ "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "선명은 화면 해상도보다 낮게 그리지 않습니다. 균형은 바쁜 그래픽 카드에 더 가볍습니다."
 }

@@ -8,7 +8,8 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import { updateWorldMatrices } from './matrices.js';
 import { View } from './view.js';
 import { Cells } from './cell-grid.js';
-import { Governor, settingsAt, ladderFor, LOW_SLOW } from './governor.js';
+import { Governor, settingsAt, governorFor } from './governor.js';
+import { readResMode, saveResMode, resModeOf, resolutionPlan, pixelRatioFor, resolutionInfo, ssFor } from './resolution.js';
 
 /**
  * Phone tier (bloomHalf): the glow blurs 3 mip levels instead of 5 (phone speed plan, step 1, owner OK 2026-11-27).
@@ -23,7 +24,7 @@ function lightenBloom(pass) {
   for (let i = LIGHT_BLOOM.mips; i < tints.length; i++) tints[i] = new THREE.Vector3(0, 0, 0);
   pass.strength *= LIGHT_BLOOM.strengthK;
 }
-import { pickQuality } from './quality-pick.js';
+import { pickQuality, gpuClass } from './quality-pick.js';
 import { markSlow, SLOW_LEVEL } from './device-note.js';
 
 // Quality tiers. `grass` scales instanced grass, `trees` the scatter density, `shadow` the map size.
@@ -52,13 +53,17 @@ export function isMobile() {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent) || (navigator.maxTouchPoints > 1 && window.innerWidth < 1100);
 }
 
-export function detectQuality(gl) {
-  const saved = (() => { try { return localStorage.getItem('starline-quality'); } catch { return null; } })();
-  let renderer = '';
+/** The graphics chip's name as the browser gives it ('' when it will not say). */
+export function glRendererName(gl) {
   try {
     const ext = gl.getExtension('WEBGL_debug_renderer_info');
-    renderer = ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER);
-  } catch { /* ignore */ }
+    return String((ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER)) || '');
+  } catch { return ''; }
+}
+
+export function detectQuality(gl) {
+  const saved = (() => { try { return localStorage.getItem('starline-quality'); } catch { return null; } })();
+  const renderer = glRendererName(gl);
   // the player's own choice (Settings) always wins; otherwise the GPU, the screen and the machine decide (quality-pick.js)
   return pickQuality({
     saved: saved && QUALITY[saved] ? saved : null, renderer, mobile: isMobile(),
@@ -110,11 +115,18 @@ const GradeShader = {
 };
 
 export class Renderer {
-  constructor(canvas, qualityName) {
+  /** opts.res: a resolution mode for this page only (?res=auto|sharp|balanced), else the saved one (engine/resolution.js). */
+  constructor(canvas, qualityName, opts = {}) {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', stencil: false });
     const gl = this.renderer.getContext();
-    this.qualityName = qualityName || detectQuality(gl);
+    this.qualityName = QUALITY[qualityName] ? qualityName : detectQuality(gl);
     this.q = QUALITY[this.qualityName];
+    // Settings > Resolution (engine/resolution.js): what the screen, the chip and the player's choice allow
+    this.mobile = isMobile();
+    this.gpuName = glRendererName(gl);
+    this.gpu = gpuClass(this.gpuName);
+    this.resMode = readResMode(opts.res);
+    this.ssOn = true;           // a supersampled picture's extra pixels (the governor's first step gives them up)
     this.governor = this.q.governor ? this.makeGovernor(this.qualityName) : null;
     const r = this.renderer;
     r.outputColorSpace = THREE.SRGBColorSpace;
@@ -160,11 +172,51 @@ export class Renderer {
     this.q = QUALITY[name];
     // back from a governor step that had made the shadow map smaller: the tier's own size again
     if (this.q.shadow !== was.shadow && this.q.shadowRange === was.shadowRange) this.onShadowChange?.(this.q);
-    this.governor = this.q.governor ? this.makeGovernor(name) : null; this.appliedLevel = 0;
+    this.governor = this.q.governor ? this.makeGovernor(name) : null; this.appliedLevel = 0; this.ssOn = true;
     if (!this.fixedScale) this.scale = 1;
     try { localStorage.setItem('starline-quality', name); } catch { /* ignore */ }
     this.buildComposer();
     this.resize();
+  }
+
+  /**
+   * Settings > Resolution: 'auto' | 'sharp' | 'balanced' (engine/resolution.js), saved for this device. Takes effect at
+   * once: the tier as designed again, and a governor with the mode's own ladder.
+   */
+  setResolutionMode(mode) {
+    mode = resModeOf(mode);
+    saveResMode(mode);
+    if (mode === this.resMode) return;
+    this.resMode = mode;
+    const was = this.q;
+    this.q = QUALITY[this.qualityName];
+    if (this.q.shadow !== was.shadow) this.onShadowChange?.(this.q);
+    this.governor = this.q.governor ? this.makeGovernor(this.qualityName) : null; this.appliedLevel = 0; this.ssOn = true;
+    if (!this.fixedScale) this.scale = 1;
+    if (this.q.msaa !== was.msaa || !!this.q.bloomHalf !== !!was.bloomHalf) this.buildComposer();
+    else if (this.bloom) this.bloom.enabled = !!this.q.bloom;
+    this.resize();
+    if (this.floor) this.applyLevel();
+  }
+
+  /**
+   * Settings > Advanced > Render resolution: a fixed fraction (the governor then holds still), or null for automatic, which
+   * goes back to the governor's own scale at its present step (it used to stay at the old fixed one).
+   */
+  setFixedScale(v) {
+    this.fixedScale = v || null;
+    this.scale = this.fixedScale || (this.governor ? settingsAt(QUALITY[this.qualityName], this.appliedLevel || 0, this.ladder).scale : 1);
+    this.resize();
+  }
+
+  /** What this tier may draw under the player's resolution choice on this device (engine/resolution.js). */
+  resPlan() { return resolutionPlan(QUALITY[this.qualityName], { mode: this.resMode, mobile: this.mobile, gpu: this.gpu }); }
+
+  /** For Settings and the performance report: the drawing buffer, the screen's own pixels, the percentage, tier and mode. */
+  resolutionInfo() {
+    const r = this.res || { w: innerWidth, h: innerHeight, dpr: devicePixelRatio || 1, pr: this.pixelRatio || 1 };
+    return { ...resolutionInfo(r), tier: QUALITY[this.qualityName].name, mode: this.resMode, level: this.appliedLevel || 0,
+      fixed: !!this.fixedScale, gpu: this.gpu, mobile: this.mobile };
   }
 
   buildComposer() {
@@ -189,22 +241,38 @@ export class Renderer {
     if (this.photoPass) this.composer.addPass(this.photoPass);
   }
 
-  /** force: a pixel ratio for one photo-mode shot (game/photo.js fitShot), past the tier's own ratio and pixel cap. */
+  /**
+   * The pixel ratio comes from engine/resolution.js: the tier's caps, the player's resolution choice, the governor's
+   * scale and supersampling. force: a pixel ratio for one photo-mode shot (game/photo.js fitShot), past all of those.
+   */
   resize(force) {
-    const w = window.innerWidth, h = window.innerHeight;
-    let dpr = force || Math.min(window.devicePixelRatio || 1, this.q.dpr) * this.scale;
-    if (!force && w * h * dpr * dpr > this.q.maxPixels) dpr = Math.sqrt(this.q.maxPixels / (w * h));
-    this.pixelRatio = Math.max(0.5, dpr);
+    const w = window.innerWidth, h = window.innerHeight, dpr = window.devicePixelRatio || 1;
+    const plan = this.resPlan();
+    // (a fixed percentage from Settings > Advanced is the player's own, a share of the screen's resolution: neither
+    //  Sharp's floor nor supersampling overrule it)
+    const fixed = !!this.fixedScale;
+    const pr = force || pixelRatioFor({ w, h, dpr, plan: fixed ? { ...plan, floor: false } : plan, scale: this.scale, ssOn: this.ssOn !== false && !fixed });
+    this.pixelRatio = Math.max(0.5, pr);
     this.renderer.setPixelRatio(this.pixelRatio);
     this.renderer.setSize(w, h, false);
     this.composer.setPixelRatio(this.pixelRatio);
     this.composer.setSize(w, h);
     if (this.q.bloomHalf) this.bloom.resolution.set(w / 2, h / 2);
+    if (force) return void this.onResize?.(w, h);
+    // drawn larger than the screen (supersampled): the glow blurs at the screen's own size, so it reaches as far on screen
+    // as at the screen's resolution (its blur is counted in texels of its mip chain)
+    this.bloomSize = this.pixelRatio > dpr ? [Math.round(w * dpr), Math.round(h * dpr)] : null;
+    if (this.bloomSize) this.bloom.setSize(...this.bloomSize);
+    this.res = { w, h, dpr, pr: this.pixelRatio };
     this.onResize?.(w, h);
+    this.onResolution?.(this.resolutionInfo());
   }
 
   makeGovernor(name) {
-    return new Governor({ levels: ladderFor(name).length, ...(name === 'low' ? { slow: LOW_SLOW } : {}) });
+    const ss = ssFor({ w: innerWidth, h: innerHeight, dpr: devicePixelRatio || 1, plan: this.resPlan() }) > 1;
+    const { ladder, opts } = governorFor(name, { mode: this.resMode, mobile: this.mobile, ss });
+    this.ladder = ladder;
+    return new Governor({ levels: ladder.length, ...opts });
   }
 
   /**
@@ -234,23 +302,26 @@ export class Renderer {
    * Cinematics on the Low tier (the arrival, the live scene tour) start `n` steps down the governor's ladder: their
    * wide views cost more than play, and waiting for the governor to find that out is seconds of stutter. 0 lifts it.
    */
+  // (only the Low tier and phones take a floor: a desktop on Medium or High took it too until 2026-11-28, which on the old
+  //  desktop ladder meant every mini game round, the Mini games menu, the arrival flight and the scene tour at 72 %)
   setFloor(n) { this.floor = n; this.applyLevel(); }
 
   applyLevel() {
     if (!this.governor || this.fixedScale) return;
-    const level = Math.max(this.governor.level, this.floor || 0);
+    const level = Math.max(this.governor.level, this.qualityName === 'low' || this.mobile ? this.floor || 0 : 0);
     if (level === (this.appliedLevel || 0)) return;
     this.appliedLevel = level;
     // far down the Low ladder by the governor's own judgement (not a cinematic's floor): remember the device as slow
     if (this.qualityName === 'low' && this.governor.level >= SLOW_LEVEL) markSlow();
-    const { q, scale } = settingsAt(QUALITY[this.qualityName], level, ladderFor(this.qualityName));
+    const { q, scale, ss } = settingsAt(QUALITY[this.qualityName], level, this.ladder);
     const was = this.q;
     this.q = q;
+    // another sample count needs another render target; a lighter glow is built with fewer blur levels
+    const rebuild = q.msaa !== was.msaa || !!q.bloomHalf !== !!was.bloomHalf;
     if (q.shadow !== was.shadow) this.onShadowChange?.(q);       // a smaller shadow map (the sky makes a new one)
-    if (q.msaa !== was.msaa) this.buildComposer();               // another sample count needs another render target
+    if (rebuild) this.buildComposer();
     else if (q.bloom !== was.bloom && this.bloom) this.bloom.enabled = !!q.bloom;   // (round-light.js reads q.bloom too)
-    if (scale !== this.scale) { this.scale = scale; this.resize(); }
-    else if (q.msaa !== was.msaa) this.resize();
+    if (scale !== this.scale || ss !== this.ssOn || rebuild) { this.scale = scale; this.ssOn = ss; this.resize(); }
   }
 
   render(scene, camera) {
@@ -276,7 +347,7 @@ export class Renderer {
       this.resize(pr);
       // pixel-sized effects keep the preview's look in the larger picture: the bloom's mip chain at the screen's size
       // (its blur reach is counted in mip texels; the composite upsamples them), point sprites scaled by the ratio
-      this.bloom.setSize(innerWidth * sp, innerHeight * sp);
+      this.bloom.setSize(...(this.bloomSize || [innerWidth * sp, innerHeight * sp]));
       undo = this.onShot?.(pr / sp) || null;
       this.renderWorld(scene, camera, false);
       return copy(this.renderer.domElement);

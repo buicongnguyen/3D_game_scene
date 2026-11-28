@@ -5262,5 +5262,11 @@
   "Stop downloads": "ダウンロードを中止",
   "Download all {n} ({size})": "{n}曲をすべてダウンロード（{size}）",
   "No songs in this list yet": "このリストにはまだ曲がありません",
-  "Songs": "曲"
+  "Songs": "曲",
+  "Resolution": "解像度",
+  "Sharp": "くっきり",
+  "Balanced": "バランス",
+  "Low": "低",
+  "Render {w}×{h} · {pct} % · {tier}": "描画 {w}×{h} · {pct} % · {tier}",
+  "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "くっきりは画面の解像度より低く描きません。バランスは忙しいグラフィックカードに軽めです。"
 }

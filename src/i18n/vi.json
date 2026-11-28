@@ -5262,5 +5262,11 @@
   "Stop downloads": "Dừng tải",
   "Download all {n} ({size})": "Tải cả {n} bài ({size})",
   "No songs in this list yet": "Danh sách này chưa có bài nào",
-  "Songs": "Bài hát"
+  "Songs": "Bài hát",
+  "Resolution": "Độ phân giải",
+  "Sharp": "Sắc nét",
+  "Balanced": "Cân bằng",
+  "Low": "Thấp",
+  "Render {w}×{h} · {pct} % · {tier}": "Kết xuất {w}×{h} · {pct} % · {tier}",
+  "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "Sắc nét không bao giờ vẽ thấp hơn độ phân giải màn hình của bạn. Cân bằng nhẹ hơn cho card đồ họa đang bận."
 }

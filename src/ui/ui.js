@@ -891,7 +891,27 @@ export class UI {
     const g = this.game;
     const q = $('optQuality');
     q.value = g.renderer.qualityName;
-    q.addEventListener('change', () => { g.renderer.setQuality(q.value); this.toast(tx('Graphics setting saved — reload to apply fully')); });
+    q.addEventListener('change', () => { g.renderer.setQuality(q.value); this.toast(tx('Graphics setting saved — reload to apply fully')); this.syncRes?.(); });
+    // Resolution (engine/resolution.js): Auto · Sharp · Balanced in one flat row, saved for this device, applied at once;
+    // the line under it says what is drawn now ("Render 2560×1440 · 100 % · High"), kept current while Settings is open
+    const resBtns = [...document.querySelectorAll('#optRes button')], TIER = { Low: N_('Low'), Medium: N_('Medium'), High: N_('High') };
+    this.syncRes = () => {
+      const r = g.renderer, info = r.resolutionInfo();
+      for (const b of resBtns) b.setAttribute('aria-pressed', String(b.dataset.res === r.resMode));
+      const el = $('optResInfo');
+      if (el) el.textContent = tx('Render {w}×{h} · {pct} % · {tier}', { w: info.w, h: info.h, pct: info.pct, tier: tx(TIER[info.tier] || info.tier) });
+    };
+    for (const b of resBtns) b.addEventListener('click', () => {
+      this.audio?.click();
+      // a fixed percentage from Advanced would overrule the choice: Automatic there again
+      const sc = $('optScale');
+      if (sc?.value) { sc.value = ''; sc.dispatchEvent(new Event('change')); }
+      g.renderer.setResolutionMode(b.dataset.res);
+      this.syncRes();
+    });
+    g.renderer.onResolution = () => { if (this.overlay === 'settings') this.syncRes(); };
+    onLangChange(() => this.syncRes());
+    this.syncRes();
     // Build the scenery option here, like the tour controls, so it works from either Settings door.
     const tropicalRow = document.createElement('label'); tropicalRow.className = 'check';
     const tropical = document.createElement('input'); tropical.id = 'optTropicalTrees'; tropical.type = 'checkbox';
@@ -899,7 +919,7 @@ export class UI {
     const tropicalLabel = document.createElement('span');
     tropicalLabel.dataset.i18n = ''; tropicalLabel.dataset.i18nSrc = 'Enable tropical trees';
     tropicalLabel.textContent = tx('Enable tropical trees');
-    tropicalRow.append(tropical, tropicalLabel); q.closest('label').after(tropicalRow);
+    tropicalRow.append(tropical, tropicalLabel); ($('optResNote') || q.closest('label')).after(tropicalRow);
     tropical.addEventListener('change', () => setTropicalTrees(tropical.checked));
     onTreeThemeChange(enabled => { tropical.checked = enabled; });
     // People: the standard models or the light ones (engine/people.js). Automatic = light on Low graphics.
@@ -1033,7 +1053,7 @@ export class UI {
       if (g.world) g.applyLook?.();
       const sun = g.world?.sky?.sun;             // (the sky is the world's: world/world.js)
       if (sun) sun.castShadow = shadows.checked;
-      if (g.renderer) { g.renderer.fixedScale = scale.value ? +scale.value : null; if (g.renderer.fixedScale) { g.renderer.scale = g.renderer.fixedScale; g.renderer.resize(); } }
+      if (g.renderer && (g.renderer.fixedScale || null) !== (scale.value ? +scale.value : null)) g.renderer.setFixedScale(scale.value ? +scale.value : null);
       if (g.follow) { g.follow.fovBase = +fov.value; if (lastCam !== +camDist.value) { g.follow.zoomTarget = +camDist.value; lastCam = +camDist.value; } }
       document.documentElement.style.setProperty('--ui-scale', text.value);
       save('season', season.value); save('time', tv); save('weather', weather.checked); save('shadows', shadows.checked);
@@ -1154,6 +1174,7 @@ export class UI {
     if (this.overlay && this.overlay !== id) $(this.overlay).classList.add('hidden');
     $(id).classList.remove('hidden');
     if (id === 'pause') this.refreshMinigames?.();
+    if (id === 'settings') this.syncRes?.();
     this.overlayStack = [...(this.overlayStack || []).filter(x => x !== id), id];
     this.overlay = id;
   }

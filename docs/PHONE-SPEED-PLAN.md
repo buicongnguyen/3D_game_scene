@@ -178,3 +178,10 @@ Open: the real phone's numbers (Settings -> Copy performance report) for the ms 
 `WEBGL_multi_draw` decides whether R3-3/R3-6 apply on iPhones (they fall back to the per-building / per-species draws).
 Scripts: `.tools/r3/` (ignored): `ab.mjs` (frozen-world A/B with variants and `--static`), `diff.cjs`, `cross.sh`,
 `vsprev.sh`, `budget-merge.mjs`.
+
+## 5. PC resolution (2026-11-28, branch `pc-resolution`)
+
+The phone tiers are unchanged: Low and Medium on a phone keep their pixel-ratio and pixel caps, the Low ladder, its
+31 ms line and the cinematic / mini game floors. On a desktop the governor now gives up supersampling, the shadow map,
+the glow, MSAA and distances before any resolution, and the floors no longer touch a desktop's Medium/High (they put
+every PC mini game at 72 %). Settings > Resolution (Auto / Sharp / Balanced) and the numbers: `docs/RESOLUTION.md`.
