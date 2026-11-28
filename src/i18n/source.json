@@ -16683,6 +16683,12 @@
   ]
  },
  {
+  "s": "Orchard slope",
+  "ctx": [
+   "UI (src/content/stages.js)"
+  ]
+ },
+ {
   "s": "the Kawabe letters",
   "ctx": [
    "UI (src/content/stamps.js)"
@@ -17764,7 +17770,7 @@
   ]
  },
  {
-  "s": "Sing & Play: find flat open ground, pick Solo or a group, then press Perform.",
+  "s": "Sing & Play: face a view you like on open ground, pick Solo or a group, then press Perform.",
   "ctx": [
    "UI (src/game/director.js)"
   ]

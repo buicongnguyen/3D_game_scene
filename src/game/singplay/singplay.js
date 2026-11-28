@@ -12,7 +12,7 @@ import { prepareMoves, lendClips } from '../tricks/exercise-moves.js';
 import { SHOW } from '../kotone-show.js';
 import { KOTONE_SONGS, songFromParam, songsFor } from '../../content/kotone-songs.js';
 import { Performer } from '../perform/performer.js';
-import { planShots, createCameraMan } from '../perform/camera-man.js';
+import { planShots, createCameraMan, fromCamera } from '../perform/camera-man.js';
 import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js';
 import { canPerform, canGroup, gameEnv } from './flat.js';
 import { Troupe } from '../perform/troupe.js';
@@ -26,12 +26,19 @@ import { DANCE_STYLES, DANCE_STYLE } from '../../content/kotone-club.js';
 export { SAVE_KEY };   // (sing-here.js: the pause menu's Sing here writes her place before this module loads)
 export const GROUP_KEY = 'starline:singplay:group';   // the group size last picked (per device: 1, 4 or 8)
 export const DANCE_KEY = 'starline:singplay:dance';   // the Dance choice last picked (per device: content/kotone-club.js DANCE_STYLES)
-export const STAGE = Object.freeze({ x: -91, z: 99.5, facing: Math.PI });   // first visit: in front of the station stage
+export const STAGE = Object.freeze({ x: -91, z: 99.5, facing: 0 });   // first visit: in front of the station stage (facing: the camera's view, content/stages.js)
 const REASONS = { water: N_('Too close to the water'), steep: N_('Too steep here'), room: N_('Not enough room here'), group: N_('Not enough room for the group here') };
 const GROUP_LABELS = { 1: N_('Solo'), 4: N_('Group of 4'), 8: N_('Group of 8') };
 const DANCE_LABELS = { mix: N_('Mixed'), kpop: N_('K-pop'), cute: N_('Cute'), hiphop: N_('Hip-hop') };
 export const loadDance = (store = globalThis.localStorage) => { try { const v = store?.getItem(DANCE_KEY); return DANCE_STYLES.includes(v) ? v : DANCE_STYLE; } catch { return DANCE_STYLE; } };
 const saveDance = v => { try { localStorage.setItem(DANCE_KEY, v); } catch { /* per-device convenience */ } };
+/** The formation's layouts, tried in turn when the group checks its room (a hillside: the closer one keeps the whole
+ *  formation within the height range; content/troupe.js spots scaled across x and front to back z). */
+export const LAYOUTS = Object.freeze([Object.freeze({ x: 1, z: 1 }), Object.freeze({ x: .85, z: .75 })]);
+/** Her facing when she performs: toward the camera (its view direction turned half round), so the view the player framed
+ *  is the backdrop behind her. dir: the camera's world look direction. */
+export const faceCamera = dir => Math.atan2(dir.x, dir.z) + Math.PI;
+const _dir = new THREE.Vector3();
 const AUDIENCE = { low: 2, other: 4, near: 35, ring: 4.2, groupRing: 7.5 };
 const loadPlace = () => { try { const v = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); return v && Number.isFinite(v.x) && Number.isFinite(v.z) ? v : null; } catch { return null; } };
 const savePlace = p => { try { localStorage.setItem(SAVE_KEY, JSON.stringify(p)); } catch { /* per-device convenience */ } };
@@ -75,7 +82,8 @@ export class SingPlay {
     this.perf = null; this.cam = null; this.auto = true; this.freeUntil = 0; this.rec = null; this.songIx = 0; this.audience = [];
     this.checkT = 0; this.allowed = { ok: false, reason: 'room' }; this.saveT = 0;
     this.dance = loadDance();
-    this.group = 1; this.groupReady = null; this.groupWait = false; this.troupe = null; this.formation = null; this.limits = null;
+    this.group = 1; this.groupReady = null; this.groupWait = false; this.troupe = null; this.formation = null; this.limits = null; this.layout = LAYOUTS[0];
+    this.viewYaw = null; this.from = null;
   }
 
   async start() {
@@ -90,7 +98,7 @@ export class SingPlay {
     this.swapBody(body);
     const place = loadPlace() || STAGE;
     g.player.teleport(place.x, place.z, undefined, place.facing);
-    g.follow.first = true;
+    g.follow.first = true; g.follow.yaw = place.facing;   // (the camera behind her looks at the view: she turns to it on Perform)
     const list = [...KOTONE_SONGS, songFromParam(g.params?.get?.('kotoneSong'))].filter(Boolean);
     this.songs = (await Promise.all(list.map(loadSong))).filter(Boolean);
     this.limits = groupLimits(low, g.params);
@@ -128,9 +136,21 @@ export class SingPlay {
     p.anim.play('Idle');
   }
 
-  keepPlace() { const p = this.g.player; if (!p.swimming) savePlace({ x: +p.pos.x.toFixed(2), z: +p.pos.z.toFixed(2), facing: +p.facing.toFixed(3) }); }
+  // (facing kept: the view's, not her turn to the camera during a song)
+  keepPlace() { const p = this.g.player, f = this.perf && this.viewYaw !== null ? this.viewYaw : p.facing; if (!p.swimming) savePlace({ x: +p.pos.x.toFixed(2), z: +p.pos.z.toFixed(2), facing: +(Math.atan2(Math.sin(f), Math.cos(f))).toFixed(3) }); }
+
+  /** Her facing if she performed now: toward the camera (faceCamera). */
+  performFacing() {
+    const c = this.g.camera, d = c.getWorldDirection(_dir);
+    return Math.hypot(d.x, d.z) > .05 ? faceCamera(d) : (this.g.follow?.yaw ?? this.g.player.facing) + Math.PI;
+  }
+
+  /** The ground for the feet and the camera on a hillside: the terrain outdoors; null in a room or on a deck (level). */
+  ground() { const g = this.g, p = g.player; return g.interiors?.active || p.onItem ? null : (x, z) => g.world.heightAt(x, z); }
 
   // ---------------------------------------------------------------- the HUD: one row, every button always in its place
+  // (during a song the setup rows - group, dance, stages - hide: they cannot be used then; Stop, Record, Photo and Camera
+  // stay in one row with the song line under it)
   hud() {
     const bar = this.bar = document.createElement('div');
     bar.id = 'singplayBar'; bar.className = 'singplay-bar';
@@ -167,7 +187,9 @@ export class SingPlay {
 body.singplay #inventory{display:none}
 @media (max-width:640px){body.singplay #toasts{top:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px))}}
 .singplay-group{flex-basis:100%;display:flex;justify-content:center;gap:6px}.singplay-seg[aria-pressed=true]{background:#5b3fa0;color:#fff}
-@media (max-width:640px){.singplay-bar{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 104px);left:12px;right:12px;transform:none;max-width:none;flex-wrap:wrap;gap:6px}.singplay-btn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px;white-space:nowrap}.singplay-hint{position:absolute;top:152px;left:0;right:0}}`;
+.singplay-bar.performing .singplay-group,.singplay-bar.performing .singplay-stages{display:none}
+@media (max-width:640px){.singplay-bar{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 104px);left:12px;right:12px;transform:none;max-width:none;flex-wrap:wrap;gap:6px}.singplay-btn{min-height:44px;min-width:44px;padding:0 10px;font-size:13px;white-space:nowrap}.singplay-hint{position:absolute;top:152px;left:0;right:0}}
+@media (max-width:640px){.singplay-bar.performing.performing .singplay-hint{top:52px}}`;
       document.head.appendChild(st);
     }
     document.body.appendChild(bar);
@@ -181,7 +203,9 @@ body.singplay #inventory{display:none}
     this.btnPerform.setAttribute('aria-disabled', String(!ok || !this.songs?.length));
     this.btnRecord.textContent = this.rec ? `● ${fmt(this.rec.secs())}` : tx(N_('Record'));
     this.btnRecord.classList.toggle('on', !!this.rec);
-    this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec));
+    // Record works before a song too: it starts the performance and the recording together
+    this.btnRecord.setAttribute('aria-disabled', String(!p && !this.rec && !(ok && this.songs?.length && !this.groupWait)));
+    this.bar.classList.toggle('performing', !!p);   // (during a song the setup rows hide: one row of Stop, Record, Photo, Camera)
     this.btnCam.textContent = tx(this.auto ? N_('Camera: Auto') : N_('Camera: Free'));
     this.btnCam.setAttribute('aria-disabled', String(!p));
     // (Group of 8 shows on a phone once it has measured strong: strong-phone.js)
@@ -215,7 +239,13 @@ body.singplay #inventory{display:none}
     const want = new Set(songsFor(this.songs.map(x => x.song), getLang())), pool = this.songs.filter(x => want.has(x.song));
     const song = pool[this.songIx++ % pool.length];
     p.locked = true; p.vel.set(0, 0, 0);
-    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: this.dance });
+    // she (and the group) turns to face the camera: the view the player framed becomes the backdrop; the auto camera's
+    // first shot starts where the player's camera stood (camera-man.js open)
+    const f = this.performFacing();
+    this.viewYaw = f - Math.PI; p.facing = f; p.root.rotation.y = f;
+    this.from = fromCamera(g.camera.position, { x: p.pos.x, y: p.pos.y, z: p.pos.z, facing: f });
+    const ground = this.ground();
+    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: this.dance, ground });
     this.perf.start(0);
     this.d.performing = true;   // (director.updateBarks: the villagers' bubbles hidden, no new ones, until she stops)
     if (this.group > 1) this.makeTroupe();
@@ -237,6 +267,9 @@ body.singplay #inventory{display:none}
     this.perf?.dispose(); this.perf = null; this.cam = null;
     this.d.performing = false;
     g.player.locked = false; g.follow.first = true;
+    // back to the view the player framed: she turns to it again, the camera behind her
+    if (this.viewYaw !== null) { g.player.facing = this.viewYaw; g.player.root.rotation.y = this.viewYaw; g.follow.yaw = this.viewYaw; this.viewYaw = null; }
+    this.from = null;
     g.audio?.holdMusic?.('singplay', false);
     this.release();
     this.label();
@@ -285,7 +318,13 @@ body.singplay #inventory{display:none}
         if ((this.strongT = (this.strongT || 0) + 1) % 4 === 0) this.judgeStrong(true);   // (about once a second)
         const was = this.allowed.ok + this.allowed.reason, env = gameEnv(g);
         this.allowed = p.grounded ? canPerform(p.pos, env) : { ok: false, reason: 'steep' };
-        if (this.allowed.ok && this.group > 1) this.allowed = canGroup(p.pos, p.facing, this.spots(), env);
+        if (this.allowed.ok && this.group > 1) {
+          // the formation turned to the camera, as Perform will turn it; the closer layout when the first will not fit
+          const f = this.performFacing();
+          let r = null;
+          for (const L of LAYOUTS) { r = canGroup(p.pos, f, this.spots(L), env); if (r.ok) { this.layout = L; break; } }
+          this.allowed = r;
+        }
         if (was !== this.allowed.ok + this.allowed.reason) this.label(); else this.stages?.refresh();
       }
     }
@@ -301,9 +340,9 @@ body.singplay #inventory{display:none}
     if (!this.camWas) { this.cam = createCameraMan(this.shots, { portrait: innerHeight > innerWidth }); this.camWas = true; }
     this.cam.portrait = innerHeight > innerWidth;
     const clear = (a, b) => g.colliders.raycast(a.x, a.y, a.z, b.x, b.y, b.z);
-    const subject = { x: p.pos.x, y: p.pos.y, z: p.pos.z, facing: p.facing };
+    const subject = { x: p.pos.x, y: p.pos.y, z: p.pos.z, facing: p.facing, from: this.from };
     if (this.formation) { const c = this.groupCentre(); subject.group = { x: c.x, z: c.z, w: this.groupW, depth: this.groupD }; }
-    this.cam.update(dt, this.perf.t, subject, g.camera, clear);
+    this.cam.update(dt, this.perf.t, subject, g.camera, clear, this.ground());
     p.silhouette?.show?.(false);
     return true;
   }
@@ -333,7 +372,7 @@ body.singplay #inventory{display:none}
     if (!dropNow(this.shots, t, this.dropAt)) return;
     this.troupe.setSize(4);
     const xs = troupeOf(4).map(m => m.x), zs = troupeOf(4).map(m => m.z);
-    this.groupW = Math.max(...xs) - Math.min(...xs); this.groupD = Math.max(...zs) - Math.min(...zs);
+    this.groupW = (Math.max(...xs) - Math.min(...xs)) * this.layout.x; this.groupD = (Math.max(...zs) - Math.min(...zs)) * this.layout.z;
     saveStrong('0'); this.strong = { ok: false, why: 'fell back' };
     this.group = 4; saveGroup(4);
     this.watch = null; this.dropAt = null;
@@ -343,14 +382,14 @@ body.singplay #inventory{display:none}
 
   // ---------------------------------------------------------------- the group (content/troupe.js, perform/troupe.js)
   /** The members' places from Kotone, in her frame (metres: x across, z forward). */
-  spots() {
+  spots(L = this.layout) {
     const k = leadOffset();
-    return troupeOf(this.group).filter(m => !m.lead).map(m => ({ x: m.x - k.x, z: m.z - k.z }));
+    return troupeOf(this.group).filter(m => !m.lead).map(m => ({ x: (m.x - k.x) * L.x, z: (m.z - k.z) * L.z }));
   }
 
   /** The formation's centre in the world (Kotone stands off it: front row, inner place). */
   groupCentre() {
-    const p = this.g.player, k = leadOffset(), s = Math.sin(p.facing), c = Math.cos(p.facing), x = -k.x, z = -k.z;
+    const p = this.g.player, k = leadOffset(), L = this.layout, s = Math.sin(p.facing), c = Math.cos(p.facing), x = -k.x * L.x, z = -k.z * L.z;
     return { x: p.pos.x + x * c + z * s, z: p.pos.z - x * s + z * c };
   }
 
@@ -363,7 +402,7 @@ body.singplay #inventory{display:none}
     for (const m of cast) {
       if (m.lead) continue;
       const model = g.assets.clone(low ? `${m.file}.lite` : m.file); if (!model) continue;
-      const x = m.x - k.x, z = m.z - k.z;
+      const x = (m.x - k.x) * this.layout.x, z = (m.z - k.z) * this.layout.z;
       model.position.set(x, g.world.heightAt(p.pos.x + x * c + z * s, p.pos.z - x * s + z * c), z);
       model.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
       root.add(model);
@@ -373,8 +412,11 @@ body.singplay #inventory{display:none}
     }
     g.scene.add(root); root.updateMatrixWorld(true);
     const xs = cast.map(m => m.x), zs = cast.map(m => m.z);
-    this.groupW = Math.max(...xs) - Math.min(...xs); this.groupD = Math.max(...zs) - Math.min(...zs);
-    this.troupe = new Troupe(this.perf, p.model, this.restRoot, members, { backHalf: L.backHalf, backFaces: L.backFaces, backShadows: L.backShadows, merge: L.merge, parent: root });
+    this.groupW = (Math.max(...xs) - Math.min(...xs)) * this.layout.x; this.groupD = (Math.max(...zs) - Math.min(...zs)) * this.layout.z;
+    // (a hillside: each member's feet fitted to the ground under its own spot, ground-fit.js; the formation stands at y 0,
+    // so its members' heights are the world's)
+    const ground = this.ground();
+    this.troupe = new Troupe(this.perf, p.model, this.restRoot, members, { backHalf: L.backHalf, backFaces: L.backFaces, backShadows: L.backShadows, merge: L.merge, parent: root, ground });
   }
 
   dropTroupe() {
@@ -397,7 +439,11 @@ body.singplay #inventory{display:none}
       this.ui.toast?.(tx(N_('Video saved')));
       return;
     }
-    if (!this.perf) return;
+    if (!this.perf) {
+      // Record before a song: the performance and the recording start together (Perform's own checks first)
+      this.perform();
+      if (!this.perf) return;
+    }
     // 720p at most on phones and Low (the canvas is what is recorded): the pixel ratio for the take
     const phone = R.qualityName === 'low' || Math.min(innerWidth, innerHeight) < 700, cap = phone ? 1280 : 1920, long = Math.max(innerWidth, innerHeight);
     this.recScale = R.fixedScale;

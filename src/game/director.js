@@ -1034,7 +1034,7 @@ export class Director {
 
   refreshObjective(pulse = false) {
     if (!this.quest) return;
-    if (this.singplay) { this.ui.setObjective(-1, tx('Sing & Play: find flat open ground, pick Solo or a group, then press Perform.'), pulse); this.refreshHud(); return; }
+    if (this.singplay) { this.ui.setObjective(-1, tx('Sing & Play: face a view you like on open ground, pick Solo or a group, then press Perform.'), pulse); this.refreshHud(); return; }
     if (this.explore) { this.ui.setObjective(-1, this.stamps?.objective() || tx('Explore Hoshi Valley: wander, shop, play ball and visit the neighbours.'), pulse); this.refreshHud(); return; }
     this.ui.setObjective(this.q.state.chapter, this.q.objective(tx), pulse);
     this.refreshHud();

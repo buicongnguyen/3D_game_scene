@@ -77,3 +77,31 @@ A third flat row under the bar: **Mixed / K-pop / Cute / Hip-hop** (44 px+, alwa
 while performing like the group row; remembered per device). It picks the plan's dance loops, mic moves and moments
 (docs/KOTONE-SHOW.md "The Dance choice"); a group dances the same style. Phone layout: the hint moved down to 152 px under
 the three rows.
+
+## Face the camera, Record from idle, the camera grammar, hillsides (2026-11-28, branch sing-camera)
+Owner: "when I press Perform the group should turn 180 deg to face the camera so we see that background behind them";
+"there is no Record button yet"; "learn the camera from Avatar Studio"; the phone bar covered the view; "make it perform
+in a little steep spot".
+- **Face the camera** (`singplay.js` performFacing / faceCamera): on Perform Kotone and the formation turn to the camera's
+  view direction + pi, so the view the player framed is the backdrop; Stop turns her back and puts the follow camera behind
+  her again. The idle room checks (canGroup) use that turned facing. Stages (`content/stages.js`): `facing` is now the
+  camera's view after a jump (each stage keeps its spot and its old backdrop: the stored facing turned half round), except
+  Star hill, which now films the valley (checked at the new turn); the place saved for the next visit keeps the view.
+- **Record** works before a song: it starts the performance and the take together (label "Record", "● 0:12" while it
+  records); Stop ends both and saves the video + captions as before.
+- **Phone bar**: during a song the setup rows (group, dance, stages) hide; Stop / Record / Photo / Camera stay in one
+  row with the song line under it (390x844: the bar 194 px tall idle, 44 px performing); they come back after Stop.
+- **Camera grammar** (`perform/camera-man.js`, from Avatar Studio `club/club-director.js`: cuts on bar lines, a new shot
+  per section, never the same shot twice, short close-ups, calm long moves in verses, a crane after the loud parts, the
+  ending crane-out): open (starts at the player's own camera, then eases in), wide, crane, landscape (far and high,
+  aimed 30 m past the group: the chosen view fills the frame), medium, side, low hero (opens every chorus), push, orbit,
+  close (Kotone's sung lines: a verse line every 6 bars at most, a chorus line every 4, never two in a row, 4 bars at
+  most), reveal. No shot shorter than 2 bars; the camera stays in front of walls and trees (collider ray to her) and over
+  the ground between it and her (terrain samples), portrait frames stand back. No extra render passes.
+- **Hillsides** (`singplay/flat.js`): her ring may slope up to 20 deg (0.6 m over 1.6 m; banks/cliffs past 30 deg between
+  samples still refuse), a group's whole ground within 0.6 m of height and each member's ground under 20 deg (reasons:
+  "Too steep here"); a closer layout (x 0.85, z 0.75) is tried when the first one does not fit. Feet: `perform/ground-fit.js`
+  drops the pelvis to the lower planted foot and turns each planted foot by the slope about its toe joint onto the ground
+  (two-bone leg solve), for Kotone and every member. Measured (`scripts/troupe-check.mjs --slope 15|20 [--across]`, 8
+  dancers, golden-rails-en): planted toe/ankle within 0.55 cm of the dance's height over the ground (0 sink), slide p95
+  1.01 cm/s (the same as level), joint rules 0. New stage **Orchard slope** (80, -85; a 12 deg hillside, the valley below).

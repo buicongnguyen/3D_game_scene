@@ -111,7 +111,7 @@ test('the room check: every member on level, dry, clear ground', () => {
   const spots = [{ x: -1.5, z: 0 }, { x: 3, z: -2 }];
   const flat = { heightAt: () => 1, waterY: 0, room: null, solid: () => false };
   assert.deepEqual(canGroup({ x: 0, y: 1, z: 0 }, 0, spots, flat), { ok: true });
-  assert.equal(canGroup({ x: 0, y: 1, z: 0 }, 0, spots, { ...flat, heightAt: x => (x > 2 ? 1.6 : 1) }).reason, 'group');
+  assert.equal(canGroup({ x: 0, y: 1, z: 0 }, 0, spots, { ...flat, heightAt: x => (x > 2 ? 1.7 : 1) }).reason, 'steep', 'a member 0.7 m up');
   assert.equal(canGroup({ x: 0, y: 1, z: 0 }, 0, spots, { ...flat, solid: x => x > 2 }).reason, 'group');
   assert.equal(canGroup({ x: 0, y: 1, z: 0 }, 0, spots, { ...flat, heightAt: x => (x < -1 ? .1 : 1) }).reason, 'water');
   // her facing turns the layout: facing +x (pi/2), a spot 3 m to her side is 3 m along -z
@@ -123,7 +123,8 @@ test('the camera: choruses frame the group, close-ups go to her verse lines, and
   const plan = lead, shots = planShots(plan, clock, { group: true });
   for (const s of sections.filter(x => x.kind === 'chorus')) {
     const inside = shots.filter(x => x.t0 >= s.t - .3 && x.t0 < s.e - .5);
-    assert.ok(inside.length && inside.every(x => x.kind === 'wide' || x.kind === 'medium'), 'group shots on choruses');
+    assert.ok(inside.length && inside.every(x => ['wide', 'medium', 'low'].includes(x.kind)), 'group shots on choruses');
+    assert.equal(inside[0].kind, 'low', 'a chorus opens on the low hero shot');
   }
   const v = sections.find(x => x.kind === 'verse');
   assert.ok(shots.some(x => x.kind === 'close' && x.t0 >= v.t - .3 && x.t0 < v.e), 'close-ups on her verse lines');

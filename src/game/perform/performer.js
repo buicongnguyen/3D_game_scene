@@ -14,6 +14,7 @@ import { planPerformance, blockAt, momentAt, micShown, PLAN } from './plan.js';
 import { micLayer, leadTarget, micClipFor, micFold, SINGING } from './mic-layer.js';
 import { makeMic } from './mic-prop.js';
 import { createFootHold } from './foot-hold.js';
+import { createGroundFit } from './ground-fit.js';
 import { MIC_CLIPS } from '../../content/kotone-club.js';
 
 const follow = (cur, target, dt, up, down) => cur + (target - cur) * (1 - Math.exp(-dt / Math.max(1e-3, target > cur ? up : down)));
@@ -93,13 +94,14 @@ export class Performer {
    * npc: the performer (actors/npc.js: model, anim, face); clips: Map name -> AnimationClip (her pack, made ready for her
    * model); song: { song (the list entry), beats, lyrics, mouth, stage, url }; restRoot: the pack's armature (rest pose).
    */
-  constructor(npc, clips, song, { audio = null, restRoot = null, style } = {}) {
+  constructor(npc, clips, song, { audio = null, restRoot = null, style, ground = null } = {}) {
     this.n = npc; this.clips = clips; this.data = song;
     this.clock = createBeatClock(song.song, { beats: song.beats, sections: song.stage?.sections || null, lyrics: song.lyrics });
     this.plan = planPerformance(song.song, this.clock, song.lyrics, { style });   // (style: the Dance choice)
     this.mood = moodAt('intro');
     this.sound = new SongAudio(song.url, audio);
     this.restRoot = restRoot;
+    this.ground = ground;   // (x, z) -> y: her feet fitted to a hillside (ground-fit.js); null on level stages
     this.t = 0; this.on = false; this.done = false;
     this.w = 0; this.g = 0; this.cur = ''; this.prevMic = ''; this.xfAt = -99;
     this.actions = new Map(); this.layer = null; this.mic = null;
@@ -126,6 +128,7 @@ export class Performer {
     this.layer = mics.size === want.length ? micLayer(n.model, mics, this.restRoot) : null;
     this.mic = this.layer ? makeMic(n.model) : null;
     this.feet = createFootHold(n.model);
+    this.fit = this.ground ? createGroundFit(n.model, this.ground) : null;
     const track = this.data.mouth?.open ? this.data.mouth : this.data.lyrics;
     if (track) n.face?.sing(track, () => this.t);
     n.poser = this;
@@ -136,7 +139,7 @@ export class Performer {
     const n = this.n, anim = n.anim;
     if (!this.on) return;
     this.on = false;
-    this.layer?.restore(); this.feet?.restore();
+    this.fit?.restore(); this.layer?.restore(); this.feet?.restore();
     for (const a of this.actions.values()) { a.stop(); anim.mixer.uncacheAction(a.getClip(), anim.root); }
     this.actions.clear(); this.layer = null;
     this.mic?.dispose(); this.mic = null;
@@ -169,7 +172,7 @@ export class Performer {
   /** Before the mixer: the dance pose of this song time (action times and weights). */
   before() {
     if (!this.on) return;
-    this.layer?.restore(); this.feet?.restore();
+    this.fit?.restore(); this.layer?.restore(); this.feet?.restore();
     this.fading = poseDance(this.plan, this.clock, this.actions, this.t);
   }
 
@@ -183,6 +186,7 @@ export class Performer {
     const want = lines ? leadTarget(lines, t) : 0;
     this.feet?.update(dt, this.fading);   // planted feet held through a cross-fade (foot-hold.js)
     this.onPose?.(dt, t);                  // her dance pose, before the mic: a group's front row copies it (troupe.js)
+    this.fit?.apply();                     // then her own feet on the slope under her (the copies fit their own: troupe.js)
     this.w = follow(this.w, want, dt, SINGING.up, SINGING.down);
     this.g = micShown(P, t);
     this.mic?.show(this.g);

@@ -69,3 +69,30 @@ export function createFootHold(model) {
     },
   };
 }
+
+// (moved here from troupe.js 2026-11-28: the followers' leg solve, also used by ground-fit.js)
+const _H = new THREE.Vector3(), _K = new THREE.Vector3(), _A = new THREE.Vector3(), _n = new THREE.Vector3(), _u = new THREE.Vector3(), _w = new THREE.Vector3();
+const _qf = new THREE.Quaternion(), _qp = new THREE.Quaternion(), _qq = new THREE.Quaternion(), _qr = new THREE.Quaternion(), _m = new THREE.Matrix4();
+const chain = (...bones) => { for (const b of bones) { b.updateMatrix(); b.matrixWorld.multiplyMatrices(b.parent.matrixWorld, b.matrix); } };
+const worldTurn = (b, out) => out.setFromRotationMatrix(_m.extractRotation(b.matrixWorld));
+/** Turn `bone` by the world rotation q (its parent's world matrix is current). */
+const turn = (bone, q) => { worldTurn(bone.parent, _qp); bone.quaternion.premultiply(_qq.copy(_qp).invert().multiply(q).multiply(_qp)); };
+/**
+ * Two-bone leg solve without walking the scene (foot-hold.js reach does a full world update per call): only this leg's
+ * chain is recomposed from the hips down (the bones above stand still, their matrices are this frame's). The ankle goes
+ * w of the way to `target`, the knee stays in its own bend plane, the foot keeps its world turn.
+ */
+export function legSolve(hips, thigh, shin, foot, target, w = 1) {
+  chain(hips, thigh, shin, foot);
+  worldTurn(foot, _qf);
+  _H.setFromMatrixPosition(thigh.matrixWorld); _K.setFromMatrixPosition(shin.matrixWorld); _A.setFromMatrixPosition(foot.matrixWorld);
+  const T = w < 1 ? _w.copy(_A).lerp(target, w) : _w.copy(target);
+  const l1 = _H.distanceTo(_K), l2 = _K.distanceTo(_A), d = Math.min(l1 + l2 - 1e-4, Math.max(Math.abs(l1 - l2) + 1e-4, _H.distanceTo(T)));
+  const ang = x => Math.acos(Math.min(1, Math.max(-1, (l1 * l1 + l2 * l2 - x * x) / (2 * l1 * l2))));
+  _n.subVectors(_H, _K).cross(_u.subVectors(_A, _K));
+  if (_n.lengthSq() > 1e-12) { turn(shin, _qr.setFromAxisAngle(_n.normalize(), ang(d) - ang(_H.distanceTo(_A)))); chain(shin, foot); }
+  _A.setFromMatrixPosition(foot.matrixWorld).sub(_H).normalize();
+  turn(thigh, _qr.setFromUnitVectors(_A, _u.copy(T).sub(_H).normalize()));
+  chain(thigh, shin);
+  worldTurn(shin, _qp); foot.quaternion.copy(_qp.invert().multiply(_qf));
+}
