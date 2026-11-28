@@ -5268,5 +5268,19 @@
  "Balanced": "균형",
  "Low": "낮음",
  "Render {w}×{h} · {pct} % · {tier}": "렌더링 {w}×{h} · {pct} % · {tier}",
- "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "선명은 화면 해상도보다 낮게 그리지 않습니다. 균형은 바쁜 그래픽 카드에 더 가볍습니다."
+ "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "선명은 화면 해상도보다 낮게 그리지 않습니다. 균형은 바쁜 그래픽 카드에 더 가볍습니다.",
+ "Breaking": "브레이킹",
+ "Capoeira": "카포에이라",
+ "Popping": "팝핑",
+ "Party classics": "파티 클래식",
+ "Latin party": "라틴 파티",
+ "Northern soul": "노던 소울",
+ "Rock · floor · freeze": "록 · 플로어 · 프리즈",
+ "Ginga · round": "징가 · 라운드",
+ "Wave · tut": "웨이브 · 텃",
+ "YMCA · silly steps": "YMCA · 엉뚱한 스텝",
+ "Salsa · samba · house": "살사 · 삼바 · 하우스",
+ "Jazz · floor spin": "재즈 · 플로어 스핀",
+ "Dance sequences": "댄스 시퀀스",
+ "The dances couldn't be loaded": "춤을 불러오지 못했어요"
 }

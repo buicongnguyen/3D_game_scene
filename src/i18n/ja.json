@@ -5268,5 +5268,19 @@
   "Balanced": "バランス",
   "Low": "低",
   "Render {w}×{h} · {pct} % · {tier}": "描画 {w}×{h} · {pct} % · {tier}",
-  "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "くっきりは画面の解像度より低く描きません。バランスは忙しいグラフィックカードに軽めです。"
+  "Sharp never draws below your screen's resolution. Balanced is lighter on a busy graphics card.": "くっきりは画面の解像度より低く描きません。バランスは忙しいグラフィックカードに軽めです。",
+  "Breaking": "ブレイキン",
+  "Capoeira": "カポエイラ",
+  "Popping": "ポッピング",
+  "Party classics": "パーティー定番",
+  "Latin party": "ラテンパーティー",
+  "Northern soul": "ノーザンソウル",
+  "Rock · floor · freeze": "ロック · フロア · フリーズ",
+  "Ginga · round": "ジンガ · ラウンド",
+  "Wave · tut": "ウェーブ · タット",
+  "YMCA · silly steps": "YMCA · おどけステップ",
+  "Salsa · samba · house": "サルサ · サンバ · ハウス",
+  "Jazz · floor spin": "ジャズ · フロアスピン",
+  "Dance sequences": "ダンスシーケンス",
+  "The dances couldn't be loaded": "ダンスを読み込めませんでした"
 }

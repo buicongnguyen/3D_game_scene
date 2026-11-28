@@ -311,6 +311,20 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   pack (`moves-vroid-nam1`, the back row's source). Only that pack ships: the other six were dropped from the deploy
   (owner, 2026-11-28); `--member <id>` rebuilds a member's pack when it is needed.
 
+#### The dance sequences — `moves-seq-<style>-kotone.glb` / `-nam1.glb` (since 2026-11-28, docs/SING-AND-PLAY.md "Dance sequences")
+
+- One lazy pack per sequence style (breaking, capoeira, classics, latin, soul) and body: Kotone's (the front
+  row's source) and nam-1's (the back row's). No mesh; the armature is copied from `moves-kotone` / `moves-vroid-nam1`
+  (same joints, order and rest: tests/assets.test.mjs); clips `Seq*` (content/dance-sequences.js SEQ_TAKES), only the takes
+  that body keeps (content/dance-seq-fit.js `rigs`); floor work (footwork, head spin, floor spin) only in nam-1's.
+- Made by `art/blender/seq_takes.py` (the whole Mixamo takes retargeted with vroid_mixamo.py's own retarget, unchanged:
+  `.tools/seq/raw`) and `node scripts/seq-bake.mjs` (Avatar Studio Club mode's dance prep, read-only copy in
+  `.tools/club-solver`: beat-measured loops, foot lock, hand clearance, joint repair; planted feet pinned and the legs
+  keyed at 60 Hz; joint rules R1-R11 at 1.2x (or the take's own max rate), planted slide <= 1.5 cm/s p95, floor sink <=
+  1.5 cm standing / 2.5 cm floor work; keys thinned like the Club bake, hips and legs exact, floor work's arms and spine
+  exact too; rotations 16-bit). Rotations and the hips' translation only.
+- Fetched only when that style is picked in Sing & Play (nam-1's for a group of 8), never at the start.
+
 #### The Night Star (Stella) — VRoid CC0 alpha sample AvatarSample_D_Darkness (since 2026-11-28, docs/NIGHT-STAR.md)
 
 - `vroid-nightstar.glb`, `vroid-nightstar.lite.glb`: the same contract as the members (69 bones, one mesh, one MASK

@@ -16,10 +16,11 @@
 // texture a row instead of one a member). Limits for slow phones (measured: docs/GROUP-PERFORMANCE.md): the back row
 // at half rate, its faces off, no shadows, or the back row left out (setSize(4): Sing & Play's fallback during a show).
 import * as THREE from 'three';
-import { poseDance } from './performer.js';
+import { poseDance, matchStarts } from './performer.js';
 import { planBacking } from './plan.js';
-import { createFootHold, legSolve } from './foot-hold.js';
+import { createFootHold, legSolve, chainBones } from './foot-hold.js';
 import { createGroundFit } from './ground-fit.js';
+import { createFloorBlend } from './floor-blend.js';
 import { lineIndexAt, SINGING } from './mic-layer.js';
 import { Face } from '../../actors/face.js';
 import { TROUPE_LIMITS } from '../../content/troupe.js';
@@ -47,7 +48,7 @@ export function legLength(root) {
  * A copier from the source rig to one follower (same bone names). restSrc / restDst: restPose() of each. ->
  * { copy(), bones, corrected } (corrected: how many bones need the per-bone rest turn).
  */
-export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, dstRest = dst, legSrc = legLength(srcRest), legDst = legLength(dstRest), feet = 'auto' } = {}) {
+export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, dstRest = dst, legSrc = legLength(srcRest), legDst = legLength(dstRest), feet = 'auto', toes = false } = {}) {
   const pairs = [], srcBones = new Map();
   src.traverse(o => { if (o.isBone && !srcBones.has(o.name)) srcBones.set(o.name, o); });
   let corrected = 0, hips = null;
@@ -66,16 +67,19 @@ export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, dstRest 
   // a leg, foot-hold.js reach). Bodies of the same build need nothing (the measured slide is the source's own).
   const legs = ['L', 'R'].map(s => {
     const n = k => `${k}_${s}`, b = (r, k) => r.getObjectByName(n(k));
-    return { s: { thigh: b(src, 'thigh'), shin: b(src, 'shin'), foot: b(src, 'foot') }, d: { thigh: b(dst, 'thigh'), shin: b(dst, 'shin'), foot: b(dst, 'foot') } };
-  }).filter(l => l.s.foot && l.d.foot);
+    return { s: { thigh: b(src, 'thigh'), shin: b(src, 'shin'), foot: b(src, 'foot'), toe: b(src, 'toe') }, d: { thigh: b(dst, 'thigh'), shin: b(dst, 'shin'), foot: b(dst, 'foot'), toe: b(dst, 'toe') } };
+  }).filter(l => l.s.foot && l.d.foot && (!toes || (l.s.toe && l.d.toe)));
+  // toes (a dance sequence's Mixamo takes, troupe.js Troupe): every follower's leg solved so its TOE goes where the source's
+  // goes (scaled): the takes pivot on the ball of the foot, and a foot of another length then slid 2-3 cm/s with the ankle
+  // put right (nu-1 and nam-2, 2026-11-28); without a split mismatch too
   const seg = (r, a, b) => restLen(r, a, b);
   const split = r => seg(r, 'thigh_L', 'shin_L') / Math.max(1e-4, seg(r, 'shin_L', 'foot_L'));
   const mismatch = Math.abs(split(dstRest) / split(srcRest) - 1);
-  const ik = feet === 'auto' ? mismatch > IK_SPLIT : !!feet;
-  if (ik) for (const l of legs) { l.restS = restAnkle(srcRest, l.s.foot.name); l.restD = restAnkle(dstRest, l.d.foot.name); }
+  const ik = toes || (feet === 'auto' ? mismatch > IK_SPLIT : !!feet);
+  if (ik) for (const l of legs) { const j = toes ? 'toe' : 'foot'; l.restS = restAnkle(srcRest, l.s[j].name); l.restD = restAnkle(dstRest, l.d[j].name); }
   const k = hips?.k ?? 1, hipsD = dst.getObjectByName('hips');
   return {
-    bones: pairs.length, corrected, hips, ik, mismatch,
+    bones: pairs.length, corrected, hips, ik, mismatch, toes,
     copy() {
       for (const e of pairs) { if (e.K) e.d.quaternion.multiplyQuaternions(e.K, e.s.quaternion); else e.d.quaternion.copy(e.s.quaternion); }
       if (hips) { const s = hips.s.position, d = hips.d.position; d.set(hips.pd.x + (s.x - hips.ps.x) * hips.k, hips.pd.y + (s.y - hips.ps.y) * hips.k, hips.pd.z + (s.z - hips.ps.z) * hips.k); }
@@ -85,10 +89,12 @@ export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, dstRest 
       // eased out over the next 5 cm of lift
       _inv.copy(src.matrixWorld).invert();
       for (const l of legs) {
-        _a.setFromMatrixPosition(l.s.foot.matrixWorld).applyMatrix4(_inv).sub(l.restS);
+        _a.setFromMatrixPosition((toes ? l.s.toe : l.s.foot).matrixWorld).applyMatrix4(_inv).sub(l.restS);
         const w = 1 - smooth((_a.y - LEG_SOLVE.low) / LEG_SOLVE.ease);
         if (w < 1e-3) continue;
         _a.multiplyScalar(k).add(l.restD).applyMatrix4(dst.matrixWorld);
+        // (toes: the ankle where it puts this foot's toe on that spot, the foot turned as copied)
+        if (toes) { chainBones(hipsD, l.d.thigh, l.d.shin, l.d.foot, l.d.toe); _a.sub(_b.setFromMatrixPosition(l.d.toe.matrixWorld)).add(_c.setFromMatrixPosition(l.d.foot.matrixWorld)); }
         legSolve(hipsD, l.d.thigh, l.d.shin, l.d.foot, _a, w);
       }
     },
@@ -96,7 +102,7 @@ export function makeCopier(src, dst, restSrc, restDst, { srcRest = src, dstRest 
 }
 const IK_SPLIT = .01;   // a thigh : shin split 1 % off the source's: the legs are solved (measured: 2.5-3 cm/s slide without)
 const LEG_SOLVE = Object.freeze({ low: .03, ease: .05 });   // m: an ankle up to 3 cm over its rest height is solved fully, none past 8 cm
-const _inv = new THREE.Matrix4(), _a = new THREE.Vector3(), _b = new THREE.Vector3();
+const _inv = new THREE.Matrix4(), _a = new THREE.Vector3(), _b = new THREE.Vector3(), _c = new THREE.Vector3();
 const smooth = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
 function restLen(root, a, b) {
   root.updateWorldMatrix(true, true);
@@ -112,25 +118,32 @@ export function chorusAt(lines, t) {
   return i >= 0 && lines.chorus[i] === 1 && t <= lines.e[i] + SINGING.post;
 }
 
-/** A row's source: one mixer, a routine (the lead's plan or the back row's), the foot hold. */
+/** A row's source: one mixer, a routine (the lead's plan or the back row's), the foot hold; with floor work in its routine
+ *  (a Breaking or Northern soul back row) the floor blend too (floor-blend.js: the body on the floor through a fade into or
+ *  out of it, where the foot hold lets go). */
 export class RowDancer {
-  constructor(model, clips, plan, clock) {
+  constructor(model, clips, plan, clock, { level = true } = {}) {
+    this.level = level;   // (a sequence on level ground: the feet lock; on a hillside the hold, as the Club loops)
     this.model = model; this.plan = plan; this.clock = clock;
     this.mixer = new THREE.AnimationMixer(model); this.actions = new Map();
+    matchStarts(plan, clips);   // (a sequence: each take starts near the pose before it, on its own whole beats)
     for (const name of new Set([...plan.blocks.map(b => b.clip), ...plan.moments.map(m => m.clip)])) {
       const clip = clips.get(name); if (!clip) continue;
       const a = this.mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat, Infinity); a.timeScale = 0; a.setEffectiveWeight(0); a.play();
       this.actions.set(name, a);
     }
     this.feet = createFootHold(model);
+    this.floor = plan.blocks.some(b => b.floor) ? createFloorBlend(model) : null;   // (made at rest, before any dance moves it)
   }
   pose(dt, t) {
-    this.feet.restore();
+    this.feet.restore(); this.floor?.restore();
     const fading = poseDance(this.plan, this.clock, this.actions, t);
     this.mixer.update(0);
-    this.feet.update(dt, fading);
+    if (fading === 2) { this.feet.drop(); this.floor?.apply(); }   // (into or out of the floor: no foot held, the body on the floor)
+    else if (this.plan.sequence && this.level) this.feet.lock(dt, fading === 1);   // (a sequence's takes: feet pinned where they touch)
+    else this.feet.update(dt, fading === 1);
   }
-  dispose() { this.feet.restore(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model); }
+  dispose() { this.feet.restore(); this.floor?.restore(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model); }
 }
 
 /**
@@ -142,8 +155,8 @@ export class RowDancer {
  * stands in the formation (troupe.js sets it: put back before her mixer writes).
  */
 export function leadSource(perf, rig, clips, rigRest, body, bodyRest) {
-  const dancer = new RowDancer(rig, clips, perf.plan, perf.clock);
-  const cp = makeCopier(rig, body, restPose(rigRest), restPose(bodyRest), { srcRest: rigRest, dstRest: bodyRest });
+  const dancer = new RowDancer(rig, clips, perf.plan, perf.clock, { level: perf.level !== false });
+  const cp = makeCopier(rig, body, restPose(rigRest), restPose(bodyRest), { srcRest: rigRest, dstRest: bodyRest, toes: !!perf.plan.sequence });
   let ms = 0, n = 0;
   return {
     model: rig, fit: null, copier: cp,
@@ -166,7 +179,8 @@ export class Troupe {
    * lead: Kotone's Performer (started); leadModel: her model; leadRest: her rig at rest (her pack's armature);
    * members: [{ m (content/troupe.js entry), model (a fresh clone, at rest), clips (Map, the back row's source only) }];
    * opts: { backHalf, backFaces, backShadows } (the phone limits), merge (default true: a row drawn as one mesh),
-   * parent (where the joined meshes hang: the formation; default the first member's parent).
+   * parent (where the joined meshes hang: the formation; default the first member's parent), floor (default true: the
+   * back row may go down to the floor in a sequence style: flat ground only, game/singplay/singplay.js floorOk).
    */
   constructor(lead, leadModel, leadRest, members, opts = {}) {
     this.lead = lead; this.members = members; this.all = members.slice();
@@ -182,12 +196,17 @@ export class Troupe {
     const srcModel = lead.source?.model || leadModel, srcE = members.find(e => e.model === srcModel);
     if (srcE && lead.source) lead.source.fit = srcE.fit || null;
     const front = members.filter(e => e.m.row === 0 && e !== srcE), back = members.filter(e => e.m.row === 1);
-    this.front = front.map(e => makeCopier(srcModel, e.model, leadR, rest.get(e), { srcRest: leadRest, legSrc: leadLeg, feet: opts.feet ?? 'auto' }));
+    const toes = !!lead.plan.sequence;   // (a sequence's takes: the followers' toes put where the source's go)
+    this.front = front.map(e => makeCopier(srcModel, e.model, leadR, rest.get(e), { srcRest: leadRest, legSrc: leadLeg, feet: opts.feet ?? 'auto', toes }));
     const src = back.find(e => e.m.source);
     this.back = null;
     if (src?.clips?.size) {
-      const plan = planBacking(lead.plan, { noContact: true });
-      this.back = { src, dancer: new RowDancer(src.model, src.clips, plan, lead.clock), copiers: back.filter(e => e !== src).map(e => makeCopier(src.model, e.model, rest.get(src), rest.get(e), { feet: opts.feet ?? 'auto' })) };
+      // (the back row's bodies: its followers and the source's own when it is not nam-1's: a take that breaks a joint rule on
+      // one of them is left out: plan.js sequenceBlocks `bodies`)
+      const plan = planBacking(lead.plan, { noContact: true, floor: opts.floor !== false, bodies: back.map(e => e.m.file).filter(f => f !== 'vroid-nam1') });
+      // (its feet lock on a hillside too: with the hold, the takes' fades slid it 35 cm/s there; the front row holds instead:
+      // troupe-check --slope 8)
+      this.back = { src, dancer: new RowDancer(src.model, src.clips, plan, lead.clock, { level: true }), copiers: back.filter(e => e !== src).map(e => makeCopier(src.model, e.model, rest.get(src), rest.get(e), { feet: opts.feet ?? 'auto', toes })) };
     }
     // faces: blink of their own; the front row sings every line with the lead (owner 2026-11-28: "the front four sing
     // together"), the back row joins on the chorus lines

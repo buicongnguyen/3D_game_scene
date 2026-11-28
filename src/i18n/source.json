@@ -18684,6 +18684,66 @@
   ]
  },
  {
+  "s": "Breaking",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Capoeira",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Party classics",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Latin party",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Northern soul",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Rock · floor · freeze",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Ginga · round",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "YMCA · silly steps",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Salsa · samba · house",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Jazz · floor spin",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
   "s": "Solo",
   "ctx": [
    "UI (src/game/singplay/pickers.js)"
@@ -18802,6 +18862,12 @@
  },
  {
   "s": "Follows the song: {style}",
+  "ctx": [
+   "UI (src/game/singplay/pickers.js)"
+  ]
+ },
+ {
+  "s": "Dance sequences",
   "ctx": [
    "UI (src/game/singplay/pickers.js)"
   ]
@@ -18991,6 +19057,12 @@
  },
  {
   "s": "The song couldn't be loaded",
+  "ctx": [
+   "UI (src/game/singplay/singplay.js)"
+  ]
+ },
+ {
+  "s": "The dances couldn't be loaded",
   "ctx": [
    "UI (src/game/singplay/singplay.js)"
   ]

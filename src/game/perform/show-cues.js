@@ -10,6 +10,8 @@
 //   showDraws   their draw calls (one each; the fireworks reuse the valley's own spark pool)
 //   showDefault the Sing & Play switch's default per device
 
+import { SEQUENCES } from '../../content/dance-sequences.js';
+
 /** Linear RGB washes (the stage's LED and lantern tint, the ground glow, beams and sticks). */
 export const WASH = Object.freeze({
   verse: Object.freeze([0.18, 0.42, 1.0]),
@@ -62,7 +64,8 @@ export function cuePlan(plan, clock, { night = false } = {}) {
   const close = plan.moments.find(m => m.id === 'cheer') || plan.moments.find(m => m.id === 'bow');
   if (close && !bursts.some(t => Math.abs(t - close.t0) < 1)) bursts.push(close.t0);
   bursts.sort((a, b) => a - b);
-  const dance = plan.kind === 'party' || plan.style === 'kpop' || plan.style === 'hiphop';
+  const like = SEQUENCES[plan.style]?.like || plan.style;   // (a sequence style: the style it borrows from)
+  const dance = plan.kind === 'party' || like === 'kpop' || like === 'hiphop';
   const lasers = night ? loud.filter(s => dance || s === last).map(s => [s.t0, s.t1]) : [];
   const fireworks = night && last ? { t0: last.t0, t1: plan.end + 1.5 } : null;
   return { bursts, fireworks, lasers, last: last ? { t0: last.t0, t1: last.t1 } : null };

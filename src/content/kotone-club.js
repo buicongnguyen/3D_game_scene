@@ -8,6 +8,8 @@
 // Mic moves: their upper body (neck, head, arms, hands) is laid over the dance on sung lines. Moments: one-shots placed by
 // the song's structure (a clap hop into a chorus, a wave in the bridge, a cheer and a bow at the end); *Mic = with the mic.
 
+import { SEQ_STYLES } from './dance-sequences.js';
+
 /** Pack clip name -> Avatar Studio move id (the bake reads this). */
 export const CLUB_BAKE = Object.freeze({
   ClubBounceRock: 'V2ClubBounceRock', ClubHipSway: 'V2ClubHipSway', ClubChillSway: 'V2ClubChillSway', ClubSideGroove: 'V2ClubSideGroove',
@@ -52,8 +54,10 @@ export const CLUB_LOOPS = Object.freeze([
  *           heart hands into the chorus
  *   hiphop  low and grounded: bounce rock, side groove, body roll, afro step, top rock, Brooklyn rock, fist pump; punches
  *           and points on chorus lines, a mic jump into the chorus
+ * and the sequence styles (content/dance-sequences.js SEQ_STYLES: breaking, capoeira, classics, latin, soul),
+ * which play a round of steps (game/perform/plan.js sequenceBlocks) and borrow a style above for the mic and the moments.
  */
-export const DANCE_STYLES = Object.freeze(['mix', 'kpop', 'cute', 'hiphop']);
+export const DANCE_STYLES = Object.freeze(['mix', 'kpop', 'cute', 'hiphop', ...SEQ_STYLES]);
 export const DANCE_STYLE = 'mix';
 /** Mic moves per style: verse lines and chorus lines, each alternating by line when there are more. */
 export const MIC_SETS = Object.freeze({

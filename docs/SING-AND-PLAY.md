@@ -368,3 +368,117 @@ Korean songs too)."
   once / full before and during / lost connection / Stop / the play cache moved / offline / the list as data, and the
   worker in a vm: the kept copy first and never evicted, `?keep=1` not stored, the oldest played songs out past 120 MB),
   `tests/song-catalog.test.mjs` and `tests/singplay-pickers.test.mjs` updated (every language listed and pickable).
+## Dance sequences (2026-11-28, branch dance-sequences)
+
+Owner: "There are some dance sequences in the Club mode of the Avatar Studio — can you bring them here?" Avatar Studio Club
+mode's sequence styles (its `src/club/dance-sequences.js`; docs/club/PLAN.md "Dance sequences (2026-11-25)" and "Move and
+dance") are Dance choices in Sing & Play now: a style with a sequence plays its round of steps in order over bars instead
+of one dance per block.
+
+**The picker.** The Dance picker shows the styles as before, then a second group headed **Dance sequences** (vi "Chuỗi
+động tác nhảy", ko "댄스 시퀀스", ja "ダンスシーケンス"): a tile per style with a small picture and its round in a few
+words (`pickers.js` DANCE_ROUNDS). Picking one starts fetching its packs; Perform waits for them ("Getting the song
+ready…"); if they cannot load, the show dances the style it borrows from, with a toast.
+
+| Style (id) | Round (bars) | Borrows (mic moves, moments, fallback loops) |
+|---|---|---|
+| Breaking (`breaking`) | ready 1 -> top rock 2 -> footwork 3 (floor) -> power 2 (floor), frozen on the section's last beat | Hip-hop |
+| Capoeira (`capoeira`) | ginga 2 -> ginga 2 -> capoeira round 4 (the back row 4 bars on: one row gingas while the other plays the round) | Hip-hop |
+| Party classics (`classics`) | YMCA / silly 4 -> Macarena / silly 2 -> silly 2 (both rows in step) | Cute |
+| Latin party (`latin`) | salsa / samba 2 -> samba / salsa in place 2 -> house 2 -> in place 2 (the back row 2 bars on, its own takes) | K-pop |
+| Northern soul (`soul`) | jazz step 2 -> floor spin 2 (floor) -> swing kick 2 -> floor spin 2 (floor) | K-pop |
+
+Not ported: **Popping** (tried: Kotone keeps only Wave 2, which breaks a wrist rule copied onto the boys; nam-1's tuts and
+snake cross the thighs of the thicker copies and their fades break rules on nam-1 itself, so with the cast's bodies and
+fades checked no popping take was left for either row: `SEQ_DROPPED`), the Club's **Hip hop** sequence (Starline's own
+Hip-hop style stays; the Club set is ten more takes), **Pop** (its takes are the latin and popping ones plus two CC0
+grooves; K-pop covers it) and **Jazz** (folded into Northern soul).
+
+**Rules.** The Club's, re-stated for Starline (content/dance-sequences.js, game/perform/plan.js `sequenceBlocks`):
+- A round is laid back from the section's end (`sequenceStep`), so every section ends on the round's last step; Breaking
+  freezes it on the section's last beat (`freezeDelay`: eased in over half a beat on floor work, held, then on).
+- A step's takes play in the list's order turned by the round and the section, each at its **own tempo** on the song's
+  beat (`clipRate`: beat sync on the take's measured bpm, an eighth-grid take never doubles, half time down to 0.5x) and
+  never faster than the rate its joints pass (`maxRate`, 1.1x for a few). A take going on into the next step runs on
+  (`from` / `offset`, no restart, no fade); a new take starts on the whole beat whose pose is nearest the one before
+  (`matchStarts`), fades in over one beat (two into or out of the floor).
+- **The lead** (Kotone or whoever sings) never goes down to the floor or travels: a floor step plays the round's top-rock
+  step, a travel step its in-place takes (Sing & Play's spots are fixed). Under her sung lines the mic move's arm lies over
+  the dance's chest, so there she dances only takes with a calm torso (the Club loops' 10 deg / 10 cm rule; tried 35 deg:
+  her forearm went into her body in YMCA and Silly 2) — mostly the round's Club fill-ins (Breaking's top rocks, Northern
+  soul's step-touch and kick-ball-change) or her style's loops (the Club's singer groove); with the mic in hand no take
+  whose wrists meet. The front row copies her, so it does the same.
+- **The back row** (nam-1's rig, copied to its row) is the cypher: it runs its own round (`backShift` bars on where the style
+  says), goes down to the floor in every other section (the 2nd, 4th, ...: the Club's cypher moves on each section; a
+  song of 4-bar sections would otherwise keep it on the floor from start to end), and only on level ground: no slope over
+  `FLOOR_SLOPE` 3 deg under any back-row spot (`flat.js floorOk`; a hillside stage plays the standing steps). No moment
+  over floor work. Into and out of the floor, `floor-blend.js` keeps the lowest skin point on the floor (Club floor-blend).
+- **The cast's bodies.** Each take is checked on every body that may copy its rig (below); a take that breaks a joint
+  rule on one of them, or a fade that does, is left out of any routine those bodies dance (`bodies`, `fails`, `SEQ_PAIRS`).
+- **Feet** (foot-hold.js `lock`): through a fade every foot the blend brings down is pinned where it touched (the body
+  raised first where a bent and a straight leg blend low: up to 7 cm), let go as it lifts, creeping out at 1.2 cm/s
+  after the fade; the knee turned about its own hinge. The followers' leg solve puts their toes where the source's go
+  (`makeCopier` `toes`). On a hillside the front row keeps the Club loops' hold (the lock and the ground fit on one leg
+  bent knees out of plane at 8 deg); the back row locks there too (with the hold its fades slid 35 cm/s).
+- Stella's dress (`content/troupe.js DRESS`): no take with a toe over 15 cm, a foot over 45 cm out or a hip lift over 12 cm.
+
+**The takes.** Mixamo dances from the owner's library (`C:\repos\avatar-show-unity\Assets\Private\MotionLib\Clips`, the
+same files as `pitch_intent/new_animation`; Mixamo licence: in-app use, modified and commercial OK per the owner, as for
+Kotone's own clips; never offered as a download). No legacy Studio clip (none of LEGACY_MOTION_NAMES / KEPT_LEGACY / *_Old:
+"Macarena" is Mixamo's Macarena Dance, not the Studio's MocapMacarena). `art/blender/seq_takes.py` retargets the whole
+takes onto Kotone and nam-1 with vroid_mixamo.py's own retarget (imported, unchanged; cyclic takes tiled as the Club's
+tools do) into `.tools/seq/raw`; `node scripts/seq-bake.mjs` cuts beat-measured loops on each body with the Club's own dance
+prep (dance-prep.js and its helpers copied read-only into `.tools/club-solver`, `--vendor`): tempo, loop window, facing,
+in-place root, beat warp, seam, foot lock, hand clearance, joint repair; a take that breaks the joint rules on the
+standing path tries the floor-work path danced standing (the Club's "grounded", as its gingas). Then its planted feet
+are pinned and the legs keyed at 60 Hz (a Mixamo landing slid 7-10 cm/s in its last millimetres), and it is checked:
+joint rules R1-R11 at 120 Hz and the fastest beat-sync rate 1.2x (or its own max rate), planted slide <= 1.5 cm/s p95,
+floor sink <= 1.5 cm (floor work 2.5), then again on every body that copies the rig (Kotone's: the seven members and
+Stella; nam-1's: nu-1, nam-3, nam-2 and Saki) and again on the thinned 16-bit clips. `node scripts/seq-pairs.mjs` fades
+every pair of a style's dances as the game does (four tempos, every beat of the first take, 120 Hz) on the rig and its
+copies and writes the ones that break a rule (`src/content/dance-seq-pairs.js`). Kept and dropped: `SEQ_DROPPED`,
+`dance-seq-fit.js` (`rigs`, `maxRate`, `fails`). Run the bake again after kotone.glb or vroid-nam1.glb change (same
+skeleton: the raw takes stay; a new body moves the hand clearance), then the pair check.
+
+**Packs** (`moves-seq-<style>-kotone.glb` / `-nam1.glb`, the armature of moves-kotone / moves-vroid-nam1, fetched only when
+that style is picked; nam-1's only for a group of 8; floor work only in nam-1's): Kotone / nam-1, raw / packed KB: Breaking 172 / 111, 276 / 185; Capoeira 172 / 122, 118 / 88; Party classics 85 / 59,
+157 / 114; Latin party 492 / 303, 451 / 320; Northern soul 54 / 37, 293 / 198. Together 2.32 MB raw, 1.57 MB packed (budgets
+raised in tests/asset-contracts.mjs); a player fetches one style's one or two. Kept takes (Kotone | nam-1): Breaking: ready,
+uprock 2, uprock | + footwork, head spin; Capoeira: ginga, ginga 2, capoeira round | ginga, round; Party classics: YMCA,
+silly 2 | + silly, Macarena; Latin party: salsa, salsa 4, salsa 7, samba, samba 2, samba 5, samba 7, house | salsa, salsa 3,
+4, 7, samba 3, 5, 7, house; Northern soul: jazz 5 | + jazz 4, swing 2, swing 4, floor spin. 27 takes; 7 kept with bodies they
+break on (`fails`); 150 fades left out (53 on Kotone's rig, 97 on nam-1's).
+
+**Measured** (`node scripts/troupe-check.mjs --song public/songs/kotone/golden-rails-en --style <style>`: the whole song,
+86.7 BPM, 8 dancers, level ground): **joint rules 0 on every member** in all five styles (the lead, the copied front row,
+nam-1 and the copied back row; on every frame at 60 Hz). Planted-foot slide p95 (cm/s) front row / back row: Breaking
+0.87-0.90 / 1.10-1.25, Capoeira 1.21-1.30 / 1.15-1.32, Party classics 1.20-1.29 / 1.21-1.38, Latin party 1.24-1.33 /
+1.23-1.41, Northern soul 1.20-1.29 / 1.13-1.28 (all <= 1.5). Stance 115-170 % of the hip width front, 115-330 % back (the
+latin and classics takes step wide). Toe sink <= 0.9 cm. Floor work: the back row on the floor 2990 / 5341 frames in
+Breaking (head spin, footwork), 2408 in Northern soul (floor spin); its lowest skin point 0.7 cm under the floor on nam-1,
+1.3-3.3 cm on nu-1 / nam-2 and 6.1 cm on nam-3 (copies of nam-1's head spin: their hair and bigger heads); Breaking freezes
+on 5 section ends in both rows. On an 8 deg hillside (`--slope 8`; no floor work there): Breaking and Latin party joints 0,
+slide <= 1.41; at 15 deg Latin 0, Breaking one frame of R1 (a knee 1-2 deg out of plane) on the four back-row members.
+Troupe JS in Node 0.04-0.09 ms a frame (one evaluation a row, as before).
+
+**Browser** (`GAME_URL=http://127.0.0.1:4329/ node tests/seq-browser.mjs`, built preview, Chromium + GPU, group of 8 on
+the Village square stage: level; the station stage slopes 4-7 deg under the back row, so no floor work there, as the shrine
+yard, the village square and the festival stage are 0 deg and the kite meadow 2-3): pictures PC 1280x720 (High) and phone
+390x844 (Low) of Breaking (the back row's head spins behind the front row's top rocks, the section-end freeze, a sung
+line), Latin party and Party classics (a sung line, the outro), local `.tools/seq/{pc,phone}-<style>-<moment>.png`; no page
+errors. Frame cost, phone Low 390x844, CPU 4x, group of 8, one page, four cycles of Mixed / Breaking / Mixed at the same
+song time: paired median rise Breaking vs Mixed +2.8 ms frame gap, +2.7 ms JS (p95 +7.1), performers' JS +0.84 ms
+(1.09 -> 1.79 ms); the Mixed-vs-Mixed null pair rose +1.6 / +1.4 ms (the shared machine's drift), +0.03 ms performers. So
+about +0.8 ms of JS a frame at 4x CPU is the sequences' own: the followers' toe solve (12 leg solves a frame) and the lock.
+
+Owner decisions: (1) under her sung lines the lead (and the front row that copies her) dances a calm-torso groove (the Club's rule;
+the round's takes turn 15-180 deg and put her mic arm into her body), so in a mostly sung song the round shows in the back
+row, the intro / bridge / outro and instrumentals: loosen it per style? (2) FLOOR_SLOPE 3 deg leaves the station stage
+(4-7 deg) without floor work: allow 5? (3) floor work every other section (the cypher) or every section? (4) the boys'
+and thicker girls' copies drop several takes (thighs, wrists): a per-body pass of the Club's joint repair could win them
+back. (5) Popping dropped (above).
+
+Checks: `tests/dance-sequences.test.mjs` (rounds, the lead's and the back row's rules, tempo and max rate, the freeze,
+floor on level ground only, Stella, the picker, the cast's bodies and fades, matchStarts), `node scripts/troupe-check.mjs
+--style <style>` (whole song, 8 dancers: slide, joints on every copied pose, sinks; `--why N`, `--slidewhy`, `--sinkwhy`
+<member> to trace), `GAME_URL=... node tests/seq-browser.mjs` (pictures and the frame cost A/B on a built preview).

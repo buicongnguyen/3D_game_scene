@@ -36,6 +36,24 @@ export function canPerform(p, env) {
   return { ok: true };
 }
 
+/**
+ * Floor work (a sequence style's footwork, head spin and floor spin: content/dance-sequences.js) needs level ground: the
+ * floor loops are grounded on a flat floor (hands, knees and back on it), and the ground fit only fits planted feet.
+ * FLOOR_SLOPE degrees: the most the ground under any back-row spot may slope (sampled FLOOR_FOOT m round it); steeper
+ * (a hillside stage) and the back row plays the round's standing steps instead.
+ */
+export const FLOOR_SLOPE = 3, FLOOR_FOOT = .8;
+/** p, facing, spots, env: as canGroup (spots: the back row's places). -> true where the back row may go down to the floor. */
+export function floorOk(p, facing, spots, env) {
+  if (env.room) return true;   // (a room's floor is level)
+  const s = Math.sin(facing), c = Math.cos(facing), tan = Math.tan(FLOOR_SLOPE * Math.PI / 180), f = FLOOR_FOOT;
+  for (const o of spots) {
+    const x = p.x + o.x * c + o.z * s, z = p.z - o.x * s + o.z * c, h = env.heightAt(x, z);
+    for (const [dx, dz] of [[f, 0], [-f, 0], [0, f], [0, -f]]) if (Math.abs(env.heightAt(x + dx, z + dz) - h) / f > tan) return false;
+  }
+  return true;
+}
+
 /** The env for canPerform from the game (world heights, colliders, the open room). */
 export function gameEnv(g) {
   const room = g.interiors?.active ? g.interiors.rooms?.get?.(g.interiors.active) || null : null;
