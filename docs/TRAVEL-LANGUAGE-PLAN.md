@@ -709,6 +709,15 @@ CER 0.012. Korean A/B (8 lines × 3 takes, Whisper large-v3 CER): Qwen3-TTS 1.7B
 Magpie TTS not tried (NeMo toolchain; the prebuilt binary was blocked). Listen: `.tools/voice-samples/listen.html`,
 sections "Korean A/B (blind)" and "Pilot scenes · shipped clips (2026-11-28)".
 
+**Onset check** (owner listen 2026-11-28: VieNeu Trúc Ly takes 0 and 1 "vibrate at the beginning", take 2 does not).
+`tools/tts/onset.py` scores the fast up-and-back pitch swings in the first voiced 250 ms of a decoded clip (score =
+back-swing cents / 60; fail above 1.0): Trúc Ly t0 1.17, t1 3.50, t2 0.00. `bake.py` now rejects trembly takes before
+CER (never trading a dropped word for a steadier start), makes 3 more seeds when no take passes, and logs every
+take's score. First count of the 96 shipped clips: EN 5, VI 3, KO 6 failed. Re-baked VI kw4.supper/02, kw5.cranes/07
+and KO kw4.supper/01, 07, 08, 09, kw5.cranes/04, 10 (all now steady, CER unchanged at 0 except VI kw5.cranes/07 0.033);
+VI kw4.supper/03 kept (6 takes, none steady: "Rửa" starts on the dipping hỏi tone, which the score cannot tell from a
+tremble). EN Kokoro has no seed (one deterministic take): its 5 fails are listed on the listen page, not re-rolled.
+
 **Rooms** (floor before → after): kawabe-b 8.2×6.2 → 8.4×7.0, kawabe-a 6.4×5.4 → 7.6×6.4 (horigotatsu), kawabe-shop
 5.4×4.7 → 6.6×5.6, takamori-a 7.3×6.0 → 8.0×6.8, takamori-b 5.3×4.9 → 6.8×6.0; all ≤ 13.8 k tris, ≤ 22 primitives,
 7 materials, ≤ 756 KB. Measured Low (390×844): kw4 empty 29 draws / 41 k tris, supper 47 / 118 k (4 people + props,

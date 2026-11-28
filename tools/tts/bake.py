@@ -11,8 +11,13 @@ Engines live in two venvs, so this script re-runs itself as worker processes:
   post   (Whisper venv)  raw take -> chain -> m4a -> Whisper -> CER
 Chain: sentences joined with fixed gaps (Qwen3/Supertonic synthesise one sentence at a time) -> trim silence ->
 HPF 70 Hz -> de-ess -> -18 LUFS -> -1 dBTP true-peak limiter -> AAC. No time stretching, no pitch shifting.
+Take choice: takes whose onset trembles (tools/tts/onset.py, score > 1.0) are rejected, then lowest CER, then length;
+takes with CER over max(0.1, best CER) are never kept for their onset. If no clear take of a seeded engine is steady,
+EXTRA_TAKES more seeds are made before falling back to the clear take with the lowest onset score.
 
   python tools/tts/bake.py lines [--lang en,vi,ko] [--scene kw4.supper] [--force]     shipped clips + reports
+  python tools/tts/bake.py lines --lang vi --keys kw4.supper/02,kw5.cranes/07           re-bake only these lines
+  python tools/tts/bake.py score [--lang en,vi,ko]       onset + Whisper of the SHIPPED clips -> .tools/speech/score-<lang>.json
   python tools/tts/bake.py ab --lang ko --keys k1,k2 --cast tools/tts/ko-ab.json       blind A/B takes (no shipping)
 (any python 3.9+ works for the orchestrator; it only spawns the venvs.)
 """
@@ -45,6 +50,8 @@ LICENCE = {
     "supertonic": "Supertonic 3 (Supertone), OpenRAIL-M: machine-made speech, no impersonation",
 }
 TAKES = {"kokoro": 1, "vieneu": 3, "qwen3": 3, "supertonic": 3}
+SEEDED = {"vieneu", "qwen3", "supertonic"}    # Kokoro is deterministic: another take would be the same audio
+EXTRA_TAKES = 3                               # more seeds when every take's onset trembles
 WORKER_VENV = {"kokoro": VENV, "qwen3": VENV, "supertonic": VENV, "vieneu": VENV2}
 SR = 24000
 SEED = 20261128
@@ -296,9 +303,37 @@ def decoded_true_peak(path: Path) -> float:
     return float(20 * np.log10(np.abs(resample_poly(a, 4, 1)).max() + 1e-12))
 
 
+def onset_mod():
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import onset
+    return onset
+
+
+CER_OK = 0.1    # a take this far from the text (or from the best take's CER) is not traded for a steadier onset
+
+
+def clear(takes) -> list:
+    """Takes whose words are as good as this line gets: CER <= max(CER_OK, best CER of all takes)."""
+    bound = max(CER_OK, min(t["cer"] for t in takes))
+    return [t for t in takes if t["cer"] <= bound]
+
+
+def choose(takes) -> dict:
+    """Clear takes (words right) with a steady onset first: lowest CER, then the length closest to the median take
+    (runaway or truncated takes lose ties). If no clear take has a steady onset: the clear take with the lowest
+    onset score, then CER, then length (a dropped word is worse than a trembly start)."""
+    med = sorted(t["d"] for t in takes)[len(takes) // 2]
+    ok = [t for t in clear(takes) if t["onset_ok"]]
+    if ok:
+        return min(ok, key=lambda t: (t["cer"], abs(t["d"] - med), t["take"]))
+    return min(clear(takes), key=lambda t: (t["onset"]["score"], t["cer"], abs(t["d"] - med), t["take"]))
+
+
 def post_worker(job_path: Path) -> None:
-    import soundfile as sf
+    import soundfile as sf, warnings
     from faster_whisper import WhisperModel
+    warnings.filterwarnings("ignore", module="librosa")
+    on = onset_mod()
     job = json.loads(job_path.read_text(encoding="utf-8"))
     asr = WhisperModel("large-v3", device="cuda", compute_type="float16", local_files_only=True)
     results = {}
@@ -320,13 +355,16 @@ def post_worker(job_path: Path) -> None:
             segs, _ = asr.transcribe(str(m4a), language=it["lang"], beam_size=5, condition_on_previous_text=False)
             heard = " ".join(s.text.strip() for s in segs).strip()
             c = round(cer(it["text"], heard), 3)
+            o = on.onset_score(*on.load(m4a))     # the decoded clip, as shipped (and as `bake.py score` measures it)
+            o.pop("legs", None)
             takes.append(dict(take=k, cer=c, heard=heard, d=round(len(y) / SR, 3), bytes=size, m4a=str(m4a),
-                              env=envelope(y), digits=bool(re.search(r"\d", heard))))
-        # lowest CER, then the take whose length is closest to the median (runaway/truncated takes lose ties)
-        med = sorted(t["d"] for t in takes)[len(takes) // 2]
-        best = min(takes, key=lambda t: (t["cer"], abs(t["d"] - med), t["take"]))
-        results[it["id"]] = dict(takes=takes, best=best["take"])
-        print(json.dumps({"id": it["id"], "cers": [t["cer"] for t in takes], "best": best["take"], "heard": best["heard"]}, ensure_ascii=False), flush=True)
+                              env=envelope(y), digits=bool(re.search(r"\d", heard)), onset=o,
+                              onset_ok=o["score"] <= on.THRESHOLD))
+        best = choose(takes)
+        results[it["id"]] = dict(takes=takes, best=best["take"], onset_ok=any(t["onset_ok"] for t in clear(takes)))
+        print(json.dumps({"id": it["id"], "key": it.get("key"), "cers": [t["cer"] for t in takes],
+                          "onset": [t["onset"]["score"] for t in takes], "best": best["take"], "heard": best["heard"]},
+                         ensure_ascii=False), flush=True)
     Path(job["results"]).write_text(json.dumps(results, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
@@ -345,9 +383,8 @@ def make_items(entries, raw_root: Path, takes_override=None):
     return items
 
 
-def run_items(items, tag: str, force=False) -> dict:
-    TOOLS.mkdir(parents=True, exist_ok=True)
-    jobs = TOOLS / "jobs"; jobs.mkdir(exist_ok=True)
+def _synth_post(items, tag: str, force=False) -> dict:
+    jobs = TOOLS / "jobs"; jobs.mkdir(parents=True, exist_ok=True)
     for engine in sorted({i["engine"] for i in items}):
         sub = [i for i in items if i["engine"] == engine]
         jp = jobs / f"{tag}-synth-{engine}.json"
@@ -360,11 +397,33 @@ def run_items(items, tag: str, force=False) -> dict:
     return json.loads(res.read_text(encoding="utf-8"))
 
 
+def run_items(items, tag: str, force=False) -> dict:
+    """Synthesise + score every item; items of seeded engines whose takes ALL tremble at the onset get EXTRA_TAKES
+    more seeds (SEED + 1000*k, k = 3..5), then the choice is made again over all takes. Results: tag-results.json."""
+    TOOLS.mkdir(parents=True, exist_ok=True)
+    res = _synth_post(items, tag, force)
+    redo = [it for it in items if not res[it["id"]]["onset_ok"] and it["engine"] in SEEDED]
+    if redo:
+        print(f"  onset: {len(redo)} line(s) with no steady take -> {EXTRA_TAKES} more takes each", flush=True)
+        for it in redo:
+            n = it["takes"]
+            it["takes"] = n + EXTRA_TAKES
+            it["raw"] = it["raw"] + [it["raw"][0].replace("__t0.wav", f"__t{k}.wav") for k in range(n, n + EXTRA_TAKES)]
+        res.update(_synth_post(redo, tag + "-more", False))
+        (TOOLS / "jobs" / f"{tag}-results.json").write_text(json.dumps(res, ensure_ascii=False, indent=1), encoding="utf-8")
+    for it in items:
+        r = res[it["id"]]
+        if not r["onset_ok"]:
+            print(f"  onset: {it.get('key')} kept take {r['best']} (onset {r['takes'][r['best']]['onset']['score']}): no steady take", flush=True)
+    return res
+
+
 def cmd_lines(args):
     lines = json.loads((TOOLS / "lines.json").read_text(encoding="utf-8"))
     langs = args.lang.split(",") if args.lang else sorted({l["lang"] for l in lines})
     for lang in langs:
-        sel = [l for l in lines if l["lang"] == lang and (not args.scene or l["scene"] in args.scene.split(","))]
+        sel = [l for l in lines if l["lang"] == lang and (not args.scene or l["scene"] in args.scene.split(","))
+               and (not args.keys or l["key"] in args.keys.split(","))]
         if not sel:
             continue
         missing = [l["key"] for l in sel if not l.get("voice")]
@@ -374,7 +433,7 @@ def cmd_lines(args):
         items = make_items(sel, RAW, None)
         res = run_items(items, f"lines-{lang}", force=args.force)
         rp = TOOLS / f"report-{lang}.json"
-        rep = json.loads(rp.read_text(encoding="utf-8")) if rp.exists() else {"lines": {}}
+        rep = json.loads(rp.read_text(encoding="utf-8")) if rp.exists() else seed_report(lang)
         valid = {l["key"] for l in lines if l["lang"] == lang}
         rep["lines"] = {k: v for k, v in rep.get("lines", {}).items() if k in valid}
         for it, e in zip(items, sel):
@@ -387,14 +446,62 @@ def cmd_lines(args):
                                           engine=ENGINE_TAG[it["engine"]], voice=it["voice"] + (f" @{it['speed']}" if it.get("speed") else "")
                                           + (f" [{it['style']}]" if it.get("style") else ""), take=t["take"],
                                           takes=[x["cer"] for x in r["takes"]], kb=round(t["bytes"] / 1024, 1),
+                                          onset=t["onset"]["score"], onsets=[x["onset"]["score"] for x in r["takes"]],
                                           **({"digits": True} if t["digits"] else {}))
         engines = sorted({LICENCE_KEY(v["engine"]) for v in rep["lines"].values()})
         rep["licence"] = "; ".join(LICENCE[e] for e in engines)
         rep = {"licence": rep["licence"], "lines": dict(sorted(rep["lines"].items()))}
         rp.write_text(json.dumps(rep, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        cers = [v["cer"] for v in rep["lines"].values()]
+        cers = [v["cer"] for v in rep["lines"].values() if "cer" in v] or [0.0]   # seeded (unbaked) lines have none
         print(f"{lang}: {len(cers)} clips, mean CER {sum(cers)/len(cers):.3f}, max {max(cers):.3f}, "
               f"{sum(c > 0.1 for c in cers)} over 0.1 -> {rp.relative_to(ROOT)}", flush=True)
+
+
+def seed_report(lang: str) -> dict:
+    """No report-<lang>.json (a fresh checkout): start from the shipped index.json so a partial re-bake
+    (--keys / --scene) keeps every other clip exactly as shipped when `speech-build.mjs --import` runs."""
+    idx = PUBLIC / lang / "index.json"
+    if not idx.exists():
+        return {"lines": {}}
+    man = json.loads(idx.read_text(encoding="utf-8"))
+    eng = (man.get("engines") or [None])[0]
+    return {"licence": man.get("licence"), "lines": {k: dict(v, engine=eng) for k, v in man.get("lines", {}).items()}}
+
+
+def score_worker(job_path: Path) -> None:
+    """Onset score + Whisper CER of shipped clips (no synthesis, nothing written under public/)."""
+    import warnings
+    from faster_whisper import WhisperModel
+    warnings.filterwarnings("ignore", module="librosa")
+    on = onset_mod()
+    job = json.loads(job_path.read_text(encoding="utf-8"))
+    asr = WhisperModel("large-v3", device="cuda", compute_type="float16", local_files_only=True)
+    out = {}
+    for it in job["items"]:
+        a, sr = on.load(it["path"])
+        o = on.onset_score(a, sr)
+        segs, _ = asr.transcribe(it["path"], language=it["lang"], beam_size=5, condition_on_previous_text=False)
+        heard = " ".join(s.text.strip() for s in segs).strip()
+        out[it["key"]] = dict(onset=o, ok=o["score"] <= on.THRESHOLD, cer=round(cer(it["text"], heard), 3), heard=heard,
+                              kb=round(Path(it["path"]).stat().st_size / 1024, 1), d=round(len(a) / sr, 2))
+        print(f"{'ok  ' if out[it['key']]['ok'] else 'FAIL'} {o['score']:5.2f} cer {out[it['key']]['cer']:.3f}  {it['lang']} {it['key']}", flush=True)
+    Path(job["results"]).write_text(json.dumps(out, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
+def cmd_score(args):
+    lines = json.loads((TOOLS / "lines.json").read_text(encoding="utf-8"))
+    langs = args.lang.split(",") if args.lang else sorted({l["lang"] for l in lines})
+    jobs = TOOLS / "jobs"; jobs.mkdir(parents=True, exist_ok=True)
+    for lang in langs:
+        man = json.loads((PUBLIC / lang / "index.json").read_text(encoding="utf-8"))["lines"]
+        items = [dict(key=l["key"], lang=lang, text=l["text"], path=str(PUBLIC / lang / man[l["key"]]["f"]))
+                 for l in lines if l["lang"] == lang and l["key"] in man]
+        jp, res = jobs / f"score-{lang}.json", TOOLS / f"score-{lang}.json"
+        jp.write_text(json.dumps(dict(items=items, results=str(res)), ensure_ascii=False, indent=1), encoding="utf-8")
+        run_worker(VENV, "score-worker", jp)
+        r = json.loads(res.read_text(encoding="utf-8"))
+        bad = [k for k, v in r.items() if not v["ok"]]
+        print(f"{lang}: {len(r)} clips, {len(bad)} with a trembly onset: {','.join(bad)}", flush=True)
 
 
 def LICENCE_KEY(tag: str) -> str:
@@ -435,12 +542,14 @@ def cmd_ab(args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("mode", choices=["lines", "ab", "synth", "post"])
+    ap.add_argument("mode", choices=["lines", "ab", "score", "synth", "post", "score-worker"])
     ap.add_argument("--job"); ap.add_argument("--lang"); ap.add_argument("--scene"); ap.add_argument("--keys"); ap.add_argument("--cast")
     ap.add_argument("--force", action="store_true")
     a = ap.parse_args()
     if a.mode == "synth": synth_worker(Path(a.job))
     elif a.mode == "post": post_worker(Path(a.job))
+    elif a.mode == "score-worker": score_worker(Path(a.job))
+    elif a.mode == "score": cmd_score(a)
     elif a.mode == "lines": cmd_lines(a)
     else: cmd_ab(a)
 

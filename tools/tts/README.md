@@ -27,16 +27,34 @@ Workers run with `python -I -X utf8` (downloaded model folders are never on `sys
 
 **Rules** (plan §3.4): Qwen3 and Supertonic synthesise one sentence at a time (0.24 s gap); Kokoro and VieNeu split
 internally. Seeded engines (VieNeu, Qwen3, Supertonic) make 3 takes (seed 20261128 + 1000·take), Kokoro 1. Every take
-goes through the chain, is encoded, then decoded by Whisper large-v3 (beam 5, language forced). The kept take has the
-lowest CER (ties: length closest to the median take). Chain: trim silence -> HPF 70 Hz -> de-ess (5 kHz split, up to
+goes through the chain, is encoded, then decoded by Whisper large-v3 (beam 5, language forced) and given an **onset
+score** (below). Only "clear" takes count (CER ≤ max(0.1, the line's best CER): a dropped word is never traded for a
+steadier start). Clear takes whose onset trembles are rejected; of the rest the kept take has the lowest CER (ties:
+length closest to the median take). If no clear take of a seeded engine is steady, 3 more seeds (k = 3..5) are made and
+the choice is redone; if none is steady still, the clear take with the lowest onset score wins (then CER, then length). Kokoro is deterministic (one
+take), so its onset is logged but cannot be re-rolled. Chain: trim silence -> HPF 70 Hz -> de-ess (5 kHz split, up to
 8 dB) -> −18 LUFS -> −1 dBTP true-peak limiter (4× oversampled) -> AAC-LC, mono, 24 kHz, 40 kbps (PyAV, `ipod`
 muxer). AAC overshoots the limiter, so the clip is decoded and re-limited until the **decoded** true peak is ≤ −1
 dBTP. No time stretching and no pitch shifting (children are young-woman voices: owner 2026-11-28).
 CER = edit distance on lower-cased NFC text with punctuation and spaces removed; numbers heard as digits count as
 errors (`digits: true` in the report). CER > 0.1 = needs a human listen.
 
+**Onset score** (`tools/tts/onset.py`, owner listen 2026-11-28: VieNeu Trúc Ly takes 0 and 1 "vibrate at the
+beginning", take 2 does not). Measured on the decoded clip (what ships; pYIN's voicing edge can move with the AAC
+round trip). pYIN pitch (5 ms hop) of the first voiced run (≥ 40 ms), at most 250 ms, 15 ms trimmed at
+each edge, 3-frame median; a zig-zag with 12-cent hysteresis splits it into monotone legs. Every pair of adjacent legs
+that are both 15–100 ms long and where the return is at least half the swing counts its smaller height: a quick
+up-and-back (tremble, warble, vibrato) scores, a held / rising / falling tone and a slow intonation arch or pitch accent
+(small rise, big fall) do not. `score = back-swing cents / 60`; a take **fails above 1.0**. Trúc Ly: t0 1.17 (legs
++80 c/65 ms, −70 c/70 ms), t1 3.50 (+210/80, −310/75), t2 0.00 (one 30-cent leg). The amplitude dip in the attack is
+logged (`amp`, dB) but not scored (it did not separate the takes). `python tools/tts/onset.py <wav|m4a>...` prints the
+numbers; `python tools/tts/bake.py score` scores the shipped clips (onset + Whisper) into `.tools/speech/score-<lang>.json`;
+`python tools/tts/bake.py lines --lang vi --keys kw4.supper/02` re-bakes single lines (a missing report is seeded from
+the shipped `index.json`, so `--import` keeps every other clip as shipped).
+
 `report-<lang>.json` per line: `f, d, h, env` (what `--import` keeps) plus `cer, heard, engine, voice, take, takes`
-(CER of every take), `kb`. `env` = base64 Uint8 RMS per 1/30 s window, 95th-percentile window = 255.
+(CER of every take), `onset, onsets` (onset score of the kept take / of every take), `kb`. The post worker's
+`.tools/speech/jobs/<tag>-results.json` has every take's `onset` {score, pitch, amp, t_on, run_ms} and `onset_ok`. `env` = base64 Uint8 RMS per 1/30 s window, 95th-percentile window = 255.
 
 ## Models (all model downloads live on E:)
 
