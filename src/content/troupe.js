@@ -21,6 +21,8 @@
 // front-row place and its girl goes to the singer's place, so Kotone is in every group of 4 or 8; whoever stands at
 // nam-1's place plays nam-1's pack (made ready for her own body). No new files: only the two packs there are.
 
+import { SEQ_FIT } from './dance-seq-fit.js';
+
 export const KOTONE = 'kotone';
 export const BACK_PACK = 'moves-vroid-nam1';
 
@@ -47,9 +49,13 @@ export const TROUPE = Object.freeze([
  *           game/perform/plan.js `avoid`)
  */
 export const NIGHT_STAR = 'night-star';
+/** A long dress's limits for the sequence takes (measured by scripts/seq-bake.mjs, content/dance-seq-fit.js stance): no
+ *  toe higher than `kick` over the floor, no foot further than `reach` from her spot, no hip lift over `lift` (m). */
+export const DRESS = Object.freeze({ kick: .15, reach: .45, lift: .12 });
+const dressAvoid = () => Object.entries(SEQ_FIT).filter(([, f]) => f.stance.kick > DRESS.kick || f.stance.reach > DRESS.reach || f.stance.lift > DRESS.lift).map(([k]) => k);
 export const GUESTS = Object.freeze([
   Object.freeze({ id: NIGHT_STAR, file: 'vroid-nightstar', h: 1.733, gait: Object.freeze({ walk: 1.059, run: 4.5 }), guest: true,
-    avoid: Object.freeze(['ClubJumpPoint', 'ClubKickBall', 'ClubCutePop', 'ClubTopRock', 'ClubAfroStep', 'ClubSideGroove', 'ClubClapStep', 'ClubBodyRoll', 'ClubFistPump', 'MomentJumpMic']) }),
+    avoid: Object.freeze(['ClubJumpPoint', 'ClubKickBall', 'ClubCutePop', 'ClubTopRock', 'ClubAfroStep', 'ClubSideGroove', 'ClubClapStep', 'ClubBodyRoll', 'ClubFistPump', 'MomentJumpMic', ...dressAvoid()]) }),
 ]);
 
 /** The singers in the Singer row's order (Kotone first, then the girls, then the boys). */

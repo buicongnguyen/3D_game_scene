@@ -16,7 +16,8 @@ import { songsBase, fetchCatalog, mergeSongs, songOrder, songStyle, songDance } 
 import { Performer } from '../perform/performer.js';
 import { planShots, createCameraMan, fromCamera } from '../perform/camera-man.js';
 import { startRecording, srtFromLyrics, saveBlob } from '../perform/recorder.js';
-import { canPerform, canGroup, gameEnv } from './flat.js';
+import { canPerform, canGroup, floorOk, gameEnv } from './flat.js';
+import { SEQUENCES, isSequence, seqPacks } from '../../content/dance-sequences.js';
 import { Troupe, leadSource } from '../perform/troupe.js';
 import { GROUP_SIZES, troupeOf, troupeFiles, leadOffset, KOTONE, NAMES, member, singersWith, avoidOf, NIGHT_STAR } from '../../content/troupe.js';
 import { nightStarSeen } from '../../content/night-star.js';
@@ -160,6 +161,7 @@ export class SingPlay {
     if (this.showOn) this.makeShow();
     this.hud();
     this.setGroup(Math.min(loadGroup(), this.max()), false);
+    if (isSequence(this.dancePick)) this.loadDances(this.dancePick);
     this.pauseLeave();
     // the visitor herself steps out of Town Life while the player is her (no second Kotone at the station)
     const town = this.d.town, k = town?.people.find(it => it.p.id === SHOW.who);
@@ -172,11 +174,35 @@ export class SingPlay {
     return true;
   }
 
+  /**
+   * A sequence style's lazy packs (content/dance-sequences.js seqPacks: the front row's on Kotone's rig always, the back
+   * row's on nam-1's in a group of 8), fetched when the style is picked or a song in it starts; Kotone's are joined to
+   * her clips once. -> true when the files this style needs now are in.
+   */
+  dancesFor(style, group = this.group) {
+    const [front, back] = seqPacks(style);
+    return front ? (group >= 8 ? [front, back] : [front]) : [];
+  }
+  async loadDances(style, group = this.group) {
+    const files = this.dancesFor(style, group), a = this.g.assets;
+    if (!files.length) return true;
+    if (!files.every(f => a.has(f))) await a.loadLater(files).catch(() => {});
+    if (!files.every(f => a.has(f))) return false;
+    this.seqJoined ||= new Set();
+    if (!this.seqJoined.has(files[0])) {
+      const pack = a.gltf(files[0]), rig = a.clone(this.kBody);
+      for (const [k, v] of prepareMoves(pack, rig, pack.scene, false)) this.clips.set(k, v);
+      this.seqJoined.add(files[0]);
+    }
+    return true;
+  }
+
   /** Kotone's dance clips (her moves pack), made ready once for any clone of her model (the same skeleton and rest). */
   prepareClips() {
     const g = this.g, pack = g.assets.gltf(SHOW.pack), rig = g.assets.clone(this.kBody);
     this.clips = pack && rig ? prepareMoves(pack, rig, pack.scene, false) : new Map();
     this.restRoot = pack?.scene || null;
+    this.seqJoined = new Set();   // (a sequence style's packs joined since: loadDances)
   }
 
   /**
@@ -311,6 +337,7 @@ export class SingPlay {
   setDance(id) {
     if (this.perf || !DANCE_PICKS.includes(id)) return false;
     this.dancePick = id; saveDance(id);
+    if (isSequence(id)) this.loadDances(id);   // (its lazy packs start loading now)
     this.label();
     return true;
   }
@@ -369,6 +396,7 @@ export class SingPlay {
       const ready = this.groupReady = a.loadLater(files).then(() => files.every(f => a.has(f))).catch(() => false);
       ready.then(ok => { if (this.groupReady !== ready) return; this.groupWait = false; if (!ok) { this.ui.toast?.(tx(N_("The group couldn't be loaded"))); this.group = 1; } this.label(); });
     } else { this.groupWait = false; this.groupReady = Promise.resolve(true); }
+    if (isSequence(this.dancePick)) this.loadDances(this.dancePick);   // (a group of 8: the back row's pack too)
     this.label();
   }
 
@@ -385,12 +413,20 @@ export class SingPlay {
     const song = await this.songData(pick.song).catch(() => null);
     this.songWait = false;
     if (!song) { this.ui.toast?.(tx(N_("The song couldn't be loaded"))); this.label(); return; }
+    // a sequence style: its packs (most often already fetched when it was picked); failing, the style it borrows from
+    let style = danceFor(this.dancePick, song.song);
+    if (isSequence(style)) {
+      this.songWait = true; this.label();
+      const ok = await this.loadDances(style);
+      this.songWait = false;
+      if (!ok) { this.ui.toast?.(tx(N_("The dances couldn't be loaded"))); style = SEQUENCES[style].like; }
+    }
     // (while it loaded: she may have walked off the flat ground, or the mode closed)
     if (this.perf || !this.bar?.isConnected || !this.allowed.ok || this.groupWait) { this.label(); return; }
-    this.performWith(song);
+    this.performWith(song, style);
   }
 
-  performWith(song) {
+  performWith(song, style = danceFor(this.dancePick, song.song)) {
     const g = this.g, p = g.player;
     this.time?.settle();   // (mid-ease: the hour it was easing to, before the show picks its day or night look)
     p.locked = true; p.vel.set(0, 0, 0);
@@ -400,7 +436,10 @@ export class SingPlay {
     this.viewYaw = f - Math.PI; p.facing = f; p.root.rotation.y = f;
     this.from = fromCamera(g.camera.position, { x: p.pos.x, y: p.pos.y, z: p.pos.z, facing: f });
     const ground = this.ground();
-    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style: danceFor(this.dancePick, song.song), ground, avoid: avoidOf(this.singer) });
+    this.perfStyle = style;
+    // (the bodies that copy Kotone's rig: the lead when she is not Kotone and the front row of a group)
+    const front = troupeOf(this.group, this.singer).filter(m => m.row === 0 && m.id !== KOTONE).map(m => m.file);
+    this.perf = new Performer(p, this.clips, song, { audio: g.audio, restRoot: this.restRoot, style, ground, avoid: avoidOf(this.singer), bodies: front });
     // another singer: the group's Kotone (or a hidden Kotone under her in a solo) dances and the lead copies her
     const members = this.group > 1 ? this.makeFormation() : null;
     if (this.singer !== KOTONE) {
@@ -615,7 +654,11 @@ export class SingPlay {
       model.traverse(o => { if (o.isMesh) o.receiveShadow = true; });
       root.add(model);
       const e = { m, model };
-      if (m.source && m.row === 1) { const pack = g.assets.gltf(m.pack); e.clips = pack ? prepareMoves(pack, model, pack.scene, false) : new Map(); }
+      if (m.source && m.row === 1) {
+        const pack = g.assets.gltf(m.pack); e.clips = pack ? prepareMoves(pack, model, pack.scene, false) : new Map();
+        const seq = g.assets.gltf(seqPacks(this.perfStyle)[1]);   // (a sequence style: the back row's own takes, its floor work)
+        if (seq) for (const [k, v] of prepareMoves(seq, model, seq.scene, false)) e.clips.set(k, v);
+      }
       members.push(e);
     }
     return members;
@@ -630,7 +673,10 @@ export class SingPlay {
     // (a hillside: each member's feet fitted to the ground under its own spot, ground-fit.js; the formation stands at y 0,
     // so its members' heights are the world's)
     const ground = this.ground();
-    this.troupe = new Troupe(this.perf, p.model, this.restRoot, members, { backHalf: L.backHalf, backFaces: L.backFaces, backShadows: L.backShadows, merge: L.merge, parent: root, ground });
+    // floor work (a sequence's back row) only where the ground under the back row is level (flat.js floorOk)
+    const k = leadOffset(), back = cast.filter(m => m.row === 1).map(m => ({ x: (m.x - k.x) * this.layout.x, z: (m.z - k.z) * this.layout.z }));
+    const floor = !ground || floorOk(p.pos, p.facing, back, gameEnv(g));
+    this.troupe = new Troupe(this.perf, p.model, this.restRoot, members, { backHalf: L.backHalf, backFaces: L.backFaces, backShadows: L.backShadows, merge: L.merge, parent: root, ground, floor });
   }
 
   dropTroupe() {

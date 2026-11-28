@@ -11,7 +11,7 @@
 // Hooks: the NPC calls poser.before() before its mixer update and poser.after() after it (actors/npc.js).
 import * as THREE from 'three';
 import { createBeatClock } from './beat-clock.js';
-import { planPerformance, blockAt, momentAt, micShown, PLAN } from './plan.js';
+import { planPerformance, blockAt, momentAt, micShown, clipTiming, PLAN } from './plan.js';
 import { micLayer, leadTarget, micClipFor, micFold, SINGING } from './mic-layer.js';
 import { makeMic } from './mic-prop.js';
 import { fitMicGrip, aimMic } from './mic-grip.js';
@@ -75,22 +75,90 @@ export function momentWeight(P, bar) {
 }
 
 /**
+ * Beats lost by a freeze at song beat `beat` (pure; Avatar Studio Club mode's freezeDelay): the dance eases to a stop over
+ * `ramp` beats before the section's last beat, holds through it, and goes on from there (hold: { end, ramp } in beats).
+ */
+export function freezeDelay(beat, hold) {
+  if (!hold) return 0;
+  const { end, ramp } = hold, start = end - 1;
+  if (beat < start) { const e = Math.max(0, beat - (start - ramp)); return ramp ? e * e / (2 * ramp) : 0; }
+  if (beat <= end) return ramp / 2 + beat - start;
+  const e = Math.min(ramp, beat - end);
+  return 1 + ramp / 2 + (ramp ? e - e * e / (2 * ramp) : 0);
+}
+
+/**
  * The dance of song time t on a mixer's actions (Map clip name -> AnimationAction, all playing at timeScale 0): the
  * block's loop at the beat, a cross-fade from the block before over its first beat or two, a moment over both. A pure
- * function of t (a skipped frame never puts the dancer off the beat). -> true while a cross-fade runs (foot-hold.js).
+ * function of t (a skipped frame never puts the dancer off the beat). A sequence take plays at its own tempo and beat
+ * phase (plan.js clipTiming, the block's own m); a freezing block holds its pose over the section's last beat.
+ * -> 0 (no cross-fade), 1 (a cross-fade runs: foot-hold.js), 2 (a cross-fade into or out of floor work: floor-blend.js)
  */
+/**
+ * A block's clip time at song beat b (pure): beats since the block (or the take it goes on from) began, at the block's own
+ * rate, less what freezes held, from its start offset (whole clip beats: matchStarts), on the take's own beat grid (a
+ * sequence take: clipTiming) or the Club loops' 120-BPM design; L: the clip's length.
+ */
+export function blockClipTime(P, k, b, L) {
+  const f = clipTiming(k.clip), m = k.m ?? P.rate.m;
+  let bb = k.freeze ? b - freezeDelay(b, { end: k.b1 * P.meter, ramp: k.floor ? PLAN.freezeRamp : 0 }) : b;
+  if (k.after) bb -= freezeDelay(b, { end: k.after.bar * P.meter, ramp: k.after.ramp });
+  const d = Math.max(0, bb - (k.from ?? k.b0) * P.meter - (k.lost || 0)) * m + (k.offset || 0);
+  const x = f ? f.phase + d * f.beat : d * .5;
+  return ((x % L) + L) % L;
+}
+
+const MATCH_BONES = ['hips', 'spine', 'chest', 'neck', 'thigh_L', 'thigh_R', 'shin_L', 'shin_R', 'foot_L', 'foot_R', 'upperarm_L', 'upperarm_R', 'forearm_L', 'forearm_R', 'hand_L', 'hand_R'];
+/**
+ * Where each take of a sequence starts (once per plan, from the clips): of its whole beats, the one whose pose is nearest
+ * the take before at the bar line (the sum of the main bones' turns apart), so the one-beat fade blends two close poses
+ * (two Mixamo takes blended from far poses put knees out of their plane and slid feet: 2026-11-28, troupe-check). The
+ * step pattern stays on the song's beats (whole beats of the take's own grid). A take going on keeps its offset.
+ */
+export function matchStarts(P, clips) {
+  if (!P.sequence || P.matched) return;
+  P.matched = true;
+  const samplers = new Map(), q0 = new THREE.Quaternion(), q1 = new THREE.Quaternion();
+  const sampler = name => {
+    if (!samplers.has(name)) {
+      const clip = clips.get(name), m = new Map();
+      if (clip) for (const t of clip.tracks) { const [bone, prop] = t.name.split('.'); if (prop === 'quaternion' && MATCH_BONES.includes(bone)) m.set(bone, t.createInterpolant()); }
+      samplers.set(name, clip ? { clip, m } : null);
+    }
+    return samplers.get(name);
+  };
+  for (let i = 1; i < P.blocks.length; i++) {
+    const k = P.blocks[i], pb = P.blocks[i - 1];
+    if (k.clip === pb.clip) { k.offset = pb.offset || 0; continue; }
+    const A = sampler(pb.clip), B = sampler(k.clip); if (!A || !B) continue;
+    const f = clipTiming(k.clip), beats = f ? f.beats : Math.round(B.clip.duration / .5), beat0 = k.b0 * P.meter;
+    const ta = blockClipTime(P, pb, beat0, A.clip.duration);
+    const pose = new Map([...A.m].map(([bone, it]) => [bone, q0.fromArray(it.evaluate(ta)).clone()]));
+    let best = 0, bd = Infinity;
+    for (let o = 0; o < beats; o++) {
+      const tb = blockClipTime(P, { ...k, offset: o }, beat0, B.clip.duration);
+      let d = 0;
+      for (const [bone, qa] of pose) { const it = B.m.get(bone); if (it) d += qa.angleTo(q1.fromArray(it.evaluate(tb))); }
+      if (d < bd - 1e-6) { bd = d; best = o; }
+    }
+    k.offset = best;
+  }
+}
+
 export function poseDance(P, c, actions, songT) {
-  const t = Math.min(songT, P.end), b = c.beatAt(t), bar = b / P.meter, m = P.rate.m;
+  const t = Math.min(songT, P.end), b = c.beatAt(t), bar = b / P.meter;
   const i = blockAt(P, bar), blk = P.blocks[i], prev = P.blocks[i - 1];
-  const clipTime = (a, beat0) => { const L = a.getClip().duration; const x = Math.max(0, b - beat0) * m * .5; return ((x % L) + L) % L; };
+  const clipTime = (a, k) => blockClipTime(P, k, b, a.getClip().duration);
   const mo = momentWeight(P, bar), mw = mo ? mo.w : 0;
   for (const a of actions.values()) a.setEffectiveWeight(0);
-  const x = prev ? smooth((b - blk.b0 * P.meter) / (blk.fade || PLAN.fadeBeats)) : 1;   // (two beats between stances that differ)
+  // (two beats between stances that differ; the same take going on into the next block: no fade, it simply runs on)
+  const x = prev && prev.clip !== blk.clip ? smooth((b - blk.b0 * P.meter) / (blk.fade || PLAN.fadeBeats)) : 1;
   const ca = actions.get(blk.clip);
-  if (ca) { ca.time = clipTime(ca, blk.b0 * P.meter); ca.setEffectiveWeight((1 - mw) * x); }
-  if (prev && x < 1) { const pa = actions.get(prev.clip); if (pa && pa !== ca) { pa.time = clipTime(pa, prev.b0 * P.meter); pa.setEffectiveWeight((1 - mw) * (1 - x)); } }
-  if (mo) { const a = actions.get(mo.clip); if (a) { const L = a.getClip().duration; a.time = Math.min(L - 1e-3, Math.max(0, b - mo.b0 * P.meter) * m * .5); a.setEffectiveWeight(mw); } }
-  return Boolean((prev && x < 1) || (mo && mo.w < 1));
+  if (ca) { ca.time = clipTime(ca, blk); ca.setEffectiveWeight((1 - mw) * x); }
+  if (prev && x < 1) { const pa = actions.get(prev.clip); if (pa && pa !== ca) { pa.time = clipTime(pa, prev); pa.setEffectiveWeight((1 - mw) * (1 - x)); } }
+  if (mo) { const a = actions.get(mo.clip); if (a) { const L = a.getClip().duration; a.time = Math.min(L - 1e-3, Math.max(0, b - mo.b0 * P.meter) * P.rate.m * .5); a.setEffectiveWeight(mw); } }
+  const xf = Boolean(prev && x < 1);
+  return xf && (blk.floor || prev.floor) ? 2 : xf || (mo && mo.w < 1) ? 1 : 0;
 }
 
 export class Performer {
@@ -98,11 +166,12 @@ export class Performer {
    * npc: the performer (actors/npc.js: model, anim, face); clips: Map name -> AnimationClip (her pack, made ready for her
    * model); song: { song (the list entry), beats, lyrics, mouth, stage, url }; restRoot: the pack's armature (rest pose).
    */
-  constructor(npc, clips, song, { audio = null, restRoot = null, style, ground = null, avoid = null } = {}) {
+  constructor(npc, clips, song, { audio = null, restRoot = null, style, ground = null, avoid = null, bodies = null } = {}) {
     this.n = npc; this.clips = clips; this.data = song;
     this.clock = createBeatClock(song.song, { beats: song.beats, sections: song.stage?.sections || null, lyrics: song.lyrics });
     // (style: the Dance choice; avoid: clips this singer never dances, content/troupe.js GUESTS)
-    this.plan = planPerformance(song.song, this.clock, song.lyrics, { style, avoid: avoid?.length ? avoid : null });
+    // (bodies: the model files that copy Kotone's rig in this cast, the lead's own when she is not Kotone: plan.js sequenceBlocks)
+    this.plan = planPerformance(song.song, this.clock, song.lyrics, { style, avoid: avoid?.length ? avoid : null, bodies });
     this.mood = moodAt('intro');
     this.sound = new SongAudio(song.url, audio, song.song?.gainDb);
     this.restRoot = restRoot;
@@ -125,6 +194,7 @@ export class Performer {
     const n = this.n, anim = n.anim; if (!anim || this.on) return;
     this.t = t; this.on = true;
     anim.cancelOneShot(); anim.mixer.stopAllAction(); anim.current = null; anim.currentName = ''; anim.locked = true;
+    if (!this.source) matchStarts(this.plan, this.clips);   // (a sequence: each take starts near the pose before it)
     if (!this.source) for (const name of new Set([...this.plan.blocks.map(b => b.clip), ...this.plan.moments.map(m => m.clip)])) {
       const clip = this.clips.get(name); if (!clip) continue;
       const a = anim.mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat, Infinity); a.timeScale = 0; a.setEffectiveWeight(0); a.play();
@@ -198,7 +268,8 @@ export class Performer {
     const P = this.plan, t = Math.min(this.t, P.end), c = this.clock, lines = P.lines;
     const want = lines ? leadTarget(lines, t) : 0;
     this.source?.pose(dt, t);             // a lead who is not Kotone: Kotone's rig danced, her body copies it
-    this.feet?.update(dt, this.fading);   // planted feet held through a cross-fade (foot-hold.js)
+    if (this.plan.sequence) this.feet?.lock(dt, this.fading === 1);   // a sequence's takes: feet pinned where they touch (foot-hold.js lock)
+    else this.feet?.update(dt, this.fading);   // planted feet held through a cross-fade (foot-hold.js)
     this.onPose?.(dt, t);                  // her dance pose, before the mic: a group's front row copies it (troupe.js)
     this.fit?.apply();                     // then her own feet on the slope under her (the copies fit their own: troupe.js)
     this.w = follow(this.w, want, dt, SINGING.up, SINGING.down);

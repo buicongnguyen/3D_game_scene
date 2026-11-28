@@ -1,5 +1,7 @@
 // Machine-readable mirror of art/CONTRACTS.md. Keep both in sync.
 import { PERFORM_CLIPS } from '../src/content/kotone-club.js';
+import { SEQ_STYLES, styleClips } from '../src/content/dance-sequences.js';
+import { SEQ_FIT } from '../src/content/dance-seq-fit.js';
 // tris: triangle budget. nodes: node names the runtime looks up. mats: material names.
 // clips: animation clips (rigged models). family: generator script.
 
@@ -81,6 +83,11 @@ export const CONTRACTS = {
     [`${m}.lite`, { family: 'vroid', vroidOf: m, tris: 8300, atlas: 512, nodes: [...MIXAMO_BONES, 'eye_L', 'eye_R'], morphs: VROID_MORPHS, clips: VROID_CLIPS }],
     // (only the back row's source keeps a pack; the others' were dropped 2026-11-28: rebuild with vroid_mixamo.py --member)
     ...(m === 'vroid-nam1' ? [[`moves-${m}`, { family: 'vroid-clips', of: m, clips: KOTONE_SHOW_CLIPS }]] : [])])),
+  // the dance sequences (content/dance-sequences.js, docs/SING-AND-PLAY.md "Dance sequences"): one lazy pack per style and
+  // body (scripts/seq-bake.mjs), the takes that body keeps (content/dance-seq-fit.js rigs: floor work only nam-1's);
+  // fetched only when that style is picked in Sing & Play (nam-1's for a group of 8). The armature is the body's pack's.
+  ...Object.fromEntries(SEQ_STYLES.flatMap(style => [['kotone', 'kotone'], ['nam1', 'vroid-nam1']].map(([rig, of]) =>
+    [`moves-seq-${style}-${rig}`, { family: 'vroid-clips', of, clips: styleClips(style).filter(id => SEQ_FIT[id]?.rigs.includes(rig)) }]))),
   // the two sisters visiting Hoshi Station (game/station-visitors.js): the CC0 VRoid Studio samples AvatarSample_F ("Vita",
   // 1.71 m, her cyber suit is her festival costume) and AvatarSample_E ("Bibi", 1.41 m), built like Kotone
   // (vroid_mixamo.py --member cc0-f / cc0-e). Fetched only near the station or near where the sisters are, never at the start.

@@ -123,7 +123,8 @@ test('the Dance choice: each style plays its own loops, mic moves and moments; M
   assert.deepEqual(planPerformance(song, clock, lyrics, { style: 'nonsense' }).summary, plan.summary, 'unknown = mix');
   const L = vocalLines(lyrics), ch = lines.findIndex(l => l.section === 'Chorus');
   const seen = new Set();
-  for (const style of DANCE_STYLES.filter(s => s !== 'mix')) {
+  const { isSequence } = await import('../src/content/dance-sequences.js');
+  for (const style of DANCE_STYLES.filter(s => s !== 'mix' && !isSequence(s))) {   // (the sequence styles: tests/dance-sequences.test.mjs)
     const p = planPerformance(song, clock, lyrics, { style }), own = p.blocks.filter(b => CLUB_LOOPS.find(d => d.clip === b.clip).styles.includes(style));
     assert.equal(p.style, style);
     assert.ok(own.length >= p.blocks.length * .8, `${style}: ${own.length} of ${p.blocks.length} blocks its own`);

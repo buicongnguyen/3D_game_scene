@@ -16,6 +16,7 @@ import { tx, N_, getLang, onLangChange } from '../../i18n/i18n.js';
 import { SINGERS, NIGHT_STAR, GROUP_SIZES, nameOf, facePic } from '../../content/troupe.js';
 import { STAGES } from '../../content/stages.js';
 import { DANCE_STYLES } from '../../content/kotone-club.js';
+import { isSequence } from '../../content/dance-sequences.js';
 import { TIME_CHOICES, timeIcon, currentTime, pickTime } from './time-row.js';
 import { stageAt, jump } from './stages-row.js';
 
@@ -25,7 +26,11 @@ const ROWS = Object.freeze([['singer', 'song', 'group'], ['dance', 'stage', 'tim
 /** The Dance choice that follows the song (its own style, else Mixed): the default (singplay.js danceFor). */
 export const DANCE_AUTO = 'auto';
 export const DANCE_PICKS = Object.freeze([DANCE_AUTO, ...DANCE_STYLES]);
-export const DANCE_LABELS = Object.freeze({ auto: N_('Auto'), mix: N_('Mixed'), kpop: N_('K-pop'), cute: N_('Cute'), hiphop: N_('Hip-hop') });
+export const DANCE_LABELS = Object.freeze({ auto: N_('Auto'), mix: N_('Mixed'), kpop: N_('K-pop'), cute: N_('Cute'), hiphop: N_('Hip-hop'),
+  breaking: N_('Breaking'), capoeira: N_('Capoeira'), popping: N_('Popping'), classics: N_('Party classics'), latin: N_('Latin party'), soul: N_('Northern soul') });
+/** The sequence styles' tiles: their round in a few words (content/dance-sequences.js SEQUENCES). */
+export const DANCE_ROUNDS = Object.freeze({ breaking: N_('Rock · floor · freeze'), capoeira: N_('Ginga · round'), popping: N_('Wave · tut'),
+  classics: N_('YMCA · silly steps'), latin: N_('Salsa · samba · house'), soul: N_('Jazz · floor spin') });
 export const GROUP_LABELS = Object.freeze({ 1: N_('Solo'), 4: N_('Group of 4'), 8: N_('Group of 8') });
 const TITLES = Object.freeze({ singer: N_('Singer'), song: N_('Song'), group: N_('Group'), dance: N_('Dance'), stage: N_('Stage'), time: N_('Time'), settings: N_('Settings') });
 const PHONE = '(max-width: 640px), (max-height: 480px)';
@@ -99,8 +104,13 @@ export function pickerData(sp, id) {
     return one(sizes.map(n => ({ id: String(n), name: tx(GROUP_LABELS[n]), svg: people(n), selected: n === sp.group })), { note: sp.groupWait ? tx(N_('Getting the group ready…')) : groupNote(sp), w: 380, tile: 104 });
   }
   if (id === 'dance') {
+    // the styles, then the sequence styles under their own heading (each tile says its round)
     const auto = sp.songDance?.() || 'mix';
-    return one(DANCE_PICKS.map(d => ({ id: d, name: tx(DANCE_LABELS[d]), sub: d === DANCE_AUTO ? tx(N_('Follows the song: {style}'), { style: tx(DANCE_LABELS[auto]) }) : '', svg: d === DANCE_AUTO ? ICONS.auto : DANCE_ICONS[d] || ICONS.dance, selected: d === sp.dancePick })), { w: 400, tile: 112 });
+    const tile = d => ({ id: d, name: tx(DANCE_LABELS[d]), sub: d === DANCE_AUTO ? tx(N_('Follows the song: {style}'), { style: tx(DANCE_LABELS[auto]) }) : DANCE_ROUNDS[d] ? tx(DANCE_ROUNDS[d]) : '',
+      svg: d === DANCE_AUTO ? ICONS.auto : DANCE_ICONS[d] || ICONS.dance, selected: d === sp.dancePick });
+    return { kind: 'tiles', note: '', w: 440, tile: 112, sections: [
+      { label: '', items: DANCE_PICKS.filter(d => !isSequence(d)).map(tile) },
+      { label: tx(N_('Dance sequences')), items: DANCE_PICKS.filter(isSequence).map(tile) }] };
   }
   if (id === 'stage') {
     const here = stageAt(sp.g.player.pos);
@@ -145,8 +155,16 @@ export const ICONS = Object.freeze({
   gear: svg('<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/><circle cx="12" cy="12" r="6.3"/>', 22),
   caret: svg('<path d="M7 10l5 5 5-5"/>', 14),
 });
-/** The Dance tiles' pictures: Mixed a shuffle, K-pop a star, Cute a heart, Hip-hop a bolt. */
+/** The Dance tiles' pictures: Mixed a shuffle, K-pop a star, Cute a heart, Hip-hop a bolt; the sequences: a head spin
+ *  (Breaking), a kick (Capoeira), a wave (Popping), the Y of the YMCA (Party classics), maracas (Latin party), a record
+ *  (Northern soul). */
 const DANCE_ICONS = Object.freeze({
+  breaking: svg('<circle cx="12" cy="19" r="2"/><path d="M12 17V9.5M12 9.5 8 4M12 9.5l4-5.5"/><path d="M4.5 13.5c1.6 1.6 4.4 2.5 7.5 2.5s5.9-.9 7.5-2.5"/>'),
+  capoeira: svg('<circle cx="6.5" cy="5" r="2"/><path d="M7 7.2 8.2 13l-2.7 7.5M8.2 13l10.3-4.2M7.6 9.6 3.5 11.5"/>'),
+  popping: svg('<path d="M2.5 14c2.1-4.5 4.2-4.5 6.3 0s4.2 4.5 6.3 0 4.2-4.5 6.4 0"/><circle cx="3" cy="14" r="1.2"/>'),
+  classics: svg('<circle cx="12" cy="9.5" r="2"/><path d="M12 11.5v5.5M12 17l-3 4.5M12 17l3 4.5M10.8 10.2 6 3M13.2 10.2 18 3"/>'),
+  latin: svg('<ellipse cx="7.5" cy="7" rx="3" ry="4"/><path d="M9 10.7l3 9.3"/><ellipse cx="16.5" cy="7" rx="3" ry="4"/><path d="M15 10.7 12 20"/>'),
+  soul: svg('<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/><path d="M12 5.6a6.4 6.4 0 0 1 6.4 6.4"/>'),
   mix: svg('<path d="M3 7h3.5c4 0 6 10 10 10H21M3 17h3.5c1.8 0 3.1-2 4.3-4.4M13.2 9.4C14.3 8 15.4 7 16.5 7H21"/><path d="M18.5 4.5 21 7l-2.5 2.5M18.5 14.5 21 17l-2.5 2.5"/>'),
   kpop: svg('<path d="M12 3.2l2.6 5.4 5.9.8-4.3 4.1 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.1 5.9-.8z"/>'),
   cute: svg('<path d="M12 20.2s-7.8-4.6-7.8-10.1A4.4 4.4 0 0 1 12 7.5a4.4 4.4 0 0 1 7.8 2.6c0 5.5-7.8 10.1-7.8 10.1z"/>'),

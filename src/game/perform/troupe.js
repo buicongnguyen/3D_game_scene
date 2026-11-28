@@ -16,10 +16,11 @@
 // texture a row instead of one a member). Limits for slow phones (measured: docs/GROUP-PERFORMANCE.md): the back row
 // at half rate, its faces off, no shadows, or the back row left out (setSize(4): Sing & Play's fallback during a show).
 import * as THREE from 'three';
-import { poseDance } from './performer.js';
+import { poseDance, matchStarts } from './performer.js';
 import { planBacking } from './plan.js';
 import { createFootHold, legSolve } from './foot-hold.js';
 import { createGroundFit } from './ground-fit.js';
+import { createFloorBlend } from './floor-blend.js';
 import { lineIndexAt, SINGING } from './mic-layer.js';
 import { Face } from '../../actors/face.js';
 import { TROUPE_LIMITS } from '../../content/troupe.js';
@@ -112,25 +113,31 @@ export function chorusAt(lines, t) {
   return i >= 0 && lines.chorus[i] === 1 && t <= lines.e[i] + SINGING.post;
 }
 
-/** A row's source: one mixer, a routine (the lead's plan or the back row's), the foot hold. */
+/** A row's source: one mixer, a routine (the lead's plan or the back row's), the foot hold; with floor work in its routine
+ *  (a Breaking or Northern soul back row) the floor blend too (floor-blend.js: the body on the floor through a fade into or
+ *  out of it, where the foot hold lets go). */
 export class RowDancer {
   constructor(model, clips, plan, clock) {
     this.model = model; this.plan = plan; this.clock = clock;
     this.mixer = new THREE.AnimationMixer(model); this.actions = new Map();
+    matchStarts(plan, clips);   // (a sequence: each take starts near the pose before it, on its own whole beats)
     for (const name of new Set([...plan.blocks.map(b => b.clip), ...plan.moments.map(m => m.clip)])) {
       const clip = clips.get(name); if (!clip) continue;
       const a = this.mixer.clipAction(clip); a.setLoop(THREE.LoopRepeat, Infinity); a.timeScale = 0; a.setEffectiveWeight(0); a.play();
       this.actions.set(name, a);
     }
     this.feet = createFootHold(model);
+    this.floor = plan.blocks.some(b => b.floor) ? createFloorBlend(model) : null;   // (made at rest, before any dance moves it)
   }
   pose(dt, t) {
-    this.feet.restore();
+    this.feet.restore(); this.floor?.restore();
     const fading = poseDance(this.plan, this.clock, this.actions, t);
     this.mixer.update(0);
-    this.feet.update(dt, fading);
+    if (fading === 2) { this.feet.drop(); this.floor?.apply(); }   // (into or out of the floor: no foot held, the body on the floor)
+    else if (this.plan.sequence) this.feet.lock(dt, fading === 1);   // (a sequence's takes: feet pinned where they touch)
+    else this.feet.update(dt, fading === 1);
   }
-  dispose() { this.feet.restore(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model); }
+  dispose() { this.feet.restore(); this.floor?.restore(); this.mixer.stopAllAction(); this.mixer.uncacheRoot(this.model); }
 }
 
 /**
@@ -166,7 +173,8 @@ export class Troupe {
    * lead: Kotone's Performer (started); leadModel: her model; leadRest: her rig at rest (her pack's armature);
    * members: [{ m (content/troupe.js entry), model (a fresh clone, at rest), clips (Map, the back row's source only) }];
    * opts: { backHalf, backFaces, backShadows } (the phone limits), merge (default true: a row drawn as one mesh),
-   * parent (where the joined meshes hang: the formation; default the first member's parent).
+   * parent (where the joined meshes hang: the formation; default the first member's parent), floor (default true: the
+   * back row may go down to the floor in a sequence style: flat ground only, game/singplay/singplay.js floorOk).
    */
   constructor(lead, leadModel, leadRest, members, opts = {}) {
     this.lead = lead; this.members = members; this.all = members.slice();
@@ -186,7 +194,9 @@ export class Troupe {
     const src = back.find(e => e.m.source);
     this.back = null;
     if (src?.clips?.size) {
-      const plan = planBacking(lead.plan, { noContact: true });
+      // (the back row's bodies: its followers and the source's own when it is not nam-1's: a take that breaks a joint rule on
+      // one of them is left out: plan.js sequenceBlocks `bodies`)
+      const plan = planBacking(lead.plan, { noContact: true, floor: opts.floor !== false, bodies: back.map(e => e.m.file).filter(f => f !== 'vroid-nam1') });
       this.back = { src, dancer: new RowDancer(src.model, src.clips, plan, lead.clock), copiers: back.filter(e => e !== src).map(e => makeCopier(src.model, e.model, rest.get(src), rest.get(e), { feet: opts.feet ?? 'auto' })) };
     }
     // faces: blink of their own; the mouth on chorus lines
