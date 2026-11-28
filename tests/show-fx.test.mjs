@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { buildStage, stageSize, footlightSpots } from '../src/fx/show-fx.js';
 import { UP, UPLIGHT, stageArea, uplightNight, uplightShader, patchUplight, uplightStart, uplightUpdate, uplightStop } from '../src/fx/stage-uplight.js';
 import { patchFaceMaterial } from '../src/actors/face-look.js';
+import { lightingAt } from '../src/world/seasons.js';
 import { castOf, troupeOf, troupeFiles, TROUPE, KOTONE, NIGHT_STAR, GUESTS, NAMES, LOCAL_NAMES, nameOf, member, avoidOf, singersWith, isGuest } from '../src/content/troupe.js';
 import { DANCE_STYLES, CLUB_LOOPS } from '../src/content/kotone-club.js';
 import { KOTONE_SONGS, showSongs, songsFor } from '../src/content/kotone-songs.js';
@@ -193,8 +194,13 @@ test('the stage light: one patch in the shader, its hooks kept, uniforms only, n
   // an unlit material (no lights chunk) is left alone
   const basic = { uniforms: {}, fragmentShader: THREE.ShaderLib.basic.fragmentShader };
   uplightShader(basic); assert.equal(basic.fragmentShader, THREE.ShaderLib.basic.fragmentShader);
-  // night only: 0 by day and at sunset's start, full at night
-  assert.equal(uplightNight(0), 0); assert.equal(uplightNight(1), 1); assert.ok(uplightNight(0.15) < 0.15 && uplightNight(0.5) > 0.6);
+  // night only: exactly 0 from morning through the end of sunset (the sun on the horizon at 19:00), full at real night
+  // (owner 2026-11-28: by day the light made every performer too bright)
+  const nightAt = h => lightingAt('spring', h).night;
+  for (const h of [5.6, 6, 8, 12.5, 15, 17.2, 18, 18.4, 18.7, 18.95, 19]) assert.equal(uplightNight(nightAt(h)), 0, `no stage light at ${h}:00`);
+  assert.ok(uplightNight(nightAt(19.6)) > 0.3 && uplightNight(nightAt(19.6)) < 0.9, 'it comes in after the sun is down');
+  for (const h of [20.5, 21, 23, 2, 4.8]) assert.equal(uplightNight(nightAt(h)), 1, `full at ${h}:00`);
+  assert.equal(uplightNight(0), 0); assert.equal(uplightNight(1), 1);
   // the show that started last owns the light; another's updates and stops leave it alone
   const A = {}, B = {}, K = UPLIGHT.uUpK.value, wash = new THREE.Color(1, 0.24, 0.6);
   uplightStart(A, { x: 1, y: 2, z: 3, facing: Math.PI / 2, tilt: [0.1, 0], area: stageArea(null) });

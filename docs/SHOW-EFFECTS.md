@@ -28,7 +28,7 @@ feature can be switched off in the game).
 | bursts | ONE instanced draw of a quad, 192 (Low) / 480 (PC) particles in 4 burst slots; the position of every particle is a pure function of song time and its seed in the vertex shader (ballistic lift, analytic drag toward a drift velocity, flutter), so the CPU writes 8 uniforms a frame and uploads nothing. Night: confetti (half from cannons on the tower tops, half showered from the truss, tumbling); day: petals, soap bubbles (rim, highlight, a rainbow tint), balloons. Dead particles collapse to a point outside the view (no `discard`). | 1 | every chorus opens with one, a long chorus gets a second at its middle bar, the closing cheer one |
 | glow sticks | ONE `InstancedMesh` of the dance game's `light-stick.glb` (handle + glowing head, one geometry, ×1.7 so it reads at concert distance) in each watcher's `grip_R` (their hand's matrix written after their own pose this frame: no lag). The watchers play the dance game's crowd clips (`villager-*-dance`: 34 KB each) with the clip time set from the song's beat before their mixer runs: `StickWave` (left on one beat, right on the next) at night, `Clap` on the beat by day. | 1 | night, with watchers |
 | fireworks | the valley's own (`fx/fx.js fireworks`, its spark pool) 45 m behind the stage | +1 while they fly | the last chorus to the end, night |
-| stage light on the performers | footlights along the stage front (glowing fixtures in the stage set's mesh), the light they throw on the performers and a stage fill (a term in the performers' own shader: `fx/stage-uplight.js`), a warm pool on the ground (in the ground wash's card) and the footlights' spill (one more card). See "Stage light on the performers" below. | 0 | night (fades in from dusk), Show effects On |
+| stage light on the performers | footlights along the stage front (glowing fixtures in the stage set's mesh), the light they throw on the performers and a stage fill (a term in the performers' own shader: `fx/stage-uplight.js`), a warm pool on the ground (in the ground wash's card) and the footlights' spill (one more card). See "Stage light on the performers" below. | 0 | night only: none from morning to the end of Sunset (19:00), full from about 20:10; Show effects On |
 
 All of them read one shared set of uniforms (song time, beat sweep, pulse, wash, level, night, unfold); the CPU's work a
 frame is those uniforms and up to 12 stick matrices. Shaders are compiled when the mode starts (`ShowFX.warm`:
@@ -114,8 +114,9 @@ no three.js light (a light recompiles every lit material and costs every fragmen
 
 All three only inside the formation's area (a box round the members, 0.85 m past the outer ones, a 0.7 m soft edge, from
 the feet to above the hair): watchers and villagers are outside it (and wear other materials); a VRoid visitor elsewhere
-in the valley is never lit. Night only (from dusk: `uplightNight`, 0 at night 0.05, full at 0.6 = about 19:00; a hint at
-Sunset), Show effects On only, in and out with the stage set's unfold and fold. Solo, 4 and 8, the lead, both rows'
+in the valley is never lit. Night only (`uplightNight`: 0 up to night 0.65 = the sun on the horizon at 19:00, the end of
+Sunset; full at 0.95, about 20:10; see "Not by day" below), Show effects On only, in and out with the stage set's unfold
+and fold. Solo, 4 and 8, the lead, both rows'
 joined meshes, the Night Star and her group: everyone on the stage.
 
 **A visible source.** Footlights stand on the ground along the stage front (3-9 by the stage's width, each on its own
@@ -184,6 +185,41 @@ a frame. Fragment work: about 40 ALU operations per performer fragment while it 
 PC 1280x720 and phone 390x844: group of 4 at night (wide, medium, close, low hero; plus `-off`, `-key`, `-fill` for the
 balance), solo at night (medium, close), group of 8 (wide, medium), Sunset (wide, close), the Night Star at the shrine
 (`nightstar-*`); the probes `.tools/uplight/shots.mjs` and `nightstar.mjs` (the song frozen mid-chorus, fixed views).
+
+### Not by day (2026-11-28, after the deploy)
+Owner: "In the daytime we maybe don't need the light, but keep the other effects — in the daytime, with the light added,
+all characters seem too bright."
+
+**Why.** The light faded in over the valley's night value 0.05-0.6, which the sky reaches at 17:40-18:55: the whole
+Sunset hour, with the sun still up. Sunset (18:00) had ~8 % of it, 18:24 19 %, 18:42 59 % and 18:55 95 %: performers in
+nearly full footlights under an orange sky, on top of the low sun. Explore's own clock and Sing & Play's slow clock
+(an hour every 10 minutes) walk a show through those times. At Noon nothing of the show touched them.
+
+**Fix.** `UP.nightFrom` 0.65, `nightTo` 0.95: exactly 0 from morning through the end of Sunset (the sun is on the horizon
+at 19:00 whatever the season; at dawn the night value is under 0.65 before sunrise at 5:36), then in over the first
+hour of the night, full from about 20:10. The footlight lenses and the warm pool follow it (they use the same value).
+Everything else by day stays: the stage set, petals, bubbles, balloons, the ground wash, the claps. tests/show-fx.test.mjs
+checks the hours (0 at 5:36, 6, 8, 12:30, 15, 17:12, 18, 18:24, 18:42, 18:57, 19; full at 20:30, 21, 23, 2, 4:48).
+
+**Measured** (`.tools/day/probe.mjs`: Sing & Play, group of 4 at the station, first chorus, the world frozen and three
+arms drawn on that frame: as shipped / the light's terms at 0 / no show effects at all; faces = Rec. 709 luma 0-255 over
+each performer's face box, the mean of the four):
+
+| hour (night value) | PC before: ship / no light / no show | PC after: ship / no show | phone before: ship / no show | phone after: ship / no show |
+|---|---|---|---|---|
+| Noon 12:30 (0) | 221.2 / 221.2 / 221.2 | 220.3 / 220.3 | 233.9 / 233.9 | 233.4 / 233.4 |
+| Sunset 18:00 (0.15) | 128.3 / 122.6 / 122.4 | 122.3 / 122.1 | 142.1 / 135.7 | 135.8 / 135.8 |
+| 18:24 (0.20) | 118.1 / 103.7 / 103.7 | (0 now) | | |
+| 18:42 (0.36) | 130.5 / 83.2 / 83.0 | 83.3 / 83.0 | 145.3 / 92.4 | 92.3 / 92.3 |
+| dusk 19:36 (0.83) | 135.9 / 41.8 / 35.1 | 118.4 / 38.3 | 154.0 / 43.3 | 125.5 / 42.7 |
+| Night 21:00 (1) | 138.9 / 46.5 / 36.2 | 138.5 / 35.2 | 149.6 / 39.4 | 149.9 / 39.3 |
+
+By day the performers' faces now equal a no-show frame (within 0.3 of 255: the glow cards' light in the bloom). Night is
+unchanged. Also checked at Noon on that frozen frame: the glow (bloom) adds +20 to the faces (bloom off 199.7), the face
+shading's bent normals +4 (shade off 216.2), the PC supersampling nothing (Resolution Balanced 219.5): the performers'
+daylight brightness is the valley's own (sun 3.3, the pale VRoid skin near white, the white dresses over the glow's
+threshold), not the show's. Pictures: `.tools/day/day-light-pc.png`, `day-light-phone.png` (before | after | no show at
+Noon, Sunset, 18:42, 19:36, Night; the frames in `.tools/day/before*`, `after/`), local.
 
 ## The switch
 **Show effects: On / Off** in the Song row of the idle bar (after Lyrics; flat, 44 px on phones, text 13 px; the row

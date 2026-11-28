@@ -42,7 +42,12 @@ export const UP = Object.freeze({
   fillWash: 0.1,   // and in the fill
   pulse: 0.1,      // the key's lift on the beat
   pool: 0.3,       // the warm pool of light on the stage ground (fx/show-fx.js glow cards)
-  nightFrom: 0.05, nightTo: 0.6,   // night (the valley's 0..1) over which the light fades in
+  // night (the valley's 0..1, world/seasons.js lightingAt) over which the light fades in: only after the sun is down.
+  // 0.65 is the sun on the horizon (19:00, the end of Sunset; at dawn the night value is under 0.65 before sunrise at
+  // 5:36), 0.95 about 20:10, real night. (Owner 2026-11-28: "in the daytime we maybe don't need the light ... with the
+  // light added, all characters seem too bright": it used to fade in over 0.05-0.6, i.e. 17:40-18:55, the whole sunset
+  // hour, so by 18:40 the performers stood in nearly full footlights under a still-orange sky.)
+  nightFrom: 0.65, nightTo: 0.95,
 });
 const KEY = new THREE.Color(1.0, 0.86, 0.72), FILL = new THREE.Color(1.0, 0.9, 0.8);
 
@@ -117,7 +122,7 @@ export function patchUplight(m) {
 }
 
 const smooth01 = x => (x <= 0 ? 0 : x >= 1 ? 1 : x * x * (3 - 2 * x));
-/** How much of the light a night value gives (0 by day, 1 at night; pure). */
+/** How much of the light a night value gives (0 from morning through the end of sunset, 1 at real night; pure). */
 export const uplightNight = night => smooth01((night - UP.nightFrom) / (UP.nightTo - UP.nightFrom));
 
 /**

@@ -298,7 +298,11 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   materials before the bake (the lips: the face skin within a few mm of the mouth's slit, the upper lip thinner, fading
   at the corners; the inside: the FaceMouth sheet and its bake margin) and a multiply in the atlas: the lips toward
   pink-coral for the girls and women (strength 0.88, 3.2 mm above / 6.8 mm below the slit at most) and a faint natural
-  rose for the boys (0.35, 2 / 4 mm), the inside 0.6 darker except the teeth (both kinds). `MOUTH_KIND` is set per
+  rose for the boys (0.35, 2 / 4 mm). The inside (round 4, owner: "a dark pink tongue colour", not dark): painted toward
+  a deep rose (girls sRGB 0.33 / 0.055 / 0.15, boys 0.33 / 0.075 / 0.155) and, toward its bottom (a third mask: the
+  texel's rest height in the mouth sheet), a lighter tongue rose (0.60 / 0.21 / 0.32, boys 0.58 / 0.24 / 0.33), the
+  picture's own shading kept, the teeth white. `VROID_MOUTH_SAVE=1` also writes the plain atlas and the masks (R lips,
+  G inside, B tongue) beside it for measuring. `MOUTH_KIND` is set per
   member (`nam-*` = boy). `VROID_MOUTH=off` builds the plain atlas; `VROID_MOUTH_VARIANTS=1` writes the measured options
   beside it (`.tools/.../<stem>.atlas.<option>.png`) and leaves the atlas plain. No draws, materials or shader work:
   the same on PC and Low. Numbers in docs/GROUP-PERFORMANCE.md ("Faces at a distance", round 3).
@@ -306,7 +310,9 @@ Full notes, controls and three.js usage: `docs/PERFORMERS.md`. In short:
   `node scripts/kotone-club-bake.mjs`; `-- --member nam-1 --only full,lite,pack`, then `kotone-club-bake.mjs --who
   vroid-nam1`; the other girls and boys `-- --member <id> --only full,lite`; the guests `-- --member cc0-d-darkness |
   cc0-f | cc0-e --only full,lite --out <folder>`, copied as vroid-nightstar / visitor-vita / visitor-bibi; then
-  `art/blender/kotone_portrait.py` (Blender 4.5.11, as the cast's portraits) and `node scripts/bake-singer-faces.mjs`.
+  `art/blender/kotone_portrait.py` and `art/blender/saki_portrait.py` (Blender 4.5.11, as the cast's portraits) and
+  `node scripts/bake-singer-faces.mjs`. A texture-only rebuild (the mouth, round 4) gives every file's glTF JSON and
+  accessors byte for byte and the packs' nodes and own clips too: the shipped packs and their Club bakes stay.
 - Loaded only by a group performance (`content/troupe.js`, `game/perform/troupe.js`): the models of the group and one
   pack (`moves-vroid-nam1`, the back row's source). Only that pack ships: the other six were dropped from the deploy
   (owner, 2026-11-28); `--member <id>` rebuilds a member's pack when it is needed.

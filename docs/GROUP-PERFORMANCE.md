@@ -388,6 +388,51 @@ before | after, the 2-12 m strip singing, the options), `all8-pc.png` / `all8-lo
 `singer-faces-before-after.png`; numbers in `.tools/girls/m/final-vs-before.json`, `tint-pc-wide.json`,
 `tint-low-wide.json` (local, ignored).
 
+### Round 4 (2026-11-28): the mouth's inside a dark rose, not dark brown
+Owner, after round 3 went live: "Inside the character's mouth it should be a dark pink tongue colour; currently it is
+dark and doesn't look good." Round 3 multiplied the mouth's sheet by 0.4: its dark red (atlas median (101, 28, 29) on
+the cavity, (126, 36, 35) on the tongue) became (41, 13, 12) / (51, 15, 14), a grey-brown hole by day and near black at
+night. Now `vroid_lite.mouth_look` paints the inside toward a deep rose with a lighter tongue rose toward its bottom
+(a third mask, `low`: the texel's rest height in the mouth sheet's own box, 1 below 20 % of its height, 0 above 55 %),
+keeping the picture's own shading (luminance over the inside's median, to the power 0.6, clamped 0.55-1.35) and the
+teeth white. Girls and women: inside sRGB (0.33, 0.055, 0.15) = #540E26, tongue (0.60, 0.21, 0.32) = #993652; boys a
+little less saturated: (0.33, 0.075, 0.155) = #541328, tongue (0.58, 0.24, 0.33) = #943D54. In the atlases: cavity
+median (85, 15, 40), tongue (156, 53, 83) (Riku (81, 19, 39) / (157, 65, 89)). The lip band is unchanged.
+
+**Picked by measuring.** Nine colour pairs (pinker and lighter to darker) swapped into Kotone's and Riku's atlases on
+one frozen Sing & Play frame (`.tools/mouth/probe.mjs`: the members' atlases swapped as ImageBitmaps like GLTFLoader's,
+the camera 0.8-6 m in front of each face along its eye bone's forward, the near plane at distance - 0.6 m so the front
+row does not hide the back row; the mouth found by rendering it shut and wide open; mouthA 0.6 / mouthO 0.2 vs shut;
+the box 0.6 x the eye-mouth distance across, 0.25 above to 0.55 below the slit, every pixel; CIE76). A lighter pink
+(0.50, 0.14, 0.22) gave the most signal but read as a pale hole by day; the darker roses kept most of the darkness.
+
+**Effect** (plain = the atlas with no mouth work, round 3 = the shipped files, round 4 = these; the 2-6 m means;
+signal / darkness = skin L - the open mouth's L):
+
+| face | PC day 15:00 signal plain / r3 / r4 | darkness plain / r3 / r4 | PC night 21:00, show on: signal | darkness | phone day (light files): signal | darkness |
+|---|---|---|---|---|---|---|
+| Saki | 9.30 / 9.28 / 9.46 | 25.9 / 33.8 / 30.6 | 9.78 / 10.46 / 10.19 | 27.0 / 38.6 / 33.0 | 9.75 / 9.57 / 9.69 | 27.8 / 36.3 / 31.0 |
+| Kotone | 10.34 / 9.81 / 10.15 | 22.6 / 30.5 / 27.7 | 12.11 / 12.74 / 12.35 | 26.7 / 39.6 / 33.7 | 9.81 / 9.03 / 9.48 | 24.7 / 29.9 / 25.6 |
+| Aoi | 7.12 / 6.26 / 7.19 | 12.9 / 14.2 / 14.4 | 12.45 / 16.85 / 16.00 | 26.4 / 43.1 / 36.6 | 7.26 / 5.84 / 7.23 | 13.2 / 14.4 / 14.5 |
+| Riku | 8.17 / 9.91 / 10.86 | 19.6 / 32.8 / 28.3 | 9.35 / 12.30 / 12.14 | 23.9 / 39.4 / 31.1 | 8.05 / 9.71 / 10.79 | 19.9 / 33.7 / 27.2 |
+
+By day singing changes the mouth's pixels as much as round 3's dark inside or more (+1 to +24 %: the rose differs from
+the skin in hue as well as in lightness; a* of the open mouth 26-29 against round 3's 7-17); at night 1-5 % less than
+round 3 (still +2 to +30 % over plain). The open mouth stays 26-37 L darker than the skin by day and night on PC
+(round 3 28-43, plain 20-27): 47-66 % of round 3's darkness gain kept on PC; on the phone's light files 16-108 %
+(Kotone's 512 px mouth gains least). Pictures: `.tools/mouth/closeups-pc-day.png`, `closeups-pc-night.png`,
+`closeups-phone-day.png` (0.8 / 1.2 / 2 m, singing, round 3 | round 4), `strip-2-6m-pc-day.png`, `strip-2-6m-phone-day.png`,
+`strip-2-4m-pc-night.png`; numbers `.tools/mouth/final*/` (local, ignored).
+
+**Rebuilt, texture only.** All 22 files (Kotone, Saki, Mio, Yuna, Aoi, Riku, Kai, Ren and their light files; the Night
+Star, Vita and Bibi and theirs), one Blender 5.2.5 run per member (Kotone and nam-1 with their packs, to check them):
+every file's glTF JSON and every accessor byte-identical to the shipped one, only the atlas picture changed
+(`.tools/mouth/bin/glbdiff.mjs`); the fresh packs' 69 nodes and nine own clips byte-identical to the shipped
+moves-kotone / moves-vroid-nam1, so those (with their Club bakes) and every pack baked on these bodies stay as they are.
+Raw +12,816 B over the 22 files. The Singer row's faces re-baked (`scripts/bake-singer-faces.mjs`; a closed mouth: they
+barely change). Kotone's portrait shows her mouth closed: not re-rendered. New: Saki's portrait
+(`art/blender/saki_portrait.py`, `public/portraits/nu-3.webp`: a gentle smile, lips a little apart).
+
 ## Checks
 - `npm test` (troupe.test.mjs: cast, back routine, copy maths, leg solve, sing-along gate, room check, group shots,
   limits, strong-phone rule, budget watch and the cut, the row merge's skinning/morph/UV maths, a packed pack's rest

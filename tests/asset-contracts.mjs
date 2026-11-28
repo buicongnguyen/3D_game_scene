@@ -359,7 +359,7 @@ export const EXERCISE_CLIPS = ['ExStretch', 'ExArmSwing', 'ExArmCircle', 'ExSide
   'ExChild', 'ExChildIn', 'ExMountain', ...['Tree', 'Warrior', 'Bird'].flatMap(n => [`Ex${n}L`, `Ex${n}R`, `Ex${n}InL`, `Ex${n}InR`])];
 for (const who of ['rin', 'mika', 'villager-kid', 'villager-man']) CONTRACTS[`exercise-${who}`] = { family: 'clips', of: who, clips: EXERCISE_CLIPS };
 
-export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru', 'kotone'];
+export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo', 'hoa', 'nabi', 'byeol', 'haru', 'kotone', 'nu-3'];   // (nu-3: Saki, 2026-11-28)
 // Raw GLBs are the editable, uncompressed sources; production ships meshopt-packed copies (tests/pack.test.mjs).
 // Raised from 30 / 12 MB when every house became enterable (seven home interiors, about 0.7 MB raw and 0.2 MB packed each)
 // and the cow, pig, goat and dog arrived (about 0.5 MB raw each). Keep them tight: they are what a first visit downloads.
@@ -419,6 +419,8 @@ export const PORTRAITS = ['mika', 'genzo', 'rin', 'ota', 'hana', 'sora', 'tamo',
 // +0.49 MB: the Explore moves pack (moves-explore.glb, 17 clips on Saki's skeleton for every singer body; Play as).
 // -0.05 MB: the girls, Kotone, the Night Star and the visitors re-packed the same way, and every VRoid mouth tinted in its
 // atlas (faces round 3: the 16 models and light files -49,028 B together); 91,193,824 B measured.
+// +0.01 MB: the mouths' inside a dark rose instead of dark brown (faces round 4, texture only: the 22 VRoid files
+// +12,816 B together); 91,698,964 B measured.
 export const TOTAL_RAW_BYTES = 91_950_000;     // (the dance game, the exercise packs, the visitors, the Night Star and Play as)
 // 13.5 -> 13.8 MB: Town Life added ten villager clips per kind (about +0.16 MB packed each) and six held props (0.06 MB).
 // 13.8 -> 14.2 MB: Grandma Sora (0.31 MB packed).
@@ -454,6 +456,7 @@ export const TOTAL_RAW_BYTES = 91_950_000;     // (the dance game, the exercise 
 // +0.23 MB: the Explore moves pack packed (moves-explore.glb, every singer body's Explore moves; fetched the first time a
 // singer is played, Play as; 41.03 MB measured).
 // -0.08 MB: the girls' atlases re-packed and the mouths tinted (-82,556 B packed; faces round 3); 40,695,020 B measured.
+// +0.01 MB: the mouths' rose inside (faces round 4: the 22 VRoid files +12,808 B packed, the pictures only).
 export const TOTAL_PACKED_BYTES = 41_150_000;      // (all together)
 
 // The phone videos (public/video, written by scripts/record-videos.mjs) are budgeted on their own: they are not part of

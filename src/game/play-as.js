@@ -63,8 +63,10 @@ export const playAsList = (store = globalThis.localStorage, params = null) =>
 export const bodyFileOf = (id, low) => { const m = member(id); return m ? (low ? `${m.file}.lite` : m.file) : null; };
 /** A name for the Play as tiles: Mika's own, else the singer's in the game's language. */
 export const playAsName = (id, lang = getLang()) => (id === MIKA ? tx(N_('Mika')) : nameOf(id, lang) || id);
-/** A face picture for the tiles (Mika: her portrait). */
-export const playAsPic = id => (id === MIKA ? 'portraits/mika.webp' : facePic(id));
+/** Who has a dialogue portrait (public/portraits/<id>.webp): Mika, Kotone and Saki (art/blender/saki_portrait.py). */
+export const PLAY_AS_PORTRAITS = Object.freeze([MIKA, KOTONE, 'nu-3']);
+/** A picture for the tiles: the portrait where there is one, else the Singer row's face (content/troupe.js facePic). */
+export const playAsPic = id => (PLAY_AS_PORTRAITS.includes(id) ? `portraits/${id}.webp` : facePic(id));
 /** The Explore save's Play as choice, checked against who can be played now. */
 export function savedPlayAs(st, list) { const v = st?.explore?.playAs; return list.includes(v) ? v : MIKA; }
 

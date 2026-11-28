@@ -107,8 +107,14 @@ def area(name, loc, target, energy, color, size):
 def render(name):
     cfg = SETUP[name]
     s = setup_scene()
-    bpy.ops.import_scene.gltf(filepath=os.path.join(MODELS, name + '.glb'))
+    # (file: the model's own name when it differs from the portrait's, e.g. Saki: vroid-nu3 -> nu-3)
+    bpy.ops.import_scene.gltf(filepath=os.path.join(MODELS, cfg.get('file', name) + '.glb'))
     arm = next((o for o in bpy.data.objects if o.type == 'ARMATURE'), None)
+    # (keys: face shape keys set for the picture, e.g. a gentle smile {'smile': 0.6, 'mouthA': 0.2})
+    for o in bpy.data.objects:
+        ks = o.data.shape_keys.key_blocks if o.type == 'MESH' and o.data.shape_keys else None
+        for k, v in (cfg.get('keys') or {}).items():
+            if ks and k in ks: ks[k].value = v
     for o in list(bpy.data.objects):
         if o.type == 'MESH' and o.name.startswith('Icosphere'):
             bpy.data.objects.remove(o, do_unlink=True)
